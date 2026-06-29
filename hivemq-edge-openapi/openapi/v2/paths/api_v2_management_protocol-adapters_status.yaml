@@ -1,0 +1,19 @@
+get:
+  description: Obtain the runtime status of every v2 protocol adapter.
+  operationId: getAdapterStatuses
+  x-roles-allowed:
+    - admin
+    - super
+    - user
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/AdapterStatus.yaml
+      description: Success
+  summary: Obtain the status of all v2 adapters
+  tags:
+    - Protocol Adapters

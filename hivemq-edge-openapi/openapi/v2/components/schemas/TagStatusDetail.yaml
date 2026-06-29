@@ -1,0 +1,31 @@
+type: object
+description: A tag's status plus per-aspect detail — states, counters, and the last failure reason.
+required:
+  - tagName
+properties:
+  tagName:
+    type: string
+  status:
+    $ref: ./TagStatus.yaml
+  readAspectState:
+    type: string
+    description: The read aspect's current state name (for example WAITING_FOR_POLL_INTERVAL).
+  writeAspectState:
+    type: string
+    description: The write aspect's current state name.
+  readActivated:
+    type: boolean
+  writeActivated:
+    type: boolean
+  readUsed:
+    type: boolean
+  writeUsed:
+    type: boolean
+  failureCount:
+    type: integer
+    format: int32
+  lastFailureReason:
+    type: string
+  lastTransitionAt:
+    type: string
+    format: date-time

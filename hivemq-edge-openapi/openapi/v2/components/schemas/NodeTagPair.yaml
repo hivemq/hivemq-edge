@@ -1,0 +1,34 @@
+type: object
+description: >-
+  A Node/Tag pair as configured, with its read-only activation flags (persisted preferences from the
+  configuration section) and its derived runtime status.
+required:
+  - tagName
+  - nodeString
+properties:
+  tagName:
+    type: string
+    description: The tag name.
+  nodeString:
+    type: string
+    description: Opaque JSON node definition, stored as-is.
+  readActivated:
+    type: boolean
+    readOnly: true
+    description: Persisted read-aspect activation preference from the configuration section.
+  writeActivated:
+    type: boolean
+    readOnly: true
+    description: Persisted write-aspect activation preference from the configuration section.
+  pollable:
+    type: boolean
+    readOnly: true
+  subscribable:
+    type: boolean
+    readOnly: true
+  access:
+    $ref: ./AccessFlags.yaml
+  schema:
+    $ref: ../../../components/schemas/JsonNode.yaml
+  status:
+    $ref: ./TagStatus.yaml
