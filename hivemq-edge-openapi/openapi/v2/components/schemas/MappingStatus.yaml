@@ -1,0 +1,7 @@
+type: string
+description: The derived runtime status of a mapping.
+enum:
+  - ACTIVE
+  - DEACTIVATED_BY_TAG
+  - BLOCKED_BY_TAG_ERROR
+  - BLOCKED_BY_ADAPTER

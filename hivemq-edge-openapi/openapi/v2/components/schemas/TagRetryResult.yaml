@@ -1,0 +1,13 @@
+type: object
+description: The outcome of a tag retry request.
+properties:
+  accepted:
+    type: array
+    description: The tags whose retry was accepted (at least one aspect re-verifies).
+    items:
+      type: string
+  skipped:
+    type: array
+    description: The tags whose retry was skipped, each with the reason.
+    items:
+      $ref: ./SkippedTagRetry.yaml

@@ -25,6 +25,7 @@ import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extensions.ExtensionBootstrap;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.v2.wiring.ProtocolAdapterLifecycle;
 import com.hivemq.pulse.messaging.AssetMapperManager;
 import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;
@@ -38,6 +39,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull ExtensionBootstrap extensionBootstrap;
     private final @NotNull AdminService adminService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull ProtocolAdapterLifecycle protocolAdapterLifecycle;
     private final @NotNull DataCombinerManager dataCombinerManager;
     private final @NotNull AssetMapperManager assetMapperManager;
 
@@ -47,12 +49,14 @@ public class HiveMQEdgeGateway {
             final @NotNull ExtensionBootstrap extensionBootstrap,
             final @NotNull AdminService adminService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull ProtocolAdapterLifecycle protocolAdapterLifecycle,
             final @NotNull DataCombinerManager dataCombinerManager,
             final @NotNull AssetMapperManager assetMapperManager) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
         this.protocolAdapterManager = protocolAdapterManager;
+        this.protocolAdapterLifecycle = protocolAdapterLifecycle;
         this.dataCombinerManager = dataCombinerManager;
         this.assetMapperManager = assetMapperManager;
     }
@@ -61,6 +65,9 @@ public class HiveMQEdgeGateway {
         try {
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
             protocolAdapterManager.start();
+            // Start the v2 subsystem beside the legacy one — disjoint config, registries, and REST surface;
+            // the two never interact (touchpoint 5).
+            protocolAdapterLifecycle.start();
             dataCombinerManager.start();
             assetMapperManager.start();
 

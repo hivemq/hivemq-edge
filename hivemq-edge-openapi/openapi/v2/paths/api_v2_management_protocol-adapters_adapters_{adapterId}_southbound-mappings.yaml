@@ -1,0 +1,32 @@
+get:
+  description: List a v2 adapter's southbound mappings with their derived runtime status.
+  operationId: getSouthboundMappings
+  x-roles-allowed:
+    - admin
+    - super
+    - user
+  parameters:
+    - description: The adapter id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/Mapping.yaml
+      description: Success
+    '404':
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
+      description: Adapter not found
+  summary: List a v2 adapter's southbound mappings
+  tags:
+    - Protocol Adapters

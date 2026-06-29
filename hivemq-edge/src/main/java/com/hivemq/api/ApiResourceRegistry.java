@@ -76,6 +76,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<BridgesApi> bridgeApi;
     private final @NotNull Lazy<MetricsApi> dashboardApi;
     private final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi;
+    private final @NotNull Lazy<com.hivemq.edge.api.v2.ProtocolAdaptersApi> v2ProtocolAdaptersApi;
     private final @NotNull Lazy<UnsApi> unsApi;
     private final @NotNull Lazy<FrontendApi> frontendApi;
     private final @NotNull Lazy<GatewayEndpointApi> gatewayApi;
@@ -100,6 +101,7 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<BridgesApi> bridgeApi,
             final @NotNull Lazy<MetricsApi> dashboardApi,
             final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi,
+            final @NotNull Lazy<com.hivemq.edge.api.v2.ProtocolAdaptersApi> v2ProtocolAdaptersApi,
             final @NotNull Lazy<UnsApi> unsApi,
             final @NotNull Lazy<FrontendApi> frontendApi,
             final @NotNull Lazy<GatewayEndpointApi> gatewayApi,
@@ -121,6 +123,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.bridgeApi = bridgeApi;
         this.dashboardApi = dashboardApi;
         this.protocolAdaptersApi = protocolAdaptersApi;
+        this.v2ProtocolAdaptersApi = v2ProtocolAdaptersApi;
         this.unsApi = unsApi;
         this.frontendApi = frontendApi;
         this.gatewayApi = gatewayApi;
@@ -163,6 +166,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         logger.trace("Initialized authenticationApi API resources");
         register(protocolAdaptersApi.get());
         logger.trace("Initialized protocolAdaptersApi API resources");
+        register(v2ProtocolAdaptersApi.get());
+        logger.trace("Initialized v2 protocolAdaptersApi API resources");
         register(unsApi.get());
         logger.trace("Initialized unsApi API resources");
         register(frontendApi.get());
