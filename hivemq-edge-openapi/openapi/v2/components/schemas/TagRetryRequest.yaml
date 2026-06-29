@@ -1,0 +1,10 @@
+type: object
+description: >-
+  A request to retry permanently-failed tags (runtime-only; never touches configuration). Omit tagNames to retry
+  every permanently-failed tag on the adapter.
+properties:
+  tagNames:
+    type: array
+    description: The tags to retry; omit for all permanently-failed tags.
+    items:
+      type: string

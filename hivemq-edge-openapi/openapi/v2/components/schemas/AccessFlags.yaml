@@ -1,0 +1,11 @@
+type: object
+description: The declared access capabilities of a node.
+properties:
+  readable:
+    $ref: ./AccessTriState.yaml
+  writable:
+    $ref: ./AccessTriState.yaml
+  pollable:
+    $ref: ./AccessTriState.yaml
+  subscribable:
+    $ref: ./AccessTriState.yaml

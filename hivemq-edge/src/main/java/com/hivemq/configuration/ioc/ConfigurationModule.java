@@ -87,6 +87,13 @@ public class ConfigurationModule {
 
     @Provides
     @Singleton
+    static @NotNull com.hivemq.protocols.v2.config.ProtocolAdapterExtractor v2ProtocolAdapterExtractor(
+            final @NotNull ConfigurationService configurationService) {
+        return configurationService.v2ProtocolAdapterExtractor();
+    }
+
+    @Provides
+    @Singleton
     static @NotNull DataCombiningExtractor dataCombiningExtractor(
             final @NotNull ConfigurationService configurationService) {
         return configurationService.dataCombiningExtractor();

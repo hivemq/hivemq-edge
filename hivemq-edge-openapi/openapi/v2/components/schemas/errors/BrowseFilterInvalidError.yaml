@@ -1,0 +1,23 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter the browse was requested on.
+        example: "my-adapter"
+      reason:
+        type: string
+        description: The reason the browse filter could not be parsed.
+        example: "Unrecognized field 'foo'"
+    required:
+      - adapterId
+      - reason
+example:
+  general:
+    status: 400
+    title: "Browse Filter Invalid"
+    detail: "The browse filter for the protocol adapter 'my-adapter' is invalid: Unrecognized field 'foo'"
+    adapterId: "my-adapter"
+    reason: "Unrecognized field 'foo'"
+    type: "https://hivemq.com/edge/api/v2/model/BrowseFilterInvalidError"
