@@ -1,0 +1,19 @@
+type: object
+description: One entry of a browse result.
+properties:
+  nodeId:
+    type: string
+    description: The minimum identity of the discovered node.
+  nodeString:
+    type: string
+    description: The full JSON node definition of the discovered node.
+  type:
+    type: string
+    description: The kind of node.
+    enum:
+      - FOLDER
+      - OBJECT
+      - VALUE
+  selectable:
+    type: boolean
+    description: Whether the node can be selected as a tag's node definition.

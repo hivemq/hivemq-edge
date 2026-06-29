@@ -1,0 +1,11 @@
+type: object
+description: A mapping (northbound or southbound) with its derived runtime status.
+properties:
+  tagName:
+    type: string
+  topic:
+    type: string
+  status:
+    $ref: ./MappingStatus.yaml
+  blockedBy:
+    $ref: ./MappingBlockedBy.yaml

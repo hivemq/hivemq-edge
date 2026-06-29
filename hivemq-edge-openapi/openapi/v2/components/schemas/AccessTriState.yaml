@@ -1,0 +1,6 @@
+type: string
+description: A three-valued access capability of a node.
+enum:
+  - 'YES'
+  - 'NO'
+  - WILL_NOT_USE

@@ -91,6 +91,10 @@ public abstract class ApiModule {
             @NotNull ProtocolAdaptersResourceImpl protocolAdaptersResource);
 
     @Binds
+    abstract @NotNull com.hivemq.edge.api.v2.ProtocolAdaptersApi v2ProtocolAdaptersApi(
+            @NotNull com.hivemq.api.v2.resources.impl.ProtocolAdaptersResourceImpl v2ProtocolAdaptersResource);
+
+    @Binds
     abstract @NotNull UnsApi unsApi(@NotNull UnsResourceImpl unsResource);
 
     @Binds

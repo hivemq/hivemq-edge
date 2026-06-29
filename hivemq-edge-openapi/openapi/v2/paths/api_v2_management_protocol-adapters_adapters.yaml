@@ -1,0 +1,19 @@
+get:
+  description: List the v2 protocol adapters with their runtime status.
+  operationId: listAdapters
+  x-roles-allowed:
+    - admin
+    - super
+    - user
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/AdapterStatus.yaml
+      description: Success
+  summary: List the v2 adapters with status
+  tags:
+    - Protocol Adapters
