@@ -689,5 +689,55 @@ class ProtocolAdapterManagerTest {
             continueStart.countDown();
             waitUntilNotBusy(spyManager);
         }
+
+        @Test
+        void refresh_changedConfig_swapsInPlaceWithoutDeletingTheAdapter() throws Exception {
+            // EDG-602: an update must never remove the adapter id from the map. The previous delete-then-recreate
+            // sequence left a window where getAdapterDomainTags resolved no wrapper and returned 404. The new
+            // config is now swapped in place — the old wrapper is stopped, the new one started, and the adapter
+            // stays resolvable throughout.
+            final ProtocolAdapter oldAdapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapterConfig oldConfig = mock(ProtocolAdapterConfig.class);
+            addAdapterToManager("adapter-1", oldAdapter, oldConfig);
+            manager.start("adapter-1");
+
+            final ProtocolAdapterEntity entity = mock(ProtocolAdapterEntity.class);
+            final ProtocolAdapterConfig newConfig = mock(ProtocolAdapterConfig.class);
+            final ProtocolSpecificAdapterConfig newAdapterConfig = mock(ProtocolSpecificAdapterConfig.class);
+            final ProtocolAdapterFactory<?> factory = mock(ProtocolAdapterFactory.class);
+            final ProtocolAdapterInformation info = mock(ProtocolAdapterInformation.class);
+            final ProtocolAdapter newAdapter = createSuccessAdapter("adapter-1");
+
+            when(configConverter.fromEntity(entity)).thenReturn(newConfig);
+            when(versionProvider.getVersion()).thenReturn("1.0.0");
+            when(newConfig.getAdapterId()).thenReturn("adapter-1");
+            when(newConfig.getProtocolId()).thenReturn("test-protocol");
+            when(newConfig.getAdapterConfig()).thenReturn(newAdapterConfig);
+            org.mockito.Mockito.doReturn(List.of()).when(newConfig).getTags();
+            when(newConfig.getNorthboundMappings()).thenReturn(List.<NorthboundMapping>of());
+            when(newConfig.getSouthboundMappings()).thenReturn(List.<SouthboundMapping>of());
+            when(newConfig.missingTags()).thenReturn(Optional.empty());
+            when(factoryManager.get("test-protocol")).thenReturn(Optional.of(factory));
+            when(factory.getInformation()).thenReturn(info);
+            when(info.getProtocolId()).thenReturn("test-protocol");
+            when(factory.createAdapter(any(), any())).thenReturn(newAdapter);
+
+            manager.refresh(List.of(entity));
+            waitUntilNotBusy(manager);
+
+            // the adapter id never disappeared: it resolves, and to the NEW wrapper (new config swapped in)
+            assertThat(manager.getProtocolAdapterWrapperByAdapterId("adapter-1"))
+                    .isPresent()
+                    .get()
+                    .extracting(ProtocolAdapterWrapper::getConfig)
+                    .isSameAs(newConfig);
+            // the displaced instance was stopped and destroyed; the replacement was started
+            verify(oldAdapter).stop(any(), any(), any());
+            verify(oldAdapter).destroy();
+            verify(newAdapter).start(any(), any(), any());
+            // an update is metric-neutral and must never run the delete path that caused the 404
+            verify(protocolAdapterMetrics, org.mockito.Mockito.never()).decreaseProtocolAdapterMetric(anyString());
+            verify(protocolAdapterMetrics, org.mockito.Mockito.never()).increaseProtocolAdapterMetric(anyString());
+        }
     }
 }

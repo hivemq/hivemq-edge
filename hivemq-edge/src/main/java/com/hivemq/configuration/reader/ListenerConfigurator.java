@@ -23,7 +23,6 @@ import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TLSEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
-import com.hivemq.configuration.entity.listener.UDPListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.tls.ClientAuthenticationModeEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
@@ -34,7 +33,6 @@ import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
-import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import java.io.File;
@@ -120,8 +118,6 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
             return convertTlsTcpListener(tlsTCPListenerEntity);
         } else if (entity instanceof TlsWebsocketListenerEntity tlsWebsocketListenerEntity) {
             return convertTlsWebsocketListener(tlsWebsocketListenerEntity);
-        } else if (entity instanceof UDPListenerEntity udpListenerEntity) {
-            return convertUdpListener(udpListenerEntity);
         }
         return null;
     }
@@ -132,15 +128,6 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
                 entity.getPort(),
                 entity.getBindAddress(),
                 getName(entity, "tcp-listener-"),
-                entity.getExternalHostname());
-    }
-
-    @NotNull
-    MqttsnUdpListener convertUdpListener(final @NotNull UDPListenerEntity entity) {
-        return new MqttsnUdpListener(
-                entity.getPort(),
-                entity.getBindAddress(),
-                getName(entity, "udp-listener-"),
                 entity.getExternalHostname());
     }
 

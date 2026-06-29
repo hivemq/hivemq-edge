@@ -28,12 +28,12 @@ jobs:
       openapi-changed: ${{ steps.openapi.outputs.changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
           
       - name: Check for backend changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: backend
         with:
           filters: |
@@ -45,7 +45,7 @@ jobs:
               - '.github/**'
 
       - name: Check for frontend changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: frontend
         with:
           filters: |
@@ -54,7 +54,7 @@ jobs:
               - '.github/**'
 
       - name: Check for openAPI changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: openapi
         with:
           filters: |
@@ -85,6 +85,11 @@ jobs:
     needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
     if: needs.check-for-changes.outputs.backend-changed == 'true'
+    permissions:
+      contents: read
+      packages: read
+      checks: write
+      pull-requests: write
 
 
   check:

@@ -14,23 +14,18 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           repository: 'ornl-epics/etherip'
       - name: Setup Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
         with:
           distribution: 'adopt'
           java-version: '25'
-      - uses: whelk-io/maven-settings-xml-action@9dc09b23833fa9aa7f27b63db287951856f3433d # v3.0.0
-        with:
-          servers: >
-            [
-              {
-                "id":"github",
-                "username":"${{ github.actor }}",
-                "password":"${{ secrets.GITHUB_TOKEN }}"
-              }
-            ]
+          server-id: 'github'
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
       - name: Build and Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn package deploy:deploy-file -Durl=https://maven.pkg.github.com/hivemq/hivemq-edge -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml

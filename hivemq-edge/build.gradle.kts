@@ -193,8 +193,6 @@ dependencies {
     implementation(libs.zeroallocationhashing)
     implementation(libs.jctools)
 
-    // mqtt-sn codec
-    implementation(libs.mqtt.sn.codec)
     implementation(libs.hivemq.mqtt.client)
 
     // JAX-RS + Http Connector + Serializers
@@ -468,7 +466,7 @@ tasks.forbiddenApisTest { enabled = false }
 
 hivemqLicense {
     projectName.set("HiveMQ Edge")
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
     ignoredGroupPrefixes.addAll("com.hivemq", "com.github.saasquatch")
 }
 

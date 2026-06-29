@@ -198,14 +198,18 @@ final class JsonToOpcUAConverterUtil {
     }
 
     static @NotNull ULong extractUnsignedLong(final @NotNull JsonNode jsonNode) {
-        if (jsonNode.isLong()) {
-            return ULong.valueOf(jsonNode.asLong());
+        // Jackson stores integers that fit in an int as IntNode, so accept both; a JSON integer maps
+        // to OPC UA (U)Int64.
+        if (jsonNode.isInt() || jsonNode.isLong()) {
+            return ULong.valueOf(jsonNode.longValue());
         }
         throw createException(jsonNode, UInt64.name());
     }
 
     static long extractLong(final @NotNull JsonNode jsonNode) {
-        if (jsonNode.isLong()) {
+        // Jackson stores integers that fit in an int as IntNode, so accept both; a JSON integer maps
+        // to OPC UA Int64.
+        if (jsonNode.isInt() || jsonNode.isLong()) {
             return jsonNode.longValue();
         }
         throw createException(jsonNode, Int64.name());

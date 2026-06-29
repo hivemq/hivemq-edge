@@ -18,16 +18,5 @@ class RepositoryConventionPlugin : Plugin<Project> {
     private fun RepositoryHandler.applyRepositorySettings() {
         mavenCentral()
         maven { url = URI.create("https://jitpack.io") }
-        exclusiveContent {
-            forRepository {
-                maven {
-                    url = URI.create("https://jitpack.io")
-                }
-            }
-            filter {
-                includeGroup("com.github.simon622.mqtt-sn")
-                includeGroup("com.github.simon622")
-            }
-        }
     }
 }

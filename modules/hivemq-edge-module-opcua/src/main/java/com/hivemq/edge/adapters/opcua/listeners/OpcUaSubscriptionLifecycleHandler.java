@@ -101,32 +101,76 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
-     * Creates a new OPC UA subscription.
-     * If the subscription is created successfully, it returns an Optional containing the subscription.
-     * If the subscription creation fails, it returns an empty Optional.
+     * Starts construction of a new OPC UA subscription. Configure with the builder's setters, then
+     * call {@link Builder#create()} to push the subscription to the server.
      *
      * @param client the OPC UA client
-     * @return an Optional containing the created subscription or empty if creation failed
+     * @return a builder
      */
-    public static @NotNull Optional<OpcUaSubscription> createNewSubscription(final @NotNull OpcUaClient client) {
-        log.debug("Creating new OPC UA subscription");
-        final OpcUaSubscription subscription = new OpcUaSubscription(client);
-        try {
-            subscription.create();
-            return subscription
-                    .getSubscriptionId()
-                    .map(subscriptionId -> {
-                        log.trace("New subscription ID: {}", subscriptionId);
-                        return subscription;
-                    })
-                    .or(() -> {
-                        log.error("Subscription not created on the server");
-                        return Optional.empty();
-                    });
-        } catch (final UaException e) {
-            log.error("Failed to create subscription", e);
+    public static @NotNull Builder newSubscription(final @NotNull OpcUaClient client) {
+        return new Builder(client);
+    }
+
+    /** Fluent builder for an {@link OpcUaSubscription}. */
+    public static final class Builder {
+
+        private final @NotNull OpcUaClient client;
+        private int publishingIntervalMs = 1000; // OPC UA / Milo default, kept here for documentation
+
+        private Builder(final @NotNull OpcUaClient client) {
+            this.client = client;
         }
-        return Optional.empty();
+
+        /**
+         * Set the requested publishing interval in milliseconds.
+         *
+         * @param publishingIntervalMs the requested publishing interval in milliseconds
+         * @return this builder, for chaining
+         */
+        public @NotNull Builder publishingInterval(final int publishingIntervalMs) {
+            this.publishingIntervalMs = publishingIntervalMs;
+            return this;
+        }
+
+        /**
+         * Create the subscription on the server with the configured parameters. If the server revises
+         * the requested publishing interval (e.g. to enforce a minimum), the revision is logged.
+         *
+         * @return the created subscription, or empty if the creation failed
+         */
+        public @NotNull Optional<OpcUaSubscription> create() {
+            log.debug("Creating new OPC UA subscription with publishingInterval={}ms", publishingIntervalMs);
+            final OpcUaSubscription subscription = new OpcUaSubscription(client);
+            subscription.setPublishingInterval((double) publishingIntervalMs);
+            try {
+                subscription.create();
+                final double revised = subscription.getPublishingInterval();
+                if (Math.abs(revised - publishingIntervalMs) > 1.0) {
+                    log.warn(
+                            "OPC UA server revised publishingInterval: requested={}ms, revised={}ms",
+                            publishingIntervalMs,
+                            revised);
+                } else {
+                    log.info(
+                            "OPC UA subscription created with publishingInterval={}ms (requested {}ms)",
+                            revised,
+                            publishingIntervalMs);
+                }
+                return subscription
+                        .getSubscriptionId()
+                        .map(subscriptionId -> {
+                            log.trace("New subscription ID: {}", subscriptionId);
+                            return subscription;
+                        })
+                        .or(() -> {
+                            log.error("Subscription not created on the server");
+                            return Optional.empty();
+                        });
+            } catch (final UaException e) {
+                log.error("Failed to create subscription", e);
+            }
+            return Optional.empty();
+        }
     }
 
     private static void extractPayload(
@@ -147,16 +191,17 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @return an Optional containing the created or transferred subscription, or empty if failed
      */
     public @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
-        return createNewSubscription(client).map(subscription -> {
-            subscription.setPublishingInterval(
-                    (double) config.getOpcuaToMqttConfig().publishingInterval());
-            subscription.setSubscriptionListener(this);
-            if (syncTagsAndMonitoredItems(subscription, tags, config)) {
-                return subscription;
-            } else {
-                return null;
-            }
-        });
+        return newSubscription(client)
+                .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
+                .create()
+                .map(subscription -> {
+                    subscription.setSubscriptionListener(this);
+                    if (syncTagsAndMonitoredItems(subscription, tags, config)) {
+                        return subscription;
+                    } else {
+                        return null;
+                    }
+                });
     }
 
     /**
@@ -323,7 +368,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_TRANSFER_FAILED_COUNT);
 
         log.error("Subscription Transfer failed, recreating subscription for adapter '{}'", adapterId);
-        createNewSubscription(client)
+        newSubscription(client)
+                .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
+                .create()
                 .ifPresentOrElse(
                         replacementSubscription -> {
                             // reconnect the listener with the new subscription

@@ -75,7 +75,7 @@ describe('toolbar.utils', () => {
           id: 'pulse-1',
           type: NodeTypes.PULSE_NODE,
           position: { x: 0, y: 0 },
-          data: { id: 'pulse-1', label: 'Pulse Agent' },
+          data: { id: 'pulse-1', label: 'HiveMQ Platform' },
         } as NodePulseType,
         expected: true,
       },

@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 
@@ -306,6 +307,85 @@ public class OpcUaClientConnectionTest {
             assertThat(opcUaClientConnection.isHealthy())
                     .as("Connection should not be healthy after being stopped")
                     .isFalse();
+        });
+    }
+
+    /**
+     * EDG-688 regression test: a non-default {@code publishingInterval} configured on the adapter
+     * must actually reach the OPC UA server. Before the fix, the adapter constructed the
+     * {@link org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription} with Milo's
+     * no-arg constructor (defaulting to 1000 ms) and only called {@code setPublishingInterval}
+     * <em>after</em> {@code create()} had already gone on the wire, queuing a
+     * {@code ModifySubscription} diff that was never flushed. The end effect was that every
+     * subscription ran at the Milo default of 1000 ms regardless of what was configured.
+     */
+    @Test
+    @Timeout(60)
+    void configuredPublishingInterval_isAppliedOnTheServer() throws Exception {
+        // Arrange — non-default, distinguishable-from-Milo-default value
+        final int requestedPublishingIntervalMs = 250;
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, requestedPublishingIntervalMs),
+                null,
+                null);
+
+        final OpcuaTag tag = new OpcuaTag(
+                "testTag",
+                "Test tag",
+                new OpcuaTagDefinition(
+                        "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
+
+        final ProtocolAdapterTagStreamingService streamingService = mock(ProtocolAdapterTagStreamingService.class);
+        final AtomicBoolean reconnectionCallbackInvoked = new AtomicBoolean(false);
+
+        opcUaClientConnection = new OpcUaClientConnection(
+                "test-adapter-id",
+                List.of(tag),
+                protocolAdapterState,
+                streamingService,
+                eventService,
+                metricsService,
+                config,
+                new OpcUaServiceFaultListener(
+                        metricsService,
+                        eventService,
+                        "test-adapter-id",
+                        () -> reconnectionCallbackInvoked.set(true),
+                        true));
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+
+        // Act
+        final boolean started = opcUaClientConnection.start(parsedConfig);
+        assertThat(started).as("Connection should start successfully").isTrue();
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .as("Connection should be established")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        // Assert — the OPC UA server's subscription manager records the negotiated publishingInterval
+        // for every active subscription. With the fix, this is the value we requested; without the
+        // fix, the server would have received Milo's default of 1000 ms instead.
+        await().untilAsserted(() -> {
+            final var serverSubscriptions = java.util.Objects.requireNonNull(opcUaServerExtension.getOpcUaServer())
+                    .getSubscriptions()
+                    .values();
+            assertThat(serverSubscriptions)
+                    .as("server should see exactly one active subscription")
+                    .hasSize(1);
+            final double serverPublishingInterval =
+                    serverSubscriptions.iterator().next().getPublishingInterval();
+            assertThat(serverPublishingInterval)
+                    .as(
+                            "server-observed publishingInterval must equal the configured value, not Milo's 1000 ms default")
+                    .isCloseTo(requestedPublishingIntervalMs, within(1.0));
         });
     }
 }

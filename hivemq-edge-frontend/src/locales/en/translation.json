@@ -134,7 +134,7 @@
       "connectDevice": {
         "header": "From Devices To HiveMQ Edge",
         "readMore": {
-          "title": "Connect MQTT or MQTT-SN devices to the broker",
+          "title": "Connect MQTT devices to the broker",
           "label": "Read more"
         },
         "protocolAdapter": {
@@ -157,19 +157,19 @@
         }
       },
       "pulse": {
-        "header": "Connect to HiveMQ Pulse",
+        "header": "Connect to HiveMQ Platform",
         "section": {
           "activate": {
-            "title": "To access the features of HiveMQ Edge Pulse, you need to activate it first.",
-            "label": "Pulse Activation"
+            "title": "To access Data Intelligence features, you need to connect with HiveMQ Platform first.",
+            "label": "HiveMQ Platform Connection"
           },
           "manage": {
-            "title": "Pulse is currently active.",
-            "label": "Pulse Activation"
+            "title": "Connected with HiveMQ Platform.",
+            "label": "Manage Connection"
           },
           "assets": {
-            "title": "Use HiveMQ Edge Pulse to manage and publish assets to your HiveMQ Edge",
-            "label": "Manage Pulse Assets"
+            "title": "Use HiveMQ Platform to manage and publish assets to your HiveMQ Edge",
+            "label": "Manage Assets"
           }
         }
       }
@@ -1089,7 +1089,7 @@
       "header_CLUSTER_NODE": "Group Overview",
       "header_EDGE_NODE": "Edge Overview",
       "header_DEVICE_NODE": "Device Overview",
-      "header_PULSE_NODE": "Pulse Agent Overview",
+      "header_PULSE_NODE": "HiveMQ Platform Overview",
       "header_ASSETS_NODE": "Assets Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
@@ -1104,8 +1104,8 @@
       "header_BRIDGE_NODE": "Bridge Observability",
       "header_CLUSTER_NODE": "Group Observability",
       "header_COMBINER_NODE": "Combiner Observability",
-      "header_PULSE_NODE": "Pulse Agent Observability",
-      "header_ASSETS_NODE": "Pulse Assets Observability"
+      "header_PULSE_NODE": "HiveMQ Platform Observability",
+      "header_ASSETS_NODE": "Asset Observability"
     },
     "datahub": {
       "aria-label": "Open the Data Hub policy",
@@ -1264,8 +1264,8 @@
       "assetMapper": {
         "back": "Back to Selection",
         "create": "Create Asset Mapper",
-        "requiresPulse": "Pulse Agent required",
-        "pulseAgentRequired": "Pulse Agent automatically included",
+        "requiresPulse": "Connection to HiveMQ Platform required",
+        "pulseAgentRequired": "HiveMQ Platform automatically included",
         "comingSoon": "Coming soon",
         "success": {
           "title": "Asset Mapper Created",
@@ -1373,7 +1373,7 @@
           "DEVICE_NODE": "Devices",
           "BRIDGE_NODE": "Bridges",
           "HOST_NODE": "Hosts",
-          "PULSE_NODE": "Pulse Agents",
+          "PULSE_NODE": "HiveMQ Platform",
           "EDGE_NODE": "Edge Broker",
           "COMBINER_NODE": "Combiners",
           "ASSETS_NODE": "Assets",
@@ -1779,8 +1779,8 @@
           "description": "Provides topic filters as a data source"
         },
         "pulse": {
-          "name": "Pulse Agent",
-          "description": "Assets managed by the Pulse Agent"
+          "name": "HiveMQ Platform",
+          "description": "Assets managed by the HiveMQ Platform"
         }
       },
       "mappings": {
@@ -1856,11 +1856,11 @@
       "attention": "Assets requiring attention"
     },
     "title": "Assets",
-    "description": "Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.",
+    "description": "Manage Assets and their data mappings to stream live data from Edge to HiveMQ's Data Intelligence Platform and other external infrastructure.",
     "error": {
       "loading": "We cannot load the assets at this time. Please try again later",
-      "notYetAvailable": "Pulse Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
-      "notActivated": "The Pulse Agent is not connected to this Edge instance.",
+      "notYetAvailable": "Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
+      "notActivated": "This Edge instance is not connected to the HiveMQ Platform.",
       "asset": {
         "title": "Loading Asset",
         "loading": "There was an error loading the asset: ",
@@ -1872,43 +1872,43 @@
     },
     "activation": {
       "action": {
-        "activate": "Activate Pulse",
-        "manage": "Manage Activation",
+        "activate": "Connect with HiveMQ Platform",
+        "manage": "Manage Connection",
         "revoke": "Revoke",
-        "submit": "Activate"
+        "submit": "Connect"
       },
       "heading": {
-        "title": "Pulse Agent Activation"
+        "title": "HiveMQ Platform Connection"
       },
       "error": {
-        "noCapabilityLoaded": "Cannot check the Pulse capability. Please try again later"
+        "noCapabilityLoaded": "Cannot check Data Intelligence capability. Please try again later."
       },
       "form": {
         "activated": {
-          "title": "Pulse is activated",
-          "description": "You can revoke the activation or activate a different instance with a new token."
+          "title": "HiveMQ Edge is connected with the HiveMQ Platform.",
+          "description": "You can revoke the connection or connect a different instance with a new connection string."
         },
         "notActivated": {
-          "title": "Pulse is not activated",
-          "description": "To activate Pulse, you need to submit the activation token."
+          "title": "Not connected to HiveMQ Platform",
+          "description": "To connect to HiveMQ Platform, you need to submit the connection string you obtained via your HiveMQ Platform Account."
         },
         "token": {
-          "title": "Activation Token",
-          "description": "Enter the activation token you received from the Pulse team.",
-          "placeholder": "Paste or drop the activation token here"
+          "title": "Connection String",
+          "description": "Enter the connection string you received via HiveMQ Platform.",
+          "placeholder": "Paste or drop the connection string here"
         }
       },
       "activate": {
-        "title": "Pulse Agent Activation",
-        "success": "The Pulse Agent has been successfully activated",
-        "error": "The Pulse Agent could not be activated: {{error}}. Please check the activation token and try again",
+        "title": "HiveMQ Platform Connection",
+        "success": "Successfully connected with HiveMQ Platform.",
+        "error": "Could not connect to HiveMQ Platform: {{error}}. Please check the connection string and try again.",
         "loading": "Processing the request. Please wait ..."
       },
       "revoke": {
-        "title": "Pulse Agent Deactivation",
-        "confirmation": "Do you really want to deactivate the Pulse Agent? The operation cannot be reversed.",
-        "success": "The Pulse Agent has been successfully deactivated",
-        "error": "The Pulse Agent could not be deactivated: {{error}}. Please try again.",
+        "title": "Disconnect from HiveMQ Platform",
+        "confirmation": "Do you really want to disconnect from the HiveMQ Platform? You will need a new connection string to reconnect.",
+        "success": "Successfully disconnected from HiveMQ Platform.",
+        "error": "Could not disconnect from HiveMQ Platform: {{error}}. Please try again.",
         "loading": "Processing the request. Please wait ..."
       }
     },
@@ -1933,7 +1933,7 @@
       "status_DRAFT": "Draft",
       "status_STREAMING": "Streaming",
       "listing": {
-        "aria-label": "List of Pulse assets",
+        "aria-label": "List of Assets",
         "noDataText": "No assets found",
         "column": {
           "name": "Name",
@@ -1978,7 +1978,7 @@
             "remove": "Remove {{ name }}",
             "helper": "The asset mapper to use for the new mapping",
             "moreInfo": {
-              "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.",
+              "title": "Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from HiveMQ Platform.",
               "link": "https://docs.hivemq.com/hivemq-edge/pulse-asset-mapping.html"
             }
           },
@@ -1986,7 +1986,7 @@
             "title": "Data Sources",
             "placeholder": "$t(common.placeholder.typeOrSelect)",
             "moreInfo": {
-              "title": "Data sources are the entities from the Workspace where integration points are collected from. Edge and the Pulse Agent will be added automatically."
+              "title": "Data sources are the entities from the Workspace where integration points are collected from. Edge and the HiveMQ Platform will be added automatically."
             },
             "noOptionMatching": "No entities matching the filter",
             "noOptionAvailable": "No entities available",
@@ -2028,7 +2028,7 @@
     },
     "mapper": {
       "manager": {
-        "header": "Managing Pulse Asset Mappings"
+        "header": "Managing Asset Mappings"
       },
       "title": "Asset Mapper",
       "unnamed": "< unnamed asset mapper >",
@@ -2061,7 +2061,7 @@
       "nodeClient": {
         "status_ACTIVATED": "Activated",
         "status_DEACTIVATED": "Not Activated",
-        "title": "Pulse Agent"
+        "title": "HiveMQ Platform"
       }
     }
   },

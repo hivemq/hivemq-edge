@@ -51,6 +51,12 @@ export default tsEslint.config(
       'react/prop-types': 0,
       'react/display-name': 0,
 
+      // The HTTP client from useHttpClient() is a stable, lazily-created singleton (useState
+      // initializer), so its sub-clients (appClient.*) never change between renders. The bumped
+      // @tanstack/eslint-plugin-query flags them as missing queryKey dependencies, which are false
+      // positives against our stable-client + QUERY_KEYS convention. Disable the rule.
+      '@tanstack/query/exhaustive-deps': 'off',
+
       'unused-expressions': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
       'cypress/no-unnecessary-waiting': 'error',

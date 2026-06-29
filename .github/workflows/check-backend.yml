@@ -3,12 +3,18 @@ name: CI Check
 on:
   workflow_call:
 
+permissions:
+  contents: read
+  packages: read      # read hivemq-data-hub / hivemq-commons artifacts from GitHub Packages
+  checks: write        # publish-unit-test-result-action creates a check run
+  pull-requests: write # jacoco-report / test-results post a PR comment
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
 
@@ -26,16 +32,22 @@ jobs:
           cd ../hivemq-edge
 
       - name: Setup Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
         with:
           distribution: 'adopt'
           java-version: '21'
 
-      - uses: burrunan/gradle-cache-action@663fbad34e03c8f12b27f4999ac46e3d90f87eca # v3.0.1
+      - uses: burrunan/gradle-cache-action@4b67497abd37a511d6c1dc6299bdd84ff39f7bf5 # v3.0.2
         name: Build container
         with:
           arguments: :test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
           gradle-version: wrapper
+        env:
+          # an authenticated GITHUB_TOKEN with packages:read can read the
+          # hivemq-data-hub / hivemq-commons GitHub Packages Maven artifacts
+          # cross-repo, so no managed PAT/secret is required here.
+          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ github.actor }}
+          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@f3a4c8ee80460c780d2932e55fb914138ecaca2c
@@ -45,7 +57,7 @@ jobs:
 
       - name: Add coverage to PR
         id: jacoco
-        uses: madrapps/jacoco-report@50d3aff4548aa991e6753342d9ba291084e63848 # v1.7.2
+        uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920 # v1.8.0
         with:
           paths: |
             ${{ github.workspace }}/**/build/reports/jacoco/jacocoMergedReport/jacocoMergedReport.xml

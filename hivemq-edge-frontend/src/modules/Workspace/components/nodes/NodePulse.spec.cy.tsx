@@ -21,7 +21,7 @@ describe('NodePulse', () => {
 
   it('should render properly', () => {
     cy.mountWithProviders(mockReactFlow(<NodePulse {...MOCK_NODE_PULSE} />))
-    cy.getByTestId('pulse-client-description').should('have.text', 'Pulse Agent')
+    cy.getByTestId('pulse-client-description').should('have.text', 'HiveMQ Platform')
     cy.getByTestId('pulse-client-capabilities').within(() => {
       cy.get('svg').should('have.attr', 'data-type', PulseStatus.activation.ACTIVATED)
       cy.getByTestId('pulse-client-unmapped').should('have.text', 1)
@@ -57,7 +57,7 @@ describe('NodePulse', () => {
 
     cy.get('[role="toolbar"]').should('have.attr', 'data-id', NODE_PULSE_AGENT_DEFAULT_ID)
     cy.get('[role="toolbar"]').within(() => {
-      cy.getByTestId('toolbar-title').should('have.text', 'my pulse client')
+      cy.getByTestId('toolbar-title').should('have.text', 'HiveMQ Platform')
       cy.getByTestId('node-group-toolbar-panel').should('have.attr', 'aria-label', 'Open the overview panel')
     })
   })

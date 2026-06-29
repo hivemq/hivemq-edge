@@ -16,7 +16,7 @@ const cy_AddNewBridge = (id: string, host: string, clientId: string) => {
 
   bridgePage.config.submitButton.click()
 
-  bridgePage.toast.close()
+  bridgePage.dismissAllToasts()
 }
 
 describe('Bridges', () => {

@@ -16,7 +16,9 @@ export const TopicFilterNode: FC<NodeProps<Node<TopicFilterData>>> = (props) => 
     <>
       <NodeWrapper route={`node/${type}/${id}`} {...props}>
         <VStack ml={6} alignItems="flex-end">
-          {data.topics?.map((t) => <Topic tagTitle={t} key={t} />)}
+          {data.topics?.map((t) => (
+            <Topic tagTitle={t} key={t} />
+          ))}
         </VStack>
       </NodeWrapper>
       {data.topics?.map((_, index) => (

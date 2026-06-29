@@ -111,5 +111,5 @@ artifacts {
 
 hivemqLicense {
     projectName.set(project.name)
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
 }

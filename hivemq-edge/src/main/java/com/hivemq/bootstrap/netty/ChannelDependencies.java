@@ -20,8 +20,6 @@ import com.hivemq.codec.decoder.mqtt.MqttConnectDecoder;
 import com.hivemq.codec.decoder.mqtt.MqttDecoders;
 import com.hivemq.codec.encoder.EncoderFactory;
 import com.hivemq.codec.encoder.MQTTMessageEncoder;
-import com.hivemq.codec.transcoder.Mqtt5ToMqttsnTranscoder;
-import com.hivemq.codec.transcoder.MqttsnToMqtt5Transcoder;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -47,10 +45,6 @@ import com.hivemq.mqtt.handler.publish.MessageExpiryHandler;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqtt.handler.subscribe.SubscribeHandler;
 import com.hivemq.mqtt.handler.unsubscribe.UnsubscribeHandler;
-import com.hivemq.mqttsn.IMqttsnTopicRegistry;
-import com.hivemq.mqttsn.handler.sleep.AwakeHandler;
-import com.hivemq.mqttsn.handler.sleep.SleepHandler;
-import com.hivemq.mqttsn.services.IGatewayBroadcastService;
 import com.hivemq.security.ssl.SslParameterHandler;
 import dagger.Lazy;
 import io.netty.channel.group.ChannelGroup;
@@ -91,13 +85,7 @@ public class ChannelDependencies {
     private final @NotNull InterceptorHandler interceptorHandler;
     private final @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter;
     private final @NotNull ShutdownHooks shutdownHooks;
-    private final @NotNull IMqttsnTopicRegistry mqttsnTopicRegistry;
-    private final @NotNull MqttsnToMqtt5Transcoder mqttsnToMqttTranscoder;
-    private final @NotNull Mqtt5ToMqttsnTranscoder mqttToMqttsnTranscoder;
     private final @NotNull HivemqId hiveMqId;
-    private final @NotNull AwakeHandler awakeHandler;
-    private final @NotNull SleepHandler sleepHandler;
-    private final @NotNull Provider<IGatewayBroadcastService> gatewayDiscoveryService;
     private final @NotNull HandlerProvider handlerProvider;
 
     @Inject
@@ -131,14 +119,8 @@ public class ChannelDependencies {
             final @NotNull InterceptorHandler interceptorHandler,
             final @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter,
             final @NotNull ShutdownHooks shutdownHooks,
-            final @NotNull IMqttsnTopicRegistry mqttsnTopicRegistry,
             final @NotNull HivemqId hiveMqId,
-            final @NotNull MqttsnToMqtt5Transcoder mqttsnToMqttTranscoder,
-            final @NotNull Mqtt5ToMqttsnTranscoder mqttToMqttsnTranscoder,
-            final @NotNull AwakeHandler awakeHandler,
-            final @NotNull SleepHandler sleepHandler,
             final @NotNull MqttConnacker mqttConnacker,
-            final @NotNull Provider<IGatewayBroadcastService> gatewayDiscoveryService,
             @NotNull HandlerProvider handlerProvider) {
 
         this.noConnectIdleHandler = noConnectIdleHandler;
@@ -156,7 +138,6 @@ public class ChannelDependencies {
         this.restrictionsConfigurationService = restrictionsConfigurationService;
         this.mqttConnectDecoder = mqttConnectDecoder;
         this.shutdownHooks = shutdownHooks;
-        this.mqttsnTopicRegistry = mqttsnTopicRegistry;
         this.handlerProvider = handlerProvider;
         this.mqttMessageEncoder = new MQTTMessageEncoder(encoderFactory, globalMQTTMessageCounter);
         this.eventLog = eventLog;
@@ -173,12 +154,7 @@ public class ChannelDependencies {
         this.interceptorHandler = interceptorHandler;
         this.globalMQTTMessageCounter = globalMQTTMessageCounter;
         this.hiveMqId = hiveMqId;
-        this.mqttsnToMqttTranscoder = mqttsnToMqttTranscoder;
-        this.mqttToMqttsnTranscoder = mqttToMqttsnTranscoder;
-        this.awakeHandler = awakeHandler;
-        this.sleepHandler = sleepHandler;
         this.mqttConnacker = mqttConnacker;
-        this.gatewayDiscoveryService = gatewayDiscoveryService;
     }
 
     @NotNull
@@ -331,36 +307,12 @@ public class ChannelDependencies {
         return shutdownHooks;
     }
 
-    public @NotNull IMqttsnTopicRegistry getMqttsnTopicRegistry() {
-        return mqttsnTopicRegistry;
-    }
-
-    public @NotNull MqttsnToMqtt5Transcoder getMqttsnToMqttTranscoder() {
-        return mqttsnToMqttTranscoder;
-    }
-
-    public @NotNull Mqtt5ToMqttsnTranscoder getMqttToMqttsnTranscoder() {
-        return mqttToMqttsnTranscoder;
-    }
-
     public @NotNull HivemqId getHiveMqId() {
         return hiveMqId;
     }
 
-    public @NotNull AwakeHandler getAwakeHandler() {
-        return awakeHandler;
-    }
-
-    public @NotNull SleepHandler getSleepHandler() {
-        return sleepHandler;
-    }
-
     public @NotNull MqttConnacker getMqttConnacker() {
         return mqttConnacker;
-    }
-
-    public @NotNull Provider<IGatewayBroadcastService> getGatewayDiscoveryService() {
-        return gatewayDiscoveryService;
     }
 
     public @NotNull HandlerProvider getHandlerProvider() {

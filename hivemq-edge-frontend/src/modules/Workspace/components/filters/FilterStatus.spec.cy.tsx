@@ -12,7 +12,7 @@ describe('FilterStatus', () => {
     cy.get('[role="group"] label#workspace-filter-status-label').should('have.text', 'Status')
     cy.get('[role="group"] #react-select-status-placeholder').should('have.text', 'Select statuses to trace ...')
     cy.get('[role="group"] #workspace-filter-status-trigger').click()
-    cy.get('#react-select-status-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-status-listbox').within(() => {
       cy.get('[role="option"]').should('have.length', 5)
       cy.get('[role="option"]').eq(0).should('have.text', 'Connected')
       cy.get('[role="option"]').eq(1).should('have.text', 'Running')
@@ -67,7 +67,7 @@ describe('FilterStatus', () => {
     cy.get('[role="group"] ').should('have.attr', 'data-disabled')
 
     cy.get('[role="group"] #workspace-filter-status-trigger').click({ force: true })
-    cy.get('#react-select-status-listbox [role="listbox"]').should('not.exist')
+    cy.get('#react-select-status-listbox').should('not.exist')
 
     cy.get('@onChange').should('not.have.been.called')
   })

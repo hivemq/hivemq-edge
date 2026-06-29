@@ -27,17 +27,6 @@ java {
 repositories {
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.simon622")
-        }
-    }
 }
 
 dependencies {
@@ -111,6 +100,6 @@ artifacts {
 
 hivemqLicense {
     projectName.set(project.name)
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
     ignoredGroupPrefixes.add("org.mariadb.jdbc")
 }

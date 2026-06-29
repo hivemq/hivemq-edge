@@ -29,7 +29,6 @@ import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
@@ -59,7 +58,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
     private final @NotNull SecurityConfigurationService securityConfigurationService;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
-    private final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
@@ -74,7 +72,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull RestrictionsConfigurationService restrictionsConfigurationService,
             final @NotNull SecurityConfigurationService securityConfigurationService,
             final @NotNull PersistenceConfigurationService persistenceConfigurationService,
-            final @NotNull MqttsnConfigurationService mqttsnConfigurationService,
             final @NotNull ApiConfigurationService apiConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
@@ -85,7 +82,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.restrictionsConfigurationService = restrictionsConfigurationService;
         this.securityConfigurationService = securityConfigurationService;
         this.persistenceConfigurationService = persistenceConfigurationService;
-        this.mqttsnConfigurationService = mqttsnConfigurationService;
         this.apiConfigurationService = apiConfigurationService;
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
@@ -116,11 +112,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public @NotNull PersistenceConfigurationService persistenceConfigurationService() {
         return persistenceConfigurationService;
-    }
-
-    @Override
-    public @NotNull MqttsnConfigurationService mqttsnConfiguration() {
-        return mqttsnConfigurationService;
     }
 
     @Override

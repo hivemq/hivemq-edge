@@ -53,7 +53,7 @@ describe('EntityReferencesWizard', () => {
           .should('be.visible')
           .should(
             'contain.text',
-            'Data sources are the entities from the Workspace where integration points are collected from. Edge and the Pulse Agent will be added automatically.'
+            'Data sources are the entities from the Workspace where integration points are collected from. Edge and the HiveMQ Platform will be added automatically.'
           )
         cy.getByTestId('more-info-trigger').click()
         cy.get('[data-testid="more-info-popover"]').should('not.be.visible')
@@ -66,7 +66,7 @@ describe('EntityReferencesWizard', () => {
     cy.get('#wizard-mapper-sources').click()
     cy.wait(['@getBridges', '@getAdapters'])
 
-    cy.get('#react-select-sources-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-sources-listbox').within(() => {
       // Should have options from both bridges and adapters
       cy.get('[role="option"]').should('have.length.greaterThan', 0)
 
@@ -93,7 +93,7 @@ describe('EntityReferencesWizard', () => {
 
     // Select first bridge option
     cy.get('#wizard-mapper-sources').click()
-    cy.get('#react-select-sources-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-sources-listbox').within(() => {
       cy.get('[role="option"]').eq(1).click()
     })
 
@@ -184,7 +184,7 @@ describe('EntityReferencesWizard', () => {
     cy.get('#wizard-mapper-sources').click()
     cy.get('#wizard-mapper-sources input').type('bridge')
 
-    cy.get('#react-select-sources-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-sources-listbox').within(() => {
       cy.get('[role="option"]').each(($option) => {
         cy.wrap($option).should('contain.text', 'bridge')
       })

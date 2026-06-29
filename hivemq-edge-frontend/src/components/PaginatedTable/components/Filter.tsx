@@ -8,11 +8,10 @@ import { DateTime } from 'luxon'
 import DateTimeRangeSelector from '@/components/DateTime/DateTimeRangeSelector.tsx'
 import type { FilterMetadata } from '@/components/PaginatedTable/types.ts'
 
-export interface FilterProps<T>
-  extends Pick<
-    Column<T, unknown>,
-    'id' | 'getFilterValue' | 'getFacetedUniqueValues' | 'getFacetedMinMaxValues' | 'setFilterValue' | 'columnDef'
-  > {
+export interface FilterProps<T> extends Pick<
+  Column<T, unknown>,
+  'id' | 'getFilterValue' | 'getFacetedUniqueValues' | 'getFacetedMinMaxValues' | 'setFilterValue' | 'columnDef'
+> {
   firstValue: unknown
 }
 

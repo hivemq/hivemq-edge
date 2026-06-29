@@ -73,21 +73,12 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
             }
         }
 
-        if (listener instanceof MqttsnUdpListener mqttsnUdpListener) {
-            return createUdpInitializer(mqttsnUdpListener);
-        }
-
         throw new IllegalArgumentException("Unknown listener type");
     }
 
     @NotNull
     protected AbstractChannelInitializer createTcpInitializer(final @NotNull MqttTcpListener listener) {
         return new TcpChannelInitializer(channelDependencies, listener, nonSslHandlerProvider);
-    }
-
-    @NotNull
-    protected AbstractChannelInitializer createUdpInitializer(final @NotNull MqttsnUdpListener listener) {
-        return new UdpChannelInitializer(channelDependencies, listener, nonSslHandlerProvider);
     }
 
     @NotNull

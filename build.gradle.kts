@@ -4,7 +4,7 @@ plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
     id("com.hivemq.tools.oci-version-catalog") version "0.3.0"
-    id("io.github.sgtsilvio.gradle.oci") version "0.25.0"
+    id("io.github.sgtsilvio.gradle.oci") version "0.27.0"
     id("jacoco")
 }
 
@@ -32,6 +32,12 @@ tasks.register("license") {
     group = "license"
 
     dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":updateThirdPartyLicenses") })
+}
+
+tasks.register("checkApprovedLicenses") {
+    group = "checkApprovedLicenses"
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":checkApprovedLicenses") })
 }
 
 tasks.register("check") {

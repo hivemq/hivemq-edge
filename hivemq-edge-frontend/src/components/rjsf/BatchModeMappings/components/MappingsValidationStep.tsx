@@ -15,7 +15,7 @@ import {
   useBoolean,
   VisuallyHidden,
 } from '@chakra-ui/react'
-import { LuCheckSquare } from 'react-icons/lu'
+import { LuSquareCheck } from 'react-icons/lu'
 
 import type { StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchModeMappings/types.ts'
 import { ErrorObject } from '@/components/rjsf/BatchModeMappings/types.ts'
@@ -35,7 +35,7 @@ const MappingsValidationStep: FC<StepRendererProps> = ({ store, onContinue }) =>
         header: () => <VisuallyHidden>{t('rjsf.batchUpload.dataValidation.columns.admin')}</VisuallyHidden>,
         footer: ({ table }) => (
           <Button
-            leftIcon={<LuCheckSquare />}
+            leftIcon={<LuSquareCheck />}
             isDisabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
             onClick={() => {
               const selectedRows = table.getSelectedRowModel().rows

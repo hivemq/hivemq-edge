@@ -23,7 +23,7 @@ jobs:
           echo "selected_github_ref=${workflow_call_github_ref:-${{ github.ref_name }}}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
         with:
           distribution: 'temurin'
           java-version: |
@@ -36,14 +36,13 @@ jobs:
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
       - name: Setup Snyk
-        uses: snyk/actions/setup@9cf6ca713d71123d2d229cc3d7f145b96ea3c518 # master
+        uses: snyk/actions/setup@8e119fbb6c251787721d34ba683ed48eba792766 # master
 
       - name: Run Snyk monitor
         shell: bash
         run: >
           snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
           --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=development -d
-          --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++~~Selected~~,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\""
           hivemq-edge/hivemq-edge -- --stacktrace
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -51,14 +50,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: '20.13.1'
+          node-version: '24.16.0'
 
       - name: Run Snyk Frontend monitor
         shell: bash
         run: >
-          snyk monitor --file=pnpm-lock.yaml --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
+          snyk monitor --all-projects --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
           --project-name=hivemq-edge-frontend --remote-repo-url=hivemq-edge-frontend --project-lifecycle=development -d
-          --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++~~Selected~~,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\""
           hivemq-edge/hivemq-edge-frontend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

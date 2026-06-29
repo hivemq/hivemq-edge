@@ -32,12 +32,4 @@ public enum ProtocolVersion {
      * The protocol version which indicates a MQTT 5 connection
      */
     MQTTv5,
-    /**
-     * The protocol version which indicates a MQTT-SN 1.2 connection
-     */
-    MQTTSNv1_2,
-    /**
-     * The protocol version which indicates a MQTT-SN 2.0 connection
-     */
-    MQTTSNv2_0,
 }

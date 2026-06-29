@@ -86,7 +86,6 @@ public class HiveMQEdgeNettyBootstrapTest {
         when(listenerConfigurationService.getTlsTcpListeners()).thenReturn(Lists.newArrayList());
         when(listenerConfigurationService.getWebsocketListeners()).thenReturn(Lists.newArrayList());
         when(listenerConfigurationService.getTlsWebsocketListeners()).thenReturn(Lists.newArrayList());
-        when(listenerConfigurationService.getUdpListeners()).thenReturn(Lists.newArrayList());
 
         final var unused = hiveMQNettyBootstrap.bootstrapServer();
     }

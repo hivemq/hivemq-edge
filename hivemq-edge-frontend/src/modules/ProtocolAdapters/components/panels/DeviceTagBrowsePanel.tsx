@@ -3,12 +3,21 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Divider, Flex, FormControl, FormLabel, Input, Select, Spinner, Text } from '@chakra-ui/react'
 
+import type { AxiosError } from 'axios'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import type { BrowseFormat } from '@/api/hooks/useProtocolAdapters/useBrowseDeviceTags.ts'
 import { useBrowseDeviceTags } from '@/api/hooks/useProtocolAdapters/useBrowseDeviceTags.ts'
 import type { ImportMode } from '@/api/hooks/useProtocolAdapters/useImportDeviceTags.ts'
 import { useImportDeviceTags } from '@/api/hooks/useProtocolAdapters/useImportDeviceTags.ts'
 import { downloadTimeStamp } from '@/utils/download.utils.ts'
+
+interface ValidationError {
+  row?: number
+  column?: string
+  value?: string
+  code?: string
+  message: string
+}
 
 interface DeviceTagBrowsePanelProps {
   adapterId: string
@@ -87,7 +96,33 @@ const DeviceTagBrowsePanel: FC<DeviceTagBrowsePanelProps> = ({ adapterId }) => {
           if (fileInputRef.current) fileInputRef.current.value = ''
         },
         onError: (err) => {
-          errorToast({ title: t('deviceTagBrowse.error.import') }, err)
+          const body = (err as unknown as AxiosError<{ errors?: ValidationError[] }>).response?.data
+          const validationErrors = body?.errors
+          if (validationErrors?.length) {
+            errorToast(
+              {
+                title: t('deviceTagBrowse.error.import'),
+                description: (
+                  <>
+                    <Text as="span" display="block" fontStyle="italic">
+                      {importFile.name} · {importMode}
+                    </Text>
+                    {validationErrors.map((e, i) => {
+                      const location = [e.row != null ? `Row ${e.row}` : null, e.column].filter(Boolean).join(', ')
+                      return (
+                        <Text as="span" display="block" key={i}>
+                          {location ? `${location}: ${e.message}` : e.message}
+                        </Text>
+                      )
+                    })}
+                  </>
+                ),
+              },
+              new Error()
+            )
+          } else {
+            errorToast({ title: t('deviceTagBrowse.error.import') }, err)
+          }
         },
       }
     )

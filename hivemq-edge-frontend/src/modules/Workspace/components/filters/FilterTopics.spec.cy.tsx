@@ -35,7 +35,7 @@ describe('FilterTopics', () => {
     cy.get('[role="group"] label#workspace-filter-topics-label').should('have.text', 'Topics')
     cy.get('[role="group"] #react-select-topics-placeholder').should('have.text', 'Select topics to trace ...')
     cy.get('[role="group"] #workspace-filter-topics-trigger').click()
-    cy.get('#react-select-topics-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-topics-listbox').within(() => {
       cy.get('[role="option"]').should('have.length', 2)
       cy.get('[role="option"]').eq(0).should('contain.text', formatTopicString('my/topic'))
       cy.get('[role="option"]').eq(1).should('contain.text', formatTopicString('test/tag1'))
@@ -108,7 +108,7 @@ describe('FilterTopics', () => {
     cy.get('[role="group"] ').should('have.attr', 'data-disabled')
 
     cy.get('[role="group"] #workspace-filter-topics-trigger').click({ force: true })
-    cy.get('#react-select-topics-listbox [role="listbox"]').should('not.exist')
+    cy.get('#react-select-topics-listbox').should('not.exist')
 
     cy.get('@onChange').should('not.have.been.called')
   })
