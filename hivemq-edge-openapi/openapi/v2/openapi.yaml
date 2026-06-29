@@ -1,0 +1,48 @@
+openapi: 3.0.1
+info:
+  contact:
+    url: https://www.hivemq.com
+  description: >
+    The v2 protocol-adapter REST API of HiveMQ Edge — state-only runtime views and commands
+    (direction activation, tag retry, browse). No endpoint creates, modifies, or deletes configuration;
+    configuration is produced by an external tool and only read by Edge.
+  title: HiveMQ Edge REST API — Protocol Adapters v2
+  version: PLACEHOLDER_HIVEMQ_VERSION
+  x-logo:
+    url: https://www.hivemq.com/img/svg/hivemq-bee.svg
+tags:
+  - description: >-
+      Interact with v2 protocol adapters: state-only runtime views and commands (direction activation,
+      tag retry, browse). No endpoint creates, modifies, or deletes configuration.
+    name: Protocol Adapters
+paths:
+  /api/v2/management/protocol-adapters/types:
+    $ref: paths/api_v2_management_protocol-adapters_types.yaml
+  /api/v2/management/protocol-adapters/adapters:
+    $ref: paths/api_v2_management_protocol-adapters_adapters.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/status:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_status.yaml
+  /api/v2/management/protocol-adapters/status:
+    $ref: paths/api_v2_management_protocol-adapters_status.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/activation:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_activation.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/tags:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_tags.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}/status:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}_status.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}/retry:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}_retry.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/tags/retry:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_tags_retry.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/northbound-mappings:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_northbound-mappings.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/southbound-mappings:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_southbound-mappings.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/browse:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_browse.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/node-schema:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_node-schema.yaml
+  /api/v2/management/protocol-adapters/adapters/{adapterId}/adapter-schema:
+    $ref: paths/api_v2_management_protocol-adapters_adapters_{adapterId}_adapter-schema.yaml
