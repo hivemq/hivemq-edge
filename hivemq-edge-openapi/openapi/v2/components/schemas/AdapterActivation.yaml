@@ -1,0 +1,13 @@
+type: object
+description: >-
+  A request to activate or deactivate a direction of an adapter. This is a live-goal command that is never
+  persisted; after a restart the configuration-declared activation applies again.
+required:
+  - direction
+  - activated
+properties:
+  direction:
+    $ref: ./AdapterDirection.yaml
+  activated:
+    type: boolean
+    description: Whether to activate (true) or deactivate (false) the direction.

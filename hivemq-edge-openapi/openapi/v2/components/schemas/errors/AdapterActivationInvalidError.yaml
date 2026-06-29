@@ -1,0 +1,8 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+example:
+  general:
+    status: 400
+    title: "Activation Request Invalid"
+    detail: "Both 'direction' and 'activated' are required in the activation request body."
+    type: "https://hivemq.com/edge/api/v2/model/AdapterActivationInvalidError"

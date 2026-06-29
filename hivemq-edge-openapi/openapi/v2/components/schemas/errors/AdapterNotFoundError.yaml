@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter that was not found.
+        example: "my-adapter"
+    required:
+      - adapterId
+example:
+  general:
+    status: 404
+    title: "Adapter Not Found"
+    detail: "No protocol adapter found with the id 'my-adapter'."
+    adapterId: "my-adapter"
+    type: "https://hivemq.com/edge/api/v2/model/AdapterNotFoundError"

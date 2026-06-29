@@ -1,0 +1,8 @@
+type: object
+description: A request to browse a device's address space below a filter node.
+properties:
+  nodeString:
+    type: string
+    description: >-
+      The JSON node definition to browse below; omit or pass an empty object to browse from the root of the
+      device's address space.

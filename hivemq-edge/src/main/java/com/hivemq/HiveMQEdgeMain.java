@@ -182,6 +182,8 @@ public class HiveMQEdgeMain {
     public void shutdownProtocolAdapters() {
         if (injector != null) {
             injector.protocolAdapterManager().shutdown();
+            // Stop the v2 subsystem beside the legacy one (touchpoint 5).
+            injector.protocolAdapterLifecycle().stop();
         }
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownThread);

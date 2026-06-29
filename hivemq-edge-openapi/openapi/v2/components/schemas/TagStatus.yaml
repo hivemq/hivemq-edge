@@ -1,0 +1,10 @@
+type: string
+description: >-
+  The externally visible status of a tag, with a distinct value per direction-activation combination, plus
+  deactivated and error.
+enum:
+  - NORTHBOUND_AND_SOUTHBOUND
+  - NORTHBOUND_ONLY
+  - SOUTHBOUND_ONLY
+  - DEACTIVATED
+  - ERROR

@@ -1,0 +1,28 @@
+type: object
+description: >-
+  The read-only configured definition of a v2 adapter, as loaded from the externally-generated configuration
+  section. The v2 API never writes configuration.
+required:
+  - id
+properties:
+  id:
+    type: string
+    description: The adapter instance id.
+  protocolId:
+    type: string
+  configVersion:
+    type: integer
+    format: int32
+  northboundActivated:
+    type: boolean
+    description: The configuration-declared northbound activation (the goal at startup).
+  southboundActivated:
+    type: boolean
+    description: The configuration-declared southbound activation (the goal at startup).
+  skipVerification:
+    type: boolean
+  watchdogTimeoutMillis:
+    type: integer
+    format: int64
+  adapterConfiguration:
+    $ref: ../../../components/schemas/JsonNode.yaml

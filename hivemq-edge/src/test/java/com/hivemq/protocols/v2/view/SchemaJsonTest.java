@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * S22 precursor: the v2 API serves the reused v1 {@link Schema} through the reused
- * {@link SchemaJsonRepresentation} projection — no Nevsky-side copy exists (see {@code ReuseNoForkTest}).
+ * {@link SchemaJsonRepresentation} projection — no v2-side copy exists (see {@code ReuseNoForkTest}).
  * This locks the projection contract the v2 schema endpoints rely on: every reused {@link ScalarType} maps to
  * the expected JSON-Schema {@code type}/{@code format}, and the constraints are projected.
  */

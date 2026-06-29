@@ -156,6 +156,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull ConcurrentMap<Path, Long> fragmentToModificationTime;
     private final @NotNull BridgeExtractor bridgeExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
+    private final @NotNull com.hivemq.protocols.v2.config.ProtocolAdapterExtractor v2ProtocolAdapterExtractor;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
@@ -178,6 +179,9 @@ public class ConfigFileReaderWriter {
         this.configurators = configurators;
         this.bridgeExtractor = new BridgeExtractor(this);
         this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
+        // The read-only v2 extractor reads the disjoint <v2> section beside the legacy
+        // <protocol-adapters> one; the two never interact (touchpoint 2).
+        this.v2ProtocolAdapterExtractor = new com.hivemq.protocols.v2.config.ProtocolAdapterExtractor();
         this.dataCombiningExtractor = new DataCombiningExtractor(this);
         this.assetMappingExtractor = new AssetMappingExtractor(this);
         this.pulseExtractor = new PulseExtractor(this);
@@ -185,6 +189,7 @@ public class ConfigFileReaderWriter {
         this.extractors = List.of(
                 this.bridgeExtractor,
                 this.protocolAdapterExtractor,
+                this.v2ProtocolAdapterExtractor,
                 this.dataCombiningExtractor,
                 this.assetMappingExtractor,
                 this.pulseExtractor,
@@ -295,6 +300,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull ProtocolAdapterExtractor getProtocolAdapterExtractor() {
         return protocolAdapterExtractor;
+    }
+
+    public @NotNull com.hivemq.protocols.v2.config.ProtocolAdapterExtractor getV2ProtocolAdapterExtractor() {
+        return v2ProtocolAdapterExtractor;
     }
 
     public @NotNull PulseExtractor getPulseExtractor() {

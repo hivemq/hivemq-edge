@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter that is not connected.
+        example: "my-adapter"
+    required:
+      - adapterId
+example:
+  general:
+    status: 409
+    title: "Adapter Not Connected"
+    detail: "The protocol adapter 'my-adapter' is not connected, so it cannot be browsed."
+    adapterId: "my-adapter"
+    type: "https://hivemq.com/edge/api/v2/model/AdapterNotConnectedError"

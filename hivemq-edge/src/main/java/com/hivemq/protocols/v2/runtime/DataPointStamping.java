@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stamps tag identity onto an adapter-produced {@link DataPoint}.
  * <p>
- * In the Nevsky framework, correlation across the adapter boundary is by {@link Node} reference — a protocol
+ * In the v2 framework, correlation across the adapter boundary is by {@link Node} reference — a protocol
  * adapter reports values as {@code dataPoint(Node, DataPoint)} and is NOT required to set
  * {@link DataPoint#getTagName()} or {@link DataPoint#getAdapterId()}. Before a value is handed to northbound
  * consumers, the framework re-creates it with the owning tag's name and the adapter's id, preserving the

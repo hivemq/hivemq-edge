@@ -1,0 +1,6 @@
+type: string
+description: A protocol adapter communication direction.
+enum:
+  - NORTHBOUND
+  - SOUTHBOUND
+  - BOTH
