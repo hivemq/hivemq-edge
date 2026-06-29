@@ -16,7 +16,7 @@
 package com.hivemq.protocols.v2.manager;
 
 /**
- * The manager's own immutable health summary (design §8.3): adapter counts folded from the registry's snapshots on
+ * The manager's own immutable health summary: adapter counts folded from the registry's snapshots on
  * each {@link ProtocolAdapterManagerMessage.ProtocolAdapterManagerTick}, published into an
  * {@code AtomicReference} the manager exposes. A pure function of the registry's snapshots — readers (the REST
  * surface, a later task) read it without locking.

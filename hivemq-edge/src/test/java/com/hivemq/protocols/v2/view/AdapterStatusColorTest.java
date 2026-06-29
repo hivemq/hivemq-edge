@@ -31,7 +31,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import org.junit.jupiter.api.Test;
 
 /**
- * The machine-state → color fold (design §11.2): every state maps, and each maps to the documented color.
+ * The machine-state → color fold: every state maps, and each maps to the documented color.
  */
 class AdapterStatusColorTest {
 

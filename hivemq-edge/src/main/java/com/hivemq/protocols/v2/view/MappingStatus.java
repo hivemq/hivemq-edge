@@ -19,7 +19,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The derived runtime status of one mapping (design §11.3) — a <b>pure function</b> of the owning adapter's machine
+ * The derived runtime status of one mapping — a <b>pure function</b> of the owning adapter's machine
  * state and the referenced tag's per-aspect snapshot, computed by {@link #of}. A mapping owns no state of its own;
  * its status is read entirely from the snapshot of the tag it references, on the side it consumes (a northbound
  * mapping reads the tag's read aspect; a southbound mapping its write aspect).
@@ -39,7 +39,7 @@ public enum MappingStatus {
     BLOCKED_BY_ADAPTER;
 
     /**
-     * Fold a mapping's status from the adapter machine state and the referenced tag's snapshot (design §11.3).
+     * Fold a mapping's status from the adapter machine state and the referenced tag's snapshot.
      * <p>
      * A deactivated aspect is reported as {@link #DEACTIVATED_BY_TAG} even when the adapter is down: the mapping is
      * intentionally off, which is more informative than the incidental {@link #BLOCKED_BY_ADAPTER}.

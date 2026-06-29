@@ -158,6 +158,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
+    public @NotNull com.hivemq.protocols.v2.config.ProtocolAdapterExtractor v2ProtocolAdapterExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
+        return configFileReaderWriter.getV2ProtocolAdapterExtractor();
+    }
+
+    @Override
     public @NotNull BridgeExtractor bridgeExtractor() {
         Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getBridgeExtractor();

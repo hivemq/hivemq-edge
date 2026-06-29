@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The subscribed read aspect (design §7.4; scenarios S10, S11 at unit level). The aspect subscribes on
+ * The subscribed read aspect (scenarios S10, S11 at unit level). The aspect subscribes on
  * verification, the first pushed value confirms it; a command-response loss backs off and re-adds, while a
  * spontaneous loss power-cycles the aspect through verification. Driven on {@code FakeClock} +
  * {@code ManualDispatcher} through the running coordinator, observed only through the published snapshot.
@@ -98,7 +98,7 @@ class TagAspectReadSubscribedTest {
         fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
         fixture.drain();
 
-        // A spontaneous loss re-verifies (design §7.4) — the aspect parks in verification, not subscription retry.
+        // A spontaneous loss re-verifies — the aspect parks in verification, not subscription retry.
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION");
         assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore + 1);
     }

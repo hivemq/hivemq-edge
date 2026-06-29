@@ -24,7 +24,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * The factory registry's listable/hidden split (design §10.1): a hidden factory — the chaos test adapter — stays
+ * The factory registry's listable/hidden split: a hidden factory — the chaos test adapter — stays
  * resolvable by {@code protocol-id} so a configured instance is created and run like any other, but is excluded
  * from {@link ProtocolAdapterFactoryRegistry#all()}, the v2 {@code GET /types} source, so it never appears in the
  * frontend's adapter catalog.

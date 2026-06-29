@@ -30,12 +30,12 @@ import org.jetbrains.annotations.Nullable;
  * A wrapper event — a protocol-adapter event reported through the tell-façade, a timer expiry generated inside
  * the tick handler, or the synthesized {@link AllVerified} gate signal. Events are the ONLY messages that flow
  * through the adapter machine's {@link com.hivemq.protocols.v2.fsm.FSMTransitionTable}; an event with no
- * matching row runs the table's defensive reset (design §6.4).
+ * matching row runs the table's defensive reset.
  * <p>
  * Band: {@link MailboxMessagePriority#EVENT} (the {@link com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage}
  * default), except {@link DataPointReceived} and {@link BrowseResultReceived}, which override to
  * {@link MailboxMessagePriority#DATA} so the chatty push channel never starves control, acknowledgments, or time
- * (design §5.1). The timer-expiry events ({@link WatchdogFired}, {@link BackoffFired}, {@link PollTimerFired},
+ *. The timer-expiry events ({@link WatchdogFired}, {@link BackoffFired}, {@link PollTimerFired},
  * {@link VerificationRetryTimerFired}, {@link SubscriptionRetryTimerFired}) never enter the mailbox — they are
  * generated inside the tick handler on the dispatch thread and fed straight to the machine — so their band is
  * never consulted.
@@ -72,7 +72,7 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
 
     /**
      * Reports one node's verification outcome. Feeds both the adapter gate (counting) and the node's tag aspects
-     * (design §6.3).
+     *.
      *
      * @param node    the verified node.
      * @param outcome the verification outcome.
@@ -81,7 +81,7 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
             implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * The synthesized gate signal: every node in the verification batch has reported an outcome (design §6.3).
+     * The synthesized gate signal: every node in the verification batch has reported an outcome.
      * Drives {@code WAITING_FOR_VERIFICATION → CONNECTED}.
      */
     record AllVerified() implements ProtocolAdapterWrapperEvent {}
@@ -105,7 +105,7 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
      * @param node        the node the failure belongs to.
      * @param reason      a human-readable description.
      * @param spontaneous {@code true} if the failure arrived outside a command-response exchange — selects the
-     *                    recovery path (design §7.4).
+     *                    recovery path.
      */
     record NodeErrorReceived(@NotNull Node node, @NotNull String reason, boolean spontaneous)
             implements ProtocolAdapterWrapperEvent {}
@@ -133,31 +133,31 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
     }
 
     /**
-     * A per-state watchdog expired: the awaited acknowledgment did not arrive in time (design §6.3). Generated in
+     * A per-state watchdog expired: the awaited acknowledgment did not arrive in time. Generated in
      * the tick handler, never enqueued.
      */
     record WatchdogFired() implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * The connection backoff elapsed: time to attempt the next {@code connect()} (design §6.3). Generated in the
+     * The connection backoff elapsed: time to attempt the next {@code connect()}. Generated in the
      * tick handler, never enqueued.
      */
     record BackoffFired() implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * A per-tag poll interval elapsed (design §7.3). Consumed by the tag read aspects (a later task); generated in
+     * A per-tag poll interval elapsed. Consumed by the tag read aspects (a later task); generated in
      * the tick handler, never enqueued.
      */
     record PollTimerFired() implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * A per-tag verification retry delay elapsed (design §7.2). Consumed by the tag aspects (a later task);
+     * A per-tag verification retry delay elapsed. Consumed by the tag aspects (a later task);
      * generated in the tick handler, never enqueued.
      */
     record VerificationRetryTimerFired() implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * A per-tag subscription retry backoff elapsed (design §7.4). Consumed by the tag read aspects (a later task);
+     * A per-tag subscription retry backoff elapsed. Consumed by the tag read aspects (a later task);
      * generated in the tick handler, never enqueued.
      */
     record SubscriptionRetryTimerFired() implements ProtocolAdapterWrapperEvent {}

@@ -20,7 +20,7 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Selects the nodes a scripted {@link ChaosScript} behavior applies to (design §10.2): every node, one node by
+ * Selects the nodes a scripted {@link ChaosScript} behavior applies to: every node, one node by
  * {@link Node#nodeId()}, or an arbitrary predicate. The first script rule whose matcher matches a node wins, so a
  * specific {@link #byId(String)} rule declared before {@link #all()} overrides the catch-all.
  */

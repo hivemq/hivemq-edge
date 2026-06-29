@@ -24,8 +24,8 @@ import com.hivemq.protocols.v2.fsm.FSM;
 import com.hivemq.protocols.v2.runtime.Backoff;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.Clock;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
 import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The write half of a tag's behavior (design §7.5) — one of the two independent aspects every tag has. A write
+ * The write half of a tag's behavior — one of the two independent aspects every tag has. A write
  * aspect is a {@link FSM} over {@link TagAspectWriteState}: it shares the five pre-operating states with the read
  * aspect (built by {@link TagAspectPreOperatingTransitions}, the same shared rows) and adds the
  * {@code WAITING_FOR_WRITE_REQUEST} ⇄ {@code WAITING_FOR_WRITE_RESULT} write cycle.
@@ -51,9 +51,9 @@ import org.slf4j.LoggerFactory;
  * <li><b>goal and adapter-readiness changes</b> bypass the table: the three-condition goal ({@link TagAspectGoal})
  * and the {@code DEACTIVATED} ↔ operating coupling to the adapter's connection are applied directly.</li>
  * </ul>
- * <b>One write is in flight at a time</b> (design §7.5): a write arriving while the aspect is not resting at
+ * <b>One write is in flight at a time</b>: a write arriving while the aspect is not resting at
  * {@code WAITING_FOR_WRITE_REQUEST} is dropped by the table's lenient {@code unmatched} slot — multi-write
- * ordering and back-pressure are a reserved extension point (design §14).
+ * ordering and back-pressure are a reserved extension point.
  */
 public final class TagAspectWrite implements TagAspectVerifying {
 
@@ -61,7 +61,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
 
     /**
      * The failure count past which a tag's failures are logged at {@code ERROR} rather than {@code WARN} — a few
-     * hiccups are routine, sustained failures are not (mirrors the read aspect, design §7.3).
+     * hiccups are routine, sustained failures are not (mirrors the read aspect).
      */
     private static final int SUSTAINED_FAILURE_THRESHOLD = 5;
 
@@ -81,7 +81,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     private final @NotNull Clock clock;
     private final @NotNull PriorityTimerQueue timers;
     private final @NotNull BatchCollector batches;
-    private final @NotNull NevskyMetrics metrics;
+    private final @NotNull ProtocolAdapterMetrics metrics;
     private final @NotNull SharedNodeVerification sharedNodeVerification;
     private final @NotNull Backoff verificationRetryBackoff;
 
@@ -112,7 +112,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
             final @NotNull Clock clock,
             final @NotNull PriorityTimerQueue timers,
             final @NotNull BatchCollector batches,
-            final @NotNull NevskyMetrics metrics,
+            final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
             final @NotNull RetryPolicy retryPolicy) {
         this.adapterId = adapterId;
@@ -127,12 +127,12 @@ public final class TagAspectWrite implements TagAspectVerifying {
         this.machine = new FSM<>(TagAspectWriteState.DEACTIVATED, TagAspectWriteTransitions.table(), this);
     }
 
-    // ── goal and adapter-readiness coupling (bypass the table, design §7.1, §7.2) ───────────────────────────────
+    // ── goal and adapter-readiness coupling (bypass the table) ───────────────────────────────
 
     /**
-     * Apply a new aspect goal (the three-condition rule, design §7.1; for a write aspect the direction is
+     * Apply a new aspect goal (the three-condition rule; for a write aspect the direction is
      * southbound). When the goal becomes active the aspect leaves {@code DEACTIVATED}; when it becomes inactive it
-     * returns to {@code DEACTIVATED}, cancelling any timer — never reconnecting the adapter (design §8.2).
+     * returns to {@code DEACTIVATED}, cancelling any timer — never reconnecting the adapter.
      *
      * @param newGoal the recomputed goal.
      */
@@ -155,7 +155,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
             case DISCONNECTED -> moveTo(TagAspectWriteState.WAITING_FOR_ADAPTER_READY);
             case VERIFYING, READY -> {
                 // Activated while the adapter is up: this node missed the connect-time gate verification, so ask
-                // for a fresh one of its own (design §7.6) — no reconnect.
+                // for a fresh one of its own — no reconnect.
                 moveTo(TagAspectWriteState.WAITING_FOR_VERIFICATION);
                 requestVerification();
             }
@@ -171,7 +171,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * The adapter began verifying (design §6.3): an active aspect waiting for the adapter moves into verification
+     * The adapter began verifying: an active aspect waiting for the adapter moves into verification
      * and consumes the connect-time gate result the wrapper routes to it — it does not request its own.
      */
     public void onAdapterVerifying() {
@@ -182,7 +182,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * The adapter reached {@code CONNECTED} (design §7.2). When verification was skipped the aspect is still
+     * The adapter reached {@code CONNECTED}. When verification was skipped the aspect is still
      * waiting for the adapter — treat the connection as verified and rest ready for writes; otherwise it has
      * already advanced through verification and nothing happens here.
      */
@@ -194,9 +194,9 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * The adapter is no longer connected (design §7.2): every aspect except a deactivated or permanently-failed
+     * The adapter is no longer connected: every aspect except a deactivated or permanently-failed
      * one returns to waiting for the adapter and re-verifies on the next connection. A permanent verification
-     * failure is sticky — only a user-commanded retry clears it (design §7.6).
+     * failure is sticky — only a user-commanded retry clears it.
      */
     public void onAdapterUnavailable() {
         adapterPhase = AdapterPhase.DISCONNECTED;
@@ -209,7 +209,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * A user-commanded tag retry (design §7.6): if the aspect is in permanent verification failure, reset its
+     * A user-commanded tag retry: if the aspect is in permanent verification failure, reset its
      * counters and re-verify (or wait for the adapter). Any other state is left untouched — a no-op here, reported
      * as a skip reason by the REST layer in a later task.
      */
@@ -231,7 +231,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     // ── routed events (drive the table) ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Feed the node's verification outcome to the machine (design §7.2).
+     * Feed the node's verification outcome to the machine.
      *
      * @param outcome the verification outcome.
      */
@@ -246,7 +246,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * A southbound write arrived for the tag (design §7.5). Drives the write cycle when the aspect is resting at
+     * A southbound write arrived for the tag. Drives the write cycle when the aspect is resting at
      * {@code WAITING_FOR_WRITE_REQUEST}; in any other state the table's {@code unmatched} slot drops it (one write
      * in flight at a time).
      *
@@ -257,7 +257,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * The adapter acknowledged the in-flight write (design §7.5).
+     * The adapter acknowledged the in-flight write.
      *
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
@@ -315,7 +315,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
                 machine.state());
     }
 
-    // ── snapshot accessors (pure reads on the dispatch thread, design §6.6, §7.7) ───────────────────────────────
+    // ── snapshot accessors (pure reads on the dispatch thread) ───────────────────────────────
 
     /**
      * @return the current aspect state.
@@ -354,7 +354,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * @return whether the aspect is awaiting the connect-time verification result (design §6.3) — the signal the
+     * @return whether the aspect is awaiting the connect-time verification result — the signal the
      *         coordinator uses to select this node for the single connect verification batch.
      */
     public boolean awaitingVerification() {
@@ -415,7 +415,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
         failureCount++;
         lastFailureReason = reason;
         metrics.incrementTagFailure(tag.name());
-        // Escalating severity: a first hiccup is routine, sustained failures are not (design §7.3).
+        // Escalating severity: a first hiccup is routine, sustained failures are not.
         if (failureCount == 1) {
             log.debug("Write aspect of tag '{}' on adapter '{}' failed: {}", tag.name(), adapterId, reason);
         } else if (failureCount < SUSTAINED_FAILURE_THRESHOLD) {

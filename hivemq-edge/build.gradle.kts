@@ -350,7 +350,7 @@ tasks.register<GenerateTask>("genJaxRs") {
     )
 }
 
-// The Nevsky (v2) REST surface is generated from its own bundled spec into its own package, so it is fully
+// The v2 REST surface is generated from its own bundled spec into its own package, so it is fully
 // isolated from the v1 API and from the SDK types of the same name (the package carries the version, rule N1).
 tasks.register<GenerateTask>("genJaxRsV2") {
     inputSpec.set("$projectDir/../ext/hivemq-edge-openapi-v2.yaml")

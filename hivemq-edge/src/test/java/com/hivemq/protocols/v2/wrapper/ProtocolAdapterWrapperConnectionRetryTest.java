@@ -26,7 +26,7 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import org.junit.jupiter.api.Test;
 
 /**
- * Connection loss and recovery (design §6.2, §6.3; scenarios S2, S5, S6, S19 at unit level): a connect failure
+ * Connection loss and recovery (scenarios S2, S5, S6, S19 at unit level): a connect failure
  * backs off and reconnects; a spontaneous {@code disconnected()} while connected differs from an
  * {@code error(CONNECTION)} (which disconnects cleanly first); and exhausting the retry policy escalates to
  * {@code ERROR} and notifies the supervisor.

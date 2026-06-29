@@ -26,8 +26,8 @@ import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The single mailbox message type of the {@link ProtocolAdapterManager} supervisor actor (design §8.1). Everything
- * the manager consumes arrives as one of these, in priority-band order (design §5.1):
+ * The single mailbox message type of the {@link ProtocolAdapterManager} supervisor actor. Everything
+ * the manager consumes arrives as one of these, in priority-band order:
  * <ul>
  * <li>{@code CONTROL} — externally-driven intent: a freshly-loaded configuration, REST direction activation, REST
  * tag retry, and a REST browse request;</li>
@@ -41,7 +41,7 @@ import org.jetbrains.annotations.NotNull;
 public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
 
     /**
-     * A freshly-loaded {@code <v2-protocol-adapters>} section from the extractor (design §8.2, §9.3) — the same
+     * A freshly-loaded {@code <v2>} section from the extractor — the same
      * path at startup and on every reload. The manager diffs it against the running set and applies the gentlest
      * correct transition per adapter.
      *
@@ -56,8 +56,7 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
-     * Activate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b> (design §8.2,
-     * D7). Forwarded to the running wrapper as
+     * Activate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b> (D7). Forwarded to the running wrapper as
      * {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.ActivateDirection}.
      *
      * @param adapterId the adapter instance id.
@@ -73,8 +72,7 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
-     * Deactivate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b> (design
-     * §8.2, D7). Forwarded to the running wrapper as
+     * Deactivate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b> (D7). Forwarded to the running wrapper as
      * {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.DeactivateDirection}.
      *
      * @param adapterId the adapter instance id.
@@ -90,9 +88,9 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
-     * Retry a permanently-failed tag of an adapter (REST origin, EDG-462) — a runtime-only command, forwarded to
+     * Retry a permanently-failed tag of an adapter (REST origin) — a runtime-only command, forwarded to
      * the running wrapper as {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.RetryTag}; never
-     * touches configuration (design §7.6).
+     * touches configuration.
      *
      * @param adapterId the adapter instance id.
      * @param tagName   the tag to retry.
@@ -105,7 +103,7 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
-     * Browse an adapter's device address space (REST origin, design §11.4). Carries the completion future the REST
+     * Browse an adapter's device address space (REST origin). Carries the completion future the REST
      * thread blocks on; the manager forwards the request toward the wrapper and the result is relayed back by
      * completing the future. The full browse bridge (capability and connection checks, the wrapper&rarr;adapter
      * forward, the timeout) is completed in the OpenAPI/resource task; here the message is part of the sealed
@@ -127,14 +125,14 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
-     * A managed wrapper reached {@code CONNECTED} (design §6.1, §8.3). The {@code EVENT} band (the default).
+     * A managed wrapper reached {@code CONNECTED}. The {@code EVENT} band (the default).
      *
      * @param adapterId the adapter instance id.
      */
     record WrapperStarted(@NotNull String adapterId) implements ProtocolAdapterManagerMessage {}
 
     /**
-     * A managed wrapper reached {@code STOPPED} (design §6.1, §8.3) — the signal that a stop-and-discard or full
+     * A managed wrapper reached {@code STOPPED} — the signal that a stop-and-discard or full
      * recreate may now tear the wrapper down. The {@code EVENT} band.
      *
      * @param adapterId the adapter instance id.
@@ -142,8 +140,8 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     record WrapperStopped(@NotNull String adapterId) implements ProtocolAdapterManagerMessage {}
 
     /**
-     * A managed wrapper entered {@code ERROR} (design §6.4, §8.3). The manager records it and performs <b>no</b>
-     * automatic recreate (manual recovery in this project, §8.3). The {@code EVENT} band.
+     * A managed wrapper entered {@code ERROR}. The manager records it and performs <b>no</b>
+     * automatic recreate (manual recovery in this project). The {@code EVENT} band.
      *
      * @param adapterId the adapter instance id.
      * @param reason    a human-readable description of why.
@@ -151,7 +149,7 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     record WrapperError(@NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
 
     /**
-     * Periodic housekeeping (design §8.3): the manager folds the registry's snapshots into a health summary it
+     * Periodic housekeeping: the manager folds the registry's snapshots into a health summary it
      * publishes for readers. The {@code TICK} band.
      *
      * @param nowMillis the tick's logical time, in milliseconds.

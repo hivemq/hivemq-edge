@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The immutable, declarative script a {@link ChaosProtocolAdapter} consults per command (design §10.2). It maps
+ * The immutable, declarative script a {@link ChaosProtocolAdapter} consults per command. It maps
  * each lifecycle command to a {@link ChaosBehavior} and each node to its verification, poll, subscription, write,
  * and browse behaviors, plus events to inject at chosen harness ticks and a global acknowledgment latency that
  * exercises the wrapper's watchdogs.
@@ -35,12 +35,12 @@ import org.jetbrains.annotations.Nullable;
  * defaults: lifecycle commands {@link ChaosBehavior#succeed() succeed}, verification {@link VerifyOutcome.Success
  * succeeds}, a poll returns {@link PollBehavior#noResponse() nothing}, a write succeeds, and a browse returns no
  * entries. There is deliberately no default subscription behavior — an unscripted subscribe is silent, leaving the
- * read aspect waiting (design §7.4).
+ * read aspect waiting.
  * <p>
  * <b>Time contract.</b> The script holds no timers; every deferral ({@link ChaosBehavior.Delay},
  * {@link #acknowledgmentLatencyTicks()}, {@link #injectedEvents()}, {@link SubscriptionBehavior.LoseAfter}) is
  * driven by the harness, which advances the shared {@code FakeClock} and pumps the simulator one tick at a time
- * (design §10.2), keeping every test fully deterministic.
+ *, keeping every test fully deterministic.
  */
 public final class ChaosScript {
 
@@ -92,7 +92,7 @@ public final class ChaosScript {
      *         further attempt, so a single {@link Builder#onConnect(ChaosBehavior)} applies to every attempt.
      */
     public @NotNull ChaosBehavior connectBehaviorFor(final int attempt) {
-        final int index = Math.min(Math.max(attempt, 1), connectBehaviors.size()) - 1;
+        final int index = Math.clamp(attempt, 1, connectBehaviors.size()) - 1;
         return connectBehaviors.get(index);
     }
 
@@ -115,14 +115,12 @@ public final class ChaosScript {
      * @param attempt the 1-based verification attempt for the node (the first verify is attempt 1, a retry is
      *                attempt 2, …); the last scripted response repeats for further attempts.
      * @return the first matching verification response — present with the scripted outcome, or empty for a
-     *         {@code verifyNoResponse} response (the adapter stays silent, exercising the verification watchdog,
-     *         design §6.3). When no rule matches, a {@link VerifyOutcome.Success} is returned.
+     *         {@code verifyNoResponse} response (the adapter stays silent, exercising the verification watchdog). When no rule matches, a {@link VerifyOutcome.Success} is returned.
      */
     public @NotNull Optional<VerifyOutcome> verifyResponseFor(final @NotNull Node node, final int attempt) {
         for (final VerifyRule rule : verifyRules) {
             if (rule.matcher().matches(node)) {
-                final int index =
-                        Math.min(Math.max(attempt, 1), rule.responses().size()) - 1;
+                final int index = Math.clamp(attempt, 1, rule.responses().size()) - 1;
                 return rule.responses().get(index);
             }
         }
@@ -158,15 +156,17 @@ public final class ChaosScript {
 
     /**
      * @param node the node being written.
-     * @return the first matching write outcome, or a success when none matches.
+     * @return the first matching write outcome — present with the scripted result, or empty for a
+     *         {@code writeNoResponse} rule (the adapter records the write but never acknowledges it, so the write
+     *         aspect parks in {@code WAITING_FOR_WRITE_RESULT}). When no rule matches, a success is returned.
      */
-    public @NotNull WriteOutcome writeOutcomeFor(final @NotNull Node node) {
+    public @NotNull Optional<WriteOutcome> writeOutcomeFor(final @NotNull Node node) {
         for (final WriteRule rule : writeRules) {
             if (rule.matcher().matches(node)) {
-                return new WriteOutcome(rule.success(), rule.reason());
+                return Optional.ofNullable(rule.outcome());
             }
         }
-        return new WriteOutcome(true, null);
+        return Optional.of(new WriteOutcome(true, null));
     }
 
     /**
@@ -232,9 +232,7 @@ public final class ChaosScript {
             @NotNull NodeMatcher matcher, @NotNull SubscriptionBehavior behavior) {}
 
     private record WriteRule(
-            @NotNull NodeMatcher matcher,
-            boolean success,
-            @Nullable String reason) {}
+            @NotNull NodeMatcher matcher, @Nullable WriteOutcome outcome) {}
 
     private record BrowseRule(
             @NotNull NodeMatcher matcher, @NotNull List<BrowseResultEntry> results, int durationTicks) {}
@@ -281,8 +279,7 @@ public final class ChaosScript {
 
         /**
          * Script {@code connect()} per attempt — the first behavior answers the first attempt, and so on; the last
-         * repeats for every further attempt. Models a connect that fails then recovers after a backoff (design
-         * §6.3), mirroring the {@code MockProtocolAdapter} connect-reply queue.
+         * repeats for every further attempt. Models a connect that fails then recovers after a backoff, mirroring the {@code MockProtocolAdapter} connect-reply queue.
          *
          * @param behaviors the behaviors, one per attempt; must not be empty.
          * @return this builder.
@@ -326,7 +323,7 @@ public final class ChaosScript {
         /**
          * Script verification per attempt for matching nodes — the first outcome answers the first verify, and so
          * on; the last repeats. Models a transient failure that clears on retry, or a permanent failure that
-         * clears on a tag retry (design §7.6).
+         * clears on a tag retry.
          *
          * @param matcher  the nodes the sequence applies to.
          * @param outcomes the outcomes, one per attempt; must not be empty.
@@ -347,7 +344,7 @@ public final class ChaosScript {
 
         /**
          * Make verification stay silent for matching nodes: the adapter records the {@code verifyBatch} but never
-         * reports an outcome, so the wrapper's verification watchdog eventually fires (design §6.3, §10.2).
+         * reports an outcome, so the wrapper's verification watchdog eventually fires.
          *
          * @param matcher the nodes that never report a verification outcome.
          * @return this builder.
@@ -386,7 +383,20 @@ public final class ChaosScript {
          */
         public @NotNull Builder write(
                 final @NotNull NodeMatcher matcher, final boolean success, final @Nullable String reason) {
-            writeRules.add(new WriteRule(matcher, success, reason));
+            writeRules.add(new WriteRule(matcher, new WriteOutcome(success, reason)));
+            return this;
+        }
+
+        /**
+         * Make a write stay silent for matching nodes: the adapter records the {@code writeBatch} but never reports a
+         * write result, so the tag's write aspect parks in {@code WAITING_FOR_WRITE_RESULT} until the next event —
+         * the write-side mirror of {@link #verifyNoResponse(NodeMatcher)} and {@link PollBehavior#noResponse()}.
+         *
+         * @param matcher the nodes whose write is never acknowledged.
+         * @return this builder.
+         */
+        public @NotNull Builder writeNoResponse(final @NotNull NodeMatcher matcher) {
+            writeRules.add(new WriteRule(matcher, null));
             return this;
         }
 

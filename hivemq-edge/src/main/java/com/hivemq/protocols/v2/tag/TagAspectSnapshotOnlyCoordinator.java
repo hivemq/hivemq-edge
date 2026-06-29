@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * aspect state names it reports are always {@code DEACTIVATED} and every per-aspect flag is {@code false}, which
  * is honest: with no aspect machines running, every aspect is at rest.
  * <p>
- * It does still drive the adapter's connect-time verification gate (design §6.3) so the adapter machine and
+ * It does still drive the adapter's connect-time verification gate so the adapter machine and
  * snapshot publication can be exercised on their own (the adapter-machine tests use it): on connect it verifies
  * <b>all</b> configured nodes through a {@link SharedNodeVerification} with a no-op fan-out (there are no aspects
  * to route results to), and {@link #allReported()} gates {@code CONNECTED}. It must be bound to the adapter's
@@ -73,7 +73,7 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     }
 
     /**
-     * Bind the adapter's verify seam so the connect gate can issue {@code verifyBatch} (design §6.3). Called once,
+     * Bind the adapter's verify seam so the connect gate can issue {@code verifyBatch}. Called once,
      * before the first connect — mirroring {@link TagAspectRuntimeCoordinator#bindRuntime}. The fan-out is a no-op
      * because there are no aspect machines; the verification authority is used purely for the gate count.
      *

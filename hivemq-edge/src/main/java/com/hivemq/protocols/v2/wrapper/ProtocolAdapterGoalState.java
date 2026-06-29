@@ -16,12 +16,12 @@
 package com.hivemq.protocols.v2.wrapper;
 
 /**
- * The adapter goal (design §6.1): the commanded state the wrapper continuously steps toward. The adapter must be
+ * The adapter goal: the commanded state the wrapper continuously steps toward. The adapter must be
  * connected exactly when at least one direction is activated; when neither is, the goal is to be stopped.
  * <p>
- * Initial values come from the {@code <v2-protocol-adapters>} configuration section. A REST direction activation
+ * Initial values come from the {@code <v2>} configuration section. A REST direction activation
  * changes the <em>live</em> goal only and is never persisted — after a restart the config-declared flags apply
- * again (design §8.2, D7).
+ * again (D7).
  *
  * @param northboundActivated whether the read side (adapter → MQTT) is activated.
  * @param southboundActivated whether the write side (MQTT → adapter) is activated.

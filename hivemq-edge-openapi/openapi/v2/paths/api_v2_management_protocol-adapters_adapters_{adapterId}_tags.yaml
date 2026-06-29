@@ -1,5 +1,5 @@
 get:
-  description: List a Nevsky (v2) adapter's Node/Tag pairs with their activation flags and derived status.
+  description: List a v2 adapter's Node/Tag pairs with their activation flags and derived status.
   operationId: getAdapterTags
   x-roles-allowed:
     - admin
@@ -27,6 +27,6 @@ get:
           schema:
             $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
-  summary: List a Nevsky adapter's Node/Tag pairs
+  summary: List a v2 adapter's Node/Tag pairs
   tags:
     - Protocol Adapters

@@ -29,12 +29,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The scriptable test simulator (design §10). It implements {@link ProtocolAdapter} directly and answers every
+ * The scriptable test simulator. It implements {@link ProtocolAdapter} directly and answers every
  * command by consulting a {@link ChaosScript}, reporting back through the {@link ProtocolAdapterOutput} tell-façade
  * exactly as a real adapter would — so its replies travel back through the wrapper mailbox. It records every
  * command for sequence assertions.
  * <p>
- * <b>Time contract (design §10.2).</b> The simulator holds no timers of its own. Immediate behaviors
+ * <b>Time contract.</b> The simulator holds no timers of its own. Immediate behaviors
  * ({@link ChaosBehavior#succeed()}, a {@link PollBehavior.Value}, …) report within the command call; deferred
  * behaviors ({@link ChaosBehavior.Delay}, the global acknowledgment latency, a {@link SubscriptionBehavior.LoseAfter}
  * loss, a browse duration, and {@link ChaosScript#injectedEvents() injected events}) are queued against a tick
@@ -73,7 +73,7 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
         }
     }
 
-    // ── ProtocolAdapter (design §3.6) ───────────────────────────────────────────────────────────────────────────
+    // ── ProtocolAdapter ───────────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull String adapterId() {
@@ -139,8 +139,8 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
     public void writeBatch(final @NotNull List<WriteEntry> entries) {
         commands.add("writeBatch");
         for (final WriteEntry entry : entries) {
-            final ChaosScript.WriteOutcome outcome = script.writeOutcomeFor(entry.node());
-            output.writeResult(entry.node(), outcome.success(), outcome.reason());
+            script.writeOutcomeFor(entry.node())
+                    .ifPresent(outcome -> output.writeResult(entry.node(), outcome.success(), outcome.reason()));
         }
     }
 
@@ -155,13 +155,13 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
         }
     }
 
-    // ── harness-driven time (design §10.2) ──────────────────────────────────────────────────────────────────────
+    // ── harness-driven time ──────────────────────────────────────────────────────────────────────
 
     /**
      * Advance the simulator one harness tick and fire every deferred behavior that has come due. Called by the
      * harness once per advanced tick, after the clock told the wrapper its tick and before the dispatcher drains —
      * so a due acknowledgment ({@code EVENT}) is enqueued alongside the wrapper tick ({@code TICK}) and, by the
-     * priority ladder, processed first (design §5.1, S24).
+     * priority ladder, processed first (S24).
      */
     public void onTick() {
         currentTick++;
@@ -182,7 +182,7 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
     }
 
     /**
-     * @return the commands the wrapper has issued, in order — the source of {@code assertSequence} (design §10.3).
+     * @return the commands the wrapper has issued, in order — the source of {@code assertSequence}.
      */
     public @NotNull List<String> commands() {
         return commands;
@@ -209,16 +209,16 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
 
     private void applyImmediate(final @NotNull ChaosBehavior behavior, final @NotNull Runnable onSucceed) {
         switch (behavior) {
-            case ChaosBehavior.Succeed ignored -> onSucceed.run();
-            case ChaosBehavior.FailAdapter fail -> output.error(ErrorScope.ADAPTER, fail.reason());
-            case ChaosBehavior.FailConnection fail -> output.error(ErrorScope.CONNECTION, fail.reason());
-            case ChaosBehavior.Drop ignored -> {
+            case final ChaosBehavior.Succeed ignored -> onSucceed.run();
+            case final ChaosBehavior.FailAdapter fail -> output.error(ErrorScope.ADAPTER, fail.reason());
+            case final ChaosBehavior.FailConnection fail -> output.error(ErrorScope.CONNECTION, fail.reason());
+            case final ChaosBehavior.Drop ignored -> {
                 // Silent: the command is dropped, so the wrapper parks until its watchdog fires.
             }
-            case ChaosBehavior.NoResponse ignored -> {
+            case final ChaosBehavior.NoResponse ignored -> {
                 // Silent: the command is recorded but never acknowledged.
             }
-            case ChaosBehavior.Delay delay -> {
+            case final ChaosBehavior.Delay delay -> {
                 if (delay.ticks() <= 0) {
                     applyImmediate(delay.then(), onSucceed);
                 } else {
@@ -230,23 +230,23 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
 
     private void applyPoll(final @NotNull Node node, final @NotNull PollBehavior behavior) {
         switch (behavior) {
-            case PollBehavior.Value value -> output.dataPoint(node, value.value());
-            case PollBehavior.NodeErrorResponse error -> output.nodeError(node, error.reason(), false);
-            case PollBehavior.NoResponse ignored -> {
-                // The poll never returns; the read aspect waits and the next scheduled poll is the retry (§7.3).
+            case final PollBehavior.Value value -> output.dataPoint(node, value.value());
+            case final PollBehavior.NodeErrorResponse error -> output.nodeError(node, error.reason(), false);
+            case final PollBehavior.NoResponse ignored -> {
+                // The poll never returns; the read aspect waits and the next scheduled poll is the retry.
             }
         }
     }
 
     private void applySubscription(final @NotNull Node node, final @Nullable SubscriptionBehavior behavior) {
         if (behavior == null) {
-            // Unscripted subscribe: silent, leaving the read aspect in WAITING_FOR_SUBSCRIPTION (design §7.4).
+            // Unscripted subscribe: silent, leaving the read aspect in WAITING_FOR_SUBSCRIPTION.
             return;
         }
         switch (behavior) {
-            case SubscriptionBehavior.Accept accept -> output.dataPoint(node, accept.firstValue());
-            case SubscriptionBehavior.Fail fail -> output.nodeError(node, fail.reason(), false);
-            case SubscriptionBehavior.LoseAfter lose -> {
+            case final SubscriptionBehavior.Accept accept -> output.dataPoint(node, accept.firstValue());
+            case final SubscriptionBehavior.Fail fail -> output.nodeError(node, fail.reason(), false);
+            case final SubscriptionBehavior.LoseAfter lose -> {
                 output.dataPoint(node, lose.firstValue());
                 final int delay = Math.max(1, lose.ticks());
                 scheduleAt(currentTick + delay, () -> output.nodeError(node, lose.reason(), lose.spontaneous()));
@@ -256,13 +256,14 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
 
     private void applyEvent(final @NotNull ChaosEvent event) {
         switch (event) {
-            case ChaosEvent.Started ignored -> output.started();
-            case ChaosEvent.Stopped ignored -> output.stopped();
-            case ChaosEvent.Connected ignored -> output.connected();
-            case ChaosEvent.Disconnect ignored -> output.disconnected();
-            case ChaosEvent.ErrorReport error -> output.error(error.scope(), error.reason());
-            case ChaosEvent.DataPointPush push -> output.dataPoint(push.node(), push.value());
-            case ChaosEvent.NodeErrorPush push -> output.nodeError(push.node(), push.reason(), push.spontaneous());
+            case final ChaosEvent.Started ignored -> output.started();
+            case final ChaosEvent.Stopped ignored -> output.stopped();
+            case final ChaosEvent.Connected ignored -> output.connected();
+            case final ChaosEvent.Disconnect ignored -> output.disconnected();
+            case final ChaosEvent.ErrorReport error -> output.error(error.scope(), error.reason());
+            case final ChaosEvent.DataPointPush push -> output.dataPoint(push.node(), push.value());
+            case final ChaosEvent.NodeErrorPush push ->
+                output.nodeError(push.node(), push.reason(), push.spontaneous());
         }
     }
 

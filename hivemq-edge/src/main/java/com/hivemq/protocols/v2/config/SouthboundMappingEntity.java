@@ -27,9 +27,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A southbound mapping in the {@code <v2-protocol-adapters>} section (design §9.1): it routes an MQTT topic's payload
- * to a tag's write aspect. The Nevsky config section carries only the {@code topic} / {@code tag-name} pair — exactly
- * what {@link ProtocolAdapterEntity#getWriteUsedTagNames() write-used derivation} (§9.2) needs; the full southbound
+ * A southbound mapping in the {@code <v2>} section: it routes an MQTT topic's payload
+ * to a tag's write aspect. The v2 config section carries only the {@code topic} / {@code tag-name} pair — exactly
+ * what {@link ProtocolAdapterEntity#getWriteUsedTagNames() write-used derivation} needs; the full southbound
  * field-mapping detail belongs to the routing layer and is out of this section's scope. Edge only reads it.
  */
 @SuppressWarnings({"FieldMayBeFinal", "unused"})

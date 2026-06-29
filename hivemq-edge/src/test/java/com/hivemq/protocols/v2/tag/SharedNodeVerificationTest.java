@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The shared verification bookkeeping (design §7.6): a node is verified at most once while in flight (so a
+ * The shared verification bookkeeping: a node is verified at most once while in flight (so a
  * read-and-write tag yields a single {@code verifyBatch} entry), a reported result clears it for the next time,
  * and {@code allReported} tracks the outstanding requests the gate counting consumes.
  */
@@ -113,7 +113,7 @@ class SharedNodeVerificationTest {
 
         coordinator.beginConnectVerification(List.of(first, second));
 
-        // The connect gate issues a single verifyBatch carrying every node (design §6.3, §7.6).
+        // The connect gate issues a single verifyBatch carrying every node.
         assertThat(requests).hasSize(1);
         assertThat(requests.get(0)).containsExactly(first, second);
         assertThat(coordinator.allReported()).isFalse();

@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.runtime;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The exponential-backoff retry policy for an adapter type (design §5.6). A {@link Backoff} turns this into a
+ * The exponential-backoff retry policy for an adapter type. A {@link Backoff} turns this into a
  * concrete delay sequence.
  *
  * @param initialMillis  the first retry delay, in milliseconds.

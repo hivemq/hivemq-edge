@@ -21,17 +21,20 @@ import com.codahale.metrics.MetricRegistry;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
-class NevskyMetricsTest {
+class ProtocolAdapterMetricsTest {
 
     @Test
     void registersTheGaugesAndCounters() {
         final MetricRegistry registry = new MetricRegistry();
-        try (NevskyMetrics metrics = new NevskyMetrics(registry, "adapter-1", () -> 0)) {
+        try (ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(registry, "adapter-1", () -> 0)) {
             assertThat(registry.getGauges())
-                    .containsKeys("nevsky.adapter.adapter-1.mailbox.depth", "nevsky.adapter.adapter-1.tick.lag");
+                    .containsKeys(
+                            "protocol-adapter-v2.adapter.adapter-1.mailbox.depth",
+                            "protocol-adapter-v2.adapter.adapter-1.tick.lag");
             assertThat(registry.getCounters())
                     .containsKeys(
-                            "nevsky.adapter.adapter-1.state.transitions", "nevsky.adapter.adapter-1.defensive.resets");
+                            "protocol-adapter-v2.adapter.adapter-1.state.transitions",
+                            "protocol-adapter-v2.adapter.adapter-1.defensive.resets");
         }
     }
 
@@ -39,14 +42,14 @@ class NevskyMetricsTest {
     void mailboxDepthGaugeReflectsItsSource() {
         final MetricRegistry registry = new MetricRegistry();
         final AtomicInteger depth = new AtomicInteger(3);
-        try (NevskyMetrics metrics = new NevskyMetrics(registry, "adapter-1", depth::get)) {
+        try (ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(registry, "adapter-1", depth::get)) {
             assertThat(registry.getGauges()
-                            .get("nevsky.adapter.adapter-1.mailbox.depth")
+                            .get("protocol-adapter-v2.adapter.adapter-1.mailbox.depth")
                             .getValue())
                     .isEqualTo(3);
             depth.set(7);
             assertThat(registry.getGauges()
-                            .get("nevsky.adapter.adapter-1.mailbox.depth")
+                            .get("protocol-adapter-v2.adapter.adapter-1.mailbox.depth")
                             .getValue())
                     .isEqualTo(7);
         }
@@ -55,7 +58,7 @@ class NevskyMetricsTest {
     @Test
     void countersIncrement() {
         final MetricRegistry registry = new MetricRegistry();
-        try (NevskyMetrics metrics = new NevskyMetrics(registry, "adapter-1", () -> 0)) {
+        try (ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(registry, "adapter-1", () -> 0)) {
             metrics.incrementStateTransition();
             metrics.incrementStateTransition();
             metrics.incrementDefensiveReset();
@@ -63,16 +66,16 @@ class NevskyMetricsTest {
             metrics.incrementTagFailure("temperature");
             metrics.incrementTagFailure("pressure");
 
-            assertThat(registry.counter("nevsky.adapter.adapter-1.state.transitions")
+            assertThat(registry.counter("protocol-adapter-v2.adapter.adapter-1.state.transitions")
                             .getCount())
                     .isEqualTo(2);
-            assertThat(registry.counter("nevsky.adapter.adapter-1.defensive.resets")
+            assertThat(registry.counter("protocol-adapter-v2.adapter.adapter-1.defensive.resets")
                             .getCount())
                     .isEqualTo(1);
-            assertThat(registry.counter("nevsky.adapter.adapter-1.tag.temperature.failures")
+            assertThat(registry.counter("protocol-adapter-v2.adapter.adapter-1.tag.temperature.failures")
                             .getCount())
                     .isEqualTo(2);
-            assertThat(registry.counter("nevsky.adapter.adapter-1.tag.pressure.failures")
+            assertThat(registry.counter("protocol-adapter-v2.adapter.adapter-1.tag.pressure.failures")
                             .getCount())
                     .isEqualTo(1);
         }
@@ -81,14 +84,14 @@ class NevskyMetricsTest {
     @Test
     void tickLagGaugeReflectsTheRecordedValue() {
         final MetricRegistry registry = new MetricRegistry();
-        try (NevskyMetrics metrics = new NevskyMetrics(registry, "adapter-1", () -> 0)) {
+        try (ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(registry, "adapter-1", () -> 0)) {
             assertThat(registry.getGauges()
-                            .get("nevsky.adapter.adapter-1.tick.lag")
+                            .get("protocol-adapter-v2.adapter.adapter-1.tick.lag")
                             .getValue())
                     .isEqualTo(0L);
             metrics.recordTickLag(42);
             assertThat(registry.getGauges()
-                            .get("nevsky.adapter.adapter-1.tick.lag")
+                            .get("protocol-adapter-v2.adapter.adapter-1.tick.lag")
                             .getValue())
                     .isEqualTo(42L);
         }
@@ -97,7 +100,7 @@ class NevskyMetricsTest {
     @Test
     void closeDeregistersEveryMetric() {
         final MetricRegistry registry = new MetricRegistry();
-        final NevskyMetrics metrics = new NevskyMetrics(registry, "adapter-1", () -> 0);
+        final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(registry, "adapter-1", () -> 0);
         metrics.incrementTagFailure("temperature");
 
         metrics.close();
@@ -108,11 +111,11 @@ class NevskyMetricsTest {
     @Test
     void closeFreesTheNamesSoTheSameAdapterCanBeRecreated() {
         final MetricRegistry registry = new MetricRegistry();
-        final NevskyMetrics first = new NevskyMetrics(registry, "adapter-1", () -> 0);
+        final ProtocolAdapterMetrics first = new ProtocolAdapterMetrics(registry, "adapter-1", () -> 0);
         first.close();
 
         // Re-registering the same names must not throw "duplicate metric".
-        final NevskyMetrics second = new NevskyMetrics(registry, "adapter-1", () -> 0);
+        final ProtocolAdapterMetrics second = new ProtocolAdapterMetrics(registry, "adapter-1", () -> 0);
         second.close();
 
         assertThat(registry.getMetrics()).isEmpty();

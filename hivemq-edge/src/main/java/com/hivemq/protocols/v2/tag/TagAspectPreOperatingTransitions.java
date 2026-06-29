@@ -19,7 +19,7 @@ import com.hivemq.protocols.v2.fsm.FSMTransitionTable;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The five shared pre-operating transition rows (design §7.2), built <b>once</b> and reused by every aspect
+ * The five shared pre-operating transition rows, built <b>once</b> and reused by every aspect
  * variant — the polled and subscribed read tables ({@link TagAspectReadTransitions}) and the write table
  * ({@link TagAspectWriteTransitions}). The rows are parameterized by the variant's pre-operating state constants
  * and by the role-specific "verified" entry reached through {@link TagAspectVerifying#enterVerified()}, so engine
@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The rows act through the {@link TagAspectVerifying} context — the small contract both aspect classes implement —
  * so a {@code ContextType} of {@link TagAspectRead} or {@link TagAspectWrite} both satisfy it. Goal and
- * adapter-readiness changes never reach these rows; they are applied directly by the aspect (design §7.1, §7.2).
+ * adapter-readiness changes never reach these rows; they are applied directly by the aspect.
  */
 final class TagAspectPreOperatingTransitions {
 

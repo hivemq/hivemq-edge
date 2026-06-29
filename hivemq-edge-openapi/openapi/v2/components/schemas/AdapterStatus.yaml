@@ -1,6 +1,6 @@
 type: object
 description: >-
-  The runtime status of a Nevsky adapter — a pure function of the immutable snapshot the adapter wrapper publishes.
+  The runtime status of a v2 adapter — a pure function of the immutable snapshot the adapter wrapper publishes.
 required:
   - id
 properties:

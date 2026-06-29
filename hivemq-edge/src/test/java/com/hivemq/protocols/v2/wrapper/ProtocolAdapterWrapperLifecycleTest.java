@@ -23,7 +23,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * The happy path and the activation-driven goal (design §6.2; scenarios S1, S18 at unit level). Start, connect,
+ * The happy path and the activation-driven goal (scenarios S1, S18 at unit level). Start, connect,
  * verify, reach {@code CONNECTED} in the exact command sequence; the skip-verification flag reaches
  * {@code CONNECTED} without a verify batch; and a config-origin {@code ApplyActivation} drives the adapter goal up
  * to {@code CONNECTED} and back down to {@code STOPPED}.

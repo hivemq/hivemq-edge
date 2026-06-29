@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The wrapper half of the browse bridge (design §11.4) on a {@link WrapperTestFixture}: a browse runs only when
+ * The wrapper half of the browse bridge on a {@link WrapperTestFixture}: a browse runs only when
  * the adapter is {@code CONNECTED} with no browse in flight; it is completed from the protocol adapter's browse
  * result, failed on its deadline, and failed when the connection is lost.
  */

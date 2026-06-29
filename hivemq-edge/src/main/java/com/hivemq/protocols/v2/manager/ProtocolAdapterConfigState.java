@@ -17,11 +17,11 @@ package com.hivemq.protocols.v2.manager;
 
 /**
  * How disruptively one piece of adapter configuration must be applied — the layer that would refine a
- * {@link ProtocolAdapterConfigStateTransition#FULL_RECREATE} into a gentler reconnect window where the protocol allows it (design §8.2).
+ * {@link ProtocolAdapterConfigStateTransition#FULL_RECREATE} into a gentler reconnect window where the protocol allows it.
  * <p>
  * This enum is the documented seam the primary design reserves; the manager treats every {@code FULL_RECREATE} as a
  * stop / discard / recreate today (the credential-rotation-via-disconnect-window optimization and the full
- * per-field dependency handling stay a documented stub, design §8.2). It is defined here so that refinement can be
+ * per-field dependency handling stay a documented stub). It is defined here so that refinement can be
  * added later without touching the transition classification or the manager's reconcile loop.
  */
 public enum ProtocolAdapterConfigState {

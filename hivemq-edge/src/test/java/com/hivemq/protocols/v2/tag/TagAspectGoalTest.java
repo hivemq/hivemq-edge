@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 /**
- * The three-condition rule (design §7.1): an aspect is driven only when its direction is activated, its
+ * The three-condition rule: an aspect is driven only when its direction is activated, its
  * preference is activated, and the tag is used. Any single condition failing keeps it inactive.
  */
 class TagAspectGoalTest {

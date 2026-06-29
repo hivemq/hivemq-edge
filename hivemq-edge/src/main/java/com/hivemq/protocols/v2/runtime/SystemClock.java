@@ -40,7 +40,7 @@ public final class SystemClock implements Clock, AutoCloseable {
 
     public SystemClock() {
         this.scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-            final Thread thread = new Thread(runnable, "nevsky-clock-" + THREAD_COUNTER.incrementAndGet());
+            final Thread thread = new Thread(runnable, "protocol-adapter-clock-" + THREAD_COUNTER.incrementAndGet());
             thread.setDaemon(true);
             return thread;
         });

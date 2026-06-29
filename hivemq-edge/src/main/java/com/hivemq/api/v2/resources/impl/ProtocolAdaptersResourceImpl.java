@@ -26,7 +26,7 @@ import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.v2.errors.ProtocolAdapterV2ErrorFactory;
+import com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory;
 import com.hivemq.edge.api.v2.ProtocolAdaptersApi;
 import com.hivemq.edge.api.v2.model.AccessFlags;
 import com.hivemq.edge.api.v2.model.AdapterActivation;
@@ -79,7 +79,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The Nevsky (v2) protocol-adapters REST resource (design §11). It is <b>state-only</b>: it serves read-only views
+ * The v2 protocol-adapters REST resource. It is <b>state-only</b>: it serves read-only views
  * folded purely from the immutable snapshots the adapter wrappers publish and from the externally-generated
  * configuration section, and it issues runtime-state commands (direction activation, tag retry, browse) by
  * {@code tell}ing the manager — it never touches actor state and never writes configuration.
@@ -96,14 +96,14 @@ import org.jetbrains.annotations.Nullable;
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
     /**
-     * The browse request timeout (design §11.4): the JAX-RS request thread is the only thread that blocks, and it
+     * The browse request timeout: the JAX-RS request thread is the only thread that blocks, and it
      * gives up after this long with {@code 504}. The wrapper's own browse deadline is the backstop that releases
      * the in-flight slot.
      */
     private static final long BROWSE_REQUEST_TIMEOUT_MILLIS = 60_000L;
 
     private final @NotNull MailboxSender<ProtocolAdapterManagerMessage> manager;
-    private final @NotNull ProtocolAdapterHandleRegistry registry;
+    private final @NotNull ProtocolAdapterHandleRegistry handleRegistry;
     private final @NotNull ProtocolAdapterFactoryRegistry factoryRegistry;
     private final @NotNull ProtocolAdapterExtractor configExtractor;
     private final @NotNull ObjectMapper objectMapper;
@@ -111,30 +111,30 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     /**
      * @param manager          the manager mailbox the runtime-state commands are told to.
-     * @param registry         the REST-readable adapter registry (snapshots and senders).
+     * @param handleRegistry   the REST-readable adapter registry (snapshots and senders).
      * @param factoryRegistry  the registered adapter type factories (empty in production, D8).
-     * @param configExtractor  the read-only {@code <v2-protocol-adapters>} configuration extractor.
+     * @param configExtractor  the read-only {@code <v2>} configuration extractor.
      * @param objectMapper     the JSON mapper used to deserialize browse filter node strings.
      */
     @Inject
     public ProtocolAdaptersResourceImpl(
             final @NotNull MailboxSender<ProtocolAdapterManagerMessage> manager,
-            final @NotNull ProtocolAdapterHandleRegistry registry,
+            final @NotNull ProtocolAdapterHandleRegistry handleRegistry,
             final @NotNull ProtocolAdapterFactoryRegistry factoryRegistry,
             final @NotNull ProtocolAdapterExtractor configExtractor,
             final @NotNull ObjectMapper objectMapper) {
-        this(manager, registry, factoryRegistry, configExtractor, objectMapper, BROWSE_REQUEST_TIMEOUT_MILLIS);
+        this(manager, handleRegistry, factoryRegistry, configExtractor, objectMapper, BROWSE_REQUEST_TIMEOUT_MILLIS);
     }
 
     ProtocolAdaptersResourceImpl(
             final @NotNull MailboxSender<ProtocolAdapterManagerMessage> manager,
-            final @NotNull ProtocolAdapterHandleRegistry registry,
+            final @NotNull ProtocolAdapterHandleRegistry handleRegistry,
             final @NotNull ProtocolAdapterFactoryRegistry factoryRegistry,
             final @NotNull ProtocolAdapterExtractor configExtractor,
             final @NotNull ObjectMapper objectMapper,
             final long browseTimeoutMillis) {
         this.manager = manager;
-        this.registry = registry;
+        this.handleRegistry = handleRegistry;
         this.factoryRegistry = factoryRegistry;
         this.configExtractor = configExtractor;
         this.objectMapper = objectMapper;
@@ -269,9 +269,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response setAdapterActivation(
             final @NotNull String adapterId, final @NotNull AdapterActivation body) {
         if (body.getDirection() == null || body.getActivated() == null) {
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterActivationInvalidError());
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterActivationInvalidError());
         }
-        if (registry.find(adapterId) == null) {
+        if (handleRegistry.find(adapterId) == null) {
             return adapterNotFound(adapterId);
         }
         final ProtocolAdapterDirection direction =
@@ -307,17 +307,17 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return Response.ok(retryResult(adapterId, snapshot, requested)).build();
     }
 
-    // ── browse bridge (design §11.4) ─────────────────────────────────────────────────────────────────────────────
+    // ── browse bridge ─────────────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull Response browseAdapter(final @NotNull String adapterId, final @Nullable BrowseCommand body) {
-        if (registry.find(adapterId) == null) {
+        if (handleRegistry.find(adapterId) == null) {
             return adapterNotFound(adapterId);
         }
         final Optional<ProtocolAdapterFactory> factory = factoryFor(adapterId);
         if (factory.isEmpty()
                 || !factory.get().information().capabilities().contains(ProtocolAdapterCapability.BROWSE)) {
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseNotSupportedError(adapterId));
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
         }
         final String nodeString = (body == null
                         || body.getNodeString() == null
@@ -330,7 +330,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     nodeString, factory.get().information().nodeClass());
         } catch (final JsonProcessingException exception) {
             return ErrorResponseUtil.errorResponse(
-                    ProtocolAdapterV2ErrorFactory.browseFilterInvalidError(adapterId, exception.getOriginalMessage()));
+                    ProtocolAdapterErrorFactory.browseFilterInvalidError(adapterId, exception.getOriginalMessage()));
         }
 
         final CompletableFuture<List<BrowseResultEntry>> completion = new CompletableFuture<>();
@@ -340,10 +340,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final List<BrowseResultEntry> entries = completion.get(browseTimeoutMillis, TimeUnit.MILLISECONDS);
             return Response.ok(toBrowseResult(entries)).build();
         } catch (final TimeoutException exception) {
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseTimeoutError(adapterId));
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
         } catch (final InterruptedException exception) {
             Thread.currentThread().interrupt();
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseInterruptedError(adapterId));
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseInterruptedError(adapterId));
         } catch (final ExecutionException exception) {
             return browseFailure(adapterId, exception.getCause());
         }
@@ -353,26 +353,26 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (cause instanceof final BrowseRejectedException rejected) {
             return switch (rejected.reason()) {
                 case NOT_CONNECTED ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterNotConnectedError(adapterId));
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterNotConnectedError(adapterId));
                 case ALREADY_IN_FLIGHT ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseInProgressError(adapterId));
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseInProgressError(adapterId));
                 case UNSUPPORTED ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseNotSupportedError(adapterId));
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
                 case TIMED_OUT ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseTimeoutError(adapterId));
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
             };
         }
         if (cause instanceof IllegalArgumentException) {
             return adapterNotFound(adapterId);
         }
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseFailedError(adapterId));
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseFailedError(adapterId));
     }
 
     // ── DTO assembly (pure functions) ────────────────────────────────────────────────────────────────────────────
 
     private @NotNull List<AdapterStatus> allStatuses() {
         final List<AdapterStatus> statuses = new ArrayList<>();
-        for (final ProtocolAdapterHandle handle : registry.all()) {
+        for (final ProtocolAdapterHandle handle : handleRegistry.all()) {
             final AdapterStatusSnapshot snapshot = handle.snapshot().get();
             if (snapshot != null) {
                 statuses.add(toStatusDto(snapshot));
@@ -584,7 +584,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     // ── lookups and helpers ──────────────────────────────────────────────────────────────────────────────────────
 
     private @Nullable AdapterStatusSnapshot snapshotOf(final @NotNull String adapterId) {
-        final ProtocolAdapterHandle handle = registry.find(adapterId);
+        final ProtocolAdapterHandle handle = handleRegistry.find(adapterId);
         return handle == null ? null : handle.snapshot().get();
     }
 
@@ -619,14 +619,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     private static @NotNull Response adapterNotFound(final @NotNull String adapterId) {
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterNotFoundError(adapterId));
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterNotFoundError(adapterId));
     }
 
     private static @NotNull Response adapterTypeUnavailable(final @NotNull String adapterId) {
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterTypeNotFoundError(adapterId));
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterTypeNotFoundError(adapterId));
     }
 
     private static @NotNull Response tagNotFound(final @NotNull String adapterId, final @NotNull String tagName) {
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.tagNotFoundError(adapterId, tagName));
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.tagNotFoundError(adapterId, tagName));
     }
 }

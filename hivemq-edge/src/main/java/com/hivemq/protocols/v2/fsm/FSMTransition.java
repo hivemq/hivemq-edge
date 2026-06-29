@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * One row of a {@link FSMTransitionTable} (design §4): in state {@link #from()}, on an event of exactly type
+ * One row of a {@link FSMTransitionTable}: in state {@link #from()}, on an event of exactly type
  * {@link #eventType()}, when the optional {@link #guard()} passes, run {@link #action()} to compute the next
  * state. A {@code null} guard makes the row unconditional — the catch-all for its {@code (from, eventType)}
  * key, evaluated only after every guarded row for that key has failed. Built through

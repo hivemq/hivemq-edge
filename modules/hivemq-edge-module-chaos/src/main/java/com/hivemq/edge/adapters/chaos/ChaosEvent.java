@@ -22,11 +22,11 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * An event the {@link ChaosProtocolAdapter} reports spontaneously at a chosen harness tick, via
- * {@link ChaosScript.Builder#injectAtTick(long, ChaosEvent)} (design §10.2). It models the device — or a
+ * {@link ChaosScript.Builder#injectAtTick(long, ChaosEvent)}. It models the device — or a
  * misbehaving adapter — acting outside any command-response exchange: a spontaneous connection {@link Disconnect}
  * or {@link ErrorReport}, an unsolicited {@link DataPointPush} or {@link NodeErrorPush}, or an out-of-band lifecycle
  * callback ({@link Started}, {@link Stopped}, {@link Connected}) that the wrapper does not expect in its current
- * state — the trigger for a defensive reset and the {@code ERROR} absorption rule (design §6.4).
+ * state — the trigger for a defensive reset and the {@code ERROR} absorption rule.
  */
 public sealed interface ChaosEvent {
 
@@ -79,7 +79,7 @@ public sealed interface ChaosEvent {
     /**
      * @param node        the node the failure belongs to.
      * @param reason      the failure reason.
-     * @param spontaneous whether the loss is spontaneous (selects the read aspect's recovery path, design §7.4).
+     * @param spontaneous whether the loss is spontaneous (selects the read aspect's recovery path).
      * @return an event that reports a per-node error ({@code output.nodeError(node, reason, spontaneous)}).
      */
     static @NotNull ChaosEvent nodeError(
@@ -128,7 +128,7 @@ public sealed interface ChaosEvent {
      *
      * @param node        the node the failure belongs to.
      * @param reason      the failure reason.
-     * @param spontaneous whether the loss is spontaneous (design §7.4).
+     * @param spontaneous whether the loss is spontaneous.
      */
     record NodeErrorPush(@NotNull Node node, @NotNull String reason, boolean spontaneous) implements ChaosEvent {}
 }

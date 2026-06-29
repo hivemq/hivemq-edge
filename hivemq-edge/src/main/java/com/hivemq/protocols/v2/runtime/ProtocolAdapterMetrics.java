@@ -24,24 +24,24 @@ import java.util.function.IntSupplier;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The minimal per-adapter metric set the risk model promises (design §5.8), registered on the shared
+ * The minimal per-adapter metric set the risk model promises, registered on the shared
  * {@link MetricRegistry}. One instance belongs to one adapter wrapper, created when the wrapper is and
- * {@link #close() removed} when the wrapper is, so its metric names ({@code nevsky.adapter.<id>.*}) never outlive
+ * {@link #close() removed} when the wrapper is, so its metric names ({@code protocol-adapter-v2.adapter.<id>.*}) never outlive
  * the adapter.
  * <ul>
- * <li>{@code nevsky.adapter.<id>.mailbox.depth} — gauge over the wrapper mailbox's {@code size()};</li>
- * <li>{@code nevsky.adapter.<id>.state.transitions} — counter, one per adapter-machine transition;</li>
- * <li>{@code nevsky.adapter.<id>.defensive.resets} — counter, one per defensive (unmatched) reset;</li>
- * <li>{@code nevsky.adapter.<id>.tag.<name>.failures} — counter per tag (poll/write/subscription failures);</li>
- * <li>{@code nevsky.adapter.<id>.tick.lag} — gauge of {@code now - tick.nowMillis} at processing time.</li>
+ * <li>{@code protocol-adapter-v2.adapter.<id>.mailbox.depth} — gauge over the wrapper mailbox's {@code size()};</li>
+ * <li>{@code protocol-adapter-v2.adapter.<id>.state.transitions} — counter, one per adapter-machine transition;</li>
+ * <li>{@code protocol-adapter-v2.adapter.<id>.defensive.resets} — counter, one per defensive (unmatched) reset;</li>
+ * <li>{@code protocol-adapter-v2.adapter.<id>.tag.<name>.failures} — counter per tag (poll/write/subscription failures);</li>
+ * <li>{@code protocol-adapter-v2.adapter.<id>.tick.lag} — gauge of {@code now - tick.nowMillis} at processing time.</li>
  * </ul>
  * Counters and the tick-lag holder are updated from the owning actor's dispatch thread; the gauges are read from
  * the metrics reporter's thread, which is why the mailbox-depth source is the thread-safe {@code Mailbox.size()}
  * and the tick-lag source is an {@link AtomicLong}.
  */
-public final class NevskyMetrics implements AutoCloseable {
+public final class ProtocolAdapterMetrics implements AutoCloseable {
 
-    public static final @NotNull String ADAPTER_PREFIX = "nevsky.adapter.";
+    public static final @NotNull String ADAPTER_PREFIX = "protocol-adapter-v2.adapter.";
 
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull String adapterId;
@@ -60,7 +60,7 @@ public final class NevskyMetrics implements AutoCloseable {
      * @param mailboxDepth   the source of the mailbox-depth gauge — typically the wrapper mailbox's
      *                       {@code size}, which is safe to read from any thread.
      */
-    public NevskyMetrics(
+    public ProtocolAdapterMetrics(
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull String adapterId,
             final @NotNull IntSupplier mailboxDepth) {

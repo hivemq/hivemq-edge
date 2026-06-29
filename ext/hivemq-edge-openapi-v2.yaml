@@ -3,18 +3,18 @@ info:
   contact:
     url: https://www.hivemq.com
   description: |
-    The Nevsky (v2) protocol-adapter REST API of HiveMQ Edge — state-only runtime views and commands (direction activation, tag retry, browse). No endpoint creates, modifies, or deletes configuration; configuration is produced by an external tool and only read by Edge.
+    The v2 protocol-adapter REST API of HiveMQ Edge — state-only runtime views and commands (direction activation, tag retry, browse). No endpoint creates, modifies, or deletes configuration; configuration is produced by an external tool and only read by Edge.
   title: HiveMQ Edge REST API — Protocol Adapters v2
   version: 2026.11-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
-  - description: 'Interact with Nevsky (v2) protocol adapters: state-only runtime views and commands (direction activation, tag retry, browse). No endpoint creates, modifies, or deletes configuration.'
+  - description: 'Interact with v2 protocol adapters: state-only runtime views and commands (direction activation, tag retry, browse). No endpoint creates, modifies, or deletes configuration.'
     name: Protocol Adapters
 paths:
   /api/v2/management/protocol-adapters/types:
     get:
-      description: Obtain the list of registered Nevsky (v2) protocol adapter types. Empty in production until a real adapter type is ported.
+      description: Obtain the list of registered v2 protocol adapter types. Empty in production until a real adapter type is ported.
       operationId: getAdapterTypes
       x-roles-allowed:
         - admin
@@ -29,12 +29,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/AdapterType'
           description: Success
-      summary: Obtain the registered Nevsky adapter types
+      summary: Obtain the registered v2 adapter types
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters:
     get:
-      description: List the Nevsky (v2) protocol adapters with their runtime status.
+      description: List the v2 protocol adapters with their runtime status.
       operationId: listAdapters
       x-roles-allowed:
         - admin
@@ -49,12 +49,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/AdapterStatus'
           description: Success
-      summary: List the Nevsky adapters with status
+      summary: List the v2 adapters with status
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}:
     get:
-      description: Obtain the read-only configured definition of a Nevsky (v2) adapter.
+      description: Obtain the read-only configured definition of a v2 adapter.
       operationId: getAdapter
       x-roles-allowed:
         - admin
@@ -80,12 +80,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterNotFoundError'
           description: Adapter not found
-      summary: Obtain a Nevsky adapter's configured definition
+      summary: Obtain a v2 adapter's configured definition
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/status:
     get:
-      description: Obtain the runtime status of a Nevsky (v2) adapter (machine state, color, and tag summary).
+      description: Obtain the runtime status of a v2 adapter (machine state, color, and tag summary).
       operationId: getAdapterStatus
       x-roles-allowed:
         - admin
@@ -111,12 +111,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterNotFoundError'
           description: Adapter not found
-      summary: Obtain a Nevsky adapter's runtime status
+      summary: Obtain a v2 adapter's runtime status
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/status:
     get:
-      description: Obtain the runtime status of every Nevsky (v2) protocol adapter.
+      description: Obtain the runtime status of every v2 protocol adapter.
       operationId: getAdapterStatuses
       x-roles-allowed:
         - admin
@@ -131,12 +131,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/AdapterStatus'
           description: Success
-      summary: Obtain the status of all Nevsky adapters
+      summary: Obtain the status of all v2 adapters
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/activation:
     post:
-      description: Activate or deactivate a direction of a Nevsky (v2) adapter. This is a live-goal command and is never persisted; after a restart the configuration-declared activation applies again.
+      description: Activate or deactivate a direction of a v2 adapter. This is a live-goal command and is never persisted; after a restart the configuration-declared activation applies again.
       operationId: setAdapterActivation
       x-roles-allowed:
         - admin
@@ -169,12 +169,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterNotFoundError'
           description: Adapter not found
-      summary: Set a Nevsky adapter's direction activation
+      summary: Set a v2 adapter's direction activation
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/tags:
     get:
-      description: List a Nevsky (v2) adapter's Node/Tag pairs with their activation flags and derived status.
+      description: List a v2 adapter's Node/Tag pairs with their activation flags and derived status.
       operationId: getAdapterTags
       x-roles-allowed:
         - admin
@@ -202,12 +202,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterNotFoundError'
           description: Adapter not found
-      summary: List a Nevsky adapter's Node/Tag pairs
+      summary: List a v2 adapter's Node/Tag pairs
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}/status:
     get:
-      description: Obtain the status and per-aspect detail of one tag of a Nevsky (v2) adapter.
+      description: Obtain the status and per-aspect detail of one tag of a v2 adapter.
       operationId: getTagStatus
       x-roles-allowed:
         - admin
@@ -251,7 +251,7 @@ paths:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}/retry:
     post:
-      description: Retry a permanently-failed tag of a Nevsky (v2) adapter (runtime-only; EDG-462). Each aspect of the tag that is in a permanent verification failure re-verifies; aspects in any other state are skipped with a reason. Never touches configuration.
+      description: Retry a permanently-failed tag of a v2 adapter (runtime-only). Each aspect of the tag that is in a permanent verification failure re-verifies; aspects in any other state are skipped with a reason. Never touches configuration.
       operationId: retryTag
       x-roles-allowed:
         - admin
@@ -293,7 +293,7 @@ paths:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/tags/retry:
     post:
-      description: Bulk-retry permanently-failed tags of a Nevsky (v2) adapter (runtime-only; EDG-462). The body may list the tag names to retry; omit it to retry every permanently-failed tag. Never touches configuration.
+      description: Bulk-retry permanently-failed tags of a v2 adapter (runtime-only). The body may list the tag names to retry; omit it to retry every permanently-failed tag. Never touches configuration.
       operationId: retryTags
       x-roles-allowed:
         - admin
@@ -329,7 +329,7 @@ paths:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/northbound-mappings:
     get:
-      description: List a Nevsky (v2) adapter's northbound mappings with their derived runtime status.
+      description: List a v2 adapter's northbound mappings with their derived runtime status.
       operationId: getNorthboundMappings
       x-roles-allowed:
         - admin
@@ -357,12 +357,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterNotFoundError'
           description: Adapter not found
-      summary: List a Nevsky adapter's northbound mappings
+      summary: List a v2 adapter's northbound mappings
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/southbound-mappings:
     get:
-      description: List a Nevsky (v2) adapter's southbound mappings with their derived runtime status.
+      description: List a v2 adapter's southbound mappings with their derived runtime status.
       operationId: getSouthboundMappings
       x-roles-allowed:
         - admin
@@ -390,12 +390,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterNotFoundError'
           description: Adapter not found
-      summary: List a Nevsky adapter's southbound mappings
+      summary: List a v2 adapter's southbound mappings
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/browse:
     post:
-      description: Browse a Nevsky (v2) adapter's device address space below a filter node. The request blocks until the adapter returns the result or the request times out. Single in-flight browse per adapter.
+      description: Browse a v2 adapter's device address space below a filter node. The request blocks until the adapter returns the result or the request times out. Single in-flight browse per adapter.
       operationId: browseAdapter
       x-roles-allowed:
         - admin
@@ -470,12 +470,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/BrowseTimeoutError'
           description: The adapter did not return a browse result before the timeout
-      summary: Browse a Nevsky adapter's address space
+      summary: Browse a v2 adapter's address space
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/node-schema:
     get:
-      description: Obtain the JSON-Schema projection of a Nevsky (v2) adapter type's node-definition schema (the reused adapter Schema).
+      description: Obtain the JSON-Schema projection of a v2 adapter type's node-definition schema (the reused adapter Schema).
       operationId: getNodeSchema
       x-roles-allowed:
         - admin
@@ -501,12 +501,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterTypeNotFoundError'
           description: Adapter type schema not available
-      summary: Obtain a Nevsky adapter's node-definition schema
+      summary: Obtain a v2 adapter's node-definition schema
       tags:
         - Protocol Adapters
   /api/v2/management/protocol-adapters/adapters/{adapterId}/adapter-schema:
     get:
-      description: Obtain the JSON-Schema projection of a Nevsky (v2) adapter type's adapter-configuration schema (the reused adapter Schema).
+      description: Obtain the JSON-Schema projection of a v2 adapter type's adapter-configuration schema (the reused adapter Schema).
       operationId: getAdapterSchema
       x-roles-allowed:
         - admin
@@ -532,7 +532,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdapterTypeNotFoundError'
           description: Adapter type schema not available
-      summary: Obtain a Nevsky adapter's configuration schema
+      summary: Obtain a v2 adapter's configuration schema
       tags:
         - Protocol Adapters
 components:
@@ -542,7 +542,7 @@ components:
       description: The arguments of the fsm derived from the behavior policy.
     AdapterType:
       type: object
-      description: A registered Nevsky adapter type, with its capabilities and schema projections.
+      description: A registered v2 adapter type, with its capabilities and schema projections.
       required:
         - id
       properties:
@@ -584,7 +584,7 @@ components:
           $ref: '#/components/schemas/JsonNode'
     AdapterStatusColor:
       type: string
-      description: The externally visible color of a Nevsky (v2) protocol adapter, derived purely from its state machine state.
+      description: The externally visible color of a v2 protocol adapter, derived purely from its state machine state.
       enum:
         - GREY_STOPPED
         - YELLOW_CONNECTING
@@ -594,7 +594,7 @@ components:
         - RED_ERROR
     AdapterMachineState:
       type: string
-      description: The Nevsky (v2) protocol adapter state machine state.
+      description: The v2 protocol adapter state machine state.
       enum:
         - STOPPED
         - WAITING_FOR_STARTED
@@ -608,7 +608,7 @@ components:
         - ERROR
     TagSummary:
       type: object
-      description: A summary of a Nevsky adapter's tags, counted by externally visible status.
+      description: A summary of a v2 adapter's tags, counted by externally visible status.
       properties:
         total:
           type: integer
@@ -636,7 +636,7 @@ components:
           description: The number of tags in error.
     AdapterStatus:
       type: object
-      description: The runtime status of a Nevsky adapter — a pure function of the immutable snapshot the adapter wrapper publishes.
+      description: The runtime status of a v2 adapter — a pure function of the immutable snapshot the adapter wrapper publishes.
       required:
         - id
       properties:
@@ -664,7 +664,7 @@ components:
           description: The time of the last state machine transition.
     AdapterDefinition:
       type: object
-      description: The read-only configured definition of a Nevsky adapter, as loaded from the externally-generated configuration section. The v2 API never writes configuration.
+      description: The read-only configured definition of a v2 adapter, as loaded from the externally-generated configuration section. The v2 API never writes configuration.
       required:
         - id
       properties:

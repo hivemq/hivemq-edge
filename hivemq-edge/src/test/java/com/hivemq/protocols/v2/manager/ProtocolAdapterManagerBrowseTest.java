@@ -38,7 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The manager half of the browse bridge (design §11.4): the manager checks the snapshot is {@code CONNECTED} and
+ * The manager half of the browse bridge: the manager checks the snapshot is {@code CONNECTED} and
  * forwards the request to the wrapper, fails it for a disconnected adapter, and fails it for an unknown adapter.
  * The {@link RecordingWrapperFactory} captures what is forwarded to the wrapper.
  */
@@ -47,7 +47,7 @@ class ProtocolAdapterManagerBrowseTest {
     private FakeClock clock;
     private ManualDispatcher dispatcher;
     private Mailbox<ProtocolAdapterManagerMessage> mailbox;
-    private ProtocolAdapterHandleRegistry registry;
+    private ProtocolAdapterHandleRegistry handleRegistry;
     private RecordingWrapperFactory wrapperFactory;
     private ProtocolAdapterManager manager;
 
@@ -56,12 +56,12 @@ class ProtocolAdapterManagerBrowseTest {
         clock = new FakeClock();
         dispatcher = new ManualDispatcher();
         mailbox = new DefaultMailbox<>();
-        registry = new ProtocolAdapterHandleRegistry();
+        handleRegistry = new ProtocolAdapterHandleRegistry();
         wrapperFactory = new RecordingWrapperFactory();
         final ProtocolAdapterFactoryRegistry factories = new ProtocolAdapterFactoryRegistry(
                 Set.of(new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
                         ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID)));
-        manager = new ProtocolAdapterManager(factories, registry, wrapperFactory, clock);
+        manager = new ProtocolAdapterManager(factories, handleRegistry, wrapperFactory, clock);
         dispatcher.attach(mailbox, manager);
         manager.bindSelf(mailbox);
     }

@@ -19,13 +19,13 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The wrapper's tick — time delivered as a message (design §5.4, §6.1). The clock tells one of these to the
+ * The wrapper's tick — time delivered as a message. The clock tells one of these to the
  * wrapper's mailbox every period; when the wrapper handles it, it drains its timer queue and dispatches pending
  * batches, on its own dispatch thread.
  * <p>
  * Band {@link MailboxMessagePriority#TICK}: above {@code DATA} (time stays on time under data floods) but below
  * {@code EVENT} (an already-enqueued acknowledgment is processed, and its watchdog canceled, before the tick that
- * would have fired it — design §6.3).
+ * would have fired it).
  *
  * @param nowMillis the clock time, in milliseconds, at which this tick was produced.
  */

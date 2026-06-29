@@ -1,6 +1,6 @@
 post:
   description: >-
-    Retry a permanently-failed tag of a Nevsky (v2) adapter (runtime-only; EDG-462). Each aspect of the tag that
+    Retry a permanently-failed tag of a v2 adapter (runtime-only). Each aspect of the tag that
     is in a permanent verification failure re-verifies; aspects in any other state are skipped with a reason.
     Never touches configuration.
   operationId: retryTag

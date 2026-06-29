@@ -43,7 +43,7 @@ public final class SystemDispatcher implements MessageDispatcher {
     public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
             final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
         final DispatchLoop<MessageType> loop = new DispatchLoop<>(mailbox, handler);
-        final Thread thread = new Thread(loop, "nevsky-dispatcher-" + THREAD_COUNTER.incrementAndGet());
+        final Thread thread = new Thread(loop, "protocol-adapter-dispatcher-" + THREAD_COUNTER.incrementAndGet());
         thread.setDaemon(true);
         loop.bind(thread);
         thread.start();

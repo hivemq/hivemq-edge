@@ -40,7 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The production wrapper factory (design §8.2): it turns a read-only configuration entity into a fully-wired,
+ * The production wrapper factory: it turns a read-only configuration entity into a fully-wired,
  * dispatcher-attached wrapper that — driven by the same activation kick the manager sends — reaches
  * {@code CONNECTED}, including the {@code node-string} deserialization and the config-to-{@code DataPoint}
  * translation. Run on a {@link FakeClock} + {@link ManualDispatcher} with a synchronous protocol-adapter double.

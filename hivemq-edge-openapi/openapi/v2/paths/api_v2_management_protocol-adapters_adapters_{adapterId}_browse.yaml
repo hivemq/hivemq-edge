@@ -1,6 +1,6 @@
 post:
   description: >-
-    Browse a Nevsky (v2) adapter's device address space below a filter node. The request blocks until the adapter
+    Browse a v2 adapter's device address space below a filter node. The request blocks until the adapter
     returns the result or the request times out. Single in-flight browse per adapter.
   operationId: browseAdapter
   x-roles-allowed:
@@ -76,6 +76,6 @@ post:
           schema:
             $ref: ../components/schemas/errors/BrowseTimeoutError.yaml
       description: The adapter did not return a browse result before the timeout
-  summary: Browse a Nevsky adapter's address space
+  summary: Browse a v2 adapter's address space
   tags:
     - Protocol Adapters

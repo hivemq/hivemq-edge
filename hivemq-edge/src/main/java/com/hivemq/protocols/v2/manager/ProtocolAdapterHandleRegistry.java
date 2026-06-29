@@ -27,11 +27,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The concurrent, REST-readable directory of an Edge instance's Nevsky adapters (design §6.6, §8). Each entry is a
+ * The concurrent, REST-readable directory of an Edge instance's v2 adapters. Each entry is a
  * {@link ProtocolAdapterHandle} that exposes <b>only</b> the immutable status snapshot reference and the wrapper's
  * send-only mailbox handle — never the wrapper, its state, or its mailbox's receive side. REST threads and the
- * manager's own tick read snapshots and {@code tell} commands; nothing else crosses the boundary (the actor model,
- * design §5.2).
+ * manager's own tick read snapshots and {@code tell} commands; nothing else crosses the boundary (the actor model).
  * <p>
  * The map is mutated only by the manager actor (register on create, remove on discard) but read from foreign
  * threads, so it is backed by a {@link ConcurrentHashMap}; the per-handle snapshot is an {@link AtomicReference}
@@ -76,8 +75,8 @@ public final class ProtocolAdapterHandleRegistry {
 
     /**
      * A REST-readable handle to one adapter: its id, the send-only handle of its wrapper mailbox, and the reference
-     * the wrapper publishes its immutable status snapshot into (design §6.6). For an adapter whose type has no
-     * registered factory the wrapper sender is a no-op and the snapshot is a fixed {@code ERROR} (design §8.2).
+     * the wrapper publishes its immutable status snapshot into. For an adapter whose type has no
+     * registered factory the wrapper sender is a no-op and the snapshot is a fixed {@code ERROR}.
      *
      * @param adapterId     the adapter instance id.
      * @param wrapperSender the send-only handle of the wrapper mailbox — {@code tell}-only, callable from any thread.

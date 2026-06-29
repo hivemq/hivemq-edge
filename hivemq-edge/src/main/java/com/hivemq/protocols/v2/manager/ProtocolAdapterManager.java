@@ -50,17 +50,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The Protocol Adapter Manager — the supervisor {@link MessageHandler} of the Nevsky subsystem (design §8). It owns
+ * The Protocol Adapter Manager — the supervisor {@link MessageHandler} of the v2 subsystem. It owns
  * the wrapper/adapter pairs, applies the gentlest correct transition on configuration change, routes the
  * runtime-state commands from REST, and reacts to wrapper health. It reads <b>only</b> the
- * {@code <v2-protocol-adapters>} section (through the {@link ConfigurationChanged} message the extractor's consumer
+ * {@code <v2>} section (through the {@link ConfigurationChanged} message the extractor's consumer
  * tells it) and it never writes configuration.
  * <p>
- * Like every Nevsky component it is an actor: {@link #receive(ProtocolAdapterManagerMessage)} runs on the manager's
+ * Like every v2 component it is an actor: {@link #receive(ProtocolAdapterManagerMessage)} runs on the manager's
  * single dispatch thread, so its maps need no locks. The only state that crosses the boundary outward is the
  * immutable {@link ProtocolAdapterManagerSnapshot} health summary it publishes on each tick, and each wrapper's own
- * snapshot in the {@link ProtocolAdapterHandleRegistry} — read by REST threads without locking (the actor model,
- * design §5.2).
+ * snapshot in the {@link ProtocolAdapterHandleRegistry} — read by REST threads without locking (the actor model).
  * <p>
  * The manager is bound to its own mailbox through {@link #bindSelf(MailboxSender)} once, before any message is
  * handled (the two-phase init mirrors the wrapper context's {@code bindMachine}): the manager needs its own
@@ -72,12 +71,12 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
 
     /**
      * The wrapper sender of an {@code ERROR} handle for an unknown / un-instantiable adapter: there is no wrapper,
-     * so a {@code tell} is dropped. REST commands to such an adapter are therefore harmless no-ops (design §8.2).
+     * so a {@code tell} is dropped. REST commands to such an adapter are therefore harmless no-ops.
      */
     private static final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> NO_OP_WRAPPER_SENDER = message -> {};
 
     private final @NotNull ProtocolAdapterFactoryRegistry factoryRegistry;
-    private final @NotNull ProtocolAdapterHandleRegistry registry;
+    private final @NotNull ProtocolAdapterHandleRegistry handleRegistry;
     private final @NotNull ProtocolAdapterWrapperFactory wrapperFactory;
     private final @NotNull Clock clock;
 
@@ -94,17 +93,17 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
 
     /**
      * @param factoryRegistry the protocol-adapter type factories (empty in production, D8).
-     * @param registry       the REST-readable adapter registry the manager populates.
+     * @param handleRegistry  the REST-readable adapter registry the manager populates.
      * @param wrapperFactory the seam that builds and attaches a wrapper/adapter pair from one configuration.
      * @param clock          the clock used to stamp the {@code ERROR} snapshots and the health summary.
      */
     public ProtocolAdapterManager(
             final @NotNull ProtocolAdapterFactoryRegistry factoryRegistry,
-            final @NotNull ProtocolAdapterHandleRegistry registry,
+            final @NotNull ProtocolAdapterHandleRegistry handleRegistry,
             final @NotNull ProtocolAdapterWrapperFactory wrapperFactory,
             final @NotNull Clock clock) {
         this.factoryRegistry = factoryRegistry;
-        this.registry = registry;
+        this.handleRegistry = handleRegistry;
         this.wrapperFactory = wrapperFactory;
         this.clock = clock;
     }
@@ -120,7 +119,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     }
 
     /**
-     * @return the latest health summary the manager has published (design §8.3).
+     * @return the latest health summary the manager has published.
      */
     public @NotNull ProtocolAdapterManagerSnapshot healthSummary() {
         return Objects.requireNonNullElse(healthSummary.get(), ProtocolAdapterManagerSnapshot.empty());
@@ -148,7 +147,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         }
     }
 
-    // ── configuration difference → gentlest transition (design §8.2) ────────────────────────────────────────────
+    // ── configuration difference → gentlest transition ────────────────────────────────────────────
 
     private void reconcile(final @NotNull List<ProtocolAdapterEntity> newConfigs) {
         final Map<String, ProtocolAdapterEntity> updatedById = new LinkedHashMap<>();
@@ -243,13 +242,13 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                         updated.getWriteUsedTagNames()));
         if (ProtocolAdapterConfigDiffUtils.adapterDirectionChanged(running, updated)) {
             // The tag-set update does not carry the adapter direction goal; re-assert the config-declared goal when
-            // it changed too (design §8.2). Still never reconnects.
+            // it changed too. Still never reconnects.
             tellWrapper(existing, activationCommand(updated));
         }
         existing.appliedEntity(updated);
     }
 
-    // ── instance lifecycle (design §8.2) ────────────────────────────────────────────────────────────────────────
+    // ── instance lifecycle ────────────────────────────────────────────────────────────────────────
 
     private void createAdapter(final @NotNull ProtocolAdapterEntity entity) {
         final String adapterId = entity.getAdapterId();
@@ -268,9 +267,9 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             return;
         }
         containerMap.put(adapterId, adapter);
-        registry.register(adapter.handle());
-        // Apply the config-declared activation to bring the freshly-created wrapper to its initial goal (design
-        // §9.3). The wrapper starts in STOPPED; this is the command that steps it toward CONNECTED when a direction
+        handleRegistry.register(adapter.handle());
+        // Apply the config-declared activation to bring the freshly-created wrapper to its initial goal. The wrapper
+        // starts in STOPPED; this is the command that steps it toward CONNECTED when a direction
         // is activated, and leaves it STOPPED when neither is.
         tellWrapper(adapter, activationCommand(entity));
     }
@@ -288,7 +287,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         final ProtocolAdapterHandle handle =
                 new ProtocolAdapterHandle(adapterId, NO_OP_WRAPPER_SENDER, new AtomicReference<>(errorSnapshot));
         containerMap.put(adapterId, ProtocolAdapterContainer.unknown(handle, entity));
-        registry.register(handle);
+        handleRegistry.register(handle);
         log.warn("v2 adapter '{}' is unavailable: {}", adapterId, reason);
     }
 
@@ -315,7 +314,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         }
         if (!adapter.isReal() || isStopped(adapter)) {
             // No wrapper to wind down, or it is already at rest — tear down now.
-            registry.unregister(adapterId);
+            handleRegistry.unregister(adapterId);
             adapter.close();
             if (recreateAs != null) {
                 createAdapter(recreateAs);
@@ -325,11 +324,11 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         // Running: ask it to stop and tear it down when it reports stopped. Remove the handle now so REST no longer
         // sees an adapter that is going away.
         tellWrapper(adapter, new ProtocolAdapterWrapperCommand.StopAdapter());
-        registry.unregister(adapterId);
+        handleRegistry.unregister(adapterId);
         pendingRemovalMap.put(adapterId, new PendingRemoval(adapter, recreateAs));
     }
 
-    // ── wrapper health (design §6.1, §8.3) ──────────────────────────────────────────────────────────────────────
+    // ── wrapper health ──────────────────────────────────────────────────────────────────────
 
     private void onWrapperStarted(final @NotNull String adapterId) {
         // Health is read from the wrapper's own snapshot; the event is logged for visibility. No action needed.
@@ -350,16 +349,16 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     }
 
     private void onWrapperError(final @NotNull String adapterId, final @NotNull String reason) {
-        // The wrapper's snapshot already shows ERROR (design §6.4). The manager performs NO automatic recreate
-        // (manual recovery in this project, design §8.3): the user deactivates and re-activates, or replaces the
+        // The wrapper's snapshot already shows ERROR. The manager performs NO automatic recreate
+        // (manual recovery in this project): the user deactivates and re-activates, or replaces the
         // configuration.
         log.warn("v2 adapter '{}' entered ERROR: {}", adapterId, reason);
     }
 
-    // ── browse bridge (design §11.4) ─────────────────────────────────────────────────────────────────────────────
+    // ── browse bridge ─────────────────────────────────────────────────────────────────────────────
 
     private void handleBrowse(final @NotNull BrowseRequested browse) {
-        final ProtocolAdapterHandle handle = registry.find(browse.adapterId());
+        final ProtocolAdapterHandle handle = handleRegistry.find(browse.adapterId());
         if (handle == null) {
             // A race: the adapter was removed after the resource's own 404 check. The resource maps this to 404.
             browse.completion()
@@ -369,7 +368,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         // The capability check (400) is the resource's — it holds the factory. The manager checks the connection
         // (409) on the snapshot and forwards to the wrapper, which (on its own dispatch thread) rechecks it is
         // CONNECTED with no browse in flight, issues browse(filter), and completes the future from the result or
-        // the deadline (design §11.4).
+        // the deadline.
         final AdapterStatusSnapshot snapshot = handle.snapshot().get();
         if (snapshot == null || snapshot.machineState() != ProtocolAdapterWrapperState.CONNECTED) {
             browse.completion()
@@ -381,7 +380,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         handle.wrapperSender().tell(new ProtocolAdapterWrapperBrowseRequest(browse.filter(), browse.completion()));
     }
 
-    // ── health summary (design §8.3) ────────────────────────────────────────────────────────────────────────────
+    // ── health summary ────────────────────────────────────────────────────────────────────────────
 
     private void publishHealthSummary(final long nowMillis) {
         int total = 0;
@@ -389,7 +388,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         int error = 0;
         int stopped = 0;
         int transitioning = 0;
-        for (final ProtocolAdapterHandle handle : registry.all()) {
+        for (final ProtocolAdapterHandle handle : handleRegistry.all()) {
             total++;
             final AdapterStatusSnapshot snapshot = handle.snapshot().get();
             if (snapshot == null) {
@@ -410,7 +409,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
 
     private void forwardCommand(final @NotNull String adapterId, final @NotNull ProtocolAdapterWrapperCommand command) {
-        final ProtocolAdapterHandle handle = registry.find(adapterId);
+        final ProtocolAdapterHandle handle = handleRegistry.find(adapterId);
         if (handle == null) {
             log.warn(
                     "Dropping {} for unknown v2 adapter '{}'",

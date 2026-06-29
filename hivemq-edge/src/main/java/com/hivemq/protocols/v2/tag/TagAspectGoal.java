@@ -16,14 +16,14 @@
 package com.hivemq.protocols.v2.tag;
 
 /**
- * The goal of a single tag aspect — the three-condition rule (design §7.1). An aspect is driven if and only if
+ * The goal of a single tag aspect — the three-condition rule. An aspect is driven if and only if
  * <b>all three</b> conditions hold:
  * <ol>
  * <li>the adapter direction is activated — northbound for a read aspect, southbound for a write aspect;</li>
  * <li>the tag aspect is activated in the configuration ({@code read-activated} / {@code write-activated});</li>
  * <li>the tag is used — a configured mapping consumes (read) or produces to (write) it.</li>
  * </ol>
- * The user never sets {@code used} directly; it is derived from the configuration's mapping graph (design §9.2)
+ * The user never sets {@code used} directly; it is derived from the configuration's mapping graph
  * and flips as part of the tags-only gentlest transition. Deactivating an adapter direction returns that side's
  * aspects to {@code DEACTIVATED} without touching the other side — the direction switch is a master switch.
  *

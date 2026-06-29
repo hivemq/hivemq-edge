@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.fsm;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The reusable state-machine engine (design §4). It owns the current state and drives it two ways:
+ * The reusable state-machine engine. It owns the current state and drives it two ways:
  * <ul>
  * <li>{@link #onEvent(FSMEvent)} — table-driven. A protocol-adapter event or timer expiry runs
  * through the {@link FSMTransitionTable}; an event with no matching row runs the table's {@code unmatched} action
@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>{@link #onGoalChange(Runnable)} — the goal-command bypass. Activation, stop, tag-set updates, and retry
  * are goal mutations, valid in <em>every</em> state; they run a caller-supplied mutation (mutate the goal,
  * then {@code stepTowardGoal}) that never consults the table, so a goal command can never trigger a defensive
- * reset (§4).</li>
+ * reset.</li>
  * </ul>
  * {@code stepTowardGoal} lives in the machine's context and advances the current state one step toward the
  * goal through {@link #transitionTo(FSMState)}. All methods run on the actor's single dispatch

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * The immutable status snapshot the {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapper} publishes
- * after every message (design §6.6) — the only state that crosses the actor boundary outward. It is published by
+ * after every message — the only state that crosses the actor boundary outward. It is published by
  * the actor on its own dispatch thread into an {@code AtomicReference}; REST threads read it without locking, and
  * every read-side view is a pure function of it.
  *

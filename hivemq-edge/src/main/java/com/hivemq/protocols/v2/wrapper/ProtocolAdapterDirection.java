@@ -16,7 +16,7 @@
 package com.hivemq.protocols.v2.wrapper;
 
 /**
- * A communication direction an adapter goal can activate (design §6.1, §7.1): {@code NORTHBOUND} is the read
+ * A communication direction an adapter goal can activate: {@code NORTHBOUND} is the read
  * side (adapter → MQTT), {@code SOUTHBOUND} is the write side (MQTT → adapter), and {@code BOTH} addresses both
  * in one command. {@link ProtocolAdapterWrapperCommand.ActivateDirection} and
  * {@link ProtocolAdapterWrapperCommand.DeactivateDirection} carry one of these.
@@ -26,11 +26,11 @@ package com.hivemq.protocols.v2.wrapper;
  */
 public enum ProtocolAdapterDirection {
     /**
-     * The read side — adapter to MQTT. Gated by {@code northboundActivated} (design §7.1).
+     * The read side — adapter to MQTT. Gated by {@code northboundActivated}.
      */
     NORTHBOUND,
     /**
-     * The write side — MQTT to adapter. Gated by {@code southboundActivated} (design §7.1).
+     * The write side — MQTT to adapter. Gated by {@code southboundActivated}.
      */
     SOUTHBOUND,
     /**

@@ -26,9 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 /**
- * Stopping from every waiting state and the named path to {@code STOPPED} (design §6.2, §6.5; scenario S7 at unit
+ * Stopping from every waiting state and the named path to {@code STOPPED} (scenario S7 at unit
  * level). A goal change to "stopped" while still waiting for an acknowledgment records the intent and is acted on
- * when the acknowledgment lands. Also covers recovery out of {@code ERROR} (design §6.4): the goal cycle through
+ * when the acknowledgment lands. Also covers recovery out of {@code ERROR}: the goal cycle through
  * {@code STOPPED} re-arms a fresh start.
  */
 class ProtocolAdapterWrapperStopTest {
