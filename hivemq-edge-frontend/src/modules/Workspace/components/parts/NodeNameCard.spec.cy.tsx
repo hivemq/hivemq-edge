@@ -62,10 +62,12 @@ describe('NodeNameCard', () => {
   })
 
   it('should render the pulse agent properly', () => {
-    cy.mountWithProviders(<NodeNameCard type={NodeTypes.PULSE_NODE} name="Pulse Agent" description="the description" />)
+    cy.mountWithProviders(
+      <NodeNameCard type={NodeTypes.PULSE_NODE} name="HiveMQ Platform" description="the description" />
+    )
 
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.PULSE_NODE)
-    cy.getByTestId('node-name').should('have.text', 'Pulse Agent')
+    cy.getByTestId('node-name').should('have.text', 'HiveMQ Platform')
     cy.getByTestId('node-description').should('have.text', 'the description')
   })
 
