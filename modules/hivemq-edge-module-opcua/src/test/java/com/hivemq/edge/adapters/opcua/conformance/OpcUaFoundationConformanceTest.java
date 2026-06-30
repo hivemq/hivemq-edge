@@ -20,6 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
+import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
@@ -227,10 +230,37 @@ class OpcUaFoundationConformanceTest {
                 .as("the Double variable resolves the Double datatype")
                 .isEqualTo(NodeIds.Double.toParseableString());
 
+        // EDG-737 P4: the resolved OPC-UA datatype id round-trips into a v1 Schema — i.e. the foundation
+        // carries enough for the import layer to build a typed tag, not just an opaque datatype string.
+        assertThat(schemaFor(dataTypeByNodeId.get(INT32_NODE.nodeId())))
+                .as("the Int32 datatype maps to a v1 scalar schema")
+                .isInstanceOfSatisfying(
+                        ScalarSchema.class, schema -> assertThat(schema.type()).isEqualTo(ScalarType.LONG));
+        assertThat(schemaFor(dataTypeByNodeId.get(DOUBLE_NODE.nodeId())))
+                .as("the Double datatype maps to a v1 scalar schema")
+                .isInstanceOfSatisfying(
+                        ScalarSchema.class, schema -> assertThat(schema.type()).isEqualTo(ScalarType.DOUBLE));
+
         adapter.disconnect();
         adapter.stop();
         dispatcher.drainAll();
         assertThat(output.stopped).as("stopped() after stop()").isTrue();
+    }
+
+    /**
+     * Maps a resolved OPC-UA datatype id to the v1 {@link Schema} the import layer would build for it — the
+     * minimal proof (EDG-737 P4) that the resolved attribute string is sufficient to produce a typed tag.
+     */
+    private static @NotNull Schema schemaFor(final @NotNull String opcuaDataTypeId) {
+        final ScalarType type;
+        if (NodeIds.Int32.toParseableString().equals(opcuaDataTypeId)) {
+            type = ScalarType.LONG;
+        } else if (NodeIds.Double.toParseableString().equals(opcuaDataTypeId)) {
+            type = ScalarType.DOUBLE;
+        } else {
+            type = ScalarType.STRING;
+        }
+        return new ScalarSchema(type, null, null, null, null, false, true, false);
     }
 
     @Test
@@ -255,6 +285,34 @@ class OpcUaFoundationConformanceTest {
         assertThat(output.eventLog())
                 .as("a CONTROL command fired mid-browse preempts the queued next page")
                 .containsSubsequence("disconnected", "browseError");
+    }
+
+    @Test
+    void browseCancel_releasesTheOpenContinuationPoint() {
+        final DrainOnCallDispatcher dispatcher = new DrainOnCallDispatcher();
+        final RecordingOutput output = new RecordingOutput();
+        final OpcUaConformanceAdapter adapter = connectedAdapter(dispatcher, output);
+
+        // the first page of a paginated browse leaves a continuation point open on the server
+        adapter.browse(11, new BrowseFilter(OBJECTS_FOLDER), 1);
+        dispatcher.drainAll();
+        final BrowseContinuation continuation = output.lastContinuation();
+        assertThat(continuation).as("first page left a continuation").isNotNull();
+
+        // abandon the browse: browseCancel releases the continuation point (OPC-UA ReleaseContinuationPoints)
+        adapter.browseCancel(11);
+        dispatcher.drainAll();
+
+        // resuming the now-released point is rejected by the server -> browseError, never a real next page
+        adapter.browseNext(11, requireNonNull(continuation));
+        dispatcher.drainAll();
+        assertThat(output.eventLog())
+                .as("resuming the released continuation fails rather than returning a page")
+                .containsSubsequence("browsePage", "browseError");
+        assertThat(output.eventLog())
+                .as("the released point yields no second page — only the original first page")
+                .filteredOn("browsePage"::equals)
+                .hasSize(1);
     }
 
     /**

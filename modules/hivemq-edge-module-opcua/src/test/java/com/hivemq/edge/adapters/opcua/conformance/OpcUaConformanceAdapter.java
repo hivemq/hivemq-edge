@@ -91,6 +91,8 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     private @Nullable OpcUaClient client;
     private @Nullable OpcUaSubscription subscription;
     private long pageDelayMillis;
+    // the continuation point currently open on the server, if any — released on browseCancel (EDG-737 P2)
+    private @Nullable ByteString openContinuationPoint;
 
     OpcUaConformanceAdapter(
             final @NotNull ProtocolAdapterInput input,
@@ -317,6 +319,12 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
      * slow device, so the framework's interleaving between pages is observable.
      */
     private void emitPage(final int requestId, final @NotNull BrowseResult result) {
+        if (!result.getStatusCode().isGood()) {
+            // e.g. Bad_ContinuationPointInvalid after the point was released — a failed page, not an empty one.
+            openContinuationPoint = null;
+            output.browseError(requestId, "browse status " + result.getStatusCode());
+            return;
+        }
         if (pageDelayMillis > 0L) {
             try {
                 Thread.sleep(pageDelayMillis);
@@ -348,7 +356,28 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
                 (continuationPoint != null && continuationPoint.bytes() != null && continuationPoint.bytes().length > 0)
                         ? new BrowseContinuation(Base64.getEncoder().encodeToString(continuationPoint.bytes()))
                         : null;
+        // Track the open continuation point so browseCancel can release it; cleared once the walk drains it.
+        openContinuationPoint = continuation != null ? continuationPoint : null;
         output.browsePage(requestId, entries, continuation);
+    }
+
+    /**
+     * EDG-737 P2: release the server continuation point an abandoned paginated browse left open. {@code
+     * browseNext} with {@code releaseContinuationPoints = true} is the OPC-UA {@code ReleaseContinuationPoints}
+     * mechanism. Best-effort — an abandoned browse frees what it can and reports nothing.
+     */
+    @Override
+    protected void doBrowseCancel(final int requestId) {
+        final ByteString open = openContinuationPoint;
+        openContinuationPoint = null;
+        if (open == null) {
+            return; // no page is open — nothing to release
+        }
+        try {
+            requireNonNull(client).browseNextAsync(true, List.of(open)).get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (final @NotNull Exception ignored) {
+            // best-effort: a failed release on an already-gone browse is not surfaced
+        }
     }
 
     /**
