@@ -360,6 +360,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
                 case TIMED_OUT ->
                     ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
+                case FAILED ->
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseFailedError(adapterId));
             };
         }
         if (cause instanceof IllegalArgumentException) {

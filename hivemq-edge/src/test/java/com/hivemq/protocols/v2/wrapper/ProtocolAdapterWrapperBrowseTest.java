@@ -21,6 +21,9 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
+import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
@@ -34,17 +37,38 @@ import org.junit.jupiter.api.Test;
 class ProtocolAdapterWrapperBrowseTest {
 
     @Test
-    void browseWhenConnected_issuesBrowseAndCompletesFromTheResult() {
+    void browseWhenConnected_walksDiscoverThenResolveAndCompletesWithSelectableVariables() {
         final WrapperTestFixture fixture = connectedFixture();
         final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
 
-        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
-
+        // Browse below "root"; the engine issues browse(requestId=1, filter, 0) to the adapter.
+        fixture.send(
+                new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(WrapperTestSupport.node("root")), future));
         assertThat(fixture.commands()).contains("browse");
         assertThat(future).isNotDone();
 
-        fixture.output.browseResult(
-                List.of(new BrowseResultEntry(fixture.nodeFor("temperature"), NodeType.VALUE, true)));
+        // DISCOVER: one page carrying a selectable variable, no continuation ⇒ DISCOVER complete.
+        fixture.output.browsePage(
+                1,
+                List.of(new BrowseResultEntry(
+                        WrapperTestSupport.node("temperature"), NodeType.VALUE, true, "temperature")),
+                null);
+        fixture.drain();
+        // The engine has moved to RESOLVE and issued readNodeAttributes for the discovered variable.
+        assertThat(fixture.commands()).contains("readNodeAttributes");
+        assertThat(future).isNotDone();
+
+        // RESOLVE: the variable's attributes ⇒ the walk completes with the resolved selectable variable.
+        fixture.output.readAttributesResult(
+                1,
+                List.of(new ResolvedAttributes(
+                        WrapperTestSupport.node("temperature"),
+                        "double",
+                        AccessFlags.builder()
+                                .readable(AccessTriState.YES)
+                                .pollable(AccessTriState.YES)
+                                .build(),
+                        "")));
         fixture.drain();
 
         assertThat(future).isCompletedWithValueMatching(entries -> entries.size() == 1);

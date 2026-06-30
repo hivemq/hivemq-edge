@@ -17,8 +17,10 @@ package com.hivemq.protocols.v2.wrapper;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.fsm.FSMEvent;
@@ -121,11 +123,46 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
             @NotNull Node node, boolean success, @Nullable String reason) implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * Answers a browse request.
+     * One page of a paginated browse DISCOVER phase — fed to the wrapper's browse engine, not the adapter
+     * machine.
      *
-     * @param entries the discovered nodes.
+     * @param requestId    correlates the page with its browse.
+     * @param entries      the discovered nodes in this page.
+     * @param continuation an opaque token to fetch the next page, or {@code null} if this is the last page.
      */
-    record BrowseResultReceived(@NotNull List<BrowseResultEntry> entries) implements ProtocolAdapterWrapperEvent {
+    record BrowsePageReceived(
+            int requestId,
+            @NotNull List<BrowseResultEntry> entries,
+            @Nullable BrowseContinuation continuation) implements ProtocolAdapterWrapperEvent {
+        @Override
+        public @NotNull MailboxMessagePriority priority() {
+            return MailboxMessagePriority.DATA;
+        }
+    }
+
+    /**
+     * The resolved attributes of a RESOLVE batch — fed to the wrapper's browse engine, not the adapter
+     * machine.
+     *
+     * @param requestId  correlates the batch with its browse.
+     * @param attributes the resolved attributes, one per requested node.
+     */
+    record AttributesResolved(int requestId, @NotNull List<ResolvedAttributes> attributes)
+            implements ProtocolAdapterWrapperEvent {
+        @Override
+        public @NotNull MailboxMessagePriority priority() {
+            return MailboxMessagePriority.DATA;
+        }
+    }
+
+    /**
+     * A browse DISCOVER page or RESOLVE batch failed — fed to the wrapper's browse engine, not the adapter
+     * machine.
+     *
+     * @param requestId the browse/resolve that failed.
+     * @param reason    a human-readable description of the failure.
+     */
+    record BrowseFailed(int requestId, @NotNull String reason) implements ProtocolAdapterWrapperEvent {
         @Override
         public @NotNull MailboxMessagePriority priority() {
             return MailboxMessagePriority.DATA;

@@ -454,8 +454,8 @@ class ProtocolAdaptersResourceImplTest {
         final ProtocolAdapterFactoryRegistry factories = browseCapableFactories();
         when(configExtractor.getAdapterByAdapterId("a")).thenReturn(Optional.of(entity("a", "chaos")));
         register("a", snapshot("a", ProtocolAdapterWrapperState.CONNECTED, List.of(), true, false, null));
-        manager.browseHandler = request ->
-                request.completion().complete(List.of(new BrowseResultEntry(new TestNode(), NodeType.VALUE, true)));
+        manager.browseHandler = request -> request.completion()
+                .complete(List.of(new BrowseResultEntry(new TestNode(), NodeType.VALUE, true, "node")));
 
         final Response response = resource(factories).browseAdapter("a", new BrowseCommand());
         assertThat(response.getStatus()).isEqualTo(200);
