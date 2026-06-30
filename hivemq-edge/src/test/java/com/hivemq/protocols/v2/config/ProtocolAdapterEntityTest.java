@@ -100,6 +100,47 @@ class ProtocolAdapterEntityTest {
         assertThat(validate(entity)).isEmpty();
     }
 
+    @Test
+    void northboundMappingToTagWithNoReadTransport_isRejected() {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("temperature", false, false)); // neither pollable nor subscribable
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("temperature", "plant/a/temperature"));
+
+        assertThat(messages(entity))
+                .anyMatch(message ->
+                        message.contains("temperature") && message.contains("neither pollable nor subscribable"));
+    }
+
+    @Test
+    void northboundMappingToSubscribableTag_isAccepted() {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("temperature", false, true));
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("temperature", "plant/a/temperature"));
+
+        assertThat(validate(entity)).isEmpty();
+    }
+
+    @Test
+    void northboundMappingToPollableOnlyTag_isAccepted() {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("temperature", true, false));
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("temperature", "plant/a/temperature"));
+
+        assertThat(validate(entity)).isEmpty();
+    }
+
+    @Test
+    void southboundOnlyMappingToTagWithNoReadTransport_isAccepted() {
+        // A write-only tag legitimately declares neither pollable nor subscribable — those flags describe read
+        // transport. The read-transport rule must apply only to read-used (northbound-mapped) tags, never to a tag
+        // that is only produced to by a southbound mapping.
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("setpoint", false, false));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity("plant/a/setpoint", "setpoint"));
+
+        assertThat(validate(entity)).isEmpty();
+    }
+
     // S32: the watchdog must be strictly greater than the PA command timeout.
     @Test
     void watchdogNotGreaterThanCommandTimeout_isRejected() {
@@ -206,13 +247,18 @@ class ProtocolAdapterEntityTest {
     }
 
     private static @NotNull TagEntity tag(final @NotNull String name) {
+        return tag(name, true, false);
+    }
+
+    private static @NotNull TagEntity tag(
+            final @NotNull String name, final boolean pollable, final boolean subscribable) {
         return new TagEntity(
                 name,
                 "{\"id\":\"" + name + "\"}",
                 true,
                 true,
-                true,
-                false,
+                pollable,
+                subscribable,
                 5_000,
                 new AccessFlagsEntity(AccessTriState.YES, AccessTriState.YES, AccessTriState.YES, AccessTriState.NO));
     }

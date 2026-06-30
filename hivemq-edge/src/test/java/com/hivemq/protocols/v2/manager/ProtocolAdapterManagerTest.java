@@ -197,6 +197,91 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
+    void fullRecreate_whenStoppingWrapperErrors_closesOldContainerAndCreatesReplacement() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "a")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        // A connection-critical change forces a full recreate: the running wrapper is told to stop and a pending
+        // removal records the replacement.
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "b")).build())));
+        assertThat(handleRegistry.find("a")).isNull();
+
+        // The wrapper fails to stop cleanly and errors instead of reporting stopped(): the manager must still tear
+        // the old container down and build the replacement, so a recoverable reload is never stranded.
+        fireWrapperError("a", "stop failed");
+
+        assertThat(wrapperFactory.closedAdapterIds()).containsExactly("a");
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void removal_whenStoppingWrapperErrors_closesOldContainerWithoutRecreate() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of())); // pure removal
+        assertThat(handleRegistry.find("a")).isNull();
+
+        // The wrapper errors instead of reporting stopped(): the old container is still closed and, because this was a
+        // pure removal, no replacement is created.
+        fireWrapperError("a", "stop failed");
+
+        assertThat(wrapperFactory.closedAdapterIds()).containsExactly("a");
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+        assertThat(handleRegistry.find("a")).isNull();
+    }
+
+    @Test
+    void secondReloadWhilePendingRemoval_thenError_appliesTheNewestRecreateTarget() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "a")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        // First full recreate records a pending removal with host=b as the recreate target.
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "b")).build())));
+        // A second reload arrives while the removal is still pending; it folds the newest target (host=c, SB off).
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .adapterConfiguration(Map.of("host", "c"))
+                .southboundActivated(false)
+                .build())));
+
+        // The stopping wrapper errors: the replacement is built from the newest folded target, not the stale one.
+        fireWrapperError("a", "stop failed");
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+        assertThat(wrapperFactory.commands("a"))
+                .last()
+                .isInstanceOfSatisfying(ProtocolAdapterWrapperCommand.ApplyActivation.class, activation -> assertThat(
+                                activation.adapterDirections().southboundActivated())
+                        .isFalse());
+    }
+
+    @Test
+    void shutdownRequested_whenAnAdapterErrorsWhileStopping_stillCompletesTheLatch() {
+        send(new ConfigurationChanged(List.of(adapter("a").build(), adapter("b").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        wrapperFactory.setMachineState("b", ProtocolAdapterWrapperState.CONNECTED);
+
+        final CountDownLatch done = new CountDownLatch(1);
+        send(new ProtocolAdapterManagerMessage.ShutdownRequested(done));
+
+        fireWrapperStopped("a");
+        assertThat(done.getCount()).isEqualTo(1); // still waiting for "b"
+
+        // "b" errors while stopping instead of reporting stopped(): it must still count toward the drain so a
+        // subsystem shutdown never blocks on an adapter that failed to stop cleanly.
+        fireWrapperError("b", "stop failed");
+
+        assertThat(done.getCount()).isZero();
+        assertThat(wrapperFactory.closedAdapterIds()).containsExactlyInAnyOrder("a", "b");
+    }
+
+    @Test
     void recovery_deactivateThenActivate_areForwardedAsLiveGoalCommands() {
         send(new ConfigurationChanged(List.of(adapter("a").build())));
 

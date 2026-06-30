@@ -263,21 +263,38 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         "adapter [" + adapterId + "] declares tag name [" + duplicate + "] more than once",
                         null)));
 
-        final Set<String> declaredTagNames =
-                tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
+        final Map<String, TagEntity> tagNameToEntityMap = new HashMap<>();
+        tags.forEach(tagEntity -> tagNameToEntityMap.putIfAbsent(tagEntity.getName(), tagEntity));
         northboundMappings.forEach(mapping -> mapping.validate(validationEvents));
         northboundMappings.forEach(mapping -> EntityValidatable.notMatch(
                 validationEvents,
-                () -> declaredTagNames.contains(mapping.getTagName()),
+                () -> tagNameToEntityMap.containsKey(mapping.getTagName()),
                 () -> "northbound mapping references tag name ["
                         + mapping.getTagName()
                         + "] which is not declared in adapter ["
                         + adapterId
                         + "]"));
+        // A tag consumed by a northbound mapping is read-used: the runtime will drive its read aspect and ask the
+        // adapter to read it. A tag that declares neither pollable nor subscribable has no read transport, so reading
+        // it is impossible; reject it at load with a clear message instead of letting the runtime silently treat it
+        // as polled and issue polls the node never agreed to.
+        northboundMappings.forEach(mapping -> {
+            final TagEntity tagEntity = tagNameToEntityMap.get(mapping.getTagName());
+            if (tagEntity != null) {
+                EntityValidatable.notMatch(
+                        validationEvents,
+                        () -> tagEntity.isPollable() || tagEntity.isSubscribable(),
+                        () -> "northbound mapping references tag ["
+                                + mapping.getTagName()
+                                + "] of adapter ["
+                                + adapterId
+                                + "] which is neither pollable nor subscribable, so it has no read transport");
+            }
+        });
         southboundMappings.forEach(mapping -> mapping.validate(validationEvents));
         southboundMappings.forEach(mapping -> EntityValidatable.notMatch(
                 validationEvents,
-                () -> declaredTagNames.contains(mapping.getTagName()),
+                () -> tagNameToEntityMap.containsKey(mapping.getTagName()),
                 () -> "southbound mapping references tag name ["
                         + mapping.getTagName()
                         + "] which is not declared in adapter ["

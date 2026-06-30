@@ -386,6 +386,22 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     }
 
     private void onWrapperError(final @NotNull String adapterId, final @NotNull String reason) {
+        final PendingRemoval pending = pendingRemovalMap.remove(adapterId);
+        if (pending != null) {
+            // The adapter was being discarded (a removal or a full recreate) and failed to stop cleanly — it entered
+            // ERROR instead of reporting stopped(). Treat the error as the terminal acknowledgment of the stop, exactly
+            // as a clean stopped() would have been: release the stopping container's resources and, for a full
+            // recreate, build the replacement. Without this the adapter is stranded — its container is never closed,
+            // its REST handle is already gone, and any pending recreate is never built — until the process restarts.
+            log.warn("v2 adapter '{}' errored while stopping; tearing it down: {}", adapterId, reason);
+            pending.stopping().close();
+            if (pending.recreateAs() != null) {
+                createAdapter(pending.recreateAs());
+            }
+            // A subsystem shutdown may be waiting for this adapter to wind down.
+            completeShutdownIfDone();
+            return;
+        }
         // The wrapper's snapshot already shows ERROR. The manager performs NO automatic recreate
         // (manual recovery in this project): the user deactivates and re-activates, or replaces the
         // configuration.
