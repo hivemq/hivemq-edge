@@ -103,4 +103,30 @@ class TagGroupsTest {
         Assertions.assertThat(groups)
                 .anyMatch(g -> !g.isReadable() && g.getTags().contains(write));
     }
+
+    @Test
+    void shouldRejectReadWriteMixedWithReadOnlyAtSameAddress() {
+        final CipTag readWrite = tag("rw", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.OVERWRITE_ZERO);
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(readWrite, readOnly)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("READ_WRITE");
+    }
+
+    @Test
+    void shouldAllowReadOnlyAndWriteOnlyAtSameAddress() throws OdvaException {
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag writeOnly = tag("wo", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.OVERWRITE_ZERO);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(readOnly, writeOnly)))
+                .isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
+    }
+
+    private static CipTag tag(final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
+        return new CipTag(name, name, new CipTagDefinition(address, 1, CipDataType.INT, 0d, null, 0, null, rw, wm));
+    }
 }

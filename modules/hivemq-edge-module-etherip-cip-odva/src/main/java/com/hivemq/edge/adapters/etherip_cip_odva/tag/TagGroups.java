@@ -20,6 +20,7 @@ import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,7 +62,34 @@ public class TagGroups {
             registerTag(cipTag);
         }
 
+        validateDirectionConsistency();
+
         return true;
+    }
+
+    /**
+     * Per address, either every tag is {@link CipReadWrite#READ_WRITE} or none is. Mixing READ_WRITE with a
+     * READ_ONLY or WRITE_ONLY tag at the same address is rejected as confusing; READ_ONLY together with
+     * WRITE_ONLY at one address is allowed.
+     */
+    private void validateDirectionConsistency() throws OdvaException {
+        final Map<String, Boolean> addressHasReadWrite = new HashMap<>();
+        final Map<String, Boolean> addressHasOnly = new HashMap<>();
+        for (final GroupKey key : tagAddressToTagGroup.keySet()) {
+            if (key.readWrite() == CipReadWrite.READ_WRITE) {
+                addressHasReadWrite.put(key.address(), Boolean.TRUE);
+            } else {
+                addressHasOnly.put(key.address(), Boolean.TRUE);
+            }
+        }
+        for (final String address : addressHasReadWrite.keySet()) {
+            if (addressHasOnly.containsKey(address)) {
+                throw new OdvaException(
+                        "Address "
+                                + address
+                                + " mixes READ_WRITE with READ_ONLY/WRITE_ONLY tags. Per address, either all tags are READ_WRITE or none is.");
+            }
+        }
     }
 
     private boolean tagsAlreadyRegistered() {
