@@ -19,10 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -242,33 +244,33 @@ class ChaosProtocolAdapterTest {
     @Test
     void browseImmediate_reportsTheResultWithinTheCall() {
         final RecordingOutput output = new RecordingOutput();
-        final List<BrowseResultEntry> entries = List.of(new BrowseResultEntry(NODE_A, NodeType.VALUE, true));
+        final List<BrowseResultEntry> entries = List.of(new BrowseResultEntry(NODE_A, NodeType.VALUE, true, "a"));
         final ChaosProtocolAdapter adapter = new ChaosProtocolAdapter(
                 "a",
                 output,
                 ChaosScript.builder().browse(NodeMatcher.all(), entries, 0).build());
 
-        adapter.browse(new BrowseFilter(NODE_A));
+        adapter.browse(1, new BrowseFilter(NODE_A), 0);
 
-        assertThat(output.events).containsExactly("browseResult:1");
+        assertThat(output.events).containsExactly("browsePage:1");
     }
 
     @Test
     void browseWithDuration_reportsTheResultAfterTheGivenTicks() {
         final RecordingOutput output = new RecordingOutput();
-        final List<BrowseResultEntry> entries = List.of(new BrowseResultEntry(NODE_A, NodeType.VALUE, true));
+        final List<BrowseResultEntry> entries = List.of(new BrowseResultEntry(NODE_A, NodeType.VALUE, true, "a"));
         final ChaosProtocolAdapter adapter = new ChaosProtocolAdapter(
                 "a",
                 output,
                 ChaosScript.builder().browse(NodeMatcher.all(), entries, 3).build());
 
-        adapter.browse(new BrowseFilter(NODE_A));
+        adapter.browse(1, new BrowseFilter(NODE_A), 0);
         adapter.onTick(); // tick 1
         adapter.onTick(); // tick 2
         assertThat(output.events).isEmpty();
 
         adapter.onTick(); // tick 3 — the browse completes
-        assertThat(output.events).containsExactly("browseResult:1");
+        assertThat(output.events).containsExactly("browsePage:1");
     }
 
     @Test
@@ -353,8 +355,21 @@ class ChaosProtocolAdapterTest {
         }
 
         @Override
-        public void browseResult(final @NotNull List<BrowseResultEntry> entries) {
-            events.add("browseResult:" + entries.size());
+        public void browsePage(
+                final int requestId,
+                final @NotNull List<BrowseResultEntry> entries,
+                final @Nullable BrowseContinuation continuation) {
+            events.add("browsePage:" + entries.size());
+        }
+
+        @Override
+        public void readAttributesResult(final int requestId, final @NotNull List<ResolvedAttributes> attributes) {
+            events.add("readAttributesResult:" + attributes.size());
+        }
+
+        @Override
+        public void browseError(final int requestId, final @NotNull String reason) {
+            events.add("browseError:" + reason);
         }
     }
 }
