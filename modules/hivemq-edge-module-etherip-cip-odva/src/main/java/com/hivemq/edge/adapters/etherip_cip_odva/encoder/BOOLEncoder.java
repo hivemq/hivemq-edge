@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.etherip_cip_odva.encoder;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
-import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaEncodeException;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagValueProducer;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -42,23 +41,23 @@ class BOOLEncoder extends BaseStaticCipTagEncoder<Boolean> {
 
     @Override
     public void encodeMultiple(
-            final @NotNull CipTag cipTag, final @NotNull ByteBuffer buf, final @NotNull List<Boolean> values)
-            throws OdvaEncodeException {
+            final @NotNull CipTag cipTag, final @NotNull ByteBuffer buf, final @NotNull List<Boolean> values) {
 
-        // FIXME: Implement
-        throw new OdvaEncodeException(cipTag, "Not implemented");
+        // Pack the flags into consecutive bits, mirroring the decoder: element i lives in bit (i % 8) of the
+        // (i / 8)-th byte from the tag's start position.
+        final int start = buf.position();
+        for (int i = 0; i < values.size(); i++) {
+            setBit(start + (i / 8), buf, i % 8, values.get(i));
+        }
     }
 
-    private void setBit(int position, ByteBuffer buf, Integer batchBitIndex, Boolean value) {
-        // FIXME: Check bit index?
-        if (Boolean.TRUE.equals(value)) {
-            // FIXME: limit bit index to 0 to 7?
-            buf.put(position, (byte) (buf.get(position) | (1 << batchBitIndex)));
-        }
-        //        else {
-        // NOOP - already 0
-        //            buf.put(position, (byte)(buf.get(position) & (0 << batchBitIndex)));
-        //       }
+    private static void setBit(int position, ByteBuffer buf, int bitIndex, Boolean value) {
+        // Set or clear the bit. Clearing matters for read-modify-write, where the byte is pre-filled with the
+        // current attribute value and a false must actually clear an already-set bit.
+        final byte current = buf.get(position);
+        final byte updated =
+                Boolean.TRUE.equals(value) ? (byte) (current | (1 << bitIndex)) : (byte) (current & ~(1 << bitIndex));
+        buf.put(position, updated);
     }
 
     @Override
@@ -76,9 +75,8 @@ class BOOLEncoder extends BaseStaticCipTagEncoder<Boolean> {
     public int getRequestSizeMultiple(
             final @NotNull CipTag cipTag, final @NotNull CipTagValueProducer<List<Boolean>> valueProducer) {
 
-        CipTagDefinition definition = cipTag.getDefinition();
-        // FIXME: Do we want to take into account BitIndex?
-        Integer batchBitIndex = definition.getBatchBitIndex() != null ? definition.getBatchBitIndex() : 0;
-        return ((definition.getNumberOfElements() + batchBitIndex) % 8) + 1;
+        // Number of bytes needed to hold numberOfElements consecutive bits (ceiling division).
+        final int numberOfElements = cipTag.getDefinition().getNumberOfElements();
+        return (numberOfElements + 7) / 8;
     }
 }
