@@ -15,6 +15,8 @@
  */
 package com.hivemq.bridge.mqtt;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.BRIDGE_MARKER_PROPERTY;
+import static com.hivemq.edge.HiveMQEdgeConstants.BRIDGE_MARKER_PROPERTY_VALUE;
 import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY;
 import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -148,6 +150,7 @@ public class BridgeMqttClient {
                             .add(
                                     CLIENT_AGENT_PROPERTY,
                                     String.format(CLIENT_AGENT_PROPERTY_VALUE, systemInformation.getHiveMQVersion()))
+                            .add(BRIDGE_MARKER_PROPERTY, BRIDGE_MARKER_PROPERTY_VALUE)
                             .build())
                     .sessionExpiryInterval(bridge.getSessionExpiry())
                     .send()
