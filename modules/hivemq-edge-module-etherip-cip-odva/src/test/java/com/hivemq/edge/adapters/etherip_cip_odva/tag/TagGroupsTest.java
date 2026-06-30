@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
@@ -65,5 +67,40 @@ class TagGroupsTest {
                 .isEqualTo(
                         LogicalAddressPathFactory.create(single.getDefinition().getAddress()));
         Assertions.assertThat(singleGroup.getTags()).containsExactly(single);
+    }
+
+    @Test
+    void shouldSeparateTagsAtSameAddressByDirection() throws OdvaException {
+        // given: same CIP address, different read/write direction
+        final CipTag read = new CipTag(
+                "read",
+                "read",
+                new CipTagDefinition("@1/2/3", 1, CipDataType.INT, 0d, null, 0, null, CipReadWrite.READ_ONLY, null));
+        final CipTag write = new CipTag(
+                "write",
+                "write",
+                new CipTagDefinition(
+                        "@1/2/3",
+                        1,
+                        CipDataType.INT,
+                        0d,
+                        null,
+                        0,
+                        null,
+                        CipReadWrite.WRITE_ONLY,
+                        CipWriteMode.OVERWRITE_ZERO));
+
+        // when
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(read, write)))
+                .isTrue();
+
+        // then: two groups despite the shared address, one readable, one not
+        final Collection<TagGroup> groups = tagGroups.getTagGroups();
+        Assertions.assertThat(groups).hasSize(2);
+        Assertions.assertThat(groups)
+                .anyMatch(g -> g.isReadable() && g.getTags().contains(read));
+        Assertions.assertThat(groups)
+                .anyMatch(g -> !g.isReadable() && g.getTags().contains(write));
     }
 }
