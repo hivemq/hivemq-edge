@@ -19,6 +19,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Stopwatch;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -42,13 +43,17 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValues;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValuesFactory;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.decoder.CipTagDecoders;
+import com.hivemq.edge.adapters.etherip_cip_odva.encoder.CipTagEncoders;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.ExceptionProcessor;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaDecodeException;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagDecodingAttributeProtocol;
+import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagEncodingAttributeProtocol;
+import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagValueProducer;
 import com.hivemq.edge.adapters.etherip_cip_odva.hysteresis.Hysteresis;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroup;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroups;
@@ -60,6 +65,7 @@ import etherip.data.CipException;
 import etherip.protocol.Encapsulation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -88,6 +94,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     private final @NotNull AtomicReference<DataPointStore> lastSamples = new AtomicReference<>(new DataPointStore());
     private final @NotNull StatsTracker statsTracker;
     private final @NotNull CipTagDecoders cipTagsDecoders = new CipTagDecoders();
+    private final @NotNull CipTagEncoders cipTagsEncoders = new CipTagEncoders();
     private final @NotNull Hysteresis hysteresis = new Hysteresis();
     private final @NotNull List<CipTag> tags;
     private final @NotNull TagGroups tagGroups = new TagGroups();
@@ -446,17 +453,113 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
     @Override
     public void write(@NotNull final WritingInput writingInput, @NotNull final WritingOutput writingOutput) {
-        CipWritePayload cipWritePayload = (CipWritePayload) writingInput.getWritingPayload();
+        final String tagName = writingInput.getWritingContext().getTagName();
+        final CipWritePayload cipWritePayload = (CipWritePayload) writingInput.getWritingPayload();
+        final JsonNode value = cipWritePayload.getValue();
 
-        LOG.info(
-                "{}. Received write tag={}, payload={}",
-                adapterId,
-                writingInput.getWritingContext().getTagName(),
-                cipWritePayload.getValue());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adapter '{}'. Received write tag={}, payload={}", adapterId, tagName, value);
+        }
 
-        // write to happen here
+        final CipTag tag = tags.stream()
+                .filter(t -> t.getName().equals(tagName))
+                .findFirst()
+                .orElse(null);
+        if (tag == null) {
+            writingOutput.fail("Tag '" + tagName + "' not found for write.");
+            return;
+        }
+        if (!tag.isWritable()) {
+            writingOutput.fail("Tag '" + tagName + "' is READ_ONLY and cannot be written.");
+            return;
+        }
 
-        writingOutput.finish();
+        // READ_MODIFY_WRITE is added in a later phase; only OVERWRITE_ZERO is wired up so far.
+        if (tag.getWriteMode() != CipWriteMode.OVERWRITE_ZERO) {
+            writingOutput.fail("Write mode "
+                    + tag.getWriteMode()
+                    + " is not yet supported for tag '"
+                    + tagName
+                    + "'; only OVERWRITE_ZERO is currently implemented.");
+            return;
+        }
+
+        final TagGroup tagGroup = tagGroups.getTagGroups().stream()
+                .filter(g -> g.getTags().contains(tag) || Objects.equals(g.getComposite(), tag))
+                .findFirst()
+                .orElse(null);
+        if (tagGroup == null) {
+            writingOutput.fail("No tag group found for tag '" + tagName + "'.");
+            return;
+        }
+
+        final EthernetIPWithODVA client = etherNetIP.get();
+        if (isNotConnected(client)) {
+            writingOutput.fail("Adapter '" + adapterId + "' is not connected; cannot write tag '" + tagName + "'.");
+            return;
+        }
+
+        // OVERWRITE_ZERO: build the whole attribute from the supplied value(s); unsupplied bytes are zeroed.
+        // For a composite tag the payload is a JSON object keyed by sibling tag name; for a scalar tag the
+        // payload is the value itself.
+        final List<CipTag> tagsToWrite = tag.isComposite() ? tagGroup.getTags() : List.of(tag);
+        final CipTagValueProducer<Object> valueProducer = t -> {
+            final JsonNode node = tag.isComposite() ? value.get(t.getName()) : value;
+            if (node == null) {
+                throw new IllegalArgumentException("No value supplied for tag '" + t.getName() + "'.");
+            }
+            return jsonToCipValue(t, node);
+        };
+
+        try {
+            final CipTagEncodingAttributeProtocol encodingProtocol = new CipTagEncodingAttributeProtocol(
+                    cipTagsEncoders, tagsToWrite, adapterConfig.getByteOrder().toNioByteOrder(), valueProducer);
+            requireNonNull(client).setAttributeSingle(tagGroup.getLogicalAddressPath(), encodingProtocol);
+            writingOutput.finish();
+        } catch (final Exception e) {
+            LOG.warn(
+                    "Adapter '{}'. Failed to write tag '{}': {}",
+                    adapterId,
+                    tagName,
+                    ExceptionUtils.extractMessageWithCause(e));
+            writingOutput.fail(e, "Failed to write tag '" + tagName + "'.");
+        }
+    }
+
+    /**
+     * Convert a JSON value into the Java type the encoder for this tag's {@link CipDataType} expects:
+     * {@link Boolean} for BOOL, {@link Number} for the integer/real types, {@link String} for the string
+     * types. When the tag reads more than one element the JSON value must be an array and is converted to a
+     * {@link List} of the corresponding scalar type.
+     */
+    @VisibleForTesting
+    static @NotNull Object jsonToCipValue(final @NotNull CipTag tag, final @NotNull JsonNode node) {
+        final CipDataType dataType = tag.getDefinition().getDataType();
+        if (tag.getDefinition().getNumberOfElements() > 1) {
+            if (!node.isArray()) {
+                throw new IllegalArgumentException(
+                        "Tag '" + tag.getName() + "' expects an array of " + dataType + " values.");
+            }
+            final List<Object> values = new ArrayList<>(node.size());
+            for (final JsonNode element : node) {
+                values.add(jsonToScalar(tag, dataType, element));
+            }
+            return values;
+        }
+        return jsonToScalar(tag, dataType, node);
+    }
+
+    private static @NotNull Object jsonToScalar(
+            final @NotNull CipTag tag, final @NotNull CipDataType dataType, final @NotNull JsonNode node) {
+        return switch (dataType) {
+            case BOOL -> node.asBoolean();
+            case SINT, USINT, INT, UINT, DINT, UDINT, LINT, ULINT -> node.asLong();
+            case REAL, LREAL -> node.asDouble();
+            case STRING, SSTRING -> node.asText();
+            case COMPOSITE ->
+                throw new IllegalArgumentException(
+                        "Tag '" + tag.getName() + "' has data type COMPOSITE and cannot be written as a scalar value.");
+        };
     }
 
     @Override
