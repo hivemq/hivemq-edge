@@ -30,6 +30,14 @@ public interface HiveMQEdgeConstants {
     String VERSION_PROPERTY = "version";
     String CLIENT_AGENT_PROPERTY = "client-agent";
 
+    // -- CONNECT user property marking a bridge client to the broker;
+    // the enterprise broker assigns a larger receive buffer to connections with this user property
+    // and will not shrink this receive buffer when entering overload protection
+    // currently the broker only checks whether the property exists, it doesn't read the value
+    // See BCD-515 and EDG-759
+    String BRIDGE_MARKER_PROPERTY = "hmq-bridge";
+    String BRIDGE_MARKER_PROPERTY_VALUE = "edge";
+
     int MAX_ID_LEN = 500;
     int MAX_NAME_LEN = 256;
     String NAME_REGEX =
