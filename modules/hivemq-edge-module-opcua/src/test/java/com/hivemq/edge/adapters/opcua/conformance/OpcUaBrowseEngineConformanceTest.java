@@ -28,6 +28,9 @@ import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.protocols.v2.browse.BrowseOutcome;
+import com.hivemq.protocols.v2.browse.BrowsedNode;
+import com.hivemq.protocols.v2.browse.ProtocolAdapterBrowseEngine;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,10 +42,11 @@ import util.EmbeddedOpcUaServerExtension;
 import util.TestNamespace;
 
 /**
- * EDG-737 — drives the {@link ReferenceBrowseEngine} (the traversal policy the framework's PAW will own)
- * through its DISCOVER → RESOLVE phases against a <b>large, deep, branching</b> embedded OPC-UA address space,
- * to prove the {@code browse}/{@code browseNext}/{@code readNodeAttributes} contract is sufficient to assemble
- * a complete, deduped, typed result — the real end-to-end check that the SDK v2 browse changes are sound.
+ * EDG-737 — drives the shared {@link ProtocolAdapterBrowseEngine} (the SDK traversal engine the framework's PAW
+ * also runs in production) through its DISCOVER → RESOLVE phases against a <b>large, deep, branching</b>
+ * embedded OPC-UA address space, to prove the {@code browse}/{@code browseNext}/{@code readNodeAttributes}
+ * contract is sufficient to assemble a complete, deduped, typed result — the real end-to-end check that the
+ * SDK v2 browse changes are sound.
  * <p>
  * The tree (built by {@link TestNamespace#growLargeTree}) deliberately seeds a variable shared by two folders
  * and a reference cycle. Size is parameterized by system properties ({@code edg737.browse.*}) — small by
@@ -66,13 +70,13 @@ class OpcUaBrowseEngineConformanceTest {
                 requireNonNull(server.getTestNamespace()).growLargeTree(breadth, depth, varsPerFolder);
 
         final DrainOnCallDispatcher dispatcher = new DrainOnCallDispatcher();
-        final ReferenceBrowseEngine engine = new ReferenceBrowseEngine();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
         final EngineOutput output = new EngineOutput(engine);
         final OpcUaConformanceAdapter adapter = connectedAdapter(dispatcher, output);
 
         // walk the model through DISCOVER -> RESOLVE; with the synchronous dispatcher one drain runs it all
-        final ReferenceBrowseEngine.BrowseOutcome outcome =
-                engine.start(adapter, new ConformanceNode(tree.rootNodeId()), maxReferences, 0);
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode(tree.rootNodeId()), maxReferences, 0, outcome);
         dispatcher.drainAll();
 
         assertThat(outcome.isDone())
@@ -82,7 +86,7 @@ class OpcUaBrowseEngineConformanceTest {
                 .as("the walk succeeded: %s", outcome.failure())
                 .isTrue();
 
-        final List<ReferenceBrowseEngine.BrowsedTag> tags = outcome.result();
+        final List<BrowsedNode> tags = outcome.result();
         final List<String> resolvedIds =
                 tags.stream().map(tag -> tag.attributes().node().nodeId()).toList();
         final List<String> expectedIds =
@@ -117,7 +121,7 @@ class OpcUaBrowseEngineConformanceTest {
                 .isEqualTo(expectedPath.get(tag.attributes().node().nodeId())));
 
         // default tag names derived from the path: non-empty, unique, and the expected value for the shared node
-        assertThat(tags.stream().map(ReferenceBrowseEngine.BrowsedTag::tagName).toList())
+        assertThat(tags.stream().map(BrowsedNode::tagName).toList())
                 .as("every variable got a non-empty, unique default tag name")
                 .doesNotContain("")
                 .doesNotHaveDuplicates();
@@ -129,21 +133,21 @@ class OpcUaBrowseEngineConformanceTest {
                         .isEqualTo("shared"));
 
         // pagination + termination: each folder browsed exactly once, small maxReferences forced continuations
-        assertThat(engine.browseCommands)
+        assertThat(engine.browseCommands())
                 .as("each folder browsed exactly once — the cycle caused no re-walk")
                 .isEqualTo(tree.folderCount());
-        assertThat(engine.browseNextCommands)
+        assertThat(engine.browseNextCommands())
                 .as("maxReferences=%d forced continuation-point pagination", maxReferences)
                 .isGreaterThan(0);
         assertThat(output.browsePages)
                 .as("exactly one page event per browse and per browseNext")
-                .isEqualTo(engine.browseCommands + engine.browseNextCommands);
+                .isEqualTo(engine.browseCommands() + engine.browseNextCommands());
 
         // RESOLVE batching: variables attribute-read in batches of RESOLVE_BATCH
-        final int expectedBatches =
-                (expectedIds.size() + ReferenceBrowseEngine.RESOLVE_BATCH - 1) / ReferenceBrowseEngine.RESOLVE_BATCH;
-        assertThat(engine.resolveBatches)
-                .as("attribute reads batched at %d", ReferenceBrowseEngine.RESOLVE_BATCH)
+        final int expectedBatches = (expectedIds.size() + ProtocolAdapterBrowseEngine.RESOLVE_BATCH - 1)
+                / ProtocolAdapterBrowseEngine.RESOLVE_BATCH;
+        assertThat(engine.resolveBatches())
+                .as("attribute reads batched at %d", ProtocolAdapterBrowseEngine.RESOLVE_BATCH)
                 .isEqualTo(expectedBatches);
 
         adapter.disconnect();
@@ -166,18 +170,18 @@ class OpcUaBrowseEngineConformanceTest {
     }
 
     /**
-     * A {@link ProtocolAdapterOutput} that routes browse events into the {@link ReferenceBrowseEngine} (as the
-     * PAW will) and tracks the lifecycle acks the harness asserts. All callbacks run on the single dispatch
-     * thread, so no synchronization is needed.
+     * A {@link ProtocolAdapterOutput} that routes browse events into the {@link ProtocolAdapterBrowseEngine} (as
+     * the PAW does in production) and tracks the lifecycle acks the harness asserts. All callbacks run on the
+     * single dispatch thread, so no synchronization is needed.
      */
     private static final class EngineOutput implements ProtocolAdapterOutput {
-        private final @NotNull ReferenceBrowseEngine engine;
+        private final @NotNull ProtocolAdapterBrowseEngine engine;
         private boolean started;
         private boolean connected;
         private boolean stopped;
         private int browsePages;
 
-        private EngineOutput(final @NotNull ReferenceBrowseEngine engine) {
+        private EngineOutput(final @NotNull ProtocolAdapterBrowseEngine engine) {
             this.engine = engine;
         }
 
@@ -225,7 +229,7 @@ class OpcUaBrowseEngineConformanceTest {
 
         @Override
         public void readAttributesResult(final int requestId, final @NotNull List<ResolvedAttributes> attributes) {
-            engine.onReadAttributesResult(requestId, attributes);
+            engine.onAttributesResolved(requestId, attributes);
         }
 
         @Override

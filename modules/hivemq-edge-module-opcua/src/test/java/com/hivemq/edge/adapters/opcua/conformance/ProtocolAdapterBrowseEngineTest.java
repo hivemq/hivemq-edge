@@ -24,57 +24,59 @@ import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.protocols.v2.browse.BrowseOutcome;
+import com.hivemq.protocols.v2.browse.ProtocolAdapterBrowseEngine;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * EDG-737 — pure unit checks for the {@link ReferenceBrowseEngine}'s tag-name policy (the path→default-tag-name
- * derivation that the {@code browseName} carried on each browse entry now makes possible) and its
- * superseded-request guard. No server needed.
+ * EDG-737 — pure unit checks for the shared {@link ProtocolAdapterBrowseEngine}'s tag-name policy (the
+ * path→default-tag-name derivation that the {@code browseName} carried on each browse entry now makes possible)
+ * and its superseded-request guard. No server needed.
  */
-class ReferenceBrowseEngineTest {
+class ProtocolAdapterBrowseEngineTest {
 
     @Test
     void tagNameDefault_sanitizesEachPathSegment() {
-        assertThat(ReferenceBrowseEngine.tagNameDefault("/Plant/Line 1/Temperature"))
+        assertThat(ProtocolAdapterBrowseEngine.tagNameDefault("/Plant/Line 1/Temperature"))
                 .isEqualTo("plant-line-1-temperature");
-        assertThat(ReferenceBrowseEngine.tagNameDefault("/A/B/C")).isEqualTo("a-b-c");
-        assertThat(ReferenceBrowseEngine.tagNameDefault("/shared")).isEqualTo("shared");
-        assertThat(ReferenceBrowseEngine.tagNameDefault("")).isEmpty();
+        assertThat(ProtocolAdapterBrowseEngine.tagNameDefault("/A/B/C")).isEqualTo("a-b-c");
+        assertThat(ProtocolAdapterBrowseEngine.tagNameDefault("/shared")).isEqualTo("shared");
+        assertThat(ProtocolAdapterBrowseEngine.tagNameDefault("")).isEmpty();
     }
 
     @Test
     void sanitize_collapsesAndTrimsNonAlphanumerics() {
-        assertThat(ReferenceBrowseEngine.sanitize("Foo Bar Baz")).isEqualTo("foo-bar-baz");
-        assertThat(ReferenceBrowseEngine.sanitize("--A__B--")).isEqualTo("a-b");
+        assertThat(ProtocolAdapterBrowseEngine.sanitize("Foo Bar Baz")).isEqualTo("foo-bar-baz");
+        assertThat(ProtocolAdapterBrowseEngine.sanitize("--A__B--")).isEqualTo("a-b");
     }
 
     @Test
     void dedupDefaults_suffixesCollisions() {
-        assertThat(ReferenceBrowseEngine.dedupDefaults(List.of("a", "a", "b", "a")))
+        assertThat(ProtocolAdapterBrowseEngine.dedupDefaults(List.of("a", "a", "b", "a")))
                 .containsExactly("a", "a-2", "b", "a-3");
     }
 
     @Test
     void dedupDefaults_doesNotRecollideAGeneratedSuffixWithAnOrganicOne() {
         // "a","a" -> "a","a-2"; the organic "a-2" must then advance to "a-2-2", never a duplicate "a-2"
-        assertThat(ReferenceBrowseEngine.dedupDefaults(List.of("a", "a", "a-2")))
+        assertThat(ProtocolAdapterBrowseEngine.dedupDefaults(List.of("a", "a", "a-2")))
                 .containsExactly("a", "a-2", "a-2-2")
                 .doesNotHaveDuplicates();
     }
 
     @Test
     void pathSegment_collapsesSeparatorsSoABrowseNameCannotForgePathLevels() {
-        assertThat(ReferenceBrowseEngine.pathSegment("Temperature")).isEqualTo("Temperature");
-        assertThat(ReferenceBrowseEngine.pathSegment("Flow/Rate")).isEqualTo("Flow_Rate");
+        assertThat(ProtocolAdapterBrowseEngine.pathSegment("Temperature")).isEqualTo("Temperature");
+        assertThat(ProtocolAdapterBrowseEngine.pathSegment("Flow/Rate")).isEqualTo("Flow_Rate");
     }
 
     @Test
     void events_fromASupersededRequestId_areIgnored() {
         final RecordingAdapter adapter = new RecordingAdapter();
-        final ReferenceBrowseEngine engine = new ReferenceBrowseEngine();
-        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0);
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, new BrowseOutcome());
 
         // start() seeds the root and issues exactly one browse for it, then awaits that page
         assertThat(adapter.browseCalls).as("root browse issued").isEqualTo(1);
@@ -95,7 +97,7 @@ class ReferenceBrowseEngineTest {
         assertThat(engine.isActive()).as("engine still awaiting the real page").isTrue();
 
         // a resolve result from a superseded request is likewise ignored
-        engine.onReadAttributesResult(99, List.of());
+        engine.onAttributesResolved(99, List.of());
         assertThat(adapter.readAttrsCalls).isZero();
         assertThat(engine.isActive()).isTrue();
     }
@@ -107,7 +109,7 @@ class ReferenceBrowseEngineTest {
 
         @Override
         public @NotNull String adapterId() {
-            return "reference-browse-engine-test";
+            return "browse-engine-test";
         }
 
         @Override
