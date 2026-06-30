@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.encoder;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagEncodingAttributeProtocol;
@@ -36,7 +37,7 @@ class CipTagEncodersTest {
 
         {
             String address = "@22/1/5"; // SINT[10]
-            TagGroup tagGroup = new TagGroup(address);
+            TagGroup tagGroup = new TagGroup(address, CipReadWrite.READ_WRITE);
 
             tagGroup.add(
                     new CipTag("scada", "scada", new CipTagDefinition(address, 1, CipDataType.BOOL, 0d, null, 9, 7)));

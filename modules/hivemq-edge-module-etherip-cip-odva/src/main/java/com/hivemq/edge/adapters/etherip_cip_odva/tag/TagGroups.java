@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
@@ -26,7 +27,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 
 public class TagGroups {
-    private final @NotNull Map<String, TagGroup> tagAddressToTagGroup = new TreeMap<>();
+
+    /**
+     * Tags are grouped by device address <em>and</em> direction. Keeping the {@link CipReadWrite} in the key
+     * keeps read-only, write-only, and read-write tags at the same CIP address in separate groups, so the
+     * poll loop never reads write-only tags and a composite only aggregates siblings of the same direction.
+     */
+    private record GroupKey(
+            @NotNull String address, @NotNull CipReadWrite readWrite) implements Comparable<GroupKey> {
+        @Override
+        public int compareTo(final @NotNull GroupKey o) {
+            final int byAddress = address.compareTo(o.address);
+            return byAddress != 0 ? byAddress : readWrite.compareTo(o.readWrite);
+        }
+    }
+
+    private final @NotNull Map<GroupKey, TagGroup> tagAddressToTagGroup = new TreeMap<>();
 
     private final @NotNull AtomicBoolean tagsRegistered = new AtomicBoolean(false);
 
@@ -56,9 +72,10 @@ public class TagGroups {
     private TagGroup getOrCreateTagGroup(CipTagDefinition definition) throws OdvaException {
         AtomicReference<OdvaException> maybeException = new AtomicReference<>();
 
-        TagGroup tagGroup = tagAddressToTagGroup.computeIfAbsent(definition.getAddress(), address -> {
+        final GroupKey key = new GroupKey(definition.getAddress(), definition.getReadWrite());
+        TagGroup tagGroup = tagAddressToTagGroup.computeIfAbsent(key, k -> {
             try {
-                return new TagGroup(address);
+                return new TagGroup(k.address(), k.readWrite());
             } catch (OdvaException e) {
                 maybeException.set(e);
                 return null;

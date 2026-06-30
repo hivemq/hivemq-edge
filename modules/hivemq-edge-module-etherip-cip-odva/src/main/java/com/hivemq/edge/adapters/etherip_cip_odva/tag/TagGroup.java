@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
 import com.google.common.base.Objects;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.LogicalAddressPathFactory;
@@ -27,17 +28,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Contains tags decoded from this tagAddress
+ * Contains tags decoded from this tagAddress. All tags in a group share the same address and the same
+ * {@link CipReadWrite} direction.
  */
 public class TagGroup {
     private final @NotNull String tagAddress;
+    private final @NotNull CipReadWrite readWrite;
     private final @NotNull LogicalAddressPath logicalAddressPath;
     private @Nullable CipTag composite;
 
     private final List<CipTag> tags = new ArrayList<>();
 
-    public TagGroup(final @NotNull String tagAddress) throws OdvaException {
+    public TagGroup(final @NotNull String tagAddress, final @NotNull CipReadWrite readWrite) throws OdvaException {
         this.tagAddress = tagAddress;
+        this.readWrite = readWrite;
         this.logicalAddressPath = LogicalAddressPathFactory.create(tagAddress);
     }
 
@@ -52,6 +56,19 @@ public class TagGroup {
     @NotNull
     public String getTagAddress() {
         return tagAddress;
+    }
+
+    @NotNull
+    public CipReadWrite getReadWrite() {
+        return readWrite;
+    }
+
+    public boolean isReadable() {
+        return readWrite.isReadable();
+    }
+
+    public boolean isWritable() {
+        return readWrite.isWritable();
     }
 
     @Nullable
@@ -80,12 +97,14 @@ public class TagGroup {
         if (!(o instanceof final TagGroup that)) {
             return false;
         }
-        return Objects.equal(tagAddress, that.tagAddress) && Objects.equal(tags, that.tags);
+        return Objects.equal(tagAddress, that.tagAddress)
+                && readWrite == that.readWrite
+                && Objects.equal(tags, that.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(tagAddress, tags);
+        return Objects.hashCode(tagAddress, readWrite, tags);
     }
 
     @Override

@@ -250,6 +250,11 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                     return;
                 }
 
+                // Write-only tags have no readable attribute; never poll them.
+                if (!tagGroup.isReadable()) {
+                    continue;
+                }
+
                 tryPoll(connectedClient, pollingOutput, tagGroup, currentLastSamples, errors::add);
             }
 
