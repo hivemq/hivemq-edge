@@ -23,21 +23,50 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * Builds the bytes of a single CIP attribute and patches the supplied tag values into them.
+ * <p>
+ * The buffer is first seeded, then the supplied tags are encoded on top at their individual offsets:
+ * <ul>
+ *     <li><b>OVERWRITE_ZERO</b> (no prefill): the buffer is zero-filled, so bytes not covered by a supplied
+ *         tag are written as zero.</li>
+ *     <li><b>READ_MODIFY_WRITE</b> (prefill = the current attribute bytes): the buffer starts as the attribute
+ *         read back from the device, so bytes not covered by a supplied tag keep their current value.</li>
+ * </ul>
+ */
 public class CipTagEncodingAttributeProtocol extends BaseEncodingAttributeProtocol<Void> {
 
     private final CipTagEncoders cipTagEncoders;
     private final List<CipTag> tags;
     private final ByteOrder byteOrder;
     private final CipTagValueProducer<Object> valueProducer;
+    private final byte @Nullable [] prefill;
 
     private int totalRequestSize = 0;
 
+    /**
+     * OVERWRITE_ZERO: the unsupplied bytes of the attribute are zeroed.
+     */
     public CipTagEncodingAttributeProtocol(
             final CipTagEncoders cipTagsEncoders,
             final List<CipTag> tags,
             final ByteOrder byteOrder,
             final CipTagValueProducer<Object> valueProducer) {
+        this(cipTagsEncoders, tags, byteOrder, valueProducer, null);
+    }
+
+    /**
+     * If {@code prefill} is non-null the buffer is seeded with it (READ_MODIFY_WRITE); otherwise it is
+     * zero-filled (OVERWRITE_ZERO).
+     */
+    public CipTagEncodingAttributeProtocol(
+            final CipTagEncoders cipTagsEncoders,
+            final List<CipTag> tags,
+            final ByteOrder byteOrder,
+            final CipTagValueProducer<Object> valueProducer,
+            final byte @Nullable [] prefill) {
 
         super();
 
@@ -45,20 +74,29 @@ public class CipTagEncodingAttributeProtocol extends BaseEncodingAttributeProtoc
         this.byteOrder = byteOrder;
         this.valueProducer = valueProducer;
         this.cipTagEncoders = cipTagsEncoders;
+        this.prefill = prefill == null ? null : prefill.clone();
     }
 
     @Override
     protected void writeToBuffer(final ByteBuffer buf, final StringBuilder log) throws OdvaException {
 
-        int starPosition = buf.position();
+        final int startPosition = buf.position();
 
-        // EIP reuses buffer, we should clear it as we might be making partial writes
-        // totalRequestSize is set by previous call to internalGetRequestSize
-        clearBuffer(buf, totalRequestSize);
+        // Seed the buffer: current attribute bytes for read-modify-write, otherwise zeros.
+        // totalRequestSize is set by a previous call to internalGetRequestSize.
+        if (prefill != null) {
+            buf.put(prefill, 0, Math.min(prefill.length, totalRequestSize));
+            for (int i = prefill.length; i < totalRequestSize; i++) {
+                buf.put((byte) 0);
+            }
+        } else {
+            clearBuffer(buf, totalRequestSize);
+        }
 
-        buf.position(starPosition);
+        // Patch the supplied tag values on top of the seeded buffer.
+        buf.position(startPosition);
         cipTagEncoders.encode(tags, buf, byteOrder, valueProducer);
-        buf.position(starPosition + totalRequestSize);
+        buf.position(startPosition + totalRequestSize);
     }
 
     private static void clearBuffer(@NotNull ByteBuffer buf, int requestSize) {
@@ -69,7 +107,10 @@ public class CipTagEncodingAttributeProtocol extends BaseEncodingAttributeProtoc
 
     @Override
     protected int internalGetRequestSize() {
-        this.totalRequestSize = cipTagEncoders.getRequestSize(tags, valueProducer);
+        // For read-modify-write the attribute size is what was read; for overwrite-zero it is the span the
+        // supplied tags require.
+        final int encoderSize = cipTagEncoders.getRequestSize(tags, valueProducer);
+        this.totalRequestSize = prefill == null ? encoderSize : Math.max(encoderSize, prefill.length);
         return totalRequestSize;
     }
 }
