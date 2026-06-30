@@ -23,6 +23,7 @@ import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterDirection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -56,7 +57,7 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
-     * Activate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b> (D7). Forwarded to the running wrapper as
+     * Activate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b>. Forwarded to the running wrapper as
      * {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.ActivateDirection}.
      *
      * @param adapterId the adapter instance id.
@@ -72,7 +73,7 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
-     * Deactivate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b> (D7). Forwarded to the running wrapper as
+     * Deactivate a direction of an adapter (REST origin) — a <b>live-goal command, never persisted</b>. Forwarded to the running wrapper as
      * {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.DeactivateDirection}.
      *
      * @param adapterId the adapter instance id.
@@ -118,6 +119,21 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
             @NotNull BrowseFilter filter,
             @NotNull CompletableFuture<List<BrowseResultEntry>> completion)
             implements ProtocolAdapterManagerMessage {
+        @Override
+        public @NotNull MailboxMessagePriority priority() {
+            return MailboxMessagePriority.CONTROL;
+        }
+    }
+
+    /**
+     * Wind the whole subsystem down (bootstrap origin: process / embedded-runtime shutdown). The manager stops and
+     * discards every managed adapter — so each protocol adapter receives a clean stop and every wrapper container's
+     * resources (dispatcher binding, tick, metrics) are released — and counts the latch down once they have all
+     * wound down. The {@code CONTROL} band: shutdown intent jumps ahead of any queued data.
+     *
+     * @param done counted down once every managed adapter has stopped and its container is closed.
+     */
+    record ShutdownRequested(@NotNull CountDownLatch done) implements ProtocolAdapterManagerMessage {
         @Override
         public @NotNull MailboxMessagePriority priority() {
             return MailboxMessagePriority.CONTROL;

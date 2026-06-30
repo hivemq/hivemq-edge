@@ -36,6 +36,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -253,6 +254,44 @@ class ProtocolAdapterManagerTest {
         assertThat(summary.connectedAdapters()).isEqualTo(1);
         assertThat(summary.stoppedAdapters()).isEqualTo(1);
         assertThat(summary.lastUpdatedAtMillis()).isEqualTo(123L);
+    }
+
+    @Test
+    void shutdownRequested_stopsEveryAdapter_closesItsContainer_andCompletesTheLatch() {
+        send(new ConfigurationChanged(List.of(adapter("a").build(), adapter("b").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        wrapperFactory.setMachineState("b", ProtocolAdapterWrapperState.CONNECTED);
+
+        final CountDownLatch done = new CountDownLatch(1);
+        send(new ProtocolAdapterManagerMessage.ShutdownRequested(done));
+
+        // Both running adapters are told to stop and removed from the REST registry; the latch waits for them.
+        assertThat(wrapperFactory.commands("a"))
+                .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.StopAdapter.class);
+        assertThat(wrapperFactory.commands("b"))
+                .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.StopAdapter.class);
+        assertThat(handleRegistry.find("a")).isNull();
+        assertThat(handleRegistry.find("b")).isNull();
+        assertThat(done.getCount()).isEqualTo(1);
+
+        fireWrapperStopped("a");
+        assertThat(done.getCount()).isEqualTo(1); // still waiting for "b"
+        fireWrapperStopped("b");
+
+        assertThat(done.getCount()).isZero(); // every adapter has wound down
+        assertThat(wrapperFactory.closedAdapterIds()).containsExactlyInAnyOrder("a", "b"); // containers closed
+    }
+
+    @Test
+    void shutdownRequested_withOnlyStoppedAdapters_tearsThemDownAndCompletesImmediately() {
+        send(new ConfigurationChanged(List.of(adapter("a").build()))); // snapshot starts STOPPED
+
+        final CountDownLatch done = new CountDownLatch(1);
+        send(new ProtocolAdapterManagerMessage.ShutdownRequested(done));
+
+        assertThat(done.getCount()).isZero(); // a stopped adapter is torn down at once
+        assertThat(handleRegistry.find("a")).isNull();
+        assertThat(wrapperFactory.closedAdapterIds()).contains("a");
     }
 
     private void send(final @NotNull ProtocolAdapterManagerMessage message) {

@@ -88,6 +88,7 @@ class ProtocolAdapterWrapperSnapshotTest {
         fixture.send(new ProtocolAdapterWrapperCommand.UpdateTagSet(
                 List.of(WrapperTestSupport.pair("temperature")),
                 Map.of("temperature", TagAspectActivationPreference.defaults()),
+                Map.of("temperature", 1000L),
                 Set.of("temperature"),
                 Set.of()));
         fixture.send(new ProtocolAdapterWrapperCommand.RetryTag("temperature"));

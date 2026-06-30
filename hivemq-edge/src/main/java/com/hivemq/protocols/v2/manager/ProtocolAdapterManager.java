@@ -27,6 +27,7 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.Configurati
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.DeactivateAdapter;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ProtocolAdapterManagerTick;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.RetryTag;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ShutdownRequested;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperError;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStarted;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopped;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,8 +93,12 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
 
     private @Nullable ProtocolAdapterManagerHealthListener healthListener;
 
+    /** Set while a subsystem shutdown is draining; counted down once every managed adapter has wound down. */
+    private @Nullable CountDownLatch shutdownLatch;
+
     /**
-     * @param factoryRegistry the protocol-adapter type factories (empty in production, D8).
+     * @param factoryRegistry the protocol-adapter type factories (empty in production until a v2 adapter module is
+     *                        bundled).
      * @param handleRegistry  the REST-readable adapter registry the manager populates.
      * @param wrapperFactory the seam that builds and attaches a wrapper/adapter pair from one configuration.
      * @param clock          the clock used to stamp the {@code ERROR} snapshots and the health summary.
@@ -140,6 +146,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             case RetryTag retry ->
                 forwardCommand(retry.adapterId(), new ProtocolAdapterWrapperCommand.RetryTag(retry.tagName()));
             case BrowseRequested browse -> handleBrowse(browse);
+            case ShutdownRequested shutdown -> onShutdownRequested(shutdown.done());
             case WrapperStarted started -> onWrapperStarted(started.adapterId());
             case WrapperStopped stopped -> onWrapperStopped(stopped.adapterId());
             case WrapperError error -> onWrapperError(error.adapterId(), error.reason());
@@ -238,6 +245,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 new ProtocolAdapterWrapperCommand.UpdateTagSet(
                         nodes,
                         ProtocolAdapterConfigSupport.activationOf(updated),
+                        ProtocolAdapterConfigSupport.pollIntervalMillisByTagName(updated),
                         updated.getReadUsedTagNames(),
                         updated.getWriteUsedTagNames()));
         if (ProtocolAdapterConfigDiffUtils.adapterDirectionChanged(running, updated)) {
@@ -328,6 +336,33 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         pendingRemovalMap.put(adapterId, new PendingRemoval(adapter, recreateAs));
     }
 
+    // ── subsystem shutdown ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Wind the whole subsystem down on the dispatch thread: stop and discard every managed adapter (so each
+     * protocol adapter gets a clean stop and every container's resources are released), then count the latch down
+     * once they have all stopped. Pending recreates are dropped so a stop during shutdown never respawns an adapter.
+     *
+     * @param done the latch the bootstrap awaits before tearing the runtime down.
+     */
+    private void onShutdownRequested(final @NotNull CountDownLatch done) {
+        shutdownLatch = done;
+        pendingRemovalMap.replaceAll((adapterId, pending) -> new PendingRemoval(pending.stopping(), null));
+        for (final String adapterId : new ArrayList<>(containerMap.keySet())) {
+            stopAndDiscard(adapterId, null);
+        }
+        completeShutdownIfDone();
+    }
+
+    private void completeShutdownIfDone() {
+        final CountDownLatch latch = shutdownLatch;
+        if (latch != null && pendingRemovalMap.isEmpty()) {
+            shutdownLatch = null;
+            log.info("The v2 protocol-adapter manager has stopped every adapter");
+            latch.countDown();
+        }
+    }
+
     // ── wrapper health ──────────────────────────────────────────────────────────────────────
 
     private void onWrapperStarted(final @NotNull String adapterId) {
@@ -346,6 +381,8 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         if (pending.recreateAs() != null) {
             createAdapter(pending.recreateAs());
         }
+        // A shutdown may be waiting for the last adapter to wind down.
+        completeShutdownIfDone();
     }
 
     private void onWrapperError(final @NotNull String adapterId, final @NotNull String reason) {

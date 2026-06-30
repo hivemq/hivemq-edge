@@ -21,7 +21,7 @@ package com.hivemq.protocols.v2.wrapper;
  * <p>
  * Initial values come from the {@code <v2>} configuration section. A REST direction activation
  * changes the <em>live</em> goal only and is never persisted — after a restart the config-declared flags apply
- * again (D7).
+ * again.
  *
  * @param northboundActivated whether the read side (adapter → MQTT) is activated.
  * @param southboundActivated whether the write side (MQTT → adapter) is activated.

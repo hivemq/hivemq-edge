@@ -129,16 +129,20 @@ public interface TagAspectCoordinator {
             @NotNull Map<String, TagAspectActivationPreference> tagActivation);
 
     /**
-     * Replace the tag set in place — the tags-only transition. Never reconnects.
+     * Replace the tag set in place — the tags-only transition. The coordinator diffs the set: survivors keep
+     * polling untouched, removed tags are torn down, added tags verify against the live connection. Never
+     * reconnects.
      *
-     * @param nodes             the new node/tag pairs.
-     * @param activation        the per-tag activation preferences.
-     * @param readUsedTagNames  the tags consumed by a northbound mapping.
-     * @param writeUsedTagNames the tags produced to by a southbound mapping.
+     * @param nodes                       the new node/tag pairs.
+     * @param activation                  the per-tag activation preferences.
+     * @param pollIntervalMillisByTagName the per-tag poll cadence, keyed by tag name.
+     * @param readUsedTagNames            the tags consumed by a northbound mapping.
+     * @param writeUsedTagNames           the tags produced to by a southbound mapping.
      */
     void updateTagSet(
             @NotNull List<NodeTagPair> nodes,
             @NotNull Map<String, TagAspectActivationPreference> activation,
+            @NotNull Map<String, Long> pollIntervalMillisByTagName,
             @NotNull Set<String> readUsedTagNames,
             @NotNull Set<String> writeUsedTagNames);
 

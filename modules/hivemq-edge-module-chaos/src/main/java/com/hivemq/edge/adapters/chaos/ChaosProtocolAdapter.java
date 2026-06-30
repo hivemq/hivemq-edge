@@ -161,7 +161,7 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
      * Advance the simulator one harness tick and fire every deferred behavior that has come due. Called by the
      * harness once per advanced tick, after the clock told the wrapper its tick and before the dispatcher drains —
      * so a due acknowledgment ({@code EVENT}) is enqueued alongside the wrapper tick ({@code TICK}) and, by the
-     * priority ladder, processed first (S24).
+     * priority ladder, processed first.
      */
     public void onTick() {
         currentTick++;

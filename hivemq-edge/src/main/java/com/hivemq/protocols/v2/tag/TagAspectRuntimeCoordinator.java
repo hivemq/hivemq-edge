@@ -50,6 +50,9 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
 
+    /** Fallback poll cadence for a tag absent from the per-tag interval map — a defensive default, never expected. */
+    private static final long DEFAULT_POLL_INTERVAL_MILLIS = 5_000L;
+
     private record BoundRuntime(
             @NotNull Clock clock,
             @NotNull PriorityTimerQueue timers,
@@ -57,46 +60,54 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             @NotNull ProtocolAdapterMetrics metrics,
             @NotNull SharedNodeVerification sharedNodeVerification) {}
 
+    /** The adapter's connection phase as the coordinator last saw it — replayed onto a tag added in place. */
+    private enum AdapterReadiness {
+        DISCONNECTED,
+        VERIFYING,
+        READY
+    }
+
     private final @NotNull String adapterId;
-    private final long pollIntervalMillis;
     private final @NotNull RetryPolicy retryPolicy;
 
     private @NotNull List<NodeTagPair> nodes;
     private @NotNull Map<String, TagAspectActivationPreference> activation;
+    private @NotNull Map<String, Long> pollIntervalMillisByTagName;
     private @NotNull Set<String> readUsedTagNames;
     private @NotNull Set<String> writeUsedTagNames;
     private @NotNull ProtocolAdapterGoalState goal;
+    private @NotNull AdapterReadiness adapterReadiness = AdapterReadiness.DISCONNECTED;
 
     private @Nullable BoundRuntime runtime;
     private @NotNull List<TagRuntime> tagRuntimes = new ArrayList<>();
     private @NotNull Map<Node, TagRuntime> tagRuntimesByNode = new HashMap<>();
 
     /**
-     * @param adapterId          the owning adapter's id.
-     * @param nodes              the configured node/tag pairs.
-     * @param activation         the per-tag activation preferences.
-     * @param readUsedTagNames   the tags consumed by a northbound mapping.
-     * @param writeUsedTagNames  the tags produced to by a southbound mapping.
-     * @param initialGoal        the initial adapter direction goal (from configuration).
-     * @param pollIntervalMillis the poll cadence for polled read aspects, in milliseconds.
-     * @param retryPolicy        the backoff policy for verification and subscription retries.
+     * @param adapterId                   the owning adapter's id.
+     * @param nodes                       the configured node/tag pairs.
+     * @param activation                  the per-tag activation preferences.
+     * @param pollIntervalMillisByTagName the per-tag poll cadence, keyed by tag name.
+     * @param readUsedTagNames            the tags consumed by a northbound mapping.
+     * @param writeUsedTagNames           the tags produced to by a southbound mapping.
+     * @param initialGoal                 the initial adapter direction goal (from configuration).
+     * @param retryPolicy                 the backoff policy for verification and subscription retries.
      */
     public TagAspectRuntimeCoordinator(
             final @NotNull String adapterId,
             final @NotNull List<NodeTagPair> nodes,
             final @NotNull Map<String, TagAspectActivationPreference> activation,
+            final @NotNull Map<String, Long> pollIntervalMillisByTagName,
             final @NotNull Set<String> readUsedTagNames,
             final @NotNull Set<String> writeUsedTagNames,
             final @NotNull ProtocolAdapterGoalState initialGoal,
-            final long pollIntervalMillis,
             final @NotNull RetryPolicy retryPolicy) {
         this.adapterId = adapterId;
         this.nodes = List.copyOf(nodes);
         this.activation = new HashMap<>(activation);
+        this.pollIntervalMillisByTagName = new HashMap<>(pollIntervalMillisByTagName);
         this.readUsedTagNames = new HashSet<>(readUsedTagNames);
         this.writeUsedTagNames = new HashSet<>(writeUsedTagNames);
         this.goal = initialGoal;
-        this.pollIntervalMillis = pollIntervalMillis;
         this.retryPolicy = retryPolicy;
     }
 
@@ -121,7 +132,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
         final SharedNodeVerification sharedNodeVerification =
                 new SharedNodeVerification(nodeVerifier, this::findTagRuntime);
         this.runtime = new BoundRuntime(clock, timers, batches, metrics, sharedNodeVerification);
-        rebuildTagRuntimes();
+        buildInitialTagRuntimes();
         applyGoalToAll();
     }
 
@@ -129,6 +140,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
 
     @Override
     public void onAdapterVerifying() {
+        adapterReadiness = AdapterReadiness.VERIFYING;
         // Move active aspects into verification, then issue the nodes they need as ONE connect-verification batch
         // through the shared authority — a read-and-write tag therefore yields a single verifyBatch entry.
         final List<Node> toVerify = new ArrayList<>();
@@ -153,6 +165,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
 
     @Override
     public void onAdapterReady() {
+        adapterReadiness = AdapterReadiness.READY;
         for (final TagRuntime tagRuntime : tagRuntimes) {
             tagRuntime.onAdapterReady();
         }
@@ -160,6 +173,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
 
     @Override
     public void onAdapterUnavailable() {
+        adapterReadiness = AdapterReadiness.DISCONNECTED;
         runtime().sharedNodeVerification().reset();
         for (final TagRuntime tagRuntime : tagRuntimes) {
             tagRuntime.onAdapterUnavailable();
@@ -220,17 +234,54 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     public void updateTagSet(
             final @NotNull List<NodeTagPair> newNodes,
             final @NotNull Map<String, TagAspectActivationPreference> newActivation,
+            final @NotNull Map<String, Long> newPollIntervalMillisByTagName,
             final @NotNull Set<String> newReadUsedTagNames,
             final @NotNull Set<String> newWriteUsedTagNames) {
-        // Tear down the current aspects (cancel their timers, drop subscriptions) before rebuilding, so no timer
-        // outlives its tag. Preserving surviving tags untouched is a gentlest-transition refinement for the PAM
-        // task; here a tags-only change re-verifies the new set without ever reconnecting the adapter.
-        deactivateAll();
+        // Diff the tag set in place. A tag unchanged in node-string, access mode, and poll interval is a survivor:
+        // its running TagRuntime is kept untouched, so it keeps polling without re-verification. A tag whose
+        // identity changed and a removed tag are torn down; an added (or changed) tag gets a fresh runtime whose
+        // adapter readiness is replayed to the live phase, so it verifies against an already-connected adapter
+        // without ever reconnecting.
+        final BoundRuntime bound = runtime();
+        final Map<String, TagRuntime> survivingByName = new HashMap<>();
+        for (final TagRuntime tagRuntime : tagRuntimes) {
+            survivingByName.put(tagRuntime.tagName(), tagRuntime);
+        }
+
+        final List<TagRuntime> rebuilt = new ArrayList<>(newNodes.size());
+        final Map<Node, TagRuntime> byNode = new HashMap<>();
+        for (final NodeTagPair pair : newNodes) {
+            final String tagName = pair.tag().name();
+            final long newPollIntervalMillis =
+                    newPollIntervalMillisByTagName.getOrDefault(tagName, DEFAULT_POLL_INTERVAL_MILLIS);
+            final TagRuntime existing = survivingByName.remove(tagName);
+            if (existing != null && isUnchanged(existing, pair, newPollIntervalMillis)) {
+                rebuilt.add(existing);
+                byNode.put(existing.node(), existing);
+            } else {
+                if (existing != null) {
+                    existing.deactivate();
+                }
+                final TagRuntime created = newTagRuntime(bound, pair, newPollIntervalMillis);
+                replayReadiness(created);
+                rebuilt.add(created);
+                byNode.put(pair.node(), created);
+            }
+        }
+        // Whatever is left was dropped from the set: tear it down (cancel timers, drop subscriptions).
+        for (final TagRuntime removed : survivingByName.values()) {
+            removed.deactivate();
+        }
+
         this.nodes = List.copyOf(newNodes);
         this.activation = new HashMap<>(newActivation);
+        this.pollIntervalMillisByTagName = new HashMap<>(newPollIntervalMillisByTagName);
         this.readUsedTagNames = new HashSet<>(newReadUsedTagNames);
         this.writeUsedTagNames = new HashSet<>(newWriteUsedTagNames);
-        rebuildTagRuntimes();
+        this.tagRuntimes = rebuilt;
+        this.tagRuntimesByNode = byNode;
+        // Survivors whose goal is unchanged are no-ops here; an added tag activates (and, when the adapter is ready,
+        // verifies); a survivor whose `used`/activation flipped transitions in place — none of this reconnects.
         applyGoalToAll();
     }
 
@@ -262,21 +313,14 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
         return tagRuntimesByNode.get(node);
     }
 
-    private void rebuildTagRuntimes() {
+    private void buildInitialTagRuntimes() {
         final BoundRuntime bound = runtime();
         final List<TagRuntime> rebuilt = new ArrayList<>(nodes.size());
         final Map<Node, TagRuntime> byNode = new HashMap<>();
         for (final NodeTagPair pair : nodes) {
-            final TagRuntime tagRuntime = new TagRuntime(
-                    adapterId,
-                    pair,
-                    bound.clock(),
-                    bound.timers(),
-                    bound.batches(),
-                    bound.metrics(),
-                    bound.sharedNodeVerification(),
-                    pollIntervalMillis,
-                    retryPolicy);
+            final long pollIntervalMillis =
+                    pollIntervalMillisByTagName.getOrDefault(pair.tag().name(), DEFAULT_POLL_INTERVAL_MILLIS);
+            final TagRuntime tagRuntime = newTagRuntime(bound, pair, pollIntervalMillis);
             rebuilt.add(tagRuntime);
             byNode.put(pair.node(), tagRuntime);
         }
@@ -284,9 +328,44 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
         this.tagRuntimesByNode = byNode;
     }
 
-    private void deactivateAll() {
-        for (final TagRuntime tagRuntime : tagRuntimes) {
-            tagRuntime.deactivate();
+    private @NotNull TagRuntime newTagRuntime(
+            final @NotNull BoundRuntime bound, final @NotNull NodeTagPair pair, final long pollIntervalMillis) {
+        return new TagRuntime(
+                adapterId,
+                pair,
+                bound.clock(),
+                bound.timers(),
+                bound.batches(),
+                bound.metrics(),
+                bound.sharedNodeVerification(),
+                pollIntervalMillis,
+                retryPolicy);
+    }
+
+    /**
+     * @return whether the surviving runtime's tag is identical to the incoming pair — same node-string, access mode,
+     *         and poll interval — so it can be kept in place rather than rebuilt.
+     */
+    private boolean isUnchanged(
+            final @NotNull TagRuntime existing,
+            final @NotNull NodeTagPair incoming,
+            final long incomingPollIntervalMillis) {
+        final NodeTagPair current = existing.pair();
+        final long currentPollIntervalMillis =
+                pollIntervalMillisByTagName.getOrDefault(current.tag().name(), DEFAULT_POLL_INTERVAL_MILLIS);
+        return current.node().nodeString().equals(incoming.node().nodeString())
+                && current.tag().pollable() == incoming.tag().pollable()
+                && current.tag().subscribable() == incoming.tag().subscribable()
+                && currentPollIntervalMillis == incomingPollIntervalMillis;
+    }
+
+    private void replayReadiness(final @NotNull TagRuntime tagRuntime) {
+        switch (adapterReadiness) {
+            case VERIFYING -> tagRuntime.onAdapterVerifying();
+            case READY -> tagRuntime.onAdapterReady();
+            case DISCONNECTED -> {
+                // A fresh runtime already starts disconnected; it will couple on the next adapter readiness signal.
+            }
         }
     }
 

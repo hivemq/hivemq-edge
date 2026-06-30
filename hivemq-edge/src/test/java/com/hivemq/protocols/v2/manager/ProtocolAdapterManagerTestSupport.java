@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.schema.AnySchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
@@ -250,6 +251,10 @@ final class ProtocolAdapterManagerTestSupport {
         return new ScalarSchema(ScalarType.STRING, null, null, null, null, false, true, false);
     }
 
+    static @NotNull Schema anySchema() {
+        return new AnySchema(null, null, false, true, false);
+    }
+
     /**
      * A reused-{@link DataPoint} double — the wrapper never inspects it, so the simplest carrier suffices.
      */
@@ -474,7 +479,8 @@ final class ProtocolAdapterManagerTestSupport {
 
         @Override
         public @NotNull Schema adapterConfigSchema() {
-            return scalarSchema();
+            // The test adapter accepts any configuration; its tests vary the config without a config schema.
+            return anySchema();
         }
 
         @Override

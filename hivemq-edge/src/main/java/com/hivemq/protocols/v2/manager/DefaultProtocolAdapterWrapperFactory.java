@@ -116,6 +116,11 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final ProtocolAdapterOutput output = new ProtocolAdapterOutputFacade(mailbox);
 
         final List<NodeTagPair> nodes = translateNodes(entity, factory);
+        // Validate the instance configuration against the type's schema before the adapter sees it, so an invalid
+        // section is rejected with a clear message (the manager turns this into an ERROR handle) rather than failing
+        // opaquely inside the adapter later.
+        AdapterConfigurationSchemaValidator.validate(
+                adapterId, entity.getAdapterConfiguration(), factory.adapterConfigSchema(), objectMapper);
         final DataPoint adapterConfig =
                 dataPointFactory.createJsonDataPoint(adapterId, entity.getAdapterConfiguration());
         final ProtocolAdapterService services = new WrapperServices(dataPointFactory, dispatcher);
@@ -133,10 +138,10 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 adapterId,
                 nodes,
                 activation,
+                ProtocolAdapterConfigSupport.pollIntervalMillisByTagName(entity),
                 readUsed,
                 writeUsed,
                 goal,
-                ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
                 retryPolicy);
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,

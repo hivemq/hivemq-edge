@@ -150,6 +150,7 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     public void updateTagSet(
             final @NotNull List<NodeTagPair> nodes,
             final @NotNull Map<String, TagAspectActivationPreference> activation,
+            final @NotNull Map<String, Long> pollIntervalMillisByTagName,
             final @NotNull Set<String> readUsedTagNames,
             final @NotNull Set<String> writeUsedTagNames) {
         this.nodes = List.copyOf(nodes);

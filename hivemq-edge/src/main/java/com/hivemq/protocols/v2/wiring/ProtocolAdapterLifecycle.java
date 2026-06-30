@@ -24,6 +24,8 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage;
 import com.hivemq.protocols.v2.runtime.SystemClock;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -44,8 +46,10 @@ import org.slf4j.LoggerFactory;
  * {@code ConfigurationChanged} at startup and on every reload — the manager applies the gentlest correct transition.</li>
  * </ol>
  * The order matters: the manager is bound and pumping before the first configuration is delivered. {@link #stop()}
- * cancels the tick, stops the manager's dispatch thread, and closes the clock — which cancels every wrapper tick too,
- * since the whole subsystem shares the one clock. Both methods are idempotent.
+ * first drains the manager — it stops and discards every adapter, so each protocol adapter gets a clean stop and
+ * every wrapper container's resources are released — and only then cancels the tick, stops the manager's dispatch
+ * thread, and closes the clock (which cancels every wrapper tick too, since the whole subsystem shares the one
+ * clock). Both methods are idempotent.
  */
 @Singleton
 public class ProtocolAdapterLifecycle {
@@ -54,6 +58,9 @@ public class ProtocolAdapterLifecycle {
 
     /** The manager's housekeeping cadence: a coarse health-summary tick is sufficient. */
     private static final long MANAGER_TICK_PERIOD_MILLIS = 1_000L;
+
+    /** How long {@link #stop()} waits for the manager to stop every adapter before tearing the runtime down anyway. */
+    private static final long SHUTDOWN_DRAIN_TIMEOUT_MILLIS = 10_000L;
 
     private final @NotNull ProtocolAdapterManager manager;
     private final @NotNull Mailbox<ProtocolAdapterManagerMessage> managerMailbox;
@@ -109,13 +116,21 @@ public class ProtocolAdapterLifecycle {
     }
 
     /**
-     * Stop the v2 protocol-adapter subsystem: cancel the manager tick, stop the manager's dispatch thread, and close
-     * the clock (which cancels every wrapper's tick too, since the whole subsystem shares the one clock). Idempotent.
+     * Stop the v2 protocol-adapter subsystem: first ask the manager — on its own dispatch thread — to stop and
+     * discard every adapter, so each protocol adapter gets a clean stop and every wrapper container's resources
+     * (dispatcher binding, tick, metrics) are released; then cancel the manager tick, stop the manager's dispatch
+     * thread, and close the clock (which cancels every wrapper's tick too, since the whole subsystem shares the one
+     * clock). Idempotent.
      */
     public synchronized void stop() {
         if (!started) {
             return;
         }
+        // Drain the manager (stop every adapter and close its container) before tearing the runtime down, while the
+        // manager's dispatch thread and the shared clock are still running.
+        final CountDownLatch managerDrained = new CountDownLatch(1);
+        managerMailbox.tell(new ProtocolAdapterManagerMessage.ShutdownRequested(managerDrained));
+        awaitDrain(managerDrained);
         closeQuietly(managerTickHandle);
         if (managerDispatcherHandle != null) {
             managerDispatcherHandle.close();
@@ -125,6 +140,18 @@ public class ProtocolAdapterLifecycle {
         managerDispatcherHandle = null;
         started = false;
         log.info("Stopped the v2 protocol-adapter subsystem");
+    }
+
+    private static void awaitDrain(final @NotNull CountDownLatch latch) {
+        try {
+            if (!latch.await(SHUTDOWN_DRAIN_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                log.warn("Timed out waiting for the v2 protocol-adapter manager to stop every adapter; "
+                        + "continuing shutdown");
+            }
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for the v2 protocol-adapter manager to stop every adapter");
+        }
     }
 
     private static void closeQuietly(final @Nullable AutoCloseable closeable) {

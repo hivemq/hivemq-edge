@@ -227,7 +227,11 @@ public final class ProtocolAdapterWrapperContext {
             case ProtocolAdapterWrapperCommand.UpdateTagSet update -> {
                 activation = Map.copyOf(update.activation());
                 tagPlane.updateTagSet(
-                        update.nodes(), update.activation(), update.readUsedTagNames(), update.writeUsedTagNames());
+                        update.nodes(),
+                        update.activation(),
+                        update.pollIntervalMillisByTagName(),
+                        update.readUsedTagNames(),
+                        update.writeUsedTagNames());
             }
             case ProtocolAdapterWrapperCommand.ApplyActivation apply -> {
                 goal = apply.adapterDirections();

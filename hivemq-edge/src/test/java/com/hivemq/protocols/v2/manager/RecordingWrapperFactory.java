@@ -49,6 +49,7 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     private final @NotNull List<String> createdAdapterIds = new ArrayList<>();
     private final @NotNull Map<String, Recorded> recordedByAdapterId = new LinkedHashMap<>();
     private final @NotNull List<String> translateNodesAdapterIds = new ArrayList<>();
+    private final @NotNull List<String> closedAdapterIds = new ArrayList<>();
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
 
     @Override
@@ -68,7 +69,8 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
         final MailboxSender<ProtocolAdapterWrapperMessage> sender = commands::add;
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, sender, snapshot);
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(new MetricRegistry(), adapterId, () -> 0);
-        return new ProtocolAdapterContainer(handle, () -> {}, () -> {}, metrics, entity);
+        // Record container teardown so a test can assert the manager closes a wrapper's resources on shutdown.
+        return new ProtocolAdapterContainer(handle, () -> closedAdapterIds.add(adapterId), () -> {}, metrics, entity);
     }
 
     @Override
@@ -88,6 +90,11 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     @NotNull
     List<String> translateNodesAdapterIds() {
         return translateNodesAdapterIds;
+    }
+
+    @NotNull
+    List<String> closedAdapterIds() {
+        return closedAdapterIds;
     }
 
     @NotNull
