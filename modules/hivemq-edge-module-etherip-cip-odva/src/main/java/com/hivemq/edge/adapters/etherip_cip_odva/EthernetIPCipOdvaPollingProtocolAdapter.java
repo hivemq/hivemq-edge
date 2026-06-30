@@ -54,6 +54,7 @@ import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagDecodingAttributeProtocol;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagEncodingAttributeProtocol;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagValueProducer;
+import com.hivemq.edge.adapters.etherip_cip_odva.handler.RawAttributeReadProtocol;
 import com.hivemq.edge.adapters.etherip_cip_odva.hysteresis.Hysteresis;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroup;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroups;
@@ -67,6 +68,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -95,6 +97,11 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     private final @NotNull StatsTracker statsTracker;
     private final @NotNull CipTagDecoders cipTagsDecoders = new CipTagDecoders();
     private final @NotNull CipTagEncoders cipTagsEncoders = new CipTagEncoders();
+
+    // Serializes read-modify-write per CIP attribute address, so the read->write window of one RMW write is
+    // not interleaved with another write to the same attribute. Does not protect against the device being
+    // changed by its own program logic during the window (CIP offers no compare-and-swap); last writer wins.
+    private final @NotNull ConcurrentHashMap<String, Object> writeLocks = new ConcurrentHashMap<>();
     private final @NotNull Hysteresis hysteresis = new Hysteresis();
     private final @NotNull List<CipTag> tags;
     private final @NotNull TagGroups tagGroups = new TagGroups();
@@ -474,16 +481,6 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             return;
         }
 
-        // READ_MODIFY_WRITE is added in a later phase; only OVERWRITE_ZERO is wired up so far.
-        if (tag.getWriteMode() != CipWriteMode.OVERWRITE_ZERO) {
-            writingOutput.fail("Write mode "
-                    + tag.getWriteMode()
-                    + " is not yet supported for tag '"
-                    + tagName
-                    + "'; only OVERWRITE_ZERO is currently implemented.");
-            return;
-        }
-
         final TagGroup tagGroup = tagGroups.getTagGroups().stream()
                 .filter(g -> g.getTags().contains(tag) || Objects.equals(g.getComposite(), tag))
                 .findFirst()
@@ -498,10 +495,10 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             writingOutput.fail("Adapter '" + adapterId + "' is not connected; cannot write tag '" + tagName + "'.");
             return;
         }
+        final EthernetIPWithODVA connectedClient = requireNonNull(client);
 
-        // OVERWRITE_ZERO: build the whole attribute from the supplied value(s); unsupplied bytes are zeroed.
-        // For a composite tag the payload is a JSON object keyed by sibling tag name; for a scalar tag the
-        // payload is the value itself.
+        // The supplied tags are encoded on top of the attribute buffer. For a composite the payload is a JSON
+        // object keyed by sibling tag name; for a scalar it is the value itself.
         final List<CipTag> tagsToWrite = tag.isComposite() ? tagGroup.getTags() : List.of(tag);
         final CipTagValueProducer<Object> valueProducer = t -> {
             final JsonNode node = tag.isComposite() ? value.get(t.getName()) : value;
@@ -511,19 +508,49 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             return jsonToCipValue(t, node);
         };
 
-        try {
-            final CipTagEncodingAttributeProtocol encodingProtocol = new CipTagEncodingAttributeProtocol(
-                    cipTagsEncoders, tagsToWrite, adapterConfig.getByteOrder().toNioByteOrder(), valueProducer);
-            requireNonNull(client).setAttributeSingle(tagGroup.getLogicalAddressPath(), encodingProtocol);
-            writingOutput.finish();
-        } catch (final Exception e) {
-            LOG.warn(
-                    "Adapter '{}'. Failed to write tag '{}': {}",
-                    adapterId,
-                    tagName,
-                    ExceptionUtils.extractMessageWithCause(e));
-            writingOutput.fail(e, "Failed to write tag '" + tagName + "'.");
+        // Serialize read-modify-write per attribute so its read->write window is not interleaved with another
+        // write to the same attribute. OVERWRITE_ZERO does not read, but sharing the lock is harmless and keeps
+        // concurrent writes to one attribute ordered.
+        final Object lock = writeLocks.computeIfAbsent(tagGroup.getTagAddress(), a -> new Object());
+        synchronized (lock) {
+            try {
+                final byte @Nullable [] prefill = tag.getWriteMode() == CipWriteMode.READ_MODIFY_WRITE
+                        ? readAttributeBytes(connectedClient, tagGroup)
+                        : null;
+
+                final CipTagEncodingAttributeProtocol encodingProtocol = new CipTagEncodingAttributeProtocol(
+                        cipTagsEncoders,
+                        tagsToWrite,
+                        adapterConfig.getByteOrder().toNioByteOrder(),
+                        valueProducer,
+                        prefill);
+                connectedClient.setAttributeSingle(tagGroup.getLogicalAddressPath(), encodingProtocol);
+                writingOutput.finish();
+            } catch (final Exception e) {
+                LOG.warn(
+                        "Adapter '{}'. Failed to write tag '{}': {}",
+                        adapterId,
+                        tagName,
+                        ExceptionUtils.extractMessageWithCause(e));
+                writingOutput.fail(e, "Failed to write tag '" + tagName + "'.");
+            }
         }
+    }
+
+    /**
+     * Read the current bytes of the attribute for a read-modify-write. A failed read is a hard stop: the
+     * caller must not fall back to zeroing the unsupplied bytes.
+     */
+    private byte @NotNull [] readAttributeBytes(
+            final @NotNull EthernetIPWithODVA client, final @NotNull TagGroup tagGroup) throws Exception {
+        final RawAttributeReadProtocol readProtocol = new RawAttributeReadProtocol();
+        client.getAttributeSingle(tagGroup.getLogicalAddressPath(), readProtocol);
+        final byte[] bytes = readProtocol.getBytes();
+        if (bytes == null) {
+            throw new OdvaException(
+                    "Read-modify-write failed: could not read current attribute at " + tagGroup.getTagAddress());
+        }
+        return bytes;
     }
 
     /**
