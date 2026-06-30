@@ -29,13 +29,15 @@ import org.jetbrains.annotations.Nullable;
 // It holds the three Edge singletons a subscriber operates against — LocalTopicTree, the client-queue
 // persistence, and the SingleWriterService — so that callers never have to know about, hold, or thread
 // those singletons through their own constructors. A component just injects this factory and calls
-// create(...).
+// builder(...).
 //
 //   @Inject MyComponent(final InternalTopicFilterSubscriberFactory subscriberFactory) { ... }
 //   ...
-//   subscriber = subscriberFactory.create("tynebridge", bridgeId)
-//                                 .withProcessor(message -> { ... })
-//                                 .withTopicFilter("sensors/#")
+//   // a combiner that keeps the latest value of one topic in an atomic reference:
+//   final AtomicReference<byte[]> latest = new AtomicReference<>();
+//   subscriber = subscriberFactory.builder("combiner", combinerId)
+//                                 .withProcessor(message -> latest.set(message.getPayload()))
+//                                 .withTopicFilter("sensors/temperature")
 //                                 .build();
 //
 @Singleton
@@ -87,14 +89,15 @@ public class InternalTopicFilterSubscriberFactory {
         return registry.get(clientId);
     }
 
-    // Begin building a subscriber for the given component identity.
+    // A builder for a subscriber with the given component identity. Named for what it returns (a Builder),
+    // not for its effect — it has none until build() is called on the returned builder.
     //
-    // componentPrefix — the Edge component type, unique across Edge (e.g. "tynebridge"). Becomes the
-    //                   middle segment of the reserved internal client ID "$INTERNAL::<prefix>::<id>".
+    // componentPrefix — the Edge component type, unique across Edge (e.g. "combiner"). Becomes the middle
+    //                   segment of the reserved internal client ID "$INTERNAL::<prefix>::<id>".
     // instanceId      — unique within the componentPrefix namespace; typically the config ID of the
     //                   owning instance.
     //
-    public @NotNull InternalTopicFilterSubscriber.Builder create(
+    public @NotNull InternalTopicFilterSubscriber.Builder builder(
             final @NotNull String componentPrefix, final @NotNull String instanceId) {
         return new InternalTopicFilterSubscriber.Builder(
                 componentPrefix, instanceId, this, topicTree, clientQueuePersistence, singleWriterService);

@@ -48,13 +48,15 @@ import org.slf4j.LoggerFactory;
 // Builder, and drive it with explicit lifecycle verbs. The single piece of behaviour the component
 // supplies — what to do with each message — is a Processor lambda passed to the builder.
 //
-//   subscriber = factory.create("tynebridge", bridgeId)
-//                       .withProcessor(message -> { ... })   // runs on the SingleWriter thread
-//                       .withTopicFilter("sensors/#")
+//   // a combiner keeping the latest value of one topic in an atomic reference:
+//   final AtomicReference<byte[]> latest = new AtomicReference<>();
+//   subscriber = factory.builder("combiner", combinerId)
+//                       .withProcessor(message -> latest.set(message.getPayload())) // SingleWriter thread
+//                       .withTopicFilter("sensors/temperature")
 //                       .build();
-//   subscriber.start();                       // attach(); consume();
-//   subscriber.addTopicFilter("actuators/#"); // runtime mutation, no teardown
-//   subscriber.stop();                        // detach(); pause(); deallocate();
+//   subscriber.start();                          // attach(); consume();
+//   subscriber.addTopicFilter("sensors/humidity"); // runtime mutation, no teardown
+//   subscriber.stop();                           // detach(); pause(); deallocate();
 //
 // Lifecycle. The lifecycle is decomposed into independent verbs. attach()/detach() control the
 // SUBSCRIPTION (topics in the topic tree, i.e. whether messages are COLLECTED); consume()/pause()

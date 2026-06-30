@@ -81,7 +81,7 @@ class InternalTopicFilterSubscriberTest {
     // red, where mock-only tests (Tier 1/2) would stay green because each mock accepts its own id.
     @Test
     void realTree_subscribeIdEqualsPollId() {
-        final InternalTopicFilterSubscriber subscriber = factory.create("tynebridge", "my-bridge")
+        final InternalTopicFilterSubscriber subscriber = factory.builder("tynebridge", "my-bridge")
                 .withProcessor(message -> {})
                 .withTopicFilter("sensors/#")
                 .build();
@@ -175,7 +175,7 @@ class InternalTopicFilterSubscriberTest {
 
     @Test
     void build_withoutProcessor_throws() {
-        assertThatThrownBy(() -> factory.create("tynebridge", "x").build())
+        assertThatThrownBy(() -> factory.builder("tynebridge", "x").build())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("requires a processor");
     }
@@ -183,7 +183,7 @@ class InternalTopicFilterSubscriberTest {
     @Test
     void build_withEmptyFilterSet_isValid_andAttachIsANoOp() {
         final InternalTopicFilterSubscriber s =
-                factory.create("tynebridge", "x").withProcessor(m -> {}).build();
+                factory.builder("tynebridge", "x").withProcessor(m -> {}).build();
 
         s.attach(); // empty set: subscribes to nothing, must not error
         assertThat(treeIdsFor("anything")).isEmpty();
@@ -193,7 +193,7 @@ class InternalTopicFilterSubscriberTest {
 
     @Test
     void isExcludedIngressClientId_excludesOnlyTheConfiguredId() {
-        final InternalTopicFilterSubscriber s = factory.create("tynebridge", "my-bridge")
+        final InternalTopicFilterSubscriber s = factory.builder("tynebridge", "my-bridge")
                 .withProcessor(m -> {})
                 .withExcludedIngressClientId("peer-broker")
                 .build();
@@ -294,7 +294,7 @@ class InternalTopicFilterSubscriberTest {
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     private @NotNull InternalTopicFilterSubscriber build(final @NotNull String... filters) {
-        return factory.create("tynebridge", "my-bridge")
+        return factory.builder("tynebridge", "my-bridge")
                 .withProcessor(m -> {})
                 .withTopicFilter(List.of(filters))
                 .build();
