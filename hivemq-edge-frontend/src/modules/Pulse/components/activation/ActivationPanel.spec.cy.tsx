@@ -16,30 +16,33 @@ describe('ActivationPanel', () => {
     cy.wait('@capabilities')
     cy.get('[role="alert"]')
       .should('have.attr', 'data-status', 'error')
-      .should('contain.text', 'Cannot check the Pulse capability. Please try again later')
+      .should('contain.text', 'Cannot check Data Intelligence capability. Please try again later.')
   })
 
   const cy_formShouldRenderProperly = (isActivated: boolean, title: string, description: string) => {
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.wait('@capabilities')
-    cy.getByTestId('pulse-activation-trigger').should('have.text', isActivated ? 'Manage Activation' : 'Activate Pulse')
+    cy.getByTestId('pulse-activation-trigger').should(
+      'have.text',
+      isActivated ? 'Manage Connection' : 'Connect with HiveMQ Platform'
+    )
     cy.getByTestId('pulse-activation-trigger').click()
     cy.get("[role='dialog']").should('be.visible')
     cy.get("[role='dialog']").within(() => {
-      cy.get('header').should('have.text', 'Pulse Agent Activation')
+      cy.get('header').should('have.text', 'HiveMQ Platform Connection')
 
       cy.get('[role="alert"]')
         .should('have.attr', 'data-status', 'info')
-        // .should('contain.text', 'Pulse is activated')
-        // .should('contain.text', 'You can revoke the activation or activate a different instance with a new token.')
+        // .should('contain.text', 'HiveMQ Edge is connected with the HiveMQ Platform.')
+        // .should('contain.text', 'You can revoke the connection or connect a different instance with a new connection string.')
         .should('contain.text', title)
         .should('contain.text', description)
     })
 
     cy.get('form#pulse-activation-form').within(() => {
       cy.getByTestId('root').within(() => {
-        cy.get('textarea').should('have.attr', 'placeholder', 'Paste or drop the activation token here')
-        cy.get('label[for="root"]').should('have.text', 'Activation Token')
+        cy.get('textarea').should('have.attr', 'placeholder', 'Paste or drop the connection string here')
+        cy.get('label[for="root"]').should('have.text', 'Connection String')
         cy.get('textarea').should('have.text', '')
       })
     })
@@ -67,8 +70,8 @@ describe('ActivationPanel', () => {
     cy.mountWithProviders(<ActivationPanel />)
     cy_formShouldRenderProperly(
       false,
-      'Pulse is not activated',
-      'To activate Pulse, you need to submit the activation token.'
+      'Not connected to HiveMQ Platform',
+      'To connect to HiveMQ Platform, you need to submit the connection string you obtained via your HiveMQ Platform Account.'
     )
 
     cy.getByTestId('root').within(() => {
@@ -94,8 +97,8 @@ describe('ActivationPanel', () => {
     cy.mountWithProviders(<ActivationPanel />)
     cy_formShouldRenderProperly(
       true,
-      'Pulse is activated',
-      'You can revoke the activation or activate a different instance with a new token.'
+      'HiveMQ Edge is connected with the HiveMQ Platform.',
+      'You can revoke the connection or connect a different instance with a new connection string.'
     )
   })
 

@@ -74,7 +74,12 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
 
   return (
     <>
-      <ContextualToolbar id={id} title={data.label} dragging={dragging} onOpenPanel={onContextMenu} />
+      <ContextualToolbar
+        id={id}
+        title={t('pulse.workspace.nodeClient.title')}
+        dragging={dragging}
+        onOpenPanel={onContextMenu}
+      />
       <NodeWrapper
         isSelected={selected}
         statusModel={statusModel}
