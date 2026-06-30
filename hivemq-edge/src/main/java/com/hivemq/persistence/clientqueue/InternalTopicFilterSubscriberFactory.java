@@ -45,9 +45,11 @@ public class InternalTopicFilterSubscriberFactory {
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull SingleWriterService singleWriterService;
 
-    // Registry of currently-attached subscribers, keyed by their reserved-prefix clientId. Populated
-    // by attach(), cleared by detach(). The PublishDistributor consults it (getSubscriber) to ask a
-    // subscriber's isExcludedIngressClientId(...) before queueing a publish — i.e. ingress-exclusion.
+    // Registry of currently-allocated subscribers, keyed by their reserved-prefix clientId. Populated
+    // by build(), cleared by deallocate() — a subscriber owns its identity for its whole live span, not
+    // just while attached. The PublishDistributor consults it (getSubscriber) to ask a subscriber's
+    // isExcludedIngressClientId(...) before queueing a publish — i.e. ingress-exclusion. It is also the
+    // uniqueness guard: register() rejects a duplicate componentPrefix::instanceId.
     // Concurrent because the publish path reads it while lifecycle verbs (any thread) mutate it.
     private final @NotNull ConcurrentHashMap<String, InternalTopicFilterSubscriber> registry =
             new ConcurrentHashMap<>();
@@ -62,10 +64,15 @@ public class InternalTopicFilterSubscriberFactory {
         this.singleWriterService = singleWriterService;
     }
 
-    // ── registry — called by the subscriber's attach()/detach(), read by the distributor ────────────
+    // ── registry — called by the subscriber's build()/deallocate(), read by the distributor ──────────
 
     void register(final @NotNull InternalTopicFilterSubscriber subscriber) {
-        registry.put(subscriber.clientId(), subscriber);
+        final InternalTopicFilterSubscriber existing = registry.putIfAbsent(subscriber.clientId(), subscriber);
+        if (existing != null) {
+            throw new IllegalStateException("InternalTopicFilterSubscriber '" + subscriber.clientId()
+                    + "' is already in use; componentPrefix::instanceId must be unique within Edge"
+                    + " (the existing subscriber must deallocate() before this identity can be reused)");
+        }
     }
 
     void deregister(final @NotNull InternalTopicFilterSubscriber subscriber) {
@@ -73,7 +80,7 @@ public class InternalTopicFilterSubscriberFactory {
     }
 
     /**
-     * The attached subscriber with this reserved-prefix clientId, or null if none is attached. Used by
+     * The allocated subscriber with this reserved-prefix clientId, or null if none is allocated. Used by
      * the PublishDistributor to ask isExcludedIngressClientId(...) before queueing a publish.
      */
     public @Nullable InternalTopicFilterSubscriber getSubscriber(final @NotNull String clientId) {

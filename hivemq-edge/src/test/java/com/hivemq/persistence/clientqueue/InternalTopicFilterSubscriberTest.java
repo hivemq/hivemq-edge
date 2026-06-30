@@ -246,22 +246,49 @@ class InternalTopicFilterSubscriberTest {
     }
 
     @Test
-    void attach_registersInFactory_detachDeregisters() {
+    void build_registersInFactory_deallocateDeregisters() {
+        // Registration brackets the subscriber's whole live span: it owns its clientId from build()
+        // until deallocate(), NOT just while attached. attach()/detach() leave the registration alone.
         final InternalTopicFilterSubscriber s = build("sensors/#");
 
         assertThat(factory.getSubscriber(clientId()))
-                .as("not registered before attach")
-                .isNull();
+                .as("registered at build()")
+                .isSameAs(s);
 
         s.attach();
         assertThat(factory.getSubscriber(clientId()))
-                .as("registered after attach")
+                .as("still registered after attach()")
                 .isSameAs(s);
 
         s.detach();
         assertThat(factory.getSubscriber(clientId()))
-                .as("deregistered after detach")
+                .as("still registered after detach() — detach does not free the identity")
+                .isSameAs(s);
+
+        s.deallocate();
+        assertThat(factory.getSubscriber(clientId()))
+                .as("deregistered only at deallocate()")
                 .isNull();
+    }
+
+    @Test
+    void build_duplicateIdentity_throws_andDeallocateFreesItForReuse() {
+        // Two subscribers with the same componentPrefix::instanceId cannot coexist: the second build()
+        // is rejected. This is the uniqueness guard — the identity is the subscriber, 1:1.
+        final InternalTopicFilterSubscriber first = build("sensors/#");
+
+        assertThatThrownBy(() -> build("other/#"))
+                .as("a second subscriber with the same identity is rejected at build()")
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already in use");
+
+        // Once the first deallocates, the queue is destroyed and the identity is free to reuse.
+        first.deallocate();
+
+        final InternalTopicFilterSubscriber second = build("other/#");
+        assertThat(factory.getSubscriber(clientId()))
+                .as("the same identity is reusable after the first subscriber deallocated")
+                .isSameAs(second);
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────

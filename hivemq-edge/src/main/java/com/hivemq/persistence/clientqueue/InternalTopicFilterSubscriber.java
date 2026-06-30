@@ -109,7 +109,7 @@ public final class InternalTopicFilterSubscriber {
     // The per-message handler. Set once at construction (Builder requires it).
     private final @NotNull Processor processor;
 
-    // The factory that built this subscriber, kept as a back-reference so that attach()/detach() can
+    // The factory that built this subscriber, kept as a back-reference so that build()/deallocate() can
     // (de)register this subscriber in the factory's registry — see isExcludedIngressClientId() below.
     private final @NotNull InternalTopicFilterSubscriberFactory factory;
 
@@ -286,13 +286,16 @@ public final class InternalTopicFilterSubscriber {
         }
 
         // Produce the live subscriber. The subscriber is constructed in the IDLE state — detached and
-        // paused — i.e. nothing happens until start() (or attach()/consume()) is called.
+        // paused — i.e. no messages flow until start() (or attach()/consume()) is called. It is, however,
+        // already REGISTERED with the factory: the subscriber owns its clientId ("$INTERNAL::<prefix>::
+        // <instanceId>") from build() until deallocate(). register() throws if that identity is already in
+        // use, so a duplicate componentPrefix::instanceId is rejected here rather than silently colliding.
         public @NotNull InternalTopicFilterSubscriber build() {
             if (processor == null) {
                 throw new IllegalStateException(
                         "InternalTopicFilterSubscriber requires a processor; call withProcessor(...) before build()");
             }
-            return new InternalTopicFilterSubscriber(
+            final InternalTopicFilterSubscriber subscriber = new InternalTopicFilterSubscriber(
                     componentPrefix,
                     instanceId,
                     processor,
@@ -302,6 +305,8 @@ public final class InternalTopicFilterSubscriber {
                     topicTree,
                     clientQueuePersistence,
                     singleWriterService);
+            factory.register(subscriber); // throws if clientId already in use — deregistered by deallocate()
+            return subscriber;
         }
     }
 
@@ -399,9 +404,6 @@ public final class InternalTopicFilterSubscriber {
         for (final String topicFilter : topicFilters) {
             addToTree(topicFilter);
         }
-        // Register with the factory's registry so the distributor can find us by clientId and ask
-        // isExcludedIngressClientId(...) before queueing a message to us. Symmetric with detach().
-        factory.register(this);
         attached = true;
         return this;
     }
@@ -438,7 +440,6 @@ public final class InternalTopicFilterSubscriber {
         for (final String topicFilter : topicFilters) {
             removeFromTree(topicFilter);
         }
-        factory.deregister(this); // symmetric with attach()
         attached = false;
         return this;
     }
@@ -460,6 +461,9 @@ public final class InternalTopicFilterSubscriber {
         // long-lived subscriber must eventually stop()/deallocate() rather than just detach(), or the
         // queue (and its memory) would linger.
         clientQueuePersistence.clear(clientId, false);
+        // Free the clientId in the factory's registry — symmetric with build(). The queue is now
+        // destroyed, so the componentPrefix::instanceId identity becomes available for reuse.
+        factory.deregister(this);
         deallocated = true;
     }
 
