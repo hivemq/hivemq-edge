@@ -16,10 +16,14 @@
 package com.hivemq.edge.adapters.chaos;
 
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
+import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -145,14 +149,48 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
     }
 
     @Override
-    public void browse(final @NotNull BrowseFilter filter) {
+    public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {
         commands.add("browse");
+        // DISCOVER: the children of the filter node, scripted per node, as a single page (the simulator never
+        // paginates — multi-page DISCOVER is proven by the OPC-UA conformance suite).
         final ChaosScript.BrowseOutcome outcome = script.browseOutcomeFor(filter.filterNode());
         if (outcome.durationTicks() <= 0) {
-            output.browseResult(outcome.entries());
+            output.browsePage(requestId, outcome.entries(), null);
         } else {
-            scheduleAt(currentTick + outcome.durationTicks(), () -> output.browseResult(outcome.entries()));
+            scheduleAt(
+                    currentTick + outcome.durationTicks(), () -> output.browsePage(requestId, outcome.entries(), null));
         }
+    }
+
+    @Override
+    public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
+        commands.add("browseNext");
+        // The simulator never returns a continuation, so a well-behaved engine never calls this; answer an
+        // empty last page defensively.
+        output.browsePage(requestId, List.of(), null);
+    }
+
+    @Override
+    public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
+        commands.add("readNodeAttributes");
+        // RESOLVE: report each discovered node's attributes in one batch. A scripted datatype/access wins;
+        // otherwise a readable, typed default lets the node round-trip the two-phase walk.
+        final List<ResolvedAttributes> resolved = new ArrayList<>(nodes.size());
+        for (final Node node : nodes) {
+            resolved.add(defaultAttributes(node));
+        }
+        output.readAttributesResult(requestId, resolved);
+    }
+
+    private static @NotNull ResolvedAttributes defaultAttributes(final @NotNull Node node) {
+        return new ResolvedAttributes(
+                node,
+                "chaos:int",
+                AccessFlags.builder()
+                        .readable(AccessTriState.YES)
+                        .pollable(AccessTriState.YES)
+                        .build(),
+                "");
     }
 
     // ── harness-driven time ──────────────────────────────────────────────────────────────────────

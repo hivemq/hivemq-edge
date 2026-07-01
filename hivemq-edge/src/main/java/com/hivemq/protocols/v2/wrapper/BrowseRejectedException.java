@@ -37,7 +37,9 @@ public final class BrowseRejectedException extends RuntimeException {
         /** The adapter type does not declare the {@code BROWSE} capability (HTTP 400). */
         UNSUPPORTED,
         /** The adapter did not return a browse result before the deadline (HTTP 504). */
-        TIMED_OUT
+        TIMED_OUT,
+        /** A browse DISCOVER page or RESOLVE batch failed at the device (HTTP 500). */
+        FAILED
     }
 
     private final @NotNull Reason reason;

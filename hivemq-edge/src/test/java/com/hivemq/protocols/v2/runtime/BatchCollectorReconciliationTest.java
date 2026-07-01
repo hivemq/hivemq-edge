@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -232,6 +233,12 @@ class BatchCollectorReconciliationTest {
         }
 
         @Override
-        public void browse(final @NotNull BrowseFilter filter) {}
+        public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {}
+
+        @Override
+        public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {}
+
+        @Override
+        public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {}
     }
 }
