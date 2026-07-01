@@ -37,6 +37,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
@@ -524,7 +525,13 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         public void writeBatch(final @NotNull List<WriteEntry> entries) {}
 
         @Override
-        public void browse(final @NotNull BrowseFilter filter) {}
+        public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {}
+
+        @Override
+        public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {}
+
+        @Override
+        public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {}
     }
 
     /**

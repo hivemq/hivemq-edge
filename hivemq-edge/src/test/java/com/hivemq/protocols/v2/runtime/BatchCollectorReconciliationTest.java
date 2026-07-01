@@ -310,6 +310,12 @@ class BatchCollectorReconciliationTest {
         }
 
         @Override
-        public void browse(final @NotNull BrowseFilter filter) {}
+        public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {}
+
+        @Override
+        public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {}
+
+        @Override
+        public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {}
     }
 }
