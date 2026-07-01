@@ -98,8 +98,8 @@ public final class ProtocolAdapterFactoryRegistry {
     /**
      * @return the listable factories, in registration order — the source of the v2 {@code GET /types} listing.
      *         Hidden factories are excluded, so they never appear in the frontend even though they
-     *         remain resolvable by {@link #findByProtocolId(String)}. Empty in production wiring (D8), so
-     *         {@code GET /types} is empty until a real adapter type is ported.
+     *         remain resolvable by {@link #findByProtocolId(String)}. Empty in production until a v2 adapter module
+     *         is bundled, so {@code GET /types} is empty until a real adapter type is ported.
      */
     public @NotNull Collection<ProtocolAdapterFactory> all() {
         return List.copyOf(listableFactories);

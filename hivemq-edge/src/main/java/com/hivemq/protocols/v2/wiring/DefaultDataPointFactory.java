@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  *: the reused v1 {@link DataPointImpl} value, exactly as the legacy framework's adapter input creates it.
  * <p>
  * Unlike the legacy per-adapter factory it carries no adapter id of its own — the framework re-stamps each
- * PA-produced value with the owning tag's name and adapter id before it reaches a northbound consumer —
+ * adapter-produced value with the owning tag's name and adapter id before it reaches a northbound consumer —
  * so the {@code tagName} doubles as the provisional adapter id here. The factory is stateless and therefore safe to
  * share across every v2 adapter instance.
  */

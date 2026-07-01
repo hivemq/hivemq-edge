@@ -234,7 +234,11 @@ public final class ProtocolAdapterWrapperContext {
             case ProtocolAdapterWrapperCommand.UpdateTagSet update -> {
                 activation = Map.copyOf(update.activation());
                 tagPlane.updateTagSet(
-                        update.nodes(), update.activation(), update.readUsedTagNames(), update.writeUsedTagNames());
+                        update.nodes(),
+                        update.activation(),
+                        update.pollIntervalMillisByTagName(),
+                        update.readUsedTagNames(),
+                        update.writeUsedTagNames());
             }
             case ProtocolAdapterWrapperCommand.ApplyActivation apply -> {
                 goal = apply.adapterDirections();
@@ -373,6 +377,26 @@ public final class ProtocolAdapterWrapperContext {
     @NotNull
     ProtocolAdapterWrapperState watchdogErrorStep(final @NotNull ProtocolAdapterWrapperState current) {
         return enterError("watchdog timeout while in " + current, true);
+    }
+
+    /**
+     * Drive the machine into {@code ERROR} after a synchronous protocol-adapter command threw while a message was
+     * handled, instead of reporting the failure through the output façade. It mirrors the adapter-reported error path
+     * ({@code error(ErrorScope.ADAPTER, ...)} → {@link #adapterErrorStep}): no second {@code stop()} is issued — the
+     * adapter has just failed and issuing another command could only fail again — the tag plane and any pending browse
+     * are released, and the supervisor is notified. The wrapper's {@code receive} calls this from its fault fence, so
+     * the FSM error contract holds even for a direct adapter that throws on the dispatch thread rather than telling the
+     * output.
+     *
+     * @param trigger the message being handled when the fault was raised.
+     * @param fault   the unchecked exception raised while handling it.
+     */
+    public void failFromUnhandledFault(
+            final @NotNull ProtocolAdapterWrapperMessage trigger, final @NotNull RuntimeException fault) {
+        final String reason =
+                "protocol adapter failed while handling " + trigger.getClass().getSimpleName() + ": " + fault;
+        log.warn("Adapter '{}' entered ERROR after an unhandled fault: {}", adapterId, reason);
+        machine().transitionTo(enterError(reason, false));
     }
 
     /**

@@ -24,8 +24,10 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
+import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -51,6 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 
@@ -116,11 +119,33 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final ProtocolAdapterOutput output = new ProtocolAdapterOutputFacade(mailbox);
 
         final List<NodeTagPair> nodes = translateNodes(entity, factory);
+        // Validate the instance configuration against the type's schema before the adapter sees it, so an invalid
+        // section is rejected with a clear message rather than failing opaquely inside the adapter later. The manager
+        // runs this same preflight before any destructive transition; repeating it here keeps the guarantee that an
+        // adapter never sees a configuration the framework has not checked, even for a direct caller of create().
+        validateConfiguration(entity, factory);
         final DataPoint adapterConfig =
                 dataPointFactory.createJsonDataPoint(adapterId, entity.getAdapterConfiguration());
-        final ProtocolAdapterService services = new WrapperServices(dataPointFactory, dispatcher);
+        // Hand the adapter a dispatcher that records every binding it opens through the framework, so the framework
+        // owns each dispatch thread for the adapter's whole lifetime — whether the adapter is a template (which
+        // attaches in AbstractProtocolAdapter's constructor) or a direct ProtocolAdapter that attaches its own
+        // mailbox, and whether or not the adapter is itself AutoCloseable. A construction that fails after a binding
+        // was opened releases it here; a successful build hands the recording dispatcher to the container so teardown
+        // releases every binding then.
+        final RecordingDispatcher recordingDispatcher = new RecordingDispatcher(dispatcher);
+        final ProtocolAdapterService services = new WrapperServices(dataPointFactory, recordingDispatcher);
         final ProtocolAdapterInput input = new WrapperInput(adapterId, adapterConfig, nodes, services);
-        final ProtocolAdapter protocolAdapter = factory.createAdapter(input, output);
+        final ProtocolAdapter protocolAdapter;
+        try {
+            protocolAdapter = factory.createAdapter(input, output);
+        } catch (final RuntimeException failure) {
+            // The adapter type's factory threw while constructing the instance. Release every dispatch binding the
+            // half-built adapter opened, then surface a clear, adapter-specific reason the manager turns into an ERROR
+            // handle rather than letting the raw failure escape and leave the configured adapter missing.
+            recordingDispatcher.close();
+            throw new ProtocolAdapterConfigException(
+                    "adapter [" + adapterId + "] could not be constructed: " + failure, failure);
+        }
 
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
         final ProtocolAdapterGoalState goal = ProtocolAdapterConfigSupport.goalOf(entity);
@@ -133,10 +158,10 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 adapterId,
                 nodes,
                 activation,
+                ProtocolAdapterConfigSupport.pollIntervalMillisByTagName(entity),
                 readUsed,
                 writeUsed,
                 goal,
-                ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
                 retryPolicy);
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,
@@ -163,9 +188,24 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final MessageDispatcherHandle dispatcherHandle = dispatcher.attach(mailbox, wrapper);
         final AutoCloseable tickHandle =
                 clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis()));
+        // The container owns the teardown of everything the adapter attached through the framework dispatcher, so its
+        // dispatch thread is released when the adapter is discarded, exactly as the wrapper's is. A template adapter
+        // (or any AutoCloseable adapter) is also closed so it can release any non-dispatch resources it holds; the
+        // recording dispatcher then closes every remaining binding it opened, each at most once — so a direct adapter
+        // that is not AutoCloseable still has its dispatch thread released, and a template's single binding is never
+        // double-closed.
+        final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
-        return new ProtocolAdapterContainer(handle, dispatcherHandle, tickHandle, metrics, entity);
+        return new ProtocolAdapterContainer(
+                handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, entity);
+    }
+
+    @Override
+    public void validateConfiguration(
+            final @NotNull ProtocolAdapterEntity entity, final @NotNull ProtocolAdapterFactory factory) {
+        AdapterConfigurationSchemaValidator.validate(
+                entity.getAdapterId(), entity.getAdapterConfiguration(), factory.adapterConfigSchema(), objectMapper);
     }
 
     @Override
@@ -191,6 +231,98 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                     node, tag.getName(), factory.nodeDefinitionSchema(), tag.isPollable(), tag.isSubscribable()));
         }
         return nodes;
+    }
+
+    /**
+     * The teardown of everything a successfully-built adapter owns on the framework side: the adapter's own
+     * {@link AutoCloseable} (a template adapter, or any adapter that releases resources on teardown), then every
+     * dispatch binding it opened through the framework dispatcher. The recording dispatcher stays live for the
+     * adapter's whole lifetime, so a direct adapter that attaches a mailbox — at construction or later — through
+     * {@link ProtocolAdapterService#dispatcher()} always has that binding released here, even when it is not itself
+     * {@link AutoCloseable}. Closing both never double-closes a live binding: the recorded bindings close at most once,
+     * so a template's single binding — closed first by the adapter's own {@code close()} — is skipped by the second
+     * pass. Best effort: a failing adapter close still lets the recording dispatcher release the dispatch threads.
+     *
+     * @param protocolAdapter     the constructed adapter, closed if it is {@link AutoCloseable}.
+     * @param recordingDispatcher the dispatcher that recorded every binding the adapter opened.
+     * @return the composite teardown handed to the container as the adapter's dispatcher binding.
+     */
+    private static @NotNull AutoCloseable adapterTeardown(
+            final @NotNull ProtocolAdapter protocolAdapter, final @NotNull RecordingDispatcher recordingDispatcher) {
+        return () -> {
+            try {
+                if (protocolAdapter instanceof AutoCloseable closeable) {
+                    closeable.close();
+                }
+            } finally {
+                recordingDispatcher.close();
+            }
+        };
+    }
+
+    /**
+     * A {@link MessageDispatcher} that delegates to the real dispatcher while recording every binding it hands out, so
+     * the framework can release each one on teardown regardless of whether the adapter is {@link AutoCloseable}. Every
+     * recorded binding closes at most once, so this is safe to {@link #close()} even after the adapter has already
+     * closed one of the same bindings itself (as a template adapter does). Bindings may be opened from the adapter's
+     * own thread after construction, so the recording is thread-safe.
+     */
+    private static final class RecordingDispatcher implements MessageDispatcher, AutoCloseable {
+
+        private final @NotNull MessageDispatcher delegate;
+        private final @NotNull List<IdempotentHandle> handles = new CopyOnWriteArrayList<>();
+
+        private RecordingDispatcher(final @NotNull MessageDispatcher delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
+                final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
+            final IdempotentHandle handle = new IdempotentHandle(delegate.attach(mailbox, handler));
+            handles.add(handle);
+            return handle;
+        }
+
+        /**
+         * Close every binding opened through this dispatcher, each at most once. Called on a construction failure to
+         * release a half-built adapter's dispatch threads, and again on container teardown to release a
+         * successfully-built adapter's — the per-binding idempotence makes the second pass a no-op for anything already
+         * closed (for example by a template adapter's own {@code close()}).
+         */
+        @Override
+        public void close() {
+            for (final IdempotentHandle handle : handles) {
+                handle.close();
+            }
+        }
+    }
+
+    /**
+     * A dispatcher handle that closes its delegate at most once, so the framework can safely close it both from the
+     * adapter's own teardown and from {@link RecordingDispatcher#close()} without double-closing a live binding.
+     */
+    private static final class IdempotentHandle implements MessageDispatcherHandle {
+
+        private final @NotNull MessageDispatcherHandle delegate;
+        private boolean closed;
+
+        private IdempotentHandle(final @NotNull MessageDispatcherHandle delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public synchronized void close() {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            try {
+                delegate.close();
+            } catch (final RuntimeException ignored) {
+                // Best effort: a failing detach must not mask teardown or the original construction failure.
+            }
+        }
     }
 
     /**

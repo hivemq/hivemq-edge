@@ -71,6 +71,12 @@ final class MockProtocolAdapter implements ProtocolAdapter {
 
     boolean verifyDrop;
 
+    // Synchronous-fault hooks: a direct adapter that throws from a command on the wrapper's dispatch thread instead of
+    // reporting through the output façade (the fault the wrapper's fence must convert into ERROR).
+    boolean throwOnStart;
+    boolean throwOnConnect;
+    boolean throwOnPollBatch;
+
     MockProtocolAdapter(final @NotNull String adapterId, final @NotNull ProtocolAdapterOutput output) {
         this.adapterId = adapterId;
         this.output = output;
@@ -84,6 +90,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void start() {
         commands.add("start");
+        if (throwOnStart) {
+            throw new IllegalStateException("start blew up");
+        }
         switch (startReply) {
             case ACK -> output.started();
             case FAIL_ADAPTER -> output.error(ErrorScope.ADAPTER, "start failed");
@@ -104,6 +113,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void connect() {
         commands.add("connect");
+        if (throwOnConnect) {
+            throw new IllegalStateException("connect blew up");
+        }
         final Reply reply = connectReplies.isEmpty() ? connectReply : connectReplies.poll();
         switch (reply) {
             case ACK -> output.connected();
@@ -137,6 +149,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void pollBatch(final @NotNull List<Node> nodes) {
         commands.add("pollBatch");
+        if (throwOnPollBatch) {
+            throw new IllegalStateException("pollBatch blew up");
+        }
     }
 
     @Override

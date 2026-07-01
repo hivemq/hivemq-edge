@@ -86,11 +86,11 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Reads come from the {@link ProtocolAdapterHandleRegistry} snapshots and the read-only
  * {@link ProtocolAdapterExtractor}; types and schema projections come from the {@link ProtocolAdapterFactoryRegistry}
- * (empty in production until a real adapter type is ported, D8); commands go to the manager mailbox through a
+ * (empty in production until a real adapter type is ported); commands go to the manager mailbox through a
  * {@link MailboxSender}. The generated v2 contract lives in its own package ({@code com.hivemq.edge.api.v2}); a few
  * generated DTO enums share simple names with the framework view folds and SDK types, so those are referenced fully
- * qualified. The constructor is {@code @Inject}-ready, but the resource is registered beside v1 only in the
- * side-by-side wiring task (T13).
+ * qualified. The constructor is {@code @Inject}-ready, but the resource is registered beside v1 only by the
+ * side-by-side bootstrap wiring.
  */
 @Singleton
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
@@ -112,7 +112,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     /**
      * @param manager          the manager mailbox the runtime-state commands are told to.
      * @param handleRegistry   the REST-readable adapter registry (snapshots and senders).
-     * @param factoryRegistry  the registered adapter type factories (empty in production, D8).
+     * @param factoryRegistry  the registered adapter type factories (empty in production until a v2 adapter module
+     *                         is bundled).
      * @param configExtractor  the read-only {@code <v2>} configuration extractor.
      * @param objectMapper     the JSON mapper used to deserialize browse filter node strings.
      */
@@ -297,13 +298,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response retryTags(final @NotNull String adapterId, final @NotNull TagRetryRequest body) {
+    public @NotNull Response retryTags(final @NotNull String adapterId, final @Nullable TagRetryRequest body) {
         final AdapterStatusSnapshot snapshot = snapshotOf(adapterId);
         if (snapshot == null) {
             return adapterNotFound(adapterId);
         }
-        final List<String> requested =
-                (body.getTagNames() == null || body.getTagNames().isEmpty()) ? null : body.getTagNames();
+        // The bulk-retry body is optional (the OpenAPI marks it not required): a request with no body, or with no tag
+        // names, retries every permanently-failed tag. Treat all three the same rather than dereferencing a null body.
+        final List<String> requested = (body == null
+                        || body.getTagNames() == null
+                        || body.getTagNames().isEmpty())
+                ? null
+                : body.getTagNames();
         return Response.ok(retryResult(adapterId, snapshot, requested)).build();
     }
 

@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.runtime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
@@ -31,9 +32,10 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * S26 at unit level: same-tick subscription requests are reconciled per node (last request wins) so a node
- * appears in at most one of the add/remove batches; poll and write batches keep duplicates in order; and a
- * dispatch sends the non-empty batches in the fixed order remove, add, poll, write, then clears them.
+ * The per-tick batch collector: same-tick subscription requests are reconciled per node (last request wins) so a
+ * node appears in at most one of the add/remove batches; poll and write batches keep duplicates in order; a dispatch
+ * sends the non-empty batches in the fixed order remove, add, poll, write, then clears them; and a throwing adapter
+ * command still clears every batch so it is never re-dispatched on the next tick.
  */
 class BatchCollectorReconciliationTest {
 
@@ -134,6 +136,25 @@ class BatchCollectorReconciliationTest {
         assertThat(adapter.polled).containsExactly(List.of(node));
     }
 
+    @Test
+    void dispatch_clearsEveryBatch_evenWhenAnAdapterCommandThrows() {
+        final BatchCollector collector = new BatchCollector();
+        final Node node = new TestNode("n1");
+        collector.addSubscription(node);
+        collector.poll(node);
+        collector.write(new WriteEntry(node, new TestDataPoint("v")));
+
+        // The adapter throws on the first batch command: the exception propagates to the wrapper's dispatch loop (its
+        // fence), but the collector must still have cleared every batch.
+        assertThatThrownBy(() -> collector.dispatch(new ThrowingProtocolAdapter()))
+                .isInstanceOf(IllegalStateException.class);
+
+        // A second dispatch to a healthy adapter sends nothing: no batch survived the throw to be re-dispatched.
+        final RecordingProtocolAdapter recording = new RecordingProtocolAdapter();
+        collector.dispatch(recording);
+        assertThat(recording.callOrder).isEmpty();
+    }
+
     private static final class TestNode extends Node {
 
         private final @NotNull String identifier;
@@ -230,6 +251,62 @@ class BatchCollectorReconciliationTest {
         public void writeBatch(final @NotNull List<WriteEntry> entries) {
             callOrder.add("write");
             written.add(entries);
+        }
+
+        @Override
+        public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {}
+
+        @Override
+        public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {}
+
+        @Override
+        public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {}
+    }
+
+    /**
+     * A protocol-adapter double whose every batch command throws — the misbehaving adapter the collector must clear
+     * its batches around.
+     */
+    private static final class ThrowingProtocolAdapter implements ProtocolAdapter {
+
+        @Override
+        public @NotNull String adapterId() {
+            return "throwing";
+        }
+
+        @Override
+        public void start() {}
+
+        @Override
+        public void stop() {}
+
+        @Override
+        public void connect() {}
+
+        @Override
+        public void disconnect() {}
+
+        @Override
+        public void verifyBatch(final @NotNull List<Node> nodes) {}
+
+        @Override
+        public void pollBatch(final @NotNull List<Node> nodes) {
+            throw new IllegalStateException("poll blew up");
+        }
+
+        @Override
+        public void addSubscriptionBatch(final @NotNull List<Node> nodes) {
+            throw new IllegalStateException("subscribe blew up");
+        }
+
+        @Override
+        public void removeSubscriptionBatch(final @NotNull List<Node> nodes) {
+            throw new IllegalStateException("unsubscribe blew up");
+        }
+
+        @Override
+        public void writeBatch(final @NotNull List<WriteEntry> entries) {
+            throw new IllegalStateException("write blew up");
         }
 
         @Override

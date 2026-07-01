@@ -63,20 +63,18 @@ public final class ProtocolAdapterConfigSupport {
     }
 
     /**
-     * The single poll cadence the running tag coordinator applies to every polled aspect. The
-     * coordinator currently takes one interval per adapter; the configuration carries one per tag, so this reduces
-     * them conservatively to the <b>shortest</b> declared interval — no tag then polls slower than its configuration
-     * asks, though tags with a longer configured interval poll faster than declared. A per-tag poll cadence is a
-     * follow-up tied to the coordinator's single-interval support.
+     * The per-tag poll cadence the running tag coordinator applies to each polled aspect, keyed by tag name. Each
+     * tag is scheduled at its own declared {@code poll-interval-millis}, so a slow tag is never overpolled because a
+     * fast sibling exists.
      *
      * @param entity the adapter configuration.
-     * @return the shortest declared poll interval, or {@link TagEntity}'s default when the adapter declares no tags.
+     * @return a map of tag name to its declared poll interval, in declaration order.
      */
-    public static long pollIntervalMillisOf(final @NotNull ProtocolAdapterEntity entity) {
-        long shortest = Long.MAX_VALUE;
+    public static @NotNull Map<String, Long> pollIntervalMillisByTagName(final @NotNull ProtocolAdapterEntity entity) {
+        final Map<String, Long> pollIntervals = new LinkedHashMap<>();
         for (final TagEntity tag : entity.getTags()) {
-            shortest = Math.min(shortest, tag.getPollIntervalMillis());
+            pollIntervals.put(tag.getName(), tag.getPollIntervalMillis());
         }
-        return shortest == Long.MAX_VALUE ? new TagEntity().getPollIntervalMillis() : shortest;
+        return pollIntervals;
     }
 }

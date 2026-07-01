@@ -95,6 +95,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     private @NotNull RetryPolicy retryPolicy = RetryPolicy.defaults();
     private long watchdogTimeoutMillis = 1000;
     private long pollIntervalMillis = 1000;
+    private final @NotNull Map<String, Long> pollIntervalsByTagName = new HashMap<>();
     private long tickPeriodMillis = 100;
     private boolean skipVerification;
 
@@ -226,6 +227,20 @@ public final class ProtocolAdapterWrapperTestHarness {
     }
 
     /**
+     * Override one tag's poll cadence, leaving every other tag at the adapter-wide default. Proves per-tag poll
+     * scheduling: tags with different intervals poll at their own cadence.
+     *
+     * @param tagName the tag whose poll cadence to set.
+     * @param millis  the tag's poll interval, in milliseconds.
+     * @return this harness.
+     */
+    public @NotNull ProtocolAdapterWrapperTestHarness pollInterval(final @NotNull String tagName, final long millis) {
+        requireNotBuilt();
+        this.pollIntervalsByTagName.put(tagName, millis);
+        return this;
+    }
+
+    /**
      * @param tickPeriodMillis the wall-clock duration of one harness tick, in milliseconds.
      * @return this harness.
      */
@@ -339,7 +354,43 @@ public final class ProtocolAdapterWrapperTestHarness {
             final @NotNull Set<String> readUsed, final @NotNull Set<String> writeUsed) {
         final ActorRuntime rt = runtime();
         send(new ProtocolAdapterWrapperCommand.UpdateTagSet(
-                nodes, Map.copyOf(rt.activation), Set.copyOf(readUsed), Set.copyOf(writeUsed)));
+                nodes,
+                Map.copyOf(rt.activation),
+                resolvedPollIntervals(nodes),
+                Set.copyOf(readUsed),
+                Set.copyOf(writeUsed)));
+        return this;
+    }
+
+    /**
+     * Simulate a tags-only config reload that changes the tag set (adds or removes tags): tell the wrapper one
+     * {@code UpdateTagSet} carrying the new node set. The coordinator diffs in place — survivors keep polling, added
+     * tags verify against the live connection, removed tags are torn down — and never reconnects.
+     *
+     * @param newNodes  the new node/tag pairs.
+     * @param readUsed  the tags a northbound mapping now consumes.
+     * @param writeUsed the tags a southbound mapping now produces to.
+     * @return this harness.
+     */
+    public @NotNull ProtocolAdapterWrapperTestHarness updateTags(
+            final @NotNull List<NodeTagPair> newNodes,
+            final @NotNull Set<String> readUsed,
+            final @NotNull Set<String> writeUsed) {
+        final ActorRuntime rt = runtime();
+        this.nodes = List.copyOf(newNodes);
+        final Map<String, TagAspectActivationPreference> newActivation = new HashMap<>();
+        for (final NodeTagPair pair : newNodes) {
+            final String name = pair.tag().name();
+            newActivation.put(name, rt.activation.getOrDefault(name, TagAspectActivationPreference.defaults()));
+        }
+        rt.activation.clear();
+        rt.activation.putAll(newActivation);
+        send(new ProtocolAdapterWrapperCommand.UpdateTagSet(
+                newNodes,
+                Map.copyOf(newActivation),
+                resolvedPollIntervals(newNodes),
+                Set.copyOf(readUsed),
+                Set.copyOf(writeUsed)));
         return this;
     }
 
@@ -533,6 +584,15 @@ public final class ProtocolAdapterWrapperTestHarness {
         return activation;
     }
 
+    private @NotNull Map<String, Long> resolvedPollIntervals(final @NotNull List<NodeTagPair> forNodes) {
+        final Map<String, Long> intervals = new HashMap<>();
+        for (final NodeTagPair pair : forNodes) {
+            final String name = pair.tag().name();
+            intervals.put(name, pollIntervalsByTagName.getOrDefault(name, pollIntervalMillis));
+        }
+        return intervals;
+    }
+
     /**
      * The actor and its collaborators, built once from the harness configuration and then frozen. Mirrors the
      * wiring of the wrapper-package test fixture, but always drives the running tag-aspect coordinator and the
@@ -564,7 +624,7 @@ public final class ProtocolAdapterWrapperTestHarness {
             this.adapter = new ChaosProtocolAdapter(adapterId, output, script);
             final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
             final TagAspectRuntimeCoordinator coordinator = new TagAspectRuntimeCoordinator(
-                    adapterId, nodes, activation, readUsed, writeUsed, goal, pollIntervalMillis, retryPolicy);
+                    adapterId, nodes, activation, resolvedPollIntervals(nodes), readUsed, writeUsed, goal, retryPolicy);
             final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                     adapterId,
                     adapter,

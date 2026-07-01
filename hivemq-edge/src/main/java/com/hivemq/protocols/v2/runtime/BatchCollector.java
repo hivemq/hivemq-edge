@@ -104,20 +104,25 @@ public final class BatchCollector {
                 toAdd.add(operation.getKey());
             }
         }
-        if (!toRemove.isEmpty()) {
-            protocolAdapter.removeSubscriptionBatch(toRemove);
+        // Clear in a finally so a throwing adapter command never leaves a batch behind to be re-dispatched on the
+        // next tick. The exception still propagates to the wrapper actor's dispatch loop, which fences it.
+        try {
+            if (!toRemove.isEmpty()) {
+                protocolAdapter.removeSubscriptionBatch(toRemove);
+            }
+            if (!toAdd.isEmpty()) {
+                protocolAdapter.addSubscriptionBatch(toAdd);
+            }
+            if (!pollBatch.isEmpty()) {
+                protocolAdapter.pollBatch(new ArrayList<>(pollBatch));
+            }
+            if (!writeBatch.isEmpty()) {
+                protocolAdapter.writeBatch(new ArrayList<>(writeBatch));
+            }
+        } finally {
+            subscriptionOperations.clear();
+            pollBatch.clear();
+            writeBatch.clear();
         }
-        if (!toAdd.isEmpty()) {
-            protocolAdapter.addSubscriptionBatch(toAdd);
-        }
-        if (!pollBatch.isEmpty()) {
-            protocolAdapter.pollBatch(new ArrayList<>(pollBatch));
-        }
-        if (!writeBatch.isEmpty()) {
-            protocolAdapter.writeBatch(new ArrayList<>(writeBatch));
-        }
-        subscriptionOperations.clear();
-        pollBatch.clear();
-        writeBatch.clear();
     }
 }

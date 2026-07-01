@@ -24,6 +24,8 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage;
 import com.hivemq.protocols.v2.runtime.SystemClock;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -44,8 +46,10 @@ import org.slf4j.LoggerFactory;
  * {@code ConfigurationChanged} at startup and on every reload — the manager applies the gentlest correct transition.</li>
  * </ol>
  * The order matters: the manager is bound and pumping before the first configuration is delivered. {@link #stop()}
- * cancels the tick, stops the manager's dispatch thread, and closes the clock — which cancels every wrapper tick too,
- * since the whole subsystem shares the one clock. Both methods are idempotent.
+ * first drains the manager — it stops and discards every adapter, so each protocol adapter gets a clean stop and
+ * every wrapper container's resources are released — and only then cancels the tick, stops the manager's dispatch
+ * thread, and closes the clock (which cancels every wrapper tick too, since the whole subsystem shares the one
+ * clock). Both methods are idempotent.
  */
 @Singleton
 public class ProtocolAdapterLifecycle {
@@ -55,11 +59,18 @@ public class ProtocolAdapterLifecycle {
     /** The manager's housekeeping cadence: a coarse health-summary tick is sufficient. */
     private static final long MANAGER_TICK_PERIOD_MILLIS = 1_000L;
 
+    /** How long {@link #stop()} waits for the manager to stop every adapter gracefully before forcing it down. */
+    private static final long DEFAULT_SHUTDOWN_DRAIN_TIMEOUT_MILLIS = 10_000L;
+
+    /** How long {@link #stop()} then waits for the forced teardown — closing handles only, so it is near-instant. */
+    private static final long FORCE_CLOSE_TIMEOUT_MILLIS = 2_000L;
+
     private final @NotNull ProtocolAdapterManager manager;
     private final @NotNull Mailbox<ProtocolAdapterManagerMessage> managerMailbox;
     private final @NotNull MessageDispatcher dispatcher;
     private final @NotNull SystemClock clock;
     private final @NotNull ProtocolAdapterExtractor configExtractor;
+    private final long shutdownDrainTimeoutMillis;
 
     private @Nullable MessageDispatcherHandle managerDispatcherHandle;
     private @Nullable AutoCloseable managerTickHandle;
@@ -79,11 +90,28 @@ public class ProtocolAdapterLifecycle {
             final @NotNull MessageDispatcher dispatcher,
             final @NotNull SystemClock clock,
             final @NotNull ProtocolAdapterExtractor configExtractor) {
+        this(manager, managerMailbox, dispatcher, clock, configExtractor, DEFAULT_SHUTDOWN_DRAIN_TIMEOUT_MILLIS);
+    }
+
+    /**
+     * As the injected constructor, but with an explicit graceful-drain timeout — the configurable bound on how long
+     * {@link #stop()} waits for adapters to stop cleanly before forcing the teardown.
+     *
+     * @param shutdownDrainTimeoutMillis how long {@link #stop()} waits for the graceful drain before forcing.
+     */
+    public ProtocolAdapterLifecycle(
+            final @NotNull ProtocolAdapterManager manager,
+            final @NotNull Mailbox<ProtocolAdapterManagerMessage> managerMailbox,
+            final @NotNull MessageDispatcher dispatcher,
+            final @NotNull SystemClock clock,
+            final @NotNull ProtocolAdapterExtractor configExtractor,
+            final long shutdownDrainTimeoutMillis) {
         this.manager = manager;
         this.managerMailbox = managerMailbox;
         this.dispatcher = dispatcher;
         this.clock = clock;
         this.configExtractor = configExtractor;
+        this.shutdownDrainTimeoutMillis = shutdownDrainTimeoutMillis;
     }
 
     /**
@@ -109,12 +137,28 @@ public class ProtocolAdapterLifecycle {
     }
 
     /**
-     * Stop the v2 protocol-adapter subsystem: cancel the manager tick, stop the manager's dispatch thread, and close
-     * the clock (which cancels every wrapper's tick too, since the whole subsystem shares the one clock). Idempotent.
+     * Stop the v2 protocol-adapter subsystem: first ask the manager — on its own dispatch thread — to stop and
+     * discard every adapter, so each protocol adapter gets a clean stop and every wrapper container's resources
+     * (dispatcher binding, tick, metrics) are released; then cancel the manager tick, stop the manager's dispatch
+     * thread, and close the clock (which cancels every wrapper's tick too, since the whole subsystem shares the one
+     * clock). Idempotent.
      */
     public synchronized void stop() {
         if (!started) {
             return;
+        }
+        // Drain the manager (stop every adapter and close its container) before tearing the runtime down, while the
+        // manager's dispatch thread and the shared clock are still running.
+        final CountDownLatch managerDrained = new CountDownLatch(1);
+        managerMailbox.tell(new ProtocolAdapterManagerMessage.ShutdownRequested(managerDrained));
+        if (!awaitDrain(managerDrained)) {
+            // An adapter never acknowledged its stop within the drain window (its stop watchdog may be configured
+            // longer than that window). Force every still-pending container closed on the manager's dispatch thread —
+            // which is idle, awaiting the events that never came — so no wrapper or adapter dispatch thread, tick, or
+            // metric is orphaned when the clock and dispatcher are closed below.
+            final CountDownLatch forceClosed = new CountDownLatch(1);
+            managerMailbox.tell(new ProtocolAdapterManagerMessage.ShutdownTimedOut(forceClosed));
+            awaitForceClose(forceClosed);
         }
         closeQuietly(managerTickHandle);
         if (managerDispatcherHandle != null) {
@@ -125,6 +169,35 @@ public class ProtocolAdapterLifecycle {
         managerDispatcherHandle = null;
         started = false;
         log.info("Stopped the v2 protocol-adapter subsystem");
+    }
+
+    /**
+     * @return {@code true} if the manager drained every adapter within the timeout; {@code false} if it timed out
+     *         (the caller then forces the teardown) or the wait was interrupted.
+     */
+    private boolean awaitDrain(final @NotNull CountDownLatch latch) {
+        try {
+            if (latch.await(shutdownDrainTimeoutMillis, TimeUnit.MILLISECONDS)) {
+                return true;
+            }
+            log.warn("Timed out waiting for the v2 protocol-adapter manager to stop every adapter; forcing teardown");
+            return false;
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for the v2 protocol-adapter manager to stop every adapter");
+            return false;
+        }
+    }
+
+    private static void awaitForceClose(final @NotNull CountDownLatch latch) {
+        try {
+            if (!latch.await(FORCE_CLOSE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                log.warn("Timed out waiting for the forced v2 protocol-adapter teardown; continuing shutdown");
+            }
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for the forced v2 protocol-adapter teardown");
+        }
     }
 
     private static void closeQuietly(final @Nullable AutoCloseable closeable) {

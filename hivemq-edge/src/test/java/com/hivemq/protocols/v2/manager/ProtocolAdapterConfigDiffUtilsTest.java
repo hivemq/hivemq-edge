@@ -19,9 +19,12 @@ import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.
 import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.tag;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
+import com.hivemq.protocols.v2.config.AccessFlagsEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.RetryPolicyEntity;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -92,7 +95,7 @@ class ProtocolAdapterConfigDiffUtilsTest {
 
     @Test
     void addedMappingThatFlipsUsed_isTagsOnly() {
-        // S16: a northbound mapping added in config flips the tag's readUsed — a tags-only transition (UpdateTagSet
+        // A northbound mapping added in config flips the tag's readUsed — a tags-only transition (UpdateTagSet
         // recomputes used), never a reconnect.
         final ProtocolAdapterEntity running = adapter("a").build();
         final ProtocolAdapterEntity updated =
@@ -100,6 +103,30 @@ class ProtocolAdapterConfigDiffUtilsTest {
 
         assertThat(ProtocolAdapterConfigDiffUtils.classify(running, updated))
                 .isEqualTo(ProtocolAdapterConfigStateTransition.TAGS_ONLY);
+    }
+
+    @Test
+    void accessFlagsOnlyChange_isTagsOnly() {
+        // A change to a tag's declared access flags is part of its tag-set identity, so it is a tags-only transition
+        // (the runtime keeps the tag in place; the new flags reach only the REST view), never an activation-only no-op
+        // and never a reconnect.
+        final ProtocolAdapterEntity running = adapter("a")
+                .tags(tag("temperature").access(access(false)).build())
+                .build();
+        final ProtocolAdapterEntity updated = adapter("a")
+                .tags(tag("temperature").access(access(true)).build())
+                .build();
+
+        assertThat(ProtocolAdapterConfigDiffUtils.classify(running, updated))
+                .isEqualTo(ProtocolAdapterConfigStateTransition.TAGS_ONLY);
+    }
+
+    private static @NotNull AccessFlagsEntity access(final boolean readable) {
+        return new AccessFlagsEntity(
+                readable ? AccessTriState.YES : AccessTriState.NO,
+                AccessTriState.NO,
+                AccessTriState.NO,
+                AccessTriState.NO);
     }
 
     @Test

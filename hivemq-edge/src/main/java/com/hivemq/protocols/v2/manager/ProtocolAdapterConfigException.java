@@ -19,10 +19,19 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown by the wrapper factory when an otherwise well-formed adapter configuration cannot be turned into a running
- * wrapper — for example a {@code node-string} that does not deserialize into the adapter type's node class. The manager catches it and surfaces the adapter as an {@code ERROR} registry handle with the message,
- * rather than failing the whole reload.
+ * wrapper — for example a {@code node-string} that does not deserialize into the adapter type's node class, or an
+ * {@code adapter-configuration} that does not match the adapter type's configuration schema. The manager catches it
+ * and surfaces the adapter as an {@code ERROR} registry handle with the message, rather than failing the whole
+ * reload.
  */
 public class ProtocolAdapterConfigException extends RuntimeException {
+
+    /**
+     * @param message a human-readable description of why the configuration could not be instantiated.
+     */
+    public ProtocolAdapterConfigException(final @NotNull String message) {
+        super(message);
+    }
 
     /**
      * @param message a human-readable description of why the configuration could not be instantiated.

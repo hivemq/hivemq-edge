@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.chaos;
 
+import com.hivemq.adapter.sdk.api.schema.AnySchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
@@ -49,6 +50,9 @@ public final class ChaosProtocolAdapterFactory implements ProtocolAdapterFactory
 
     private static final @NotNull Schema STRING_SCHEMA =
             new ScalarSchema(ScalarType.STRING, null, null, null, null, false, true, false);
+
+    // The chaos adapter's behavior is driven by its script, not its configuration; it accepts any configuration.
+    private static final @NotNull Schema ANY_SCHEMA = new AnySchema(null, null, false, true, false);
 
     private final @NotNull ProtocolAdapterInformation information;
     private final @NotNull Function<ProtocolAdapterInput, ChaosScript> scriptResolver;
@@ -104,7 +108,7 @@ public final class ChaosProtocolAdapterFactory implements ProtocolAdapterFactory
 
     @Override
     public @NotNull Schema adapterConfigSchema() {
-        return STRING_SCHEMA;
+        return ANY_SCHEMA;
     }
 
     @Override

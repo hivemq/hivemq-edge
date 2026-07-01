@@ -377,22 +377,84 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
     // ── S14: tags-only reload ───────────────────────────────────────────────────────────────────────────────────
 
     @Test
-    void s14_tagsOnlyReload_appliesInPlaceWithoutReconnecting() {
+    void s14_tagsOnlyReload_survivorsKeepPollingWithoutReVerifying() {
         final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
-                .poll(NodeMatcher.all(), PollBehavior.value(TEMPERATURE))
-                .build());
+                        .poll(NodeMatcher.all(), PollBehavior.value(TEMPERATURE))
+                        .build())
+                .configure(List.of(
+                        ProtocolAdapterWrapperTestHarness.polledTag("temperature"),
+                        ProtocolAdapterWrapperTestHarness.polledTag("pressure")))
+                .readUsed(Set.of("temperature", "pressure"));
         harness.activateNorthbound();
         assertThat(harness.wrapperState()).isEqualTo(CONNECTED);
         assertThat(count(harness, "connect")).isEqualTo(1);
+        assertThat(count(harness, "verifyBatch")).isEqualTo(1); // one connect-gate batch covered both tags
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
 
-        harness.updateTags(Set.of("temperature"), Set.of()); // a tags-only reload of the same set
+        // A tags-only reload that DROPS "pressure" but leaves the "temperature" survivor unchanged.
+        harness.updateTags(
+                List.of(ProtocolAdapterWrapperTestHarness.polledTag("temperature")), Set.of("temperature"), Set.of());
 
-        // The gentlest transition for a tags-only change: the tag set is re-applied in place and the adapter is
-        // NEVER reconnected. (The rebuilt aspects re-couple to the adapter on its next readiness
-        // signal; the no-reconnect invariant is the guarantee asserted here.)
-        assertThat(harness.wrapperState()).isEqualTo(CONNECTED);
+        // The survivor keeps polling in place: it never reconnects and never issues a fresh verification.
         assertThat(count(harness, "connect")).isEqualTo(1);
-        assertThat(harness.tag("temperature")).isNotNull();
+        assertThat(count(harness, "verifyBatch")).isEqualTo(1); // unchanged — the survivor did NOT re-verify
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(harness.snapshot().tags()).hasSize(1); // the removed tag is gone from the snapshot
+
+        harness.advance(1); // the survivor's poll timer fires uninterrupted — it kept its schedule across the reload
+        assertThat(harness.commandsSent()).contains("pollBatch");
+    }
+
+    @Test
+    void s14_tagsOnlyReload_addedTagVerifiesAgainstLiveConnection_survivorUntouched() {
+        final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
+                        .poll(NodeMatcher.all(), PollBehavior.value(TEMPERATURE))
+                        .build())
+                .configure(List.of(ProtocolAdapterWrapperTestHarness.polledTag("temperature")))
+                .readUsed(Set.of("temperature"));
+        harness.activateNorthbound();
+        assertThat(harness.wrapperState()).isEqualTo(CONNECTED);
+        assertThat(count(harness, "verifyBatch")).isEqualTo(1);
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+
+        // A tags-only reload that ADDS "pressure"; "temperature" is unchanged.
+        harness.updateTags(
+                List.of(
+                        ProtocolAdapterWrapperTestHarness.polledTag("temperature"),
+                        ProtocolAdapterWrapperTestHarness.polledTag("pressure")),
+                Set.of("temperature", "pressure"),
+                Set.of());
+
+        // No reconnect; the survivor did not re-verify, but the added tag verified against the live connection.
+        assertThat(count(harness, "connect")).isEqualTo(1);
+        assertThat(count(harness, "verifyBatch")).isEqualTo(2); // a second batch for the added node only
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL"); // survivor untouched
+        assertThat(harness.readState("pressure")).isEqualTo("WAITING_FOR_POLL_INTERVAL"); // added tag now operating
+        assertThat(harness.tagStatus("pressure")).isEqualTo(NORTHBOUND_ONLY);
+    }
+
+    @Test
+    void perTagPollIntervals_areScheduledIndependently() {
+        final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
+                        .poll(NodeMatcher.all(), PollBehavior.noResponse()) // a poll parks the aspect, no value back
+                        .build())
+                .configure(List.of(
+                        ProtocolAdapterWrapperTestHarness.polledTag("fast"),
+                        ProtocolAdapterWrapperTestHarness.polledTag("slow")))
+                .readUsed(Set.of("fast", "slow"))
+                .pollInterval("fast", 1000) // one tick
+                .pollInterval("slow", 5000); // five ticks
+        harness.activateNorthbound();
+        assertThat(harness.wrapperState()).isEqualTo(CONNECTED);
+        assertThat(harness.readState("fast")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(harness.readState("slow")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+
+        harness.advance(1); // 1000 ms: only "fast" is due, so only "fast" polls
+        assertThat(harness.readState("fast")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+        assertThat(harness.readState("slow")).isEqualTo("WAITING_FOR_POLL_INTERVAL"); // NOT overpolled
+
+        harness.advance(4); // 5000 ms total: "slow" is now due and polls for the first time
+        assertThat(harness.readState("slow")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
     }
 
     // ── S16: `used` flips ───────────────────────────────────────────────────────────────────────────────────────

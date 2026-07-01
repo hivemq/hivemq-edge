@@ -1025,7 +1025,10 @@ components:
         schema:
           $ref: '#/components/schemas/JsonNode'
         status:
-          $ref: '#/components/schemas/TagStatus'
+          nullable: true
+          description: The tag's derived runtime status, or null when the tag is configured but not part of the running snapshot — the adapter is not running, or a reload added the tag but it has not yet been (or could not be) applied to the running adapter.
+          allOf:
+            - $ref: '#/components/schemas/TagStatus'
     TagStatusDetail:
       type: object
       description: A tag's status plus per-aspect detail — states, counters, and the last failure reason.

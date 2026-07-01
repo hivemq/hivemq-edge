@@ -84,14 +84,23 @@ final class WrapperTestFixture {
         final TagAspectRuntimeCoordinator runningTagPlane;
         final TagAspectSnapshotOnlyCoordinator snapshotOnlyTagPlane;
         if (builder.runningCoordinator) {
+            final Map<String, Long> pollIntervals = new HashMap<>();
+            for (final NodeTagPair pair : builder.nodes) {
+                final String tagName = pair.tag().name();
+                pollIntervals.put(
+                        tagName,
+                        builder.pollIntervalsByTagName != null
+                                ? builder.pollIntervalsByTagName.getOrDefault(tagName, builder.pollIntervalMillis)
+                                : builder.pollIntervalMillis);
+            }
             runningTagPlane = new TagAspectRuntimeCoordinator(
                     adapterId,
                     builder.nodes,
                     activation,
+                    pollIntervals,
                     readUsed,
                     writeUsed,
                     builder.initialGoal,
-                    builder.pollIntervalMillis,
                     builder.retryPolicy);
             snapshotOnlyTagPlane = null;
             tagPlane = runningTagPlane;
@@ -301,6 +310,7 @@ final class WrapperTestFixture {
         private long tickPeriodMillis = 100;
         private boolean runningCoordinator;
         private long pollIntervalMillis = 1000;
+        private @Nullable Map<String, Long> pollIntervalsByTagName;
         private @Nullable Map<String, TagAspectActivationPreference> activation;
         private @Nullable Set<String> readUsed;
         private @Nullable Set<String> writeUsed;
@@ -360,6 +370,15 @@ final class WrapperTestFixture {
         @NotNull
         Builder pollIntervalMillis(final long pollIntervalMillis) {
             this.pollIntervalMillis = pollIntervalMillis;
+            return this;
+        }
+
+        /**
+         * Set per-tag poll cadences; a tag absent from the map falls back to {@link #pollIntervalMillis(long)}.
+         */
+        @NotNull
+        Builder pollIntervals(final @NotNull Map<String, Long> pollIntervalsByTagName) {
+            this.pollIntervalsByTagName = pollIntervalsByTagName;
             return this;
         }
 

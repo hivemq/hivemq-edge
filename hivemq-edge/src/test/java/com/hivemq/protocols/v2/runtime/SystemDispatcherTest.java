@@ -92,11 +92,49 @@ class SystemDispatcherTest {
         }
     }
 
+    @Test
+    void throwingHandler_doesNotKillTheLoop_andLaterMessagesAreStillDelivered() {
+        final SystemDispatcher dispatcher = new SystemDispatcher();
+        final DefaultMailbox<TestMessage> mailbox = new DefaultMailbox<>();
+        final ThrowingHandler handler = new ThrowingHandler("boom");
+        try (MessageDispatcherHandle handle = dispatcher.attach(mailbox, handler)) {
+            mailbox.tell(new TestMessage("boom", MailboxMessagePriority.EVENT)); // the handler throws on this one
+            mailbox.tell(new TestMessage("after", MailboxMessagePriority.EVENT)); // must still be delivered
+
+            await().atMost(TIMEOUT).until(() -> handler.delivered().contains("after"));
+
+            // The thrown exception did not kill the dispatch thread: the next message was still delivered.
+            assertThat(handler.delivered()).containsExactly("boom", "after");
+        }
+    }
+
     private record TestMessage(
             @NotNull String label, @NotNull MailboxMessagePriority band) implements MailboxMessage {
         @Override
         public @NotNull MailboxMessagePriority priority() {
             return band;
+        }
+    }
+
+    private static final class ThrowingHandler implements MessageHandler<TestMessage> {
+
+        private final @NotNull String throwLabel;
+        private final @NotNull List<String> delivered = new CopyOnWriteArrayList<>();
+
+        private ThrowingHandler(final @NotNull String throwLabel) {
+            this.throwLabel = throwLabel;
+        }
+
+        @Override
+        public void receive(final @NotNull TestMessage message) {
+            delivered.add(message.label());
+            if (message.label().equals(throwLabel)) {
+                throw new IllegalStateException("handler blew up on " + message.label());
+            }
+        }
+
+        private @NotNull List<String> delivered() {
+            return delivered;
         }
     }
 

@@ -62,18 +62,22 @@ public sealed interface ProtocolAdapterWrapperCommand extends ProtocolAdapterWra
     record StopAdapter() implements ProtocolAdapterWrapperCommand {}
 
     /**
-     * Replace the tag set in place — the atomic tags-only transition. Never reconnects.
+     * Replace the tag set in place — the atomic tags-only transition. The coordinator diffs the set in place:
+     * survivors keep polling untouched, removed tags are torn down, added tags are verified against the live
+     * connection. Never reconnects.
      *
-     * @param nodes             the new node/tag pairs.
-     * @param activation        the per-tag activation preferences from the configuration.
-     * @param readUsedTagNames  the tags consumed by at least one northbound mapping (the {@code readUsed}
-     *                          derivation).
-     * @param writeUsedTagNames the tags produced to by at least one southbound mapping (the {@code writeUsed}
-     *                          derivation).
+     * @param nodes                     the new node/tag pairs.
+     * @param activation                the per-tag activation preferences from the configuration.
+     * @param pollIntervalMillisByTagName the per-tag poll cadence, keyed by tag name.
+     * @param readUsedTagNames          the tags consumed by at least one northbound mapping (the {@code readUsed}
+     *                                  derivation).
+     * @param writeUsedTagNames         the tags produced to by at least one southbound mapping (the {@code writeUsed}
+     *                                  derivation).
      */
     record UpdateTagSet(
             @NotNull List<NodeTagPair> nodes,
             @NotNull Map<String, TagAspectActivationPreference> activation,
+            @NotNull Map<String, Long> pollIntervalMillisByTagName,
             @NotNull Set<String> readUsedTagNames,
             @NotNull Set<String> writeUsedTagNames)
             implements ProtocolAdapterWrapperCommand {}

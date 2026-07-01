@@ -209,6 +209,37 @@ class ProtocolAdaptersResourceImplTest {
     }
 
     @Test
+    void getTags_tagConfiguredButAbsentFromTheRunningSnapshot_hasNullStatus() {
+        // A tags-only reload added `broken`, but after rejecting the untranslatable tag the manager kept the
+        // previously-applied tag set running: the read-only extractor config now lists both tags while the running
+        // snapshot still carries only `temperature`. The config view must list both, and report the not-running tag
+        // with a null status (NodeTagPair.status is nullable in the OpenAPI) rather than a 500 or a fabricated status.
+        when(configExtractor.getAdapterByAdapterId("a"))
+                .thenReturn(Optional.of(entity(
+                        "a", "chaos", List.of(tagEntity("temperature"), tagEntity("broken")), List.of(), List.of())));
+        register(
+                "a",
+                snapshot(
+                        "a",
+                        ProtocolAdapterWrapperState.CONNECTED,
+                        List.of(tagSnapshot("temperature", true, true, false, false, false, false)),
+                        true,
+                        false,
+                        null));
+
+        final Response response = resource().getAdapterTags("a");
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        final List<?> tags = (List<?>) response.getEntity();
+        assertThat(tags).hasSize(2);
+        final NodeTagPair temperature = nodeTagPair(tags, "temperature");
+        assertThat(temperature.getStatus()).isEqualTo(TagStatus.NORTHBOUND_ONLY);
+        final NodeTagPair broken = nodeTagPair(tags, "broken");
+        assertThat(broken.getStatus()).isNull();
+        assertThat(broken.getNodeString()).isNotBlank();
+    }
+
+    @Test
     void getTagStatus_found_andNotFoundPaths() {
         register(
                 "a",
@@ -365,6 +396,30 @@ class ProtocolAdaptersResourceImplTest {
 
         final TagRetryResult result = (TagRetryResult) response.getEntity();
         assertThat(result.getAccepted()).containsExactly("bad");
+    }
+
+    @Test
+    void bulkRetry_nullBody_retriesEveryPermanentlyFailedTag() {
+        register(
+                "a",
+                snapshot(
+                        "a",
+                        ProtocolAdapterWrapperState.CONNECTED,
+                        List.of(
+                                tagSnapshot("bad", true, false, true, false, false, false),
+                                tagSnapshot("good", true, true, false, false, false, false)),
+                        true,
+                        false,
+                        null));
+
+        // The OpenAPI marks the bulk-retry body optional: a POST with no JSON body arrives here as a null request and
+        // must retry every permanently-failed tag rather than fail with a 500.
+        final Response response = resource().retryTags("a", null);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        final TagRetryResult result = (TagRetryResult) response.getEntity();
+        assertThat(result.getAccepted()).containsExactly("bad");
+        assertThat(manager.messages).contains(new RetryTag("a", "bad"));
     }
 
     // ── mappings (derived status) ───────────────────────────────────────────────────────────────────────────────
@@ -570,6 +625,14 @@ class ProtocolAdaptersResourceImplTest {
     private void register(final @NotNull String adapterId, final @NotNull AdapterStatusSnapshot snapshot) {
         handleRegistry.register(new ProtocolAdapterHandle(
                 adapterId, NO_OP_WRAPPER_SENDER, new java.util.concurrent.atomic.AtomicReference<>(snapshot)));
+    }
+
+    private static @NotNull NodeTagPair nodeTagPair(final @NotNull List<?> tags, final @NotNull String tagName) {
+        return tags.stream()
+                .map(NodeTagPair.class::cast)
+                .filter(tag -> tagName.equals(tag.getTagName()))
+                .findFirst()
+                .orElseThrow();
     }
 
     private static @NotNull AdapterStatusColor colorOf(final @NotNull List<?> statuses, final @NotNull String id) {

@@ -39,7 +39,8 @@ import org.jetbrains.annotations.Nullable;
  * Validation rejects a section (returns {@link Configurator.ConfigResult#ERROR}, no consumer notification) when an
  * adapter fails its own {@link ProtocolAdapterEntity#validate(List) checks} — duplicate tag names, mapping references
  * that do not resolve to a declared tag, an invalid {@code protocol-id}, or the watchdog/command-timeout invariant
- * (S32) — or when two adapters share an {@code adapter-id}. A bad section is reported with a clear
+ * (the watchdog must exceed the command timeout) — or when two adapters share an {@code adapter-id}. A bad section
+ * is reported with a clear
  * message and the previously-applied configuration is left untouched.
  */
 public class ProtocolAdapterExtractor
