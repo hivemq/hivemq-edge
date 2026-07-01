@@ -197,11 +197,12 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         final ProtocolAdapterEntity running = existing.appliedEntity();
 
         if (!existing.isReal()) {
-            // An unknown / un-instantiable adapter. If its protocol-id changed it may now resolve (or fail
-            // differently), so re-evaluate by discarding and recreating; otherwise just record the new config.
-            if (running.getProtocolId().equals(updated.getProtocolId())) {
-                existing.appliedEntity(updated);
-            } else {
+            // An unknown / un-instantiable adapter (e.g. rejected by the schema preflight). Any change to its
+            // configuration may make it resolve now — a fixed protocol-id, a corrected schema-invalid section, a
+            // new host — so re-evaluate by discarding and recreating on any change; an unchanged configuration is
+            // left on its existing ERROR handle. Comparing only the protocol-id would strand a rejected adapter in
+            // ERROR until restart even after the operator fixes its configuration.
+            if (!running.equals(updated)) {
                 stopAndDiscard(adapterId, updated);
             }
             return;

@@ -347,6 +347,30 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
+    void schemaRejectedAdapter_recoversWhenTheConfigurationIsFixedAndReloaded() {
+        // A schema-invalid configuration is rejected at the preflight and surfaced as an ERROR handle with no wrapper.
+        wrapperFactory.rejectSchemaWhen(
+                entity -> "bad".equals(entity.getAdapterConfiguration().get("host")));
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "bad")).build())));
+
+        final ProtocolAdapterHandle rejected = handleRegistry.find("a");
+        assertThat(rejected).isNotNull();
+        assertThat(rejected.snapshot().get().machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(wrapperFactory.createdAdapterIds()).doesNotContain("a");
+
+        // The operator fixes the configuration and reloads (same protocol-id). The rejected adapter must be rebuilt
+        // from the corrected configuration, not left stranded in ERROR until a process restart.
+        send(new ConfigurationChanged(List.of(
+                adapter("a").adapterConfiguration(Map.of("host", "good")).build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+        final ProtocolAdapterHandle recovered = handleRegistry.find("a");
+        assertThat(recovered).isNotNull();
+        assertThat(recovered.snapshot().get().machineState()).isNotEqualTo(ProtocolAdapterWrapperState.ERROR);
+    }
+
+    @Test
     void tagsOnlyReloadWithAnUntranslatableTag_keepsTheRunningAdapterUntouched() {
         send(new ConfigurationChanged(
                 List.of(adapter("a").tags(tag("temperature").build()).build())));
