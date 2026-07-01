@@ -118,6 +118,20 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
      * absorb rows.
      */
     private void handleEvent(final @NotNull ProtocolAdapterWrapperEvent event) {
+        // Browse events never drive the adapter machine: the wrapper's browse engine consumes them and
+        // ignores any that are stale or arrive while no browse is in flight — in ERROR too.
+        if (event instanceof final ProtocolAdapterWrapperEvent.BrowsePageReceived page) {
+            context.onBrowsePage(page.requestId(), page.entries(), page.continuation());
+            return;
+        }
+        if (event instanceof final ProtocolAdapterWrapperEvent.AttributesResolved resolved) {
+            context.onAttributesResolved(resolved.requestId(), resolved.attributes());
+            return;
+        }
+        if (event instanceof final ProtocolAdapterWrapperEvent.BrowseFailed failed) {
+            context.onBrowseFailed(failed.requestId(), failed.reason());
+            return;
+        }
         if (machine.state() == ProtocolAdapterWrapperState.ERROR) {
             machine.onEvent(event);
             return;
@@ -144,9 +158,6 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 context.routeNodeErrorToTags(nodeError.node(), nodeError.reason(), nodeError.spontaneous());
             case ProtocolAdapterWrapperEvent.WriteResultReceived write ->
                 context.routeWriteResultToTags(write.node(), write.success(), write.reason());
-            case ProtocolAdapterWrapperEvent.BrowseResultReceived browse ->
-                // Complete the pending browse future; a stale result with nothing waiting is dropped.
-                context.completeBrowse(browse.entries());
             case ProtocolAdapterWrapperEvent.PollTimerFired ignored -> {
                 // Unused: aspects schedule and fire their own timers on the actor's single timer queue.
             }
@@ -155,6 +166,10 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
             }
             case ProtocolAdapterWrapperEvent.SubscriptionRetryTimerFired ignored -> {
                 // Unused: aspects schedule and fire their own timers on the actor's single timer queue.
+            }
+            default -> {
+                // The browse events (BrowsePageReceived / AttributesResolved / BrowseFailed) are handled
+                // ahead of this switch and routed to the browse engine, never the adapter machine.
             }
         }
     }

@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.manager;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterDirection;
 import java.util.List;
@@ -117,7 +117,7 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     record BrowseRequested(
             @NotNull String adapterId,
             @NotNull BrowseFilter filter,
-            @NotNull CompletableFuture<List<BrowseResultEntry>> completion)
+            @NotNull CompletableFuture<List<BrowseNode>> completion)
             implements ProtocolAdapterManagerMessage {
         @Override
         public @NotNull MailboxMessagePriority priority() {

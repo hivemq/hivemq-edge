@@ -24,9 +24,11 @@ import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
@@ -720,9 +722,24 @@ public final class ProtocolAdapterWrapperTestHarness {
         }
 
         @Override
-        public void browseResult(final @NotNull List<BrowseResultEntry> entries) {
-            events.add("browseResult");
-            delegate.browseResult(entries);
+        public void browsePage(
+                final int requestId,
+                final @NotNull List<BrowseNode> entries,
+                final @Nullable BrowseContinuation continuation) {
+            events.add("browsePage");
+            delegate.browsePage(requestId, entries, continuation);
+        }
+
+        @Override
+        public void readAttributesResult(final int requestId, final @NotNull List<ResolvedAttributes> attributes) {
+            events.add("readAttributesResult");
+            delegate.readAttributesResult(requestId, attributes);
+        }
+
+        @Override
+        public void browseError(final int requestId, final @NotNull String reason) {
+            events.add("browseError");
+            delegate.browseError(requestId, reason);
         }
     }
 

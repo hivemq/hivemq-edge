@@ -31,7 +31,7 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
@@ -510,7 +510,7 @@ class ProtocolAdaptersResourceImplTest {
         when(configExtractor.getAdapterByAdapterId("a")).thenReturn(Optional.of(entity("a", "chaos")));
         register("a", snapshot("a", ProtocolAdapterWrapperState.CONNECTED, List.of(), true, false, null));
         manager.browseHandler = request ->
-                request.completion().complete(List.of(new BrowseResultEntry(new TestNode(), NodeType.VALUE, true)));
+                request.completion().complete(List.of(new BrowseNode(new TestNode(), NodeType.VALUE, true, "node")));
 
         final Response response = resource(factories).browseAdapter("a", new BrowseCommand());
         assertThat(response.getStatus()).isEqualTo(200);
