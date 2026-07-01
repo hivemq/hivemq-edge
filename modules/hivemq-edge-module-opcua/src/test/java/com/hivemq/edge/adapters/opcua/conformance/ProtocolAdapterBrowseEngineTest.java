@@ -85,9 +85,7 @@ class ProtocolAdapterBrowseEngineTest {
         // a page tagged with a superseded requestId must be dropped: nothing discovered, no follow-up command.
         // (Were it processed, the engine would advance to RESOLVE and issue readNodeAttributes for the ghost.)
         engine.onBrowsePage(
-                99,
-                List.of(new BrowseNode(new ConformanceNode("ns=1;i=1"), NodeType.VALUE, true, "ghost")),
-                null);
+                99, List.of(new BrowseNode(new ConformanceNode("ns=1;i=1"), NodeType.VALUE, true, "ghost")), null);
         assertThat(adapter.browseCalls)
                 .as("stale page issues no further browse")
                 .isEqualTo(1);

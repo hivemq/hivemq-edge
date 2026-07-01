@@ -407,9 +407,7 @@ public final class ChaosScript {
          * @return this builder.
          */
         public @NotNull Builder browse(
-                final @NotNull NodeMatcher matcher,
-                final @NotNull List<BrowseNode> results,
-                final int durationTicks) {
+                final @NotNull NodeMatcher matcher, final @NotNull List<BrowseNode> results, final int durationTicks) {
             browseRules.add(new BrowseRule(matcher, List.copyOf(results), durationTicks));
             return this;
         }
