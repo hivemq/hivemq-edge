@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
@@ -333,7 +333,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
             }
         }
         final NamespaceTable namespaceTable = requireNonNull(client).getNamespaceTable();
-        final List<BrowseResultEntry> entries = new ArrayList<>();
+        final List<BrowseNode> entries = new ArrayList<>();
         if (result.getReferences() != null) {
             for (final ReferenceDescription reference : result.getReferences()) {
                 final Optional<NodeId> childId = reference.getNodeId().toNodeId(namespaceTable);
@@ -344,7 +344,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
                 final String browseName = reference.getBrowseName() != null
                         ? requireNonNullElse(reference.getBrowseName().getName(), "")
                         : "";
-                entries.add(new BrowseResultEntry(
+                entries.add(new BrowseNode(
                         new ConformanceNode(childId.get().toParseableString()),
                         isVariable ? NodeType.VALUE : NodeType.OBJECT,
                         isVariable,

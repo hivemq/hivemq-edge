@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.wrapper;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
@@ -132,7 +132,7 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
      */
     record BrowsePageReceived(
             int requestId,
-            @NotNull List<BrowseResultEntry> entries,
+            @NotNull List<BrowseNode> entries,
             @Nullable BrowseContinuation continuation) implements ProtocolAdapterWrapperEvent {
         @Override
         public @NotNull MailboxMessagePriority priority() {

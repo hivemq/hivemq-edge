@@ -21,7 +21,7 @@ import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.browse.BrowseOutcome;
@@ -86,7 +86,7 @@ class ProtocolAdapterBrowseEngineTest {
         // (Were it processed, the engine would advance to RESOLVE and issue readNodeAttributes for the ghost.)
         engine.onBrowsePage(
                 99,
-                List.of(new BrowseResultEntry(new ConformanceNode("ns=1;i=1"), NodeType.VALUE, true, "ghost")),
+                List.of(new BrowseNode(new ConformanceNode("ns=1;i=1"), NodeType.VALUE, true, "ghost")),
                 null);
         assertThat(adapter.browseCalls)
                 .as("stale page issues no further browse")

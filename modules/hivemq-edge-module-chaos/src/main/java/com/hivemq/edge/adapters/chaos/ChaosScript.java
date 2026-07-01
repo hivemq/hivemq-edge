@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.chaos;
 
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.util.ArrayList;
@@ -212,7 +212,7 @@ public final class ChaosScript {
      * @param entries       the discovered nodes.
      * @param durationTicks how many harness ticks the browse takes before it reports; {@code 0} is immediate.
      */
-    public record BrowseOutcome(@NotNull List<BrowseResultEntry> entries, int durationTicks) {}
+    public record BrowseOutcome(@NotNull List<BrowseNode> entries, int durationTicks) {}
 
     /**
      * An event scheduled for a chosen harness tick.
@@ -235,7 +235,7 @@ public final class ChaosScript {
             @NotNull NodeMatcher matcher, @Nullable WriteOutcome outcome) {}
 
     private record BrowseRule(
-            @NotNull NodeMatcher matcher, @NotNull List<BrowseResultEntry> results, int durationTicks) {}
+            @NotNull NodeMatcher matcher, @NotNull List<BrowseNode> results, int durationTicks) {}
 
     // ── builder ─────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -408,7 +408,7 @@ public final class ChaosScript {
          */
         public @NotNull Builder browse(
                 final @NotNull NodeMatcher matcher,
-                final @NotNull List<BrowseResultEntry> results,
+                final @NotNull List<BrowseNode> results,
                 final int durationTicks) {
             browseRules.add(new BrowseRule(matcher, List.copyOf(results), durationTicks));
             return this;

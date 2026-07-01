@@ -25,7 +25,7 @@ import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
@@ -152,7 +152,7 @@ class OpcUaFoundationConformanceTest {
         // discover the namespace-1 folders directly under Objects (one page, server-decided size)
         final List<Node> testFolders = browseAllPages(adapter, dispatcher, output, OBJECTS_FOLDER, 0).stream()
                 .filter(entry -> !entry.selectable()) // folders are Objects, not selectable variables
-                .map(BrowseResultEntry::node)
+                .map(BrowseNode::node)
                 .filter(node -> node.nodeId().startsWith("ns=1;"))
                 .toList();
         assertThat(testFolders)
@@ -163,7 +163,7 @@ class OpcUaFoundationConformanceTest {
         final int pagesBeforeVariables = output.browsePageCount();
         final Set<String> variableNodeIds = new HashSet<>();
         for (final Node folder : testFolders) {
-            for (final BrowseResultEntry entry : browseAllPages(adapter, dispatcher, output, folder, 1)) {
+            for (final BrowseNode entry : browseAllPages(adapter, dispatcher, output, folder, 1)) {
                 if (entry.selectable()) {
                     variableNodeIds.add(entry.node().nodeId());
                 }
@@ -191,11 +191,11 @@ class OpcUaFoundationConformanceTest {
 
         // DISCOVER: walk the ns=1 folders under Objects and collect their selectable variables
         final List<Node> variables = new ArrayList<>();
-        for (final BrowseResultEntry folder : browseAllPages(adapter, dispatcher, output, OBJECTS_FOLDER, 0)) {
+        for (final BrowseNode folder : browseAllPages(adapter, dispatcher, output, OBJECTS_FOLDER, 0)) {
             if (folder.selectable() || !folder.node().nodeId().startsWith("ns=1;")) {
                 continue; // only the test-namespace folders
             }
-            for (final BrowseResultEntry entry : browseAllPages(adapter, dispatcher, output, folder.node(), 0)) {
+            for (final BrowseNode entry : browseAllPages(adapter, dispatcher, output, folder.node(), 0)) {
                 if (entry.selectable()) {
                     variables.add(entry.node());
                 }
@@ -319,7 +319,7 @@ class OpcUaFoundationConformanceTest {
      * Drive a full paginated browse of one node to completion (browse + browseNext until no continuation),
      * returning every entry assembled across its pages — the orchestration the framework's PAW will own.
      */
-    private static @NotNull List<BrowseResultEntry> browseAllPages(
+    private static @NotNull List<BrowseNode> browseAllPages(
             final @NotNull OpcUaConformanceAdapter adapter,
             final @NotNull DrainOnCallDispatcher dispatcher,
             final @NotNull RecordingOutput output,
@@ -334,7 +334,7 @@ class OpcUaFoundationConformanceTest {
             dispatcher.drainAll();
             continuation = output.lastContinuation();
         }
-        final List<BrowseResultEntry> entries = new ArrayList<>();
+        final List<BrowseNode> entries = new ArrayList<>();
         output.pagesFrom(firstPageIndex).forEach(entries::addAll);
         return entries;
     }
@@ -361,7 +361,7 @@ class OpcUaFoundationConformanceTest {
         private final @NotNull Map<Node, DataPoint> dataPoints = new LinkedHashMap<>();
         private final @NotNull Map<Node, Boolean> writeResults = new LinkedHashMap<>();
         private final @NotNull List<String> eventLog = new ArrayList<>();
-        private final @NotNull List<List<BrowseResultEntry>> browsePages = new ArrayList<>();
+        private final @NotNull List<List<BrowseNode>> browsePages = new ArrayList<>();
         private final @NotNull List<ResolvedAttributes> resolvedAttributes = new ArrayList<>();
         private volatile boolean started;
         private volatile boolean stopped;
@@ -438,7 +438,7 @@ class OpcUaFoundationConformanceTest {
         @Override
         public void browsePage(
                 final int requestId,
-                final @NotNull List<BrowseResultEntry> entries,
+                final @NotNull List<BrowseNode> entries,
                 final @Nullable BrowseContinuation continuation) {
             synchronized (lock) {
                 browsePages.add(entries);
@@ -486,7 +486,7 @@ class OpcUaFoundationConformanceTest {
         }
 
         @NotNull
-        List<List<BrowseResultEntry>> pagesFrom(final int fromIndex) {
+        List<List<BrowseNode>> pagesFrom(final int fromIndex) {
             synchronized (lock) {
                 return List.copyOf(browsePages.subList(fromIndex, browsePages.size()));
             }

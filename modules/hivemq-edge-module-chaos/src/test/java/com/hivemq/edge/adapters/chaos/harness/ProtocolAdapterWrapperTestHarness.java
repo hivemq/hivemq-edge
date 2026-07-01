@@ -25,7 +25,7 @@ import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
@@ -664,7 +664,7 @@ public final class ProtocolAdapterWrapperTestHarness {
         @Override
         public void browsePage(
                 final int requestId,
-                final @NotNull List<BrowseResultEntry> entries,
+                final @NotNull List<BrowseNode> entries,
                 final @Nullable BrowseContinuation continuation) {
             events.add("browsePage");
             delegate.browsePage(requestId, entries, continuation);

@@ -30,7 +30,7 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -511,7 +511,7 @@ public final class ProtocolAdapterWrapperContext {
      * @param completion the future the REST thread awaits.
      */
     public void handleBrowseRequest(
-            final @NotNull BrowseFilter filter, final @NotNull CompletableFuture<List<BrowseResultEntry>> completion) {
+            final @NotNull BrowseFilter filter, final @NotNull CompletableFuture<List<BrowseNode>> completion) {
         if (machine().state() != CONNECTED) {
             completion.completeExceptionally(new BrowseRejectedException(
                     BrowseRejectedException.Reason.NOT_CONNECTED,
@@ -550,7 +550,7 @@ public final class ProtocolAdapterWrapperContext {
         }
         pendingBrowse = null;
         timers.cancel(pending.deadline());
-        final List<BrowseResultEntry> entries = new ArrayList<>(nodes.size());
+        final List<BrowseNode> entries = new ArrayList<>(nodes.size());
         for (final BrowsedNode node : nodes) {
             entries.add(node.entry());
         }
@@ -591,7 +591,7 @@ public final class ProtocolAdapterWrapperContext {
      */
     public void onBrowsePage(
             final int requestId,
-            final @NotNull List<BrowseResultEntry> entries,
+            final @NotNull List<BrowseNode> entries,
             final @Nullable BrowseContinuation continuation) {
         browseEngine.onBrowsePage(requestId, entries, continuation);
     }
@@ -763,6 +763,6 @@ public final class ProtocolAdapterWrapperContext {
      * @param deadline   the deadline timer, canceled when the browse completes.
      */
     private record PendingBrowse(
-            @NotNull CompletableFuture<List<BrowseResultEntry>> completion,
+            @NotNull CompletableFuture<List<BrowseNode>> completion,
             @NotNull TimerHandle deadline) {}
 }

@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
@@ -39,7 +39,7 @@ class ProtocolAdapterWrapperBrowseTest {
     @Test
     void browseWhenConnected_walksDiscoverThenResolveAndCompletesWithSelectableVariables() {
         final WrapperTestFixture fixture = connectedFixture();
-        final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
 
         // Browse below "root"; the engine issues browse(requestId=1, filter, 0) to the adapter.
         fixture.send(
@@ -50,8 +50,7 @@ class ProtocolAdapterWrapperBrowseTest {
         // DISCOVER: one page carrying a selectable variable, no continuation ⇒ DISCOVER complete.
         fixture.output.browsePage(
                 1,
-                List.of(new BrowseResultEntry(
-                        WrapperTestSupport.node("temperature"), NodeType.VALUE, true, "temperature")),
+                List.of(new BrowseNode(WrapperTestSupport.node("temperature"), NodeType.VALUE, true, "temperature")),
                 null);
         fixture.drain();
         // The engine has moved to RESOLVE and issued readNodeAttributes for the discovered variable.
@@ -78,7 +77,7 @@ class ProtocolAdapterWrapperBrowseTest {
     void browseWhenNotConnected_failsWithNotConnected() {
         final WrapperTestFixture fixture =
                 WrapperTestFixture.builder().skipVerification(true).build();
-        final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
 
         fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
 
@@ -89,8 +88,8 @@ class ProtocolAdapterWrapperBrowseTest {
     @Test
     void secondBrowseWhileOneIsInFlight_failsWithAlreadyInFlight() {
         final WrapperTestFixture fixture = connectedFixture();
-        final CompletableFuture<List<BrowseResultEntry>> first = new CompletableFuture<>();
-        final CompletableFuture<List<BrowseResultEntry>> second = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> first = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> second = new CompletableFuture<>();
 
         fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), first));
         fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), second));
@@ -102,7 +101,7 @@ class ProtocolAdapterWrapperBrowseTest {
     @Test
     void browseThatNeverReturns_failsOnTheDeadline() {
         final WrapperTestFixture fixture = connectedFixture();
-        final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
 
         fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
         assertThat(future).isNotDone();
@@ -115,7 +114,7 @@ class ProtocolAdapterWrapperBrowseTest {
     @Test
     void browsePendingWhenConnectionLost_isFailed() {
         final WrapperTestFixture fixture = connectedFixture();
-        final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
 
         fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
         assertThat(future).isNotDone();

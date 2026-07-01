@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
@@ -221,7 +221,7 @@ class OpcUaBrowseEngineConformanceTest {
         @Override
         public void browsePage(
                 final int requestId,
-                final @NotNull List<BrowseResultEntry> entries,
+                final @NotNull List<BrowseNode> entries,
                 final @Nullable BrowseContinuation continuation) {
             browsePages++;
             engine.onBrowsePage(requestId, entries, continuation);

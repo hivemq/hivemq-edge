@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.browse;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.util.ArrayDeque;
@@ -44,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>DISCOVER</b> — a breadth-first frontier walk below the filter node. Each node's continuation pages
  *       are drained ({@code browseNext}) <i>before</i> any sibling is browsed; a visited-set dedups shared
  *       nodes and breaks reference cycles. Each discovered node's path is assembled from its ancestors'
- *       {@link BrowseResultEntry#browseName() browse names}.</li>
+ *       {@link BrowseNode#browseName() browse names}.</li>
  *   <li><b>RESOLVE</b> — the discovered variables, sorted by path, are attribute-read in batches of
  *       {@link #RESOLVE_BATCH} ({@code readNodeAttributes}); each is paired with its path and a deduplicated
  *       default tag name.</li>
@@ -92,7 +92,7 @@ public final class ProtocolAdapterBrowseEngine {
     private final @NotNull Deque<FrontierEntry> frontier = new ArrayDeque<>();
     private final @NotNull Set<String> visited = new HashSet<>();
     private final @NotNull List<DiscoveredVariable> discovered = new ArrayList<>();
-    private final @NotNull Map<String, BrowseResultEntry> entryByNode = new HashMap<>();
+    private final @NotNull Map<String, BrowseNode> entryByNode = new HashMap<>();
     private @NotNull String activePath = "";
     private int activeDepth;
     private @Nullable BrowseContinuation activeContinuation;
@@ -203,12 +203,12 @@ public final class ProtocolAdapterBrowseEngine {
      */
     public void onBrowsePage(
             final int requestId,
-            final @NotNull List<BrowseResultEntry> entries,
+            final @NotNull List<BrowseNode> entries,
             final @Nullable BrowseContinuation continuation) {
         if (phase != Phase.DISCOVERING || requestId != this.requestId) {
             return;
         }
-        for (final BrowseResultEntry entry : entries) {
+        for (final BrowseNode entry : entries) {
             final String nodeId = entry.node().nodeId();
             final String childPath = activePath + "/" + pathSegment(entry.browseName());
             if (entry.selectable()) {
@@ -316,7 +316,7 @@ public final class ProtocolAdapterBrowseEngine {
         for (final DiscoveredVariable variable : sorted) {
             final String nodeId = variable.node().nodeId();
             final ResolvedAttributes attributes = resolvedByNode.get(nodeId);
-            final BrowseResultEntry entry = entryByNode.get(nodeId);
+            final BrowseNode entry = entryByNode.get(nodeId);
             final String path = pathByNode.get(nodeId);
             final String tagName = tagNameByNode.get(nodeId);
             if (attributes != null && entry != null && path != null && tagName != null) {

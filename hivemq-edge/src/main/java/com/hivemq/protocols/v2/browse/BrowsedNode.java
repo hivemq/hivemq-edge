@@ -15,13 +15,13 @@
  */
 package com.hivemq.protocols.v2.browse;
 
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * One fully assembled result of a two-phase browse — the {@link ProtocolAdapterBrowseEngine}'s output for a
- * single discovered, selectable variable. It pairs the DISCOVER-phase {@link BrowseResultEntry} (node, kind,
+ * single discovered, selectable variable. It pairs the DISCOVER-phase {@link BrowseNode} (node, kind,
  * selectable flag, browse name) with the RESOLVE-phase {@link ResolvedAttributes} (datatype, access,
  * description), the node's {@code path} assembled from its ancestors' browse names, and the deduplicated
  * default {@code tagName} derived from that path.
@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
  * @param attributes the RESOLVE-phase device attributes (datatype, access, description).
  */
 public record BrowsedNode(
-        @NotNull BrowseResultEntry entry,
+        @NotNull BrowseNode entry,
         @NotNull String path,
         @NotNull String tagName,
         @NotNull ResolvedAttributes attributes) {}

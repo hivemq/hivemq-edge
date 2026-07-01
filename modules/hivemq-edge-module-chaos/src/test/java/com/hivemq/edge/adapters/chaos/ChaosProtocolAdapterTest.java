@@ -21,7 +21,7 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
@@ -244,7 +244,7 @@ class ChaosProtocolAdapterTest {
     @Test
     void browseImmediate_reportsTheResultWithinTheCall() {
         final RecordingOutput output = new RecordingOutput();
-        final List<BrowseResultEntry> entries = List.of(new BrowseResultEntry(NODE_A, NodeType.VALUE, true, "a"));
+        final List<BrowseNode> entries = List.of(new BrowseNode(NODE_A, NodeType.VALUE, true, "a"));
         final ChaosProtocolAdapter adapter = new ChaosProtocolAdapter(
                 "a",
                 output,
@@ -258,7 +258,7 @@ class ChaosProtocolAdapterTest {
     @Test
     void browseWithDuration_reportsTheResultAfterTheGivenTicks() {
         final RecordingOutput output = new RecordingOutput();
-        final List<BrowseResultEntry> entries = List.of(new BrowseResultEntry(NODE_A, NodeType.VALUE, true, "a"));
+        final List<BrowseNode> entries = List.of(new BrowseNode(NODE_A, NodeType.VALUE, true, "a"));
         final ChaosProtocolAdapter adapter = new ChaosProtocolAdapter(
                 "a",
                 output,
@@ -357,7 +357,7 @@ class ChaosProtocolAdapterTest {
         @Override
         public void browsePage(
                 final int requestId,
-                final @NotNull List<BrowseResultEntry> entries,
+                final @NotNull List<BrowseNode> entries,
                 final @Nullable BrowseContinuation continuation) {
             events.add("browsePage:" + entries.size());
         }

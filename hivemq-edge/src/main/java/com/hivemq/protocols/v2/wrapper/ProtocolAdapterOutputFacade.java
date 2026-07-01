@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.wrapper;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
@@ -96,7 +96,7 @@ public final class ProtocolAdapterOutputFacade implements ProtocolAdapterOutput 
     @Override
     public void browsePage(
             final int requestId,
-            final @NotNull List<BrowseResultEntry> entries,
+            final @NotNull List<BrowseNode> entries,
             final @Nullable BrowseContinuation continuation) {
         wrapperMailbox.tell(
                 new ProtocolAdapterWrapperEvent.BrowsePageReceived(requestId, List.copyOf(entries), continuation));
