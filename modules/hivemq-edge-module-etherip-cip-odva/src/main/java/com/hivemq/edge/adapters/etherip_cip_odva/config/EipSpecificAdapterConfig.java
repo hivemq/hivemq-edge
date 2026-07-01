@@ -87,8 +87,8 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @JsonProperty(value = "eipToMqtt", required = true)
     @ModuleConfigField(
-            title = "Ethernet IP To MQTT Config",
-            description = "The configuration for a data stream from Ethernet IP to MQTT",
+            title = "EtherNet/IP To MQTT Config",
+            description = "The configuration for a data stream from EtherNet/IP to MQTT",
             required = true)
     private final @NotNull EipToMqttConfig eipToMqttConfig;
 
