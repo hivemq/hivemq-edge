@@ -48,8 +48,7 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
 
   const selectedNode = useMemo(() => {
     return nodes.find((node) => node.id === adapterId && node.type === NodeTypes.ADAPTER_NODE) as
-      | Node<Adapter>
-      | undefined
+      Node<Adapter> | undefined
   }, [adapterId, nodes])
 
   const { data: protocols } = useGetAdapterTypes()

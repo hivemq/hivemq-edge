@@ -9,9 +9,7 @@ import { arrayWithSameObjects } from './combiner.utils'
  * Type representing nodes that can be combined (adapters, bridges, pulse agents)
  */
 export type CombinerEligibleNode =
-  | Node<Adapter, NodeTypes.ADAPTER_NODE>
-  | Node<Bridge, NodeTypes.BRIDGE_NODE>
-  | NodePulseType
+  Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE> | NodePulseType
 
 /**
  * Checks if a node is eligible to be part of a combiner based on its type and capabilities
