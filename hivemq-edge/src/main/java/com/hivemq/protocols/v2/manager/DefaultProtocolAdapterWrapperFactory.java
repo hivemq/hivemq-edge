@@ -24,8 +24,10 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
+import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -123,9 +125,23 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         validateConfiguration(entity, factory);
         final DataPoint adapterConfig =
                 dataPointFactory.createJsonDataPoint(adapterId, entity.getAdapterConfiguration());
-        final ProtocolAdapterService services = new WrapperServices(dataPointFactory, dispatcher);
+        // Hand the adapter a dispatcher that records every binding it opens, so a construction that fails after the
+        // adapter already attached its dispatch thread (a template adapter attaches in AbstractProtocolAdapter's
+        // constructor, before the subclass constructor runs) does not leak that thread.
+        final RecordingDispatcher recordingDispatcher = new RecordingDispatcher(dispatcher);
+        final ProtocolAdapterService services = new WrapperServices(dataPointFactory, recordingDispatcher);
         final ProtocolAdapterInput input = new WrapperInput(adapterId, adapterConfig, nodes, services);
-        final ProtocolAdapter protocolAdapter = factory.createAdapter(input, output);
+        final ProtocolAdapter protocolAdapter;
+        try {
+            protocolAdapter = factory.createAdapter(input, output);
+        } catch (final RuntimeException failure) {
+            // The adapter type's factory threw while constructing the instance. Release every dispatch binding the
+            // half-built adapter opened, then surface a clear, adapter-specific reason the manager turns into an ERROR
+            // handle rather than letting the raw failure escape and leave the configured adapter missing.
+            recordingDispatcher.closeRecorded();
+            throw new ProtocolAdapterConfigException(
+                    "adapter [" + adapterId + "] could not be constructed: " + failure, failure);
+        }
 
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
         final ProtocolAdapterGoalState goal = ProtocolAdapterConfigSupport.goalOf(entity);
@@ -209,6 +225,42 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                     node, tag.getName(), factory.nodeDefinitionSchema(), tag.isPollable(), tag.isSubscribable()));
         }
         return nodes;
+    }
+
+    /**
+     * A {@link MessageDispatcher} that delegates to the real dispatcher while recording every binding it hands out,
+     * used only for the duration of {@code createAdapter}. It lets {@link #create} release the dispatch threads a
+     * half-built adapter attached (a template adapter attaches in its superclass constructor) when construction then
+     * fails. On success the recorded bindings are discarded — the container owns their teardown through the adapter's
+     * own {@link AutoCloseable} — so this never double-closes a live binding.
+     */
+    private static final class RecordingDispatcher implements MessageDispatcher {
+
+        private final @NotNull MessageDispatcher delegate;
+        private final @NotNull List<MessageDispatcherHandle> handles = new ArrayList<>();
+
+        private RecordingDispatcher(final @NotNull MessageDispatcher delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
+                final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
+            final MessageDispatcherHandle handle = delegate.attach(mailbox, handler);
+            handles.add(handle);
+            return handle;
+        }
+
+        private void closeRecorded() {
+            for (final MessageDispatcherHandle handle : handles) {
+                try {
+                    handle.close();
+                } catch (final RuntimeException ignored) {
+                    // Best effort: a failing detach must not mask the original construction failure.
+                }
+            }
+            handles.clear();
+        }
     }
 
     /**

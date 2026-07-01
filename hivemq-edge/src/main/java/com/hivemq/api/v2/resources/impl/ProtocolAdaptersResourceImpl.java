@@ -298,13 +298,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response retryTags(final @NotNull String adapterId, final @NotNull TagRetryRequest body) {
+    public @NotNull Response retryTags(final @NotNull String adapterId, final @Nullable TagRetryRequest body) {
         final AdapterStatusSnapshot snapshot = snapshotOf(adapterId);
         if (snapshot == null) {
             return adapterNotFound(adapterId);
         }
-        final List<String> requested =
-                (body.getTagNames() == null || body.getTagNames().isEmpty()) ? null : body.getTagNames();
+        // The bulk-retry body is optional (the OpenAPI marks it not required): a request with no body, or with no tag
+        // names, retries every permanently-failed tag. Treat all three the same rather than dereferencing a null body.
+        final List<String> requested = (body == null
+                        || body.getTagNames() == null
+                        || body.getTagNames().isEmpty())
+                ? null
+                : body.getTagNames();
         return Response.ok(retryResult(adapterId, snapshot, requested)).build();
     }
 

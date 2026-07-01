@@ -347,6 +347,48 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
+    void tagsOnlyReloadWithAnUntranslatableTag_keepsTheRunningAdapterUntouched() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").tags(tag("temperature").build()).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        final int commandsBefore = wrapperFactory.commands("a").size();
+
+        // A tags-only reload that adds a tag whose node-string cannot be translated into the type's node class.
+        wrapperFactory.rejectTranslateWhen(entity -> entity.getTags().size() > 1);
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .tags(
+                        tag("temperature").build(),
+                        tag("broken").nodeString("}{ not json").build())
+                .build())));
+
+        // The healthy running adapter is left exactly as it was: no UpdateTagSet, no stop, no recreate, still
+        // registered. A malformed node string in a tags-only reload never takes a working adapter offline.
+        assertThat(wrapperFactory.commands("a")).hasSize(commandsBefore);
+        assertThat(wrapperFactory.commands("a"))
+                .noneMatch(ProtocolAdapterWrapperCommand.UpdateTagSet.class::isInstance);
+        assertThat(wrapperFactory.commands("a")).noneMatch(ProtocolAdapterWrapperCommand.StopAdapter.class::isInstance);
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void unexpectedFactoryFailure_isSurfacedAsAnErrorHandle_notLeftMissing() {
+        wrapperFactory.failCreateWhen(entity -> entity.getAdapterId().equals("a"));
+
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        // A configured adapter whose construction fails unexpectedly must appear as an ERROR handle, not vanish from
+        // the runtime: it stays visible to REST and the health summary with a clear reason.
+        final ProtocolAdapterHandle handle = handleRegistry.find("a");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("unexpected");
+        assertThat(wrapperFactory.createdAdapterIds()).doesNotContain("a");
+    }
+
+    @Test
     void accessOnlyReload_updatesTheTagSetInPlace_withoutAStopOrRecreate() {
         send(new ConfigurationChanged(List.of(adapter("a")
                 .tags(tag("temperature").access(access(false)).build())

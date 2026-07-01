@@ -53,6 +53,8 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     private final @NotNull List<String> closedAdapterIds = new ArrayList<>();
     private final @NotNull List<String> validatedAdapterIds = new ArrayList<>();
     private @NotNull Predicate<ProtocolAdapterEntity> schemaInvalid = entity -> false;
+    private @NotNull Predicate<ProtocolAdapterEntity> translateInvalid = entity -> false;
+    private @NotNull Predicate<ProtocolAdapterEntity> createFails = entity -> false;
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
 
     @Override
@@ -61,6 +63,13 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
             final @NotNull ProtocolAdapterFactory factory,
             final @NotNull ProtocolAdapterWrapperEventListener healthListener) {
         this.healthListener = healthListener;
+        if (createFails.test(entity)) {
+            // An unexpected, non-configuration failure while building the adapter (an adapter-module bug), thrown
+            // before
+            // anything is recorded so no wrapper is registered as created.
+            throw new IllegalStateException(
+                    "adapter [" + entity.getAdapterId() + "] blew up unexpectedly during construction");
+        }
         final String adapterId = entity.getAdapterId();
         createdAdapterIds.add(adapterId);
 
@@ -92,6 +101,10 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     public @NotNull List<NodeTagPair> translateNodes(
             final @NotNull ProtocolAdapterEntity entity, final @NotNull ProtocolAdapterFactory factory) {
         translateNodesAdapterIds.add(entity.getAdapterId());
+        if (translateInvalid.test(entity)) {
+            throw new ProtocolAdapterConfigException(
+                    "adapter [" + entity.getAdapterId() + "] has a tag whose node-string does not deserialize");
+        }
         return List.of();
     }
 
@@ -125,6 +138,27 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
      */
     void rejectSchemaWhen(final @NotNull Predicate<ProtocolAdapterEntity> schemaInvalid) {
         this.schemaInvalid = schemaInvalid;
+    }
+
+    /**
+     * Make {@link #translateNodes} throw a {@link ProtocolAdapterConfigException} for any entity the predicate matches,
+     * simulating a tag whose {@code node-string} does not deserialize into the type's node class. Set before the reload
+     * the test exercises.
+     *
+     * @param translateInvalid the predicate selecting the configurations whose tags cannot be translated.
+     */
+    void rejectTranslateWhen(final @NotNull Predicate<ProtocolAdapterEntity> translateInvalid) {
+        this.translateInvalid = translateInvalid;
+    }
+
+    /**
+     * Make {@link #create} throw an unexpected (non-configuration) {@link RuntimeException} for any entity the predicate
+     * matches, simulating an adapter-module bug during construction. Set before the configuration the test applies.
+     *
+     * @param createFails the predicate selecting the configurations whose construction fails unexpectedly.
+     */
+    void failCreateWhen(final @NotNull Predicate<ProtocolAdapterEntity> createFails) {
+        this.createFails = createFails;
     }
 
     @NotNull

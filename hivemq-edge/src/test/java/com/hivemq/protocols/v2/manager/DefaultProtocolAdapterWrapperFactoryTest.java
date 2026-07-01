@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.schema.ObjectSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
@@ -30,9 +31,16 @@ import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
+import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
+import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
+import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
+import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestDataPointFactory;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestProtocolAdapter;
@@ -153,6 +161,38 @@ class DefaultProtocolAdapterWrapperFactoryTest {
     }
 
     @Test
+    void factoryThrowingDuringConstruction_isReportedAsAConfigurationException() {
+        final CountingDispatcher counting = new CountingDispatcher();
+        final DefaultProtocolAdapterWrapperFactory factoryOnCounting = new DefaultProtocolAdapterWrapperFactory(
+                clock, counting, new MetricRegistry(), new TestDataPointFactory(), new ObjectMapper(), 100);
+        final ProtocolAdapterEntity entity = adapter("a").build();
+
+        // An adapter type whose factory throws while constructing the instance must be reported as a configuration
+        // exception the manager turns into an ERROR handle, not left to escape as a raw failure.
+        assertThatThrownBy(() -> factoryOnCounting.create(
+                        entity, new ThrowingConstructionFactory(), ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(ProtocolAdapterConfigException.class)
+                .hasMessageContaining("a")
+                .hasMessageContaining("could not be constructed");
+        assertThat(counting.liveBindings()).isZero();
+    }
+
+    @Test
+    void templateSubclassConstructorThrowingAfterSuper_releasesItsDispatchThread() {
+        final CountingDispatcher counting = new CountingDispatcher();
+        final DefaultProtocolAdapterWrapperFactory factoryOnCounting = new DefaultProtocolAdapterWrapperFactory(
+                clock, counting, new MetricRegistry(), new TestDataPointFactory(), new ObjectMapper(), 100);
+        final ProtocolAdapterEntity entity = adapter("a").build();
+
+        assertThatThrownBy(() -> factoryOnCounting.create(
+                        entity, new ThrowAfterSuperTemplateFactory(), ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(ProtocolAdapterConfigException.class);
+        // The template attached its dispatch thread in AbstractProtocolAdapter's constructor before the subclass
+        // constructor threw; the factory must have released that binding, so nothing leaks.
+        assertThat(counting.liveBindings()).isZero();
+    }
+
+    @Test
     void validateConfiguration_rejectsAConfigurationViolatingTheSchema_withoutBuilding() {
         final ProtocolAdapterFactory restrictive = restrictiveSchemaFactory(); // requires a string "host"
         final ProtocolAdapterEntity entity = adapter("a").build(); // empty adapter-configuration
@@ -234,6 +274,123 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.STOPPED);
 
         managed.close();
+    }
+
+    /**
+     * A factory of the test adapter type whose {@code createAdapter} throws an unchecked exception before attaching
+     * anything — an adapter-module bug during construction.
+     */
+    private static final class ThrowingConstructionFactory implements ProtocolAdapterFactory {
+
+        private final @NotNull ProtocolAdapterInformation information =
+                new TestProtocolAdapterInformation(ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID);
+
+        @Override
+        public @NotNull ProtocolAdapterInformation information() {
+            return information;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapter createAdapter(
+                final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
+            throw new IllegalStateException("construction blew up");
+        }
+
+        @Override
+        public @NotNull Schema adapterConfigSchema() {
+            return ProtocolAdapterManagerTestSupport.anySchema();
+        }
+
+        @Override
+        public @NotNull Schema nodeDefinitionSchema() {
+            return ProtocolAdapterManagerTestSupport.scalarSchema();
+        }
+    }
+
+    /**
+     * A factory whose {@code createAdapter} builds a template-derived adapter that attaches its dispatch thread in the
+     * superclass constructor and then throws from its own constructor body — the construction-time dispatch-leak case.
+     */
+    private static final class ThrowAfterSuperTemplateFactory implements ProtocolAdapterFactory {
+
+        private final @NotNull ProtocolAdapterInformation information =
+                new TestProtocolAdapterInformation(ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID);
+
+        @Override
+        public @NotNull ProtocolAdapterInformation information() {
+            return information;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapter createAdapter(
+                final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
+            return new ThrowAfterSuperTemplateAdapter(input, output);
+        }
+
+        @Override
+        public @NotNull Schema adapterConfigSchema() {
+            return ProtocolAdapterManagerTestSupport.anySchema();
+        }
+
+        @Override
+        public @NotNull Schema nodeDefinitionSchema() {
+            return ProtocolAdapterManagerTestSupport.scalarSchema();
+        }
+    }
+
+    /**
+     * A template adapter whose constructor attaches its dispatch thread through {@code super(...)} and then throws,
+     * modelling a subclass whose construction fails after the superclass has already opened the dispatch binding.
+     */
+    private static final class ThrowAfterSuperTemplateAdapter extends AbstractProtocolAdapter {
+
+        ThrowAfterSuperTemplateAdapter(
+                final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
+            super(input, output);
+            throw new IllegalStateException("subclass construction blew up after super()");
+        }
+
+        @Override
+        protected void doStart() {}
+
+        @Override
+        protected void doStop() {}
+
+        @Override
+        protected void doConnect() {}
+
+        @Override
+        protected void doDisconnect() {}
+
+        @Override
+        protected void doPoll(final @NotNull Node node) {}
+
+        @Override
+        protected void doAddSubscription(final @NotNull Node node) {}
+
+        @Override
+        protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {}
+    }
+
+    /**
+     * A {@link MessageDispatcher} double that counts the bindings it hands out and the ones later closed, so a test can
+     * assert a failed construction leaves no live binding behind.
+     */
+    private static final class CountingDispatcher implements MessageDispatcher {
+
+        private int attaches;
+        private int detaches;
+
+        @Override
+        public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
+                final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
+            attaches++;
+            return () -> detaches++;
+        }
+
+        private int liveBindings() {
+            return attaches - detaches;
+        }
     }
 
     private static final class RecordingHealth implements ProtocolAdapterWrapperEventListener {

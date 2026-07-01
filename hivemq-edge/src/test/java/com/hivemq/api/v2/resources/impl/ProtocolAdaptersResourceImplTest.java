@@ -367,6 +367,30 @@ class ProtocolAdaptersResourceImplTest {
         assertThat(result.getAccepted()).containsExactly("bad");
     }
 
+    @Test
+    void bulkRetry_nullBody_retriesEveryPermanentlyFailedTag() {
+        register(
+                "a",
+                snapshot(
+                        "a",
+                        ProtocolAdapterWrapperState.CONNECTED,
+                        List.of(
+                                tagSnapshot("bad", true, false, true, false, false, false),
+                                tagSnapshot("good", true, true, false, false, false, false)),
+                        true,
+                        false,
+                        null));
+
+        // The OpenAPI marks the bulk-retry body optional: a POST with no JSON body arrives here as a null request and
+        // must retry every permanently-failed tag rather than fail with a 500.
+        final Response response = resource().retryTags("a", null);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        final TagRetryResult result = (TagRetryResult) response.getEntity();
+        assertThat(result.getAccepted()).containsExactly("bad");
+        assertThat(manager.messages).contains(new RetryTag("a", "bad"));
+    }
+
     // ── mappings (derived status) ───────────────────────────────────────────────────────────────────────────────
 
     @Test

@@ -251,11 +251,16 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         try {
             nodes = wrapperFactory.translateNodes(updated, factory.get());
         } catch (final ProtocolAdapterConfigException exception) {
+            // The reload's tag set does not translate — for example a node-string that does not deserialize into the
+            // type's node class. Tearing the running adapter down and rebuilding it from a tag set that could never run
+            // would replace a healthy instance with an ERROR handle, so reject the bad reload instead: keep the running
+            // wrapper on its last-applied tag set and report the offending section. A malformed node string never takes
+            // a working adapter offline; the previous configuration keeps running until a valid reload arrives.
             log.error(
-                    "Cannot apply the tag set of v2 adapter '{}' in place: {}",
+                    "Refusing the tag-set reload of v2 adapter '{}' with an untranslatable tag; keeping the running "
+                            + "tag set: {}",
                     updated.getAdapterId(),
                     exception.getMessage());
-            stopAndDiscard(updated.getAdapterId(), updated);
             return;
         }
         tellWrapper(
@@ -297,6 +302,16 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         } catch (final ProtocolAdapterConfigException exception) {
             final String reason = Objects.requireNonNullElse(exception.getMessage(), "invalid adapter configuration");
             log.error("Cannot create v2 adapter '{}': {}", adapterId, reason);
+            registerErrorAdapter(entity, reason);
+            return;
+        } catch (final RuntimeException exception) {
+            // An unexpected failure building the adapter — an adapter-module bug in factory.createAdapter, or any other
+            // fault the wrapper factory did not convert into a ProtocolAdapterConfigException. A configured adapter
+            // must
+            // never simply vanish from the runtime: surface it as an ERROR handle with a clear reason so it stays
+            // visible to the manager health summary and to REST, exactly as an un-instantiable configuration does.
+            final String reason = "unexpected failure building the adapter: " + exception;
+            log.error("Cannot create v2 adapter '{}': {}", adapterId, reason, exception);
             registerErrorAdapter(entity, reason);
             return;
         }

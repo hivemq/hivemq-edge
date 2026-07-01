@@ -68,28 +68,38 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
     @Override
     public void receive(final @NotNull ProtocolAdapterWrapperMessage message) {
         final ProtocolAdapterWrapperState before = machine.state();
-        switch (message) {
-            case ProtocolAdapterWrapperTick tick -> {
-                context.onTick(tick.nowMillis());
-                context.stepTowardGoal();
-            }
-            case ProtocolAdapterWrapperCommand command ->
-                machine.onGoalChange(() -> {
-                    context.applyCommand(command);
+        try {
+            switch (message) {
+                case ProtocolAdapterWrapperTick tick -> {
+                    context.onTick(tick.nowMillis());
                     context.stepTowardGoal();
-                });
-            case ProtocolAdapterWrapperEvent event -> {
-                handleEvent(event);
-                context.stepTowardGoal();
+                }
+                case ProtocolAdapterWrapperCommand command ->
+                    machine.onGoalChange(() -> {
+                        context.applyCommand(command);
+                        context.stepTowardGoal();
+                    });
+                case ProtocolAdapterWrapperEvent event -> {
+                    handleEvent(event);
+                    context.stepTowardGoal();
+                }
+                case ProtocolAdapterWrapperWriteRequest write ->
+                    // A southbound write: route it to the node's write aspect. It changes no adapter
+                    // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
+                    context.routeWriteRequestToTags(write.node(), write.value());
+                case ProtocolAdapterWrapperBrowseRequest browse ->
+                    // A REST browse request: bridge it to the protocol adapter. It changes no adapter
+                    // goal or machine state — it issues one browse() when CONNECTED and stashes the future.
+                    context.handleBrowseRequest(browse.filter(), browse.completion());
             }
-            case ProtocolAdapterWrapperWriteRequest write ->
-                // A southbound write: route it to the node's write aspect. It changes no adapter
-                // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
-                context.routeWriteRequestToTags(write.node(), write.value());
-            case ProtocolAdapterWrapperBrowseRequest browse ->
-                // A REST browse request: bridge it to the protocol adapter. It changes no adapter
-                // goal or machine state — it issues one browse() when CONNECTED and stashes the future.
-                context.handleBrowseRequest(browse.filter(), browse.completion());
+        } catch (final RuntimeException fault) {
+            // A synchronous protocol-adapter command threw on this dispatch thread instead of reporting through the
+            // output façade. A template adapter cannot reach here (its command methods only tell its own mailbox), but
+            // a direct ProtocolAdapter that runs its work inline can. Convert the throw into the same adapter-error
+            // path a reported error(ADAPTER, ...) drives, so the machine enters ERROR, the supervisor is notified, and
+            // the snapshot reflects the failure rather than a stale prior state. The dispatcher's own fence remains the
+            // last-line backstop for anything this does not model (for example a fault raised while entering ERROR).
+            context.failFromUnhandledFault(message, fault);
         }
         if (machine.state() != before) {
             context.recordTransition();
