@@ -28,6 +28,7 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.DeactivateA
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ProtocolAdapterManagerTick;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.RetryTag;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ShutdownRequested;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ShutdownTimedOut;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperError;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStarted;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopped;
@@ -147,6 +148,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 forwardCommand(retry.adapterId(), new ProtocolAdapterWrapperCommand.RetryTag(retry.tagName()));
             case BrowseRequested browse -> handleBrowse(browse);
             case ShutdownRequested shutdown -> onShutdownRequested(shutdown.done());
+            case ShutdownTimedOut timedOut -> onShutdownTimedOut(timedOut.done());
             case WrapperStarted started -> onWrapperStarted(started.adapterId());
             case WrapperStopped stopped -> onWrapperStopped(stopped.adapterId());
             case WrapperError error -> onWrapperError(error.adapterId(), error.reason());
@@ -214,7 +216,23 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 existing.appliedEntity(updated);
             }
             case TAGS_ONLY -> applyTagsOnly(existing, running, updated);
-            case FULL_RECREATE -> stopAndDiscard(adapterId, updated);
+            case FULL_RECREATE -> {
+                final String schemaError = schemaError(updated);
+                if (schemaError != null) {
+                    // The reload would stop this healthy adapter and rebuild it from a configuration that does not
+                    // match its type's schema, replacing a running adapter with an ERROR handle. Reject the
+                    // destructive transition before it starts: keep the running instance on its last-applied
+                    // configuration and report the bad section, so a reload never tears down a working adapter for a
+                    // configuration that could never have run.
+                    log.error(
+                            "Refusing the full recreate of v2 adapter '{}' from a schema-invalid configuration; "
+                                    + "keeping the running instance: {}",
+                            adapterId,
+                            schemaError);
+                    return;
+                }
+                stopAndDiscard(adapterId, updated);
+            }
         }
     }
 
@@ -263,6 +281,14 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         final Optional<ProtocolAdapterFactory> factory = factoryRegistry.findByProtocolId(entity.getProtocolId());
         if (factory.isEmpty()) {
             registerErrorAdapter(entity, "no registered adapter type for protocol-id [" + entity.getProtocolId() + "]");
+            return;
+        }
+        // Validate the configuration against its type's schema before building anything, so a schema-invalid section
+        // is surfaced as a clear ERROR handle rather than failing deep inside adapter construction.
+        final String schemaError = schemaError(entity);
+        if (schemaError != null) {
+            log.error("Cannot create v2 adapter '{}': {}", adapterId, schemaError);
+            registerErrorAdapter(entity, schemaError);
             return;
         }
         final ProtocolAdapterContainer adapter;
@@ -361,6 +387,30 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             log.info("The v2 protocol-adapter manager has stopped every adapter");
             latch.countDown();
         }
+    }
+
+    /**
+     * Force the subsystem down on the dispatch thread after the graceful drain timed out: close every container that
+     * never acknowledged its stop — releasing each wrapper and protocol-adapter dispatch thread, tick, and metric so
+     * none is orphaned when the runtime is torn down — drop every pending recreate, and release the bootstrap. After
+     * this the manager owns nothing; a late wrapper event finds an empty pending map and is a harmless no-op.
+     *
+     * @param done the latch the bootstrap awaits before tearing the runtime down.
+     */
+    private void onShutdownTimedOut(final @NotNull CountDownLatch done) {
+        shutdownLatch = null;
+        for (final PendingRemoval pending : pendingRemovalMap.values()) {
+            pending.stopping().close();
+        }
+        pendingRemovalMap.clear();
+        // Defensive: any container that never reached the stop path (none, after onShutdownRequested) is closed too.
+        for (final ProtocolAdapterContainer container : containerMap.values()) {
+            handleRegistry.unregister(container.handle().adapterId());
+            container.close();
+        }
+        containerMap.clear();
+        log.warn("Forced the v2 protocol-adapter subsystem down after the graceful drain timed out");
+        done.countDown();
     }
 
     // ── wrapper health ──────────────────────────────────────────────────────────────────────
@@ -492,6 +542,28 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     private @NotNull ProtocolAdapterManagerHealthListener requireHealthListener() {
         return Objects.requireNonNull(
                 healthListener, "bindSelf must be called before the manager handles a configuration");
+    }
+
+    /**
+     * Validate a configuration against its type's schema, the load-time preflight the manager runs before it builds a
+     * new adapter or applies a destructive recreate.
+     *
+     * @param entity the configuration to validate.
+     * @return a clear message when the configuration resolves to a known adapter type whose schema it violates, or
+     *         {@code null} when it is schema-valid or its {@code protocol-id} has no registered type (an unknown type
+     *         is surfaced as an {@code ERROR} handle elsewhere, not rejected here).
+     */
+    private @Nullable String schemaError(final @NotNull ProtocolAdapterEntity entity) {
+        final Optional<ProtocolAdapterFactory> factory = factoryRegistry.findByProtocolId(entity.getProtocolId());
+        if (factory.isEmpty()) {
+            return null;
+        }
+        try {
+            wrapperFactory.validateConfiguration(entity, factory.get());
+            return null;
+        } catch (final ProtocolAdapterConfigException exception) {
+            return Objects.requireNonNullElse(exception.getMessage(), "invalid adapter configuration");
+        }
     }
 
     /**

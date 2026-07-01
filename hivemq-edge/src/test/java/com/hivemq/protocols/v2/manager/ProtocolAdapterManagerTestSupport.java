@@ -234,6 +234,12 @@ final class ProtocolAdapterManagerTestSupport {
         }
 
         @NotNull
+        TagBuilder access(final @NotNull AccessFlagsEntity access) {
+            this.access = access;
+            return this;
+        }
+
+        @NotNull
         TagEntity build() {
             return new TagEntity(
                     name,

@@ -18,6 +18,7 @@ package com.hivemq.protocols.v2.manager;
 import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.adapter;
 import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.tag;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.codahale.metrics.MetricRegistry;
@@ -149,6 +150,25 @@ class DefaultProtocolAdapterWrapperFactoryTest {
 
         assertThat(managed.isReal()).isTrue();
         managed.close();
+    }
+
+    @Test
+    void validateConfiguration_rejectsAConfigurationViolatingTheSchema_withoutBuilding() {
+        final ProtocolAdapterFactory restrictive = restrictiveSchemaFactory(); // requires a string "host"
+        final ProtocolAdapterEntity entity = adapter("a").build(); // empty adapter-configuration
+
+        assertThatThrownBy(() -> factory.validateConfiguration(entity, restrictive))
+                .isInstanceOf(ProtocolAdapterConfigException.class)
+                .hasMessageContaining("schema");
+    }
+
+    @Test
+    void validateConfiguration_acceptsAValidConfiguration() {
+        final ProtocolAdapterFactory restrictive = restrictiveSchemaFactory();
+        final ProtocolAdapterEntity entity =
+                adapter("a").adapterConfiguration(Map.of("host", "localhost")).build();
+
+        assertThatCode(() -> factory.validateConfiguration(entity, restrictive)).doesNotThrowAnyException();
     }
 
     /**

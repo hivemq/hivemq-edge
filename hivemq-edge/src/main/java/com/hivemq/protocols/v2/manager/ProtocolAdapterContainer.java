@@ -26,9 +26,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * One adapter the manager owns: its REST-readable {@link ProtocolAdapterHandle} plus the teardown resources the
- * manager must close when the adapter is discarded or recreated — the dispatcher binding, the periodic tick, and
- * the per-adapter metrics. The last-applied configuration is held here too, so the manager can diff a reload
- * against the configuration actually running rather than against the live (REST-mutated) goal.
+ * manager must close when the adapter is discarded or recreated — the wrapper's dispatcher binding, the protocol
+ * adapter's own dispatcher binding (when the adapter owns a dispatch thread, as a template adapter does), the
+ * periodic tick, and the per-adapter metrics. The last-applied configuration is held here too, so the manager can
+ * diff a reload against the configuration actually running rather than against the live (REST-mutated) goal.
  * <p>
  * An adapter whose {@code protocol-id} has no registered factory, or whose configuration cannot be instantiated, is
  * represented as an {@link #unknown(ProtocolAdapterHandle, ProtocolAdapterEntity) unknown} managed adapter: it
@@ -42,6 +43,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
 
     private final @NotNull ProtocolAdapterHandle handle;
     private final @Nullable MessageDispatcherHandle dispatcherHandle;
+    private final @Nullable AutoCloseable adapterDispatcherHandle;
     private final @Nullable AutoCloseable tickHandle;
     private final @Nullable ProtocolAdapterMetrics metrics;
     private @NotNull ProtocolAdapterEntity appliedEntity;
@@ -49,20 +51,25 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     /**
      * Create a running managed adapter with its teardown resources.
      *
-     * @param handle           the REST-readable handle.
-     * @param dispatcherHandle the binding of the wrapper mailbox to the dispatcher.
-     * @param tickHandle       the periodic wrapper tick schedule.
-     * @param metrics          the per-adapter metrics.
-     * @param appliedEntity    the configuration this adapter is running.
+     * @param handle                  the REST-readable handle.
+     * @param dispatcherHandle        the binding of the wrapper mailbox to the dispatcher.
+     * @param adapterDispatcherHandle the binding of the protocol adapter's own mailbox to the dispatcher, closed on
+     *                                teardown so a template adapter's dispatch thread is released; {@code null} for an
+     *                                adapter that owns no dispatch thread.
+     * @param tickHandle              the periodic wrapper tick schedule.
+     * @param metrics                 the per-adapter metrics.
+     * @param appliedEntity           the configuration this adapter is running.
      */
     public ProtocolAdapterContainer(
             final @NotNull ProtocolAdapterHandle handle,
             final @NotNull MessageDispatcherHandle dispatcherHandle,
+            final @Nullable AutoCloseable adapterDispatcherHandle,
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
         this.handle = handle;
         this.dispatcherHandle = dispatcherHandle;
+        this.adapterDispatcherHandle = adapterDispatcherHandle;
         this.tickHandle = tickHandle;
         this.metrics = metrics;
         this.appliedEntity = appliedEntity;
@@ -72,6 +79,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull ProtocolAdapterHandle handle, final @NotNull ProtocolAdapterEntity entity) {
         this.handle = handle;
         this.dispatcherHandle = null;
+        this.adapterDispatcherHandle = null;
         this.tickHandle = null;
         this.metrics = null;
         this.appliedEntity = entity;
@@ -122,14 +130,17 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     }
 
     /**
-     * Release the adapter's runtime resources: stop the periodic tick, detach the wrapper from the dispatcher, and
-     * deregister the per-adapter metrics so a recreated adapter with the same id starts clean. Each step is best
-     * effort; a failure in one never prevents the others. A no-op for an unknown adapter.
+     * Release the adapter's runtime resources: stop the periodic tick, detach the wrapper from the dispatcher, detach
+     * the protocol adapter's own dispatch thread (so a template adapter does not leak it), and deregister the
+     * per-adapter metrics so a recreated adapter with the same id starts clean. The wrapper binding is closed before
+     * the adapter binding so the wrapper stops commanding the adapter first. Each step is best effort; a failure in
+     * one never prevents the others. A no-op for an unknown adapter.
      */
     @Override
     public void close() {
         closeQuietly(tickHandle, "tick schedule");
-        closeQuietly(dispatcherHandle, "dispatcher binding");
+        closeQuietly(dispatcherHandle, "wrapper dispatcher binding");
+        closeQuietly(adapterDispatcherHandle, "protocol adapter dispatcher binding");
         closeQuietly(metrics, "metrics");
     }
 

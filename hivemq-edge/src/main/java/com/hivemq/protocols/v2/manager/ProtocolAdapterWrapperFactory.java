@@ -51,6 +51,18 @@ public interface ProtocolAdapterWrapperFactory {
             @NotNull ProtocolAdapterWrapperEventListener healthListener);
 
     /**
+     * Validate an instance configuration against its type's configuration schema, without building anything — the
+     * load-time preflight the manager runs before it applies a destructive transition, so a schema-invalid
+     * configuration is rejected before a healthy running adapter is ever stopped. {@link #create} performs the same
+     * check itself, so a configuration that passes here also passes there.
+     *
+     * @param entity  the adapter configuration to validate.
+     * @param factory the factory of the configuration's protocol-adapter type (the owner of the schema).
+     * @throws ProtocolAdapterConfigException if the {@code adapter-configuration} does not match the type's schema.
+     */
+    void validateConfiguration(@NotNull ProtocolAdapterEntity entity, @NotNull ProtocolAdapterFactory factory);
+
+    /**
      * Translate the configuration's tags into the runtime node/tag pairs — the payload of an in-place
      * {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.UpdateTagSet}. Shares the
      * exact node-string deserialization {@link #create} uses, so a tags-only reload builds the same pairs the

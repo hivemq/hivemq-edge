@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
+import com.hivemq.protocols.v2.config.AccessFlagsEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ActivateAdapter;
@@ -279,6 +281,98 @@ class ProtocolAdapterManagerTest {
 
         assertThat(done.getCount()).isZero();
         assertThat(wrapperFactory.closedAdapterIds()).containsExactlyInAnyOrder("a", "b");
+    }
+
+    @Test
+    void shutdownTimedOut_forceClosesEveryStillStoppingContainer() {
+        send(new ConfigurationChanged(List.of(adapter("a").build(), adapter("b").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        wrapperFactory.setMachineState("b", ProtocolAdapterWrapperState.CONNECTED);
+
+        final CountDownLatch drained = new CountDownLatch(1);
+        send(new ProtocolAdapterManagerMessage.ShutdownRequested(drained));
+        // Neither adapter acknowledges its stop, so the graceful drain never completes on its own.
+        assertThat(drained.getCount()).isEqualTo(1);
+        assertThat(wrapperFactory.closedAdapterIds()).isEmpty();
+
+        // The lifecycle gives up on the graceful drain and forces the teardown: every still-pending container is
+        // closed so no dispatch thread, tick, or metric is orphaned, and the bootstrap is released.
+        final CountDownLatch forced = new CountDownLatch(1);
+        send(new ProtocolAdapterManagerMessage.ShutdownTimedOut(forced));
+
+        assertThat(forced.getCount()).isZero();
+        assertThat(wrapperFactory.closedAdapterIds()).containsExactlyInAnyOrder("a", "b");
+
+        // A late stopped() for an already force-closed adapter finds an empty pending map and is a harmless no-op.
+        fireWrapperStopped("a");
+        assertThat(wrapperFactory.closedAdapterIds()).containsExactlyInAnyOrder("a", "b");
+    }
+
+    @Test
+    void schemaInvalidFullRecreateTarget_keepsTheRunningAdapterUntouched() {
+        send(new ConfigurationChanged(List.of(
+                adapter("a").adapterConfiguration(Map.of("host", "good")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        final int commandsBefore = wrapperFactory.commands("a").size();
+
+        // The reload changes a connection-critical field (a full recreate) to a configuration that fails its schema.
+        wrapperFactory.rejectSchemaWhen(
+                entity -> "bad".equals(entity.getAdapterConfiguration().get("host")));
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "bad")).build())));
+
+        // The healthy running adapter is left exactly as it was: no stop, no recreate, still registered. A reload
+        // never tears down a working adapter for a configuration that could never have run.
+        assertThat(wrapperFactory.commands("a")).hasSize(commandsBefore);
+        assertThat(wrapperFactory.commands("a")).noneMatch(ProtocolAdapterWrapperCommand.StopAdapter.class::isInstance);
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void schemaInvalidNewAdapter_isSurfacedAsAnErrorHandle_withoutBuildingAWrapper() {
+        wrapperFactory.rejectSchemaWhen(entity -> entity.getAdapterId().equals("a"));
+
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("a");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("schema");
+        // The configuration was validated and rejected at the preflight; no wrapper was ever built.
+        assertThat(wrapperFactory.validatedAdapterIds()).contains("a");
+        assertThat(wrapperFactory.createdAdapterIds()).doesNotContain("a");
+    }
+
+    @Test
+    void accessOnlyReload_updatesTheTagSetInPlace_withoutAStopOrRecreate() {
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .tags(tag("temperature").access(access(false)).build())
+                .build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        final int createdBefore = wrapperFactory.createdAdapterIds().size();
+
+        // A change to a tag's access flags only is a tags-only transition, applied in place.
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .tags(tag("temperature").access(access(true)).build())
+                .build())));
+
+        assertThat(wrapperFactory.commands("a"))
+                .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.UpdateTagSet.class);
+        // The adapter is never stopped or recreated, so the running instance keeps its connection.
+        assertThat(wrapperFactory.commands("a")).noneMatch(ProtocolAdapterWrapperCommand.StopAdapter.class::isInstance);
+        assertThat(wrapperFactory.createdAdapterIds()).hasSize(createdBefore);
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    private static @NotNull AccessFlagsEntity access(final boolean readable) {
+        return new AccessFlagsEntity(
+                readable ? AccessTriState.YES : AccessTriState.NO,
+                AccessTriState.NO,
+                AccessTriState.NO,
+                AccessTriState.NO);
     }
 
     @Test

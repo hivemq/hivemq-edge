@@ -23,6 +23,8 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Production {@link MessageDispatcher}: one dedicated daemon thread per handler that blocks in
@@ -33,9 +35,15 @@ import org.jetbrains.annotations.Nullable;
  * always completes first. The stop flag is observed either as the interrupt thrown by {@code awaitNextMessage}, or
  * — when a {@code tell} races in and {@code awaitNextMessage} returns that message instead of throwing — by the
  * re-check after the fetch, so a message arriving alongside {@code close()} is never delivered.
+ * <p>
+ * A handler that throws an unchecked exception never kills its dispatch thread: the loop catches it, logs it, and
+ * keeps pumping the next message. An actor whose thread died would go silent — its own watchdog would never fire,
+ * because the ticks that drive it are no longer delivered — so the loop is the last-line fence that keeps every
+ * actor alive regardless of a handler bug.
  */
 public final class SystemDispatcher implements MessageDispatcher {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(SystemDispatcher.class);
     private static final long POLL_TIMEOUT_MILLIS = 1_000L;
     private static final @NotNull AtomicLong THREAD_COUNTER = new AtomicLong();
 
@@ -85,7 +93,16 @@ public final class SystemDispatcher implements MessageDispatcher {
                     break;
                 }
                 if (message != null) {
-                    handler.receive(message);
+                    try {
+                        handler.receive(message);
+                    } catch (final RuntimeException failure) {
+                        // Never let a handler bug kill the dispatch thread: log it and keep pumping. The actor stays
+                        // alive to process its next message — a watchdog, a stop, a recovery command.
+                        log.error(
+                                "Uncaught exception while {} handled a message; the dispatcher continues",
+                                handler.getClass().getName(),
+                                failure);
+                    }
                 }
             }
         }

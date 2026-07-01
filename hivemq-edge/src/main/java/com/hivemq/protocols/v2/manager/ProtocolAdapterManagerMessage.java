@@ -141,6 +141,23 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     }
 
     /**
+     * The graceful drain ({@link ShutdownRequested}) did not complete within the bootstrap's window: one or more
+     * adapters never acknowledged their stop. The manager force-closes every still-pending container — releasing each
+     * wrapper and protocol-adapter dispatch thread, tick, and metric so none is orphaned when the runtime is torn
+     * down — drops any pending recreate, and counts the latch down. The {@code CONTROL} band: it must run ahead of any
+     * late wrapper event still queued. Sent by {@link com.hivemq.protocols.v2.wiring.ProtocolAdapterLifecycle} only
+     * after the graceful drain timed out.
+     *
+     * @param done counted down once every still-pending container has been force-closed.
+     */
+    record ShutdownTimedOut(@NotNull CountDownLatch done) implements ProtocolAdapterManagerMessage {
+        @Override
+        public @NotNull MailboxMessagePriority priority() {
+            return MailboxMessagePriority.CONTROL;
+        }
+    }
+
+    /**
      * A managed wrapper reached {@code CONNECTED}. The {@code EVENT} band (the default).
      *
      * @param adapterId the adapter instance id.

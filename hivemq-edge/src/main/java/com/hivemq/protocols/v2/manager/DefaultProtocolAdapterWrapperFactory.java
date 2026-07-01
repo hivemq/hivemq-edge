@@ -117,10 +117,10 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
 
         final List<NodeTagPair> nodes = translateNodes(entity, factory);
         // Validate the instance configuration against the type's schema before the adapter sees it, so an invalid
-        // section is rejected with a clear message (the manager turns this into an ERROR handle) rather than failing
-        // opaquely inside the adapter later.
-        AdapterConfigurationSchemaValidator.validate(
-                adapterId, entity.getAdapterConfiguration(), factory.adapterConfigSchema(), objectMapper);
+        // section is rejected with a clear message rather than failing opaquely inside the adapter later. The manager
+        // runs this same preflight before any destructive transition; repeating it here keeps the guarantee that an
+        // adapter never sees a configuration the framework has not checked, even for a direct caller of create().
+        validateConfiguration(entity, factory);
         final DataPoint adapterConfig =
                 dataPointFactory.createJsonDataPoint(adapterId, entity.getAdapterConfiguration());
         final ProtocolAdapterService services = new WrapperServices(dataPointFactory, dispatcher);
@@ -168,9 +168,22 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final MessageDispatcherHandle dispatcherHandle = dispatcher.attach(mailbox, wrapper);
         final AutoCloseable tickHandle =
                 clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis()));
+        // A template adapter (or any adapter that owns its own dispatch thread) is AutoCloseable: it attaches its own
+        // mailbox to the dispatcher at construction. The container owns that binding's teardown so the adapter's
+        // dispatch thread is released when the adapter is discarded, exactly as the wrapper's is.
+        final AutoCloseable adapterDispatcherHandle =
+                protocolAdapter instanceof AutoCloseable closeable ? closeable : null;
 
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
-        return new ProtocolAdapterContainer(handle, dispatcherHandle, tickHandle, metrics, entity);
+        return new ProtocolAdapterContainer(
+                handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, entity);
+    }
+
+    @Override
+    public void validateConfiguration(
+            final @NotNull ProtocolAdapterEntity entity, final @NotNull ProtocolAdapterFactory factory) {
+        AdapterConfigurationSchemaValidator.validate(
+                entity.getAdapterId(), entity.getAdapterConfiguration(), factory.adapterConfigSchema(), objectMapper);
     }
 
     @Override

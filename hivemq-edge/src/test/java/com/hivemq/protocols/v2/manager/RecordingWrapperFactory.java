@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,6 +51,8 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     private final @NotNull Map<String, Recorded> recordedByAdapterId = new LinkedHashMap<>();
     private final @NotNull List<String> translateNodesAdapterIds = new ArrayList<>();
     private final @NotNull List<String> closedAdapterIds = new ArrayList<>();
+    private final @NotNull List<String> validatedAdapterIds = new ArrayList<>();
+    private @NotNull Predicate<ProtocolAdapterEntity> schemaInvalid = entity -> false;
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
 
     @Override
@@ -69,8 +72,20 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
         final MailboxSender<ProtocolAdapterWrapperMessage> sender = commands::add;
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, sender, snapshot);
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(new MetricRegistry(), adapterId, () -> 0);
-        // Record container teardown so a test can assert the manager closes a wrapper's resources on shutdown.
-        return new ProtocolAdapterContainer(handle, () -> closedAdapterIds.add(adapterId), () -> {}, metrics, entity);
+        // Record container teardown so a test can assert the manager closes a wrapper's resources on shutdown. The
+        // recording double owns no protocol-adapter dispatch thread, so the adapter dispatcher binding is null.
+        return new ProtocolAdapterContainer(
+                handle, () -> closedAdapterIds.add(adapterId), null, () -> {}, metrics, entity);
+    }
+
+    @Override
+    public void validateConfiguration(
+            final @NotNull ProtocolAdapterEntity entity, final @NotNull ProtocolAdapterFactory factory) {
+        validatedAdapterIds.add(entity.getAdapterId());
+        if (schemaInvalid.test(entity)) {
+            throw new ProtocolAdapterConfigException(
+                    "adapter [" + entity.getAdapterId() + "] configuration does not match its type's schema");
+        }
     }
 
     @Override
@@ -95,6 +110,21 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     @NotNull
     List<String> closedAdapterIds() {
         return closedAdapterIds;
+    }
+
+    @NotNull
+    List<String> validatedAdapterIds() {
+        return validatedAdapterIds;
+    }
+
+    /**
+     * Make {@link #validateConfiguration} reject (throw) for any entity the predicate matches, simulating a
+     * configuration that fails its type's schema. Set before the reload the test exercises.
+     *
+     * @param schemaInvalid the predicate selecting the configurations to reject.
+     */
+    void rejectSchemaWhen(final @NotNull Predicate<ProtocolAdapterEntity> schemaInvalid) {
+        this.schemaInvalid = schemaInvalid;
     }
 
     @NotNull

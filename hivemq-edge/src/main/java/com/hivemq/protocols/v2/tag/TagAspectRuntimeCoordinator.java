@@ -237,11 +237,13 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             final @NotNull Map<String, Long> newPollIntervalMillisByTagName,
             final @NotNull Set<String> newReadUsedTagNames,
             final @NotNull Set<String> newWriteUsedTagNames) {
-        // Diff the tag set in place. A tag unchanged in node-string, access mode, and poll interval is a survivor:
-        // its running TagRuntime is kept untouched, so it keeps polling without re-verification. A tag whose
-        // identity changed and a removed tag are torn down; an added (or changed) tag gets a fresh runtime whose
-        // adapter readiness is replayed to the live phase, so it verifies against an already-connected adapter
-        // without ever reconnecting.
+        // Diff the tag set in place. A tag unchanged in the runtime-relevant identity — node-string, read transport
+        // (pollable / subscribable), and poll interval — is a survivor: its running TagRuntime is kept untouched, so
+        // it keeps polling without re-verification. A tag whose identity changed and a removed tag are torn down; an
+        // added (or changed) tag gets a fresh runtime whose adapter readiness is replayed to the live phase, so it
+        // verifies against an already-connected adapter without ever reconnecting. Access flags are read-model only —
+        // they never reach the runtime NodeTagPair — so an access-only change leaves every survivor in place; the
+        // manager records the new flags on the container so the REST view reflects them.
         final BoundRuntime bound = runtime();
         final Map<String, TagRuntime> survivingByName = new HashMap<>();
         for (final TagRuntime tagRuntime : tagRuntimes) {
@@ -343,8 +345,10 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     /**
-     * @return whether the surviving runtime's tag is identical to the incoming pair — same node-string, access mode,
-     *         and poll interval — so it can be kept in place rather than rebuilt.
+     * @return whether the surviving runtime's tag is identical to the incoming pair in the runtime-relevant identity —
+     *         same node-string, read transport (pollable / subscribable), and poll interval — so it can be kept in
+     *         place rather than rebuilt. Access flags are deliberately not compared: they are read-model only and do
+     *         not reach the runtime {@link NodeTagPair}, so an access-only change keeps the survivor untouched.
      */
     private boolean isUnchanged(
             final @NotNull TagRuntime existing,
