@@ -234,6 +234,7 @@ dependencies {
 
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
+    compileOnly("com.hivemq:hivemq-edge-module-etherip-cip-odva")
     compileOnly("com.hivemq:hivemq-edge-module-plc4x")
     compileOnly("com.hivemq:hivemq-edge-module-http")
     compileOnly("com.hivemq:hivemq-edge-module-modbus")
