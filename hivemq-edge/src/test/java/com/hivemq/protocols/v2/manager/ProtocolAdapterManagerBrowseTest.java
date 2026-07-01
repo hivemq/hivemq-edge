@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.BrowseRequested;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ConfigurationChanged;
 import com.hivemq.protocols.v2.runtime.FakeClock;
@@ -71,7 +71,7 @@ class ProtocolAdapterManagerBrowseTest {
         send(new ConfigurationChanged(List.of(adapter("a").build())));
         wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
 
-        final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
         send(new BrowseRequested("a", filter(), future));
 
         assertThat(wrapperFactory.commands("a")).hasAtLeastOneElementOfType(ProtocolAdapterWrapperBrowseRequest.class);
@@ -83,7 +83,7 @@ class ProtocolAdapterManagerBrowseTest {
         send(new ConfigurationChanged(List.of(adapter("a").build())));
         // The recording wrapper stays STOPPED (it does not actually start), so the adapter is not connected.
 
-        final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
         send(new BrowseRequested("a", filter(), future));
 
         final Throwable thrown = catchThrowable(future::get);
@@ -96,7 +96,7 @@ class ProtocolAdapterManagerBrowseTest {
 
     @Test
     void browseUnknownAdapter_failsWithIllegalArgument() {
-        final CompletableFuture<List<BrowseResultEntry>> future = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
         send(new BrowseRequested("ghost", filter(), future));
 
         final Throwable thrown = catchThrowable(future::get);

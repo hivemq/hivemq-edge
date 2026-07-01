@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.wrapper;
 
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
@@ -154,7 +155,17 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     }
 
     @Override
-    public void browse(final @NotNull BrowseFilter filter) {
+    public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {
         commands.add("browse");
+    }
+
+    @Override
+    public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
+        commands.add("browseNext");
+    }
+
+    @Override
+    public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
+        commands.add("readNodeAttributes");
     }
 }
