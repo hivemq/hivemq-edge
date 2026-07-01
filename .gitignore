@@ -30,3 +30,7 @@ out/
 .vscode/
 /hivemq-edge-frontend/package-lock.json
 /_run/
+
+# Agent tooling
+.claude/
+.entire/

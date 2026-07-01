@@ -26,6 +26,7 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
@@ -376,8 +377,18 @@ final class ProtocolAdapterManagerTestSupport {
         }
 
         @Override
-        public void browse(final @NotNull BrowseFilter filter) {
-            output.browseResult(List.of());
+        public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {
+            output.browsePage(requestId, List.of(), null);
+        }
+
+        @Override
+        public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
+            output.browsePage(requestId, List.of(), null);
+        }
+
+        @Override
+        public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
+            output.readAttributesResult(requestId, List.of());
         }
     }
 
