@@ -102,6 +102,7 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
     private int bindPort;
     private @Nullable OpcUaServer opcUaServer;
     private @Nullable TestNamespace testNamespace;
+    private @Nullable MemoryTrustListManager trustManager;
 
     private static @NotNull X509Certificate generateServerCertificate(final KeyPair keyPair) throws Exception {
         final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
@@ -148,7 +149,7 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         final KeyPair keyPair = createServerKeyPair();
         final X509Certificate certificate = generateServerCertificate(keyPair);
 
-        final var trustManager = new MemoryTrustListManager();
+        trustManager = new MemoryTrustListManager();
         trustManager.addTrustedCertificate(certificate);
         final var quarantine = new MemoryCertificateQuarantine();
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
@@ -222,6 +223,17 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public @Nullable OpcUaServer getOpcUaServer() {
         return opcUaServer;
+    }
+
+    /**
+     * Adds a certificate (typically a client root CA) to the server's trust list so the server
+     * will accept clients whose application instance certificate chains to this anchor.
+     */
+    public void addTrustedClientCertificate(final @NotNull X509Certificate clientTrustAnchor) {
+        if (trustManager == null) {
+            throw new IllegalStateException("Server has not been started; trustManager is not initialised");
+        }
+        trustManager.addTrustedCertificate(clientTrustAnchor);
     }
 
     private @NotNull Set<EndpointConfig> createEndpointConfigs(final @NotNull X509Certificate certificate) {
