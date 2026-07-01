@@ -17,9 +17,11 @@ package com.hivemq.protocols.v2.wrapper;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.util.List;
@@ -92,7 +94,21 @@ public final class ProtocolAdapterOutputFacade implements ProtocolAdapterOutput 
     }
 
     @Override
-    public void browseResult(final @NotNull List<BrowseResultEntry> entries) {
-        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.BrowseResultReceived(List.copyOf(entries)));
+    public void browsePage(
+            final int requestId,
+            final @NotNull List<BrowseNode> entries,
+            final @Nullable BrowseContinuation continuation) {
+        wrapperMailbox.tell(
+                new ProtocolAdapterWrapperEvent.BrowsePageReceived(requestId, List.copyOf(entries), continuation));
+    }
+
+    @Override
+    public void readAttributesResult(final int requestId, final @NotNull List<ResolvedAttributes> attributes) {
+        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.AttributesResolved(requestId, List.copyOf(attributes)));
+    }
+
+    @Override
+    public void browseError(final int requestId, final @NotNull String reason) {
+        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.BrowseFailed(requestId, reason));
     }
 }

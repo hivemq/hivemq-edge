@@ -28,10 +28,15 @@ import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.WAITIN
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.protocols.v2.browse.BrowseSink;
+import com.hivemq.protocols.v2.browse.BrowsedNode;
+import com.hivemq.protocols.v2.browse.ProtocolAdapterBrowseEngine;
 import com.hivemq.protocols.v2.fsm.FSM;
 import com.hivemq.protocols.v2.runtime.Backoff;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
@@ -42,6 +47,7 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,6 +106,7 @@ public final class ProtocolAdapterWrapperContext {
 
     private @Nullable TimerHandle watchdog;
     private @Nullable TimerHandle backoffTimer;
+    private final @NotNull ProtocolAdapterBrowseEngine browseEngine = new ProtocolAdapterBrowseEngine();
     private @Nullable PendingBrowse pendingBrowse;
     private @Nullable FSM<ProtocolAdapterWrapperState, ProtocolAdapterWrapperEvent, ProtocolAdapterWrapperContext>
             machine;
@@ -496,47 +503,69 @@ public final class ProtocolAdapterWrapperContext {
     /**
      * Bridge a REST browse to the protocol adapter, on the dispatch thread. A browse runs only when
      * the adapter is {@code CONNECTED} and no browse is already in flight; otherwise the future is failed with a
-     * {@link BrowseRejectedException} the resource maps to {@code 409}. On acceptance, one {@code browse(filter)} is
-     * issued, the future is stashed, and a deadline timer is armed so the slot is always released — the matching
-     * {@link ProtocolAdapterWrapperEvent.BrowseResultReceived} completes it through {@link #completeBrowse(List)}.
+     * {@link BrowseRejectedException} the resource maps to {@code 409}. On acceptance, the
+     * {@link ProtocolAdapterBrowseEngine} drives the two-phase paginated walk (DISCOVER then RESOLVE), one PA
+     * command at a time, and completes the future — with a deadline backstop that always releases the slot.
      *
      * @param filter     the browse filter.
      * @param completion the future the REST thread awaits.
      */
     public void handleBrowseRequest(
-            final @NotNull BrowseFilter filter, final @NotNull CompletableFuture<List<BrowseResultEntry>> completion) {
+            final @NotNull BrowseFilter filter, final @NotNull CompletableFuture<List<BrowseNode>> completion) {
         if (machine().state() != CONNECTED) {
             completion.completeExceptionally(new BrowseRejectedException(
                     BrowseRejectedException.Reason.NOT_CONNECTED,
                     "adapter '" + adapterId + "' is not connected (" + machine().state() + ")"));
             return;
         }
-        if (pendingBrowse != null) {
+        if (browseEngine.isActive()) {
             completion.completeExceptionally(new BrowseRejectedException(
                     BrowseRejectedException.Reason.ALREADY_IN_FLIGHT,
                     "a browse is already in flight on adapter '" + adapterId + "'"));
             return;
         }
+        // The deadline is the actor-owned backstop that always releases the slot; the engine drives the walk and
+        // reports through the sink. Browse the whole subtree below the filter (depth 0 = unlimited), letting the
+        // device choose its page size (maxReferences 0).
         final TimerHandle deadline =
                 timers.schedule(clock.nowMillis() + BROWSE_DEADLINE_MILLIS, this::onBrowseDeadline);
         pendingBrowse = new PendingBrowse(completion, deadline);
-        protocolAdapter.browse(filter);
+        browseEngine.start(protocolAdapter, filter.filterNode(), 0, 0, new BrowseSink() {
+            @Override
+            public void complete(final @NotNull List<BrowsedNode> nodes) {
+                completeBrowse(nodes);
+            }
+
+            @Override
+            public void fail(final @NotNull String reason) {
+                failBrowse(reason);
+            }
+        });
     }
 
-    /**
-     * Complete the pending browse with its results. A result arriving with nothing waiting — a stale
-     * or duplicate {@code browseResult} — is dropped.
-     *
-     * @param entries the browse result entries.
-     */
-    public void completeBrowse(final @NotNull List<BrowseResultEntry> entries) {
+    private void completeBrowse(final @NotNull List<BrowsedNode> nodes) {
         final PendingBrowse pending = pendingBrowse;
         if (pending == null) {
             return;
         }
         pendingBrowse = null;
         timers.cancel(pending.deadline());
-        pending.completion().complete(List.copyOf(entries));
+        final List<BrowseNode> entries = new ArrayList<>(nodes.size());
+        for (final BrowsedNode node : nodes) {
+            entries.add(node.entry());
+        }
+        pending.completion().complete(entries);
+    }
+
+    private void failBrowse(final @NotNull String reason) {
+        final PendingBrowse pending = pendingBrowse;
+        if (pending == null) {
+            return;
+        }
+        pendingBrowse = null;
+        timers.cancel(pending.deadline());
+        pending.completion()
+                .completeExceptionally(new BrowseRejectedException(BrowseRejectedException.Reason.FAILED, reason));
     }
 
     private void onBrowseDeadline() {
@@ -545,10 +574,46 @@ public final class ProtocolAdapterWrapperContext {
             return;
         }
         pendingBrowse = null;
+        browseEngine.abort();
         pending.completion()
                 .completeExceptionally(new BrowseRejectedException(
                         BrowseRejectedException.Reason.TIMED_OUT,
                         "browse on adapter '" + adapterId + "' did not complete before the deadline"));
+    }
+
+    /**
+     * Feed a DISCOVER page to the browse engine; a page with a stale request id or arriving while no browse is
+     * in flight is ignored.
+     *
+     * @param requestId    correlates the page with its browse.
+     * @param entries      the discovered nodes in this page.
+     * @param continuation the next-page token, or {@code null} on the last page.
+     */
+    public void onBrowsePage(
+            final int requestId,
+            final @NotNull List<BrowseNode> entries,
+            final @Nullable BrowseContinuation continuation) {
+        browseEngine.onBrowsePage(requestId, entries, continuation);
+    }
+
+    /**
+     * Feed a RESOLVE batch result to the browse engine; a stale or unsolicited result is ignored.
+     *
+     * @param requestId  correlates the batch with its browse.
+     * @param attributes the resolved attributes, one per requested node.
+     */
+    public void onAttributesResolved(final int requestId, final @NotNull List<ResolvedAttributes> attributes) {
+        browseEngine.onAttributesResolved(requestId, attributes);
+    }
+
+    /**
+     * Feed a browse step failure to the browse engine; a stale or unsolicited failure is ignored.
+     *
+     * @param requestId the browse/resolve that failed.
+     * @param reason    a human-readable description.
+     */
+    public void onBrowseFailed(final int requestId, final @NotNull String reason) {
+        browseEngine.onBrowseError(requestId, reason);
     }
 
     private void failPendingBrowse() {
@@ -558,6 +623,7 @@ public final class ProtocolAdapterWrapperContext {
         }
         pendingBrowse = null;
         timers.cancel(pending.deadline());
+        browseEngine.abort();
         pending.completion()
                 .completeExceptionally(new BrowseRejectedException(
                         BrowseRejectedException.Reason.NOT_CONNECTED,
@@ -690,13 +756,13 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * The single in-flight browse: the future the REST thread awaits and the deadline timer that releases the slot
-     * if the protocol adapter never reports a result.
+     * The single in-flight browse: the future the REST thread awaits and the deadline timer that releases the
+     * slot if the browse never finishes. The engine drives the walk; this holds the actor-owned bridge state.
      *
      * @param completion the future to complete with the browse result or a {@link BrowseRejectedException}.
      * @param deadline   the deadline timer, canceled when the browse completes.
      */
     private record PendingBrowse(
-            @NotNull CompletableFuture<List<BrowseResultEntry>> completion,
+            @NotNull CompletableFuture<List<BrowseNode>> completion,
             @NotNull TimerHandle deadline) {}
 }
