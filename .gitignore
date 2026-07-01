@@ -28,3 +28,7 @@ out/
 /hivemq-edge/src/test/resources/opc-large-config.xml
 /edge-plugins/.kotlin/
 .vscode/
+
+# Agent tooling
+.claude/
+.entire/
