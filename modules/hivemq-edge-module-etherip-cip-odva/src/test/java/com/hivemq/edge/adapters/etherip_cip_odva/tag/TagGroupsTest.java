@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
@@ -65,5 +67,66 @@ class TagGroupsTest {
                 .isEqualTo(
                         LogicalAddressPathFactory.create(single.getDefinition().getAddress()));
         Assertions.assertThat(singleGroup.getTags()).containsExactly(single);
+    }
+
+    @Test
+    void shouldSeparateTagsAtSameAddressByDirection() throws OdvaException {
+        // given: same CIP address, different read/write direction
+        final CipTag read = new CipTag(
+                "read",
+                "read",
+                new CipTagDefinition("@1/2/3", 1, CipDataType.INT, 0d, null, 0, null, CipReadWrite.READ_ONLY, null));
+        final CipTag write = new CipTag(
+                "write",
+                "write",
+                new CipTagDefinition(
+                        "@1/2/3",
+                        1,
+                        CipDataType.INT,
+                        0d,
+                        null,
+                        0,
+                        null,
+                        CipReadWrite.WRITE_ONLY,
+                        CipWriteMode.COMPLETE_WRITE));
+
+        // when
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(read, write)))
+                .isTrue();
+
+        // then: two groups despite the shared address, one readable, one not
+        final Collection<TagGroup> groups = tagGroups.getTagGroups();
+        Assertions.assertThat(groups).hasSize(2);
+        Assertions.assertThat(groups)
+                .anyMatch(g -> g.isReadable() && g.getTags().contains(read));
+        Assertions.assertThat(groups)
+                .anyMatch(g -> !g.isReadable() && g.getTags().contains(write));
+    }
+
+    @Test
+    void shouldRejectReadWriteMixedWithReadOnlyAtSameAddress() {
+        final CipTag readWrite = tag("rw", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.COMPLETE_WRITE);
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(readWrite, readOnly)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("READ_WRITE");
+    }
+
+    @Test
+    void shouldAllowReadOnlyAndWriteOnlyAtSameAddress() throws OdvaException {
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag writeOnly = tag("wo", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(readOnly, writeOnly)))
+                .isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
+    }
+
+    private static CipTag tag(final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
+        return new CipTag(name, name, new CipTagDefinition(address, 1, CipDataType.INT, 0d, null, 0, null, rw, wm));
     }
 }

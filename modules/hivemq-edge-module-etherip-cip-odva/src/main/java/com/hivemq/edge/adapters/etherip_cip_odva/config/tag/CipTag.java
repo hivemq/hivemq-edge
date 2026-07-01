@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
@@ -117,5 +118,17 @@ public class CipTag implements Tag, Serializable {
 
     public boolean isComposite() {
         return definition.getDataType() == CipDataType.COMPOSITE;
+    }
+
+    public boolean isReadable() {
+        return definition.getReadWrite().isReadable();
+    }
+
+    public boolean isWritable() {
+        return definition.getReadWrite().isWritable();
+    }
+
+    public @NotNull CipWriteMode getWriteMode() {
+        return definition.getWriteMode();
     }
 }
