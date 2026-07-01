@@ -107,23 +107,21 @@ const WizardSelectionRestrictions: FC = () => {
     // If wizard not active, restore all nodes without ghosts (GhostNodeRenderer will handle ghost cleanup)
     if (!isActive) {
       const realNodes = nodes.filter((node) => !node.data?.isGhost)
-      const restoredNodes = realNodes.map(
-        (node): Node => ({
-          ...node,
-          hidden: false,
-          selectable: true,
-          style: {
-            ...node.style,
-            opacity: undefined, // Clear dimming
-            filter: undefined, // Clear grayscale
-            cursor: 'grab',
-            border: undefined,
-            boxShadow: undefined,
-            transition: undefined,
-            pointerEvents: undefined,
-          },
-        })
-      )
+      const restoredNodes = realNodes.map((node): Node => ({
+        ...node,
+        hidden: false,
+        selectable: true,
+        style: {
+          ...node.style,
+          opacity: undefined, // Clear dimming
+          filter: undefined, // Clear grayscale
+          cursor: 'grab',
+          border: undefined,
+          boxShadow: undefined,
+          transition: undefined,
+          pointerEvents: undefined,
+        },
+      }))
       setNodes(restoredNodes)
       return
     }
