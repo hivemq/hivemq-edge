@@ -88,7 +88,7 @@ class TagGroupsTest {
                         0,
                         null,
                         CipReadWrite.WRITE_ONLY,
-                        CipWriteMode.OVERWRITE_ZERO));
+                        CipWriteMode.COMPLETE_WRITE));
 
         // when
         final TagGroups tagGroups = new TagGroups();
@@ -106,7 +106,7 @@ class TagGroupsTest {
 
     @Test
     void shouldRejectReadWriteMixedWithReadOnlyAtSameAddress() {
-        final CipTag readWrite = tag("rw", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.OVERWRITE_ZERO);
+        final CipTag readWrite = tag("rw", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.COMPLETE_WRITE);
         final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
 
         final TagGroups tagGroups = new TagGroups();
@@ -118,7 +118,7 @@ class TagGroupsTest {
     @Test
     void shouldAllowReadOnlyAndWriteOnlyAtSameAddress() throws OdvaException {
         final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
-        final CipTag writeOnly = tag("wo", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.OVERWRITE_ZERO);
+        final CipTag writeOnly = tag("wo", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
 
         final TagGroups tagGroups = new TagGroups();
         Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(readOnly, writeOnly)))

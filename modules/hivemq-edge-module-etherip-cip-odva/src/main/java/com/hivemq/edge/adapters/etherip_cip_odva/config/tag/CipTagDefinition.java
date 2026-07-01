@@ -122,8 +122,8 @@ public class CipTagDefinition implements TagDefinition, Serializable {
     @ModuleConfigField(
             title = "Write mode",
             description =
-                    "How a write is applied (only relevant when writable). OVERWRITE_ZERO: write supplied value(s), zero the rest of the attribute. READ_MODIFY_WRITE: read the attribute, overlay supplied value(s), write it back (requires readable attribute).",
-            defaultValue = "READ_MODIFY_WRITE",
+                    "Whether a write covers the whole attribute (only relevant when writable). COMPLETE_WRITE: the configured tag(s) at this address span the entire attribute, so it is written directly with no device read (the device rejects the write if they do not actually cover the whole attribute). PARTIAL_WRITE: the tag(s) cover only part of the attribute, so the rest is preserved via a read-modify-write (requires a readable attribute).",
+            defaultValue = "PARTIAL_WRITE",
             required = true)
     private final @NotNull CipWriteMode writeMode;
 
@@ -146,12 +146,12 @@ public class CipTagDefinition implements TagDefinition, Serializable {
         this.batchByteIndex = batchByteIndex;
         this.batchBitIndex = batchBitIndex;
         this.readWrite = readWrite == null ? CipReadWrite.READ_ONLY : readWrite;
-        this.writeMode = writeMode == null ? CipWriteMode.READ_MODIFY_WRITE : writeMode;
+        this.writeMode = writeMode == null ? CipWriteMode.PARTIAL_WRITE : writeMode;
         validate();
     }
 
     /**
-     * Convenience constructor defaulting direction to READ_ONLY (and write mode to READ_MODIFY_WRITE).
+     * Convenience constructor defaulting direction to READ_ONLY (and write mode to PARTIAL_WRITE).
      * Equivalent to the legacy read-only tag definition before southbound write support was added.
      */
     public CipTagDefinition(
@@ -175,11 +175,11 @@ public class CipTagDefinition implements TagDefinition, Serializable {
     }
 
     private void validate() {
-        if (readWrite == CipReadWrite.WRITE_ONLY && writeMode == CipWriteMode.READ_MODIFY_WRITE) {
+        if (readWrite == CipReadWrite.WRITE_ONLY && writeMode == CipWriteMode.PARTIAL_WRITE) {
             throw new IllegalArgumentException(
                     "Tag at address "
                             + address
-                            + " is WRITE_ONLY but uses READ_MODIFY_WRITE; a non-readable attribute cannot be read-modify-written. Use OVERWRITE_ZERO.");
+                            + " is WRITE_ONLY but uses PARTIAL_WRITE; a non-readable attribute cannot be read-modify-written. Use COMPLETE_WRITE (and ensure the tag(s) cover the whole attribute).");
         }
     }
 

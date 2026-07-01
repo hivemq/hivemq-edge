@@ -508,13 +508,13 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             return jsonToCipValue(t, node);
         };
 
-        // Serialize read-modify-write per attribute so its read->write window is not interleaved with another
-        // write to the same attribute. OVERWRITE_ZERO does not read, but sharing the lock is harmless and keeps
+        // Serialize the read->write window of a PARTIAL_WRITE per attribute so it is not interleaved with another
+        // write to the same attribute. COMPLETE_WRITE does not read, but sharing the lock is harmless and keeps
         // concurrent writes to one attribute ordered.
         final Object lock = writeLocks.computeIfAbsent(tagGroup.getTagAddress(), a -> new Object());
         synchronized (lock) {
             try {
-                final byte @Nullable [] prefill = tag.getWriteMode() == CipWriteMode.READ_MODIFY_WRITE
+                final byte @Nullable [] prefill = tag.getWriteMode() == CipWriteMode.PARTIAL_WRITE
                         ? readAttributeBytes(connectedClient, tagGroup)
                         : null;
 
@@ -527,12 +527,33 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 connectedClient.setAttributeSingle(tagGroup.getLogicalAddressPath(), encodingProtocol);
                 writingOutput.finish();
             } catch (final Exception e) {
-                LOG.warn(
-                        "Adapter '{}'. Failed to write tag '{}': {}",
-                        adapterId,
-                        tagName,
-                        ExceptionUtils.extractMessageWithCause(e));
-                writingOutput.fail(e, "Failed to write tag '" + tagName + "'.");
+                // A COMPLETE_WRITE whose configured tag(s) do not actually span the whole attribute produces a
+                // request shorter than the device's attribute, which the device rejects (typically CIP status
+                // 0x08 "Service not supported"). Surface that likely cause rather than the raw device error.
+                if (tag.getWriteMode() == CipWriteMode.COMPLETE_WRITE) {
+                    LOG.warn(
+                            "Adapter '{}'. Failed to write tag '{}' using COMPLETE_WRITE: {}. The device rejected the "
+                                    + "request; the configured tag(s) at {} may not span the whole attribute. Either make "
+                                    + "them cover the full attribute, or use PARTIAL_WRITE.",
+                            adapterId,
+                            tagName,
+                            ExceptionUtils.extractMessageWithCause(e),
+                            tagGroup.getTagAddress());
+                    writingOutput.fail(
+                            e,
+                            "Failed to write tag '"
+                                    + tagName
+                                    + "' using COMPLETE_WRITE: the configured tag(s) at "
+                                    + tagGroup.getTagAddress()
+                                    + " may not span the whole attribute. Either make them cover the full attribute, or use PARTIAL_WRITE.");
+                } else {
+                    LOG.warn(
+                            "Adapter '{}'. Failed to write tag '{}': {}",
+                            adapterId,
+                            tagName,
+                            ExceptionUtils.extractMessageWithCause(e));
+                    writingOutput.fail(e, "Failed to write tag '" + tagName + "'.");
+                }
             }
         }
     }

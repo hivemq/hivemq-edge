@@ -44,7 +44,7 @@ class CipTagEncodingAttributeProtocolTest {
     }
 
     @Test
-    void overwriteZero_zeroesUnsuppliedBytes() throws Exception {
+    void completeWrite_zeroesUnsuppliedBytes() throws Exception {
         final CipTag tag = dintAtOffset4();
         final CipTagEncodingAttributeProtocol protocol = new CipTagEncodingAttributeProtocol(
                 new CipTagEncoders(), List.of(tag), ByteOrder.LITTLE_ENDIAN, t -> 1L);
@@ -56,7 +56,7 @@ class CipTagEncodingAttributeProtocolTest {
     }
 
     @Test
-    void readModifyWrite_preservesUnsuppliedBytes() throws Exception {
+    void partialWrite_preservesUnsuppliedBytes() throws Exception {
         final CipTag tag = dintAtOffset4();
         // current attribute: bytes 0-3 carry meaningful data we must not clobber.
         final byte[] prefill = new byte[] {(byte) 0xAA, (byte) 0xBB, (byte) 0xCC, (byte) 0xDD, 9, 9, 9, 9};
