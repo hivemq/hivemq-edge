@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory;
@@ -333,11 +333,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     ProtocolAdapterErrorFactory.browseFilterInvalidError(adapterId, exception.getOriginalMessage()));
         }
 
-        final CompletableFuture<List<BrowseResultEntry>> completion = new CompletableFuture<>();
+        final CompletableFuture<List<BrowseNode>> completion = new CompletableFuture<>();
         manager.tell(
                 new ProtocolAdapterManagerMessage.BrowseRequested(adapterId, new BrowseFilter(filterNode), completion));
         try {
-            final List<BrowseResultEntry> entries = completion.get(browseTimeoutMillis, TimeUnit.MILLISECONDS);
+            final List<BrowseNode> entries = completion.get(browseTimeoutMillis, TimeUnit.MILLISECONDS);
             return Response.ok(toBrowseResult(entries)).build();
         } catch (final TimeoutException exception) {
             return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
@@ -360,6 +360,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
                 case TIMED_OUT ->
                     ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
+                case FAILED ->
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseFailedError(adapterId));
             };
         }
         if (cause instanceof IllegalArgumentException) {
@@ -527,7 +529,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .adapterConfiguration(entity.getAdapterConfiguration());
     }
 
-    private @NotNull BrowseResult toBrowseResult(final @NotNull List<BrowseResultEntry> entries) {
+    private @NotNull BrowseResult toBrowseResult(final @NotNull List<BrowseNode> entries) {
         final List<com.hivemq.edge.api.v2.model.BrowseResultEntry> mapped = entries.stream()
                 .map(entry -> new com.hivemq.edge.api.v2.model.BrowseResultEntry()
                         .nodeId(entry.node().nodeId())

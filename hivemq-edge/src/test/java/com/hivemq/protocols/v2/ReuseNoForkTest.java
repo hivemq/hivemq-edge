@@ -74,7 +74,7 @@ class ReuseNoForkTest {
             "AccessFlags",
             "WriteEntry",
             "BrowseFilter",
-            "BrowseResultEntry",
+            "BrowseNode",
             "ErrorScope",
             "VerifyOutcome",
             "ProtocolAdapter",
