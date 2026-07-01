@@ -16,21 +16,25 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.config;
 
 /**
- * Mechanism used when writing a tag. Only meaningful when the tag's {@link CipReadWrite} allows writing.
+ * Declares whether a write covers the whole CIP attribute or only part of it. Only meaningful when the tag's
+ * {@link CipReadWrite} allows writing.
  * <p>
- * A CIP attribute is the atomic write unit: one {@code Set_Attribute_Single} writes the whole attribute.
- * Since a single attribute often packs several tags, the mode decides what happens to the bytes not
- * supplied by this write.
+ * A CIP attribute is the atomic write unit: one {@code Set_Attribute_Single} always replaces the entire
+ * attribute — a device rejects a request that does not carry the attribute's full byte width. Since a single
+ * attribute often packs several tags, this mode declares whether the tag(s) supplied by a write span the whole
+ * attribute (so it can be written directly) or only part of it (so the rest must be preserved).
  */
 public enum CipWriteMode {
     /**
-     * Write the supplied tag value(s) and zero the rest of the attribute. No device read.
-     * Correct for a complete composite or a write-only attribute; destructive on a partial scalar write.
+     * The supplied tag(s) cover the entire attribute, so the write carries the whole attribute directly, with
+     * no device read. The user guarantees the configured tag(s) at this address span the full attribute width;
+     * if they do not, the device rejects the (too-short) request.
      */
-    OVERWRITE_ZERO,
+    COMPLETE_WRITE,
     /**
-     * Read the current attribute, overlay the supplied tag value(s), write the whole attribute back.
-     * Preserves the bytes of sibling tags not supplied. Requires the attribute to be readable.
+     * The supplied tag(s) cover only part of the attribute, so the rest must be preserved. Implemented as a
+     * read-modify-write: read the current attribute, overlay the supplied tag value(s), write the whole
+     * attribute back. Requires the attribute to be readable.
      */
-    READ_MODIFY_WRITE
+    PARTIAL_WRITE
 }

@@ -30,9 +30,11 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * The buffer is first seeded, then the supplied tags are encoded on top at their individual offsets:
  * <ul>
- *     <li><b>OVERWRITE_ZERO</b> (no prefill): the buffer is zero-filled, so bytes not covered by a supplied
- *         tag are written as zero.</li>
- *     <li><b>READ_MODIFY_WRITE</b> (prefill = the current attribute bytes): the buffer starts as the attribute
+ *     <li><b>COMPLETE_WRITE</b> (no prefill): the buffer is zero-filled up to the span of the supplied tags,
+ *         so it carries exactly those tags. This is correct only when they cover the whole attribute (the
+ *         caller's guarantee for COMPLETE_WRITE); otherwise the request is shorter than the device's attribute
+ *         and is rejected.</li>
+ *     <li><b>PARTIAL_WRITE</b> (prefill = the current attribute bytes): the buffer starts as the attribute
  *         read back from the device, so bytes not covered by a supplied tag keep their current value.</li>
  * </ul>
  */
@@ -47,7 +49,7 @@ public class CipTagEncodingAttributeProtocol extends BaseEncodingAttributeProtoc
     private int totalRequestSize = 0;
 
     /**
-     * OVERWRITE_ZERO: the unsupplied bytes of the attribute are zeroed.
+     * COMPLETE_WRITE: no prefill; the buffer carries only the supplied tags (assumed to span the attribute).
      */
     public CipTagEncodingAttributeProtocol(
             final CipTagEncoders cipTagsEncoders,
@@ -58,8 +60,8 @@ public class CipTagEncodingAttributeProtocol extends BaseEncodingAttributeProtoc
     }
 
     /**
-     * If {@code prefill} is non-null the buffer is seeded with it (READ_MODIFY_WRITE); otherwise it is
-     * zero-filled (OVERWRITE_ZERO).
+     * If {@code prefill} is non-null the buffer is seeded with it (PARTIAL_WRITE); otherwise it carries only
+     * the supplied tags (COMPLETE_WRITE).
      */
     public CipTagEncodingAttributeProtocol(
             final CipTagEncoders cipTagsEncoders,
@@ -82,7 +84,7 @@ public class CipTagEncodingAttributeProtocol extends BaseEncodingAttributeProtoc
 
         final int startPosition = buf.position();
 
-        // Seed the buffer: current attribute bytes for read-modify-write, otherwise zeros.
+        // Seed the buffer: current attribute bytes for PARTIAL_WRITE (prefill), otherwise zeros (COMPLETE_WRITE).
         // totalRequestSize is set by a previous call to internalGetRequestSize.
         if (prefill != null) {
             buf.put(prefill, 0, Math.min(prefill.length, totalRequestSize));
@@ -107,8 +109,8 @@ public class CipTagEncodingAttributeProtocol extends BaseEncodingAttributeProtoc
 
     @Override
     protected int internalGetRequestSize() {
-        // For read-modify-write the attribute size is what was read; for overwrite-zero it is the span the
-        // supplied tags require.
+        // For PARTIAL_WRITE the attribute size is what was read (prefill); for COMPLETE_WRITE it is the span the
+        // supplied tags require (which the caller guarantees is the whole attribute).
         final int encoderSize = cipTagEncoders.getRequestSize(tags, valueProducer);
         this.totalRequestSize = prefill == null ? encoderSize : Math.max(encoderSize, prefill.length);
         return totalRequestSize;
