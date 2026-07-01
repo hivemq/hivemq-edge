@@ -31,7 +31,6 @@ import com.hivemq.protocols.v2.fsm.FSMGuard;
 import com.hivemq.protocols.v2.fsm.FSMTransitionTable;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.AllVerified;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.BackoffFired;
-import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.BrowseResultReceived;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.Connected;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.DataPointReceived;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.Disconnected;
@@ -183,8 +182,6 @@ public final class ProtocolAdapterFSMTransitions {
                 .on(ERROR, NodeErrorReceived.class)
                 .then(absorb)
                 .on(ERROR, WriteResultReceived.class)
-                .then(absorb)
-                .on(ERROR, BrowseResultReceived.class)
                 .then(absorb)
                 .on(ERROR, WatchdogFired.class)
                 .then(absorb)
