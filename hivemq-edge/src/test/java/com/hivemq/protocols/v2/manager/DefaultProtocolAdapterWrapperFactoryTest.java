@@ -31,13 +31,16 @@ import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
@@ -57,6 +60,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -189,6 +193,47 @@ class DefaultProtocolAdapterWrapperFactoryTest {
                 .isInstanceOf(ProtocolAdapterConfigException.class);
         // The template attached its dispatch thread in AbstractProtocolAdapter's constructor before the subclass
         // constructor threw; the factory must have released that binding, so nothing leaks.
+        assertThat(counting.liveBindings()).isZero();
+    }
+
+    @Test
+    void successfulDirectAdapterUsingServiceDispatcher_releasesBindingOnContainerClose() {
+        final CountingDispatcher counting = new CountingDispatcher();
+        final DefaultProtocolAdapterWrapperFactory factoryOnCounting = new DefaultProtocolAdapterWrapperFactory(
+                clock, counting, new MetricRegistry(), new TestDataPointFactory(), new ObjectMapper(), 100);
+        final DirectDispatchingFactory directFactory = new DirectDispatchingFactory(true);
+
+        final ProtocolAdapterContainer managed =
+                factoryOnCounting.create(adapter("a").build(), directFactory, ProtocolAdapterWrapperEventListener.NONE);
+
+        // A direct (non-AutoCloseable) adapter attached its own mailbox through the framework dispatcher in its
+        // constructor, so two bindings are live: the wrapper's and the adapter's.
+        assertThat(counting.liveBindings()).isEqualTo(2);
+
+        // Container teardown must release the adapter's binding even though the adapter is not AutoCloseable.
+        managed.close();
+        assertThat(counting.liveBindings()).isZero();
+    }
+
+    @Test
+    void directAdapterAttachingAfterConstruction_releasesThatBindingOnContainerClose() {
+        final CountingDispatcher counting = new CountingDispatcher();
+        final DefaultProtocolAdapterWrapperFactory factoryOnCounting = new DefaultProtocolAdapterWrapperFactory(
+                clock, counting, new MetricRegistry(), new TestDataPointFactory(), new ObjectMapper(), 100);
+        final DirectDispatchingFactory directFactory = new DirectDispatchingFactory(false);
+
+        final ProtocolAdapterContainer managed =
+                factoryOnCounting.create(adapter("a").build(), directFactory, ProtocolAdapterWrapperEventListener.NONE);
+
+        // Only the wrapper is bound so far; the direct adapter attached nothing in its constructor.
+        assertThat(counting.liveBindings()).isEqualTo(1);
+
+        // The direct adapter stored the framework dispatcher and attaches a mailbox later — the framework still owns
+        // that binding because the recording dispatcher stays live for the adapter's whole lifetime.
+        directFactory.lastAdapter().attachLater();
+        assertThat(counting.liveBindings()).isEqualTo(2);
+
+        managed.close();
         assertThat(counting.liveBindings()).isZero();
     }
 
@@ -371,6 +416,121 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         @Override
         protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {}
     }
+
+    /**
+     * A factory whose {@code createAdapter} builds a {@link DirectDispatchingAdapter} — a direct, non-AutoCloseable
+     * adapter that opens its dispatch binding through the framework dispatcher. The last-built instance is captured so a
+     * test can drive a post-construction attach on it.
+     */
+    private static final class DirectDispatchingFactory implements ProtocolAdapterFactory {
+
+        private final @NotNull ProtocolAdapterInformation information =
+                new TestProtocolAdapterInformation(ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID);
+        private final boolean attachInConstructor;
+        private @NotNull DirectDispatchingAdapter lastAdapter = new DirectDispatchingAdapter(null, false);
+
+        private DirectDispatchingFactory(final boolean attachInConstructor) {
+            this.attachInConstructor = attachInConstructor;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapterInformation information() {
+            return information;
+        }
+
+        @Override
+        public @NotNull ProtocolAdapter createAdapter(
+                final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
+            lastAdapter = new DirectDispatchingAdapter(input.services().dispatcher(), attachInConstructor);
+            lastAdapter.adapterId(input.adapterId());
+            return lastAdapter;
+        }
+
+        private @NotNull DirectDispatchingAdapter lastAdapter() {
+            return lastAdapter;
+        }
+
+        @Override
+        public @NotNull Schema adapterConfigSchema() {
+            return ProtocolAdapterManagerTestSupport.anySchema();
+        }
+
+        @Override
+        public @NotNull Schema nodeDefinitionSchema() {
+            return ProtocolAdapterManagerTestSupport.scalarSchema();
+        }
+    }
+
+    /**
+     * A direct {@link ProtocolAdapter} — deliberately NOT {@link AutoCloseable} — that opens its dispatch binding
+     * through the framework {@link MessageDispatcher} the SDK exposes via {@code input.services().dispatcher()}, exactly
+     * as an author who does not use the template may. It attaches either in its constructor or, via {@link #attachLater},
+     * after construction, to prove the framework releases both on container teardown though it cannot close the adapter
+     * itself.
+     */
+    private static final class DirectDispatchingAdapter implements ProtocolAdapter {
+
+        private final @Nullable MessageDispatcher dispatcher;
+        private @NotNull String adapterId = "unset";
+
+        private DirectDispatchingAdapter(
+                final @Nullable MessageDispatcher dispatcher, final boolean attachInConstructor) {
+            this.dispatcher = dispatcher;
+            if (attachInConstructor) {
+                attachLater();
+            }
+        }
+
+        private void adapterId(final @NotNull String adapterId) {
+            this.adapterId = adapterId;
+        }
+
+        private void attachLater() {
+            if (dispatcher != null) {
+                dispatcher.attach(new DefaultMailbox<DirectMessage>(), message -> {});
+            }
+        }
+
+        @Override
+        public @NotNull String adapterId() {
+            return adapterId;
+        }
+
+        @Override
+        public void start() {}
+
+        @Override
+        public void stop() {}
+
+        @Override
+        public void connect() {}
+
+        @Override
+        public void disconnect() {}
+
+        @Override
+        public void verifyBatch(final @NotNull List<Node> nodes) {}
+
+        @Override
+        public void pollBatch(final @NotNull List<Node> nodes) {}
+
+        @Override
+        public void addSubscriptionBatch(final @NotNull List<Node> nodes) {}
+
+        @Override
+        public void removeSubscriptionBatch(final @NotNull List<Node> nodes) {}
+
+        @Override
+        public void writeBatch(final @NotNull List<WriteEntry> entries) {}
+
+        @Override
+        public void browse(final @NotNull BrowseFilter filter) {}
+    }
+
+    /**
+     * A trivial mailbox message the direct adapter double attaches a mailbox for.
+     */
+    private record DirectMessage() implements MailboxMessage {}
 
     /**
      * A {@link MessageDispatcher} double that counts the bindings it hands out and the ones later closed, so a test can
