@@ -43,6 +43,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValues;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValuesFactory;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
@@ -422,33 +423,41 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             output.finish(new TagSchemaCreationOutput.DataPointSchema(compositeSchema, null, null));
             return;
         }
-        final Schema scalarSchema =
-                TagSchemaMapper.buildScalarSchema(tag.getDefinition().getDataType());
+        final Schema scalarSchema = TagSchemaMapper.buildScalarSchema(
+                tag.getDefinition().getDataType(), tag.isReadable(), tag.isWritable());
         output.finish(new TagSchemaCreationOutput.DataPointSchema(scalarSchema, null, null));
     }
 
     private @Nullable Schema buildCompositeSchema(
             final @NotNull CipTag composite, final @NotNull TagSchemaCreationOutput output) {
         final String address = composite.getDefinition().getAddress();
+        final CipReadWrite readWrite = composite.getDefinition().getReadWrite();
+        // Siblings are grouped at runtime by (address, readWrite) — see TagGroups.GroupKey — so the schema
+        // must group the same way, or it could advertise siblings the runtime composite never publishes.
         final List<CipTag> siblings = tags.stream()
                 .filter(t -> !t.isComposite())
                 .filter(t -> t.getDefinition().getAddress().equals(address))
+                .filter(t -> t.getDefinition().getReadWrite() == readWrite)
                 .toList();
         if (siblings.isEmpty()) {
             output.fail("Composite tag '" + composite.getName() + "' has no scalar siblings at address " + address);
             return null;
         }
+        // The composite and its siblings share the group's direction, so their schema flags match the
+        // composite's configured CipReadWrite.
+        final boolean readable = composite.isReadable();
+        final boolean writable = composite.isWritable();
         final SchemaBuilder builder = new SchemaBuilder();
         var objectBuilder = builder.startObject();
         for (final CipTag sibling : siblings) {
             final CipDataType siblingType = sibling.getDefinition().getDataType();
             objectBuilder = objectBuilder
                     .property(sibling.getName())
-                    .schema(TagSchemaMapper.buildReadOnlyScalarSchema(siblingType))
+                    .schema(TagSchemaMapper.buildScalarSchema(siblingType, readable, writable))
                     .endProperty();
         }
         objectBuilder.endObject();
-        return builder.readable().build();
+        return builder.readable(readable).writable(writable).build();
     }
 
     @Override

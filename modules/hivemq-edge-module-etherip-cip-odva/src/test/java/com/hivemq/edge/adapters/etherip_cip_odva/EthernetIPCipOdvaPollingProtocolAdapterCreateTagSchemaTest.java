@@ -53,7 +53,7 @@ class EthernetIPCipOdvaPollingProtocolAdapterCreateTagSchemaTest {
             mode = EnumSource.Mode.EXCLUDE,
             names = {"COMPOSITE"})
     void test_buildScalarSchema_everyScalarTypeProducesScalarSchema(final CipDataType type) {
-        final Schema schema = TagSchemaMapper.buildScalarSchema(type);
+        final Schema schema = TagSchemaMapper.buildScalarSchema(type, true, true);
         assertThat(schema).as("Schema for %s", type).isInstanceOf(ScalarSchema.class);
     }
 
@@ -81,7 +81,7 @@ class EthernetIPCipOdvaPollingProtocolAdapterCreateTagSchemaTest {
 
     @Test
     void test_ulintHasMinimumOnly() {
-        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(CipDataType.ULINT);
+        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(CipDataType.ULINT, true, true);
         assertThat(scalar.type()).isEqualTo(ScalarType.ULONG);
         assertThat(scalar.minimum()).isEqualTo(0L);
         assertThat(scalar.maximum()).isNull();
@@ -100,22 +100,29 @@ class EthernetIPCipOdvaPollingProtocolAdapterCreateTagSchemaTest {
     }
 
     @Test
-    void test_scalarTagSchemaIsReadWrite() {
-        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(CipDataType.INT);
+    void test_scalarSchemaReflectsReadWriteFlags() {
+        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(CipDataType.INT, true, true);
         assertThat(scalar.readable()).isTrue();
         assertThat(scalar.writable()).isTrue();
     }
 
     @Test
-    void test_readOnlyScalarSchemaHasWritableFalse() {
-        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildReadOnlyScalarSchema(CipDataType.INT);
+    void test_scalarSchemaReadOnlyHasWritableFalse() {
+        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(CipDataType.INT, true, false);
         assertThat(scalar.readable()).isTrue();
         assertThat(scalar.writable()).isFalse();
     }
 
     @Test
+    void test_scalarSchemaWriteOnlyHasReadableFalse() {
+        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(CipDataType.INT, false, true);
+        assertThat(scalar.readable()).isFalse();
+        assertThat(scalar.writable()).isTrue();
+    }
+
+    @Test
     void test_buildScalarSchema_forCompositeType_throws() {
-        assertThatThrownBy(() -> TagSchemaMapper.buildScalarSchema(CipDataType.COMPOSITE))
+        assertThatThrownBy(() -> TagSchemaMapper.buildScalarSchema(CipDataType.COMPOSITE, true, true))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -215,13 +222,13 @@ class EthernetIPCipOdvaPollingProtocolAdapterCreateTagSchemaTest {
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private static void assertType(final CipDataType dt, final ScalarType expected) {
-        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(dt);
+        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(dt, true, true);
         assertThat(scalar.type()).as("ScalarType for %s", dt).isEqualTo(expected);
     }
 
     private static void assertType(
             final CipDataType dt, final ScalarType expected, final Number expectedMin, final Number expectedMax) {
-        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(dt);
+        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(dt, true, true);
         assertThat(scalar.type()).as("ScalarType for %s", dt).isEqualTo(expected);
         assertThat(scalar.minimum()).as("minimum for %s", dt).isEqualTo(expectedMin);
         assertThat(scalar.maximum()).as("maximum for %s", dt).isEqualTo(expectedMax);

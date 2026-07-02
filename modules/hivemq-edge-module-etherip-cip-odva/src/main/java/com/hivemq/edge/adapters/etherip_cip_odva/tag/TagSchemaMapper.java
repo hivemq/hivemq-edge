@@ -25,16 +25,15 @@ public final class TagSchemaMapper {
 
     private TagSchemaMapper() {}
 
-    public static @NotNull Schema buildScalarSchema(final @NotNull CipDataType type) {
+    /**
+     * Builds a scalar schema whose readable/writable annotations reflect the tag's configured direction
+     * ({@code CipReadWrite}), rather than assuming a fixed direction.
+     */
+    public static @NotNull Schema buildScalarSchema(
+            final @NotNull CipDataType type, final boolean readable, final boolean writable) {
         final SchemaBuilder builder = new SchemaBuilder();
         applyScalarType(builder, type);
-        return builder.readable().writable().build();
-    }
-
-    public static @NotNull Schema buildReadOnlyScalarSchema(final @NotNull CipDataType type) {
-        final SchemaBuilder builder = new SchemaBuilder();
-        applyScalarType(builder, type);
-        return builder.readable().build();
+        return builder.readable(readable).writable(writable).build();
     }
 
     private static void applyScalarType(final @NotNull SchemaBuilder builder, final @NotNull CipDataType type) {
