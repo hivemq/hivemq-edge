@@ -22,6 +22,8 @@ import static java.util.Objects.requireNonNull;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Stopwatch;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -359,6 +361,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
         final CompositeValues compositeValues = CompositeValuesFactory.create(tagGroup);
         final Long nowMs = clock.get();
+        final DataPointListBuilder dataPoints = pollingOutput.dataPointListPublisher();
 
         CipTagDecodingAttributeProtocol cipTagAttributeProtocol = new CipTagDecodingAttributeProtocol(
                 cipTagsDecoders,
@@ -375,28 +378,107 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                         if (hysteresis.isModified(value, currentValue, tag.getDefinition())
                                 || currentLastSamples.isValueOlderThan(tag, nowMs)) {
                             currentLastSamples.put(tag, value, nowMs);
-                            pollingOutput.addDataPoint(tag.getName(), value);
+                            applyValue(dataPoints.addDataPoint(tag), value);
                             compositeValues.add(tag.getName(), value);
                         }
                     } else {
-                        pollingOutput.addDataPoint(tag.getName(), value);
+                        applyValue(dataPoints.addDataPoint(tag), value);
                         compositeValues.add(tag.getName(), value);
                     }
                 });
 
         client.getAttributeSingle(tagGroup.getLogicalAddressPath(), cipTagAttributeProtocol);
 
-        if (!compositeValues.isEmpty()) {
+        final CipTag composite = tagGroup.getComposite();
+        if (!compositeValues.isEmpty() && composite != null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(
                         "Adapter {}. Created composite tag {}='{}'",
                         adapterId,
-                        tagGroup.getComposite() != null
-                                ? tagGroup.getComposite().toConciseString()
-                                : "<NULL>",
+                        composite.toConciseString(),
                         compositeValues.getValues());
             }
-            pollingOutput.addDataPoint(compositeValues.getCompositeTagName(), compositeValues.getValues());
+            final DataPointBuilder.ObjectBuilder<DataPointBuilder<DataPointListBuilder>> objectBuilder =
+                    dataPoints.addDataPoint(composite).startObjectValue();
+            compositeValues.getValues().forEach((name, value) -> putValue(objectBuilder, name, value));
+            objectBuilder.endObject();
+        }
+
+        dataPoints.publish();
+    }
+
+    /**
+     * Encodes a decoded CIP value into a datapoint using its concrete Java type (see the {@code decoder}
+     * package for the produced types). Arrays ({@code numberOfElements > 1}) arrive as a {@link List} and are
+     * written as a JSON array; anything unexpected falls back to its string form.
+     */
+    private static void applyValue(
+            final @NotNull DataPointBuilder<DataPointListBuilder> builder, final @NotNull Object value) {
+        switch (value) {
+            case final Boolean v -> builder.value(v);
+            case final Byte v -> builder.value(v);
+            case final Short v -> builder.value(v);
+            case final Integer v -> builder.value(v);
+            case final Long v -> builder.value(v);
+            case final Float v -> builder.value(v);
+            case final Double v -> builder.value(v);
+            case final String v -> builder.value(v);
+            case final List<?> v -> {
+                final DataPointBuilder.ArrayBuilder<DataPointBuilder<DataPointListBuilder>> array =
+                        builder.startArrayValue();
+                v.forEach(element -> addToArray(array, element));
+                array.endArray();
+            }
+            default -> builder.value(value.toString());
+        }
+    }
+
+    /** As {@link #applyValue} but writing a named field into a structured composite object. */
+    private static void putValue(
+            final @NotNull DataPointBuilder.ObjectBuilder<?> builder,
+            final @NotNull String name,
+            final @NotNull Object value) {
+        switch (value) {
+            case final Boolean v -> builder.put(name, v);
+            case final Byte v -> builder.put(name, v);
+            case final Short v -> builder.put(name, v);
+            case final Integer v -> builder.put(name, v);
+            case final Long v -> builder.put(name, v);
+            case final Float v -> builder.put(name, v);
+            case final Double v -> builder.put(name, v);
+            case final String v -> builder.put(name, v);
+            case final List<?> v -> {
+                final DataPointBuilder.ArrayBuilder<? extends DataPointBuilder.ObjectBuilder<?>> array =
+                        builder.startArray(name);
+                v.forEach(element -> addToArray(array, element));
+                array.endArray();
+            }
+            default -> builder.put(name, value.toString());
+        }
+    }
+
+    /**
+     * Adds a single decoded element to an array builder, by its concrete Java type. The CIP decoders produce
+     * flat lists of scalars, so the nested-list case is defensive: it recurses rather than stringifying, so a
+     * nested array is preserved as an array should the decoders ever produce one.
+     */
+    private static void addToArray(final @NotNull DataPointBuilder.ArrayBuilder<?> array, final @NotNull Object value) {
+        switch (value) {
+            case final Boolean v -> array.add(v);
+            case final Byte v -> array.add(v);
+            case final Short v -> array.add(v);
+            case final Integer v -> array.add(v);
+            case final Long v -> array.add(v);
+            case final Float v -> array.add(v);
+            case final Double v -> array.add(v);
+            case final String v -> array.add(v);
+            case final List<?> v -> {
+                final DataPointBuilder.ArrayBuilder<? extends DataPointBuilder.ArrayBuilder<?>> nested =
+                        array.startArray();
+                v.forEach(element -> addToArray(nested, element));
+                nested.endArray();
+            }
+            default -> array.add(value.toString());
         }
     }
 
