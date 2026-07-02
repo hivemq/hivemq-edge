@@ -20,16 +20,53 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * The "identity" axis of certificate validation: does the presented certificate belong to the
+ * server we think we are talking to? This is orthogonal to {@link TrustLevel}, which governs the
+ * "trust" axis (how the certificate is established as trustworthy at all).
+ *
+ * <p>The canonical values ({@link #NONE}, {@link #APPLICATION_URI}, {@link #HOSTNAME},
+ * {@link #APPLICATION_URI_AND_HOSTNAME}) describe identity checks only. The legacy values
+ * {@link #STANDARD} and {@link #ALL} are deprecated compatibility aliases that additionally imply
+ * a trust level; they are normalized to a {@code (trustLevel, tlsChecks)} pair at config parse time
+ * (see {@link Tls}).
+ */
 public enum TlsChecks {
+
+    /** No identity check is performed. */
     @JsonProperty("NONE")
     NONE("NONE"),
 
+    /**
+     * The OPC UA {@code ApplicationUri} announced by the server must match the SubjectAltName URI in
+     * its certificate.
+     */
     @JsonProperty("APPLICATION_URI")
     APPLICATION_URI("APPLICATION_URI"),
 
+    /** The endpoint hostname must match a SubjectAltName DNSName / IP address in the certificate. */
+    @JsonProperty("HOSTNAME")
+    HOSTNAME("HOSTNAME"),
+
+    /** Both {@link #APPLICATION_URI} and {@link #HOSTNAME} identity checks are performed. */
+    @JsonProperty("APPLICATION_URI_AND_HOSTNAME")
+    APPLICATION_URI_AND_HOSTNAME("APPLICATION_URI_AND_HOSTNAME"),
+
+    /**
+     * Deprecated alias. Normalizes to identity {@link #APPLICATION_URI} and forces
+     * {@link TrustLevel#CHAIN} to {@link TrustLevel#CHAIN_PKI}. Use {@code trustLevel} +
+     * {@code tlsChecks} explicitly instead.
+     */
+    @Deprecated
     @JsonProperty("STANDARD")
     STANDARD("STANDARD"),
 
+    /**
+     * Deprecated alias. Normalizes to identity {@link #APPLICATION_URI_AND_HOSTNAME} and forces
+     * {@link TrustLevel#CHAIN} to {@link TrustLevel#CHAIN_PKI}. Use {@code trustLevel} +
+     * {@code tlsChecks} explicitly instead.
+     */
+    @Deprecated
     @JsonProperty("ALL")
     ALL("ALL");
 
@@ -37,6 +74,14 @@ public enum TlsChecks {
 
     TlsChecks(final @NotNull String tlsChecks) {
         this.tlsChecks = tlsChecks;
+    }
+
+    /**
+     * @return {@code true} if this is a deprecated compatibility alias ({@link #STANDARD} /
+     *     {@link #ALL}) rather than a canonical identity value.
+     */
+    public boolean isDeprecatedAlias() {
+        return this == STANDARD || this == ALL;
     }
 
     @Override

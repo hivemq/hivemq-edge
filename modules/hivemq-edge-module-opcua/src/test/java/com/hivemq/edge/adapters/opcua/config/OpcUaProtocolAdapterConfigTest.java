@@ -186,7 +186,7 @@ class OpcUaProtocolAdapterConfigTest {
                         TlsChecks.NONE,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password"),
-                        false),
+                        TrustLevel.CHAIN),
                 new OpcUaToMqttConfig(1, 1000),
                 new Security(BASIC128RSA15),
                 null);
