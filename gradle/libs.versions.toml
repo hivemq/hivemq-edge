@@ -40,6 +40,7 @@ json-schema-inferrer = "0.2.1"
 json-schema-validator = "1.5.9"
 json-smart = "2.6.0"
 junit-jupiter = "5.14.4"
+junit = "4.13.2"
 kotlin = "1.9.25"
 logback = "1.5.37"
 mariadb = "3.5.9"
@@ -58,7 +59,7 @@ spotBugs = "4.10.2"
 swagger-annotations = "2.2.52"
 swagger-jaxrs = "1.6.16"
 systemstubs = "2.1.8"
-testcontainers = "1.21.4"
+testcontainers = "2.0.5"
 unboundid-ldap-sdk = "7.0.5"
 victools = "4.38.0"
 wiremock = "3.0.1"
@@ -130,6 +131,7 @@ json-schema-inferrer = { module = "com.github.saasquatch:json-schema-inferrer", 
 json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
 json-smart = { module = "net.minidev:json-smart", version.ref = "json-smart" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
+junit = { module = "junit:junit", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
@@ -166,7 +168,7 @@ swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", versi
 swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
 systemstubs = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "systemstubs" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
 unboundid-ldap-sdk = { module = "com.unboundid:unboundid-ldapsdk", version.ref = "unboundid-ldap-sdk" }
 victools-jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools" }
 victools-jsonschema-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools" }
