@@ -246,48 +246,41 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         }
         final EthernetIPWithODVA connectedClient = requireNonNull(client);
 
-        List<String> errors = new ArrayList<>();
-        DataPointStore currentLastSamples = requireNonNull(lastSamples.get());
+        final DataPointStore currentLastSamples = requireNonNull(lastSamples.get());
+        final List<String> errors = new ArrayList<>();
         try {
-            // FIXME: Introduce Multi Request: MPR for single tags, Separate requests for BatchedTags?
-            // Have to be careful - as maximum PLC response and request size are limiting factors and need
-            // to be taken into account
-
-            // FIXME: Add support for larger response bodies using read_fragmented
-
-            // FIXME: Can easily add support for "read tag" as well, with same Decoders/Encoders
-
-            // Create Requests, set handlers
-            for (TagGroup tagGroup : tagGroups.getTagGroups()) {
-                if (isAdapterNotStarted()) {
-                    errors.add(getNotStartedMessage());
-                    return;
-                }
-
+            for (final TagGroup tagGroup : tagGroups.getTagGroups()) {
                 // Write-only tags have no readable attribute; never poll them.
                 if (!tagGroup.isReadable()) {
                     continue;
                 }
-
                 tryPoll(connectedClient, pollingOutput, tagGroup, currentLastSamples, errors::add);
             }
-
-        } catch (Exception e) {
+        } catch (final Exception e) {
+            // A tag-group read can rethrow a connection-level failure (see tryPoll); drop the connection and
+            // reconnect on the next poll. Per-tag read/decode errors are collected in `errors` instead.
             LOG.warn(
                     "Adapter '{}'. Communication error. Will try reconnecting! {}",
                     adapterId,
                     ExceptionUtils.extractMessageWithCause(e));
-
             tryDisconnect();
-        } finally {
-            if (errors.isEmpty()) {
-                pollingOutput.finish();
-            } else {
-                String errorString = String.join(",", errors);
+        }
 
-                LOG.warn("Adapter '{}'. {}", adapterId, errorString);
-                pollingOutput.fail(errorString);
-            }
+        reportOutcome(pollingOutput, errors);
+    }
+
+    /**
+     * Reports the single outcome of a poll to the framework: {@code finish()} if every readable tag group was
+     * read without error, otherwise {@code fail()} with the collected messages (which increments the framework's
+     * error counter and, past the configured limit, stops the adapter).
+     */
+    private void reportOutcome(final @NotNull BatchPollingOutput pollingOutput, final @NotNull List<String> errors) {
+        if (errors.isEmpty()) {
+            pollingOutput.finish();
+        } else {
+            final String errorString = String.join(",", errors);
+            LOG.warn("Adapter '{}'. {}", adapterId, errorString);
+            pollingOutput.fail(errorString);
         }
     }
 
