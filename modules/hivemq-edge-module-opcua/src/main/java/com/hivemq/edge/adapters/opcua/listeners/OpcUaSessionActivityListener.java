@@ -37,7 +37,7 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final boolean acceptAnyServerCertificate;
+    private final boolean trustAnyServerCertificate;
     private final @NotNull String endpointUri;
 
     public OpcUaSessionActivityListener(
@@ -45,13 +45,13 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
             @NotNull final ProtocolAdapterState protocolAdapterState,
-            final boolean acceptAnyServerCertificate,
+            final boolean trustAnyServerCertificate,
             @NotNull final String endpointUri) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
-        this.acceptAnyServerCertificate = acceptAnyServerCertificate;
+        this.trustAnyServerCertificate = trustAnyServerCertificate;
         this.endpointUri = endpointUri;
     }
 
@@ -73,9 +73,9 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
         protocolAdapterState.setConnectionStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
-        if (acceptAnyServerCertificate) {
+        if (trustAnyServerCertificate) {
             log.warn(
-                    "OPC UA adapter '{}' connected to '{}' with acceptAnyServerCertificate=true: "
+                    "OPC UA adapter '{}' connected to '{}' with trustLevel=TRUST: "
                             + "server certificate was accepted without chain validation. "
                             + "This deployment is vulnerable to MITM and is intended for "
                             + "self-signed / factory environments only.",

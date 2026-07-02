@@ -41,6 +41,7 @@ import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecks;
+import com.hivemq.edge.adapters.opcua.config.TrustLevel;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
@@ -131,7 +132,7 @@ class OpcUaProtocolAdapterAuthTest {
     @Timeout(30)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
         final Security security = new Security(SecPolicy.NONE);
-        final Tls tls = new Tls(true, TlsChecks.NONE, null, null, false);
+        final Tls tls = new Tls(true, TlsChecks.NONE, null, null, TrustLevel.CHAIN);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(), false, null, null, tls, null, security, null);
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -156,7 +157,11 @@ class OpcUaProtocolAdapterAuthTest {
 
         final var keystore = root.wrapInKeyStoreWithPrivateKey("keystore", "root", "password", "password");
         final Tls tls = new Tls(
-                true, TlsChecks.NONE, new Keystore(keystore.getAbsolutePath(), "password", "password"), null, false);
+                true,
+                TlsChecks.NONE,
+                new Keystore(keystore.getAbsolutePath(), "password", "password"),
+                null,
+                TrustLevel.CHAIN);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(), false, null, auth, tls, null, null, null);
 
@@ -173,12 +178,12 @@ class OpcUaProtocolAdapterAuthTest {
                 CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
 
-    // ----- EDG-585: acceptAnyServerCertificate flag -----
+    // ----- EDG-585: trustLevel=TRUST -----
 
     /**
      * EDG-585 / Miele repro: an OPC UA server presents a self-signed cert that lacks {@code keyCertSign}
      * (cannot be loaded as a trust anchor). With a non-None security policy and no usable truststore,
-     * cert validation cannot succeed against JVM cacerts. Setting {@code acceptAnyServerCertificate=true}
+     * cert validation cannot succeed against JVM cacerts. Setting {@code trustLevel=TRUST}
      * bypasses chain validation and lets the adapter connect.
      *
      * <p>The {@link EmbeddedOpcUaServerExtension} produces exactly such a self-signed cert (no KeyUsage
@@ -186,8 +191,7 @@ class OpcUaProtocolAdapterAuthTest {
      */
     @Test
     @Timeout(30)
-    public void whenAcceptAnyServerCertificateTrue_andServerCertNotChainable_thenConnectSuccessfully()
-            throws Exception {
+    public void whenTrustLevelTrust_andServerCertNotChainable_thenConnectSuccessfully() throws Exception {
         final KeyChain clientKeyChain = KeyChain.createKeyChain("client");
         final var clientKeystore =
                 clientKeyChain.wrapInKeyStoreWithPrivateKey("client-keystore", "client", "password", "password");
@@ -204,7 +208,7 @@ class OpcUaProtocolAdapterAuthTest {
                     TlsChecks.NONE,
                     new Keystore(clientKeystore.getAbsolutePath(), "password", "password"),
                     null, // no user truststore — would otherwise fall back to JVM cacerts
-                    true); // acceptAnyServerCertificate
+                    TrustLevel.TRUST);
             final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                     opcUaServerExtension.getServerUri(),
                     false,
@@ -230,11 +234,11 @@ class OpcUaProtocolAdapterAuthTest {
             // EDG-585 visibility: an init-time WARN must be emitted at adapter start, naming the
             // adapter id, the endpoint URI, and the flag.
             assertThat(initWarn.list)
-                    .as("init WARN must surface acceptAnyServerCertificate=true with adapter id and URI")
+                    .as("init WARN must surface trustLevel=TRUST with adapter id and URI")
                     .anySatisfy(event -> {
                         assertThat(event.getLevel()).isEqualTo(Level.WARN);
                         final String message = event.getFormattedMessage();
-                        assertThat(message).contains("acceptAnyServerCertificate=true");
+                        assertThat(message).contains("trustLevel=TRUST");
                         assertThat(message).contains("id");
                         assertThat(message).contains(opcUaServerExtension.getServerUri());
                     });
@@ -242,11 +246,11 @@ class OpcUaProtocolAdapterAuthTest {
             // EDG-585 visibility: the same WARN must also fire on every successful connect, so an
             // operator running insecurely cannot miss it during incident triage.
             assertThat(connectWarn.list)
-                    .as("per-connect WARN must surface acceptAnyServerCertificate=true with adapter id and URI")
+                    .as("per-connect WARN must surface trustLevel=TRUST with adapter id and URI")
                     .anySatisfy(event -> {
                         assertThat(event.getLevel()).isEqualTo(Level.WARN);
                         final String message = event.getFormattedMessage();
-                        assertThat(message).contains("acceptAnyServerCertificate=true");
+                        assertThat(message).contains("trustLevel=TRUST");
                         assertThat(message).contains("id");
                         assertThat(message).contains(opcUaServerExtension.getServerUri());
                     });
@@ -258,12 +262,12 @@ class OpcUaProtocolAdapterAuthTest {
 
     /**
      * EDG-585 test #5: documents the pre-fix Miele failure mode is preserved when
-     * {@code acceptAnyServerCertificate=false} (the default). Same setup as the success test above
-     * minus the explicit opt-in: the adapter must NOT reach CONNECTED.
+     * {@code trustLevel=CHAIN} (the default). Same setup as the success test above minus the explicit
+     * opt-in: the adapter must NOT reach CONNECTED.
      */
     @Test
     @Timeout(15)
-    public void whenAcceptAnyServerCertificateFalse_andServerCertNotChainable_thenConnectionFails() throws Exception {
+    public void whenTrustLevelChain_andServerCertNotChainable_thenConnectionFails() throws Exception {
         final KeyChain clientKeyChain = KeyChain.createKeyChain("client");
         final var clientKeystore =
                 clientKeyChain.wrapInKeyStoreWithPrivateKey("client-keystore", "client", "password", "password");
@@ -279,7 +283,7 @@ class OpcUaProtocolAdapterAuthTest {
                     TlsChecks.NONE,
                     new Keystore(clientKeystore.getAbsolutePath(), "password", "password"),
                     null, // no user truststore — falls back to JVM cacerts (won't contain the self-signed server cert)
-                    false); // acceptAnyServerCertificate=false: today's failing behavior
+                    TrustLevel.CHAIN); // default trust: today's failing behavior preserved
             final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                     opcUaServerExtension.getServerUri(),
                     false,
@@ -302,17 +306,17 @@ class OpcUaProtocolAdapterAuthTest {
             // Allow the adapter to attempt a few reconnects, then verify it never reached CONNECTED.
             Thread.sleep(5000);
             assertThat(protocolAdapter.getProtocolAdapterState().getConnectionStatus())
-                    .as("Adapter must NOT reach CONNECTED when acceptAnyServerCertificate=false and "
+                    .as("Adapter must NOT reach CONNECTED when trustLevel=CHAIN (default) and "
                             + "the self-signed server cert cannot chain to JVM cacerts")
                     .isNotEqualTo(CONNECTED);
 
-            // EDG-585 test #5: an operator-facing log message must point at the new flag, so an
-            // operator hitting the Miele failure mode can find the bypass without reading source.
+            // EDG-585 test #5: an operator-facing log message must point at the bypass, so an
+            // operator hitting the Miele failure mode can find it without reading source.
             assertThat(hintLog.list)
-                    .as("operator-facing INFO must mention acceptAnyServerCertificate as the bypass")
+                    .as("operator-facing INFO must mention trustLevel=TRUST as the bypass")
                     .anySatisfy(event -> {
                         final String message = event.getFormattedMessage();
-                        assertThat(message).contains("acceptAnyServerCertificate=true");
+                        assertThat(message).contains("trustLevel=TRUST");
                         assertThat(message).contains("cacerts");
                     });
         } finally {
