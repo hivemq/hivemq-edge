@@ -89,6 +89,18 @@ public record ParsedConfig(
                                 + "or set trustLevel=TRUST to accept any server certificate.");
                     }
                     certValidator = createServerCertificateValidator(trustedCertsOpt.get(), trustLevel, identity);
+                    if (!checksHostname(identity)) {
+                        // Logged once at start (not per-connect): the certificate is trusted via its
+                        // chain, but is not verified to belong to this endpoint's hostname, so a
+                        // substituted server whose certificate chains to the same anchor is accepted.
+                        log.warn(
+                                "OPC UA adapter endpoint '{}': TLS hostname verification is not enabled "
+                                        + "(tlsChecks={}). The server certificate is trusted via its chain but is "
+                                        + "not checked against the endpoint hostname. Set tlsChecks=HOSTNAME or "
+                                        + "APPLICATION_URI_AND_HOSTNAME to enable it.",
+                                adapterConfig.getUri(),
+                                identity);
+                    }
                 }
             }
         }

@@ -17,6 +17,10 @@ package com.hivemq.edge.adapters.opcua.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
@@ -34,6 +38,7 @@ import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.LoggerFactory;
 import util.KeyChain;
 
 class ParsedConfigTest {
@@ -512,5 +517,61 @@ class ParsedConfigTest {
         assertThat(result).isInstanceOf(Success.class);
         assertThat(((Success<ParsedConfig, String>) result).result().trustAnyServerCertificate())
                 .isFalse();
+    }
+
+    // ----- hostname-verification WARN (logged once at start) -----
+
+    @Test
+    void chainWithoutHostname_logsHostnameVerificationWarn() {
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            // CHAIN with an identity that omits HOSTNAME → one-shot advisory WARN.
+            ParsedConfig.fromConfig(
+                    createAdapterConfig(true, null, null, null, TrustLevel.CHAIN, TlsChecks.APPLICATION_URI));
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage()).contains("hostname verification is not enabled");
+            });
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void chainWithHostname_doesNotLogHostnameVerificationWarn() {
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(createAdapterConfig(
+                    true, null, null, null, TrustLevel.CHAIN, TlsChecks.APPLICATION_URI_AND_HOSTNAME));
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("hostname verification is not enabled"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void trust_doesNotLogHostnameVerificationWarn() {
+        // Under TRUST the MITM warning already covers it; the hostname advisory must not double up.
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TrustLevel.TRUST, TlsChecks.NONE));
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("hostname verification is not enabled"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    private static ListAppender<ILoggingEvent> attachParsedConfigAppender() {
+        final Logger logger = (Logger) LoggerFactory.getLogger(ParsedConfig.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
+    }
+
+    private static void detachParsedConfigAppender(final ListAppender<ILoggingEvent> appender) {
+        ((Logger) LoggerFactory.getLogger(ParsedConfig.class)).detachAppender(appender);
     }
 }
