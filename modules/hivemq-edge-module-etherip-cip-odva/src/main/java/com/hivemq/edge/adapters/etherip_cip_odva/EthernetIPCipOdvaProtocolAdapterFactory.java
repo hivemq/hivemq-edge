@@ -23,7 +23,6 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.EipSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.LoggerFactory;
 
 public class EthernetIPCipOdvaProtocolAdapterFactory implements ProtocolAdapterFactory<EipSpecificAdapterConfig> {
 
@@ -34,8 +33,6 @@ public class EthernetIPCipOdvaProtocolAdapterFactory implements ProtocolAdapterF
     public EthernetIPCipOdvaProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput input) {
         this.writingEnabled = input.isWritingEnabled();
         this.eventService = input.eventService();
-
-        LoggerFactory.getLogger(this.getClass()).warn("#### Writing enabled=" + writingEnabled);
     }
 
     @Override
