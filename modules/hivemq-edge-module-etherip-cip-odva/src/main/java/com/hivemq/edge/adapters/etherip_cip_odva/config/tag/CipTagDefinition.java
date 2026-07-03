@@ -122,7 +122,7 @@ public class CipTagDefinition implements TagDefinition, Serializable {
     @ModuleConfigField(
             title = "Write mode",
             description =
-                    "Whether a write covers the whole attribute (only relevant when writable). COMPLETE_WRITE: the configured tag(s) at this address span the entire attribute, so it is written directly with no device read (the device rejects the write if they do not actually cover the whole attribute). PARTIAL_WRITE: the tag(s) cover only part of the attribute, so the rest is preserved via a read-modify-write (requires a readable attribute).",
+                    "Whether a write covers the whole attribute (only relevant when writable). COMPLETE_WRITE: the configured tag(s) at this address span the entire attribute, so it is written directly with no device read (the device rejects the write if they do not actually cover the whole attribute). PARTIAL_WRITE: the tag(s) cover only part of the attribute, so the rest is preserved by reading the current attribute from the device and overlaying the supplied tag(s) (read-modify-write).",
             defaultValue = "PARTIAL_WRITE",
             required = true)
     private final @NotNull CipWriteMode writeMode;
@@ -147,7 +147,6 @@ public class CipTagDefinition implements TagDefinition, Serializable {
         this.batchBitIndex = batchBitIndex;
         this.readWrite = readWrite == null ? CipReadWrite.READ_ONLY : readWrite;
         this.writeMode = writeMode == null ? CipWriteMode.PARTIAL_WRITE : writeMode;
-        validate();
     }
 
     /**
@@ -172,15 +171,6 @@ public class CipTagDefinition implements TagDefinition, Serializable {
                 batchBitIndex,
                 null,
                 null);
-    }
-
-    private void validate() {
-        if (readWrite == CipReadWrite.WRITE_ONLY && writeMode == CipWriteMode.PARTIAL_WRITE) {
-            throw new IllegalArgumentException(
-                    "Tag at address "
-                            + address
-                            + " is WRITE_ONLY but uses PARTIAL_WRITE; a non-readable attribute cannot be read-modify-written. Use COMPLETE_WRITE (and ensure the tag(s) cover the whole attribute).");
-        }
     }
 
     public @NotNull String getAddress() {
