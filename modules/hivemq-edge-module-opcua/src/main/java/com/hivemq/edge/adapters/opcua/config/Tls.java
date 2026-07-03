@@ -112,13 +112,23 @@ public record Tls(
         }
 
         if (tlsChecks != null && tlsChecks.isDeprecatedAlias()) {
+            // The legacy ALL level enforced key-usage / extended-key-usage checks that CHAIN_PKI does
+            // not; surface that security change explicitly so it is not applied silently on upgrade.
+            // STANDARD maps to CHAIN_PKI + APPLICATION_URI with an identical check set, so it needs no note.
+            final String keyUsageNote = (tlsChecks == TlsChecks.ALL && resolvedTrust == TrustLevel.CHAIN_PKI)
+                    ? " SECURITY CHANGE: the legacy ALL level also enforced certificate key-usage and "
+                            + "extended-key-usage checks, which trustLevel=CHAIN_PKI does NOT perform. Server "
+                            + "certificates with missing or non-conforming key-usage extensions that ALL "
+                            + "previously rejected will now be accepted."
+                    : "";
             log.warn(
                     "OPC UA adapter TLS config: tlsChecks={} is deprecated and was normalized to "
                             + "trustLevel={}, tlsChecks={}. Update the configuration to the explicit values; "
-                            + "the STANDARD/ALL aliases will be removed in a future release.",
+                            + "the STANDARD/ALL aliases will be removed in a future release.{}",
                     tlsChecks,
                     resolvedTrust,
-                    identity);
+                    identity,
+                    keyUsageNote);
         }
 
         tlsChecks = identity;
