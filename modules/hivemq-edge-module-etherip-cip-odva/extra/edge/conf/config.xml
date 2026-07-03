@@ -128,7 +128,6 @@
             <configVersion>1</configVersion>
             <config>
                 <backplane>1</backplane>
-                <port>44818</port>
                 <eipToMqtt>
                     <publishChangedDataOnly>true</publishChangedDataOnly>
                     <pollingIntervalMillis>100</pollingIntervalMillis>
@@ -349,7 +348,6 @@
 <!--            <configVersion>1</configVersion>-->
 <!--            <config>-->
 <!--                <backplane>1</backplane>-->
-<!--                <port>44818</port>-->
 <!--                <eipToMqtt>-->
 <!--                    <publishChangedDataOnly>true</publishChangedDataOnly>-->
 <!--                    <pollingIntervalMillis>1000</pollingIntervalMillis>-->
@@ -411,7 +409,6 @@
 <!--                    <publishChangedDataOnly>false</publishChangedDataOnly>-->
 <!--                </eipToMqtt>-->
 <!--                <host>192.168.0.23</host>-->
-<!--                <port>44818</port>-->
 <!--                <slot>0</slot>-->
 <!--                <id>hmzy0001</id>-->
 <!--            </config>-->

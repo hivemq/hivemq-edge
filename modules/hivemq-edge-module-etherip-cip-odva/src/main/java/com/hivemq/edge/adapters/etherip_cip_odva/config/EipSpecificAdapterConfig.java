@@ -25,9 +25,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
-    private static final int PORT_MIN = 1;
-    private static final int PORT_MAX = 65535;
-
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
@@ -48,16 +45,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
             required = true,
             format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
-
-    @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(
-            title = "Port",
-            description = "The port number on the device you wish to connect to",
-            required = true,
-            numberMin = PORT_MIN,
-            numberMax = PORT_MAX,
-            defaultValue = "44818")
-    private final int port;
 
     @JsonProperty("backplane")
     @ModuleConfigField(title = "Backplane", description = "Backplane device value", defaultValue = "1")
@@ -94,14 +81,12 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @JsonCreator
     public EipSpecificAdapterConfig(
-            @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
             @JsonProperty(value = "byteOrder") final @NotNull EipSpecificAdapterConfig.ByteOrder byteOrder,
             @JsonProperty(value = "eipToMqtt") final @Nullable EipToMqttConfig eipToMqttConfig) {
         this.host = host;
-        this.port = port;
         this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         this.byteOrder = byteOrder;
@@ -111,10 +96,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     public @NotNull String getHost() {
         return host;
-    }
-
-    public int getPort() {
-        return port;
     }
 
     public int getBackplane() {
@@ -141,8 +122,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
         if (!(o instanceof final EipSpecificAdapterConfig that)) {
             return false;
         }
-        return port == that.port
-                && backplane == that.backplane
+        return backplane == that.backplane
                 && slot == that.slot
                 && com.google.common.base.Objects.equal(id, that.id)
                 && com.google.common.base.Objects.equal(host, that.host)
@@ -152,6 +132,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @Override
     public int hashCode() {
-        return com.google.common.base.Objects.hashCode(id, host, port, backplane, slot, byteOrder, eipToMqttConfig);
+        return com.google.common.base.Objects.hashCode(id, host, backplane, slot, byteOrder, eipToMqttConfig);
     }
 }
