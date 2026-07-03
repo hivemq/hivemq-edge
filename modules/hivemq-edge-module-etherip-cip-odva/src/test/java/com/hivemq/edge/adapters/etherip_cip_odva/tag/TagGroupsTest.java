@@ -126,7 +126,52 @@ class TagGroupsTest {
         Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
     }
 
+    @Test
+    void shouldRejectTwoCompositesAtSameAddressAndDirection() {
+        final CipTag composite1 = composite("motor", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag composite2 = composite("pump", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(composite1, composite2)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("more than one composite")
+                .hasMessageContaining("motor")
+                .hasMessageContaining("pump");
+    }
+
+    @Test
+    void shouldAllowOneCompositeWithScalarSiblings() throws OdvaException {
+        final CipTag composite = composite("motor", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag sibling = tag("speed", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(composite, sibling)))
+                .isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(1);
+        Assertions.assertThat(tagGroups.getTagGroups().iterator().next().hasComposite())
+                .isTrue();
+    }
+
+    @Test
+    void shouldAllowCompositesAtSameAddressButDifferentDirection() throws OdvaException {
+        // Distinct (address, direction) groups, so each may carry its own composite.
+        final CipTag readComposite = composite("motorIn", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag writeComposite =
+                composite("motorOut", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(readComposite, writeComposite)))
+                .isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
+    }
+
     private static CipTag tag(final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
         return new CipTag(name, name, new CipTagDefinition(address, 1, CipDataType.INT, 0d, null, 0, null, rw, wm));
+    }
+
+    private static CipTag composite(
+            final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
+        return new CipTag(
+                name, name, new CipTagDefinition(address, 1, CipDataType.COMPOSITE, 0d, null, 0, null, rw, wm));
     }
 }

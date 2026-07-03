@@ -45,8 +45,22 @@ public class TagGroup {
         this.logicalAddressPath = LogicalAddressPathFactory.create(tagAddress);
     }
 
-    public void add(@NotNull CipTag cipTag) {
+    public void add(@NotNull CipTag cipTag) throws OdvaException {
         if (cipTag.isComposite()) {
+            // A group aggregates all its scalar siblings into a single composite value, so a second composite
+            // at the same (address, direction) would have no distinct meaning and would silently shadow the
+            // first. Reject it rather than let the last one win.
+            if (this.composite != null) {
+                throw new OdvaException("Address "
+                        + tagAddress
+                        + " ("
+                        + readWrite
+                        + ") has more than one composite tag ('"
+                        + this.composite.getName()
+                        + "' and '"
+                        + cipTag.getName()
+                        + "'). At most one composite is allowed per address and direction.");
+            }
             this.composite = cipTag;
         } else {
             tags.add(cipTag);
