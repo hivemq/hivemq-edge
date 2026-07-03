@@ -574,11 +574,16 @@ public final class ProtocolAdapterWrapperContext {
             return;
         }
         pendingBrowse = null;
-        browseEngine.abort();
-        pending.completion()
-                .completeExceptionally(new BrowseRejectedException(
-                        BrowseRejectedException.Reason.TIMED_OUT,
-                        "browse on adapter '" + adapterId + "' did not complete before the deadline"));
+        // Complete the REST future in a finally: the caller is waiting on the deadline rejection and must get it
+        // even if abort() were ever to fail. (abort() is itself best-effort, so this is defence in depth.)
+        try {
+            browseEngine.abort();
+        } finally {
+            pending.completion()
+                    .completeExceptionally(new BrowseRejectedException(
+                            BrowseRejectedException.Reason.TIMED_OUT,
+                            "browse on adapter '" + adapterId + "' did not complete before the deadline"));
+        }
     }
 
     /**
@@ -623,11 +628,16 @@ public final class ProtocolAdapterWrapperContext {
         }
         pendingBrowse = null;
         timers.cancel(pending.deadline());
-        browseEngine.abort();
-        pending.completion()
-                .completeExceptionally(new BrowseRejectedException(
-                        BrowseRejectedException.Reason.NOT_CONNECTED,
-                        "adapter '" + adapterId + "' lost its connection before the browse completed"));
+        // Complete the REST future in a finally so a connection-loss rejection is never skipped, and so a throwing
+        // abort() can never propagate out of the state-transition action that calls this.
+        try {
+            browseEngine.abort();
+        } finally {
+            pending.completion()
+                    .completeExceptionally(new BrowseRejectedException(
+                            BrowseRejectedException.Reason.NOT_CONNECTED,
+                            "adapter '" + adapterId + "' lost its connection before the browse completed"));
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────

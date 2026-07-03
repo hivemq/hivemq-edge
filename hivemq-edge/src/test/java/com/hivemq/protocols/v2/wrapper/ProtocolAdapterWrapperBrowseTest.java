@@ -126,6 +126,46 @@ class ProtocolAdapterWrapperBrowseTest {
         assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.WAITING_FOR_CONNECTION_RETRY);
     }
 
+    @Test
+    void browseDeadlineWhenBrowseCancelThrows_stillTimesOutAndReleasesTheSlot() {
+        final WrapperTestFixture fixture = connectedFixture();
+        fixture.adapter.browseCancelThrows = true;
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
+
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
+        assertThat(future).isNotDone();
+
+        // The deadline fires abort(), which runs the throwing browseCancel; the future must still time out and the
+        // engine must still release the slot — a throwing cancel must not wedge it as permanently ALREADY_IN_FLIGHT.
+        fixture.advance(60_000);
+        assertThat(reasonOf(future)).isEqualTo(BrowseRejectedException.Reason.TIMED_OUT);
+
+        final CompletableFuture<List<BrowseNode>> second = new CompletableFuture<>();
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), second));
+        assertThat(second)
+                .as("the slot was released, so a fresh browse is accepted")
+                .isNotDone();
+        assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.CONNECTED);
+    }
+
+    @Test
+    void browseWhenConnectionLostAndBrowseCancelThrows_isFailedCleanly() {
+        final WrapperTestFixture fixture = connectedFixture();
+        fixture.adapter.browseCancelThrows = true;
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
+
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
+        assertThat(future).isNotDone();
+
+        // Losing the connection aborts the pending browse from inside a state-transition action; a throwing
+        // browseCancel must neither strand the future nor derail the transition to the retry state.
+        fixture.output.disconnected();
+        fixture.drain();
+
+        assertThat(reasonOf(future)).isEqualTo(BrowseRejectedException.Reason.NOT_CONNECTED);
+        assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.WAITING_FOR_CONNECTION_RETRY);
+    }
+
     private static @NotNull WrapperTestFixture connectedFixture() {
         // skip-verification so the adapter reaches CONNECTED straight away; a wide tick period so the browse
         // deadline test fires exactly one tick.

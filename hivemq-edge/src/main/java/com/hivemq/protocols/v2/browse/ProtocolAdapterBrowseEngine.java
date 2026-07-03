@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The single browse traversal engine — the policy the framework's PAW drives in production <b>and</b> the
@@ -68,6 +70,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class ProtocolAdapterBrowseEngine {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterBrowseEngine.class);
+
     /** Discovered variables are attribute-read in batches of this size. */
     public static final int RESOLVE_BATCH = 100;
 
@@ -102,6 +106,7 @@ public final class ProtocolAdapterBrowseEngine {
     private final @NotNull Map<String, String> pathByNode = new HashMap<>();
     private final @NotNull Map<String, String> tagNameByNode = new HashMap<>();
     private final @NotNull Map<String, ResolvedAttributes> resolvedByNode = new HashMap<>();
+    private final @NotNull List<String> pendingResolveIds = new ArrayList<>();
     private int resolveOffset;
 
     /**
@@ -165,6 +170,7 @@ public final class ProtocolAdapterBrowseEngine {
         pathByNode.clear();
         tagNameByNode.clear();
         resolvedByNode.clear();
+        pendingResolveIds.clear();
         resolveOffset = 0;
         activePath = "";
         activeContinuation = null;
@@ -255,8 +261,10 @@ public final class ProtocolAdapterBrowseEngine {
         }
         final int end = Math.min(resolveOffset + RESOLVE_BATCH, sorted.size());
         final List<Node> batch = new ArrayList<>(end - resolveOffset);
+        pendingResolveIds.clear();
         for (final DiscoveredVariable variable : sorted.subList(resolveOffset, end)) {
             batch.add(variable.node());
+            pendingResolveIds.add(variable.node().nodeId());
         }
         resolveOffset = end;
         resolveBatches++;
@@ -274,10 +282,40 @@ public final class ProtocolAdapterBrowseEngine {
         if (phase != Phase.RESOLVING || requestId != this.requestId) {
             return;
         }
+        // The SDK contract is exactly one ResolvedAttributes per requested node. Validate the batch before trusting
+        // it: an unrequested, duplicate, or missing node id means the adapter broke that contract, and quietly
+        // dropping the affected variables would return an incomplete browse as a success (they are filtered out in
+        // finish()). Fail the whole browse instead, so the caller sees an error rather than a silently short result.
+        final Set<String> expected = new HashSet<>(pendingResolveIds);
+        final Set<String> seen = new HashSet<>();
+        for (final ResolvedAttributes attribute : attributes) {
+            final String nodeId = attribute.node().nodeId();
+            if (!expected.contains(nodeId)) {
+                failResolve("attributes returned for an unrequested node '" + nodeId + "'");
+                return;
+            }
+            if (!seen.add(nodeId)) {
+                failResolve("duplicate attributes returned for node '" + nodeId + "'");
+                return;
+            }
+        }
+        if (seen.size() != expected.size()) {
+            final Set<String> missing = new HashSet<>(expected);
+            missing.removeAll(seen);
+            failResolve("missing attributes for " + missing.size() + " requested node(s): " + missing);
+            return;
+        }
         for (final ResolvedAttributes attribute : attributes) {
             resolvedByNode.put(attribute.node().nodeId(), attribute);
         }
         readNextBatch();
+    }
+
+    /** Fail the in-flight browse from the RESOLVE phase (contract violation in the returned attributes) and reset. */
+    private void failResolve(final @NotNull String reason) {
+        final BrowseSink target = requireSink();
+        reset();
+        target.fail(Phase.RESOLVING + ": " + reason);
     }
 
     // ── termination ───────────────────────────────────────────────────────────────────────────────────────
@@ -307,8 +345,16 @@ public final class ProtocolAdapterBrowseEngine {
         if (!isActive()) {
             return;
         }
-        requireAdapter().browseCancel(requestId);
-        reset();
+        // browseCancel is a courtesy to the device (release its open continuation point). A direct adapter runs it
+        // synchronously on this thread and may throw; that must never stop the engine resetting and releasing the
+        // in-flight slot, or the caller (a deadline or a lost connection) could never browse this adapter again.
+        try {
+            requireAdapter().browseCancel(requestId);
+        } catch (final RuntimeException e) {
+            log.debug("browseCancel threw during abort; ignoring (best-effort)", e);
+        } finally {
+            reset();
+        }
     }
 
     private void finish() {

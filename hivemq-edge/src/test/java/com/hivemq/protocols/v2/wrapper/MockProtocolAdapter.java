@@ -71,6 +71,8 @@ final class MockProtocolAdapter implements ProtocolAdapter {
 
     boolean verifyDrop;
 
+    boolean browseCancelThrows;
+
     MockProtocolAdapter(final @NotNull String adapterId, final @NotNull ProtocolAdapterOutput output) {
         this.adapterId = adapterId;
         this.output = output;
@@ -167,5 +169,13 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
         commands.add("readNodeAttributes");
+    }
+
+    @Override
+    public void browseCancel(final int requestId) {
+        commands.add("browseCancel");
+        if (browseCancelThrows) {
+            throw new RuntimeException("browseCancel failed");
+        }
     }
 }

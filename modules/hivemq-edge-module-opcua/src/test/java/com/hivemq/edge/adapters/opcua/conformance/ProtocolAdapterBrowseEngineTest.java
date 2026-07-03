@@ -16,13 +16,17 @@
 package com.hivemq.edge.adapters.opcua.conformance;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
+import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.browse.BrowseOutcome;
 import com.hivemq.protocols.v2.browse.ProtocolAdapterBrowseEngine;
@@ -100,10 +104,91 @@ class ProtocolAdapterBrowseEngineTest {
         assertThat(engine.isActive()).isTrue();
     }
 
+    @Test
+    void resolveMissingARequestedNode_failsTheBrowseInsteadOfDroppingIt() {
+        final RecordingAdapter adapter = new RecordingAdapter();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome);
+
+        // Discover one selectable variable; the engine moves to RESOLVE and requests its attributes.
+        final ConformanceNode temperature = new ConformanceNode("ns=1;i=1");
+        engine.onBrowsePage(1, List.of(new BrowseNode(temperature, NodeType.VALUE, true, "temperature")), null);
+        assertThat(adapter.readAttrsCalls).isEqualTo(1);
+
+        // The adapter returns nothing for the requested node. Historically this silently dropped the variable and
+        // completed the browse short; it must now fail the browse instead.
+        engine.onAttributesResolved(1, List.of());
+        assertThat(outcome.isDone()).isTrue();
+        assertThat(outcome.isOk()).isFalse();
+        assertThat(outcome.failure()).contains("missing");
+        assertThat(engine.isActive()).isFalse();
+    }
+
+    @Test
+    void resolveWithAttributesForAnUnrequestedNode_failsTheBrowse() {
+        final RecordingAdapter adapter = new RecordingAdapter();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome);
+
+        engine.onBrowsePage(
+                1, List.of(new BrowseNode(new ConformanceNode("ns=1;i=1"), NodeType.VALUE, true, "temperature")), null);
+
+        engine.onAttributesResolved(1, List.of(attributesFor(new ConformanceNode("ns=9;i=9"))));
+        assertThat(outcome.isOk()).isFalse();
+        assertThat(outcome.failure()).contains("unrequested");
+        assertThat(engine.isActive()).isFalse();
+    }
+
+    @Test
+    void resolveComplete_completesWithTheResolvedVariable() {
+        final RecordingAdapter adapter = new RecordingAdapter();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome);
+
+        final ConformanceNode temperature = new ConformanceNode("ns=1;i=1");
+        engine.onBrowsePage(1, List.of(new BrowseNode(temperature, NodeType.VALUE, true, "temperature")), null);
+        engine.onAttributesResolved(1, List.of(attributesFor(temperature)));
+
+        assertThat(outcome.isOk()).isTrue();
+        assertThat(outcome.result()).hasSize(1);
+        assertThat(engine.isActive()).isFalse();
+    }
+
+    @Test
+    void abort_whenBrowseCancelThrows_stillResetsAndDoesNotPropagate() {
+        final RecordingAdapter adapter = new RecordingAdapter();
+        adapter.browseCancelThrows = true;
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, new BrowseOutcome());
+        assertThat(engine.isActive()).isTrue();
+
+        assertThatCode(engine::abort).doesNotThrowAnyException();
+        assertThat(adapter.browseCancelCalls).isEqualTo(1);
+        assertThat(engine.isActive())
+                .as("the in-flight slot is released even when browseCancel throws")
+                .isFalse();
+    }
+
+    private static @NotNull ResolvedAttributes attributesFor(final @NotNull Node node) {
+        return new ResolvedAttributes(
+                node,
+                "double",
+                AccessFlags.builder()
+                        .readable(AccessTriState.YES)
+                        .pollable(AccessTriState.YES)
+                        .build(),
+                "");
+    }
+
     /** Counts the commands the engine issues; all callbacks are no-ops (the test drives events directly). */
     private static final class RecordingAdapter implements ProtocolAdapter {
         private int browseCalls;
         private int readAttrsCalls;
+        private int browseCancelCalls;
+        private boolean browseCancelThrows;
 
         @Override
         public @NotNull String adapterId() {
@@ -148,6 +233,14 @@ class ProtocolAdapterBrowseEngineTest {
         @Override
         public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
             readAttrsCalls++;
+        }
+
+        @Override
+        public void browseCancel(final int requestId) {
+            browseCancelCalls++;
+            if (browseCancelThrows) {
+                throw new RuntimeException("browseCancel failed");
+            }
         }
     }
 }
