@@ -6,7 +6,7 @@ For interacting with Ethernet IP/CIP devices we rely on an open source library w
 
 We build the library internal and provide the binary in **libs/etherip-1.0.0.jar**.
 
-In case you want to build the libary yourself simply check out the original project, build the libary and put it into 
+In case you want to build the libary yourself simply check out the original project, build the libary and put it into
 the libs folder.
 
 # TL;DR
@@ -91,7 +91,7 @@ Uses [EtherIP](https://github.com/ornl-epics/etherip/) library and extends it
 - [x] Better exception information
   - [x] Decode exceptions
   - [x] Include tag information
-  
+
 - [x] List decoding of booleans
 
 - [x] Check UI for null values for batchByteIndex, batchBitIndex. When config reloaded UI reports errors for nullable values
