@@ -47,6 +47,7 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -327,6 +328,9 @@ class OpcUaProtocolAdapterAuthTest {
     private static @NotNull ListAppender<ILoggingEvent> attachAppender(final @NotNull Class<?> loggerClass) {
         final Logger logger = (Logger) LoggerFactory.getLogger(loggerClass);
         final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        // A live OPC UA connection emits per-connect WARNs on background threads. Back the appender
+        // with a thread-safe list so assertions that iterate it cannot hit ConcurrentModificationException.
+        appender.list = new CopyOnWriteArrayList<>();
         appender.start();
         logger.addAppender(appender);
         return appender;
