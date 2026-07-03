@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.etherip_cip_odva.config;
 import java.util.EnumMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * The value range of a numeric {@link CipDataType}. This is the single source of truth for the numeric bounds
@@ -26,15 +25,13 @@ import org.jetbrains.annotations.Nullable;
  * reject out-of-range values before they are encoded (a wider Java {@code long}/{@code double} narrowed to the
  * CIP width would otherwise wrap silently).
  * <p>
- * Integer types carry a {@code long} range; a {@code null} {@link IntegerRange#maximum()} means the upper
- * bound is not representable as a signed {@code long} (only {@code ULINT}, whose maximum is 2^64 - 1).
- * Floating-point types carry a {@code double} range. Non-numeric types ({@code BOOL}, strings,
- * {@code COMPOSITE}) have no range.
+ * Integer types carry a {@code long} range; floating-point types carry a {@code double} range. Non-numeric
+ * types ({@code BOOL}, strings, {@code COMPOSITE}) have no range.
  */
 public final class CipNumericRange {
 
-    /** An integer range, both bounds inclusive. {@code maximum} is {@code null} for {@code ULINT}. */
-    public record IntegerRange(long minimum, @Nullable Long maximum) {}
+    /** An integer range, both bounds inclusive. */
+    public record IntegerRange(long minimum, long maximum) {}
 
     /** A floating-point range, both bounds inclusive. */
     public record FloatRange(double minimum, double maximum) {}
@@ -50,9 +47,6 @@ public final class CipNumericRange {
         INTEGER_RANGES.put(CipDataType.DINT, new IntegerRange(-2_147_483_648L, 2_147_483_647L));
         INTEGER_RANGES.put(CipDataType.UDINT, new IntegerRange(0L, 4_294_967_295L));
         INTEGER_RANGES.put(CipDataType.LINT, new IntegerRange(Long.MIN_VALUE, Long.MAX_VALUE));
-        // ULINT's maximum is 2^64 - 1, which does not fit in a signed long; a null upper bound means
-        // "any non-negative long", which is the widest range a JSON integer (parsed as a long) can express.
-        INTEGER_RANGES.put(CipDataType.ULINT, new IntegerRange(0L, null));
 
         FLOAT_RANGES.put(CipDataType.REAL, new FloatRange(-3.4028235e38d, 3.4028235e38d));
         FLOAT_RANGES.put(CipDataType.LREAL, new FloatRange(-1.7976931348623157e308d, 1.7976931348623157e308d));

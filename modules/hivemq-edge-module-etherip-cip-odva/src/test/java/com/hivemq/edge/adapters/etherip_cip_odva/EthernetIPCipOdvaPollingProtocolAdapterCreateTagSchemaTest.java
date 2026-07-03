@@ -80,14 +80,6 @@ class EthernetIPCipOdvaPollingProtocolAdapterCreateTagSchemaTest {
     }
 
     @Test
-    void test_ulintHasMinimumOnly() {
-        final ScalarSchema scalar = (ScalarSchema) TagSchemaMapper.buildScalarSchema(CipDataType.ULINT, true, true);
-        assertThat(scalar.type()).isEqualTo(ScalarType.ULONG);
-        assertThat(scalar.minimum()).isEqualTo(0L);
-        assertThat(scalar.maximum()).isNull();
-    }
-
-    @Test
     void test_floatsMapToDouble() {
         assertType(CipDataType.REAL, ScalarType.DOUBLE, -3.4028235e38d, 3.4028235e38d);
         assertType(CipDataType.LREAL, ScalarType.DOUBLE, -1.7976931348623157e308d, 1.7976931348623157e308d);

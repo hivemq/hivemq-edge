@@ -617,7 +617,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 }
                 yield node.booleanValue();
             }
-            case SINT, USINT, INT, UINT, DINT, UDINT, LINT, ULINT -> toRangedLong(tag, dataType, node);
+            case SINT, USINT, INT, UINT, DINT, UDINT, LINT -> toRangedLong(tag, dataType, node);
             case REAL, LREAL -> toRangedDouble(tag, dataType, node);
             case STRING, SSTRING -> {
                 if (!node.isTextual()) {
@@ -638,9 +638,8 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         }
         final long value = node.longValue();
         final CipNumericRange.IntegerRange range = CipNumericRange.integerRange(dataType);
-        final Long max = range.maximum();
-        if (value < range.minimum() || (max != null && value > max)) {
-            throw new IllegalArgumentException(rangeError(tag, dataType, value, range.minimum(), max));
+        if (value < range.minimum() || value > range.maximum()) {
+            throw new IllegalArgumentException(rangeError(tag, dataType, value, range.minimum(), range.maximum()));
         }
         return value;
     }
@@ -684,7 +683,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             final @NotNull CipDataType dataType,
             final @NotNull Object value,
             final @NotNull Object minimum,
-            final @Nullable Object maximum) {
+            final @NotNull Object maximum) {
         return "Tag '"
                 + tag.getName()
                 + "' ("
@@ -694,7 +693,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 + " is out of range ["
                 + minimum
                 + ", "
-                + (maximum == null ? "2^64-1" : maximum)
+                + maximum
                 + "].";
     }
 

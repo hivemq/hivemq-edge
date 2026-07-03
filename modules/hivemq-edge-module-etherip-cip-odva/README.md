@@ -85,7 +85,8 @@ Uses [EtherIP](https://github.com/ornl-epics/etherip/) library and extends it
   - decoding done using: CipTagDecoder
     - receives buf, delegates to specific decoder based on cipdatatype
 
-- [ ] Implement ULINT (as BigDecimal?)
+- [ ] Implement ULINT — removed for now; its full range (0..2^64-1) does not fit a Java `long`, so faithful
+      support needs `BigInteger` end to end (decode, publish, schema). Re-add as its own scoped change.
 
 - [x] Better exception information
   - [x] Decode exceptions

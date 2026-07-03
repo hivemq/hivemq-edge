@@ -41,7 +41,7 @@ public final class TagSchemaMapper {
         switch (type) {
             case BOOL -> builder.scalar(ScalarType.BOOLEAN);
             case SINT, INT, DINT, LINT -> applyIntegerType(builder, ScalarType.LONG, type);
-            case USINT, UINT, UDINT, ULINT -> applyIntegerType(builder, ScalarType.ULONG, type);
+            case USINT, UINT, UDINT -> applyIntegerType(builder, ScalarType.ULONG, type);
             case REAL, LREAL -> applyFloatType(builder, type);
             case SSTRING, STRING -> builder.scalar(ScalarType.STRING);
             case COMPOSITE ->
@@ -55,11 +55,7 @@ public final class TagSchemaMapper {
             final @NotNull ScalarType scalarType,
             final @NotNull CipDataType type) {
         final CipNumericRange.IntegerRange range = CipNumericRange.integerRange(type);
-        builder.scalar(scalarType).minimum(range.minimum());
-        // ULINT's maximum (2^64 - 1) is not representable as a long, so it has no upper bound in the schema.
-        if (range.maximum() != null) {
-            builder.maximum(range.maximum());
-        }
+        builder.scalar(scalarType).minimum(range.minimum()).maximum(range.maximum());
     }
 
     private static void applyFloatType(final @NotNull SchemaBuilder builder, final @NotNull CipDataType type) {
