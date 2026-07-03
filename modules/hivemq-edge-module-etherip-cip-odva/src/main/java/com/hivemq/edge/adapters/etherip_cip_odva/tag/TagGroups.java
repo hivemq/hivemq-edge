@@ -54,16 +54,24 @@ public class TagGroups {
     }
 
     public boolean registerTagsIfEmpty(Collection<CipTag> cipTags) throws OdvaException {
-        if (tagsAlreadyRegistered()) {
+        if (tagsRegistered.get()) {
             return false;
         }
 
-        for (CipTag cipTag : cipTags) {
-            registerTag(cipTag);
+        // Build and validate first, and only mark registration complete once it has fully succeeded. If any
+        // step throws, discard the partial group state and leave the flag unset, so a later start() retries
+        // registration from scratch instead of continuing on stale or half-built groups.
+        try {
+            for (CipTag cipTag : cipTags) {
+                registerTag(cipTag);
+            }
+            validateDirectionConsistency();
+        } catch (final OdvaException e) {
+            clear();
+            throw e;
         }
 
-        validateDirectionConsistency();
-
+        tagsRegistered.set(true);
         return true;
     }
 
@@ -90,10 +98,6 @@ public class TagGroups {
                                 + " mixes READ_WRITE with READ_ONLY/WRITE_ONLY tags. Per address, either all tags are READ_WRITE or none is.");
             }
         }
-    }
-
-    private boolean tagsAlreadyRegistered() {
-        return !tagsRegistered.compareAndSet(false, true);
     }
 
     @NotNull
@@ -123,5 +127,6 @@ public class TagGroups {
 
     public void clear() {
         tagAddressToTagGroup.clear();
+        tagsRegistered.set(false);
     }
 }

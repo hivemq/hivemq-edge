@@ -165,6 +165,25 @@ class TagGroupsTest {
         Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
     }
 
+    @Test
+    void shouldRetryRegistrationAfterAFailedFirstAttempt() throws OdvaException {
+        // A first attempt with an invalid config throws and must NOT mark registration as done, nor leave
+        // partial group state behind; a later attempt with a valid config must register cleanly.
+        final CipTag readWrite = tag("rw", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.COMPLETE_WRITE);
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(readWrite, readOnly)))
+                .isInstanceOf(OdvaException.class);
+        Assertions.assertThat(tagGroups.getTagGroups()).isEmpty();
+
+        final CipTag valid = tag("ok", "@1/2/4", CipReadWrite.READ_ONLY, null);
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(valid))).isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(1);
+        Assertions.assertThat(tagGroups.getTagGroups().iterator().next().getTags())
+                .containsExactly(valid);
+    }
+
     private static CipTag tag(final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
         return new CipTag(name, name, new CipTagDefinition(address, 1, CipDataType.INT, 0d, null, 0, null, rw, wm));
     }
