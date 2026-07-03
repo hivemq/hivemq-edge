@@ -67,7 +67,7 @@ public record Tls(
                 title = "Trust level",
                 description = "How the server certificate is established as trustworthy: "
                         + "CHAIN (must chain to a trust anchor in the truststore or JVM cacerts), "
-                        + "CHAIN_PKI (as CHAIN, plus validity, revocation and key-usage checks), or "
+                        + "CHAIN_PKI (as CHAIN, plus validity and revocation checks), or "
                         + "TRUST (accept any server certificate without chain validation). "
                         + "WARNING: trustLevel=TRUST is vulnerable to MITM and is intended for environments "
                         + "without a CA (e.g. factories with self-signed per-machine certs) only. "

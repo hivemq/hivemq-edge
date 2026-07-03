@@ -101,8 +101,8 @@ class TrustAnyIdentityCertificateValidatorTest {
     @Test
     void bothChecks_hostnameMismatch_throws() {
         final var validator = new TrustAnyIdentityCertificateValidator(true, true);
-        assertThatThrownBy(() -> validator.validateCertificateChain(
-                        List.of(serverCert), SAN_VALUE, new String[] {"wrong-host"}))
+        assertThatThrownBy(() ->
+                        validator.validateCertificateChain(List.of(serverCert), SAN_VALUE, new String[] {"wrong-host"}))
                 .isInstanceOf(UaException.class);
     }
 }
