@@ -43,6 +43,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValues;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValuesFactory;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipNumericRange;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.EipSpecificAdapterConfig;
@@ -599,17 +600,102 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         return jsonToScalar(tag, dataType, node);
     }
 
+    /**
+     * Converts a single JSON value to the Java value the encoder expects, rejecting anything that does not
+     * strictly match the tag's CIP type. Jackson's {@code asLong}/{@code asDouble}/{@code asText}/{@code asBoolean}
+     * silently coerce mismatched kinds (e.g. a string to 0, a fractional number to a truncated integer), and the
+     * encoders then narrow a wider Java value to the CIP width, wrapping out-of-range values. Requiring the exact
+     * JSON node kind and enforcing the type's range here turns both of those silent corruptions into a rejected
+     * write.
+     */
     private static @NotNull Object jsonToScalar(
             final @NotNull CipTag tag, final @NotNull CipDataType dataType, final @NotNull JsonNode node) {
         return switch (dataType) {
-            case BOOL -> node.asBoolean();
-            case SINT, USINT, INT, UINT, DINT, UDINT, LINT, ULINT -> node.asLong();
-            case REAL, LREAL -> node.asDouble();
-            case STRING, SSTRING -> node.asText();
+            case BOOL -> {
+                if (!node.isBoolean()) {
+                    throw new IllegalArgumentException(typeError(tag, dataType, "a boolean", node));
+                }
+                yield node.booleanValue();
+            }
+            case SINT, USINT, INT, UINT, DINT, UDINT, LINT, ULINT -> toRangedLong(tag, dataType, node);
+            case REAL, LREAL -> toRangedDouble(tag, dataType, node);
+            case STRING, SSTRING -> {
+                if (!node.isTextual()) {
+                    throw new IllegalArgumentException(typeError(tag, dataType, "a string", node));
+                }
+                yield node.textValue();
+            }
             case COMPOSITE ->
                 throw new IllegalArgumentException(
                         "Tag '" + tag.getName() + "' has data type COMPOSITE and cannot be written as a scalar value.");
         };
+    }
+
+    private static long toRangedLong(
+            final @NotNull CipTag tag, final @NotNull CipDataType dataType, final @NotNull JsonNode node) {
+        if (!node.isIntegralNumber()) {
+            throw new IllegalArgumentException(typeError(tag, dataType, "an integer", node));
+        }
+        final long value = node.longValue();
+        final CipNumericRange.IntegerRange range = CipNumericRange.integerRange(dataType);
+        final Long max = range.maximum();
+        if (value < range.minimum() || (max != null && value > max)) {
+            throw new IllegalArgumentException(rangeError(tag, dataType, value, range.minimum(), max));
+        }
+        return value;
+    }
+
+    private static double toRangedDouble(
+            final @NotNull CipTag tag, final @NotNull CipDataType dataType, final @NotNull JsonNode node) {
+        // A whole number such as 3 is a valid float, so accept any numeric node, not only floating-point ones.
+        if (!node.isNumber()) {
+            throw new IllegalArgumentException(typeError(tag, dataType, "a number", node));
+        }
+        final double value = node.doubleValue();
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(
+                    "Tag '" + tag.getName() + "' (" + dataType + ") does not accept a non-finite value.");
+        }
+        final CipNumericRange.FloatRange range = CipNumericRange.floatRange(dataType);
+        if (value < range.minimum() || value > range.maximum()) {
+            throw new IllegalArgumentException(rangeError(tag, dataType, value, range.minimum(), range.maximum()));
+        }
+        return value;
+    }
+
+    private static @NotNull String typeError(
+            final @NotNull CipTag tag,
+            final @NotNull CipDataType dataType,
+            final @NotNull String expected,
+            final @NotNull JsonNode node) {
+        return "Tag '"
+                + tag.getName()
+                + "' ("
+                + dataType
+                + ") expects "
+                + expected
+                + " but got JSON "
+                + node.getNodeType()
+                + ".";
+    }
+
+    private static @NotNull String rangeError(
+            final @NotNull CipTag tag,
+            final @NotNull CipDataType dataType,
+            final @NotNull Object value,
+            final @NotNull Object minimum,
+            final @Nullable Object maximum) {
+        return "Tag '"
+                + tag.getName()
+                + "' ("
+                + dataType
+                + ") value "
+                + value
+                + " is out of range ["
+                + minimum
+                + ", "
+                + (maximum == null ? "2^64-1" : maximum)
+                + "].";
     }
 
     @Override

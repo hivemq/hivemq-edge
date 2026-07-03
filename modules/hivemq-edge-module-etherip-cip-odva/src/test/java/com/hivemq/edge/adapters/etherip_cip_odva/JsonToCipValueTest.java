@@ -81,4 +81,87 @@ class JsonToCipValueTest {
                         tag(CipDataType.COMPOSITE, 1), json("1")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    // ── Strict type rejection ───────────────────────────────────────────────
+
+    @Test
+    void bool_fromNonBoolean_fails() throws Exception {
+        assertThatThrownBy(() ->
+                        EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.BOOL, 1), json("1")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void int_fromString_fails() throws Exception {
+        assertThatThrownBy(() ->
+                        EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.INT, 1), json("\"5\"")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void int_fromFractional_fails() throws Exception {
+        assertThatThrownBy(() ->
+                        EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.INT, 1), json("3.9")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void string_fromNumber_fails() throws Exception {
+        assertThatThrownBy(() ->
+                        EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.STRING, 1), json("5")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    // ── Range enforcement ───────────────────────────────────────────────────
+
+    @Test
+    void usint_aboveMax_fails() throws Exception {
+        // 300 would wrap to 44 when narrowed to a byte; it must be rejected instead.
+        assertThatThrownBy(() ->
+                        EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.USINT, 1), json("300")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void usint_belowMin_fails() throws Exception {
+        assertThatThrownBy(() ->
+                        EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.USINT, 1), json("-1")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void usint_boundaries_accepted() throws Exception {
+        assertThat(EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.USINT, 1), json("0")))
+                .isEqualTo(0L);
+        assertThat(EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.USINT, 1), json("255")))
+                .isEqualTo(255L);
+    }
+
+    @Test
+    void sint_negativeInRange_accepted() throws Exception {
+        assertThat(EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.SINT, 1), json("-128")))
+                .isEqualTo(-128L);
+    }
+
+    @Test
+    void real_wholeNumber_accepted() throws Exception {
+        // A whole number is a valid float value.
+        assertThat(EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.REAL, 1), json("3")))
+                .isEqualTo(3.0d);
+    }
+
+    @Test
+    void real_aboveFloatRange_fails() throws Exception {
+        // Larger than Float.MAX_VALUE (~3.4e38); would become +Infinity when narrowed to a float.
+        assertThatThrownBy(() ->
+                        EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(tag(CipDataType.REAL, 1), json("1e40")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void array_outOfRangeElement_fails() throws Exception {
+        assertThatThrownBy(() -> EthernetIPCipOdvaPollingProtocolAdapter.jsonToCipValue(
+                        tag(CipDataType.USINT, 3), json("[1, 300, 3]")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
