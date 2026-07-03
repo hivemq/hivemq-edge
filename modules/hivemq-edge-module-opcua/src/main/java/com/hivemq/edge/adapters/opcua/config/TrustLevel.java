@@ -44,8 +44,8 @@ public enum TrustLevel {
     CHAIN("CHAIN"),
 
     /**
-     * As {@link #CHAIN}, plus PKI hygiene: certificate validity period, revocation, and key-usage
-     * extensions.
+     * As {@link #CHAIN}, plus PKI hygiene: certificate validity period and revocation. Matches the
+     * legacy {@code STANDARD} check set; key-usage extensions are not enforced.
      */
     @JsonProperty("CHAIN_PKI")
     CHAIN_PKI("CHAIN_PKI");

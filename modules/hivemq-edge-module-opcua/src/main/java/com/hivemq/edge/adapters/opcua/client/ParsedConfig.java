@@ -62,7 +62,8 @@ public record ParsedConfig(
     public static Result<ParsedConfig, String> fromConfig(final OpcUaSpecificAdapterConfig adapterConfig) {
         final boolean tlsEnabled = adapterConfig.getTls().enabled();
         // tlsChecks/trustLevel are normalized (aliases expanded, never null) inside Tls.
-        final TrustLevel trustLevel = Objects.requireNonNull(adapterConfig.getTls().trustLevel());
+        final TrustLevel trustLevel =
+                Objects.requireNonNull(adapterConfig.getTls().trustLevel());
         final TlsChecks identity = Objects.requireNonNull(adapterConfig.getTls().tlsChecks());
         final boolean trustAnyServerCertificate = trustLevel == TrustLevel.TRUST;
 
@@ -171,8 +172,8 @@ public record ParsedConfig(
     /**
      * Builds a chain-validating validator for {@code trustLevel} CHAIN / CHAIN_PKI. The Milo
      * {@link ValidationCheck} set is composed from the two orthogonal knobs: the identity checks
-     * ({@code tlsChecks}) and, for CHAIN_PKI, the PKI-hygiene checks (validity, revocation,
-     * key-usage). CHAIN contributes no optional checks beyond the chain build itself.
+     * ({@code tlsChecks}) and, for CHAIN_PKI, the PKI-hygiene checks (validity, revocation). CHAIN
+     * contributes no optional checks beyond the chain build itself.
      */
     private static @NotNull CertificateValidator createServerCertificateValidator(
             final @NotNull List<X509Certificate> trustedCerts,
@@ -188,13 +189,13 @@ public record ParsedConfig(
             checks.add(ValidationCheck.HOSTNAME);
         }
 
-        // PKI-hygiene axis (only CHAIN_PKI).
+        // PKI-hygiene axis (only CHAIN_PKI). Mirrors the legacy STANDARD check set exactly
+        // (validity + revocation); key-usage is intentionally NOT enforced so that STANDARD's
+        // on-upgrade behavior is preserved for server certs without a KeyUsage extension.
         if (trustLevel == TrustLevel.CHAIN_PKI) {
             checks.add(ValidationCheck.VALIDITY);
             checks.add(ValidationCheck.REVOCATION);
             checks.add(ValidationCheck.REVOCATION_LISTS);
-            checks.add(ValidationCheck.KEY_USAGE_END_ENTITY);
-            checks.add(ValidationCheck.EXTENDED_KEY_USAGE_END_ENTITY);
         }
 
         return new DefaultClientCertificateValidator(
