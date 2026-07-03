@@ -165,6 +165,36 @@ class TlsTest {
     }
 
     @Test
+    void allAlias_deprecationWarn_flagsDroppedKeyUsageChecks() {
+        final ListAppender<ILoggingEvent> appender = attach();
+        try {
+            tls(TlsChecks.ALL, null);
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                        .contains("deprecated")
+                        .contains("SECURITY CHANGE")
+                        .contains("key-usage");
+            });
+        } finally {
+            detach(appender);
+        }
+    }
+
+    @Test
+    void standardAlias_deprecationWarn_hasNoKeyUsageNote() {
+        // STANDARD maps to the identical check set, so it must not carry the ALL security-change note.
+        final ListAppender<ILoggingEvent> appender = attach();
+        try {
+            tls(TlsChecks.STANDARD, null);
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("SECURITY CHANGE"));
+        } finally {
+            detach(appender);
+        }
+    }
+
+    @Test
     void canonicalValues_doNotLogDeprecationWarn() {
         final ListAppender<ILoggingEvent> appender = attach();
         try {
