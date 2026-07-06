@@ -252,11 +252,11 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         final DataPointStore currentLastSamples = requireNonNull(lastSamples.get());
         final List<String> errors = new ArrayList<>();
         try {
-            for (final TagGroup tagGroup : tagGroups.getTagGroups()) {
-                // Write-only tags have no readable attribute; never poll them.
-                if (!tagGroup.isReadable()) {
-                    continue;
-                }
+            // Write-only tag groups have no readable attribute; never poll them.
+            final List<TagGroup> readableGroups = tagGroups.getTagGroups().stream()
+                    .filter(TagGroup::isReadable)
+                    .toList();
+            for (final TagGroup tagGroup : readableGroups) {
                 tryPoll(connectedClient, pollingOutput, tagGroup, currentLastSamples, errors::add);
             }
         } catch (final Exception e) {
