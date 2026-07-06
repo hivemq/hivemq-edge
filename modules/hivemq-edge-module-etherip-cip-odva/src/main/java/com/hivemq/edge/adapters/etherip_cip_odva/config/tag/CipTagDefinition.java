@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.etherip_cip_odva.config.tag;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Objects;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
@@ -26,6 +25,7 @@ import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -217,20 +217,20 @@ public class CipTagDefinition implements TagDefinition, Serializable {
         if (!(o instanceof final CipTagDefinition that)) {
             return false;
         }
-        return Objects.equal(address, that.address)
-                && Objects.equal(numberOfElements, that.numberOfElements)
+        return Objects.equals(address, that.address)
+                && Objects.equals(numberOfElements, that.numberOfElements)
                 && dataType == that.dataType
-                && Objects.equal(hysteresis, that.hysteresis)
-                && Objects.equal(minUpdateIntervalMs, that.minUpdateIntervalMs)
-                && Objects.equal(batchByteIndex, that.batchByteIndex)
-                && Objects.equal(batchBitIndex, that.batchBitIndex)
+                && Objects.equals(hysteresis, that.hysteresis)
+                && Objects.equals(minUpdateIntervalMs, that.minUpdateIntervalMs)
+                && Objects.equals(batchByteIndex, that.batchByteIndex)
+                && Objects.equals(batchBitIndex, that.batchBitIndex)
                 && readWrite == that.readWrite
                 && writeMode == that.writeMode;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(
+        return Objects.hash(
                 address,
                 numberOfElements,
                 dataType,

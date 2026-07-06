@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
-import com.google.common.base.Objects;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
@@ -23,6 +22,7 @@ import com.hivemq.edge.adapters.etherip_cip_odva.handler.LogicalAddressPathFacto
 import etherip.types.LogicalAddressPath;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -111,14 +111,14 @@ public class TagGroup {
         if (!(o instanceof final TagGroup that)) {
             return false;
         }
-        return Objects.equal(tagAddress, that.tagAddress)
+        return Objects.equals(tagAddress, that.tagAddress)
                 && readWrite == that.readWrite
-                && Objects.equal(tags, that.tags);
+                && Objects.equals(tags, that.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(tagAddress, readWrite, tags);
+        return Objects.hash(tagAddress, readWrite, tags);
     }
 
     @Override

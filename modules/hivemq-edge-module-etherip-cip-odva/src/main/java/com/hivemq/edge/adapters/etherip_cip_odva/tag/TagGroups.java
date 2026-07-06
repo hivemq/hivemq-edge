@@ -26,8 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TagGroups {
 
@@ -49,8 +49,8 @@ public class TagGroups {
 
     private final @NotNull AtomicBoolean tagsRegistered = new AtomicBoolean(false);
 
-    private TagGroup registerTag(CipTag cipTag) throws OdvaException {
-        TagGroup tagGroup = getOrCreateTagGroup(cipTag.getDefinition());
+    private @NotNull TagGroup registerTag(final @NotNull CipTag cipTag) throws OdvaException {
+        final @NotNull TagGroup tagGroup = getOrCreateTagGroup(cipTag.getDefinition());
         tagGroup.add(cipTag);
         return tagGroup;
     }
@@ -124,25 +124,17 @@ public class TagGroups {
         }
     }
 
-    @NotNull
-    private TagGroup getOrCreateTagGroup(CipTagDefinition definition) throws OdvaException {
-        AtomicReference<OdvaException> maybeException = new AtomicReference<>();
-
+    private @NotNull TagGroup getOrCreateTagGroup(final @NotNull CipTagDefinition definition) throws OdvaException {
         final GroupKey key = new GroupKey(definition.getAddress(), definition.getReadWrite());
-        TagGroup tagGroup = tagAddressToTagGroup.computeIfAbsent(key, k -> {
-            try {
-                return new TagGroup(k.address(), k.readWrite());
-            } catch (OdvaException e) {
-                maybeException.set(e);
-                return null;
-            }
-        });
-
-        if (maybeException.get() != null) {
-            throw maybeException.get();
+        // Plain get-then-create: TagGroup's constructor is checked-throwing, so don't smuggle the exception out
+        // of a computeIfAbsent lambda — just create it directly and let OdvaException propagate.
+        final @Nullable TagGroup existing = tagAddressToTagGroup.get(key);
+        if (existing != null) {
+            return existing;
         }
-
-        return tagGroup;
+        final TagGroup created = new TagGroup(key.address(), key.readWrite());
+        tagAddressToTagGroup.put(key, created);
+        return created;
     }
 
     public Collection<TagGroup> getTagGroups() {

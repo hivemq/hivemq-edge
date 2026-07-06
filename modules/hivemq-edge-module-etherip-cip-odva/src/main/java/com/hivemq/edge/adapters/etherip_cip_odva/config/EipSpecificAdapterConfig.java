@@ -113,14 +113,14 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
             return false;
         }
         return slot == that.slot
-                && com.google.common.base.Objects.equal(id, that.id)
-                && com.google.common.base.Objects.equal(host, that.host)
+                && Objects.equals(id, that.id)
+                && Objects.equals(host, that.host)
                 && byteOrder == that.byteOrder
-                && com.google.common.base.Objects.equal(eipToMqttConfig, that.eipToMqttConfig);
+                && Objects.equals(eipToMqttConfig, that.eipToMqttConfig);
     }
 
     @Override
     public int hashCode() {
-        return com.google.common.base.Objects.hashCode(id, host, slot, byteOrder, eipToMqttConfig);
+        return Objects.hash(id, host, slot, byteOrder, eipToMqttConfig);
     }
 }
