@@ -42,27 +42,10 @@
   "eipToMqtt" : {
     "ui:batchMode" : true,
     "ui:order" : [
-      "eipToMqttMappings",
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
       "publishChangedDataOnly",
       "*"
-    ],
-    "eipToMqttMappings" : {
-      "ui:batchMode" : true,
-      "items" : {
-        "ui:order" : [
-          "tagName",
-          "tagAddress",
-          "dataType",
-          "mqttTopic",
-          "mqttQos",
-          "*"
-        ],
-        "ui:collapsable" : {
-          "titleKey" : "mqttTopic"
-        }
-      }
-    }
+    ]
   }
 }
