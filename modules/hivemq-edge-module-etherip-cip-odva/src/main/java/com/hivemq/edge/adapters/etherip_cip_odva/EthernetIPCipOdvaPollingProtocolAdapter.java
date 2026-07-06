@@ -246,7 +246,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
         EthernetIPWithODVA client = etherNetIP.get();
         if (isNotConnected(client)) {
-            tryConnect(e -> failUnlessStopping(pollingOutput, o -> o.fail(e, "Failed to reconnect! Will retry!")));
+            tryConnect(e -> pollingOutput.fail(e, "Failed to reconnect! Will retry!"));
 
             client = etherNetIP.get();
             if (isNotConnected(client)) {
@@ -289,25 +289,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         } else {
             final String errorString = String.join(",", errors);
             LOG.warn("Adapter '{}'. {}", adapterId, errorString);
-            failUnlessStopping(pollingOutput, o -> o.fail(errorString));
-        }
-    }
-
-    /**
-     * Reports a poll failure to the framework, but only while the adapter is still {@code STARTED}. A poll can
-     * still be in flight when {@code stop()} begins tearing the adapter down; reporting a failure then increments
-     * the framework's error counter and drives a northbound connection-error transition that races the concurrent
-     * stop, logging a spurious "failed to transition from Disconnected to Error". During teardown we therefore
-     * finish quietly instead. This mirrors the early not-started guard in {@link #poll}, covering the reconnect
-     * and read-error paths where the adapter was still {@code STARTED} when the poll began but is being stopped by
-     * the time it reports its outcome.
-     */
-    private void failUnlessStopping(
-            final @NotNull BatchPollingOutput pollingOutput, final @NotNull Consumer<BatchPollingOutput> failure) {
-        if (isAdapterNotStarted()) {
-            pollingOutput.finish();
-        } else {
-            failure.accept(pollingOutput);
+            pollingOutput.fail(errorString);
         }
     }
 
