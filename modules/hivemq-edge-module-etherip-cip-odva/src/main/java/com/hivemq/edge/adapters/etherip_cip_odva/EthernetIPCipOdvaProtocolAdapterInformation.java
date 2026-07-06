@@ -56,7 +56,10 @@ public class EthernetIPCipOdvaProtocolAdapterInformation implements ProtocolAdap
 
     @Override
     public @NotNull List<String> getLegacyProtocolIds() {
-        return List.of("");
+        // This adapter is new and never had a prior protocol id, so it has no legacy alias. Returning a list
+        // with an empty string would register it under the "" protocol id, letting a blank/missing adapter type
+        // resolve to this adapter.
+        return List.of();
     }
 
     @Override
