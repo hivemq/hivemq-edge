@@ -45,6 +45,8 @@ import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.mqtt.topic.tree.TopicSubscribers;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberFactory;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +66,7 @@ public class InternalPublishServiceImplTest {
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence = mock();
     private final @NotNull LocalTopicTree topicTree = mock();
     private final @NotNull PublishDistributor publishDistributor = mock();
+    private final @NotNull InternalTopicFilterSubscriberFactory internalTopicFilterSubscriberFactory = mock();
     private final @NotNull ExecutorService executorService = MoreExecutors.newDirectExecutorService();
 
     private @NotNull InternalPublishServiceImpl publishService;
@@ -76,7 +79,8 @@ public class InternalPublishServiceImplTest {
         when(publishDistributor.distributeToSharedSubscribers(anySet(), any(PUBLISH.class), eq(executorService)))
                 .thenReturn(Futures.immediateFuture(null));
 
-        publishService = new InternalPublishServiceImpl(retainedMessagePersistence, topicTree, publishDistributor);
+        publishService = new InternalPublishServiceImpl(
+                retainedMessagePersistence, topicTree, publishDistributor, internalTopicFilterSubscriberFactory);
     }
 
     @Test
@@ -85,7 +89,8 @@ public class InternalPublishServiceImplTest {
 
         when(topicTree.findTopicSubscribers(anyString()))
                 .thenReturn(new TopicSubscribers(ImmutableSet.of(), ImmutableSet.of()));
-        publishService = new InternalPublishServiceImpl(retainedMessagePersistence, topicTree, publishDistributor);
+        publishService = new InternalPublishServiceImpl(
+                retainedMessagePersistence, topicTree, publishDistributor, internalTopicFilterSubscriberFactory);
 
         final PUBLISH publish =
                 TestMessageUtil.createMqtt3Publish("hivemqId", "subonly", QoS.AT_LEAST_ONCE, new byte[0], true);
@@ -103,7 +108,8 @@ public class InternalPublishServiceImplTest {
 
         when(topicTree.findTopicSubscribers(anyString()))
                 .thenReturn(new TopicSubscribers(ImmutableSet.of(), ImmutableSet.of()));
-        publishService = new InternalPublishServiceImpl(retainedMessagePersistence, topicTree, publishDistributor);
+        publishService = new InternalPublishServiceImpl(
+                retainedMessagePersistence, topicTree, publishDistributor, internalTopicFilterSubscriberFactory);
 
         final PUBLISH publish =
                 TestMessageUtil.createMqtt3Publish("hivemqId", "subonly", QoS.AT_LEAST_ONCE, new byte[0], true);
@@ -157,6 +163,65 @@ public class InternalPublishServiceImplTest {
         assertEquals(1, map.size());
         assertNull(map.get("sub1"));
         assertNotNull(map.get("sub2"));
+    }
+
+    @Test
+    @Timeout(20)
+    public void test_ingress_exclusion() {
+        // Two non-shared subscribers; the internal one ($INTERNAL::...) is registered with the factory
+        // and configured to exclude ingress from "sender". A publish from "sender" must NOT be queued to
+        // the internal subscriber, but must still go to the ordinary subscriber.
+        final String internalId = "$INTERNAL::tynebridge::b1";
+        final SubscriberWithIdentifiers internalSub = new SubscriberWithIdentifiers(internalId, 1, (byte) 0, null);
+        final SubscriberWithIdentifiers ordinarySub = new SubscriberWithIdentifiers("sub2", 1, (byte) 0, null);
+
+        when(topicTree.findTopicSubscribers("topic"))
+                .thenReturn(new TopicSubscribers(ImmutableSet.of(internalSub, ordinarySub), ImmutableSet.of()));
+
+        final InternalTopicFilterSubscriber subscriber = mock();
+        when(subscriber.isExcludedIngressClientId("sender")).thenReturn(true);
+        when(internalTopicFilterSubscriberFactory.getSubscriber(internalId)).thenReturn(subscriber);
+
+        final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic");
+
+        publishService.publish(publish, executorService, "sender");
+
+        final ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(publishDistributor, atLeastOnce())
+                .distributeToNonSharedSubscribers(mapArgumentCaptor.capture(), any(), any());
+
+        final Map map = mapArgumentCaptor.getAllValues().get(0);
+
+        assertEquals(1, map.size());
+        assertNull(map.get(internalId)); // excluded — the ingress client equals the configured exclusion
+        assertNotNull(map.get("sub2")); // ordinary subscriber unaffected
+    }
+
+    @Test
+    @Timeout(20)
+    public void test_ingress_exclusion_acceptsWhenSenderDiffers() {
+        // Same internal subscriber, but the publish ingresses from a DIFFERENT client — it must be queued.
+        final String internalId = "$INTERNAL::tynebridge::b1";
+        final SubscriberWithIdentifiers internalSub = new SubscriberWithIdentifiers(internalId, 1, (byte) 0, null);
+
+        when(topicTree.findTopicSubscribers("topic"))
+                .thenReturn(new TopicSubscribers(ImmutableSet.of(internalSub), ImmutableSet.of()));
+
+        final InternalTopicFilterSubscriber subscriber = mock();
+        when(subscriber.isExcludedIngressClientId("someoneElse")).thenReturn(false);
+        when(internalTopicFilterSubscriberFactory.getSubscriber(internalId)).thenReturn(subscriber);
+
+        final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic");
+
+        publishService.publish(publish, executorService, "someoneElse");
+
+        final ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(publishDistributor, atLeastOnce())
+                .distributeToNonSharedSubscribers(mapArgumentCaptor.capture(), any(), any());
+
+        final Map map = mapArgumentCaptor.getAllValues().get(0);
+        assertEquals(1, map.size());
+        assertNotNull(map.get(internalId)); // accepted — sender differs from the exclusion
     }
 
     @Test
