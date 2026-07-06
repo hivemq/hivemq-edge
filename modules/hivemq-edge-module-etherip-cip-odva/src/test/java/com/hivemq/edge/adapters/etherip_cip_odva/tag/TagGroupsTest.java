@@ -154,15 +154,40 @@ class TagGroupsTest {
 
     @Test
     void shouldAllowCompositesAtSameAddressButDifferentDirection() throws OdvaException {
-        // Distinct (address, direction) groups, so each may carry its own composite.
+        // Distinct (address, direction) groups, so each may carry its own composite; each needs a scalar sibling.
         final CipTag readComposite = composite("motorIn", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag readSibling = tag("speedIn", "@1/2/3", CipReadWrite.READ_ONLY, null);
         final CipTag writeComposite =
                 composite("motorOut", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+        final CipTag writeSibling = tag("speedOut", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
 
         final TagGroups tagGroups = new TagGroups();
-        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(readComposite, writeComposite)))
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(
+                        List.of(readComposite, readSibling, writeComposite, writeSibling)))
                 .isTrue();
         Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
+    }
+
+    @Test
+    void shouldRejectReadWriteCompositeWithNoScalarSiblings() {
+        final CipTag composite = composite("motor", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(composite)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("no scalar siblings")
+                .hasMessageContaining("motor");
+    }
+
+    @Test
+    void shouldRejectWriteOnlyCompositeWithNoScalarSiblings() {
+        final CipTag composite = composite("motor", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(composite)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("no scalar siblings")
+                .hasMessageContaining("motor");
     }
 
     @Test

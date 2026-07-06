@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
@@ -66,6 +68,7 @@ public class TagGroups {
                 registerTag(cipTag);
             }
             validateDirectionConsistency();
+            validateCompositesHaveSiblings();
         } catch (final OdvaException e) {
             clear();
             throw e;
@@ -96,6 +99,27 @@ public class TagGroups {
                         "Address "
                                 + address
                                 + " mixes READ_WRITE with READ_ONLY/WRITE_ONLY tags. Per address, either all tags are READ_WRITE or none is.");
+            }
+        }
+    }
+
+    /**
+     * A composite aggregates the scalar siblings in its {@code (address, readWrite)} group; with no sibling it
+     * has nothing to read or write. Such a group would start successfully but then publish nothing on poll and,
+     * on a southbound write, encode no fields — issuing a zero-length {@code COMPLETE_WRITE} or a no-op
+     * {@code PARTIAL_WRITE} that still reports success. Reject it at registration instead.
+     */
+    private void validateCompositesHaveSiblings() throws OdvaException {
+        for (final TagGroup tagGroup : tagAddressToTagGroup.values()) {
+            if (tagGroup.hasComposite() && tagGroup.getTags().isEmpty()) {
+                throw new OdvaException(
+                        "Composite tag '"
+                                + requireNonNull(tagGroup.getComposite()).getName()
+                                + "' at address "
+                                + tagGroup.getTagAddress()
+                                + " ("
+                                + tagGroup.getReadWrite()
+                                + ") has no scalar siblings to aggregate. A composite needs at least one scalar tag at the same address and direction.");
             }
         }
     }
