@@ -26,7 +26,6 @@ import static com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType.SSTRI
 import static com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType.STRING;
 import static com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType.UDINT;
 import static com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType.UINT;
-import static com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType.ULINT;
 import static com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType.USINT;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
@@ -56,7 +55,6 @@ public class CipTagEncoders {
         encoders.put(DINT, new DINTEncoder());
         encoders.put(UDINT, new DINTEncoder());
         encoders.put(LINT, new LINTEncoder());
-        encoders.put(ULINT, new LINTEncoder());
         encoders.put(REAL, new REALEncoder());
         encoders.put(LREAL, new LREALEncoder());
         encoders.put(SSTRING, new SSTRINGEncoder());

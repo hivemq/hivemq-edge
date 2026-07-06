@@ -18,7 +18,7 @@
     {
       "id": "coreFields",
       "title": "Connection",
-      "properties": ["id", "port", "host"]
+      "properties": ["id", "host"]
     },
     {
       "id": "subFields",
@@ -28,45 +28,24 @@
     {
       "id": "eip",
       "title": "EIP Device",
-      "properties": ["slot", "backplane"]
+      "properties": ["slot"]
     }
   ],
   "id": {
     "ui:disabled": false
   },
-  "port": {
-    "ui:widget": "updown"
-  },
   "ui:order" : [
     "id",
     "host",
-    "port",
     "*"
   ],
   "eipToMqtt" : {
     "ui:batchMode" : true,
     "ui:order" : [
-      "eipToMqttMappings",
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
       "publishChangedDataOnly",
       "*"
-    ],
-    "eipToMqttMappings" : {
-      "ui:batchMode" : true,
-      "items" : {
-        "ui:order" : [
-          "tagName",
-          "tagAddress",
-          "dataType",
-          "mqttTopic",
-          "mqttQos",
-          "*"
-        ],
-        "ui:collapsable" : {
-          "titleKey" : "mqttTopic"
-        }
-      }
-    }
+    ]
   }
 }

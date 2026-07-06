@@ -18,12 +18,14 @@ package com.hivemq.edge.adapters.etherip_cip_odva.config.tag;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Objects;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +38,9 @@ import org.jetbrains.annotations.Nullable;
     "minUpdateIntervalMs",
     "batchSize",
     "batchByteIndex",
-    "batchBitIndex"
+    "batchBitIndex",
+    "readWrite",
+    "writeMode"
 })
 public class CipTagDefinition implements TagDefinition, Serializable {
     @Serial
@@ -105,6 +109,24 @@ public class CipTagDefinition implements TagDefinition, Serializable {
             numberMax = 7)
     private final @Nullable Integer batchBitIndex;
 
+    @JsonProperty(value = "readWrite", required = true)
+    @ModuleConfigField(
+            title = "Read/Write",
+            description =
+                    "Direction of the tag. READ_ONLY: polled, no southbound mapping allowed. WRITE_ONLY: not polled, southbound only (e.g. command attribute). READ_WRITE: both.",
+            defaultValue = "READ_ONLY",
+            required = true)
+    private final @NotNull CipReadWrite readWrite;
+
+    @JsonProperty(value = "writeMode", required = true)
+    @ModuleConfigField(
+            title = "Write mode",
+            description =
+                    "Whether a write covers the whole attribute (only relevant when writable). COMPLETE_WRITE: the configured tag(s) at this address span the entire attribute, so it is written directly with no device read (the device rejects the write if they do not actually cover the whole attribute). PARTIAL_WRITE: the tag(s) cover only part of the attribute, so the rest is preserved by reading the current attribute from the device and overlaying the supplied tag(s) (read-modify-write).",
+            defaultValue = "PARTIAL_WRITE",
+            required = true)
+    private final @NotNull CipWriteMode writeMode;
+
     @JsonCreator
     public CipTagDefinition(
             @JsonProperty(value = "address", required = true) @NotNull final String address,
@@ -113,7 +135,9 @@ public class CipTagDefinition implements TagDefinition, Serializable {
             @JsonProperty(value = "hysteresis") @NotNull final Double hysteresis,
             @JsonProperty(value = "minUpdateIntervalMs") final Integer minUpdateIntervalMs,
             @JsonProperty(value = "batchByteIndex") @NotNull final Integer batchByteIndex,
-            @JsonProperty(value = "batchBitIndex") @Nullable final Integer batchBitIndex) {
+            @JsonProperty(value = "batchBitIndex") @Nullable final Integer batchBitIndex,
+            @JsonProperty(value = "readWrite") @Nullable final CipReadWrite readWrite,
+            @JsonProperty(value = "writeMode") @Nullable final CipWriteMode writeMode) {
         this.address = address;
         this.numberOfElements = numberOfElements;
         this.dataType = dataType;
@@ -121,6 +145,32 @@ public class CipTagDefinition implements TagDefinition, Serializable {
         this.minUpdateIntervalMs = minUpdateIntervalMs == null ? 0 : minUpdateIntervalMs;
         this.batchByteIndex = batchByteIndex;
         this.batchBitIndex = batchBitIndex;
+        this.readWrite = readWrite == null ? CipReadWrite.READ_ONLY : readWrite;
+        this.writeMode = writeMode == null ? CipWriteMode.PARTIAL_WRITE : writeMode;
+    }
+
+    /**
+     * Convenience constructor defaulting direction to READ_ONLY (and write mode to PARTIAL_WRITE).
+     * Equivalent to the legacy read-only tag definition before southbound write support was added.
+     */
+    public CipTagDefinition(
+            final @NotNull String address,
+            final @NotNull Integer numberOfElements,
+            final @NotNull CipDataType dataType,
+            final @NotNull Double hysteresis,
+            final Integer minUpdateIntervalMs,
+            final @NotNull Integer batchByteIndex,
+            final @Nullable Integer batchBitIndex) {
+        this(
+                address,
+                numberOfElements,
+                dataType,
+                hysteresis,
+                minUpdateIntervalMs,
+                batchByteIndex,
+                batchBitIndex,
+                null,
+                null);
     }
 
     public @NotNull String getAddress() {
@@ -151,6 +201,14 @@ public class CipTagDefinition implements TagDefinition, Serializable {
         return batchBitIndex;
     }
 
+    public @NotNull CipReadWrite getReadWrite() {
+        return readWrite;
+    }
+
+    public @NotNull CipWriteMode getWriteMode() {
+        return writeMode;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -159,19 +217,29 @@ public class CipTagDefinition implements TagDefinition, Serializable {
         if (!(o instanceof final CipTagDefinition that)) {
             return false;
         }
-        return Objects.equal(address, that.address)
-                && Objects.equal(numberOfElements, that.numberOfElements)
+        return Objects.equals(address, that.address)
+                && Objects.equals(numberOfElements, that.numberOfElements)
                 && dataType == that.dataType
-                && Objects.equal(hysteresis, that.hysteresis)
-                && Objects.equal(minUpdateIntervalMs, that.minUpdateIntervalMs)
-                && Objects.equal(batchByteIndex, that.batchByteIndex)
-                && Objects.equal(batchBitIndex, that.batchBitIndex);
+                && Objects.equals(hysteresis, that.hysteresis)
+                && Objects.equals(minUpdateIntervalMs, that.minUpdateIntervalMs)
+                && Objects.equals(batchByteIndex, that.batchByteIndex)
+                && Objects.equals(batchBitIndex, that.batchBitIndex)
+                && readWrite == that.readWrite
+                && writeMode == that.writeMode;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(
-                address, numberOfElements, dataType, hysteresis, minUpdateIntervalMs, batchByteIndex, batchBitIndex);
+        return Objects.hash(
+                address,
+                numberOfElements,
+                dataType,
+                hysteresis,
+                minUpdateIntervalMs,
+                batchByteIndex,
+                batchBitIndex,
+                readWrite,
+                writeMode);
     }
 
     @Override
@@ -184,6 +252,8 @@ public class CipTagDefinition implements TagDefinition, Serializable {
                 .append("minUpdateIntervalMs", minUpdateIntervalMs)
                 .append("batchByteIndex", batchByteIndex)
                 .append("batchBitIndex", batchBitIndex)
+                .append("readWrite", readWrite)
+                .append("writeMode", writeMode)
                 .toString();
     }
 }

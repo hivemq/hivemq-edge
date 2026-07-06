@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
@@ -65,5 +67,155 @@ class TagGroupsTest {
                 .isEqualTo(
                         LogicalAddressPathFactory.create(single.getDefinition().getAddress()));
         Assertions.assertThat(singleGroup.getTags()).containsExactly(single);
+    }
+
+    @Test
+    void shouldSeparateTagsAtSameAddressByDirection() throws OdvaException {
+        // given: same CIP address, different read/write direction
+        final CipTag read = new CipTag(
+                "read",
+                "read",
+                new CipTagDefinition("@1/2/3", 1, CipDataType.INT, 0d, null, 0, null, CipReadWrite.READ_ONLY, null));
+        final CipTag write = new CipTag(
+                "write",
+                "write",
+                new CipTagDefinition(
+                        "@1/2/3",
+                        1,
+                        CipDataType.INT,
+                        0d,
+                        null,
+                        0,
+                        null,
+                        CipReadWrite.WRITE_ONLY,
+                        CipWriteMode.COMPLETE_WRITE));
+
+        // when
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(read, write)))
+                .isTrue();
+
+        // then: two groups despite the shared address, one readable, one not
+        final Collection<TagGroup> groups = tagGroups.getTagGroups();
+        Assertions.assertThat(groups).hasSize(2);
+        Assertions.assertThat(groups)
+                .anyMatch(g -> g.isReadable() && g.getTags().contains(read));
+        Assertions.assertThat(groups)
+                .anyMatch(g -> !g.isReadable() && g.getTags().contains(write));
+    }
+
+    @Test
+    void shouldRejectReadWriteMixedWithReadOnlyAtSameAddress() {
+        final CipTag readWrite = tag("rw", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.COMPLETE_WRITE);
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(readWrite, readOnly)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("READ_WRITE");
+    }
+
+    @Test
+    void shouldAllowReadOnlyAndWriteOnlyAtSameAddress() throws OdvaException {
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag writeOnly = tag("wo", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(readOnly, writeOnly)))
+                .isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
+    }
+
+    @Test
+    void shouldRejectTwoCompositesAtSameAddressAndDirection() {
+        final CipTag composite1 = composite("motor", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag composite2 = composite("pump", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(composite1, composite2)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("more than one composite")
+                .hasMessageContaining("motor")
+                .hasMessageContaining("pump");
+    }
+
+    @Test
+    void shouldAllowOneCompositeWithScalarSiblings() throws OdvaException {
+        final CipTag composite = composite("motor", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag sibling = tag("speed", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(composite, sibling)))
+                .isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(1);
+        Assertions.assertThat(tagGroups.getTagGroups().iterator().next().hasComposite())
+                .isTrue();
+    }
+
+    @Test
+    void shouldAllowCompositesAtSameAddressButDifferentDirection() throws OdvaException {
+        // Distinct (address, direction) groups, so each may carry its own composite; each needs a scalar sibling.
+        final CipTag readComposite = composite("motorIn", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag readSibling = tag("speedIn", "@1/2/3", CipReadWrite.READ_ONLY, null);
+        final CipTag writeComposite =
+                composite("motorOut", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+        final CipTag writeSibling = tag("speedOut", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(
+                        List.of(readComposite, readSibling, writeComposite, writeSibling)))
+                .isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(2);
+    }
+
+    @Test
+    void shouldRejectReadWriteCompositeWithNoScalarSiblings() {
+        final CipTag composite = composite("motor", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(composite)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("no scalar siblings")
+                .hasMessageContaining("motor");
+    }
+
+    @Test
+    void shouldRejectWriteOnlyCompositeWithNoScalarSiblings() {
+        final CipTag composite = composite("motor", "@1/2/3", CipReadWrite.WRITE_ONLY, CipWriteMode.COMPLETE_WRITE);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(composite)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("no scalar siblings")
+                .hasMessageContaining("motor");
+    }
+
+    @Test
+    void shouldRetryRegistrationAfterAFailedFirstAttempt() throws OdvaException {
+        // A first attempt with an invalid config throws and must NOT mark registration as done, nor leave
+        // partial group state behind; a later attempt with a valid config must register cleanly.
+        final CipTag readWrite = tag("rw", "@1/2/3", CipReadWrite.READ_WRITE, CipWriteMode.COMPLETE_WRITE);
+        final CipTag readOnly = tag("ro", "@1/2/3", CipReadWrite.READ_ONLY, null);
+
+        final TagGroups tagGroups = new TagGroups();
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(readWrite, readOnly)))
+                .isInstanceOf(OdvaException.class);
+        Assertions.assertThat(tagGroups.getTagGroups()).isEmpty();
+
+        final CipTag valid = tag("ok", "@1/2/4", CipReadWrite.READ_ONLY, null);
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(valid))).isTrue();
+        Assertions.assertThat(tagGroups.getTagGroups()).hasSize(1);
+        Assertions.assertThat(tagGroups.getTagGroups().iterator().next().getTags())
+                .containsExactly(valid);
+    }
+
+    private static CipTag tag(final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
+        return new CipTag(name, name, new CipTagDefinition(address, 1, CipDataType.INT, 0d, null, 0, null, rw, wm));
+    }
+
+    private static CipTag composite(
+            final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
+        return new CipTag(
+                name, name, new CipTagDefinition(address, 1, CipDataType.COMPOSITE, 0d, null, 0, null, rw, wm));
     }
 }

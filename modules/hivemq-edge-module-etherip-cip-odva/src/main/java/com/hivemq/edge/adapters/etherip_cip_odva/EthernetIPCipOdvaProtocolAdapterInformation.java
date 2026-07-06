@@ -46,7 +46,7 @@ public class EthernetIPCipOdvaProtocolAdapterInformation implements ProtocolAdap
 
     @Override
     public @NotNull String getProtocolName() {
-        return "EthernetIP/CIP/ODVA";
+        return "EtherNet/IP - Logical Addressing";
     }
 
     @Override
@@ -56,17 +56,20 @@ public class EthernetIPCipOdvaProtocolAdapterInformation implements ProtocolAdap
 
     @Override
     public @NotNull List<String> getLegacyProtocolIds() {
-        return List.of("");
+        // This adapter is new and never had a prior protocol id, so it has no legacy alias. Returning a list
+        // with an empty string would register it under the "" protocol id, letting a blank/missing adapter type
+        // resolve to this adapter.
+        return List.of();
     }
 
     @Override
     public @NotNull String getDisplayName() {
-        return "EthernetIP/CIP/ODVA Protocol Adapter";
+        return "EtherNet/IP - Logical Addressing Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to PLC's supporting Ethernet IP ODVA standard";
+        return "Connects HiveMQ Edge to EtherNet/IP devices using logical (CIP object) addressing: @class/instance/attribute.";
     }
 
     @Override
@@ -115,7 +118,7 @@ public class EthernetIPCipOdvaProtocolAdapterInformation implements ProtocolAdap
                 this.getClass().getClassLoader().getResourceAsStream("ethernet-ip-cip-odva-ui-schema.json")) {
             if (is == null) {
                 log.warn(
-                        "The UISchema for the Ethernet IP/CIP/ODVA Adapter could not be loaded from resources: Not found.");
+                        "The UISchema for the EtherNet/IP - Logical Addressing Adapter could not be loaded from resources: Not found.");
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);

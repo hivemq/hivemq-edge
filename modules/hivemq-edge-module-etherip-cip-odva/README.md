@@ -6,7 +6,7 @@ For interacting with Ethernet IP/CIP devices we rely on an open source library w
 
 We build the library internal and provide the binary in **libs/etherip-1.0.0.jar**.
 
-In case you want to build the libary yourself simply check out the original project, build the libary and put it into 
+In case you want to build the libary yourself simply check out the original project, build the libary and put it into
 the libs folder.
 
 # TL;DR
@@ -85,12 +85,13 @@ Uses [EtherIP](https://github.com/ornl-epics/etherip/) library and extends it
   - decoding done using: CipTagDecoder
     - receives buf, delegates to specific decoder based on cipdatatype
 
-- [ ] Implement ULINT (as BigDecimal?)
+- [ ] Implement ULINT — removed for now; its full range (0..2^64-1) does not fit a Java `long`, so faithful
+      support needs `BigInteger` end to end (decode, publish, schema). Re-add as its own scoped change.
 
 - [x] Better exception information
   - [x] Decode exceptions
   - [x] Include tag information
-  
+
 - [x] List decoding of booleans
 
 - [x] Check UI for null values for batchByteIndex, batchBitIndex. When config reloaded UI reports errors for nullable values

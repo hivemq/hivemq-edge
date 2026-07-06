@@ -24,7 +24,6 @@ public enum CipDataType {
     DINT, // 32 but signed
     UDINT, // 32 bit unsigned
     LINT, // 64 bit signed
-    ULINT, // 64 bit unsigned
     REAL, // float (32 bit)
     LREAL, // double (64 bit)
     SSTRING, // USINT, 8 bit length

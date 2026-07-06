@@ -127,8 +127,6 @@
             <protocolId>etheripCipOdva</protocolId>
             <configVersion>1</configVersion>
             <config>
-                <backplane>1</backplane>
-                <port>44818</port>
                 <eipToMqtt>
                     <publishChangedDataOnly>true</publishChangedDataOnly>
                     <pollingIntervalMillis>100</pollingIntervalMillis>
@@ -348,8 +346,6 @@
 <!--            <protocolId>etheripCipOdva</protocolId>-->
 <!--            <configVersion>1</configVersion>-->
 <!--            <config>-->
-<!--                <backplane>1</backplane>-->
-<!--                <port>44818</port>-->
 <!--                <eipToMqtt>-->
 <!--                    <publishChangedDataOnly>true</publishChangedDataOnly>-->
 <!--                    <pollingIntervalMillis>1000</pollingIntervalMillis>-->
@@ -403,7 +399,6 @@
 <!--            <protocolId>etheripCipOdva</protocolId>-->
 <!--            <configVersion>1</configVersion>-->
 <!--            <config>-->
-<!--                <backplane>1</backplane>-->
 <!--                <byteOrder>LITTLE_ENDIAN</byteOrder>-->
 <!--                <eipToMqtt>-->
 <!--                    <maxPollingErrorsBeforeRemoval>-1</maxPollingErrorsBeforeRemoval>-->
@@ -411,7 +406,6 @@
 <!--                    <publishChangedDataOnly>false</publishChangedDataOnly>-->
 <!--                </eipToMqtt>-->
 <!--                <host>192.168.0.23</host>-->
-<!--                <port>44818</port>-->
 <!--                <slot>0</slot>-->
 <!--                <id>hmzy0001</id>-->
 <!--            </config>-->

@@ -25,9 +25,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
-    private static final int PORT_MIN = 1;
-    private static final int PORT_MAX = 65535;
-
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
@@ -48,20 +45,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
             required = true,
             format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
-
-    @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(
-            title = "Port",
-            description = "The port number on the device you wish to connect to",
-            required = true,
-            numberMin = PORT_MIN,
-            numberMax = PORT_MAX,
-            defaultValue = "44818")
-    private final int port;
-
-    @JsonProperty("backplane")
-    @ModuleConfigField(title = "Backplane", description = "Backplane device value", defaultValue = "1")
-    private final int backplane;
 
     @JsonProperty("slot")
     @ModuleConfigField(title = "Slot", description = "Slot device value", defaultValue = "0")
@@ -87,22 +70,18 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @JsonProperty(value = "eipToMqtt", required = true)
     @ModuleConfigField(
-            title = "Ethernet IP To MQTT Config",
-            description = "The configuration for a data stream from Ethernet IP to MQTT",
+            title = "EtherNet/IP To MQTT Config",
+            description = "The configuration for a data stream from EtherNet/IP to MQTT",
             required = true)
     private final @NotNull EipToMqttConfig eipToMqttConfig;
 
     @JsonCreator
     public EipSpecificAdapterConfig(
-            @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
-            @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
             @JsonProperty(value = "byteOrder") final @NotNull EipSpecificAdapterConfig.ByteOrder byteOrder,
             @JsonProperty(value = "eipToMqtt") final @Nullable EipToMqttConfig eipToMqttConfig) {
         this.host = host;
-        this.port = port;
-        this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         this.byteOrder = byteOrder;
         this.eipToMqttConfig =
@@ -111,14 +90,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     public @NotNull String getHost() {
         return host;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public int getBackplane() {
-        return backplane;
     }
 
     public int getSlot() {
@@ -141,17 +112,15 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
         if (!(o instanceof final EipSpecificAdapterConfig that)) {
             return false;
         }
-        return port == that.port
-                && backplane == that.backplane
-                && slot == that.slot
-                && com.google.common.base.Objects.equal(id, that.id)
-                && com.google.common.base.Objects.equal(host, that.host)
+        return slot == that.slot
+                && Objects.equals(id, that.id)
+                && Objects.equals(host, that.host)
                 && byteOrder == that.byteOrder
-                && com.google.common.base.Objects.equal(eipToMqttConfig, that.eipToMqttConfig);
+                && Objects.equals(eipToMqttConfig, that.eipToMqttConfig);
     }
 
     @Override
     public int hashCode() {
-        return com.google.common.base.Objects.hashCode(id, host, port, backplane, slot, byteOrder, eipToMqttConfig);
+        return Objects.hash(id, host, slot, byteOrder, eipToMqttConfig);
     }
 }

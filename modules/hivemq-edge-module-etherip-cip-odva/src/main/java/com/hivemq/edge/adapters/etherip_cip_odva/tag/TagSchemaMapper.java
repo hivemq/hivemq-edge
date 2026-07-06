@@ -19,47 +19,47 @@ import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipNumericRange;
 import org.jetbrains.annotations.NotNull;
 
 public final class TagSchemaMapper {
 
     private TagSchemaMapper() {}
 
-    public static @NotNull Schema buildScalarSchema(final @NotNull CipDataType type) {
+    /**
+     * Builds a scalar schema whose readable/writable annotations reflect the tag's configured direction
+     * ({@code CipReadWrite}), rather than assuming a fixed direction.
+     */
+    public static @NotNull Schema buildScalarSchema(
+            final @NotNull CipDataType type, final boolean readable, final boolean writable) {
         final SchemaBuilder builder = new SchemaBuilder();
         applyScalarType(builder, type);
-        return builder.readable().writable().build();
-    }
-
-    public static @NotNull Schema buildReadOnlyScalarSchema(final @NotNull CipDataType type) {
-        final SchemaBuilder builder = new SchemaBuilder();
-        applyScalarType(builder, type);
-        return builder.readable().build();
+        return builder.readable(readable).writable(writable).build();
     }
 
     private static void applyScalarType(final @NotNull SchemaBuilder builder, final @NotNull CipDataType type) {
         switch (type) {
             case BOOL -> builder.scalar(ScalarType.BOOLEAN);
-            case SINT -> builder.scalar(ScalarType.LONG).minimum(-128L).maximum(127L);
-            case USINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(255L);
-            case INT -> builder.scalar(ScalarType.LONG).minimum(-32_768L).maximum(32_767L);
-            case UINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(65_535L);
-            case DINT ->
-                builder.scalar(ScalarType.LONG).minimum(-2_147_483_648L).maximum(2_147_483_647L);
-            case UDINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(4_294_967_295L);
-            case LINT -> builder.scalar(ScalarType.LONG).minimum(Long.MIN_VALUE).maximum(Long.MAX_VALUE);
-            // Java `long` cannot represent 2^64 - 1, so no upper bound is set for ULINT.
-            case ULINT -> builder.scalar(ScalarType.ULONG).minimum(0L);
-            case REAL ->
-                builder.scalar(ScalarType.DOUBLE).minimum(-3.4028235e38d).maximum(3.4028235e38d);
-            case LREAL ->
-                builder.scalar(ScalarType.DOUBLE)
-                        .minimum(-1.7976931348623157e308d)
-                        .maximum(1.7976931348623157e308d);
+            case SINT, INT, DINT, LINT -> applyIntegerType(builder, ScalarType.LONG, type);
+            case USINT, UINT, UDINT -> applyIntegerType(builder, ScalarType.ULONG, type);
+            case REAL, LREAL -> applyFloatType(builder, type);
             case SSTRING, STRING -> builder.scalar(ScalarType.STRING);
             case COMPOSITE ->
                 throw new IllegalArgumentException(
                         "COMPOSITE is not a scalar CipDataType; build an ObjectSchema from sibling scalars instead.");
         }
+    }
+
+    private static void applyIntegerType(
+            final @NotNull SchemaBuilder builder,
+            final @NotNull ScalarType scalarType,
+            final @NotNull CipDataType type) {
+        final CipNumericRange.IntegerRange range = CipNumericRange.integerRange(type);
+        builder.scalar(scalarType).minimum(range.minimum()).maximum(range.maximum());
+    }
+
+    private static void applyFloatType(final @NotNull SchemaBuilder builder, final @NotNull CipDataType type) {
+        final CipNumericRange.FloatRange range = CipNumericRange.floatRange(type);
+        builder.scalar(ScalarType.DOUBLE).minimum(range.minimum()).maximum(range.maximum());
     }
 }

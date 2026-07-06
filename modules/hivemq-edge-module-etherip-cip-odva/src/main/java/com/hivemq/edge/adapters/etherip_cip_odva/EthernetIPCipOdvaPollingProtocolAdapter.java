@@ -19,6 +19,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Stopwatch;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -42,13 +43,20 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValues;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValuesFactory;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipNumericRange;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipWriteMode;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.decoder.CipTagDecoders;
+import com.hivemq.edge.adapters.etherip_cip_odva.encoder.CipTagEncoders;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.ExceptionProcessor;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaDecodeException;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
 import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagDecodingAttributeProtocol;
+import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagEncodingAttributeProtocol;
+import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagValueProducer;
+import com.hivemq.edge.adapters.etherip_cip_odva.handler.RawAttributeReadProtocol;
 import com.hivemq.edge.adapters.etherip_cip_odva.hysteresis.Hysteresis;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroup;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroups;
@@ -60,6 +68,7 @@ import etherip.data.CipException;
 import etherip.protocol.Encapsulation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -88,6 +97,14 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     private final @NotNull AtomicReference<DataPointStore> lastSamples = new AtomicReference<>(new DataPointStore());
     private final @NotNull StatsTracker statsTracker;
     private final @NotNull CipTagDecoders cipTagsDecoders = new CipTagDecoders();
+    private final @NotNull CipTagEncoders cipTagsEncoders = new CipTagEncoders();
+
+    // Serializes southbound writes so a read-modify-write's read->write window is never interleaved with another
+    // write. A single adapter-level lock is enough: the bundled client serializes all connection I/O anyway
+    // (etherip.protocol.Connection.execute is synchronized), so per-attribute parallelism is not actually
+    // available, and one lock keeps the concurrency model simple. Does not protect against the device being
+    // changed by its own program logic during the window (CIP offers no compare-and-swap); last writer wins.
+    private final @NotNull Object writeLock = new Object();
     private final @NotNull Hysteresis hysteresis = new Hysteresis();
     private final @NotNull List<CipTag> tags;
     private final @NotNull TagGroups tagGroups = new TagGroups();
@@ -217,7 +234,11 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
 
         if (isAdapterNotStarted()) {
-            pollingOutput.fail(getNotStartedMessage());
+            // A poll can still fire while the adapter is being torn down. That is not a sampling error — it is a
+            // teardown-window race — so finish quietly instead of failing. Reporting it as a failure would trip
+            // the framework's error counter and drive a northbound connection-error transition, which can race
+            // the concurrent stop and log a spurious "failed to transition from Disconnected to Error".
+            pollingOutput.finish();
             return;
         }
 
@@ -232,53 +253,46 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         }
         final EthernetIPWithODVA connectedClient = requireNonNull(client);
 
-        List<String> errors = new ArrayList<>();
-        DataPointStore currentLastSamples = requireNonNull(lastSamples.get());
+        final DataPointStore currentLastSamples = requireNonNull(lastSamples.get());
+        final List<String> errors = new ArrayList<>();
         try {
-            // FIXME: Introduce Multi Request: MPR for single tags, Separate requests for BatchedTags?
-            // Have to be careful - as maximum PLC response and request size are limiting factors and need
-            // to be taken into account
-
-            // FIXME: Add support for larger response bodies using read_fragmented
-
-            // FIXME: Can easily add support for "read tag" as well, with same Decoders/Encoders
-
-            // Create Requests, set handlers
-            for (TagGroup tagGroup : tagGroups.getTagGroups()) {
-                if (isAdapterNotStarted()) {
-                    errors.add(getNotStartedMessage());
-                    return;
-                }
-
+            // Write-only tag groups have no readable attribute; never poll them.
+            final List<TagGroup> readableGroups = tagGroups.getTagGroups().stream()
+                    .filter(TagGroup::isReadable)
+                    .toList();
+            for (final TagGroup tagGroup : readableGroups) {
                 tryPoll(connectedClient, pollingOutput, tagGroup, currentLastSamples, errors::add);
             }
-
-        } catch (Exception e) {
+        } catch (final Exception e) {
+            // A tag-group read can rethrow a connection-level failure (see tryPoll); drop the connection and
+            // reconnect on the next poll. Per-tag read/decode errors are collected in `errors` instead.
             LOG.warn(
                     "Adapter '{}'. Communication error. Will try reconnecting! {}",
                     adapterId,
                     ExceptionUtils.extractMessageWithCause(e));
-
             tryDisconnect();
-        } finally {
-            if (errors.isEmpty()) {
-                pollingOutput.finish();
-            } else {
-                String errorString = String.join(",", errors);
+        }
 
-                LOG.warn("Adapter '{}'. {}", adapterId, errorString);
-                pollingOutput.fail(errorString);
-            }
+        reportOutcome(pollingOutput, errors);
+    }
+
+    /**
+     * Reports the single outcome of a poll to the framework: {@code finish()} if every readable tag group was
+     * read without error, otherwise {@code fail()} with the collected messages (which increments the framework's
+     * error counter and, past the configured limit, stops the adapter).
+     */
+    private void reportOutcome(final @NotNull BatchPollingOutput pollingOutput, final @NotNull List<String> errors) {
+        if (errors.isEmpty()) {
+            pollingOutput.finish();
+        } else {
+            final String errorString = String.join(",", errors);
+            LOG.warn("Adapter '{}'. {}", adapterId, errorString);
+            pollingOutput.fail(errorString);
         }
     }
 
     private boolean isAdapterNotStarted() {
         return protocolAdapterState.getRuntimeStatus() != ProtocolAdapterState.RuntimeStatus.STARTED;
-    }
-
-    private String getNotStartedMessage() {
-        return String.format(
-                "%s is stopped during polling (state=%s)", adapterId, protocolAdapterState.getRuntimeStatus());
     }
 
     private boolean isNotConnected(final @Nullable EtherNetIP client) {
@@ -410,48 +424,275 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             output.finish(new TagSchemaCreationOutput.DataPointSchema(compositeSchema, null, null));
             return;
         }
-        final Schema scalarSchema =
-                TagSchemaMapper.buildScalarSchema(tag.getDefinition().getDataType());
+        final Schema scalarSchema = TagSchemaMapper.buildScalarSchema(
+                tag.getDefinition().getDataType(), tag.isReadable(), tag.isWritable());
         output.finish(new TagSchemaCreationOutput.DataPointSchema(scalarSchema, null, null));
     }
 
     private @Nullable Schema buildCompositeSchema(
             final @NotNull CipTag composite, final @NotNull TagSchemaCreationOutput output) {
         final String address = composite.getDefinition().getAddress();
+        final CipReadWrite readWrite = composite.getDefinition().getReadWrite();
+        // Siblings are grouped at runtime by (address, readWrite) — see TagGroups.GroupKey — so the schema
+        // must group the same way, or it could advertise siblings the runtime composite never publishes.
         final List<CipTag> siblings = tags.stream()
                 .filter(t -> !t.isComposite())
                 .filter(t -> t.getDefinition().getAddress().equals(address))
+                .filter(t -> t.getDefinition().getReadWrite() == readWrite)
                 .toList();
         if (siblings.isEmpty()) {
             output.fail("Composite tag '" + composite.getName() + "' has no scalar siblings at address " + address);
             return null;
         }
+        // The composite and its siblings share the group's direction, so their schema flags match the
+        // composite's configured CipReadWrite.
+        final boolean readable = composite.isReadable();
+        final boolean writable = composite.isWritable();
         final SchemaBuilder builder = new SchemaBuilder();
         var objectBuilder = builder.startObject();
         for (final CipTag sibling : siblings) {
             final CipDataType siblingType = sibling.getDefinition().getDataType();
             objectBuilder = objectBuilder
                     .property(sibling.getName())
-                    .schema(TagSchemaMapper.buildReadOnlyScalarSchema(siblingType))
+                    .schema(TagSchemaMapper.buildScalarSchema(siblingType, readable, writable))
                     .endProperty();
         }
         objectBuilder.endObject();
-        return builder.readable().build();
+        return builder.readable(readable).writable(writable).build();
     }
 
     @Override
     public void write(@NotNull final WritingInput writingInput, @NotNull final WritingOutput writingOutput) {
-        CipWritePayload cipWritePayload = (CipWritePayload) writingInput.getWritingPayload();
+        final String tagName = writingInput.getWritingContext().getTagName();
+        final CipWritePayload cipWritePayload = (CipWritePayload) writingInput.getWritingPayload();
+        final JsonNode value = cipWritePayload.getValue();
 
-        LOG.info(
-                "{}. Received write tag={}, payload={}",
-                adapterId,
-                writingInput.getWritingContext().getTagName(),
-                cipWritePayload.getValue());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adapter '{}'. Received write tag={}, payload={}", adapterId, tagName, value);
+        }
 
-        // write to happen here
+        final CipTag tag = tags.stream()
+                .filter(t -> t.getName().equals(tagName))
+                .findFirst()
+                .orElse(null);
+        if (tag == null) {
+            writingOutput.fail("Tag '" + tagName + "' not found for write.");
+            return;
+        }
+        if (!tag.isWritable()) {
+            writingOutput.fail("Tag '" + tagName + "' is READ_ONLY and cannot be written.");
+            return;
+        }
 
-        writingOutput.finish();
+        final TagGroup tagGroup = tagGroups.getTagGroups().stream()
+                .filter(g -> g.getTags().contains(tag) || Objects.equals(g.getComposite(), tag))
+                .findFirst()
+                .orElse(null);
+        if (tagGroup == null) {
+            writingOutput.fail("No tag group found for tag '" + tagName + "'.");
+            return;
+        }
+
+        final EthernetIPWithODVA client = etherNetIP.get();
+        if (isNotConnected(client)) {
+            writingOutput.fail("Adapter '" + adapterId + "' is not connected; cannot write tag '" + tagName + "'.");
+            return;
+        }
+        final EthernetIPWithODVA connectedClient = requireNonNull(client);
+
+        // The supplied tags are encoded on top of the attribute buffer. For a composite the payload is a JSON
+        // object keyed by sibling tag name; for a scalar it is the value itself.
+        final List<CipTag> tagsToWrite = tag.isComposite() ? tagGroup.getTags() : List.of(tag);
+        final CipTagValueProducer<Object> valueProducer = t -> {
+            final JsonNode node = tag.isComposite() ? value.get(t.getName()) : value;
+            if (node == null) {
+                throw new IllegalArgumentException("No value supplied for tag '" + t.getName() + "'.");
+            }
+            return jsonToCipValue(t, node);
+        };
+
+        // Serialize the read->write window of a PARTIAL_WRITE so it is not interleaved with another write.
+        // COMPLETE_WRITE does not read, but sharing the lock is harmless and keeps concurrent writes ordered.
+        synchronized (writeLock) {
+            try {
+                final byte @Nullable [] prefill = tag.getWriteMode() == CipWriteMode.PARTIAL_WRITE
+                        ? readAttributeBytes(connectedClient, tagGroup)
+                        : null;
+
+                final CipTagEncodingAttributeProtocol encodingProtocol = new CipTagEncodingAttributeProtocol(
+                        cipTagsEncoders,
+                        tagsToWrite,
+                        adapterConfig.getByteOrder().toNioByteOrder(),
+                        valueProducer,
+                        prefill);
+                connectedClient.setAttributeSingle(tagGroup.getLogicalAddressPath(), encodingProtocol);
+                writingOutput.finish();
+            } catch (final Exception e) {
+                // A COMPLETE_WRITE whose configured tag(s) do not actually span the whole attribute produces a
+                // request shorter than the device's attribute, which the device rejects (typically CIP status
+                // 0x08 "Service not supported"). Surface that likely cause rather than the raw device error.
+                if (tag.getWriteMode() == CipWriteMode.COMPLETE_WRITE) {
+                    LOG.warn(
+                            "Adapter '{}'. Failed to write tag '{}' using COMPLETE_WRITE: {}. The device rejected the "
+                                    + "request; the configured tag(s) at {} may not span the whole attribute. Either make "
+                                    + "them cover the full attribute, or use PARTIAL_WRITE.",
+                            adapterId,
+                            tagName,
+                            ExceptionUtils.extractMessageWithCause(e),
+                            tagGroup.getTagAddress());
+                    writingOutput.fail(
+                            e,
+                            "Failed to write tag '"
+                                    + tagName
+                                    + "' using COMPLETE_WRITE: the configured tag(s) at "
+                                    + tagGroup.getTagAddress()
+                                    + " may not span the whole attribute. Either make them cover the full attribute, or use PARTIAL_WRITE.");
+                } else {
+                    LOG.warn(
+                            "Adapter '{}'. Failed to write tag '{}': {}",
+                            adapterId,
+                            tagName,
+                            ExceptionUtils.extractMessageWithCause(e));
+                    writingOutput.fail(e, "Failed to write tag '" + tagName + "'.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Read the current bytes of the attribute for a read-modify-write. A failed read is a hard stop: the
+     * caller must not fall back to zeroing the unsupplied bytes.
+     */
+    private byte @NotNull [] readAttributeBytes(
+            final @NotNull EthernetIPWithODVA client, final @NotNull TagGroup tagGroup) throws Exception {
+        final RawAttributeReadProtocol readProtocol = new RawAttributeReadProtocol();
+        client.getAttributeSingle(tagGroup.getLogicalAddressPath(), readProtocol);
+        final byte[] bytes = readProtocol.getBytes();
+        if (bytes == null) {
+            throw new OdvaException(
+                    "Read-modify-write failed: could not read current attribute at " + tagGroup.getTagAddress());
+        }
+        return bytes;
+    }
+
+    /**
+     * Convert a JSON value into the Java type the encoder for this tag's {@link CipDataType} expects:
+     * {@link Boolean} for BOOL, {@link Number} for the integer/real types, {@link String} for the string
+     * types. When the tag reads more than one element the JSON value must be an array and is converted to a
+     * {@link List} of the corresponding scalar type.
+     */
+    @VisibleForTesting
+    static @NotNull Object jsonToCipValue(final @NotNull CipTag tag, final @NotNull JsonNode node) {
+        final CipDataType dataType = tag.getDefinition().getDataType();
+        if (tag.getDefinition().getNumberOfElements() > 1) {
+            if (!node.isArray()) {
+                throw new IllegalArgumentException(
+                        "Tag '" + tag.getName() + "' expects an array of " + dataType + " values.");
+            }
+            final List<Object> values = new ArrayList<>(node.size());
+            for (final JsonNode element : node) {
+                values.add(jsonToScalar(tag, dataType, element));
+            }
+            return values;
+        }
+        return jsonToScalar(tag, dataType, node);
+    }
+
+    /**
+     * Converts a single JSON value to the Java value the encoder expects, rejecting anything that does not
+     * strictly match the tag's CIP type. Jackson's {@code asLong}/{@code asDouble}/{@code asText}/{@code asBoolean}
+     * silently coerce mismatched kinds (e.g. a string to 0, a fractional number to a truncated integer), and the
+     * encoders then narrow a wider Java value to the CIP width, wrapping out-of-range values. Requiring the exact
+     * JSON node kind and enforcing the type's range here turns both of those silent corruptions into a rejected
+     * write.
+     */
+    private static @NotNull Object jsonToScalar(
+            final @NotNull CipTag tag, final @NotNull CipDataType dataType, final @NotNull JsonNode node) {
+        return switch (dataType) {
+            case BOOL -> {
+                if (!node.isBoolean()) {
+                    throw new IllegalArgumentException(typeError(tag, dataType, "a boolean", node));
+                }
+                yield node.booleanValue();
+            }
+            case SINT, USINT, INT, UINT, DINT, UDINT, LINT -> toRangedLong(tag, dataType, node);
+            case REAL, LREAL -> toRangedDouble(tag, dataType, node);
+            case STRING, SSTRING -> {
+                if (!node.isTextual()) {
+                    throw new IllegalArgumentException(typeError(tag, dataType, "a string", node));
+                }
+                yield node.textValue();
+            }
+            case COMPOSITE ->
+                throw new IllegalArgumentException(
+                        "Tag '" + tag.getName() + "' has data type COMPOSITE and cannot be written as a scalar value.");
+        };
+    }
+
+    private static long toRangedLong(
+            final @NotNull CipTag tag, final @NotNull CipDataType dataType, final @NotNull JsonNode node) {
+        if (!node.isIntegralNumber()) {
+            throw new IllegalArgumentException(typeError(tag, dataType, "an integer", node));
+        }
+        final long value = node.longValue();
+        final CipNumericRange.IntegerRange range = CipNumericRange.integerRange(dataType);
+        if (value < range.minimum() || value > range.maximum()) {
+            throw new IllegalArgumentException(rangeError(tag, dataType, value, range.minimum(), range.maximum()));
+        }
+        return value;
+    }
+
+    private static double toRangedDouble(
+            final @NotNull CipTag tag, final @NotNull CipDataType dataType, final @NotNull JsonNode node) {
+        // A whole number such as 3 is a valid float, so accept any numeric node, not only floating-point ones.
+        if (!node.isNumber()) {
+            throw new IllegalArgumentException(typeError(tag, dataType, "a number", node));
+        }
+        final double value = node.doubleValue();
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(
+                    "Tag '" + tag.getName() + "' (" + dataType + ") does not accept a non-finite value.");
+        }
+        final CipNumericRange.FloatRange range = CipNumericRange.floatRange(dataType);
+        if (value < range.minimum() || value > range.maximum()) {
+            throw new IllegalArgumentException(rangeError(tag, dataType, value, range.minimum(), range.maximum()));
+        }
+        return value;
+    }
+
+    private static @NotNull String typeError(
+            final @NotNull CipTag tag,
+            final @NotNull CipDataType dataType,
+            final @NotNull String expected,
+            final @NotNull JsonNode node) {
+        return "Tag '"
+                + tag.getName()
+                + "' ("
+                + dataType
+                + ") expects "
+                + expected
+                + " but got JSON "
+                + node.getNodeType()
+                + ".";
+    }
+
+    private static @NotNull String rangeError(
+            final @NotNull CipTag tag,
+            final @NotNull CipDataType dataType,
+            final @NotNull Object value,
+            final @NotNull Object minimum,
+            final @NotNull Object maximum) {
+        return "Tag '"
+                + tag.getName()
+                + "' ("
+                + dataType
+                + ") value "
+                + value
+                + " is out of range ["
+                + minimum
+                + ", "
+                + maximum
+                + "].";
     }
 
     @Override

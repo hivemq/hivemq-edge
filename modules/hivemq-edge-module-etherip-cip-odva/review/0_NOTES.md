@@ -16,7 +16,7 @@ The protocol stack
 | Code            | client.readTags("tagName")                                            | client.getAttributeSingle(logicalAddressPath, …)   |
 | Who supports it | Rockwell/Allen-Bradley ControlLogix & CompactLogix (vendor extension) | Any CIP-conformant device (the ODVA-standard way)  |
 
-The key point: symbolic Read-Tag is the Rockwell/Allen-Bradley flavor of CIP — it's a vendor extension that relies on the PLC having a tag database you can address by name. 
+The key point: symbolic Read-Tag is the Rockwell/Allen-Bradley flavor of CIP — it's a vendor extension that relies on the PLC having a tag database you can address by name.
 ODVA is the generic, standards-compliant path where data lives in the object model. You fetch it by numeric class/instance/attribute.
 
 **We should probably support both schemes!**
@@ -75,9 +75,3 @@ For all these cases we can attempt to report the error, but the solution is high
 - Customer doesn't care if 1 out 10 writes fails
 - Failed write requires business side intervention (stopping the factory, sending a new payload, ...)
 - We have to retry úntil success (stubborn device, ...)
-
-
-
-
-
-
