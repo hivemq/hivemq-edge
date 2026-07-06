@@ -234,7 +234,11 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
 
         if (isAdapterNotStarted()) {
-            pollingOutput.fail(getNotStartedMessage());
+            // A poll can still fire while the adapter is being torn down. That is not a sampling error — it is a
+            // teardown-window race — so finish quietly instead of failing. Reporting it as a failure would trip
+            // the framework's error counter and drive a northbound connection-error transition, which can race
+            // the concurrent stop and log a spurious "failed to transition from Disconnected to Error".
+            pollingOutput.finish();
             return;
         }
 
@@ -289,11 +293,6 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
     private boolean isAdapterNotStarted() {
         return protocolAdapterState.getRuntimeStatus() != ProtocolAdapterState.RuntimeStatus.STARTED;
-    }
-
-    private String getNotStartedMessage() {
-        return String.format(
-                "%s is stopped during polling (state=%s)", adapterId, protocolAdapterState.getRuntimeStatus());
     }
 
     private boolean isNotConnected(final @Nullable EtherNetIP client) {
