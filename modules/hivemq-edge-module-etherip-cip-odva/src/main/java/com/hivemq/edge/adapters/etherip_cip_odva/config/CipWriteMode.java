@@ -33,8 +33,14 @@ public enum CipWriteMode {
     COMPLETE_WRITE,
     /**
      * The supplied tag(s) cover only part of the attribute, so the rest must be preserved. Implemented as a
-     * read-modify-write: read the current attribute, overlay the supplied tag value(s), write the whole
-     * attribute back. Requires the attribute to be readable.
+     * read-modify-write: read the current attribute from the device, overlay the supplied tag value(s), write
+     * the whole attribute back.
+     * <p>
+     * The read is a raw device read ({@code Get_Attribute_Single}), independent of the tag's
+     * {@link CipReadWrite} direction — {@code WRITE_ONLY} governs only whether the adapter polls/publishes the
+     * tag northbound, not whether the device attribute can be read. So a {@code WRITE_ONLY} tag may use
+     * {@code PARTIAL_WRITE}; it just needs the device to permit reading that attribute (which the read-modify-
+     * write will attempt, and fail with an error if the device refuses).
      */
     PARTIAL_WRITE
 }

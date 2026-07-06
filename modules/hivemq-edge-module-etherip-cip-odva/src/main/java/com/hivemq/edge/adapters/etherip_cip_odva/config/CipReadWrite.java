@@ -16,14 +16,18 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.config;
 
 /**
- * Direction of a tag: whether it can be read (northbound) and/or written (southbound).
- * Determines whether a southbound mapping is allowed for the tag, and is part of the
- * tag grouping key so that read-only and write-only tags at the same address do not mix.
+ * Direction of a tag from the <em>adapter's</em> point of view: whether the adapter reads it northbound
+ * (polls/publishes it) and/or writes it southbound. This is about how the adapter uses the tag, not a claim
+ * about what the device attribute physically permits — e.g. a {@code WRITE_ONLY} tag's attribute may still be
+ * readable on the device, and a {@code PARTIAL_WRITE} to it does read it (read-modify-write).
+ * <p>
+ * Determines whether a southbound mapping is allowed for the tag, and is part of the tag grouping key so that
+ * read-only and write-only tags at the same address do not mix.
  */
 public enum CipReadWrite {
-    READ_ONLY, // device attribute is readable only; no southbound mapping allowed
-    WRITE_ONLY, // device attribute is writable only (e.g. command attribute); not polled
-    READ_WRITE; // device attribute is both readable and writable
+    READ_ONLY, // polled/published northbound; no southbound mapping allowed
+    WRITE_ONLY, // southbound only (e.g. a command attribute); not polled/published northbound
+    READ_WRITE; // both polled northbound and writable southbound
 
     public boolean isReadable() {
         return this != WRITE_ONLY;
