@@ -70,7 +70,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -100,10 +99,12 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     private final @NotNull CipTagDecoders cipTagsDecoders = new CipTagDecoders();
     private final @NotNull CipTagEncoders cipTagsEncoders = new CipTagEncoders();
 
-    // Serializes read-modify-write per CIP attribute address, so the read->write window of one RMW write is
-    // not interleaved with another write to the same attribute. Does not protect against the device being
+    // Serializes southbound writes so a read-modify-write's read->write window is never interleaved with another
+    // write. A single adapter-level lock is enough: the bundled client serializes all connection I/O anyway
+    // (etherip.protocol.Connection.execute is synchronized), so per-attribute parallelism is not actually
+    // available, and one lock keeps the concurrency model simple. Does not protect against the device being
     // changed by its own program logic during the window (CIP offers no compare-and-swap); last writer wins.
-    private final @NotNull ConcurrentHashMap<String, Object> writeLocks = new ConcurrentHashMap<>();
+    private final @NotNull Object writeLock = new Object();
     private final @NotNull Hysteresis hysteresis = new Hysteresis();
     private final @NotNull List<CipTag> tags;
     private final @NotNull TagGroups tagGroups = new TagGroups();
@@ -511,11 +512,9 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             return jsonToCipValue(t, node);
         };
 
-        // Serialize the read->write window of a PARTIAL_WRITE per attribute so it is not interleaved with another
-        // write to the same attribute. COMPLETE_WRITE does not read, but sharing the lock is harmless and keeps
-        // concurrent writes to one attribute ordered.
-        final Object lock = writeLocks.computeIfAbsent(tagGroup.getTagAddress(), a -> new Object());
-        synchronized (lock) {
+        // Serialize the read->write window of a PARTIAL_WRITE so it is not interleaved with another write.
+        // COMPLETE_WRITE does not read, but sharing the lock is harmless and keeps concurrent writes ordered.
+        synchronized (writeLock) {
             try {
                 final byte @Nullable [] prefill = tag.getWriteMode() == CipWriteMode.PARTIAL_WRITE
                         ? readAttributeBytes(connectedClient, tagGroup)
