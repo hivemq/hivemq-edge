@@ -127,7 +127,6 @@
             <protocolId>etheripCipOdva</protocolId>
             <configVersion>1</configVersion>
             <config>
-                <backplane>1</backplane>
                 <eipToMqtt>
                     <publishChangedDataOnly>true</publishChangedDataOnly>
                     <pollingIntervalMillis>100</pollingIntervalMillis>
@@ -347,7 +346,6 @@
 <!--            <protocolId>etheripCipOdva</protocolId>-->
 <!--            <configVersion>1</configVersion>-->
 <!--            <config>-->
-<!--                <backplane>1</backplane>-->
 <!--                <eipToMqtt>-->
 <!--                    <publishChangedDataOnly>true</publishChangedDataOnly>-->
 <!--                    <pollingIntervalMillis>1000</pollingIntervalMillis>-->
@@ -401,7 +399,6 @@
 <!--            <protocolId>etheripCipOdva</protocolId>-->
 <!--            <configVersion>1</configVersion>-->
 <!--            <config>-->
-<!--                <backplane>1</backplane>-->
 <!--                <byteOrder>LITTLE_ENDIAN</byteOrder>-->
 <!--                <eipToMqtt>-->
 <!--                    <maxPollingErrorsBeforeRemoval>-1</maxPollingErrorsBeforeRemoval>-->

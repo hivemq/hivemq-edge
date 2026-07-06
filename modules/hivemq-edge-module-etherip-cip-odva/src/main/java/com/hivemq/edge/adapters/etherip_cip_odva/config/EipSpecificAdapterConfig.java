@@ -46,10 +46,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
             format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
-    @JsonProperty("backplane")
-    @ModuleConfigField(title = "Backplane", description = "Backplane device value", defaultValue = "1")
-    private final int backplane;
-
     @JsonProperty("slot")
     @ModuleConfigField(title = "Slot", description = "Slot device value", defaultValue = "0")
     private final int slot;
@@ -82,12 +78,10 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
     @JsonCreator
     public EipSpecificAdapterConfig(
             @JsonProperty(value = "host", required = true) final @NotNull String host,
-            @JsonProperty(value = "backplane") final @Nullable Integer backplane,
             @JsonProperty(value = "slot") final @Nullable Integer slot,
             @JsonProperty(value = "byteOrder") final @NotNull EipSpecificAdapterConfig.ByteOrder byteOrder,
             @JsonProperty(value = "eipToMqtt") final @Nullable EipToMqttConfig eipToMqttConfig) {
         this.host = host;
-        this.backplane = Objects.requireNonNullElse(backplane, 1);
         this.slot = Objects.requireNonNullElse(slot, 0);
         this.byteOrder = byteOrder;
         this.eipToMqttConfig =
@@ -96,10 +90,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     public @NotNull String getHost() {
         return host;
-    }
-
-    public int getBackplane() {
-        return backplane;
     }
 
     public int getSlot() {
@@ -122,8 +112,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
         if (!(o instanceof final EipSpecificAdapterConfig that)) {
             return false;
         }
-        return backplane == that.backplane
-                && slot == that.slot
+        return slot == that.slot
                 && com.google.common.base.Objects.equal(id, that.id)
                 && com.google.common.base.Objects.equal(host, that.host)
                 && byteOrder == that.byteOrder
@@ -132,6 +121,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @Override
     public int hashCode() {
-        return com.google.common.base.Objects.hashCode(id, host, backplane, slot, byteOrder, eipToMqttConfig);
+        return com.google.common.base.Objects.hashCode(id, host, slot, byteOrder, eipToMqttConfig);
     }
 }

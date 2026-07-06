@@ -28,7 +28,7 @@
     {
       "id": "eip",
       "title": "EIP Device",
-      "properties": ["slot", "backplane"]
+      "properties": ["slot"]
     }
   ],
   "id": {
