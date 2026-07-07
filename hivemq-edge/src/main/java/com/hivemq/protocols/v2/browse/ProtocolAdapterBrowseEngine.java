@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The single browse traversal engine — the policy the framework's PAW drives in production <b>and</b> the
@@ -68,6 +70,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class ProtocolAdapterBrowseEngine {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterBrowseEngine.class);
+
     /** Discovered variables are attribute-read in batches of this size. */
     public static final int RESOLVE_BATCH = 100;
 
@@ -102,6 +106,7 @@ public final class ProtocolAdapterBrowseEngine {
     private final @NotNull Map<String, String> pathByNode = new HashMap<>();
     private final @NotNull Map<String, String> tagNameByNode = new HashMap<>();
     private final @NotNull Map<String, ResolvedAttributes> resolvedByNode = new HashMap<>();
+    private final @NotNull List<String> pendingResolveBatch = new ArrayList<>();
     private int resolveOffset;
 
     /**
@@ -165,6 +170,7 @@ public final class ProtocolAdapterBrowseEngine {
         pathByNode.clear();
         tagNameByNode.clear();
         resolvedByNode.clear();
+        pendingResolveBatch.clear();
         resolveOffset = 0;
         activePath = "";
         activeContinuation = null;
@@ -255,8 +261,10 @@ public final class ProtocolAdapterBrowseEngine {
         }
         final int end = Math.min(resolveOffset + RESOLVE_BATCH, sorted.size());
         final List<Node> batch = new ArrayList<>(end - resolveOffset);
+        pendingResolveBatch.clear();
         for (final DiscoveredVariable variable : sorted.subList(resolveOffset, end)) {
             batch.add(variable.node());
+            pendingResolveBatch.add(variable.node().nodeId());
         }
         resolveOffset = end;
         resolveBatches++;
@@ -266,6 +274,11 @@ public final class ProtocolAdapterBrowseEngine {
     /**
      * Consume one RESOLVE batch result. Ignored when not resolving or the result carries a superseded
      * {@code requestId}.
+     * <p>
+     * The batch must resolve <b>exactly and completely</b>: one attribute per requested node, with no missing,
+     * duplicate, or unrequested node. A short, padded, or foreign result would otherwise silently drop a discovered
+     * <i>selectable</i> node from an apparently-successful browse (the operator would see a {@code 200 OK} with fewer
+     * tags than exist on the device). Any such mismatch fails the whole browse through the sink instead of dropping.
      *
      * @param requestId  the browse this batch belongs to.
      * @param attributes the resolved attributes, one per requested node.
@@ -274,10 +287,36 @@ public final class ProtocolAdapterBrowseEngine {
         if (phase != Phase.RESOLVING || requestId != this.requestId) {
             return;
         }
+        final Set<String> requested = new HashSet<>(pendingResolveBatch);
+        final Set<String> outstanding = new HashSet<>(requested);
         for (final ResolvedAttributes attribute : attributes) {
-            resolvedByNode.put(attribute.node().nodeId(), attribute);
+            final String nodeId = attribute.node().nodeId();
+            if (!requested.contains(nodeId)) {
+                failBrowse("attribute for unrequested node '" + nodeId + "'");
+                return;
+            }
+            if (!outstanding.remove(nodeId)) {
+                failBrowse("duplicate attribute for node '" + nodeId + "'");
+                return;
+            }
+            resolvedByNode.put(nodeId, attribute);
+        }
+        if (!outstanding.isEmpty()) {
+            failBrowse("missing attributes for requested node(s) " + missingInRequestOrder(outstanding));
+            return;
         }
         readNextBatch();
+    }
+
+    /** The still-unresolved node ids of the active batch, in the order they were requested (a stable error message). */
+    private @NotNull List<String> missingInRequestOrder(final @NotNull Set<String> outstanding) {
+        final List<String> missing = new ArrayList<>(outstanding.size());
+        for (final String nodeId : pendingResolveBatch) {
+            if (outstanding.contains(nodeId)) {
+                missing.add(nodeId);
+            }
+        }
+        return missing;
     }
 
     // ── termination ───────────────────────────────────────────────────────────────────────────────────────
@@ -293,6 +332,11 @@ public final class ProtocolAdapterBrowseEngine {
         if (!isActive() || requestId != this.requestId) {
             return;
         }
+        failBrowse(reason);
+    }
+
+    /** Terminate the in-flight browse as failed — tag the reason with the phase it failed in, then go idle. */
+    private void failBrowse(final @NotNull String reason) {
         final Phase failedIn = phase;
         phase = Phase.IDLE;
         requireSink().fail(failedIn + ": " + reason);
@@ -302,13 +346,26 @@ public final class ProtocolAdapterBrowseEngine {
      * Abort an in-flight browse on an external interruption (a caller deadline or a lost connection): issue
      * {@link ProtocolAdapter#browseCancel(int)} so the device releases any open continuation point, then reset.
      * Does not call the sink — the caller surfaces the interruption. A no-op when no browse is in flight.
+     * <p>
+     * {@code browseCancel} is a best-effort courtesy to the device: a raw adapter that does real synchronous work
+     * there may throw, but the framework must not trust an adapter callback. The throw is caught and logged, and the
+     * engine is reset in a {@code finally} so the in-flight slot is always released — otherwise a throwing cancel
+     * would strand the engine {@link #isActive() active} forever and every later browse on that adapter would be
+     * rejected as already in flight.
      */
     public void abort() {
         if (!isActive()) {
             return;
         }
-        requireAdapter().browseCancel(requestId);
-        reset();
+        try {
+            requireAdapter().browseCancel(requestId);
+        } catch (final Exception cancelFailure) {
+            log.warn(
+                    "browseCancel while aborting a browse threw; releasing the in-flight slot regardless",
+                    cancelFailure);
+        } finally {
+            reset();
+        }
     }
 
     private void finish() {
