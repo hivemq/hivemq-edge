@@ -126,6 +126,91 @@ class ProtocolAdapterWrapperBrowseTest {
         assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.WAITING_FOR_CONNECTION_RETRY);
     }
 
+    @Test
+    void browseDeadlineWithAThrowingBrowseCancel_stillTimesOutAndReleasesTheSlot() {
+        // EDG-785: the deadline aborts the engine, which issues browseCancel; a raw adapter that throws there must
+        // not skip the caller's TIMED_OUT rejection nor wedge the in-flight slot on a permanent 409.
+        final WrapperTestFixture fixture = connectedFixture();
+        fixture.adapter.browseCancelThrows = true;
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
+
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
+        assertThat(future).isNotDone();
+
+        fixture.advance(60_000);
+
+        assertThat(fixture.commands()).contains("browseCancel");
+        assertThat(reasonOf(future)).isEqualTo(BrowseRejectedException.Reason.TIMED_OUT);
+        assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.CONNECTED);
+
+        // the slot was genuinely released: the next browse is accepted, not rejected as already in flight.
+        final CompletableFuture<List<BrowseNode>> next = new CompletableFuture<>();
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), next));
+        assertThat(next).isNotDone();
+    }
+
+    @Test
+    void connectionLossWithAThrowingBrowseCancel_stillFailsNotConnectedAndDoesNotWedgeTheFsm() {
+        // EDG-785: connection loss aborts the pending browse from an FSM transition action; a throwing browseCancel
+        // must be swallowed (never escaping into the tick/FSM loop) and the caller still rejected NOT_CONNECTED.
+        final WrapperTestFixture fixture = connectedFixture();
+        fixture.adapter.browseCancelThrows = true;
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
+
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), future));
+        assertThat(future).isNotDone();
+
+        fixture.output.disconnected();
+        fixture.drain();
+
+        assertThat(fixture.commands()).contains("browseCancel");
+        assertThat(reasonOf(future)).isEqualTo(BrowseRejectedException.Reason.NOT_CONNECTED);
+        // the FSM advanced normally rather than tripping a defensive reset from an escaped exception.
+        assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.WAITING_FOR_CONNECTION_RETRY);
+        assertThat(fixture.defensiveResets()).isZero();
+    }
+
+    @Test
+    void browseWithAnIncompleteResolveResult_failsInsteadOfReturningAShort200() {
+        // EDG-784: two selectable variables are discovered but the adapter resolves only one; the browse must fail
+        // (the REST layer maps it to an error) rather than complete 200 OK with the second variable silently dropped.
+        final WrapperTestFixture fixture = connectedFixture();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
+
+        fixture.send(
+                new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(WrapperTestSupport.node("root")), future));
+
+        fixture.output.browsePage(
+                1,
+                List.of(
+                        new BrowseNode(WrapperTestSupport.node("temperature"), NodeType.VALUE, true, "temperature"),
+                        new BrowseNode(WrapperTestSupport.node("pressure"), NodeType.VALUE, true, "pressure")),
+                null);
+        fixture.drain();
+        assertThat(fixture.commands()).contains("readNodeAttributes");
+        assertThat(future).isNotDone();
+
+        // resolve only "temperature", omitting "pressure".
+        fixture.output.readAttributesResult(
+                1,
+                List.of(new ResolvedAttributes(
+                        WrapperTestSupport.node("temperature"),
+                        "double",
+                        AccessFlags.builder()
+                                .readable(AccessTriState.YES)
+                                .pollable(AccessTriState.YES)
+                                .build(),
+                        "")));
+        fixture.drain();
+
+        assertThat(reasonOf(future)).isEqualTo(BrowseRejectedException.Reason.FAILED);
+        // the slot is released: the adapter stays CONNECTED and a fresh browse is accepted.
+        assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.CONNECTED);
+        final CompletableFuture<List<BrowseNode>> next = new CompletableFuture<>();
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), next));
+        assertThat(next).isNotDone();
+    }
+
     private static @NotNull WrapperTestFixture connectedFixture() {
         // skip-verification so the adapter reaches CONNECTED straight away; a wide tick period so the browse
         // deadline test fires exactly one tick.

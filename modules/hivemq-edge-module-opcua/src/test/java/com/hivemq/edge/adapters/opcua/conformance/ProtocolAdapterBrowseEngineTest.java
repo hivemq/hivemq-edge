@@ -16,13 +16,17 @@
 package com.hivemq.edge.adapters.opcua.conformance;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
+import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.browse.BrowseOutcome;
 import com.hivemq.protocols.v2.browse.ProtocolAdapterBrowseEngine;
@@ -100,10 +104,118 @@ class ProtocolAdapterBrowseEngineTest {
         assertThat(engine.isActive()).isTrue();
     }
 
+    @Test
+    void abort_withAThrowingBrowseCancel_swallowsTheThrowAndStillReleasesTheSlot() {
+        // EDG-785: a raw adapter that does real synchronous work in browseCancel and throws must not strand the
+        // engine active — otherwise every later browse on that adapter is rejected as already in flight.
+        final RecordingAdapter adapter = new RecordingAdapter();
+        adapter.browseCancelThrows = true;
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, new BrowseOutcome());
+        assertThat(engine.isActive()).isTrue();
+
+        // abort() issues browseCancel (which throws) but the throw is swallowed and the slot released in a finally.
+        assertThatCode(engine::abort).doesNotThrowAnyException();
+        assertThat(adapter.browseCancelCalls).as("browseCancel was attempted").isEqualTo(1);
+        assertThat(engine.isActive())
+                .as("slot released despite the throwing cancel")
+                .isFalse();
+
+        // the slot is genuinely reusable: a fresh browse starts cleanly rather than tripping the in-flight guard.
+        final BrowseOutcome outcome = new BrowseOutcome();
+        assertThatCode(() -> engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome))
+                .doesNotThrowAnyException();
+        assertThat(engine.isActive()).isTrue();
+    }
+
+    @Test
+    void onAttributesResolved_completeBatch_completesTheBrowseWithEveryDiscoveredVariable() {
+        // EDG-784 happy path: every requested node resolved exactly once ⇒ the browse completes with both variables.
+        final RecordingAdapter adapter = new RecordingAdapter();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome);
+        discoverTwoVariables(engine);
+
+        engine.onAttributesResolved(1, List.of(attributes("ns=1;i=1"), attributes("ns=1;i=2")));
+
+        assertThat(outcome.isDone()).isTrue();
+        assertThat(outcome.isOk()).isTrue();
+        assertThat(outcome.result()).hasSize(2);
+        assertThat(engine.isActive()).isFalse();
+    }
+
+    @Test
+    void onAttributesResolved_withAMissingAttribute_failsTheBrowseInsteadOfDroppingTheNode() {
+        // EDG-784: a well-behaved adapter that browses a node as selectable but returns no attribute for it (e.g. a
+        // denied attribute read) must not vanish from an apparently-successful browse — the whole browse fails.
+        final RecordingAdapter adapter = new RecordingAdapter();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome);
+        discoverTwoVariables(engine);
+
+        engine.onAttributesResolved(1, List.of(attributes("ns=1;i=1")));
+
+        assertThat(outcome.isOk()).isFalse();
+        assertThat(outcome.failure()).contains("missing").contains("ns=1;i=2");
+        assertThat(engine.isActive()).isFalse();
+    }
+
+    @Test
+    void onAttributesResolved_withADuplicateAttribute_failsTheBrowse() {
+        final RecordingAdapter adapter = new RecordingAdapter();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome);
+        discoverTwoVariables(engine);
+
+        engine.onAttributesResolved(1, List.of(attributes("ns=1;i=1"), attributes("ns=1;i=1")));
+
+        assertThat(outcome.isOk()).isFalse();
+        assertThat(outcome.failure()).contains("duplicate").contains("ns=1;i=1");
+        assertThat(engine.isActive()).isFalse();
+    }
+
+    @Test
+    void onAttributesResolved_withAnUnrequestedAttribute_failsTheBrowse() {
+        final RecordingAdapter adapter = new RecordingAdapter();
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        final BrowseOutcome outcome = new BrowseOutcome();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome);
+        discoverTwoVariables(engine);
+
+        engine.onAttributesResolved(1, List.of(attributes("ns=1;i=1"), attributes("ns=9;i=99")));
+
+        assertThat(outcome.isOk()).isFalse();
+        assertThat(outcome.failure()).contains("unrequested").contains("ns=9;i=99");
+        assertThat(engine.isActive()).isFalse();
+    }
+
+    /** Drive one DISCOVER page carrying two selectable variables (ns=1;i=1, ns=1;i=2) into a single RESOLVE batch. */
+    private static void discoverTwoVariables(final @NotNull ProtocolAdapterBrowseEngine engine) {
+        engine.onBrowsePage(
+                1,
+                List.of(
+                        new BrowseNode(new ConformanceNode("ns=1;i=1"), NodeType.VALUE, true, "a"),
+                        new BrowseNode(new ConformanceNode("ns=1;i=2"), NodeType.VALUE, true, "b")),
+                null);
+    }
+
+    private static @NotNull ResolvedAttributes attributes(final @NotNull String nodeId) {
+        return new ResolvedAttributes(
+                new ConformanceNode(nodeId),
+                "double",
+                AccessFlags.builder().readable(AccessTriState.YES).build(),
+                "");
+    }
+
     /** Counts the commands the engine issues; all callbacks are no-ops (the test drives events directly). */
     private static final class RecordingAdapter implements ProtocolAdapter {
         private int browseCalls;
         private int readAttrsCalls;
+        private int browseCancelCalls;
+        private boolean browseCancelThrows;
 
         @Override
         public @NotNull String adapterId() {
@@ -144,6 +256,14 @@ class ProtocolAdapterBrowseEngineTest {
 
         @Override
         public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {}
+
+        @Override
+        public void browseCancel(final int requestId) {
+            browseCancelCalls++;
+            if (browseCancelThrows) {
+                throw new IllegalStateException("browseCancel failed");
+            }
+        }
 
         @Override
         public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
