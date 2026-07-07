@@ -23,7 +23,6 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory;
@@ -44,6 +43,7 @@ import com.hivemq.edge.api.v2.model.TagRetryRequest;
 import com.hivemq.edge.api.v2.model.TagRetryResult;
 import com.hivemq.edge.api.v2.model.TagStatusDetail;
 import com.hivemq.edge.api.v2.model.TagSummary;
+import com.hivemq.protocols.v2.browse.BrowsedNode;
 import com.hivemq.protocols.v2.config.AccessFlagsEntity;
 import com.hivemq.protocols.v2.config.NorthboundMappingEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -333,11 +333,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     ProtocolAdapterErrorFactory.browseFilterInvalidError(adapterId, exception.getOriginalMessage()));
         }
 
-        final CompletableFuture<List<BrowseNode>> completion = new CompletableFuture<>();
+        final CompletableFuture<List<BrowsedNode>> completion = new CompletableFuture<>();
         manager.tell(
                 new ProtocolAdapterManagerMessage.BrowseRequested(adapterId, new BrowseFilter(filterNode), completion));
         try {
-            final List<BrowseNode> entries = completion.get(browseTimeoutMillis, TimeUnit.MILLISECONDS);
+            final List<BrowsedNode> entries = completion.get(browseTimeoutMillis, TimeUnit.MILLISECONDS);
             return Response.ok(toBrowseResult(entries)).build();
         } catch (final TimeoutException exception) {
             return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
@@ -453,6 +453,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         access.getSubscribable().name()));
     }
 
+    private @NotNull AccessFlags toAccessFlags(final @NotNull com.hivemq.adapter.sdk.api.v2.node.AccessFlags access) {
+        return new AccessFlags()
+                .readable(com.hivemq.edge.api.v2.model.AccessTriState.fromValue(
+                        access.readable().name()))
+                .writable(com.hivemq.edge.api.v2.model.AccessTriState.fromValue(
+                        access.writable().name()))
+                .pollable(com.hivemq.edge.api.v2.model.AccessTriState.fromValue(
+                        access.pollable().name()))
+                .subscribable(com.hivemq.edge.api.v2.model.AccessTriState.fromValue(
+                        access.subscribable().name()));
+    }
+
     private @NotNull TagStatusDetail toTagStatusDetail(final @NotNull TagStatusSnapshot tag) {
         return new TagStatusDetail()
                 .tagName(tag.tagName())
@@ -529,14 +541,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .adapterConfiguration(entity.getAdapterConfiguration());
     }
 
-    private @NotNull BrowseResult toBrowseResult(final @NotNull List<BrowseNode> entries) {
-        final List<com.hivemq.edge.api.v2.model.BrowseResultEntry> mapped = entries.stream()
-                .map(entry -> new com.hivemq.edge.api.v2.model.BrowseResultEntry()
-                        .nodeId(entry.node().nodeId())
-                        .nodeString(entry.node().nodeString())
+    private @NotNull BrowseResult toBrowseResult(final @NotNull List<BrowsedNode> nodes) {
+        final List<com.hivemq.edge.api.v2.model.BrowseResultEntry> mapped = nodes.stream()
+                .map(node -> new com.hivemq.edge.api.v2.model.BrowseResultEntry()
+                        // DISCOVER-phase identity
+                        .nodeId(node.entry().node().nodeId())
+                        .nodeString(node.entry().node().nodeString())
                         .type(com.hivemq.edge.api.v2.model.BrowseResultEntry.TypeEnum.fromValue(
-                                entry.type().name()))
-                        .selectable(entry.selectable()))
+                                node.entry().type().name()))
+                        .selectable(node.entry().selectable())
+                        // RESOLVE-phase result: assembled path, suggested default tag name, and device attributes
+                        .path(node.path())
+                        .tagName(node.tagName())
+                        .dataType(node.attributes().dataType())
+                        .access(toAccessFlags(node.attributes().access()))
+                        .description(node.attributes().description()))
                 .toList();
         return new BrowseResult().entries(mapped);
     }
