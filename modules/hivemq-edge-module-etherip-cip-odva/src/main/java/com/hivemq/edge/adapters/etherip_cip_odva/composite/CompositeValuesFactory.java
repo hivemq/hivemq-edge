@@ -17,14 +17,14 @@ package com.hivemq.edge.adapters.etherip_cip_odva.composite;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroup;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class CompositeValuesFactory {
     public static final NoopCompositeValues NOOP_COMPOSITE_VALUES = new NoopCompositeValues();
 
     private CompositeValuesFactory() {}
 
-    public static @NonNull CompositeValues create(final @NonNull TagGroup tagGroup) {
+    public static @NotNull CompositeValues create(final @NotNull TagGroup tagGroup) {
         final CipTag composite = tagGroup.getComposite();
         if (composite != null && composite.isComposite()) {
             return new DefaultCompositeValues(composite.getName());

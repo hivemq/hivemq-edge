@@ -84,7 +84,7 @@ public class EthernetIPCipOdvaProtocolAdapterInformation implements ProtocolAdap
 
     @Override
     public @NotNull String getLogoUrl() {
-        return "/images/ethetnet-ip-odva.png";
+        return "/images/ethernet-ip-odva.png";
     }
 
     @Override
