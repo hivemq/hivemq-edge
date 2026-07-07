@@ -71,6 +71,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
 
     boolean verifyDrop;
 
+    /** When set, {@link #browseCancel(int)} does real synchronous work that throws — the raw-adapter case EDG-785. */
+    boolean browseCancelThrows;
+
     MockProtocolAdapter(final @NotNull String adapterId, final @NotNull ProtocolAdapterOutput output) {
         this.adapterId = adapterId;
         this.output = output;
@@ -162,6 +165,14 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
         commands.add("browseNext");
+    }
+
+    @Override
+    public void browseCancel(final int requestId) {
+        commands.add("browseCancel");
+        if (browseCancelThrows) {
+            throw new IllegalStateException("browseCancel failed");
+        }
     }
 
     @Override
