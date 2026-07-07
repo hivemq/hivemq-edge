@@ -170,6 +170,47 @@ class ProtocolAdapterWrapperBrowseTest {
         assertThat(fixture.defensiveResets()).isZero();
     }
 
+    @Test
+    void browseWithAnIncompleteResolveResult_failsInsteadOfReturningAShort200() {
+        // EDG-784: two selectable variables are discovered but the adapter resolves only one; the browse must fail
+        // (the REST layer maps it to an error) rather than complete 200 OK with the second variable silently dropped.
+        final WrapperTestFixture fixture = connectedFixture();
+        final CompletableFuture<List<BrowseNode>> future = new CompletableFuture<>();
+
+        fixture.send(
+                new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(WrapperTestSupport.node("root")), future));
+
+        fixture.output.browsePage(
+                1,
+                List.of(
+                        new BrowseNode(WrapperTestSupport.node("temperature"), NodeType.VALUE, true, "temperature"),
+                        new BrowseNode(WrapperTestSupport.node("pressure"), NodeType.VALUE, true, "pressure")),
+                null);
+        fixture.drain();
+        assertThat(fixture.commands()).contains("readNodeAttributes");
+        assertThat(future).isNotDone();
+
+        // resolve only "temperature", omitting "pressure".
+        fixture.output.readAttributesResult(
+                1,
+                List.of(new ResolvedAttributes(
+                        WrapperTestSupport.node("temperature"),
+                        "double",
+                        AccessFlags.builder()
+                                .readable(AccessTriState.YES)
+                                .pollable(AccessTriState.YES)
+                                .build(),
+                        "")));
+        fixture.drain();
+
+        assertThat(reasonOf(future)).isEqualTo(BrowseRejectedException.Reason.FAILED);
+        // the slot is released: the adapter stays CONNECTED and a fresh browse is accepted.
+        assertThat(fixture.state()).isEqualTo(ProtocolAdapterWrapperState.CONNECTED);
+        final CompletableFuture<List<BrowseNode>> next = new CompletableFuture<>();
+        fixture.send(new ProtocolAdapterWrapperBrowseRequest(new BrowseFilter(fixture.nodeFor("temperature")), next));
+        assertThat(next).isNotDone();
+    }
+
     private static @NotNull WrapperTestFixture connectedFixture() {
         // skip-verification so the adapter reaches CONNECTED straight away; a wide tick period so the browse
         // deadline test fires exactly one tick.

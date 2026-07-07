@@ -106,6 +106,7 @@ public final class ProtocolAdapterBrowseEngine {
     private final @NotNull Map<String, String> pathByNode = new HashMap<>();
     private final @NotNull Map<String, String> tagNameByNode = new HashMap<>();
     private final @NotNull Map<String, ResolvedAttributes> resolvedByNode = new HashMap<>();
+    private final @NotNull List<String> pendingResolveBatch = new ArrayList<>();
     private int resolveOffset;
 
     /**
@@ -169,6 +170,7 @@ public final class ProtocolAdapterBrowseEngine {
         pathByNode.clear();
         tagNameByNode.clear();
         resolvedByNode.clear();
+        pendingResolveBatch.clear();
         resolveOffset = 0;
         activePath = "";
         activeContinuation = null;
@@ -259,8 +261,10 @@ public final class ProtocolAdapterBrowseEngine {
         }
         final int end = Math.min(resolveOffset + RESOLVE_BATCH, sorted.size());
         final List<Node> batch = new ArrayList<>(end - resolveOffset);
+        pendingResolveBatch.clear();
         for (final DiscoveredVariable variable : sorted.subList(resolveOffset, end)) {
             batch.add(variable.node());
+            pendingResolveBatch.add(variable.node().nodeId());
         }
         resolveOffset = end;
         resolveBatches++;
@@ -270,6 +274,11 @@ public final class ProtocolAdapterBrowseEngine {
     /**
      * Consume one RESOLVE batch result. Ignored when not resolving or the result carries a superseded
      * {@code requestId}.
+     * <p>
+     * The batch must resolve <b>exactly and completely</b>: one attribute per requested node, with no missing,
+     * duplicate, or unrequested node. A short, padded, or foreign result would otherwise silently drop a discovered
+     * <i>selectable</i> node from an apparently-successful browse (the operator would see a {@code 200 OK} with fewer
+     * tags than exist on the device). Any such mismatch fails the whole browse through the sink instead of dropping.
      *
      * @param requestId  the browse this batch belongs to.
      * @param attributes the resolved attributes, one per requested node.
@@ -278,10 +287,36 @@ public final class ProtocolAdapterBrowseEngine {
         if (phase != Phase.RESOLVING || requestId != this.requestId) {
             return;
         }
+        final Set<String> requested = new HashSet<>(pendingResolveBatch);
+        final Set<String> outstanding = new HashSet<>(requested);
         for (final ResolvedAttributes attribute : attributes) {
-            resolvedByNode.put(attribute.node().nodeId(), attribute);
+            final String nodeId = attribute.node().nodeId();
+            if (!requested.contains(nodeId)) {
+                failBrowse("attribute for unrequested node '" + nodeId + "'");
+                return;
+            }
+            if (!outstanding.remove(nodeId)) {
+                failBrowse("duplicate attribute for node '" + nodeId + "'");
+                return;
+            }
+            resolvedByNode.put(nodeId, attribute);
+        }
+        if (!outstanding.isEmpty()) {
+            failBrowse("missing attributes for requested node(s) " + missingInRequestOrder(outstanding));
+            return;
         }
         readNextBatch();
+    }
+
+    /** The still-unresolved node ids of the active batch, in the order they were requested (a stable error message). */
+    private @NotNull List<String> missingInRequestOrder(final @NotNull Set<String> outstanding) {
+        final List<String> missing = new ArrayList<>(outstanding.size());
+        for (final String nodeId : pendingResolveBatch) {
+            if (outstanding.contains(nodeId)) {
+                missing.add(nodeId);
+            }
+        }
+        return missing;
     }
 
     // ── termination ───────────────────────────────────────────────────────────────────────────────────────
@@ -297,6 +332,11 @@ public final class ProtocolAdapterBrowseEngine {
         if (!isActive() || requestId != this.requestId) {
             return;
         }
+        failBrowse(reason);
+    }
+
+    /** Terminate the in-flight browse as failed — tag the reason with the phase it failed in, then go idle. */
+    private void failBrowse(final @NotNull String reason) {
         final Phase failedIn = phase;
         phase = Phase.IDLE;
         requireSink().fail(failedIn + ": " + reason);
