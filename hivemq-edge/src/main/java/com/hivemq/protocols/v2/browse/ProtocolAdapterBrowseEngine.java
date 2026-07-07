@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The single browse traversal engine — the policy the framework's PAW drives in production <b>and</b> the
@@ -67,6 +69,8 @@ import org.jetbrains.annotations.Nullable;
  * surface it.
  */
 public final class ProtocolAdapterBrowseEngine {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterBrowseEngine.class);
 
     /** Discovered variables are attribute-read in batches of this size. */
     public static final int RESOLVE_BATCH = 100;
@@ -302,13 +306,26 @@ public final class ProtocolAdapterBrowseEngine {
      * Abort an in-flight browse on an external interruption (a caller deadline or a lost connection): issue
      * {@link ProtocolAdapter#browseCancel(int)} so the device releases any open continuation point, then reset.
      * Does not call the sink — the caller surfaces the interruption. A no-op when no browse is in flight.
+     * <p>
+     * {@code browseCancel} is a best-effort courtesy to the device: a raw adapter that does real synchronous work
+     * there may throw, but the framework must not trust an adapter callback. The throw is caught and logged, and the
+     * engine is reset in a {@code finally} so the in-flight slot is always released — otherwise a throwing cancel
+     * would strand the engine {@link #isActive() active} forever and every later browse on that adapter would be
+     * rejected as already in flight.
      */
     public void abort() {
         if (!isActive()) {
             return;
         }
-        requireAdapter().browseCancel(requestId);
-        reset();
+        try {
+            requireAdapter().browseCancel(requestId);
+        } catch (final Exception cancelFailure) {
+            log.warn(
+                    "browseCancel while aborting a browse threw; releasing the in-flight slot regardless",
+                    cancelFailure);
+        } finally {
+            reset();
+        }
     }
 
     private void finish() {

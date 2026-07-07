@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.conformance;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
@@ -100,10 +101,36 @@ class ProtocolAdapterBrowseEngineTest {
         assertThat(engine.isActive()).isTrue();
     }
 
+    @Test
+    void abort_withAThrowingBrowseCancel_swallowsTheThrowAndStillReleasesTheSlot() {
+        // EDG-785: a raw adapter that does real synchronous work in browseCancel and throws must not strand the
+        // engine active — otherwise every later browse on that adapter is rejected as already in flight.
+        final RecordingAdapter adapter = new RecordingAdapter();
+        adapter.browseCancelThrows = true;
+        final ProtocolAdapterBrowseEngine engine = new ProtocolAdapterBrowseEngine();
+        engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, new BrowseOutcome());
+        assertThat(engine.isActive()).isTrue();
+
+        // abort() issues browseCancel (which throws) but the throw is swallowed and the slot released in a finally.
+        assertThatCode(engine::abort).doesNotThrowAnyException();
+        assertThat(adapter.browseCancelCalls).as("browseCancel was attempted").isEqualTo(1);
+        assertThat(engine.isActive())
+                .as("slot released despite the throwing cancel")
+                .isFalse();
+
+        // the slot is genuinely reusable: a fresh browse starts cleanly rather than tripping the in-flight guard.
+        final BrowseOutcome outcome = new BrowseOutcome();
+        assertThatCode(() -> engine.start(adapter, new ConformanceNode("ns=0;i=85"), 0, 0, outcome))
+                .doesNotThrowAnyException();
+        assertThat(engine.isActive()).isTrue();
+    }
+
     /** Counts the commands the engine issues; all callbacks are no-ops (the test drives events directly). */
     private static final class RecordingAdapter implements ProtocolAdapter {
         private int browseCalls;
         private int readAttrsCalls;
+        private int browseCancelCalls;
+        private boolean browseCancelThrows;
 
         @Override
         public @NotNull String adapterId() {
@@ -144,6 +171,14 @@ class ProtocolAdapterBrowseEngineTest {
 
         @Override
         public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {}
+
+        @Override
+        public void browseCancel(final int requestId) {
+            browseCancelCalls++;
+            if (browseCancelThrows) {
+                throw new IllegalStateException("browseCancel failed");
+            }
+        }
 
         @Override
         public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
