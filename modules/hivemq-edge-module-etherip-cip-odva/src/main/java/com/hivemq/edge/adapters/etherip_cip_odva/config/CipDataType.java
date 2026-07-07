@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.etherip_cip_odva.config;
 
+import java.util.OptionalInt;
 import org.jetbrains.annotations.NotNull;
 
 public enum CipDataType {
@@ -44,13 +45,13 @@ public enum CipDataType {
      * character bytes), and {@link #COMPOSITE} is not a wire type at all, so those return empty. The widths mirror
      * the encoders (see {@code CipTagEncoders}); this is the single source of truth for byte-layout validation.
      */
-    public @NotNull java.util.OptionalInt staticByteWidth() {
+    public @NotNull OptionalInt staticByteWidth() {
         return switch (this) {
-            case BOOL, SINT, USINT -> java.util.OptionalInt.of(1);
-            case INT, UINT -> java.util.OptionalInt.of(2);
-            case DINT, UDINT, REAL -> java.util.OptionalInt.of(4);
-            case LINT, LREAL -> java.util.OptionalInt.of(8);
-            case SSTRING, STRING, COMPOSITE -> java.util.OptionalInt.empty();
+            case BOOL, SINT, USINT -> OptionalInt.of(1);
+            case INT, UINT -> OptionalInt.of(2);
+            case DINT, UDINT, REAL -> OptionalInt.of(4);
+            case LINT, LREAL -> OptionalInt.of(8);
+            case SSTRING, STRING, COMPOSITE -> OptionalInt.empty();
         };
     }
 }
