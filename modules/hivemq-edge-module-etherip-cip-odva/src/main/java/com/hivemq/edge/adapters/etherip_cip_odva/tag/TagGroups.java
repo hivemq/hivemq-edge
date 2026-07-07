@@ -17,12 +17,14 @@ package com.hivemq.edge.adapters.etherip_cip_odva.tag;
 
 import static java.util.Objects.requireNonNull;
 
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipReadWrite;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
 import com.hivemq.edge.adapters.etherip_cip_odva.exception.OdvaException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,10 +67,12 @@ public class TagGroups {
         // registration from scratch instead of continuing on stale or half-built groups.
         try {
             for (CipTag cipTag : cipTags) {
+                validateTagDefinition(cipTag);
                 registerTag(cipTag);
             }
             validateDirectionConsistency();
             validateCompositesHaveSiblings();
+            validateNoByteRangeOverlap();
         } catch (final OdvaException e) {
             clear();
             throw e;
@@ -122,6 +126,102 @@ public class TagGroups {
                                 + ") has no scalar siblings to aggregate. A composite needs at least one scalar tag at the same address and direction.");
             }
         }
+    }
+
+    /**
+     * Per-tag sanity checks on the byte-layout fields. These are cheap, device-independent, and reject configs
+     * that cannot describe a valid field: a {@code batchByteIndex} must be non-negative, {@code numberOfElements}
+     * at least one, and a {@code batchBitIndex} (when set) must be a real bit position 0–7. The JSON schema
+     * declares these bounds too, but that is only a UI/schema hint and is not enforced on the config/REST parse
+     * path, so a config with e.g. {@code batchBitIndex=8} reaches here unchecked; reject it explicitly.
+     */
+    private void validateTagDefinition(final @NotNull CipTag cipTag) throws OdvaException {
+        final CipTagDefinition definition = cipTag.getDefinition();
+        if (definition.getBatchByteIndex() < 0) {
+            throw new OdvaException("Tag '"
+                    + cipTag.getName()
+                    + "' has a negative batchByteIndex "
+                    + definition.getBatchByteIndex()
+                    + ". The byte index of a tag within its attribute must be 0 or greater.");
+        }
+        if (definition.getNumberOfElements() < 1) {
+            throw new OdvaException("Tag '"
+                    + cipTag.getName()
+                    + "' has numberOfElements "
+                    + definition.getNumberOfElements()
+                    + ". A tag must hold at least one element.");
+        }
+        final Integer bitIndex = definition.getBatchBitIndex();
+        if (bitIndex != null && (bitIndex < 0 || bitIndex > 7)) {
+            throw new OdvaException("Tag '"
+                    + cipTag.getName()
+                    + "' has batchBitIndex "
+                    + bitIndex
+                    + ". A bit index must be between 0 and 7 (a byte has 8 bits).");
+        }
+    }
+
+    /**
+     * Within a {@code (address, readWrite)} group, no two tags may claim overlapping bytes of the attribute. Two
+     * tags whose byte ranges overlap decode from the same bytes (silently wrong data) and, for a writable group,
+     * <em>corrupt each other on write</em> — a {@code PARTIAL_WRITE} read-modify-write or a {@code COMPLETE_WRITE}
+     * lays their bytes down over the same region, last-writer-wins, with no warning. Reject that at registration.
+     * <p>
+     * A tag's range is {@code [batchByteIndex, batchByteIndex + width * numberOfElements)}, where {@code width}
+     * is the type's {@link CipDataType#staticByteWidth() static byte width}. Two cases are deliberately excluded:
+     * <ul>
+     *   <li><b>Strings</b> ({@code SSTRING}/{@code STRING}) have no static width — their length is only known at
+     *       write/read time — so their span cannot be checked up front and they are skipped here.</li>
+     *   <li><b>Bit-addressed {@code BOOL}s</b> (a {@code BOOL} with a {@code batchBitIndex}) occupy a single bit,
+     *       so several may legitimately share one byte at different bit positions; they are not byte-overlaps.</li>
+     * </ul>
+     * The composite tag itself carries no bytes (it aggregates its siblings), so it is not considered here.
+     */
+    private void validateNoByteRangeOverlap() throws OdvaException {
+        for (final TagGroup tagGroup : tagAddressToTagGroup.values()) {
+            final List<CipTag> byteRangedTags = tagGroup.getTags().stream()
+                    .filter(TagGroups::occupiesAStaticByteRange)
+                    .toList();
+            for (int i = 0; i < byteRangedTags.size(); i++) {
+                for (int j = i + 1; j < byteRangedTags.size(); j++) {
+                    final CipTag a = byteRangedTags.get(i);
+                    final CipTag b = byteRangedTags.get(j);
+                    if (byteRangesOverlap(a, b)) {
+                        throw new OdvaException("Tags '"
+                                + a.getName()
+                                + "' and '"
+                                + b.getName()
+                                + "' at address "
+                                + tagGroup.getTagAddress()
+                                + " ("
+                                + tagGroup.getReadWrite()
+                                + ") claim overlapping bytes of the attribute. Each field of an attribute must occupy a"
+                                + " distinct byte range; overlapping tags read the same bytes and corrupt each other on"
+                                + " write.");
+                    }
+                }
+            }
+        }
+    }
+
+    /** A tag occupies a checkable byte range if its type has a static width and it is not a bit-addressed BOOL. */
+    private static boolean occupiesAStaticByteRange(final @NotNull CipTag cipTag) {
+        final CipTagDefinition definition = cipTag.getDefinition();
+        final boolean bitAddressedBool =
+                definition.getDataType() == CipDataType.BOOL && definition.getBatchBitIndex() != null;
+        return definition.getDataType().staticByteWidth().isPresent() && !bitAddressedBool;
+    }
+
+    private static boolean byteRangesOverlap(final @NotNull CipTag a, final @NotNull CipTag b) {
+        final int aStart = a.getDefinition().getBatchByteIndex();
+        final int aEnd = aStart
+                + a.getDefinition().getDataType().staticByteWidth().getAsInt()
+                        * a.getDefinition().getNumberOfElements();
+        final int bStart = b.getDefinition().getBatchByteIndex();
+        final int bEnd = bStart
+                + b.getDefinition().getDataType().staticByteWidth().getAsInt()
+                        * b.getDefinition().getNumberOfElements();
+        return aStart < bEnd && bStart < aEnd;
     }
 
     private @NotNull TagGroup getOrCreateTagGroup(final @NotNull CipTagDefinition definition) throws OdvaException {

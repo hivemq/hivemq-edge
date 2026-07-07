@@ -37,8 +37,9 @@ class TagGroupsTest {
 
         CipTag batch1 =
                 new CipTag("batch1", "batch1", new CipTagDefinition("@1/2/3", 1, CipDataType.INT, 1d, null, 0, null));
+        // batch2 starts at byte 2, just past batch1's INT (bytes 0-1), so the two do not overlap.
         CipTag batch2 =
-                new CipTag("batch2", "batch2", new CipTagDefinition("@1/2/3", 1, CipDataType.SINT, 1d, null, 1, null));
+                new CipTag("batch2", "batch2", new CipTagDefinition("@1/2/3", 1, CipDataType.SINT, 1d, null, 2, null));
         CipTag single =
                 new CipTag("single", "single", new CipTagDefinition("@1/2/4", 1, CipDataType.INT, 1d, null, 0, null));
 
@@ -207,6 +208,96 @@ class TagGroupsTest {
         Assertions.assertThat(tagGroups.getTagGroups()).hasSize(1);
         Assertions.assertThat(tagGroups.getTagGroups().iterator().next().getTags())
                 .containsExactly(valid);
+    }
+
+    @Test
+    void shouldRejectNegativeBatchByteIndex() {
+        final TagGroups tagGroups = new TagGroups();
+        final CipTag bad = layoutTag("bad", "@1/2/3", CipDataType.INT, 1, -1, null);
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(bad)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("negative batchByteIndex");
+    }
+
+    @Test
+    void shouldRejectZeroNumberOfElements() {
+        final TagGroups tagGroups = new TagGroups();
+        final CipTag bad = layoutTag("bad", "@1/2/3", CipDataType.INT, 0, 0, null);
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(bad)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("at least one element");
+    }
+
+    @Test
+    void shouldRejectBitIndexAboveSeven() {
+        final TagGroups tagGroups = new TagGroups();
+        final CipTag bad = layoutTag("bad", "@1/2/3", CipDataType.BOOL, 1, 0, 8);
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(bad)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("bit index must be between 0 and 7");
+    }
+
+    @Test
+    void shouldRejectTwoTagsClaimingTheSameByte() {
+        final TagGroups tagGroups = new TagGroups();
+        final CipTag a = layoutTag("a", "@1/2/3", CipDataType.SINT, 1, 0, null);
+        final CipTag b = layoutTag("b", "@1/2/3", CipDataType.SINT, 1, 0, null);
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(a, b)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("overlapping bytes");
+    }
+
+    @Test
+    void shouldRejectTwoTagsWithOverlappingRanges() {
+        final TagGroups tagGroups = new TagGroups();
+        // INT covers bytes 0-1; the SINT at byte 1 lands inside it.
+        final CipTag wide = layoutTag("wide", "@1/2/3", CipDataType.INT, 1, 0, null);
+        final CipTag inside = layoutTag("inside", "@1/2/3", CipDataType.SINT, 1, 1, null);
+        Assertions.assertThatThrownBy(() -> tagGroups.registerTagsIfEmpty(List.of(wide, inside)))
+                .isInstanceOf(OdvaException.class)
+                .hasMessageContaining("overlapping bytes");
+    }
+
+    @Test
+    void shouldAcceptAdjacentNonOverlappingTags() throws OdvaException {
+        final TagGroups tagGroups = new TagGroups();
+        final CipTag first = layoutTag("first", "@1/2/3", CipDataType.INT, 1, 0, null); // bytes 0-1
+        final CipTag second = layoutTag("second", "@1/2/3", CipDataType.SINT, 1, 2, null); // byte 2
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(first, second)))
+                .isTrue();
+    }
+
+    @Test
+    void shouldAcceptSeveralBoolsSharingAByteAtDifferentBits() throws OdvaException {
+        final TagGroups tagGroups = new TagGroups();
+        final CipTag bit0 = layoutTag("bit0", "@1/2/3", CipDataType.BOOL, 1, 0, 0);
+        final CipTag bit1 = layoutTag("bit1", "@1/2/3", CipDataType.BOOL, 1, 0, 1);
+        final CipTag bit7 = layoutTag("bit7", "@1/2/3", CipDataType.BOOL, 1, 0, 7);
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(bit0, bit1, bit7)))
+                .isTrue();
+    }
+
+    @Test
+    void shouldNotOverlapCheckStringsWithoutStaticWidth() throws OdvaException {
+        // Strings have no static width, so their span cannot be checked and they must not be rejected as overlaps.
+        final TagGroups tagGroups = new TagGroups();
+        final CipTag stringA = layoutTag("stringA", "@1/2/3", CipDataType.STRING, 1, 0, null);
+        final CipTag stringB = layoutTag("stringB", "@1/2/3", CipDataType.SSTRING, 1, 0, null);
+        Assertions.assertThat(tagGroups.registerTagsIfEmpty(List.of(stringA, stringB)))
+                .isTrue();
+    }
+
+    private static CipTag layoutTag(
+            final String name,
+            final String address,
+            final CipDataType dataType,
+            final int numberOfElements,
+            final int batchByteIndex,
+            final Integer batchBitIndex) {
+        return new CipTag(
+                name,
+                name,
+                new CipTagDefinition(address, numberOfElements, dataType, 0d, null, batchByteIndex, batchBitIndex));
     }
 
     private static CipTag tag(final String name, final String address, final CipReadWrite rw, final CipWriteMode wm) {
