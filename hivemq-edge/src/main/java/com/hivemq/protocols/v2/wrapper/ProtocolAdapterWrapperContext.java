@@ -574,11 +574,16 @@ public final class ProtocolAdapterWrapperContext {
             return;
         }
         pendingBrowse = null;
-        browseEngine.abort();
-        pending.completion()
-                .completeExceptionally(new BrowseRejectedException(
-                        BrowseRejectedException.Reason.TIMED_OUT,
-                        "browse on adapter '" + adapterId + "' did not complete before the deadline"));
+        // abort() is best-effort and self-resetting; complete the REST future in a finally so the caller is always
+        // released with the intended rejection even if the engine's abort ever throws.
+        try {
+            browseEngine.abort();
+        } finally {
+            pending.completion()
+                    .completeExceptionally(new BrowseRejectedException(
+                            BrowseRejectedException.Reason.TIMED_OUT,
+                            "browse on adapter '" + adapterId + "' did not complete before the deadline"));
+        }
     }
 
     /**
@@ -623,11 +628,17 @@ public final class ProtocolAdapterWrapperContext {
         }
         pendingBrowse = null;
         timers.cancel(pending.deadline());
-        browseEngine.abort();
-        pending.completion()
-                .completeExceptionally(new BrowseRejectedException(
-                        BrowseRejectedException.Reason.NOT_CONNECTED,
-                        "adapter '" + adapterId + "' lost its connection before the browse completed"));
+        // Called from an FSM transition action: abort() must never let an adapter's throwing browseCancel escape into
+        // the tick loop, and the future must still be completed. abort() swallows the throw; the finally guarantees
+        // the completion regardless.
+        try {
+            browseEngine.abort();
+        } finally {
+            pending.completion()
+                    .completeExceptionally(new BrowseRejectedException(
+                            BrowseRejectedException.Reason.NOT_CONNECTED,
+                            "adapter '" + adapterId + "' lost its connection before the browse completed"));
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
