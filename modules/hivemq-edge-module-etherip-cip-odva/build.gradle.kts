@@ -34,9 +34,8 @@ dependencies {
     implementation(files("libs/etherip-1.0.0.jar"))
     implementation(libs.jackson.databind)
     implementation(libs.slf4j.api)
-
-    implementation("com.google.guava:guava:33.4.0-jre")
-    implementation("org.slf4j:jul-to-slf4j:2.0.17")
+    implementation(libs.guava)
+    implementation(libs.slf4j.jultoslf4j)
 }
 
 dependencies {
@@ -110,5 +109,5 @@ javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements
 
 hivemqLicense {
     projectName.set(project.name)
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
 }
