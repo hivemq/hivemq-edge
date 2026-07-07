@@ -68,7 +68,7 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
         final MailboxSender<ProtocolAdapterWrapperMessage> sender = commands::add;
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, sender, snapshot);
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(new MetricRegistry(), adapterId, () -> 0);
-        return new ProtocolAdapterContainer(handle, () -> {}, () -> {}, metrics, entity);
+        return new ProtocolAdapterContainer(handle, () -> {}, () -> {}, () -> {}, metrics, entity);
     }
 
     @Override
