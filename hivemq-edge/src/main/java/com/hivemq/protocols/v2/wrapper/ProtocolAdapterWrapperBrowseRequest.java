@@ -17,7 +17,7 @@ package com.hivemq.protocols.v2.wrapper;
 
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
-import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
+import com.hivemq.protocols.v2.browse.BrowsedNode;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
  * @param completion the future the REST thread awaits; completed with the results or completed exceptionally.
  */
 public record ProtocolAdapterWrapperBrowseRequest(
-        @NotNull BrowseFilter filter, @NotNull CompletableFuture<List<BrowseNode>> completion)
+        @NotNull BrowseFilter filter, @NotNull CompletableFuture<List<BrowsedNode>> completion)
         implements ProtocolAdapterWrapperMessage {
 
     @Override

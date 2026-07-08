@@ -32,6 +32,8 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
+import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
@@ -46,6 +48,7 @@ import com.hivemq.edge.api.v2.model.AdapterStatusColor;
 import com.hivemq.edge.api.v2.model.AdapterType;
 import com.hivemq.edge.api.v2.model.BrowseCommand;
 import com.hivemq.edge.api.v2.model.BrowseResult;
+import com.hivemq.edge.api.v2.model.BrowseResultEntry;
 import com.hivemq.edge.api.v2.model.BrowseTimeoutError;
 import com.hivemq.edge.api.v2.model.Mapping;
 import com.hivemq.edge.api.v2.model.MappingStatus;
@@ -55,6 +58,7 @@ import com.hivemq.edge.api.v2.model.TagRetryRequest;
 import com.hivemq.edge.api.v2.model.TagRetryResult;
 import com.hivemq.edge.api.v2.model.TagStatus;
 import com.hivemq.edge.api.v2.model.TagStatusDetail;
+import com.hivemq.protocols.v2.browse.BrowsedNode;
 import com.hivemq.protocols.v2.config.AccessFlagsEntity;
 import com.hivemq.protocols.v2.config.NorthboundMappingEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -454,12 +458,31 @@ class ProtocolAdaptersResourceImplTest {
         final ProtocolAdapterFactoryRegistry factories = browseCapableFactories();
         when(configExtractor.getAdapterByAdapterId("a")).thenReturn(Optional.of(entity("a", "chaos")));
         register("a", snapshot("a", ProtocolAdapterWrapperState.CONNECTED, List.of(), true, false, null));
-        manager.browseHandler = request ->
-                request.completion().complete(List.of(new BrowseNode(new TestNode(), NodeType.VALUE, true, "node")));
+        manager.browseHandler = request -> request.completion()
+                .complete(List.of(new BrowsedNode(
+                        new BrowseNode(new TestNode(), NodeType.VALUE, true, "node"),
+                        "/node",
+                        "node",
+                        new ResolvedAttributes(
+                                new TestNode(),
+                                "Int32",
+                                AccessFlags.builder()
+                                        .readable(AccessTriState.YES)
+                                        .pollable(AccessTriState.YES)
+                                        .build(),
+                                "a node"))));
 
         final Response response = resource(factories).browseAdapter("a", new BrowseCommand());
         assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(((BrowseResult) response.getEntity()).getEntries()).hasSize(1);
+        // EDG-786: the resolved fields (path, default tag name, data type, access, description) reach the DTO,
+        // no longer discarded at the boundary.
+        final BrowseResultEntry mapped =
+                ((BrowseResult) response.getEntity()).getEntries().getFirst();
+        assertThat(mapped.getPath()).isEqualTo("/node");
+        assertThat(mapped.getTagName()).isEqualTo("node");
+        assertThat(mapped.getDataType()).isEqualTo("Int32");
+        assertThat(mapped.getDescription()).isEqualTo("a node");
+        assertThat(mapped.getAccess().getReadable()).isEqualTo(com.hivemq.edge.api.v2.model.AccessTriState.YES);
     }
 
     @Test
