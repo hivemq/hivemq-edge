@@ -47,7 +47,6 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -511,7 +510,7 @@ public final class ProtocolAdapterWrapperContext {
      * @param completion the future the REST thread awaits.
      */
     public void handleBrowseRequest(
-            final @NotNull BrowseFilter filter, final @NotNull CompletableFuture<List<BrowseNode>> completion) {
+            final @NotNull BrowseFilter filter, final @NotNull CompletableFuture<List<BrowsedNode>> completion) {
         if (machine().state() != CONNECTED) {
             completion.completeExceptionally(new BrowseRejectedException(
                     BrowseRejectedException.Reason.NOT_CONNECTED,
@@ -550,11 +549,9 @@ public final class ProtocolAdapterWrapperContext {
         }
         pendingBrowse = null;
         timers.cancel(pending.deadline());
-        final List<BrowseNode> entries = new ArrayList<>(nodes.size());
-        for (final BrowsedNode node : nodes) {
-            entries.add(node.entry());
-        }
-        pending.completion().complete(entries);
+        // Complete with the fully resolved BrowsedNode results (path, default tag name, and resolved attributes),
+        // not just the DISCOVER-phase entry — the REST resource surfaces the resolved fields (EDG-786).
+        pending.completion().complete(List.copyOf(nodes));
     }
 
     private void failBrowse(final @NotNull String reason) {
@@ -774,6 +771,6 @@ public final class ProtocolAdapterWrapperContext {
      * @param deadline   the deadline timer, canceled when the browse completes.
      */
     private record PendingBrowse(
-            @NotNull CompletableFuture<List<BrowseNode>> completion,
+            @NotNull CompletableFuture<List<BrowsedNode>> completion,
             @NotNull TimerHandle deadline) {}
 }
