@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -45,7 +46,9 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
     private static final Logger log = LoggerFactory.getLogger(NorthboundTagConsumer.class);
 
     private final @NotNull NorthboundMapping northboundMapping;
-    private final @NotNull ProtocolAdapterWrapper protocolAdapter;
+    private final @NotNull String adapterId;
+    private final @NotNull String protocolId;
+    private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ProtocolAdapterPublishServiceImpl protocolAdapterPublishService;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
@@ -59,8 +62,30 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
             final @NotNull ProtocolAdapterPublishServiceImpl protocolAdapterPublishService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull EventService eventService) {
+        this(
+                northboundMapping,
+                protocolAdapter.getId(),
+                protocolAdapter.getAdapter(),
+                protocolAdapter.getAdapterInformation().getProtocolId(),
+                objectMapper,
+                protocolAdapterPublishService,
+                protocolAdapterMetricsService,
+                eventService);
+    }
+
+    public NorthboundTagConsumer(
+            final @NotNull NorthboundMapping northboundMapping,
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapter adapter,
+            final @NotNull String protocolId,
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull ProtocolAdapterPublishServiceImpl protocolAdapterPublishService,
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            final @NotNull EventService eventService) {
         this.northboundMapping = northboundMapping;
-        this.protocolAdapter = protocolAdapter;
+        this.adapterId = adapterId;
+        this.adapter = adapter;
+        this.protocolId = protocolId;
         this.objectMapper = objectMapper;
         this.protocolAdapterPublishService = protocolAdapterPublishService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -83,23 +108,19 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                     .withTopic(northboundMapping.getMqttTopic())
                     .withQoS(northboundMapping.getMqttQos())
                     .withPayload(jsonToSend)
-                    .withAdapter(protocolAdapter.getAdapter());
+                    .withAdapter(adapter);
             final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
             publishFuture
                     .thenAccept(publishReturnCode -> {
                         protocolAdapterMetricsService.incrementReadPublishSuccess();
                         if (publishCount.incrementAndGet() == 1) {
                             eventService
-                                    .createAdapterEvent(
-                                            protocolAdapter.getId(),
-                                            protocolAdapter
-                                                    .getAdapterInformation()
-                                                    .getProtocolId())
+                                    .createAdapterEvent(adapterId, protocolId)
                                     .withSeverity(EventImpl.SEVERITY.INFO)
                                     .withTimestamp(System.currentTimeMillis())
                                     .withMessage(String.format(
                                             "Adapter '%s' took first sample to be published to '%s'",
-                                            protocolAdapter.getId(), northboundMapping.getMqttTopic()))
+                                            adapterId, northboundMapping.getMqttTopic()))
                                     .withPayload(
                                             Payload.ContentType.JSON, new String(jsonToSend, StandardCharsets.UTF_8))
                                     .fire();
@@ -111,7 +132,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                         return null;
                     });
         } catch (final Exception e) {
-            log.warn("Exception during polling of data for adapters '{}':", protocolAdapter.getId(), e);
+            log.warn("Exception during polling of data for adapters '{}':", adapterId, e);
         }
     }
 
@@ -163,6 +184,6 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
 
     @Override
     public @Nullable String getScope() {
-        return protocolAdapter.getId();
+        return adapterId;
     }
 }

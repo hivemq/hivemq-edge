@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -95,6 +96,7 @@ public final class ProtocolAdapterWrapperContext {
     private final long watchdogTimeoutMillis;
     private final boolean skipVerification;
     private final @NotNull TagAspectCoordinator tagPlane;
+    private final @NotNull Consumer<DataPoint> northboundDataPointSink;
     private final @NotNull ProtocolAdapterWrapperEventListener healthListener;
     private final @NotNull ProtocolAdapterMetrics metrics;
 
@@ -139,6 +141,53 @@ public final class ProtocolAdapterWrapperContext {
             final @NotNull TagAspectCoordinator tagPlane,
             final @NotNull ProtocolAdapterWrapperEventListener healthListener,
             final @NotNull ProtocolAdapterMetrics metrics) {
+        this(
+                adapterId,
+                protocolAdapter,
+                selfSender,
+                clock,
+                retryPolicy,
+                watchdogTimeoutMillis,
+                skipVerification,
+                initialGoal,
+                activation,
+                tagPlane,
+                healthListener,
+                metrics,
+                ignored -> {});
+    }
+
+    /**
+     * @param adapterId                the adapter instance id.
+     * @param protocolAdapter          the pure-mechanism adapter the machine commands.
+     * @param selfSender               the wrapper's own mailbox sender — used to synthesize
+     *                                 {@link ProtocolAdapterWrapperEvent.AllVerified}.
+     * @param clock                    the clock the timers are scheduled against.
+     * @param retryPolicy              the connection backoff policy.
+     * @param watchdogTimeoutMillis    the per-state acknowledgment watchdog timeout, in milliseconds.
+     * @param skipVerification         whether to skip verification and reach {@code CONNECTED} straight from
+     *                                 {@code WAITING_FOR_CONNECTED}.
+     * @param initialGoal              the initial direction goal (from the configuration).
+     * @param activation               the per-tag activation preferences.
+     * @param tagPlane                 the wrapper's view of the tag aspect machines.
+     * @param healthListener           the supervisor notification seam.
+     * @param metrics                  the per-adapter metrics.
+     * @param northboundDataPointSink  accepts stamped data points that should be offered to northbound consumers.
+     */
+    public ProtocolAdapterWrapperContext(
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapter protocolAdapter,
+            final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> selfSender,
+            final @NotNull Clock clock,
+            final @NotNull RetryPolicy retryPolicy,
+            final long watchdogTimeoutMillis,
+            final boolean skipVerification,
+            final @NotNull ProtocolAdapterGoalState initialGoal,
+            final @NotNull Map<String, TagAspectActivationPreference> activation,
+            final @NotNull TagAspectCoordinator tagPlane,
+            final @NotNull ProtocolAdapterWrapperEventListener healthListener,
+            final @NotNull ProtocolAdapterMetrics metrics,
+            final @NotNull Consumer<DataPoint> northboundDataPointSink) {
         this.adapterId = adapterId;
         this.protocolAdapter = protocolAdapter;
         this.selfSender = selfSender;
@@ -149,6 +198,7 @@ public final class ProtocolAdapterWrapperContext {
         this.goal = initialGoal;
         this.activation = Map.copyOf(activation);
         this.tagPlane = tagPlane;
+        this.northboundDataPointSink = northboundDataPointSink;
         this.healthListener = healthListener;
         this.metrics = metrics;
     }
@@ -455,7 +505,10 @@ public final class ProtocolAdapterWrapperContext {
      * @param value the reused v1 value.
      */
     public void routeDataPointToTags(final @NotNull Node node, final @NotNull DataPoint value) {
-        tagPlane.routeDataPoint(node, value);
+        final DataPoint northboundDataPoint = tagPlane.routeDataPoint(node, value, adapterId);
+        if (northboundDataPoint != null) {
+            northboundDataPointSink.accept(northboundDataPoint);
+        }
     }
 
     /**

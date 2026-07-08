@@ -33,9 +33,13 @@ import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
+import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
+import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
@@ -52,9 +56,12 @@ import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one configuration
@@ -82,6 +89,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ObjectMapper objectMapper;
+    private final @Nullable TagManager tagManager;
+    private final @Nullable NorthboundConsumerFactory northboundConsumerFactory;
     private final long tickPeriodMillis;
 
     /**
@@ -99,11 +108,36 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull ObjectMapper objectMapper,
             final long tickPeriodMillis) {
+        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null);
+    }
+
+    /**
+     * @param clock                    the clock the wrapper timers and tick are scheduled against.
+     * @param dispatcher               the dispatcher each wrapper mailbox is attached to.
+     * @param metricRegistry           the shared registry per-adapter metrics are registered on.
+     * @param dataPointFactory         the reused v1 factory the protocol adapter builds its values with.
+     * @param objectMapper             the JSON mapper that deserializes a {@code node-string} into the type's node
+     *                                 class.
+     * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
+     * @param tagManager               the shared tag manager used by MQTT northbound consumers.
+     * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
+     */
+    public DefaultProtocolAdapterWrapperFactory(
+            final @NotNull Clock clock,
+            final @NotNull MessageDispatcher dispatcher,
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull DataPointFactory dataPointFactory,
+            final @NotNull ObjectMapper objectMapper,
+            final long tickPeriodMillis,
+            final @Nullable TagManager tagManager,
+            final @Nullable NorthboundConsumerFactory northboundConsumerFactory) {
         this.clock = clock;
         this.dispatcher = dispatcher;
         this.metricRegistry = metricRegistry;
         this.dataPointFactory = dataPointFactory;
         this.objectMapper = objectMapper;
+        this.tagManager = tagManager;
+        this.northboundConsumerFactory = northboundConsumerFactory;
         this.tickPeriodMillis = tickPeriodMillis;
     }
 
@@ -139,6 +173,14 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         }
 
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
+        final NorthboundTagConsumerRegistry northboundConsumers = createNorthboundConsumers(adapterId, factory, entity);
+        final Consumer<DataPoint> northboundDataPointSink;
+        if (northboundConsumers == null) {
+            northboundDataPointSink = ignored -> {};
+        } else {
+            final TagManager activeTagManager = Objects.requireNonNull(tagManager);
+            northboundDataPointSink = dataPoint -> activeTagManager.feed(List.of(dataPoint));
+        }
         final ProtocolAdapterGoalState goal = ProtocolAdapterConfigSupport.goalOf(entity);
         final Map<String, TagAspectActivationPreference> activation = ProtocolAdapterConfigSupport.activationOf(entity);
         final Set<String> readUsed = entity.getReadUsedTagNames();
@@ -166,7 +208,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 activation,
                 tagPlane,
                 healthListener,
-                metrics);
+                metrics,
+                northboundDataPointSink);
         tagPlane.bindRuntime(
                 context.clock(),
                 context.timers(),
@@ -190,6 +233,22 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
         return new ProtocolAdapterContainer(
                 handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, entity);
+    }
+
+    private @Nullable NorthboundTagConsumerRegistry createNorthboundConsumers(
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterFactory factory,
+            final @NotNull ProtocolAdapterEntity entity) {
+        if (tagManager == null || northboundConsumerFactory == null) {
+            return null;
+        }
+        return new NorthboundTagConsumerRegistry(
+                adapterId,
+                factory.information(),
+                tagManager,
+                northboundConsumerFactory,
+                new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
+                entity.getNorthboundMappings());
     }
 
     @Override

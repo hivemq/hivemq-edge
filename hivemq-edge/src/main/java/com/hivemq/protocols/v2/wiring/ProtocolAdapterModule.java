@@ -23,6 +23,8 @@ import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.manager.DefaultProtocolAdapterWrapperFactory;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterFactoryRegistry;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry;
@@ -129,14 +131,18 @@ public abstract class ProtocolAdapterModule {
             final @NotNull Clock clock,
             final @NotNull MessageDispatcher dispatcher,
             final @NotNull MetricRegistry metricRegistry,
-            final @NotNull ObjectMapper objectMapper) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull TagManager tagManager,
+            final @NotNull NorthboundConsumerFactory northboundConsumerFactory) {
         return new DefaultProtocolAdapterWrapperFactory(
                 clock,
                 dispatcher,
                 metricRegistry,
                 new DefaultDataPointFactory(),
                 objectMapper,
-                WRAPPER_TICK_PERIOD_MILLIS);
+                WRAPPER_TICK_PERIOD_MILLIS,
+                tagManager,
+                northboundConsumerFactory);
     }
 
     @Provides
