@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * {@link ProtocolAdapterBrowseEngine#abort()} — an externally-driven interruption (a deadline or a lost
  * connection) is the caller's to surface, since only the caller knows why it aborted.
  * <p>
- * The framework's PAW supplies a sink that completes the REST request's future and maps the reason to an HTTP
+ * The framework's wrapper supplies a sink that completes the REST request's future and maps the reason to an HTTP
  * status; a test supplies {@link BrowseOutcome} and polls it.
  */
 public interface BrowseSink {

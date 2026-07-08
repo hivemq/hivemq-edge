@@ -503,8 +503,9 @@ public final class ProtocolAdapterWrapperContext {
      * Bridge a REST browse to the protocol adapter, on the dispatch thread. A browse runs only when
      * the adapter is {@code CONNECTED} and no browse is already in flight; otherwise the future is failed with a
      * {@link BrowseRejectedException} the resource maps to {@code 409}. On acceptance, the
-     * {@link ProtocolAdapterBrowseEngine} drives the two-phase paginated walk (DISCOVER then RESOLVE), one PA
-     * command at a time, and completes the future — with a deadline backstop that always releases the slot.
+     * {@link ProtocolAdapterBrowseEngine} drives the two-phase paginated walk (DISCOVER then RESOLVE), one
+     * protocol adapter command at a time, and completes the future — with a deadline backstop that always
+     * releases the slot.
      *
      * @param filter     the browse filter.
      * @param completion the future the REST thread awaits.
