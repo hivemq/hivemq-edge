@@ -181,13 +181,7 @@ public class OpcUaToJsonConverter {
             }
             obj.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            try {
-                final Object decodedValue = eo.decode(ctx);
-                addValue(builder, decodedValue, ctx);
-            } catch (final Throwable t) {
-                log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead", t);
-                addValue(builder, eo.getBody(), ctx);
-            }
+            addValue(builder, eo.decode(ctx), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -298,13 +292,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            try {
-                final Object decodedValue = eo.decode(ctx);
-                addValueToObject(obj, key, decodedValue, ctx);
-            } catch (final Throwable t) {
-                log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead", t);
-                addValueToObject(obj, key, eo.getBody(), ctx);
-            }
+            addValueToObject(obj, key, eo.decode(ctx), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -400,13 +388,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            try {
-                final Object decodedValue = eo.decode(ctx);
-                addValueToArray(arr, decodedValue, ctx);
-            } catch (final Throwable t) {
-                log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead", t);
-                addValueToArray(arr, eo.getBody(), ctx);
-            }
+            addValueToArray(arr, eo.decode(ctx), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {

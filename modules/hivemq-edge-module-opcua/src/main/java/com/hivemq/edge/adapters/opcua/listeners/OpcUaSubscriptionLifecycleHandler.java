@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -41,6 +43,7 @@ import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizat
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.UaSerializationException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -52,7 +55,10 @@ import org.slf4j.LoggerFactory;
 public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.SubscriptionListener {
 
     public static final long KEEP_ALIVE_SAFETY_MARGIN_MS = 5_000L;
+    public static final long TYPE_REGISTRY_RESET_THROTTLE_MS = 10_000L;
 
+    private static final long TYPE_REGISTRY_RESET_THROTTLE_NANOS =
+            TimeUnit.MILLISECONDS.toNanos(TYPE_REGISTRY_RESET_THROTTLE_MS);
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaSubscriptionLifecycleHandler.class);
     private static final int MAX_MONITORED_ITEM_COUNT = 5;
 
@@ -68,6 +74,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     // Track last keep-alive timestamp for health monitoring
     private volatile long lastKeepAliveTimestamp;
+
+    // Track last dynamic-type-registry reset so a permanently undecodable type cannot trigger a
+    // full DataTypeTree browse per notification (EDG-776). Monotonic clock (nanoTime), seeded one
+    // throttle window in the past so the first reset is never throttled.
+    private final @NotNull AtomicLong lastTypeRegistryResetNanos =
+            new AtomicLong(System.nanoTime() - TYPE_REGISTRY_RESET_THROTTLE_NANOS);
 
     public OpcUaSubscriptionLifecycleHandler(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -191,6 +203,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @return an Optional containing the created or transferred subscription, or empty if failed
      */
     public @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
+        warmUpDynamicTypeRegistry(client);
         return newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
@@ -368,6 +381,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_TRANSFER_FAILED_COUNT);
 
         log.error("Subscription Transfer failed, recreating subscription for adapter '{}'", adapterId);
+        warmUpDynamicTypeRegistry(client);
         newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
@@ -404,11 +418,60 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
                 final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
                 extractPayload(client, values.get(i), dataPointBuilder);
+            } catch (final @NotNull UaSerializationException e) {
+                // Typically "no codec registered" for a custom struct: Milo resets the dynamic codec
+                // registry on every session (re)activation and rebuilds it best-effort — browse/read
+                // failures under load leave it silently incomplete (EDG-776). Publishing the undecoded
+                // binary body would corrupt the payload, so drop this notification batch (the server
+                // resamples the monitored items) and reset the registry so the next notification
+                // triggers a fresh rebuild.
+                protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
+                log.warn(
+                        "Adapter '{}': could not decode OPC UA value for tag '{}', dropping the current samples and resetting the dynamic type registry",
+                        adapterId,
+                        tn,
+                        e);
+                resetDynamicTypeRegistry();
+                return;
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                 throw new RuntimeException(e);
             }
         }
         dataPointsPublisher.publish();
+    }
+
+    /**
+     * Builds the client's dynamic encoding context (DataTypeTree browse + codec registration) so the
+     * expensive first build happens off the value-notification path. Best-effort: on failure the
+     * context is rebuilt lazily on the first received value.
+     *
+     * @param client the OPC UA client
+     */
+    private void warmUpDynamicTypeRegistry(final @NotNull OpcUaClient client) {
+        try {
+            client.getDynamicEncodingContext();
+        } catch (final Exception e) {
+            log.warn(
+                    "Adapter '{}': could not pre-build the OPC UA dynamic type registry, it will be rebuilt on the first received value",
+                    adapterId,
+                    e);
+        }
+    }
+
+    /**
+     * Resets the client's cached DataTypeTree, dynamic DataTypeManager and dynamic EncodingContext so
+     * they are rebuilt from the server on next use. Throttled because each rebuild browses the
+     * server's full DataType hierarchy.
+     */
+    private void resetDynamicTypeRegistry() {
+        final long now = System.nanoTime();
+        final long last = lastTypeRegistryResetNanos.get();
+        // CAS so concurrent notification threads cannot both win the throttle window
+        if (now - last >= TYPE_REGISTRY_RESET_THROTTLE_NANOS && lastTypeRegistryResetNanos.compareAndSet(last, now)) {
+            client.resetDataTypeTree();
+            client.resetDynamicDataTypeManager();
+            client.resetDynamicEncodingContext();
+        }
     }
 }
