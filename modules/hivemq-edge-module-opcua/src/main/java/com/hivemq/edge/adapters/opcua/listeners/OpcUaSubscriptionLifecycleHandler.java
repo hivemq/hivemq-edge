@@ -203,7 +203,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @return an Optional containing the created or transferred subscription, or empty if failed
      */
     public @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
-        warmUpDynamicTypeRegistry(client);
         return newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
@@ -381,7 +380,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_TRANSFER_FAILED_COUNT);
 
         log.error("Subscription Transfer failed, recreating subscription for adapter '{}'", adapterId);
-        warmUpDynamicTypeRegistry(client);
         newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
@@ -439,24 +437,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             }
         }
         dataPointsPublisher.publish();
-    }
-
-    /**
-     * Builds the client's dynamic encoding context (DataTypeTree browse + codec registration) so the
-     * expensive first build happens off the value-notification path. Best-effort: on failure the
-     * context is rebuilt lazily on the first received value.
-     *
-     * @param client the OPC UA client
-     */
-    private void warmUpDynamicTypeRegistry(final @NotNull OpcUaClient client) {
-        try {
-            client.getDynamicEncodingContext();
-        } catch (final Exception e) {
-            log.warn(
-                    "Adapter '{}': could not pre-build the OPC UA dynamic type registry, it will be rebuilt on the first received value",
-                    adapterId,
-                    e);
-        }
     }
 
     /**
