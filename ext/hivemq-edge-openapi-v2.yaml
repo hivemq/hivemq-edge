@@ -1147,6 +1147,20 @@ components:
         selectable:
           type: boolean
           description: Whether the node can be selected as a tag's node definition.
+        path:
+          type: string
+          description: Slash-separated path of the node from the browse root, assembled from ancestor browse names. E.g. /Plant/Line1/Temperature.
+        tagName:
+          type: string
+          description: Suggested default tag name derived from the path and deduplicated within the result. E.g. plant-line1-temperature.
+        dataType:
+          type: string
+          description: The device data type resolved for the node. E.g. Int32, String, Boolean.
+        access:
+          $ref: '#/components/schemas/AccessFlags'
+        description:
+          type: string
+          description: The node description resolved from the device. May be empty.
     BrowseResult:
       type: object
       description: The result of a browse — the enumerated child nodes.
