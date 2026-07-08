@@ -15,6 +15,12 @@
  */
 package com.hivemq.api.v2.resources.impl;
 
+import static com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory.adapterActivationInvalidError;
+import static com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory.adapterNotFoundError;
+import static com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory.adapterTypeNotFoundError;
+import static com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory.tagNotFoundError;
+import static com.hivemq.util.ErrorResponseUtil.errorResponse;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
@@ -23,6 +29,7 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseNode;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.v2.errors.ProtocolAdapterErrorFactory;
@@ -35,6 +42,7 @@ import com.hivemq.edge.api.v2.model.AdapterStatus;
 import com.hivemq.edge.api.v2.model.AdapterType;
 import com.hivemq.edge.api.v2.model.BrowseCommand;
 import com.hivemq.edge.api.v2.model.BrowseResult;
+import com.hivemq.edge.api.v2.model.BrowseResultEntry;
 import com.hivemq.edge.api.v2.model.Mapping;
 import com.hivemq.edge.api.v2.model.MappingBlockedBy;
 import com.hivemq.edge.api.v2.model.NodeTagPair;
@@ -61,7 +69,6 @@ import com.hivemq.protocols.v2.view.TagStatus;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.BrowseRejectedException;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterDirection;
-import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
@@ -77,6 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The v2 protocol-adapters REST resource. It is <b>state-only</b>: it serves read-only views
@@ -95,6 +103,8 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
+    private static final @NotNull SchemaJsonRepresentation JSCHEMA = SchemaJsonRepresentation.INSTANCE;
+
     /**
      * The browse request timeout: the JAX-RS request thread is the only thread that blocks, and it
      * gives up after this long with {@code 504}. The wrapper's own browse deadline is the backstop that releases
@@ -110,11 +120,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final long browseTimeoutMillis;
 
     /**
-     * @param manager          the manager mailbox the runtime-state commands are told to.
-     * @param handleRegistry   the REST-readable adapter registry (snapshots and senders).
-     * @param factoryRegistry  the registered adapter type factories (empty in production, D8).
-     * @param configExtractor  the read-only {@code <v2>} configuration extractor.
-     * @param objectMapper     the JSON mapper used to deserialize browse filter node strings.
+     * @param manager         the manager mailbox the runtime-state commands are told to.
+     * @param handleRegistry  the REST-readable adapter registry (snapshots and senders).
+     * @param factoryRegistry the registered adapter type factories (empty in production, D8).
+     * @param configExtractor the read-only {@code <v2>} configuration extractor.
+     * @param objectMapper    the JSON mapper used to deserialize browse filter node strings.
      */
     @Inject
     public ProtocolAdaptersResourceImpl(
@@ -141,16 +151,54 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         this.browseTimeoutMillis = browseTimeoutMillis;
     }
 
-    // ── types ───────────────────────────────────────────────────────────────────────────────────────────────────
+    private static boolean hasPermanentFailure(final @NotNull TagStatusSnapshot tag) {
+        return tag.readAspectPermanentFailure() || tag.writeAspectPermanentFailure();
+    }
+
+    private static @NotNull String skipReason(final @NotNull TagStatusSnapshot tag) {
+        return !tag.readAspectGoalActive() && !tag.writeAspectGoalActive()
+                ? "tag is deactivated"
+                : "tag is not in an error state";
+    }
+
+    private static @Nullable TagStatusSnapshot findTag(
+            final @Nullable AdapterStatusSnapshot snapshot, final @NotNull String tagName) {
+        if (snapshot != null) {
+            for (final TagStatusSnapshot tag : snapshot.tags()) {
+                if (tag.tagName().equals(tagName)) {
+                    return tag;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable OffsetDateTime toOffsetDateTime(final long millis) {
+        return millis <= 0 ? null : OffsetDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC);
+    }
+
+    private static @NotNull Response adapterNotFound(final @NotNull String adapterId) {
+        return errorResponse(adapterNotFoundError(adapterId));
+    }
+
+    private static @NotNull Response adapterTypeUnavailable(final @NotNull String adapterId) {
+        return errorResponse(adapterTypeNotFoundError(adapterId));
+    }
+
+    private static @NotNull Response tagNotFound(final @NotNull String adapterId, final @NotNull String tagName) {
+        return errorResponse(tagNotFoundError(adapterId, tagName));
+    }
+
+    private static com.hivemq.edge.api.v2.model.@NonNull TagStatus getTagStatus(@NonNull TagStatusSnapshot snapshot) {
+        return com.hivemq.edge.api.v2.model.TagStatus.fromValue(
+                TagStatus.of(snapshot).name());
+    }
 
     @Override
     public @NotNull Response getAdapterTypes() {
-        final List<AdapterType> types =
-                factoryRegistry.all().stream().map(this::toTypeDto).toList();
-        return Response.ok(types).build();
+        return Response.ok(factoryRegistry.all().stream().map(this::toTypeDto).toList())
+                .build();
     }
-
-    // ── status views (pure functions of snapshots) ──────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull Response listAdapters() {
@@ -165,22 +213,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getAdapterStatus(final @NotNull String adapterId) {
         final AdapterStatusSnapshot snapshot = snapshotOf(adapterId);
-        if (snapshot == null) {
-            return adapterNotFound(adapterId);
-        }
-        return Response.ok(toStatusDto(snapshot)).build();
+        return snapshot == null
+                ? adapterNotFound(adapterId)
+                : Response.ok(toStatusDto(snapshot)).build();
     }
 
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
         final Optional<ProtocolAdapterEntity> config = configExtractor.getAdapterByAdapterId(adapterId);
-        if (config.isEmpty()) {
-            return adapterNotFound(adapterId);
-        }
-        return Response.ok(toDefinition(config.get())).build();
+        return config.isEmpty()
+                ? adapterNotFound(adapterId)
+                : Response.ok(toDefinition(config.get())).build();
     }
-
-    // ── tags ────────────────────────────────────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull Response getAdapterTags(final @NotNull String adapterId) {
@@ -190,10 +234,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         final AdapterStatusSnapshot snapshot = snapshotOf(adapterId);
         final Object nodeSchema = nodeSchemaProjection(config.get());
-        final List<NodeTagPair> tags = config.get().getTags().stream()
-                .map(tag -> toNodeTagPair(tag, findTag(snapshot, tag.getName()), nodeSchema))
-                .toList();
-        return Response.ok(tags).build();
+        return Response.ok(config.get().getTags().stream()
+                        .map(tag -> toNodeTagPair(tag, findTag(snapshot, tag.getName()), nodeSchema))
+                        .toList())
+                .build();
     }
 
     @Override
@@ -203,13 +247,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return adapterNotFound(adapterId);
         }
         final TagStatusSnapshot tag = findTag(snapshot, tagName);
-        if (tag == null) {
-            return tagNotFound(adapterId, tagName);
-        }
-        return Response.ok(toTagStatusDetail(tag)).build();
+        return tag == null
+                ? tagNotFound(adapterId, tagName)
+                : Response.ok(toTagStatusDetail(tag)).build();
     }
-
-    // ── mappings (derived status) ───────────────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull Response getNorthboundMappings(final @NotNull String adapterId) {
@@ -239,37 +280,29 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return Response.ok(mappings).build();
     }
 
-    // ── schema projections (reused v1 Schema → JSON-Schema) ─────────────────────────────────────────────────────
-
     @Override
     public @NotNull Response getNodeSchema(final @NotNull String adapterId) {
         final Optional<ProtocolAdapterFactory> factory = factoryFor(adapterId);
-        if (factory.isEmpty()) {
-            return adapterTypeUnavailable(adapterId);
-        }
-        return Response.ok(SchemaJsonRepresentation.INSTANCE.toJsonSchema(
-                        factory.get().nodeDefinitionSchema()))
-                .build();
+        return factory.isEmpty()
+                ? adapterTypeUnavailable(adapterId)
+                : Response.ok(JSCHEMA.toJsonSchema(factory.get().nodeDefinitionSchema()))
+                        .build();
     }
 
     @Override
     public @NotNull Response getAdapterSchema(final @NotNull String adapterId) {
         final Optional<ProtocolAdapterFactory> factory = factoryFor(adapterId);
-        if (factory.isEmpty()) {
-            return adapterTypeUnavailable(adapterId);
-        }
-        return Response.ok(SchemaJsonRepresentation.INSTANCE.toJsonSchema(
-                        factory.get().adapterConfigSchema()))
-                .build();
+        return factory.isEmpty()
+                ? adapterTypeUnavailable(adapterId)
+                : Response.ok(JSCHEMA.toJsonSchema(factory.get().adapterConfigSchema()))
+                        .build();
     }
-
-    // ── runtime-state commands (tell-only) ──────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull Response setAdapterActivation(
             final @NotNull String adapterId, final @NotNull AdapterActivation body) {
         if (body.getDirection() == null || body.getActivated() == null) {
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterActivationInvalidError());
+            return errorResponse(adapterActivationInvalidError());
         }
         if (handleRegistry.find(adapterId) == null) {
             return adapterNotFound(adapterId);
@@ -290,24 +323,20 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (snapshot == null) {
             return adapterNotFound(adapterId);
         }
-        if (findTag(snapshot, tagName) == null) {
-            return tagNotFound(adapterId, tagName);
-        }
-        return Response.ok(retryResult(adapterId, snapshot, List.of(tagName))).build();
+        return findTag(snapshot, tagName) == null
+                ? tagNotFound(adapterId, tagName)
+                : Response.ok(retryResult(adapterId, snapshot, List.of(tagName)))
+                        .build();
     }
 
     @Override
     public @NotNull Response retryTags(final @NotNull String adapterId, final @NotNull TagRetryRequest body) {
         final AdapterStatusSnapshot snapshot = snapshotOf(adapterId);
-        if (snapshot == null) {
-            return adapterNotFound(adapterId);
-        }
-        final List<String> requested =
-                (body.getTagNames() == null || body.getTagNames().isEmpty()) ? null : body.getTagNames();
-        return Response.ok(retryResult(adapterId, snapshot, requested)).build();
+        return snapshot == null
+                ? adapterNotFound(adapterId)
+                : Response.ok(retryResult(adapterId, snapshot, body.getTagNames()))
+                        .build();
     }
-
-    // ── browse bridge ─────────────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull Response browseAdapter(final @NotNull String adapterId, final @Nullable BrowseCommand body) {
@@ -317,7 +346,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterFactory> factory = factoryFor(adapterId);
         if (factory.isEmpty()
                 || !factory.get().information().capabilities().contains(ProtocolAdapterCapability.BROWSE)) {
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
+            return errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
         }
         final String nodeString = (body == null
                         || body.getNodeString() == null
@@ -329,7 +358,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             filterNode = objectMapper.readValue(
                     nodeString, factory.get().information().nodeClass());
         } catch (final JsonProcessingException exception) {
-            return ErrorResponseUtil.errorResponse(
+            return errorResponse(
                     ProtocolAdapterErrorFactory.browseFilterInvalidError(adapterId, exception.getOriginalMessage()));
         }
 
@@ -340,10 +369,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final List<BrowsedNode> entries = completion.get(browseTimeoutMillis, TimeUnit.MILLISECONDS);
             return Response.ok(toBrowseResult(entries)).build();
         } catch (final TimeoutException exception) {
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
+            return errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
         } catch (final InterruptedException exception) {
             Thread.currentThread().interrupt();
-            return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseInterruptedError(adapterId));
+            return errorResponse(ProtocolAdapterErrorFactory.browseInterruptedError(adapterId));
         } catch (final ExecutionException exception) {
             return browseFailure(adapterId, exception.getCause());
         }
@@ -352,25 +381,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private @NotNull Response browseFailure(final @NotNull String adapterId, final @Nullable Throwable cause) {
         if (cause instanceof final BrowseRejectedException rejected) {
             return switch (rejected.reason()) {
-                case NOT_CONNECTED ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterNotConnectedError(adapterId));
-                case ALREADY_IN_FLIGHT ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseInProgressError(adapterId));
-                case UNSUPPORTED ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
-                case TIMED_OUT ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
-                case FAILED ->
-                    ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseFailedError(adapterId));
+                case NOT_CONNECTED -> errorResponse(ProtocolAdapterErrorFactory.adapterNotConnectedError(adapterId));
+                case ALREADY_IN_FLIGHT -> errorResponse(ProtocolAdapterErrorFactory.browseInProgressError(adapterId));
+                case UNSUPPORTED -> errorResponse(ProtocolAdapterErrorFactory.browseNotSupportedError(adapterId));
+                case TIMED_OUT -> errorResponse(ProtocolAdapterErrorFactory.browseTimeoutError(adapterId));
+                case FAILED -> errorResponse(ProtocolAdapterErrorFactory.browseFailedError(adapterId));
             };
         }
         if (cause instanceof IllegalArgumentException) {
             return adapterNotFound(adapterId);
         }
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.browseFailedError(adapterId));
+        return errorResponse(ProtocolAdapterErrorFactory.browseFailedError(adapterId));
     }
-
-    // ── DTO assembly (pure functions) ────────────────────────────────────────────────────────────────────────────
 
     private @NotNull List<AdapterStatus> allStatuses() {
         final List<AdapterStatus> statuses = new ArrayList<>();
@@ -434,12 +456,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 .subscribable(tag.isSubscribable())
                 .access(toAccessFlags(tag.getAccess()))
                 .schema(nodeSchema)
-                .status(
-                        snapshot == null
-                                ? null
-                                : com.hivemq.edge.api.v2.model.TagStatus.fromValue(
-                                        TagStatus.of(snapshot).name()));
+                .status(snapshot == null ? null : getTagStatus(snapshot));
     }
+
+    // ── tag retry result derivation ──────────────────────────────────────────────────────────────────────────────
 
     private @NotNull AccessFlags toAccessFlags(final @NotNull AccessFlagsEntity access) {
         return new AccessFlags()
@@ -468,8 +488,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private @NotNull TagStatusDetail toTagStatusDetail(final @NotNull TagStatusSnapshot tag) {
         return new TagStatusDetail()
                 .tagName(tag.tagName())
-                .status(com.hivemq.edge.api.v2.model.TagStatus.fromValue(
-                        TagStatus.of(tag).name()))
+                .status(getTagStatus(tag))
                 .readAspectState(tag.readAspectStateName())
                 .writeAspectState(tag.writeAspectStateName())
                 .readActivated(tag.readActivated())
@@ -525,8 +544,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .map(capability -> AdapterType.CapabilitiesEnum.fromValue(capability.name()))
                         .toList())
                 .configVersion(information.currentConfigVersion())
-                .nodeSchema(SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.nodeDefinitionSchema()))
-                .adapterSchema(SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.adapterConfigSchema()));
+                .nodeSchema(JSCHEMA.toJsonSchema(factory.nodeDefinitionSchema()))
+                .adapterSchema(JSCHEMA.toJsonSchema(factory.adapterConfigSchema()));
     }
 
     private @NotNull AdapterDefinition toDefinition(final @NotNull ProtocolAdapterEntity entity) {
@@ -542,25 +561,24 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     private @NotNull BrowseResult toBrowseResult(final @NotNull List<BrowsedNode> nodes) {
-        final List<com.hivemq.edge.api.v2.model.BrowseResultEntry> mapped = nodes.stream()
-                .map(node -> new com.hivemq.edge.api.v2.model.BrowseResultEntry()
-                        // DISCOVER-phase identity
-                        .nodeId(node.entry().node().nodeId())
-                        .nodeString(node.entry().node().nodeString())
-                        .type(com.hivemq.edge.api.v2.model.BrowseResultEntry.TypeEnum.fromValue(
-                                node.entry().type().name()))
-                        .selectable(node.entry().selectable())
-                        // RESOLVE-phase result: assembled path, suggested default tag name, and device attributes
-                        .path(node.path())
-                        .tagName(node.tagName())
-                        .dataType(node.attributes().dataType())
-                        .access(toAccessFlags(node.attributes().access()))
-                        .description(node.attributes().description()))
-                .toList();
-        return new BrowseResult().entries(mapped);
+        return new BrowseResult()
+                .entries(nodes.stream()
+                        .map(node -> {
+                            final BrowseNode entry = node.entry();
+                            return new BrowseResultEntry()
+                                    .nodeId(entry.node().nodeId())
+                                    .nodeString(entry.node().nodeString())
+                                    .type(BrowseResultEntry.TypeEnum.fromValue(
+                                            entry.type().name()))
+                                    .selectable(entry.selectable())
+                                    .path(node.path())
+                                    .tagName(node.tagName())
+                                    .dataType(node.attributes().dataType())
+                                    .access(toAccessFlags(node.attributes().access()))
+                                    .description(node.attributes().description());
+                        })
+                        .toList());
     }
-
-    // ── tag retry result derivation ──────────────────────────────────────────────────────────────────────────────
 
     private @NotNull TagRetryResult retryResult(
             final @NotNull String adapterId,
@@ -591,22 +609,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return new TagRetryResult().accepted(accepted).skipped(skipped);
     }
 
-    private static boolean hasPermanentFailure(final @NotNull TagStatusSnapshot tag) {
-        return tag.readAspectPermanentFailure() || tag.writeAspectPermanentFailure();
-    }
-
-    private static @NotNull String skipReason(final @NotNull TagStatusSnapshot tag) {
-        if (!tag.readAspectGoalActive() && !tag.writeAspectGoalActive()) {
-            return "tag is deactivated";
-        }
-        return "tag is not in an error state";
-    }
-
-    // ── lookups and helpers ──────────────────────────────────────────────────────────────────────────────────────
-
     private @Nullable AdapterStatusSnapshot snapshotOf(final @NotNull String adapterId) {
         final ProtocolAdapterHandle handle = handleRegistry.find(adapterId);
-        return handle == null ? null : handle.snapshot().get();
+        return handle != null ? handle.snapshot().get() : null;
     }
 
     private @NotNull Optional<ProtocolAdapterFactory> factoryFor(final @NotNull String adapterId) {
@@ -618,36 +623,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private @Nullable Object nodeSchemaProjection(final @NotNull ProtocolAdapterEntity entity) {
         return factoryRegistry
                 .findByProtocolId(entity.getProtocolId())
-                .map(factory -> (Object) SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.nodeDefinitionSchema()))
+                .map(factory -> (Object) JSCHEMA.toJsonSchema(factory.nodeDefinitionSchema()))
                 .orElse(null);
-    }
-
-    private static @Nullable TagStatusSnapshot findTag(
-            final @Nullable AdapterStatusSnapshot snapshot, final @NotNull String tagName) {
-        if (snapshot == null) {
-            return null;
-        }
-        for (final TagStatusSnapshot tag : snapshot.tags()) {
-            if (tag.tagName().equals(tagName)) {
-                return tag;
-            }
-        }
-        return null;
-    }
-
-    private static @Nullable OffsetDateTime toOffsetDateTime(final long millis) {
-        return millis <= 0 ? null : OffsetDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC);
-    }
-
-    private static @NotNull Response adapterNotFound(final @NotNull String adapterId) {
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterNotFoundError(adapterId));
-    }
-
-    private static @NotNull Response adapterTypeUnavailable(final @NotNull String adapterId) {
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.adapterTypeNotFoundError(adapterId));
-    }
-
-    private static @NotNull Response tagNotFound(final @NotNull String adapterId, final @NotNull String tagName) {
-        return ErrorResponseUtil.errorResponse(ProtocolAdapterErrorFactory.tagNotFoundError(adapterId, tagName));
     }
 }
