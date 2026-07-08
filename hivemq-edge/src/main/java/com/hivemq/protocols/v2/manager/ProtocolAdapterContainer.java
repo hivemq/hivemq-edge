@@ -42,6 +42,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
 
     private final @NotNull ProtocolAdapterHandle handle;
     private final @Nullable MessageDispatcherHandle dispatcherHandle;
+    private final @Nullable AutoCloseable adapterDispatcherHandle;
     private final @Nullable AutoCloseable tickHandle;
     private final @Nullable ProtocolAdapterMetrics metrics;
     private @NotNull ProtocolAdapterEntity appliedEntity;
@@ -49,20 +50,24 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     /**
      * Create a running managed adapter with its teardown resources.
      *
-     * @param handle           the REST-readable handle.
-     * @param dispatcherHandle the binding of the wrapper mailbox to the dispatcher.
-     * @param tickHandle       the periodic wrapper tick schedule.
-     * @param metrics          the per-adapter metrics.
-     * @param appliedEntity    the configuration this adapter is running.
+     * @param handle                  the REST-readable handle.
+     * @param dispatcherHandle        the binding of the wrapper mailbox to the dispatcher.
+     * @param adapterDispatcherHandle the teardown of the adapter itself: its own {@code close()} (if AutoCloseable)
+     *                                and every dispatch binding it opened through the framework dispatcher.
+     * @param tickHandle              the periodic wrapper tick schedule.
+     * @param metrics                 the per-adapter metrics.
+     * @param appliedEntity           the configuration this adapter is running.
      */
     public ProtocolAdapterContainer(
             final @NotNull ProtocolAdapterHandle handle,
             final @NotNull MessageDispatcherHandle dispatcherHandle,
+            final @NotNull AutoCloseable adapterDispatcherHandle,
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
         this.handle = handle;
         this.dispatcherHandle = dispatcherHandle;
+        this.adapterDispatcherHandle = adapterDispatcherHandle;
         this.tickHandle = tickHandle;
         this.metrics = metrics;
         this.appliedEntity = appliedEntity;
@@ -72,6 +77,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull ProtocolAdapterHandle handle, final @NotNull ProtocolAdapterEntity entity) {
         this.handle = handle;
         this.dispatcherHandle = null;
+        this.adapterDispatcherHandle = null;
         this.tickHandle = null;
         this.metrics = null;
         this.appliedEntity = entity;
@@ -130,6 +136,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     public void close() {
         closeQuietly(tickHandle, "tick schedule");
         closeQuietly(dispatcherHandle, "dispatcher binding");
+        closeQuietly(adapterDispatcherHandle, "adapter dispatcher bindings");
         closeQuietly(metrics, "metrics");
     }
 
