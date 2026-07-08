@@ -35,7 +35,8 @@ import org.jetbrains.annotations.Nullable;
  * matching row runs the table's defensive reset.
  * <p>
  * Band: {@link MailboxMessagePriority#EVENT} (the {@link com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage}
- * default), except {@link DataPointReceived} and {@link BrowseResultReceived}, which override to
+ * default), except {@link DataPointReceived} and the browse events ({@link BrowsePageReceived},
+ * {@link AttributesResolved}, {@link BrowseFailed}), which override to
  * {@link MailboxMessagePriority#DATA} so the chatty push channel never starves control, acknowledgments, or time
  *. The timer-expiry events ({@link WatchdogFired}, {@link BackoffFired}, {@link PollTimerFired},
  * {@link VerificationRetryTimerFired}, {@link SubscriptionRetryTimerFired}) never enter the mailbox — they are

@@ -36,12 +36,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The single browse traversal engine — the policy the framework's PAW drives in production <b>and</b> the
+ * The single browse traversal engine — the policy the framework's wrapper drives in production <b>and</b> the
  * reference engine the SDK-v2 conformance suites validate against a real device. Written purely against the
  * SDK v2 browse contract ({@code browse} / {@code browseNext} / {@code readNodeAttributes} and their page /
  * attribute / error answers), it has no dependency on the runtime, so the same code runs both places.
  * <p>
- * It advances <b>one PA command at a time</b>, awaiting each answer, in two phases:
+ * It advances <b>one protocol adapter command at a time</b>, awaiting each answer, in two phases:
  * <ul>
  *   <li><b>DISCOVER</b> — a breadth-first frontier walk below the filter node. Each node's continuation pages
  *       are drained ({@code browseNext}) <i>before</i> any sibling is browsed; a visited-set dedups shared
@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * with it. <b>Exactly one browse is in flight per engine</b> — {@link #start} on an {@link #isActive() active}
  * engine is a programming error. Any page, attribute result, or error carrying a different id (from a
  * superseded or already-finished browse) is silently ignored, so a late answer can never corrupt a later
- * browse. The driving thread is single-threaded (the PAW's dispatch thread in production, the test thread
+ * browse. The driving thread is single-threaded (the wrapper's dispatch thread in production, the test thread
  * under a synchronous dispatcher); the engine holds no locks.
  *
  * <h2>Termination</h2>
