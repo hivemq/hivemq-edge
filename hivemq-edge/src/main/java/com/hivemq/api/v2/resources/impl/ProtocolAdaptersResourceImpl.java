@@ -586,7 +586,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @Nullable List<String> requestedNames) {
         final List<String> accepted = new ArrayList<>();
         final List<SkippedTagRetry> skipped = new ArrayList<>();
-        if (requestedNames == null) {
+        if (requestedNames == null || requestedNames.isEmpty()) {
             for (final TagStatusSnapshot tag : snapshot.tags()) {
                 if (hasPermanentFailure(tag)) {
                     accepted.add(tag.tagName());
