@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.Clock;
+import com.hivemq.protocols.v2.runtime.DataPointStamping;
 import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
@@ -174,11 +175,15 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     @Override
-    public void routeDataPoint(final @NotNull Node node, final @NotNull DataPoint value) {
+    public @Nullable DataPoint routeDataPoint(
+            final @NotNull Node node, final @NotNull DataPoint value, final @NotNull String adapterId) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {
-            tagRuntime.onValue(value);
+            if (tagRuntime.onValue(value)) {
+                return DataPointStamping.stamp(value, tagRuntime.pair().tag(), adapterId);
+            }
         }
+        return null;
     }
 
     @Override

@@ -284,9 +284,15 @@ public final class TagAspectRead implements TagAspectVerifying {
      * Feed a received value — a poll response or a subscription push.
      *
      * @param value the reused v1 value.
+     * @return whether the value was expected in the current read-aspect state.
      */
-    public void onValue(final @NotNull DataPoint value) {
+    public boolean onValue(final @NotNull DataPoint value) {
+        final TagAspectState state = machine.state();
+        final boolean accepted = state == TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT
+                || state == TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION
+                || state == TagAspectReadSubscribedState.SUBSCRIBED;
         dispatch(new TagAspectEvent.ValueReceived(value));
+        return accepted;
     }
 
     /**
