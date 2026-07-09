@@ -212,9 +212,10 @@ public final class TagRuntime {
      * Route a received value to the read aspect.
      *
      * @param value the reused v1 value.
+     * @return whether the read aspect accepted the value as part of its operating flow.
      */
-    public void onValue(final @NotNull DataPoint value) {
-        readAspect.onValue(value);
+    public boolean onValue(final @NotNull DataPoint value) {
+        return readAspect.onValue(value);
     }
 
     /**

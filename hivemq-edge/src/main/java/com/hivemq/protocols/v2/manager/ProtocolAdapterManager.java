@@ -240,6 +240,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                         ProtocolAdapterConfigSupport.activationOf(updated),
                         updated.getReadUsedTagNames(),
                         updated.getWriteUsedTagNames()));
+        existing.updateNorthboundMappings(updated.getNorthboundMappings());
         if (ProtocolAdapterConfigDiffUtils.adapterDirectionChanged(running, updated)) {
             // The tag-set update does not carry the adapter direction goal; re-assert the config-declared goal when
             // it changed too. Still never reconnects.
