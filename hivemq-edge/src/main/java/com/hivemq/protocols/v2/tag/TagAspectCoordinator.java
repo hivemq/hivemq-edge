@@ -88,8 +88,12 @@ public interface TagAspectCoordinator {
      *
      * @param node  the node the value belongs to.
      * @param value the reused v1 value.
+     * @param adapterId the adapter instance id used to stamp values accepted by the read aspect.
+     * @return a stamped data point for northbound consumers when the read aspect accepted the value; {@code null}
+     *         for unknown nodes or values ignored by the aspect state machine.
      */
-    void routeDataPoint(@NotNull Node node, @NotNull DataPoint value);
+    @Nullable
+    DataPoint routeDataPoint(@NotNull Node node, @NotNull DataPoint value, @NotNull String adapterId);
 
     /**
      * Route a per-node failure to the node's read aspect.
