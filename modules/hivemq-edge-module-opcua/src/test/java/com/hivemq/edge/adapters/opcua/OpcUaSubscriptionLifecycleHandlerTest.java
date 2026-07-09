@@ -20,8 +20,16 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
@@ -32,10 +40,22 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
+import org.eclipse.milo.opcua.stack.core.AttributeId;
+import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -521,6 +541,82 @@ class OpcUaSubscriptionLifecycleHandlerTest {
         // Then: No exceptions should have occurred
         assertFalse(failed.get(), "Concurrent access should not cause exceptions");
         assertTrue(handler.isKeepAliveHealthy(), "Handler should remain healthy after concurrent operations");
+    }
+
+    /**
+     * EDG-776: when a value cannot be decoded (typically "no codec registered" for a custom struct
+     * because the dynamic codec registry was rebuilt incompletely after a session re-activation),
+     * the notification batch must be dropped — never published as base64 — and the registry must be
+     * reset so the next notification triggers a fresh rebuild.
+     */
+    @Test
+    void onDataReceived_whenValueCannotBeDecoded_dropsBatchAndResetsTypeRegistry() throws Exception {
+        final OpcUaSubscriptionLifecycleHandler handler = createHandlerWithRealEventService();
+
+        // DefaultEncodingContext knows only the builtin OPC UA types, so the custom encoding id
+        // below has no codec — the same state as an incompletely rebuilt dynamic registry
+        when(opcUaClient.getDynamicEncodingContext()).thenReturn(DefaultEncodingContext.INSTANCE);
+        final DataPointListBuilder dataPointsPublisher = mock(DataPointListBuilder.class);
+        when(tagStreamingService.dataPointsPublisher()).thenReturn(dataPointsPublisher);
+        when(dataPointsPublisher.addDataPoint(any())).thenReturn(mock(DataPointBuilder.class));
+
+        final ExtensionObject undecodableStruct =
+                ExtensionObject.of(ByteString.of(new byte[] {1, 2, 3}), NodeId.parse("ns=2;i=5001"));
+        final DataValue structValue = new DataValue(new Variant(undecodableStruct), StatusCode.GOOD, null);
+
+        handler.onDataReceived(mock(OpcUaSubscription.class), List.of(createMonitoredItem()), List.of(structValue));
+
+        verify(dataPointsPublisher, never()).publish();
+        verify(metricsService).increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
+        verify(opcUaClient).resetDataTypeTree();
+        verify(opcUaClient).resetDynamicDataTypeManager();
+        verify(opcUaClient).resetDynamicEncodingContext();
+
+        // a second failure within the throttle window drops the batch again but must not trigger
+        // another full DataTypeTree rebuild
+        handler.onDataReceived(mock(OpcUaSubscription.class), List.of(createMonitoredItem()), List.of(structValue));
+
+        verify(dataPointsPublisher, never()).publish();
+        verify(opcUaClient, times(1)).resetDataTypeTree();
+        verify(opcUaClient, times(1)).resetDynamicDataTypeManager();
+        verify(opcUaClient, times(1)).resetDynamicEncodingContext();
+    }
+
+    @Test
+    void onDataReceived_whenValueDecodes_publishes() throws Exception {
+        final OpcUaSubscriptionLifecycleHandler handler = createHandlerWithRealEventService();
+
+        when(opcUaClient.getDynamicEncodingContext()).thenReturn(DefaultEncodingContext.INSTANCE);
+        final DataPointListBuilder dataPointsPublisher = mock(DataPointListBuilder.class);
+        when(tagStreamingService.dataPointsPublisher()).thenReturn(dataPointsPublisher);
+        when(dataPointsPublisher.addDataPoint(any()))
+                .thenReturn(mock(DataPointBuilder.class, withSettings().defaultAnswer(Answers.RETURNS_DEEP_STUBS)));
+
+        final DataValue stringValue = new DataValue(new Variant("hello"), StatusCode.GOOD, null);
+
+        handler.onDataReceived(mock(OpcUaSubscription.class), List.of(createMonitoredItem()), List.of(stringValue));
+
+        verify(dataPointsPublisher).publish();
+        verify(opcUaClient, never()).resetDataTypeTree();
+    }
+
+    private static @NotNull OpcUaMonitoredItem createMonitoredItem() {
+        final OpcUaMonitoredItem monitoredItem = mock(OpcUaMonitoredItem.class);
+        when(monitoredItem.getReadValueId())
+                .thenReturn(new ReadValueId(
+                        NodeId.parse(NODE_ID), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE));
+        return monitoredItem;
+    }
+
+    private OpcUaSubscriptionLifecycleHandler createHandlerWithRealEventService() {
+        return new OpcUaSubscriptionLifecycleHandler(
+                metricsService,
+                tagStreamingService,
+                new FakeEventService(),
+                ADAPTER_ID,
+                List.of(createTestTag()),
+                opcUaClient,
+                createConfig(ConnectionOptions.defaultConnectionOptions()));
     }
 
     private OpcUaSubscriptionLifecycleHandler createHandler(final @NotNull OpcUaSpecificAdapterConfig config) {
