@@ -16,6 +16,7 @@
 package com.hivemq.protocols.northbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
@@ -49,6 +50,23 @@ public class NorthboundConsumerFactory {
         return new NorthboundTagConsumer(
                 northboundMapping,
                 protocolAdapterWrapper,
+                objectMapper,
+                protocolAdapterPublishService,
+                protocolAdapterMetricsService,
+                eventService);
+    }
+
+    public @NotNull NorthboundTagConsumer build(
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapter adapter,
+            final @NotNull String protocolId,
+            final @NotNull NorthboundMapping northboundMapping,
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
+        return new NorthboundTagConsumer(
+                northboundMapping,
+                adapterId,
+                adapter,
+                protocolId,
                 objectMapper,
                 protocolAdapterPublishService,
                 protocolAdapterMetricsService,
