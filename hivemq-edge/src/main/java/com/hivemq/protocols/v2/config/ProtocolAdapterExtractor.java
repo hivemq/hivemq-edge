@@ -29,6 +29,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reads the {@code <v2>} configuration section, mirroring the legacy
@@ -56,6 +58,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ProtocolAdapterExtractor
         implements ReloadableExtractor<List<@NotNull ProtocolAdapterEntity>, ProtocolAdapterConfigUpdate> {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterExtractor.class);
 
     private volatile @NotNull List<ProtocolAdapterEntity> allConfigs = List.of();
     private volatile @NotNull List<RejectedAdapterEntity> rejectedConfigs = List.of();
