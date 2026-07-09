@@ -232,7 +232,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
 
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
         return new ProtocolAdapterContainer(
-                handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, entity);
+                handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, northboundConsumers, entity);
     }
 
     private @Nullable NorthboundTagConsumerRegistry createNorthboundConsumers(

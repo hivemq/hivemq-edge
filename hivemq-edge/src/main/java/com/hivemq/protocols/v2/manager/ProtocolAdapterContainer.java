@@ -69,22 +69,25 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
-        this(handle, dispatcherHandle, tickHandle, metrics, null, appliedEntity);
+        this(handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, null, appliedEntity);
     }
 
     /**
      * Create a running managed adapter with its teardown resources.
      *
-     * @param handle              the REST-readable handle.
-     * @param dispatcherHandle    the binding of the wrapper mailbox to the dispatcher.
-     * @param tickHandle          the periodic wrapper tick schedule.
-     * @param metrics             the per-adapter metrics.
-     * @param northboundConsumers the MQTT northbound consumers registered for this adapter.
-     * @param appliedEntity       the configuration this adapter is running.
+     * @param handle                  the REST-readable handle.
+     * @param dispatcherHandle        the binding of the wrapper mailbox to the dispatcher.
+     * @param adapterDispatcherHandle the teardown of the adapter itself and every dispatch binding it opened through
+     *                                the framework dispatcher.
+     * @param tickHandle              the periodic wrapper tick schedule.
+     * @param metrics                 the per-adapter metrics.
+     * @param northboundConsumers     the MQTT northbound consumers registered for this adapter.
+     * @param appliedEntity           the configuration this adapter is running.
      */
     public ProtocolAdapterContainer(
             final @NotNull ProtocolAdapterHandle handle,
             final @NotNull MessageDispatcherHandle dispatcherHandle,
+            final @NotNull AutoCloseable adapterDispatcherHandle,
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @Nullable NorthboundTagConsumerRegistry northboundConsumers,
