@@ -137,7 +137,7 @@ public final class FileProtocolAdapter extends AbstractProtocolAdapter {
         // The framework stamps the owning tag's name onto the value, so the node id is a stable placeholder here.
         final String tagName = fileNode.nodeId();
         return switch (value) {
-            case final JsonNode jsonNode -> dataPointFactory.createJsonDataPoint(tagName, jsonNode);
+            case final JsonNode jsonNode -> dataPointFactory.create(tagName, jsonNode);
             case final String text -> dataPointFactory.create(tagName, text);
             case final byte[] bytes -> dataPointFactory.create(tagName, bytes);
             default -> dataPointFactory.create(tagName, value.toString());

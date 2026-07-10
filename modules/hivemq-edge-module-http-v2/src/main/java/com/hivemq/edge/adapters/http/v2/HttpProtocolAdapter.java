@@ -226,7 +226,7 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
         // The framework stamps the owning tag's name onto the value, so the node id is a stable placeholder here.
         final String tagName = node.nodeId();
         if (payload instanceof final JsonNode jsonNode) {
-            return dataPointFactory.createJsonDataPoint(tagName, jsonNode);
+            return dataPointFactory.create(tagName, jsonNode);
         }
         return dataPointFactory.create(tagName, payload.toString());
     }

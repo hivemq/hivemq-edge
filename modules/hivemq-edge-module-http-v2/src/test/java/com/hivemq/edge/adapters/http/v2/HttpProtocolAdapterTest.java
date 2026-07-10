@@ -75,7 +75,7 @@ class HttpProtocolAdapterTest {
         assertThat(output.nodeErrors).isEmpty();
         assertThat(output.dataPoints).hasSize(1);
         assertThat(output.dataPoints.get(0).value().getTagValue()).isInstanceOf(JsonNode.class);
-        assertThat(output.dataPoints.get(0).value().treatTagValueAsJson()).isTrue();
+        assertThat(output.dataPoints.get(0).value().treatTagValueAsJson()).isFalse();
     }
 
     @Test
