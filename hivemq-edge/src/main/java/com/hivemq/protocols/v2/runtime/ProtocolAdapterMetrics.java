@@ -33,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>{@code protocol-adapter-v2.adapter.<id>.state.transitions} — counter, one per adapter-machine transition;</li>
  * <li>{@code protocol-adapter-v2.adapter.<id>.defensive.resets} — counter, one per defensive (unmatched) reset;</li>
  * <li>{@code protocol-adapter-v2.adapter.<id>.tag.<name>.failures} — counter per tag (poll/write/subscription failures);</li>
+ * <li>{@code protocol-adapter-v2.adapter.<id>.tag.<name>.writes.rejected} — counter per tag (southbound writes rejected because one was already in flight — should stay zero under a back-pressuring producer);</li>
  * <li>{@code protocol-adapter-v2.adapter.<id>.tick.lag} — gauge of {@code now - tick.nowMillis} at processing time.</li>
  * </ul>
  * Counters and the tick-lag holder are updated from the owning actor's dispatch thread; the gauges are read from
@@ -53,6 +54,7 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
     private final @NotNull Counter defensiveResets;
     private final @NotNull AtomicLong tickLagMillis = new AtomicLong();
     private final @NotNull Set<String> tagFailureNames = ConcurrentHashMap.newKeySet();
+    private final @NotNull Set<String> tagWriteRejectedNames = ConcurrentHashMap.newKeySet();
 
     /**
      * @param metricRegistry the shared registry to register on.
@@ -102,6 +104,19 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
     }
 
     /**
+     * Record one southbound write rejected for the named tag because one was already in flight (the aspect never
+     * queues), creating the counter on first use. Under a back-pressuring producer this stays at zero; a non-zero
+     * value means a producer submitted the next write before the current one completed.
+     *
+     * @param tagName the tag whose write was rejected.
+     */
+    public void incrementWriteRejected(final @NotNull String tagName) {
+        final String writeRejectedName = name("tag." + tagName + ".writes.rejected");
+        tagWriteRejectedNames.add(writeRejectedName);
+        metricRegistry.counter(writeRejectedName).inc();
+    }
+
+    /**
      * Publish the latest tick lag for the gauge to report.
      *
      * @param lagMillis {@code now - tick.nowMillis} measured when the tick was handled, in milliseconds.
@@ -121,6 +136,9 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
         metricRegistry.remove(defensiveResetsName);
         for (final String tagFailureName : tagFailureNames) {
             metricRegistry.remove(tagFailureName);
+        }
+        for (final String tagWriteRejectedName : tagWriteRejectedNames) {
+            metricRegistry.remove(tagWriteRejectedName);
         }
     }
 
