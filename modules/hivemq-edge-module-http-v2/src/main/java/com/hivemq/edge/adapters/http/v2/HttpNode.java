@@ -32,8 +32,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The HTTP adapter's protocol {@link Node}: one HTTP(s) endpoint to poll, plus the per-tag request shaping carried
  * over verbatim from the v1 HTTP tag definition — the request method, per-request timeout, request body and its
- * content type, and any custom headers. A URL pins one endpoint, so a node is {@link NodeProperty#UNIQUE} (and
- * therefore {@link NodeProperty#TYPED}); it is not {@link NodeProperty#VALID}-checked until poll time.
+ * content type, and any custom headers. The complete request definition identifies a node, so it is
+ * {@link NodeProperty#UNIQUE} (and therefore {@link NodeProperty#TYPED}); it is not
+ * {@link NodeProperty#VALID}-checked until poll time.
  * <p>
  * The fields carry a Jackson creator and property annotations so the framework's own {@code ObjectMapper}
  * deserializes this node from its {@link #nodeString()} when an Edge runtime loads a configured HTTP adapter. The
@@ -53,6 +54,7 @@ import org.jetbrains.annotations.Nullable;
 public final class HttpNode extends Node {
 
     static final int DEFAULT_TIMEOUT_SECONDS = 5;
+    static final int MIN_TIMEOUT_SECONDS = 1;
     static final int MAX_TIMEOUT_SECONDS = 60;
 
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -93,13 +95,13 @@ public final class HttpNode extends Node {
             @JsonProperty("httpRequestBodyContentType") final @Nullable HttpContentType httpRequestBodyContentType,
             @JsonProperty("httpRequestBody") final @Nullable String httpRequestBody,
             @JsonProperty("httpHeaders") final @Nullable List<HttpHeader> httpHeaders) {
-        this.url = url;
+        this.url = Objects.requireNonNull(url, "url must not be null");
         this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, HttpMethod.GET);
         this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, HttpContentType.JSON);
         this.httpRequestBody = httpRequestBody;
         // Ensure a reasonable timeout so a hung endpoint cannot wedge a poll, exactly as the v1 adapter does.
         this.httpRequestTimeoutSeconds = httpRequestTimeoutSeconds != null
-                ? Math.min(httpRequestTimeoutSeconds, MAX_TIMEOUT_SECONDS)
+                ? Math.max(MIN_TIMEOUT_SECONDS, Math.min(httpRequestTimeoutSeconds, MAX_TIMEOUT_SECONDS))
                 : DEFAULT_TIMEOUT_SECONDS;
         this.httpHeaders = httpHeaders != null ? List.copyOf(httpHeaders) : List.of();
     }
@@ -148,7 +150,7 @@ public final class HttpNode extends Node {
 
     @Override
     public @NotNull String nodeId() {
-        return url;
+        return nodeString();
     }
 
     @Override

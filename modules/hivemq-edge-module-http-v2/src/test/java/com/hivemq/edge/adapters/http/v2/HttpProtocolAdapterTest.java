@@ -159,7 +159,7 @@ class HttpProtocolAdapterTest {
                 5,
                 HttpContentType.JSON,
                 "{\"command\":\"open\"}",
-                List.of(new HttpHeader("X-Token", "secret")));
+                List.of(new HttpHeader("X-Token", "secret"), new HttpHeader("Content-Type", "text/plain")));
 
         poll(adapter, node);
         awaitResults(1);
@@ -169,6 +169,10 @@ class HttpProtocolAdapterTest {
         assertThat(request.method()).isEqualTo("POST");
         assertThat(request.body()).isEqualTo("{\"command\":\"open\"}");
         assertThat(request.firstHeader("Content-Type")).isEqualTo("application/json");
+        assertThat(request.headers().entrySet().stream()
+                        .filter(entry -> entry.getKey().equalsIgnoreCase("Content-Type"))
+                        .flatMap(entry -> entry.getValue().stream()))
+                .containsExactly("application/json");
         assertThat(request.firstHeader("X-Token")).isEqualTo("secret");
         assertThat(request.firstHeader("User-Agent")).startsWith("HiveMQ-Edge;");
     }

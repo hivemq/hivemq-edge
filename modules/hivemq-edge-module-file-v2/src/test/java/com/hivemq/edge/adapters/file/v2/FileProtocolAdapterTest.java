@@ -111,6 +111,17 @@ class FileProtocolAdapterTest {
     }
 
     @Test
+    void pollingAnInvalidPathReportsANodeError() {
+        final FileNode node = new FileNode("\0", FileContentType.TEXT_PLAIN);
+
+        poll(node);
+
+        assertThat(output.dataPoints).isEmpty();
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).reason()).contains("file path is invalid");
+    }
+
+    @Test
     void pollingAFileOverTheSizeCapReportsANodeErrorAndNoDataPoint(@TempDir final Path directory) throws IOException {
         final Path file = directory.resolve("big.txt");
         Files.write(file, new byte[64_001]);

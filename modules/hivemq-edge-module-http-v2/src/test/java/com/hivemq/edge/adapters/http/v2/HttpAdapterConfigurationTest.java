@@ -58,6 +58,34 @@ class HttpAdapterConfigurationTest {
     }
 
     @Test
+    void parsesTextualValuesFromTheRuntimeConfiguration() {
+        final HttpAdapterConfiguration configuration = HttpAdapterConfiguration.parse(
+                configOf(Map.of(
+                        "httpConnectTimeoutSeconds",
+                        "14",
+                        "allowUntrustedCertificates",
+                        "true",
+                        "assertResponseIsJson",
+                        "true",
+                        "httpPublishSuccessStatusCodeOnly",
+                        "false")),
+                objectMapper);
+
+        assertThat(configuration.httpConnectTimeoutSeconds()).isEqualTo(14);
+        assertThat(configuration.allowUntrustedCertificates()).isTrue();
+        assertThat(configuration.assertResponseIsJson()).isTrue();
+        assertThat(configuration.httpPublishSuccessStatusCodeOnly()).isFalse();
+    }
+
+    @Test
+    void clampsNonPositiveConnectTimeoutToTheMinimum() {
+        final HttpAdapterConfiguration configuration =
+                HttpAdapterConfiguration.parse(configOf(Map.of("httpConnectTimeoutSeconds", "0")), objectMapper);
+
+        assertThat(configuration.httpConnectTimeoutSeconds()).isEqualTo(HttpAdapterConfiguration.MIN_TIMEOUT_SECONDS);
+    }
+
+    @Test
     void ignoresUnknownKeys() {
         final HttpAdapterConfiguration configuration = HttpAdapterConfiguration.parse(
                 configOf(Map.of("allowUntrustedCertificates", true, "legacyPollingIntervalMillis", 1000)),

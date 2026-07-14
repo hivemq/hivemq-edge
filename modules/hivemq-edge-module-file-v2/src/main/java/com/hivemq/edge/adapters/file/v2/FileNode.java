@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import java.util.EnumSet;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -55,8 +56,8 @@ public final class FileNode extends Node {
     public FileNode(
             @JsonProperty(value = "filePath", required = true) final @NotNull String filePath,
             @JsonProperty(value = "contentType", required = true) final @NotNull FileContentType contentType) {
-        this.filePath = filePath;
-        this.contentType = contentType;
+        this.filePath = Objects.requireNonNull(filePath, "filePath must not be null");
+        this.contentType = Objects.requireNonNull(contentType, "contentType must not be null");
     }
 
     /**

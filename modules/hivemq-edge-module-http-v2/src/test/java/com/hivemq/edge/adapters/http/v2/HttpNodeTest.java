@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.http.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
@@ -62,12 +63,45 @@ class HttpNodeTest {
     }
 
     @Test
-    void isUniqueAndTypedAndIdentifiedByItsUrl() {
+    void clampsNonPositiveTimeoutToTheMinimum() {
+        final HttpNode node =
+                new HttpNode("https://example.org", HttpMethod.GET, 0, HttpContentType.JSON, null, List.of());
+
+        assertThat(node.httpRequestTimeoutSeconds()).isEqualTo(HttpNode.MIN_TIMEOUT_SECONDS);
+    }
+
+    @Test
+    void isUniqueAndTypedAndIdentifiedByItsCompleteRequest() {
         final HttpNode node =
                 new HttpNode("https://example.org/data", HttpMethod.GET, 5, HttpContentType.JSON, null, List.of());
 
         assertThat(node.properties()).containsExactlyInAnyOrder(NodeProperty.UNIQUE, NodeProperty.TYPED);
-        assertThat(node.nodeId()).isEqualTo("https://example.org/data");
+        assertThat(node.nodeId()).isEqualTo(node.nodeString());
+    }
+
+    @Test
+    void distinguishesRequestsToTheSameUrlWithDifferentRequestDefinitions() {
+        final HttpNode get =
+                new HttpNode("https://example.org/data", HttpMethod.GET, 5, HttpContentType.JSON, null, List.of());
+        final HttpNode post =
+                new HttpNode("https://example.org/data", HttpMethod.POST, 5, HttpContentType.JSON, "{}", List.of());
+        final HttpNode authenticatedGet = new HttpNode(
+                "https://example.org/data",
+                HttpMethod.GET,
+                5,
+                HttpContentType.JSON,
+                null,
+                List.of(new HttpHeader("Authorization", "Bearer token")));
+
+        assertThat(get.nodeId()).isNotEqualTo(post.nodeId());
+        assertThat(get.nodeId()).isNotEqualTo(authenticatedGet.nodeId());
+    }
+
+    @Test
+    void rejectsANullUrl() {
+        assertThatNullPointerException()
+                .isThrownBy(() -> new HttpNode(null, HttpMethod.GET, 5, HttpContentType.JSON, null, List.of()))
+                .withMessage("url must not be null");
     }
 
     @Test

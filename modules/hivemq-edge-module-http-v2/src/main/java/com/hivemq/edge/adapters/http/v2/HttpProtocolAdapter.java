@@ -92,12 +92,13 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
 
     @Override
     protected void doStop() {
-        httpClient = null;
+        shutdownHttpClient();
         output.stopped();
     }
 
     @Override
     protected void doConnect() {
+        shutdownHttpClient();
         try {
             final HttpClient.Builder builder = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
@@ -115,7 +116,7 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
 
     @Override
     protected void doDisconnect() {
-        httpClient = null;
+        shutdownHttpClient();
         output.disconnected();
     }
 
@@ -143,13 +144,25 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
         // what preserves v1's per-cycle parallelism, and the dispatch thread does not block on it.
         final var unused = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .whenComplete((response, throwable) -> {
-                    if (throwable != null) {
+                    if (httpClient != client) {
+                        return;
+                    }
+                    try {
+                        if (throwable != null) {
+                            output.nodeError(
+                                    node,
+                                    "the HTTP request to '" + httpNode.url() + "' failed: " + describe(throwable),
+                                    false);
+                        } else {
+                            handleResponse(httpNode, node, response);
+                        }
+                    } catch (final RuntimeException e) {
+                        LOG.debug("Could not process the HTTP response from '{}'.", httpNode.url(), e);
                         output.nodeError(
                                 node,
-                                "the HTTP request to '" + httpNode.url() + "' failed: " + describe(throwable),
+                                "the HTTP response from '" + httpNode.url() + "' could not be processed: "
+                                        + e.getMessage(),
                                 false);
-                    } else {
-                        handleResponse(httpNode, node, response);
                     }
                 });
     }
@@ -164,12 +177,12 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
             case GET -> builder.GET();
             case POST -> {
                 builder.POST(HttpRequest.BodyPublishers.ofString(bodyOrEmpty(node)));
-                builder.header(
+                builder.setHeader(
                         CONTENT_TYPE_HEADER, node.httpRequestBodyContentType().getMimeType());
             }
             case PUT -> {
                 builder.PUT(HttpRequest.BodyPublishers.ofString(bodyOrEmpty(node)));
-                builder.header(
+                builder.setHeader(
                         CONTENT_TYPE_HEADER, node.httpRequestBodyContentType().getMimeType());
             }
         }
@@ -229,6 +242,15 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
             return dataPointFactory.create(tagName, jsonNode);
         }
         return dataPointFactory.create(tagName, payload.toString());
+    }
+
+    private void shutdownHttpClient() {
+        final HttpClient client = httpClient;
+        httpClient = null;
+        if (client != null) {
+            // Cancels in-flight polls without blocking the adapter dispatcher during disconnect or reconnect.
+            client.shutdownNow();
+        }
     }
 
     @Override

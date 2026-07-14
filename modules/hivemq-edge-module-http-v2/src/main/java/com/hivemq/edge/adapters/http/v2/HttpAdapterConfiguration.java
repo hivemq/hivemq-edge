@@ -38,6 +38,7 @@ public record HttpAdapterConfiguration(
         boolean httpPublishSuccessStatusCodeOnly) {
 
     static final int DEFAULT_TIMEOUT_SECONDS = 5;
+    static final int MIN_TIMEOUT_SECONDS = 1;
     static final int MAX_TIMEOUT_SECONDS = 60;
 
     /**
@@ -53,7 +54,7 @@ public record HttpAdapterConfiguration(
         final JsonNode node = objectMapper.valueToTree(adapterConfig.getTagValue());
         final int connectTimeout = intField(node, "httpConnectTimeoutSeconds", DEFAULT_TIMEOUT_SECONDS);
         return new HttpAdapterConfiguration(
-                Math.min(connectTimeout, MAX_TIMEOUT_SECONDS),
+                Math.max(MIN_TIMEOUT_SECONDS, Math.min(connectTimeout, MAX_TIMEOUT_SECONDS)),
                 boolField(node, "allowUntrustedCertificates", false),
                 boolField(node, "assertResponseIsJson", false),
                 boolField(node, "httpPublishSuccessStatusCodeOnly", true));
@@ -61,12 +62,40 @@ public record HttpAdapterConfiguration(
 
     private static int intField(final @NotNull JsonNode node, final @NotNull String field, final int defaultValue) {
         final JsonNode value = node.get(field);
-        return (value != null && value.isNumber()) ? value.asInt() : defaultValue;
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value.isIntegralNumber() && value.canConvertToInt()) {
+            return value.intValue();
+        }
+        if (value.isTextual()) {
+            try {
+                return Integer.parseInt(value.textValue());
+            } catch (final NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
 
     private static boolean boolField(
             final @NotNull JsonNode node, final @NotNull String field, final boolean defaultValue) {
         final JsonNode value = node.get(field);
-        return (value != null && value.isBoolean()) ? value.asBoolean() : defaultValue;
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value.isBoolean()) {
+            return value.booleanValue();
+        }
+        if (value.isTextual()) {
+            final String text = value.textValue();
+            if ("true".equalsIgnoreCase(text)) {
+                return true;
+            }
+            if ("false".equalsIgnoreCase(text)) {
+                return false;
+            }
+        }
+        return defaultValue;
     }
 }

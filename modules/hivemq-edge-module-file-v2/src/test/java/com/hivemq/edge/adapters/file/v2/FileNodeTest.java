@@ -16,7 +16,10 @@
 package com.hivemq.edge.adapters.file.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
@@ -42,6 +45,24 @@ class FileNodeTest {
         final FileNode node = new FileNode("/data/reading.csv", FileContentType.TEXT_CSV);
 
         assertThat(node.properties()).containsExactlyInAnyOrder(NodeProperty.UNIQUE, NodeProperty.TYPED);
+    }
+
+    @Test
+    void rejectsNullRequiredFields() {
+        assertThatNullPointerException()
+                .isThrownBy(() -> new FileNode(null, FileContentType.TEXT_PLAIN))
+                .withMessage("filePath must not be null");
+        assertThatNullPointerException()
+                .isThrownBy(() -> new FileNode("/data/reading.txt", null))
+                .withMessage("contentType must not be null");
+    }
+
+    @Test
+    void rejectsAnUnknownContentTypeDuringDeserialization() {
+        assertThatThrownBy(() -> objectMapper.readValue(
+                        "{\"filePath\":\"/data/reading.txt\",\"contentType\":\"NOT_A_CONTENT_TYPE\"}", FileNode.class))
+                .isInstanceOf(JsonProcessingException.class)
+                .hasMessageContaining("NOT_A_CONTENT_TYPE");
     }
 
     @Test

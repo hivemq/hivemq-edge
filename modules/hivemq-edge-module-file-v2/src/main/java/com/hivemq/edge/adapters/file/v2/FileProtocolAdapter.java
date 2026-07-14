@@ -22,7 +22,9 @@ import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -47,7 +49,7 @@ public final class FileProtocolAdapter extends AbstractProtocolAdapter {
     /**
      * The maximum size, in bytes, of a file this adapter will read — carried over verbatim from the v1 adapter.
      */
-    private static final long MAX_FILE_SIZE_BYTES = 64_000;
+    private static final int MAX_FILE_SIZE_BYTES = 64_000;
 
     /**
      * @param input  everything this adapter instance is constructed from.
@@ -88,23 +90,22 @@ public final class FileProtocolAdapter extends AbstractProtocolAdapter {
             output.nodeError(node, "the file adapter received a node of an unexpected type", false);
             return;
         }
-        final Path path = Path.of(fileNode.filePath());
+        final Path path;
         try {
-            final long length = Files.size(path);
-            if (length > MAX_FILE_SIZE_BYTES) {
+            path = Path.of(fileNode.filePath());
+        } catch (final InvalidPathException e) {
+            output.nodeError(node, "The configured file path is invalid: " + e.getMessage(), false);
+            return;
+        }
+        try {
+            final byte[] fileContent = readAtMostMaxFileSize(path);
+            if (fileContent.length > MAX_FILE_SIZE_BYTES) {
                 output.nodeError(
                         node,
-                        "File '"
-                                + path.toAbsolutePath()
-                                + "' of size '"
-                                + length
-                                + "' exceeds the limit '"
-                                + MAX_FILE_SIZE_BYTES
-                                + "'.",
+                        "File '" + path.toAbsolutePath() + "' exceeds the limit '" + MAX_FILE_SIZE_BYTES + "'.",
                         false);
                 return;
             }
-            final byte[] fileContent = Files.readAllBytes(path);
             final Object value = fileNode.contentType().map(fileContent);
             if (value == null) {
                 output.nodeError(
@@ -130,6 +131,13 @@ public final class FileProtocolAdapter extends AbstractProtocolAdapter {
                             + "': "
                             + e.getMessage(),
                     false);
+        }
+    }
+
+    private static byte @NotNull [] readAtMostMaxFileSize(final @NotNull Path path) throws IOException {
+        try (InputStream inputStream = Files.newInputStream(path)) {
+            // Reading one byte beyond the cap makes the size check authoritative even when the file grows mid-poll.
+            return inputStream.readNBytes(MAX_FILE_SIZE_BYTES + 1);
         }
     }
 
