@@ -27,9 +27,11 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The table is built once and shared by every write aspect; an action acts through the {@link TagAspectWrite}
  * passed as the machine context. Goal and adapter-readiness changes never reach it — they are applied directly by
- * {@link TagAspectWrite}. The mandatory {@code unmatched} slot is lenient: an unexpected event
- * (a stale acknowledgment, or a second write while one is in flight) is logged and ignored, never a reset — this
- * is what enforces the single-in-flight-write rule.
+ * {@link TagAspectWrite}. The mandatory {@code unmatched} slot is lenient: an unexpected event is logged and
+ * ignored, never a reset — this is what enforces the single-in-flight-write rule. A second write arriving while
+ * one is in flight lands here too; {@link TagAspectWrite#logUnexpectedEvent} settles its completion
+ * {@link SouthboundWriteOutcome#REJECTED_BUSY} so the producer learns to hold off (option D: the aspect never
+ * queues).
  */
 public final class TagAspectWriteTransitions {
 
@@ -54,21 +56,21 @@ public final class TagAspectWriteTransitions {
                 TagAspectWriteState.WAITING_FOR_VERIFICATION_RETRY,
                 TagAspectWriteState.ERROR_PERMANENT_VERIFICATION_FAILURE);
         return builder
-                // A southbound write arrived while resting ready: request it and wait for the acknowledgment.
+                // A southbound write arrived while resting ready: request it, remember its completion, and wait
+                // for the acknowledgment.
                 .on(TagAspectWriteState.WAITING_FOR_WRITE_REQUEST, TagAspectEvent.WriteRequested.class)
                 .then((current, event, aspect) -> {
-                    aspect.requestWrite(((TagAspectEvent.WriteRequested) event).value());
+                    aspect.beginWrite((TagAspectEvent.WriteRequested) event);
                     return TagAspectWriteState.WAITING_FOR_WRITE_RESULT;
                 })
-                // The write was acknowledged successfully: return to the resting goal state.
+                // The write was acknowledged successfully: settle its completion and return to the resting state.
                 .on(TagAspectWriteState.WAITING_FOR_WRITE_RESULT, TagAspectEvent.WriteSucceeded.class)
-                .then((current, event, aspect) -> TagAspectWriteState.WAITING_FOR_WRITE_REQUEST)
-                // The write failed: log and count, return to the resting goal state — no flap to ERROR.
+                .then((current, event, aspect) -> aspect.completeInFlightWrite(true, null))
+                // The write failed: log and count, settle its completion, return to the resting state — no flap
+                // to ERROR.
                 .on(TagAspectWriteState.WAITING_FOR_WRITE_RESULT, TagAspectEvent.WriteFailed.class)
-                .then((current, event, aspect) -> {
-                    aspect.onWriteFailure(TagAspectPreOperatingTransitions.reasonOf(event));
-                    return TagAspectWriteState.WAITING_FOR_WRITE_REQUEST;
-                })
+                .then((current, event, aspect) ->
+                        aspect.completeInFlightWrite(false, TagAspectPreOperatingTransitions.reasonOf(event)))
                 .unmatched((current, event, aspect) -> {
                     aspect.logUnexpectedEvent(event);
                     return current;

@@ -231,10 +231,11 @@ public final class TagRuntime {
     /**
      * Route a southbound write request to the write aspect.
      *
-     * @param value the reused v1 value to write.
+     * @param value      the reused v1 value to write.
+     * @param completion the one-shot back-pressure signal for this write.
      */
-    public void submitWrite(final @NotNull DataPoint value) {
-        writeAspect.onWriteRequested(value);
+    public void submitWrite(final @NotNull DataPoint value, final @NotNull SouthboundWriteCompletion completion) {
+        writeAspect.onWriteRequested(value, completion);
     }
 
     /**

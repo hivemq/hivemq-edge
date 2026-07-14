@@ -195,10 +195,16 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     @Override
-    public void submitWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+    public void submitWrite(
+            final @NotNull Node node,
+            final @NotNull DataPoint value,
+            final @NotNull SouthboundWriteCompletion completion) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {
-            tagRuntime.submitWrite(value);
+            tagRuntime.submitWrite(value, completion);
+        } else {
+            // No such tag under this adapter: settle so a back-pressuring producer is never left waiting.
+            completion.settle(SouthboundWriteOutcome.REJECTED_BUSY);
         }
     }
 

@@ -132,8 +132,12 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     }
 
     @Override
-    public void submitWrite(final @NotNull Node node, final @NotNull DataPoint value) {
-        // No write aspect; the write is absorbed.
+    public void submitWrite(
+            final @NotNull Node node,
+            final @NotNull DataPoint value,
+            final @NotNull SouthboundWriteCompletion completion) {
+        // No write aspect in the snapshot-only plane; settle so a back-pressuring producer is never left waiting.
+        completion.settle(SouthboundWriteOutcome.REJECTED_BUSY);
     }
 
     @Override
