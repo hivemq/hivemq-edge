@@ -116,7 +116,7 @@
     "react-accessible-treeview": "2.11.2",
     "react-dom": "18.3.1",
     "react-dropzone": "14.4.1",
-    "react-hook-form": "7.80.0",
+    "react-hook-form": "7.81.0",
     "react-hotkeys-hook": "4.6.2",
     "react-i18next": "14.1.3",
     "react-icons": "5.7.0",
@@ -177,7 +177,7 @@
     "mochawesome": "^7.1.4",
     "mochawesome-merge": "^5.0.0",
     "mochawesome-report-generator": "^6.3.2",
-    "msw": "2.14.6",
+    "msw": "2.15.0",
     "openapi-typescript-codegen": "0.31.0",
     "prettier": "3.9.5",
     "sass": "1.101.0",
@@ -185,7 +185,7 @@
     "stylelint-config-standard": "37.0.0",
     "stylelint-config-standard-scss": "14.0.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.62.1",
+    "typescript-eslint": "8.64.0",
     "vite": "7.3.6",
     "vite-plugin-istanbul": "7.2.1",
     "vitest": "3.2.7"
@@ -201,5 +201,5 @@
     "js-yaml": "4.3.0",
     "ajv": "^8.20.0"
   },
-  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b"
+  "packageManager": "pnpm@11.13.0+sha512.88d94724d8f2e6c186744a5584c6e59ecac869ec7ba15e9cb4cd628e8dc7066820b2481d8ee3b51ea8da323a7378068aa58c556a3720d32b7c20a051d088363a"
 }
