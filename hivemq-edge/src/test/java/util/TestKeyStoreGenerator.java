@@ -121,7 +121,9 @@ public class TestKeyStoreGenerator {
 
         if (withX500) {
             // CN = Common Name, OU = Organisational Unit, O = Organisation, C = Country, ST = State
-            x500Name = new X500Name("CN=" + name + ", OU=" + name + ", O=" + name + ", C=" + name + ", ST=" + name);
+            // C (country, OID 2.5.4.6) must be a valid 2-character ISO 3166-1 code; BouncyCastle 1.85+
+            // rejects anything else, so it is kept fixed independently of the store name.
+            x500Name = new X500Name("CN=" + name + ", OU=" + name + ", O=" + name + ", C=DE, ST=" + name);
         } else {
             // At least 1 attribute is required
             x500Name = new X500Name("CN=" + name);
