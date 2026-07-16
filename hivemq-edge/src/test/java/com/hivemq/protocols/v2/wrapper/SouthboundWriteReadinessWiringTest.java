@@ -47,7 +47,7 @@ class SouthboundWriteReadinessWiringTest {
         rig.plane.offer(TAG, dataPoint(2));
         rig.fixture.drain();
         assertThat(rig.fixture.writeState(TAG)).isEqualTo("DEACTIVATED");
-        assertThat(rig.channel().backlog().pendingSize()).isEqualTo(2);
+        assertThat(rig.pending()).isEqualTo(2);
         assertThat(rig.channel().queue().deliveries()).isZero();
 
         // Activation connects and verifies the tag; its tagWritable opens the window and the head flows — no
@@ -62,7 +62,7 @@ class SouthboundWriteReadinessWiringTest {
         rig.ackInFlight();
         assertThat(rig.fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_REQUEST");
         assertThat(rig.channel().queue().committed()).isEqualTo(2);
-        assertThat(rig.channel().backlog().pendingSize()).isZero();
+        assertThat(rig.pending()).isZero();
         assertThat(rig.channel().queue().windowViolations()).isZero();
     }
 
@@ -81,7 +81,7 @@ class SouthboundWriteReadinessWiringTest {
         rig.fixture.send(new ProtocolAdapterWrapperEvent.Disconnected());
         assertThat(rig.channel().queue().suspended()).isTrue();
         assertThat(rig.channel().queue().keptForRedelivery()).isEqualTo(1);
-        assertThat(rig.channel().backlog().pendingSize()).isEqualTo(2); // nothing lost, nothing committed
+        assertThat(rig.pending()).isEqualTo(2); // nothing lost, nothing committed
 
         // The retry backoff fires, the adapter reconnects and the tag re-verifies; its tagWritable redelivers the
         // SAME command — nobody called resume().
@@ -93,7 +93,7 @@ class SouthboundWriteReadinessWiringTest {
         rig.ackInFlight();
         rig.ackInFlight();
         assertThat(rig.channel().queue().committed()).isEqualTo(2);
-        assertThat(rig.channel().backlog().pendingSize()).isZero();
+        assertThat(rig.pending()).isZero();
         assertThat(rig.channel().queue().windowViolations()).isZero();
         assertThat(rig.fixture.metricRegistry
                         .counter(com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics.ADAPTER_PREFIX
@@ -116,14 +116,14 @@ class SouthboundWriteReadinessWiringTest {
         rig.plane.offer(TAG, dataPoint(1));
         rig.fixture.drain();
         assertThat(rig.channel().queue().deliveries()).isZero();
-        assertThat(rig.channel().backlog().pendingSize()).isEqualTo(1);
+        assertThat(rig.pending()).isEqualTo(1);
 
         // Southbound comes back: re-verification completes, tagWritable reopens the window, the command flows.
         rig.fixture.activate(ProtocolAdapterDirection.SOUTHBOUND);
         assertThat(rig.fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_RESULT");
         rig.ackInFlight();
         assertThat(rig.channel().queue().committed()).isEqualTo(1);
-        assertThat(rig.channel().backlog().pendingSize()).isZero();
+        assertThat(rig.pending()).isZero();
     }
 
     // ── the rig: a write-only fixture with a real plane attached as the readiness listener ────────────────────────
@@ -166,6 +166,12 @@ class SouthboundWriteReadinessWiringTest {
             final SouthboundWritePlane.TagChannel channel = plane.channel(TAG);
             assertThat(channel).isNotNull();
             return channel;
+        }
+
+        private int pending() {
+            return ((com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog)
+                            channel().backlog())
+                    .pendingSize();
         }
 
         /** Acknowledge the in-flight write with success and drain the cascade (settle → commit → deliver next). */

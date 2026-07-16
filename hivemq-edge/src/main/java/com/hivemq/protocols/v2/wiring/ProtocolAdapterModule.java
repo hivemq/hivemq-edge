@@ -24,7 +24,8 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.manager.DefaultProtocolAdapterWrapperFactory;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterFactoryRegistry;
@@ -135,7 +136,8 @@ public abstract class ProtocolAdapterModule {
             final @NotNull ObjectMapper objectMapper,
             final @NotNull TagManager tagManager,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
-            final @NotNull InternalProtocolAdapterWritingService writingService) {
+            final @NotNull LocalTopicTree localTopicTree,
+            final @NotNull ClientQueuePersistence clientQueuePersistence) {
         return new DefaultProtocolAdapterWrapperFactory(
                 clock,
                 dispatcher,
@@ -145,7 +147,8 @@ public abstract class ProtocolAdapterModule {
                 WRAPPER_TICK_PERIOD_MILLIS,
                 tagManager,
                 northboundConsumerFactory,
-                writingService);
+                localTopicTree,
+                clientQueuePersistence);
     }
 
     @Provides
