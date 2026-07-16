@@ -94,6 +94,17 @@ final class RecordingClientQueue extends UnsupportedClientQueuePersistence {
     }
 
     @Override
+    public @NotNull ListenableFuture<Void> removeInFlightMarker(
+            final @NotNull String sharedSubscription, final @NotNull String uniqueId) {
+        final Set<String> leasedIds = leased.get(sharedSubscription);
+        if (leasedIds != null) {
+            leasedIds.remove(uniqueId);
+        }
+        firePublishAvailable(sharedSubscription);
+        return Futures.immediateFuture(null);
+    }
+
+    @Override
     public void addPublishAvailableCallback(
             final @NotNull PublishAvailableCallback callback, final @NotNull String queueId) {
         callbacks.put(queueId, callback);

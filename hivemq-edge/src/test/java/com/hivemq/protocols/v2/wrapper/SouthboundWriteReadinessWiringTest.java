@@ -95,7 +95,8 @@ class SouthboundWriteReadinessWiringTest {
         assertThat(rig.channel().queue().committed()).isEqualTo(2);
         assertThat(rig.pending()).isZero();
         assertThat(rig.channel().queue().windowViolations()).isZero();
-        assertThat(rig.fixture.metricRegistry
+        assertThat(rig.fixture
+                        .metricRegistry
                         .counter(com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics.ADAPTER_PREFIX
                                 + rig.fixture.adapterId + ".tag." + TAG + ".writes.rejected")
                         .getCount())
@@ -157,8 +158,7 @@ class SouthboundWriteReadinessWiringTest {
                         }
                     })
                     .build();
-            this.plane =
-                    new SouthboundWritePlane(fixture.adapterId, fixture.mailbox, 100, fixture.nodes, Set.of(TAG));
+            this.plane = new SouthboundWritePlane(fixture.adapterId, fixture.mailbox, 100, fixture.nodes, Set.of(TAG));
             delegate.set(plane);
         }
 

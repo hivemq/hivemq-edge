@@ -165,16 +165,24 @@ class ClientQueueSouthboundWriteBacklogTest {
     }
 
     @Test
-    void close_releasesTheCallback_andDropsTheLease() {
+    void close_releasesTheCallbackAndTheLease_soASuccessorBacklogCanTakeOver() {
         fake.enqueue(publish(1, "a"));
         final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
-        assertThat(backlog.head()).isNotNull();
+        final SouthboundCommand leased = backlog.head();
+        assertThat(leased).isNotNull();
 
         backlog.close();
 
         assertThat(fake.callbacks).isEmpty();
         assertThat(backlog.head()).isNull();
         assertThat(fake.pending()).isEqualTo(1); // the durable storage is untouched — that IS the durability
+
+        // An adapter recreate in the same process: the successor backlog leases the very same command — the closed
+        // backlog released its in-flight marker, so the head is not stranded until a restart.
+        final ClientQueueSouthboundWriteBacklog successor = newBacklog();
+        final SouthboundCommand relesed = successor.head();
+        assertThat(relesed).isNotNull();
+        assertThat(relesed.id()).isEqualTo(leased.id());
     }
 
     @Test
@@ -189,7 +197,8 @@ class ClientQueueSouthboundWriteBacklogTest {
 
         final List<Object> delivered = new ArrayList<>();
         while (queue.inFlight()) {
-            delivered.add(sender.requests.get(sender.requests.size() - 1).value().getTagValue());
+            delivered.add(
+                    sender.requests.get(sender.requests.size() - 1).value().getTagValue());
             sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
         }
 
@@ -282,6 +291,14 @@ class ClientQueueSouthboundWriteBacklogTest {
         }
 
         @Override
+        public @NotNull ListenableFuture<Void> removeInFlightMarker(
+                final @NotNull String sharedSubscription, final @NotNull String uniqueId) {
+            leased.remove(uniqueId);
+            firePublishAvailable();
+            return Futures.immediateFuture(null);
+        }
+
+        @Override
         public void addPublishAvailableCallback(
                 final @NotNull PublishAvailableCallback callback, final @NotNull String queueId) {
             callbacks.put(queueId, callback);
@@ -304,7 +321,7 @@ class ClientQueueSouthboundWriteBacklogTest {
         }
 
         private void settleLast(final @NotNull SouthboundWriteOutcome outcome) {
-            requests.get(requests.size() - 1).completion().settle(outcome);
+            requests.get(requests.size() - 1).completion().settle(outcome, null);
         }
     }
 

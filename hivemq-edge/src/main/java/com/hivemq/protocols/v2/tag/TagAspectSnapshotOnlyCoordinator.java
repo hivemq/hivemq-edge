@@ -137,7 +137,7 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
             final @NotNull DataPoint value,
             final @NotNull SouthboundWriteCompletion completion) {
         // No write aspect in the snapshot-only plane; settle so a back-pressuring producer is never left waiting.
-        completion.settle(SouthboundWriteOutcome.REJECTED_BUSY);
+        completion.settle(SouthboundWriteOutcome.REJECTED_BUSY, "the adapter has no write plane");
     }
 
     @Override

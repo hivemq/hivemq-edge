@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.tag;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The one-shot callback a southbound write carries so its submitter learns when the write reaches a terminal
@@ -36,10 +37,13 @@ public interface SouthboundWriteCompletion {
      * Report the write's terminal outcome. Called once, on the dispatch thread.
      *
      * @param outcome the terminal outcome.
+     * @param reason  what made it terminal — the device's own failure reason for a {@code FAILED} write, why the
+     *                write was abandoned for an {@code ABORTED} one; {@code null} on success. Travels into the
+     *                published verdict, so the device's words are what the operator reads.
      */
-    void settle(@NotNull SouthboundWriteOutcome outcome);
+    void settle(@NotNull SouthboundWriteOutcome outcome, @Nullable String reason);
 
     /** A completion that discards the outcome — for fire-and-forget callers that do not back-pressure. */
     @NotNull
-    SouthboundWriteCompletion IGNORED = outcome -> {};
+    SouthboundWriteCompletion IGNORED = (outcome, reason) -> {};
 }

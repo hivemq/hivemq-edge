@@ -240,7 +240,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             tagRuntime.submitWrite(value, completion);
         } else {
             // No such tag under this adapter: settle so a back-pressuring producer is never left waiting.
-            completion.settle(SouthboundWriteOutcome.REJECTED_BUSY);
+            completion.settle(SouthboundWriteOutcome.REJECTED_BUSY, "no such tag under this adapter");
         }
     }
 

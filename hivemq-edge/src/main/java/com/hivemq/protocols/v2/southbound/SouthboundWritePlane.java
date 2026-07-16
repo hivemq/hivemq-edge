@@ -245,11 +245,10 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
         return new TagChannel(node, backlog, queue);
     }
 
-    private void dropChannel(final @NotNull String tagName, final @NotNull TagChannel channel,
-            final @NotNull String reason) {
+    private void dropChannel(
+            final @NotNull String tagName, final @NotNull TagChannel channel, final @NotNull String reason) {
         channel.queue().suspend();
-        if (channel.backlog() instanceof final InMemorySouthboundWriteBacklog inMemory
-                && inMemory.pendingSize() > 0) {
+        if (channel.backlog() instanceof final InMemorySouthboundWriteBacklog inMemory && inMemory.pendingSize() > 0) {
             log.warn(
                     "Dropping {} pending southbound command(s) for tag '{}' on adapter '{}': {}",
                     inMemory.pendingSize(),
@@ -264,7 +263,10 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
         try {
             channel.backlog().close();
         } catch (final Exception exception) {
-            log.warn("Failed to close the southbound backlog of tag '{}' on adapter '{}'", tagName, adapterId,
+            log.warn(
+                    "Failed to close the southbound backlog of tag '{}' on adapter '{}'",
+                    tagName,
+                    adapterId,
                     exception);
         }
     }

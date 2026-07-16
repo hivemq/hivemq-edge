@@ -66,8 +66,7 @@ class SouthboundWritePlaneTest {
     @Test
     void tagWritableOpensTheWindow_tagUnwritableClosesIt() {
         final CapturingSender sender = new CapturingSender();
-        final SouthboundWritePlane plane =
-                new SouthboundWritePlane("a1", sender, 10, List.of(pair(TAG)), Set.of(TAG));
+        final SouthboundWritePlane plane = new SouthboundWritePlane("a1", sender, 10, List.of(pair(TAG)), Set.of(TAG));
         plane.offer(TAG, value(1));
         plane.offer(TAG, value(2));
 
@@ -84,7 +83,8 @@ class SouthboundWritePlaneTest {
         // Writable again: the SAME command is redelivered.
         plane.tagWritable(TAG);
         assertThat(sender.requests).hasSize(2);
-        assertThat(sender.requests.get(1).value()).isEqualTo(sender.requests.get(0).value());
+        assertThat(sender.requests.get(1).value())
+                .isEqualTo(sender.requests.get(0).value());
 
         // Notifications for unknown tags are ignored.
         plane.tagWritable("unknown");
@@ -133,8 +133,7 @@ class SouthboundWritePlaneTest {
     @Test
     void closeSuspendsAndDropsEverything() {
         final CapturingSender sender = new CapturingSender();
-        final SouthboundWritePlane plane =
-                new SouthboundWritePlane("a1", sender, 10, List.of(pair(TAG)), Set.of(TAG));
+        final SouthboundWritePlane plane = new SouthboundWritePlane("a1", sender, 10, List.of(pair(TAG)), Set.of(TAG));
         plane.offer(TAG, value(1));
 
         plane.close();
@@ -172,7 +171,7 @@ class SouthboundWritePlaneTest {
         }
 
         private void settleLast(final @NotNull com.hivemq.protocols.v2.tag.SouthboundWriteOutcome outcome) {
-            requests.get(requests.size() - 1).completion().settle(outcome);
+            requests.get(requests.size() - 1).completion().settle(outcome, null);
         }
     }
 

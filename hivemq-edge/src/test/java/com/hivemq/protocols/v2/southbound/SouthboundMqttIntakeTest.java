@@ -19,12 +19,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
-import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
@@ -46,13 +45,14 @@ class SouthboundMqttIntakeTest {
     private static final @NotNull String ADAPTER_ID = "a1";
     private static final @NotNull String SHARE = "adapter-forwarder#adapter-writer-v2-" + ADAPTER_ID;
 
-    private final @NotNull LocalTopicTree topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
-    private final @NotNull RecordingClientQueue clientQueue = new RecordingClientQueue();
+    private final @NotNull RecordingBrokerRuntime broker = new RecordingBrokerRuntime();
+    private final @NotNull LocalTopicTree topicTree = broker.topicTree;
+    private final @NotNull RecordingClientQueue clientQueue = broker.clientQueue;
 
     @Test
     void oneSharedSubscriptionPerMapping_andTheBacklogLeasesFromTheMappingQueue() {
-        final SouthboundMqttIntake intake = newIntake(
-                mapping("cmd/setpoint", "setpoint"), mapping("cmd/ramp", "ramp-rate"));
+        final SouthboundMqttIntake intake =
+                newIntake(mapping("cmd/setpoint", "setpoint"), mapping("cmd/ramp", "ramp-rate"));
 
         // The share subscribes both topics — a publish to either finds the shared subscriber.
         assertThat(topicTree.getSharedSubscriber(SHARE, "cmd/setpoint")).isNotEmpty();
@@ -87,8 +87,8 @@ class SouthboundMqttIntakeTest {
 
     @Test
     void aTagMappedTwice_keepsOnlyTheFirstMapping() {
-        final SouthboundMqttIntake intake = newIntake(
-                mapping("cmd/first", "setpoint"), mapping("cmd/second", "setpoint"));
+        final SouthboundMqttIntake intake =
+                newIntake(mapping("cmd/first", "setpoint"), mapping("cmd/second", "setpoint"));
 
         intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
 
@@ -105,6 +105,96 @@ class SouthboundMqttIntakeTest {
     }
 
     @Test
+    void terminalOutcomes_publishRetainedVerdicts_onTheResultTopic() throws Exception {
+        final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
+        clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(1, "a"));
+        clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(2, "b"));
+        final SouthboundWriteBacklog backlog = intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
+
+        // Success: a retained QoS 1 verdict on the /result sibling with the full correlation payload.
+        final SouthboundCommand first = backlog.head();
+        assertThat(first).isNotNull();
+        backlog.removeHead(first.id());
+        assertThat(broker.publishService.published).hasSize(1);
+        final PUBLISH successVerdict = broker.publishService.published.get(0);
+        assertThat(successVerdict.getTopic()).isEqualTo("cmd/setpoint/result");
+        assertThat(successVerdict.isRetain()).isTrue();
+        assertThat(successVerdict.getQoS()).isEqualTo(QoS.AT_LEAST_ONCE);
+        final var success = new ObjectMapper().readTree(successVerdict.getPayload());
+        assertThat(success.get("adapterId").asText()).isEqualTo(ADAPTER_ID);
+        assertThat(success.get("tag").asText()).isEqualTo("setpoint");
+        assertThat(success.get("commandTopic").asText()).isEqualTo("cmd/setpoint");
+        assertThat(success.get("commandId").asText()).isEqualTo(first.id());
+        assertThat(success.get("outcome").asText()).isEqualTo("SUCCEEDED");
+        assertThat(success.get("reason").isNull()).isTrue();
+        assertThat(success.get("deduplicated").asBoolean()).isFalse();
+        // The echo: what was executed, so a publisher recognizes its own command's reply.
+        assertThat(success.get("command").asText()).isEqualTo("a");
+        assertThat(success.get("correlationData").isNull()).isTrue(); // an MQTT 3 command carries none
+        assertThat(success.get("completedAtMillis").asLong()).isPositive();
+
+        // Device rejection: a FAILED verdict carrying the reason.
+        final SouthboundCommand second = backlog.head();
+        assertThat(second).isNotNull();
+        backlog.deadLetterHead(second.id(), "device rejected the value");
+        final var failure = new ObjectMapper()
+                .readTree(broker.publishService.published.get(1).getPayload());
+        assertThat(failure.get("outcome").asText()).isEqualTo("FAILED");
+        assertThat(failure.get("reason").asText()).isEqualTo("device rejected the value");
+    }
+
+    @Test
+    void crashReplayedCommand_isRecognizedByTheRetainedVerdict_andRecommittedWithoutExecuting() throws Exception {
+        // The crash window: the device executed command 1 and its verdict was retained, but the crash landed before
+        // the command was deleted from the durable queue — on restart it is still there, at the head.
+        final PUBLISH replayed = publish(1, "a");
+        clientQueue.enqueue(SHARE + "/cmd/setpoint", replayed);
+        clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(2, "b"));
+        final String verdictJson = "{\"commandId\":\"" + replayed.getUniqueId() + "\",\"outcome\":\"SUCCEEDED\"}";
+        broker.retainedStore.retained.put(
+                "cmd/setpoint/result",
+                new com.hivemq.persistence.RetainedMessage(verdictJson.getBytes(UTF_8), QoS.AT_LEAST_ONCE, 1L, 3600));
+
+        final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
+        final SouthboundWriteBacklog backlog = intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
+
+        // The replayed command never surfaces: it is re-committed and its verdict re-reported as deduplicated;
+        // the next command leases normally.
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("b");
+        assertThat(clientQueue.removed).containsExactly(replayed.getUniqueId());
+        assertThat(broker.publishService.published).hasSize(1);
+        final var dedupVerdict = new ObjectMapper()
+                .readTree(broker.publishService.published.get(0).getPayload());
+        assertThat(dedupVerdict.get("commandId").asText()).isEqualTo(replayed.getUniqueId());
+        assertThat(dedupVerdict.get("outcome").asText()).isEqualTo("SUCCEEDED");
+        assertThat(dedupVerdict.get("deduplicated").asBoolean()).isTrue();
+    }
+
+    @Test
+    void aNonMatchingRetainedVerdict_neverSuppressesTheHead() {
+        // The retained verdict names an older, already-deleted command: the head was never executed and must run.
+        clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(7, "fresh"));
+        broker.retainedStore.retained.put(
+                "cmd/setpoint/result",
+                new com.hivemq.persistence.RetainedMessage(
+                        "{\"commandId\":\"some-older-command\",\"outcome\":\"SUCCEEDED\"}".getBytes(UTF_8),
+                        QoS.AT_LEAST_ONCE,
+                        1L,
+                        3600));
+
+        final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
+        final SouthboundWriteBacklog backlog = intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
+
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("fresh");
+        assertThat(clientQueue.removed).isEmpty();
+        assertThat(broker.publishService.published).isEmpty();
+    }
+
+    @Test
     void close_removesTheSubscriptions_butLeavesTheQueuesAlone() {
         final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
         clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(1, "pending"));
@@ -118,7 +208,8 @@ class SouthboundMqttIntakeTest {
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
 
     private @NotNull SouthboundMqttIntake newIntake(final @NotNull SouthboundMappingEntity... mappings) {
-        return new SouthboundMqttIntake(ADAPTER_ID, topicTree, clientQueue, dataPointFactory(), List.of(mappings));
+        return new SouthboundMqttIntake(
+                ADAPTER_ID, broker.runtime(), dataPointFactory(), new ObjectMapper(), List.of(mappings));
     }
 
     private static @NotNull SouthboundMappingEntity mapping(final @NotNull String topic, final @NotNull String tag) {
@@ -140,7 +231,8 @@ class SouthboundMqttIntakeTest {
         };
     }
 
-    private static @NotNull PUBLISH publish(final long publishId, final @org.jetbrains.annotations.Nullable String payload) {
+    private static @NotNull PUBLISH publish(
+            final long publishId, final @org.jetbrains.annotations.Nullable String payload) {
         final PUBLISHFactory.Mqtt3Builder builder = new PUBLISHFactory.Mqtt3Builder()
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)

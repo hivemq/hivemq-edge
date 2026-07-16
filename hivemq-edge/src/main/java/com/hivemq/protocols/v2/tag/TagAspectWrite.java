@@ -182,7 +182,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
             return;
         }
         cancelActiveTimer();
-        settleInFlight(SouthboundWriteOutcome.ABORTED);
+        settleInFlight(SouthboundWriteOutcome.ABORTED, "the tag was deactivated");
         moveTo(TagAspectWriteState.DEACTIVATED);
     }
 
@@ -219,7 +219,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
         final TagAspectState current = machine.state();
         if (!current.isDeactivated() && !current.isPermanentVerificationFailure()) {
             cancelActiveTimer();
-            settleInFlight(SouthboundWriteOutcome.ABORTED);
+            settleInFlight(SouthboundWriteOutcome.ABORTED, "the adapter connection was lost");
             verificationRetryBackoff.reset();
             moveTo(TagAspectWriteState.WAITING_FOR_ADAPTER_READY);
         }
@@ -333,7 +333,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
         // Defensive: the single-in-flight invariant means no completion should linger when a new write begins. If one
         // somehow does, abort it rather than leak it (a leaked completion would strand a back-pressuring producer).
         if (inFlightCompletion != null) {
-            settleInFlight(SouthboundWriteOutcome.ABORTED);
+            settleInFlight(SouthboundWriteOutcome.ABORTED, "superseded by a new write");
         }
         requestWrite(event.value());
         inFlightCompletion = event.completion();
@@ -352,7 +352,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
         if (!success) {
             recordFailure(reason != null ? reason : "write failed");
         }
-        settleInFlight(success ? SouthboundWriteOutcome.SUCCEEDED : SouthboundWriteOutcome.FAILED);
+        settleInFlight(success ? SouthboundWriteOutcome.SUCCEEDED : SouthboundWriteOutcome.FAILED, reason);
         return TagAspectWriteState.WAITING_FOR_WRITE_REQUEST;
     }
 
@@ -368,7 +368,9 @@ public final class TagAspectWrite implements TagAspectVerifying {
                                 + "flight (the sender must hold the next write until the current one settles)",
                         tag.name(),
                         adapterId);
-                writeRequested.completion().settle(SouthboundWriteOutcome.REJECTED_BUSY);
+                writeRequested
+                        .completion()
+                        .settle(SouthboundWriteOutcome.REJECTED_BUSY, "a write is already in flight");
                 return;
             }
             // A write arriving while the aspect cannot write (deactivated, waiting for the adapter, verifying, or
@@ -379,7 +381,9 @@ public final class TagAspectWrite implements TagAspectVerifying {
                     tag.name(),
                     adapterId,
                     machine.state());
-            writeRequested.completion().settle(SouthboundWriteOutcome.ABORTED);
+            writeRequested
+                    .completion()
+                    .settle(SouthboundWriteOutcome.ABORTED, "the tag cannot write in " + machine.state());
             return;
         }
         log.debug(
@@ -395,11 +399,11 @@ public final class TagAspectWrite implements TagAspectVerifying {
      *
      * @param outcome the terminal outcome to report.
      */
-    private void settleInFlight(final @NotNull SouthboundWriteOutcome outcome) {
+    private void settleInFlight(final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
         final SouthboundWriteCompletion completion = inFlightCompletion;
         if (completion != null) {
             inFlightCompletion = null;
-            completion.settle(outcome);
+            completion.settle(outcome, reason);
         }
     }
 

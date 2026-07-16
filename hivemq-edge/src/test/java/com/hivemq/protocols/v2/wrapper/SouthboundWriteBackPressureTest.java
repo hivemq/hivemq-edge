@@ -48,7 +48,8 @@ class SouthboundWriteBackPressureTest {
         final Node node = fixture.nodeFor(TAG);
         final List<SouthboundWriteOutcome> outcomes = new ArrayList<>();
 
-        fixture.send(new ProtocolAdapterWrapperWriteRequest(node, dataPoint("1"), outcomes::add));
+        fixture.send(new ProtocolAdapterWrapperWriteRequest(
+                node, dataPoint("1"), (outcome, reason) -> outcomes.add(outcome)));
         assertThat(fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_RESULT");
         assertThat(outcomes).isEmpty(); // not settled until the device acknowledges
 
@@ -58,7 +59,8 @@ class SouthboundWriteBackPressureTest {
         assertThat(outcomes).containsExactly(SouthboundWriteOutcome.SUCCEEDED);
 
         // A failed write settles FAILED (and counts) but never flaps the tag to ERROR.
-        fixture.send(new ProtocolAdapterWrapperWriteRequest(node, dataPoint("2"), outcomes::add));
+        fixture.send(new ProtocolAdapterWrapperWriteRequest(
+                node, dataPoint("2"), (outcome, reason) -> outcomes.add(outcome)));
         fixture.output.writeResult(node, false, "device rejected the value");
         fixture.drain();
         assertThat(outcomes).containsExactly(SouthboundWriteOutcome.SUCCEEDED, SouthboundWriteOutcome.FAILED);
@@ -74,11 +76,13 @@ class SouthboundWriteBackPressureTest {
         final List<SouthboundWriteOutcome> first = new ArrayList<>();
         final List<SouthboundWriteOutcome> second = new ArrayList<>();
 
-        fixture.send(new ProtocolAdapterWrapperWriteRequest(node, dataPoint("1"), first::add));
+        fixture.send(
+                new ProtocolAdapterWrapperWriteRequest(node, dataPoint("1"), (outcome, reason) -> first.add(outcome)));
         assertThat(fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_RESULT");
 
         // A second write arriving while one is in flight is rejected immediately — not queued.
-        fixture.send(new ProtocolAdapterWrapperWriteRequest(node, dataPoint("2"), second::add));
+        fixture.send(
+                new ProtocolAdapterWrapperWriteRequest(node, dataPoint("2"), (outcome, reason) -> second.add(outcome)));
         assertThat(second).containsExactly(SouthboundWriteOutcome.REJECTED_BUSY);
         assertThat(first).isEmpty(); // the first write is still in flight, untouched
         assertThat(fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_RESULT");
@@ -98,7 +102,8 @@ class SouthboundWriteBackPressureTest {
         final Node node = fixture.nodeFor(TAG);
         final List<SouthboundWriteOutcome> outcomes = new ArrayList<>();
 
-        fixture.send(new ProtocolAdapterWrapperWriteRequest(node, dataPoint("1"), outcomes::add));
+        fixture.send(new ProtocolAdapterWrapperWriteRequest(
+                node, dataPoint("1"), (outcome, reason) -> outcomes.add(outcome)));
         assertThat(fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_RESULT");
 
         // Southbound is turned off while a write is in flight: the write is abandoned, and its completion is
@@ -157,7 +162,8 @@ class SouthboundWriteBackPressureTest {
 
         // A write reaching a deactivated aspect is aborted — the retryable outcome — so a delivering queue keeps
         // the command for redelivery. It is NOT a window violation: nothing was in flight.
-        fixture.send(new ProtocolAdapterWrapperWriteRequest(node, dataPoint("1"), outcomes::add));
+        fixture.send(new ProtocolAdapterWrapperWriteRequest(
+                node, dataPoint("1"), (outcome, reason) -> outcomes.add(outcome)));
 
         assertThat(outcomes).containsExactly(SouthboundWriteOutcome.ABORTED);
         assertThat(writesRejected(fixture)).isZero();

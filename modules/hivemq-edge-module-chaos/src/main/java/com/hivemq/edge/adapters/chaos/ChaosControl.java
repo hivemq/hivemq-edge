@@ -16,11 +16,13 @@
 package com.hivemq.edge.adapters.chaos;
 
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -45,6 +47,7 @@ public final class ChaosControl {
 
     private static final @NotNull Map<String, ChaosScript> SCRIPTS = new ConcurrentHashMap<>();
     private static final @NotNull Map<String, List<NodeTagPair>> NODES = new ConcurrentHashMap<>();
+    private static final @NotNull Map<String, List<WriteEntry>> WRITES = new ConcurrentHashMap<>();
     private static final @NotNull ChaosScript EMPTY = ChaosScript.builder().build();
 
     private ChaosControl() {}
@@ -87,12 +90,33 @@ public final class ChaosControl {
     }
 
     /**
-     * Forget every registered script and captured node. Call before each test so one test's adapters never leak into
-     * the next.
+     * @param adapterId the adapter whose device-side executions to observe.
+     * @return every write the instance's {@code writeBatch} received, in arrival order — the device's own record of
+     *         what was actually executed, for exactly-once and at-least-once assertions.
+     */
+    public static @NotNull List<WriteEntry> writesFor(final @NotNull String adapterId) {
+        return List.copyOf(WRITES.getOrDefault(adapterId, List.of()));
+    }
+
+    /**
+     * Record one write reaching the device. Called by the adapter's {@code writeBatch}.
+     *
+     * @param adapterId the receiving instance's id.
+     * @param entry     the write entry as delivered.
+     */
+    static void recordWrite(final @NotNull String adapterId, final @NotNull WriteEntry entry) {
+        WRITES.computeIfAbsent(adapterId, ignored -> new CopyOnWriteArrayList<>())
+                .add(entry);
+    }
+
+    /**
+     * Forget every registered script, captured node, and recorded write. Call before each test so one test's
+     * adapters never leak into the next.
      */
     public static void reset() {
         SCRIPTS.clear();
         NODES.clear();
+        WRITES.clear();
     }
 
     /**
