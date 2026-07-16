@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>{@code protocol-adapter-v2.adapter.<id>.state.transitions} — counter, one per adapter-machine transition;</li>
  * <li>{@code protocol-adapter-v2.adapter.<id>.defensive.resets} — counter, one per defensive (unmatched) reset;</li>
  * <li>{@code protocol-adapter-v2.adapter.<id>.tag.<name>.failures} — counter per tag (poll/write/subscription failures);</li>
- * <li>{@code protocol-adapter-v2.adapter.<id>.tag.<name>.writes.rejected} — counter per tag (southbound writes rejected because one was already in flight — should stay zero under a back-pressuring producer);</li>
+ * <li>{@code protocol-adapter-v2.adapter.<id>.tag.<name>.writes.rejected} — counter per tag (southbound writes rejected because one was already in flight — a violation of the advertised in-flight window of one that stays zero when deliveries are paced by the southbound write queue);</li>
  * <li>{@code protocol-adapter-v2.adapter.<id>.tick.lag} — gauge of {@code now - tick.nowMillis} at processing time.</li>
  * </ul>
  * Counters and the tick-lag holder are updated from the owning actor's dispatch thread; the gauges are read from

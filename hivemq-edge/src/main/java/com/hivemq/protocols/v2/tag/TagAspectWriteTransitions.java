@@ -28,10 +28,11 @@ import org.jetbrains.annotations.NotNull;
  * The table is built once and shared by every write aspect; an action acts through the {@link TagAspectWrite}
  * passed as the machine context. Goal and adapter-readiness changes never reach it — they are applied directly by
  * {@link TagAspectWrite}. The mandatory {@code unmatched} slot is lenient: an unexpected event is logged and
- * ignored, never a reset — this is what enforces the single-in-flight-write rule. A second write arriving while
- * one is in flight lands here too; {@link TagAspectWrite#logUnexpectedEvent} settles its completion
- * {@link SouthboundWriteOutcome#REJECTED_BUSY} so the producer learns to hold off (option D: the aspect never
- * queues).
+ * ignored, never a reset — this is what enforces the single-in-flight-write rule. A write arriving outside the
+ * resting state lands here too and is settled rather than ignored ({@link TagAspectWrite#logUnexpectedEvent}):
+ * {@link SouthboundWriteOutcome#REJECTED_BUSY} while one is already in flight (a violation of the advertised
+ * window of one — the aspect never queues), {@link SouthboundWriteOutcome#ABORTED} while the aspect cannot write
+ * at all, so the sender keeps the command queued for redelivery.
  */
 public final class TagAspectWriteTransitions {
 
