@@ -114,6 +114,11 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
         this.wakeup = requireNonNull(wakeup);
     }
 
+    @Override
+    public void close() {
+        // Nothing beyond the stored commands to release — and those die with this object anyway (not durable).
+    }
+
     private void requireHead(final @NotNull String id) {
         final SouthboundCommand head = pending.peekFirst();
         if (head == null || !id.equals(head.id())) {

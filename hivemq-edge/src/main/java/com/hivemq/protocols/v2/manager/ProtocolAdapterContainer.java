@@ -22,6 +22,7 @@ import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
+import com.hivemq.protocols.v2.southbound.SouthboundMqttIntake;
 import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import java.util.List;
 import java.util.Set;
@@ -52,6 +53,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     private final @Nullable AutoCloseable tickHandle;
     private final @Nullable ProtocolAdapterMetrics metrics;
     private final @Nullable NorthboundTagConsumerRegistry northboundConsumers;
+    private final @Nullable SouthboundMqttIntake southboundIntake;
     private @NotNull ProtocolAdapterEntity appliedEntity;
 
     /**
@@ -72,7 +74,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
-        this(handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, null, appliedEntity);
+        this(handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, null, null, appliedEntity);
     }
 
     /**
@@ -85,6 +87,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
      * @param tickHandle              the periodic wrapper tick schedule.
      * @param metrics                 the per-adapter metrics.
      * @param northboundConsumers     the MQTT northbound consumers registered for this adapter.
+     * @param southboundIntake        the MQTT intake subscriptions feeding this adapter's southbound queues.
      * @param appliedEntity           the configuration this adapter is running.
      */
     public ProtocolAdapterContainer(
@@ -94,6 +97,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @Nullable NorthboundTagConsumerRegistry northboundConsumers,
+            final @Nullable SouthboundMqttIntake southboundIntake,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
         this.handle = handle;
         this.dispatcherHandle = dispatcherHandle;
@@ -101,6 +105,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
         this.tickHandle = tickHandle;
         this.metrics = metrics;
         this.northboundConsumers = northboundConsumers;
+        this.southboundIntake = southboundIntake;
         this.appliedEntity = appliedEntity;
     }
 
@@ -112,6 +117,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
         this.tickHandle = null;
         this.metrics = null;
         this.northboundConsumers = null;
+        this.southboundIntake = null;
         this.appliedEntity = entity;
     }
 
@@ -198,6 +204,9 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
         closeQuietly(adapterDispatcherHandle, "adapter dispatcher bindings");
         closeQuietly(metrics, "metrics");
         closeQuietly(northboundConsumers, "northbound consumers");
+        // The intake first (no new subscriptions feed the queues), then the plane (windows and backlog leases). The
+        // durable queues and their contents survive — a recreated adapter picks them up.
+        closeQuietly(southboundIntake, "southbound MQTT intake");
         closeQuietly(handle.southboundWritePlane(), "southbound write plane");
     }
 

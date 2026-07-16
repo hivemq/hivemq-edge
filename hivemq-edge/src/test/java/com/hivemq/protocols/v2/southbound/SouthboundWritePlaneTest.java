@@ -60,7 +60,7 @@ class SouthboundWritePlaneTest {
         final SouthboundWritePlane.TagChannel channel = plane.channel(TAG);
         assertThat(channel).isNotNull();
         assertThat(channel.queue().suspended()).isTrue();
-        assertThat(channel.backlog().pendingSize()).isEqualTo(1);
+        assertThat(pending(channel)).isEqualTo(1);
     }
 
     @Test
@@ -112,7 +112,7 @@ class SouthboundWritePlaneTest {
         // aspect re-verifies from scratch and its tagWritable reopens the window.
         final SouthboundWritePlane.TagChannel survived = plane.channel(TAG);
         assertThat(survived).isNotNull();
-        assertThat(survived.backlog().pendingSize()).isEqualTo(1);
+        assertThat(pending(survived)).isEqualTo(1);
         assertThat(survived.queue().suspended()).isTrue();
 
         // The new tag's channel exists and is suspended, holding nothing yet.
@@ -127,7 +127,7 @@ class SouthboundWritePlaneTest {
         final SouthboundWritePlane.TagChannel replaced = plane.channel(TAG);
         assertThat(replaced).isNotNull();
         assertThat(replaced.node().nodeId()).isEqualTo("moved");
-        assertThat(replaced.backlog().pendingSize()).isZero();
+        assertThat(pending(replaced)).isZero();
     }
 
     @Test
@@ -144,6 +144,10 @@ class SouthboundWritePlaneTest {
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+    private static int pending(final @NotNull SouthboundWritePlane.TagChannel channel) {
+        return ((InMemorySouthboundWriteBacklog) channel.backlog()).pendingSize();
+    }
 
     private static @NotNull NodeTagPair pair(final @NotNull String tagName) {
         return NodeTagPair.create(new TestNode(tagName), tagName, schema(), true, false);

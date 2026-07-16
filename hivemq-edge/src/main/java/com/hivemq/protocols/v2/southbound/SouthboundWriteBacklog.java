@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * <b>without holding their own lock</b>, so the queue can call straight back into {@link #head()} without
  * deadlock.
  */
-public interface SouthboundWriteBacklog {
+public interface SouthboundWriteBacklog extends AutoCloseable {
 
     /**
      * @return the head command without removing it, or {@code null} when the backlog is empty. Repeated calls
@@ -70,4 +70,12 @@ public interface SouthboundWriteBacklog {
      * @param wakeup the callback to run when a command is available.
      */
     void onAvailable(final @NotNull Runnable wakeup);
+
+    /**
+     * Release whatever the backlog holds onto beyond its stored commands — callbacks, leases. A durable backlog's
+     * <b>storage</b> is deliberately untouched: it outlives the backlog object by design (that is the durability),
+     * and a successor picks its contents up. The in-memory stand-in has nothing to release.
+     */
+    @Override
+    void close();
 }

@@ -61,15 +61,17 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
     /** One write-mapped tag's delivery channel: its durable backlog and the queue pacing it to the aspect. */
     public record TagChannel(
             @NotNull Node node,
-            @NotNull InMemorySouthboundWriteBacklog backlog,
+            @NotNull SouthboundWriteBacklog backlog,
             @NotNull SouthboundWriteQueue queue) {}
 
     private final @NotNull String adapterId;
     private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender;
-    private final int backlogCapacity;
+    private final @NotNull SouthboundWriteBacklogFactory backlogFactory;
     private final @NotNull ConcurrentHashMap<String, TagChannel> channels = new ConcurrentHashMap<>();
 
     /**
+     * A plane over the interim in-memory backlogs.
+     *
      * @param adapterId         the owning adapter's id.
      * @param wrapperSender     the send-only handle to the adapter wrapper's mailbox.
      * @param backlogCapacity   the per-tag backlog bound ({@code southbound-write-backlog-capacity}); offers beyond
@@ -83,12 +85,34 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
             final int backlogCapacity,
             final @NotNull List<NodeTagPair> nodes,
             final @NotNull Set<String> writeUsedTagNames) {
+        this(
+                adapterId,
+                wrapperSender,
+                SouthboundWriteBacklogFactory.inMemory(backlogCapacity),
+                nodes,
+                writeUsedTagNames);
+    }
+
+    /**
+     * @param adapterId         the owning adapter's id.
+     * @param wrapperSender     the send-only handle to the adapter wrapper's mailbox.
+     * @param backlogFactory    builds the backlog behind each tag's channel (in-memory today; the durable
+     *                          client-queue one once the MQTT intake supplies queue ids).
+     * @param nodes             the configured node/tag pairs.
+     * @param writeUsedTagNames the tags referenced by a southbound mapping — one channel each.
+     */
+    public SouthboundWritePlane(
+            final @NotNull String adapterId,
+            final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender,
+            final @NotNull SouthboundWriteBacklogFactory backlogFactory,
+            final @NotNull List<NodeTagPair> nodes,
+            final @NotNull Set<String> writeUsedTagNames) {
         this.adapterId = adapterId;
         this.wrapperSender = wrapperSender;
-        this.backlogCapacity = backlogCapacity;
+        this.backlogFactory = backlogFactory;
         for (final NodeTagPair pair : nodes) {
             if (writeUsedTagNames.contains(pair.tag().name())) {
-                channels.put(pair.tag().name(), newSuspendedChannel(pair.node()));
+                channels.put(pair.tag().name(), newSuspendedChannel(pair.tag().name(), pair.node()));
             }
         }
     }
@@ -111,7 +135,16 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
                     adapterId);
             return false;
         }
-        channel.backlog().offer(value);
+        if (!(channel.backlog() instanceof final InMemorySouthboundWriteBacklog offerable)) {
+            // A durable backlog is fed by the broker (its MQTT queue), never offered to directly.
+            log.warn(
+                    "Southbound write for tag '{}' on adapter '{}' offered to a broker-fed backlog — discarded "
+                            + "(publish to the mapped topic instead)",
+                    tagName,
+                    adapterId);
+            return false;
+        }
+        offerable.offer(value);
         return true;
     }
 
@@ -133,16 +166,7 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
             if (!writeUsedTagNames.contains(entry.getKey())) {
                 final TagChannel dropped = channels.remove(entry.getKey());
                 if (dropped != null) {
-                    dropped.queue().suspend();
-                    final int pending = dropped.backlog().pendingSize();
-                    if (pending > 0) {
-                        log.warn(
-                                "Dropping {} pending southbound command(s) for tag '{}' on adapter '{}': the tag is "
-                                        + "no longer write-mapped",
-                                pending,
-                                entry.getKey(),
-                                adapterId);
-                    }
+                    dropChannel(entry.getKey(), dropped, "the tag is no longer write-mapped");
                 }
             }
         }
@@ -153,21 +177,12 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
             }
             final TagChannel existing = channels.get(tagName);
             if (existing == null) {
-                channels.put(tagName, newSuspendedChannel(pair.node()));
+                channels.put(tagName, newSuspendedChannel(tagName, pair.node()));
             } else if (!existing.node().equals(pair.node())) {
                 // The tag now addresses a different node: pending commands were aimed at the old one — replace the
                 // channel rather than deliver them to a node they never targeted.
-                existing.queue().suspend();
-                final int pending = existing.backlog().pendingSize();
-                if (pending > 0) {
-                    log.warn(
-                            "Dropping {} pending southbound command(s) for tag '{}' on adapter '{}': the tag's node "
-                                    + "changed",
-                            pending,
-                            tagName,
-                            adapterId);
-                }
-                channels.put(tagName, newSuspendedChannel(pair.node()));
+                dropChannel(tagName, existing, "the tag's node changed");
+                channels.put(tagName, newSuspendedChannel(tagName, pair.node()));
             } else {
                 // Surviving tag: keep the backlog (pending commands ride out the reload), close the window until the
                 // rebuilt aspect re-verifies and reports writable again.
@@ -209,23 +224,48 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
     }
 
     /**
-     * Close every delivery window and drop the channels. Pending commands are discarded with the plane — the
-     * interim backlog is in-memory; a durable backlog outlives its plane by construction.
+     * Close every delivery window, close the backlogs, and drop the channels. In-memory backlogs die with the
+     * plane; a durable backlog's storage outlives it by construction — only its callbacks and leases are released.
      */
     @Override
     public void close() {
-        for (final TagChannel channel : channels.values()) {
-            channel.queue().suspend();
+        for (final Map.Entry<String, TagChannel> entry : channels.entrySet()) {
+            entry.getValue().queue().suspend();
+            closeBacklog(entry.getKey(), entry.getValue());
         }
         channels.clear();
     }
 
-    private @NotNull TagChannel newSuspendedChannel(final @NotNull Node node) {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(backlogCapacity);
+    private @NotNull TagChannel newSuspendedChannel(final @NotNull String tagName, final @NotNull Node node) {
+        final SouthboundWriteBacklog backlog = backlogFactory.create(tagName, node);
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(wrapperSender, node, backlog);
         // The window opens on the tag's first tagWritable (verified); until then commands wait in the backlog
         // instead of bouncing off an aspect that can only abort them.
         queue.suspend();
         return new TagChannel(node, backlog, queue);
+    }
+
+    private void dropChannel(final @NotNull String tagName, final @NotNull TagChannel channel,
+            final @NotNull String reason) {
+        channel.queue().suspend();
+        if (channel.backlog() instanceof final InMemorySouthboundWriteBacklog inMemory
+                && inMemory.pendingSize() > 0) {
+            log.warn(
+                    "Dropping {} pending southbound command(s) for tag '{}' on adapter '{}': {}",
+                    inMemory.pendingSize(),
+                    tagName,
+                    adapterId,
+                    reason);
+        }
+        closeBacklog(tagName, channel);
+    }
+
+    private void closeBacklog(final @NotNull String tagName, final @NotNull TagChannel channel) {
+        try {
+            channel.backlog().close();
+        } catch (final Exception exception) {
+            log.warn("Failed to close the southbound backlog of tag '{}' on adapter '{}'", tagName, adapterId,
+                    exception);
+        }
     }
 }

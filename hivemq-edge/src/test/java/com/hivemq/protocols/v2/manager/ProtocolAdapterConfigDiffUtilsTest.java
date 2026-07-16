@@ -42,6 +42,19 @@ class ProtocolAdapterConfigDiffUtilsTest {
     }
 
     @Test
+    void changedSouthboundMapping_isAFullRecreate() {
+        // Southbound mappings define the adapter's MQTT intake subscriptions and durable queues, baked in at
+        // creation — they never mutate in place. (Northbound mappings stay TAGS_ONLY.)
+        final ProtocolAdapterEntity running =
+                adapter("a").southboundMapping("cmd/temperature", "temperature").build();
+        final ProtocolAdapterEntity updated =
+                adapter("a").southboundMapping("cmd/other", "temperature").build();
+
+        assertThat(ProtocolAdapterConfigDiffUtils.classify(running, updated))
+                .isEqualTo(ProtocolAdapterConfigStateTransition.FULL_RECREATE);
+    }
+
+    @Test
     void flippedAdapterDirection_isActivationOnly() {
         final ProtocolAdapterEntity running =
                 adapter("a").southboundActivated(false).build();
