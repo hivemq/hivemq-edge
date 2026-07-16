@@ -28,6 +28,7 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.tag.TagAspectSnapshotOnlyCoordinator;
+import com.hivemq.protocols.v2.tag.TagWriteReadinessListener;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.view.TagStatus;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
@@ -100,7 +101,8 @@ final class WrapperTestFixture {
                     builder.initialGoal,
                     builder.pollIntervalMillis,
                     builder.pollResultTimeoutMillis,
-                    builder.retryPolicy);
+                    builder.retryPolicy,
+                    builder.writeReadinessListener);
             snapshotOnlyTagPlane = null;
             tagPlane = runningTagPlane;
         } else {
@@ -314,6 +316,7 @@ final class WrapperTestFixture {
         private @Nullable Map<String, TagAspectActivationPreference> activation;
         private @Nullable Set<String> readUsed;
         private @Nullable Set<String> writeUsed;
+        private @NotNull TagWriteReadinessListener writeReadinessListener = TagWriteReadinessListener.NONE;
 
         @NotNull
         Builder adapterId(final @NotNull String adapterId) {
@@ -394,6 +397,16 @@ final class WrapperTestFixture {
         @NotNull
         Builder writeUsed(final @NotNull Set<String> writeUsed) {
             this.writeUsed = writeUsed;
+            return this;
+        }
+
+        /**
+         * Attach a write-readiness listener (e.g. a {@code SouthboundWritePlane}) to the running coordinator's
+         * write aspects.
+         */
+        @NotNull
+        Builder writeReadinessListener(final @NotNull TagWriteReadinessListener listener) {
+            this.writeReadinessListener = listener;
             return this;
         }
 

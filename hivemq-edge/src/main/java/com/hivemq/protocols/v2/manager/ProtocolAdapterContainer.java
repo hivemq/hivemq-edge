@@ -23,8 +23,9 @@ import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
-import com.hivemq.protocols.v2.southbound.SouthboundWriterRegistry;
+import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -176,15 +177,18 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     }
 
     /**
-     * Refresh the southbound write wiring after a tags-only reload changed the mappings or the node set.
+     * Refresh the southbound write plane's per-tag channels after a tags-only reload. Must run <b>before</b> the
+     * wrapper is told the corresponding {@code UpdateTagSet}, so a rebuilt aspect's readiness notification can never
+     * arrive ahead of its channel.
      *
-     * @param mappings the updated v2 southbound mappings.
-     * @param nodes    the adapter's current node/tag pairs.
+     * @param nodes             the new node/tag pairs.
+     * @param writeUsedTagNames the new write-mapped tag names.
      */
-    public void updateSouthboundMappings(
-            final @NotNull List<SouthboundMappingEntity> mappings, final @NotNull List<NodeTagPair> nodes) {
-        if (southboundWriters != null) {
-            southboundWriters.updateMappings(mappings, nodes);
+    public void updateSouthboundWritePlane(
+            final @NotNull List<NodeTagPair> nodes, final @NotNull Set<String> writeUsedTagNames) {
+        final SouthboundWritePlane plane = handle.southboundWritePlane();
+        if (plane != null) {
+            plane.updateTagSet(nodes, writeUsedTagNames);
         }
     }
 
@@ -200,7 +204,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
         closeQuietly(adapterDispatcherHandle, "adapter dispatcher bindings");
         closeQuietly(metrics, "metrics");
         closeQuietly(northboundConsumers, "northbound consumers");
-        closeQuietly(southboundWriters, "southbound writers");
+        closeQuietly(handle.southboundWritePlane(), "southbound write plane");
     }
 
     private void closeQuietly(final @Nullable AutoCloseable closeable, final @NotNull String what) {

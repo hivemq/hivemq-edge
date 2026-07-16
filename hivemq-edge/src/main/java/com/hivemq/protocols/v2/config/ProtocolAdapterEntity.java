@@ -61,6 +61,13 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     public static final long DEFAULT_WATCHDOG_TIMEOUT_MILLIS = 30_000;
     public static final long DEFAULT_COMMAND_TIMEOUT_MILLIS = 10_000;
 
+    /**
+     * Default bound of the per-tag southbound write backlog — the number of pending commands a write-mapped tag can
+     * hold before the newest offer is shed. The bound is the back-pressure limit; it applies at the durable backlog,
+     * never at the adapter (which holds one write at most).
+     */
+    public static final int DEFAULT_SOUTHBOUND_WRITE_BACKLOG_CAPACITY = 1_000;
+
     private static final @NotNull Pattern PROTOCOL_ID_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
 
     @XmlElement(name = "adapter-id", required = true)
@@ -93,6 +100,9 @@ public class ProtocolAdapterEntity implements EntityValidatable {
 
     @XmlElement(name = "command-timeout-millis")
     private long commandTimeoutMillis = DEFAULT_COMMAND_TIMEOUT_MILLIS;
+
+    @XmlElement(name = "southbound-write-backlog-capacity")
+    private int southboundWriteBacklogCapacity = DEFAULT_SOUTHBOUND_WRITE_BACKLOG_CAPACITY;
 
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
@@ -183,6 +193,13 @@ public class ProtocolAdapterEntity implements EntityValidatable {
         return commandTimeoutMillis;
     }
 
+    /**
+     * @return the per-tag bound of the southbound write backlog; offers beyond it shed the newest command.
+     */
+    public int getSouthboundWriteBacklogCapacity() {
+        return southboundWriteBacklogCapacity;
+    }
+
     public @NotNull List<TagEntity> getTags() {
         return tags;
     }
@@ -260,6 +277,12 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + ") must be strictly greater than command-timeout-millis ("
                         + commandTimeoutMillis
                         + ")");
+        EntityValidatable.notMatch(
+                validationEvents,
+                () -> southboundWriteBacklogCapacity > 0,
+                () -> "adapter [" + adapterId + "] southbound-write-backlog-capacity ("
+                        + southboundWriteBacklogCapacity
+                        + ") must be positive");
 
         retryPolicy.validate(validationEvents);
         // Both passes are per-tag; the second needs this adapter's id for its messages, which the tag has no way to
@@ -345,6 +368,7 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                     && skipVerification == that.skipVerification
                     && watchdogTimeoutMillis == that.watchdogTimeoutMillis
                     && commandTimeoutMillis == that.commandTimeoutMillis
+                    && southboundWriteBacklogCapacity == that.southboundWriteBacklogCapacity
                     && Objects.equals(adapterId, that.adapterId)
                     && Objects.equals(protocolId, that.protocolId)
                     && Objects.equals(adapterConfiguration, that.adapterConfiguration)
@@ -369,6 +393,7 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                 retryPolicy,
                 watchdogTimeoutMillis,
                 commandTimeoutMillis,
+                southboundWriteBacklogCapacity,
                 tags,
                 northboundMappings,
                 southboundMappings);

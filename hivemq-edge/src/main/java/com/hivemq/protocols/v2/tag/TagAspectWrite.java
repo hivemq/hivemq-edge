@@ -91,6 +91,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     private final @NotNull BatchCollector batches;
     private final @NotNull ProtocolAdapterMetrics metrics;
     private final @NotNull SharedNodeVerification sharedNodeVerification;
+    private final @NotNull TagWriteReadinessListener readinessListener;
     private final @NotNull Backoff verificationRetryBackoff;
 
     private final @NotNull FSM<TagAspectState, TagAspectEvent, TagAspectWrite> machine;
@@ -114,6 +115,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
      * @param batches                the actor's batch collector — where write requests are posted.
      * @param metrics                the per-adapter metrics (per-tag failure counters).
      * @param sharedNodeVerification the shared verification authority for re-verifications.
+     * @param readinessListener      notified when this aspect crosses its writability boundary.
      * @param retryPolicy            the backoff policy for verification retries.
      */
     public TagAspectWrite(
@@ -125,6 +127,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
             final @NotNull BatchCollector batches,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
+            final @NotNull TagWriteReadinessListener readinessListener,
             final @NotNull RetryPolicy retryPolicy) {
         this.adapterId = adapterId;
         this.node = node;
@@ -134,6 +137,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
         this.batches = batches;
         this.metrics = metrics;
         this.sharedNodeVerification = sharedNodeVerification;
+        this.readinessListener = readinessListener;
         this.verificationRetryBackoff = new Backoff(retryPolicy);
         this.machine = new FSM<>(TagAspectWriteState.DEACTIVATED, TagAspectWriteTransitions.table(), this);
     }
@@ -471,15 +475,38 @@ public final class TagAspectWrite implements TagAspectVerifying {
     private void dispatch(final @NotNull TagAspectEvent event) {
         final TagAspectState before = machine.state();
         machine.onEvent(event);
-        if (machine.state() != before) {
+        final TagAspectState after = machine.state();
+        if (after != before) {
             lastTransitionAtMillis = clock.nowMillis();
+            notifyReadinessCrossing(before, after);
         }
     }
 
     private void moveTo(final @NotNull TagAspectState next) {
-        if (machine.state() != next) {
+        final TagAspectState before = machine.state();
+        if (before != next) {
             machine.transitionTo(next);
             lastTransitionAtMillis = clock.nowMillis();
+            notifyReadinessCrossing(before, next);
+        }
+    }
+
+    /**
+     * Notify the readiness listener when a transition crossed the writability boundary
+     * ({@link TagAspectState#isOperating()}). Transitions within the operating pair — the normal write
+     * round-trip — never notify: a tag mid-write is busy, not unwritable.
+     *
+     * @param before the state before the transition.
+     * @param after  the state after it.
+     */
+    private void notifyReadinessCrossing(final @NotNull TagAspectState before, final @NotNull TagAspectState after) {
+        if (before.isOperating() == after.isOperating()) {
+            return;
+        }
+        if (after.isOperating()) {
+            readinessListener.tagWritable(tag.name());
+        } else {
+            readinessListener.tagUnwritable(tag.name());
         }
     }
 

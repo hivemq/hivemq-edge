@@ -55,6 +55,7 @@ public final class TagRuntime {
      * @param batches                the actor's batch collector.
      * @param metrics                the per-adapter metrics.
      * @param sharedNodeVerification the shared verification authority.
+     * @param readinessListener       notified when the write aspect crosses its writability boundary.
      * @param pollIntervalMillis      the poll cadence for a polled read aspect, in milliseconds.
      * @param pollResultTimeoutMillis the deadline for a requested poll's result (EDG-824 #15).
      * @param retryPolicy             the backoff policy for verification and subscription retries.
@@ -67,6 +68,7 @@ public final class TagRuntime {
             final @NotNull BatchCollector batches,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
+            final @NotNull TagWriteReadinessListener readinessListener,
             final long pollIntervalMillis,
             final long pollResultTimeoutMillis,
             final @NotNull RetryPolicy retryPolicy) {
@@ -92,6 +94,7 @@ public final class TagRuntime {
                 batches,
                 metrics,
                 sharedNodeVerification,
+                readinessListener,
                 retryPolicy);
     }
 
