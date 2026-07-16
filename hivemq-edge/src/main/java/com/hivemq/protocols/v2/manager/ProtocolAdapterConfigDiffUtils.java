@@ -97,7 +97,8 @@ public final class ProtocolAdapterConfigDiffUtils {
             @NotNull Map<String, Object> adapterConfiguration,
             @NotNull RetryPolicyEntity retryPolicy,
             long watchdogTimeoutMillis,
-            long commandTimeoutMillis) {}
+            long commandTimeoutMillis,
+            int southboundWriteBacklogCapacity) {}
 
     private static @NotNull ConnectionCritical connectionCritical(final @NotNull ProtocolAdapterEntity entity) {
         return new ConnectionCritical(
@@ -107,7 +108,10 @@ public final class ProtocolAdapterConfigDiffUtils {
                 entity.getAdapterConfiguration(),
                 entity.getRetryPolicy(),
                 entity.getWatchdogTimeoutMillis(),
-                entity.getCommandTimeoutMillis());
+                entity.getCommandTimeoutMillis(),
+                // The backlog bound is baked into the southbound write plane at creation; changing it rebuilds the
+                // adapter (and deliberately drops the interim in-memory backlogs with it).
+                entity.getSouthboundWriteBacklogCapacity());
     }
 
     /**

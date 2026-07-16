@@ -43,6 +43,7 @@ import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
+import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
@@ -187,6 +188,10 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final Set<String> writeUsed = entity.getWriteUsedTagNames();
         final RetryPolicy retryPolicy = entity.getRetryPolicy().toRetryPolicy();
 
+        // The southbound delivery side: one suspended queue+backlog per write-mapped tag, opened and closed by the
+        // write aspects' readiness notifications (the plane IS the readiness listener).
+        final SouthboundWritePlane southboundWritePlane = new SouthboundWritePlane(
+                adapterId, mailbox, entity.getSouthboundWriteBacklogCapacity(), nodes, writeUsed);
         final TagAspectRuntimeCoordinator tagPlane = new TagAspectRuntimeCoordinator(
                 adapterId,
                 nodes,
@@ -195,7 +200,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 writeUsed,
                 goal,
                 ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
-                retryPolicy);
+                retryPolicy,
+                southboundWritePlane);
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,
                 protocolAdapter,
@@ -230,7 +236,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // still released.
         final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
-        final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
+        final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot, southboundWritePlane);
         return new ProtocolAdapterContainer(
                 handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, northboundConsumers, entity);
     }
