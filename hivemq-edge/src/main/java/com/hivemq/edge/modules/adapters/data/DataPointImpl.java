@@ -15,12 +15,12 @@
  */
 package com.hivemq.edge.modules.adapters.data;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static java.util.Objects.requireNonNull;
 
 public class DataPointImpl implements DataPoint {
     private final @NotNull Object tagValue;
@@ -40,9 +40,7 @@ public class DataPointImpl implements DataPoint {
     }
 
     public DataPointImpl(
-            final @NotNull String tagName,
-            final @NotNull Object tagValue,
-            final @NotNull String adapterId) {
+            final @NotNull String tagName, final @NotNull Object tagValue, final @NotNull String adapterId) {
         this(tagName, tagValue, adapterId, false);
     }
 
@@ -67,7 +65,7 @@ public class DataPointImpl implements DataPoint {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (o instanceof final DataPointImpl dataPoint ) {
+        if (o instanceof final DataPointImpl dataPoint) {
             return treatAsJson == dataPoint.treatAsJson
                     && Objects.equals(getTagValue(), dataPoint.getTagValue())
                     && Objects.equals(getTagName(), dataPoint.getTagName())
