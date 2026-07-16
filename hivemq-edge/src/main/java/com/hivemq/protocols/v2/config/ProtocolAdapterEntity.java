@@ -306,6 +306,16 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + "] which is not declared in adapter ["
                         + adapterId
                         + "]"));
+        // Two southbound mappings sharing a topic would share one durable command queue between two tags: the
+        // second backlog's wakeup replaces the first's in the client-queue callback map, and both would compete
+        // for the same commands. One command topic feeds exactly one tag.
+        final Set<String> seenSouthboundTopics = new HashSet<>();
+        southboundMappings.forEach(mapping -> EntityValidatable.notMatch(
+                validationEvents,
+                () -> seenSouthboundTopics.add(mapping.getTopic()),
+                () -> "adapter [" + adapterId + "] declares southbound mappings with the duplicate topic ["
+                        + mapping.getTopic()
+                        + "] — one command topic feeds exactly one tag"));
     }
 
     /**
