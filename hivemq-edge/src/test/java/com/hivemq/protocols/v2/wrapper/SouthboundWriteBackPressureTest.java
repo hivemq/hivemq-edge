@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
-import com.hivemq.protocols.v2.southbound.InMemorySouthboundCommandSource;
-import com.hivemq.protocols.v2.southbound.SouthboundWritePump;
+import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog;
+import com.hivemq.protocols.v2.southbound.SouthboundWriteQueue;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +30,12 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * Option D at the wrapper boundary: the write aspect stays strictly single-in-flight and <b>never queues</b>,
- * every write carries a completion the aspect settles once, and a {@link SouthboundWritePump} uses that signal to
- * hold the next write until the current one completes — so a burst never reaches the adapter as a second in-flight
- * write, and the backlog waits in the pump. Driven on {@code FakeClock} + {@code ManualDispatcher} through the real
- * wrapper, observed through the published snapshot and the shared metric registry.
+ * The southbound write contract at the wrapper boundary: the write aspect stays strictly single-in-flight and
+ * <b>never queues</b> (an advertised in-flight window of one), every write carries a completion the aspect settles
+ * once, and a {@link SouthboundWriteQueue} paces delivery to that window — so a burst never reaches the adapter as
+ * a second in-flight write, and the backlog waits in the durable store behind the queue. Driven on
+ * {@code FakeClock} + {@code ManualDispatcher} through the real wrapper, observed through the published snapshot
+ * and the shared metric registry.
  */
 class SouthboundWriteBackPressureTest {
 
@@ -108,41 +109,59 @@ class SouthboundWriteBackPressureTest {
     }
 
     @Test
-    void pump_serializesABurst_soTheAdapterNeverSeesASecondInFlightWrite() {
+    void queue_pacesABurstToTheWindow_soTheAdapterNeverSeesASecondInFlightWrite() {
         final WrapperTestFixture fixture = writeOnlyFixture();
         fixture.activate(ProtocolAdapterDirection.SOUTHBOUND);
         final Node node = fixture.nodeFor(TAG);
-        final InMemorySouthboundCommandSource source = new InMemorySouthboundCommandSource(1_000);
-        final SouthboundWritePump pump = new SouthboundWritePump(fixture.mailbox, node, source);
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(1_000);
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(fixture.mailbox, node, backlog);
 
         final int burst = 30;
         for (int i = 0; i < burst; i++) {
-            source.offer(dataPoint(Integer.toString(i)));
+            backlog.offer(dataPoint(Integer.toString(i)));
         }
-        fixture.drain(); // process the single write the pump forwarded
+        fixture.drain(); // process the single write the queue delivered
 
-        // Exactly one write reached the adapter; all the rest wait in the (durable) source, none committed yet.
+        // Exactly one write reached the adapter; all the rest wait in the (durable) backlog, none committed yet.
         assertThat(fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_RESULT");
-        assertThat(pump.inFlight()).isTrue();
-        assertThat(source.pendingSize()).isEqualTo(burst);
+        assertThat(queue.inFlight()).isTrue();
+        assertThat(backlog.pendingSize()).isEqualTo(burst);
 
-        // Each acknowledgment commits the current command and releases exactly the next; drain and repeat.
+        // Each acknowledgment commits the current command and delivers exactly the next; drain and repeat.
         int acknowledgments = 0;
-        while (pump.inFlight()) {
+        while (queue.inFlight()) {
             fixture.output.writeResult(node, true, null);
             fixture.drain();
             acknowledgments++;
         }
 
         assertThat(acknowledgments).isEqualTo(burst); // every write was delivered, one at a time
-        assertThat(pump.forwarded()).isEqualTo(burst);
-        assertThat(pump.delivered()).isEqualTo(burst);
-        assertThat(source.pendingSize()).isZero(); // all committed — drained from the source
-        assertThat(pump.rejectedByAdapter()).isZero();
+        assertThat(queue.deliveries()).isEqualTo(burst);
+        assertThat(queue.committed()).isEqualTo(burst);
+        assertThat(backlog.pendingSize()).isZero(); // all committed — deleted from the backlog
+        assertThat(queue.windowViolations()).isZero();
         // The adapter never rejected a write — the single-in-flight invariant held for the whole burst.
         assertThat(writesRejected(fixture)).isZero();
         assertThat(fixture.tag(TAG).failureCount()).isZero();
         assertThat(fixture.writeState(TAG)).isEqualTo("WAITING_FOR_WRITE_REQUEST");
+    }
+
+    @Test
+    void writeArrivingWhileTheAspectCannotWrite_settlesAborted_notAWindowViolation() {
+        final WrapperTestFixture fixture = writeOnlyFixture();
+        fixture.activate(ProtocolAdapterDirection.SOUTHBOUND);
+        final Node node = fixture.nodeFor(TAG);
+        fixture.deactivate(ProtocolAdapterDirection.SOUTHBOUND);
+        assertThat(fixture.writeState(TAG)).isEqualTo("DEACTIVATED");
+        final List<SouthboundWriteOutcome> outcomes = new ArrayList<>();
+
+        // A write reaching a deactivated aspect is aborted — the retryable outcome — so a delivering queue keeps
+        // the command for redelivery. It is NOT a window violation: nothing was in flight.
+        fixture.send(new ProtocolAdapterWrapperWriteRequest(node, dataPoint("1"), outcomes::add));
+
+        assertThat(outcomes).containsExactly(SouthboundWriteOutcome.ABORTED);
+        assertThat(writesRejected(fixture)).isZero();
+        assertThat(fixture.tag(TAG).failureCount()).isZero();
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────

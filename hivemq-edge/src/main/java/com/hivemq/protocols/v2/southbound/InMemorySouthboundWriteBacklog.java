@@ -23,43 +23,48 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static java.util.Objects.requireNonNull;
+
 /**
- * An <b>interim, in-memory</b> {@link SouthboundCommandSource}: a bounded FIFO that models the durable MQTT client
+ * An <b>interim, in-memory</b> {@link SouthboundWriteBacklog}: a bounded FIFO that models the durable MQTT client
  * queue's shape and overflow policy but <b>is not durable</b> — its contents are lost on restart. It exists so the
- * {@link SouthboundWritePump} and its tests have a real source until a {@code ClientQueuePersistence}-backed source
- * is wired (see {@code SOUTHBOUND_MULTI_WRITE.md} §12). Do not use it where durability is required.
+ * {@link SouthboundWriteQueue} and its tests have a real backlog until a {@code ClientQueuePersistence}-backed one
+ * is wired. Do not use it where durability is required.
  * <p>
- * It honours the source contract precisely: {@link #poll()} exposes the head without removing it and only one
- * command is outstanding at a time; {@link #commit}/{@link #deadLetter} remove the head; {@link #release} leaves it
- * at the head to be redelivered. On overflow the <b>newest</b> offered command is shed (the queue's bound is the
- * back-pressure limit). The wakeup registered via {@link #onAvailable} is invoked outside this object's monitor.
+ * It honours the backlog contract precisely: {@link #head()} exposes the head without removing it;
+ * {@link #removeHead}/{@link #deadLetterHead} delete it — nothing else does, so an abandoned command is simply
+ * still there to be redelivered. On overflow the <b>newest</b> offered command is shed observably (the backlog's
+ * bound is the back-pressure limit). The wakeup registered via {@link #onAvailable} is invoked outside this
+ * object's monitor.
  */
-public final class InMemorySouthboundCommandSource implements SouthboundCommandSource {
+public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBacklog {
 
     private final int capacity;
-    private final @NotNull Deque<SouthboundCommand> pending = new ArrayDeque<>();
-    private final @NotNull List<SouthboundCommand> committedCommands = new ArrayList<>();
-    private final @NotNull List<SouthboundCommand> deadLetters = new ArrayList<>();
+    private final @NotNull Deque<SouthboundCommand> pending;
+    private final @NotNull List<SouthboundCommand> committedCommands;
+    private final @NotNull List<SouthboundCommand> deadLetters;
 
-    private @Nullable String heldId;
     private @Nullable Runnable wakeup;
     private long nextId;
     private long offered;
     private long droppedByOverflow;
     private long committed;
-    private long released;
     private long deadLettered;
 
     /**
      * @param capacity the maximum number of pending commands; offers beyond it shed the newest.
      */
-    public InMemorySouthboundCommandSource(final int capacity) {
+    public InMemorySouthboundWriteBacklog(final int capacity) {
         this.capacity = capacity;
+        this.pending = new ArrayDeque<>();
+        this.committedCommands = new ArrayList<>();
+        this.deadLetters = new ArrayList<>();
     }
 
     /**
      * Offer a new command (the "an MQTT write arrived" trigger). Enqueued if there is room, else shed. Nudges the
-     * pump via its wakeup, invoked outside this object's monitor so the pump can poll back without deadlock.
+     * delivering queue via its wakeup, invoked outside this object's monitor so the queue can read the head back
+     * without deadlock.
      *
      * @param value the value to write.
      */
@@ -80,23 +85,14 @@ public final class InMemorySouthboundCommandSource implements SouthboundCommandS
     }
 
     @Override
-    public synchronized @Nullable SouthboundCommand poll() {
-        if (heldId != null) {
-            return null; // a command is already outstanding; single-in-flight
-        }
-        final SouthboundCommand head = pending.peekFirst();
-        if (head == null) {
-            return null;
-        }
-        heldId = head.id();
-        return head;
+    public synchronized @Nullable SouthboundCommand head() {
+        return pending.peekFirst();
     }
 
     @Override
-    public synchronized void commit(final @NotNull String id) {
-        requireHeld(id);
+    public synchronized void removeHead(final @NotNull String id) {
+        requireHead(id);
         final SouthboundCommand done = pending.pollFirst();
-        heldId = null;
         committed++;
         if (done != null) {
             committedCommands.add(done);
@@ -104,17 +100,9 @@ public final class InMemorySouthboundCommandSource implements SouthboundCommandS
     }
 
     @Override
-    public synchronized void release(final @NotNull String id) {
-        requireHeld(id);
-        heldId = null; // the head stays in place, to be polled again
-        released++;
-    }
-
-    @Override
-    public synchronized void deadLetter(final @NotNull String id, final @NotNull String reason) {
-        requireHeld(id);
+    public synchronized void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
+        requireHead(id);
         final SouthboundCommand dead = pending.pollFirst();
-        heldId = null;
         deadLettered++;
         if (dead != null) {
             deadLetters.add(dead);
@@ -123,12 +111,13 @@ public final class InMemorySouthboundCommandSource implements SouthboundCommandS
 
     @Override
     public synchronized void onAvailable(final @NotNull Runnable wakeup) {
-        this.wakeup = wakeup;
+        this.wakeup = requireNonNull(wakeup);
     }
 
-    private void requireHeld(final @NotNull String id) {
-        if (!id.equals(heldId)) {
-            throw new IllegalStateException("dispose of a command that is not the outstanding one: " + id);
+    private void requireHead(final @NotNull String id) {
+        final SouthboundCommand head = pending.peekFirst();
+        if (head == null || !id.equals(head.id())) {
+            throw new IllegalStateException("dispose of a command that is not the head: " + id);
         }
     }
 
@@ -146,10 +135,6 @@ public final class InMemorySouthboundCommandSource implements SouthboundCommandS
 
     public synchronized long committed() {
         return committed;
-    }
-
-    public synchronized long released() {
-        return released;
     }
 
     public synchronized long deadLettered() {

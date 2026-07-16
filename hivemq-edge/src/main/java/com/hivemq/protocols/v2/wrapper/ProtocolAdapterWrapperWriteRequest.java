@@ -23,15 +23,17 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * A southbound write to deliver to a tag's write aspect — the "write arrives" trigger, told to the
- * wrapper mailbox by an external producer (a future southbound mapping; tests drive it directly). The {@link Node}
- * is the correlation key; the wrapper routes the value to that node's write aspect, which requests the write when
- * it is resting at {@code WAITING_FOR_WRITE_REQUEST} and rejects it otherwise (one write in flight at a time — the
+ * wrapper mailbox by the queue in front of the aspect
+ * ({@link com.hivemq.protocols.v2.southbound.SouthboundWriteQueue}; the future southbound mapping drives one per
+ * write-mapped tag, and tests drive it directly). The {@link Node} is the correlation key; the wrapper routes the
+ * value to that node's write aspect, which requests the write when it is resting at
+ * {@code WAITING_FOR_WRITE_REQUEST} and settles it immediately otherwise (one write in flight at a time — the
  * aspect never queues).
  * <p>
- * The {@code completion} is the option-D back-pressure seam: it is settled once with the write's terminal outcome
- * (or immediately, rejected, when one is already in flight), so a producer can hold the next write until the
- * current one completes and let the backlog wait in its durable queue. Fire-and-forget callers that do not
- * back-pressure use the {@code (node, value)} form, which discards the outcome.
+ * The {@code completion} is the back-pressure seam: it is settled once with the write's terminal outcome — or
+ * immediately (rejected busy, or aborted) when the aspect cannot take the write — so the queue can hold the next
+ * write until the current one settles and let the backlog wait in its durable store. Fire-and-forget callers that
+ * do not back-pressure use the {@code (node, value)} form, which discards the outcome.
  * <p>
  * Band: {@link MailboxMessagePriority#DATA} — like data points, southbound payload yields to control,
  * acknowledgments, and time. It is its own kind of {@link ProtocolAdapterWrapperMessage}: it is not

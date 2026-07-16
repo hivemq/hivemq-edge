@@ -51,14 +51,17 @@ import org.slf4j.LoggerFactory;
  * <li><b>goal and adapter-readiness changes</b> bypass the table: the three-condition goal ({@link TagAspectGoal})
  * and the {@code DEACTIVATED} ↔ operating coupling to the adapter's connection are applied directly.</li>
  * </ul>
- * <b>One write is in flight at a time, and the aspect never queues</b> (option D). Each write carries a
- * {@link SouthboundWriteCompletion}; the aspect requests it, remembers that completion as the in-flight one, and
- * settles it exactly once when the device acknowledges ({@link SouthboundWriteOutcome#SUCCEEDED}/{@code FAILED})
- * or the write is abandoned ({@link SouthboundWriteOutcome#ABORTED} on deactivation or a lost connection). A
- * write arriving while one is in flight is <b>not queued</b>: it is rejected immediately
- * ({@link SouthboundWriteOutcome#REJECTED_BUSY}, counted) so the producer learns to back off. Back-pressure
- * therefore lives in the producer (which holds the next write until the current settles) and the durable queue
- * behind it — not in the adapter.
+ * <b>One write is in flight at a time, and the aspect never queues</b> — it advertises, in effect, an in-flight
+ * window of exactly one write. Each write carries a {@link SouthboundWriteCompletion}; the aspect requests it,
+ * remembers that completion as the in-flight one, and settles it exactly once when the device acknowledges
+ * ({@link SouthboundWriteOutcome#SUCCEEDED}/{@code FAILED}) or the write is abandoned
+ * ({@link SouthboundWriteOutcome#ABORTED} on deactivation or a lost connection). A write arriving while one is in
+ * flight is <b>not queued</b>: it is rejected immediately ({@link SouthboundWriteOutcome#REJECTED_BUSY}, counted
+ * as a window violation); a write arriving while the aspect cannot write at all settles
+ * {@link SouthboundWriteOutcome#ABORTED} so its sender keeps the command queued for redelivery. Back-pressure
+ * therefore lives in the queue in front of the aspect
+ * ({@link com.hivemq.protocols.v2.southbound.SouthboundWriteQueue}, which holds the next write until the current
+ * one settles) and the durable backlog behind it — not in the adapter.
  */
 public final class TagAspectWrite implements TagAspectVerifying {
 
@@ -247,19 +250,21 @@ public final class TagAspectWrite implements TagAspectVerifying {
      */
     public void onVerifyResult(final @NotNull VerifyOutcome outcome) {
         switch (outcome) {
-            case VerifyOutcome.Success ignored -> dispatch(new TagAspectEvent.VerifySucceeded());
-            case VerifyOutcome.TransientFailure transientFailure ->
+            case final VerifyOutcome.Success ignored -> dispatch(new TagAspectEvent.VerifySucceeded());
+            case final VerifyOutcome.TransientFailure transientFailure ->
                 dispatch(new TagAspectEvent.VerifyTransientlyFailed(transientFailure.reason()));
-            case VerifyOutcome.PermanentFailure permanentFailure ->
+            case final VerifyOutcome.PermanentFailure permanentFailure ->
                 dispatch(new TagAspectEvent.VerifyPermanentlyFailed(permanentFailure.reason()));
         }
     }
 
     /**
      * A southbound write arrived for the tag. Drives the write cycle when the aspect is resting at
-     * {@code WAITING_FOR_WRITE_REQUEST} — the completion is settled later with the device's result. If a write is
-     * already in flight the aspect does <b>not</b> queue: the table's {@code unmatched} slot settles the
-     * completion {@link SouthboundWriteOutcome#REJECTED_BUSY} so the producer holds the next write itself.
+     * {@code WAITING_FOR_WRITE_REQUEST} — the completion is settled later with the device's result. In any other
+     * state the table's {@code unmatched} slot settles the completion immediately, and the aspect never queues:
+     * {@link SouthboundWriteOutcome#REJECTED_BUSY} while a write is in flight (a window violation), or
+     * {@link SouthboundWriteOutcome#ABORTED} while the aspect cannot write at all — so the sender keeps the
+     * command queued for redelivery.
      *
      * @param value      the reused v1 value to write.
      * @param completion the one-shot back-pressure signal for this write.
@@ -349,15 +354,28 @@ public final class TagAspectWrite implements TagAspectVerifying {
 
     void logUnexpectedEvent(final @NotNull TagAspectEvent event) {
         if (event instanceof final TagAspectEvent.WriteRequested writeRequested) {
-            // A second write while one is in flight: the aspect never queues — reject it observably so the
-            // producer holds the next write itself (option D). This should stay at zero with a gating producer.
-            metrics.incrementWriteRejected(tag.name());
-            log.warn(
-                    "Write aspect of tag '{}' on adapter '{}' rejected a southbound write: one is already in flight "
-                            + "(the producer should hold the next write until the current completes)",
+            if (machine.state() == TagAspectWriteState.WAITING_FOR_WRITE_RESULT) {
+                // A second write while one is in flight: the aspect never queues — reject it observably as a
+                // violation of the advertised window of one. This stays at zero when the sender paces deliveries
+                // to the window.
+                metrics.incrementWriteRejected(tag.name());
+                log.warn(
+                        "Write aspect of tag '{}' on adapter '{}' rejected a southbound write: one is already in "
+                                + "flight (the sender must hold the next write until the current one settles)",
+                        tag.name(),
+                        adapterId);
+                writeRequested.completion().settle(SouthboundWriteOutcome.REJECTED_BUSY);
+                return;
+            }
+            // A write arriving while the aspect cannot write (deactivated, waiting for the adapter, verifying, or
+            // permanently failed) is not a window violation: settle it ABORTED so the sender keeps the command
+            // queued for redelivery — never a silent drop, never a leaked completion.
+            log.debug(
+                    "Write aspect of tag '{}' on adapter '{}' aborted a southbound write arriving in {}",
                     tag.name(),
-                    adapterId);
-            writeRequested.completion().settle(SouthboundWriteOutcome.REJECTED_BUSY);
+                    adapterId,
+                    machine.state());
+            writeRequested.completion().settle(SouthboundWriteOutcome.ABORTED);
             return;
         }
         log.debug(

@@ -18,29 +18,31 @@ package com.hivemq.edge.modules.adapters.data;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import static java.util.Objects.requireNonNull;
 
 public class DataPointImpl implements DataPoint {
     private final @NotNull Object tagValue;
     private final @NotNull String tagName;
     private final boolean treatAsJson;
-    private final String adapterId;
+    private final @NotNull String adapterId;
 
     public DataPointImpl(
             final @NotNull String tagName,
             final @NotNull Object tagValue,
             final @NotNull String adapterId,
             final boolean treatAsJson) {
-        Objects.requireNonNull(adapterId, "adapterId must not be null");
-        Objects.requireNonNull(tagName, "tagName must not be null");
-        Objects.requireNonNull(tagValue, "tagValue must not be null");
-        this.tagName = tagName;
-        this.tagValue = tagValue;
+        this.tagName = requireNonNull(tagName, "tagName must not be null");
+        this.tagValue = requireNonNull(tagValue, "tagValue must not be null");
+        this.adapterId = requireNonNull(adapterId, "adapterId must not be null");
         this.treatAsJson = treatAsJson;
-        this.adapterId = adapterId;
     }
 
     public DataPointImpl(
-            final @NotNull String tagName, final @NotNull Object tagValue, final @NotNull String adapterId) {
+            final @NotNull String tagName,
+            final @NotNull Object tagValue,
+            final @NotNull String adapterId) {
         this(tagName, tagValue, adapterId, false);
     }
 
@@ -64,13 +66,14 @@ public class DataPointImpl implements DataPoint {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final DataPointImpl dataPoint = (DataPointImpl) o;
-        return treatAsJson == dataPoint.treatAsJson
-                && Objects.equals(getTagValue(), dataPoint.getTagValue())
-                && Objects.equals(getTagName(), dataPoint.getTagName())
-                && Objects.equals(getAdapterId(), dataPoint.getAdapterId());
+    public boolean equals(final @Nullable Object o) {
+        if (o instanceof final DataPointImpl dataPoint ) {
+            return treatAsJson == dataPoint.treatAsJson
+                    && Objects.equals(getTagValue(), dataPoint.getTagValue())
+                    && Objects.equals(getTagName(), dataPoint.getTagName())
+                    && Objects.equals(getAdapterId(), dataPoint.getAdapterId());
+        }
+        return false;
     }
 
     @Override
@@ -79,7 +82,7 @@ public class DataPointImpl implements DataPoint {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "DataPointImpl{" + "tagValue="
                 + tagValue
                 + ", tagName='"

@@ -272,10 +272,10 @@ public final class TagAspectRead implements TagAspectVerifying {
      */
     public void onVerifyResult(final @NotNull VerifyOutcome outcome) {
         switch (outcome) {
-            case VerifyOutcome.Success ignored -> dispatch(new TagAspectEvent.VerifySucceeded());
-            case VerifyOutcome.TransientFailure transientFailure ->
+            case final VerifyOutcome.Success ignored -> dispatch(new TagAspectEvent.VerifySucceeded());
+            case final VerifyOutcome.TransientFailure transientFailure ->
                 dispatch(new TagAspectEvent.VerifyTransientlyFailed(transientFailure.reason()));
-            case VerifyOutcome.PermanentFailure permanentFailure ->
+            case final VerifyOutcome.PermanentFailure permanentFailure ->
                 dispatch(new TagAspectEvent.VerifyPermanentlyFailed(permanentFailure.reason()));
         }
     }

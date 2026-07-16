@@ -80,7 +80,7 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
      * @param nodeVerifier the adapter's {@code verifyBatch} seam.
      */
     public void bindVerifier(final @NotNull NodeVerifier nodeVerifier) {
-        this.verification = new SharedNodeVerification(nodeVerifier, node -> null);
+        this.verification = new SharedNodeVerification(nodeVerifier, _ -> null);
     }
 
     @Override
