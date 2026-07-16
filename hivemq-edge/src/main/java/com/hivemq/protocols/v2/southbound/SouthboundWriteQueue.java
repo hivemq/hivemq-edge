@@ -116,12 +116,14 @@ public final class SouthboundWriteQueue {
         }
         inFlightId = command.id();
         deliveries++;
-        wrapperSender.tell(
-                new ProtocolAdapterWrapperWriteRequest(node, command.value(), outcome -> onSettled(command, outcome)));
+        wrapperSender.tell(new ProtocolAdapterWrapperWriteRequest(
+                node, command.value(), (outcome, reason) -> onSettled(command, outcome, reason)));
     }
 
     private synchronized void onSettled(
-            final @NotNull SouthboundCommand command, final @NotNull SouthboundWriteOutcome outcome) {
+            final @NotNull SouthboundCommand command,
+            final @NotNull SouthboundWriteOutcome outcome,
+            final @Nullable String reason) {
         inFlightId = null;
         switch (outcome) {
             case SUCCEEDED -> {
@@ -130,7 +132,8 @@ public final class SouthboundWriteQueue {
                 deliverNext();
             }
             case FAILED -> {
-                backlog.deadLetterHead(command.id(), "device rejected the write");
+                // The device's own words travel into the dead-letter record and the published verdict.
+                backlog.deadLetterHead(command.id(), reason != null ? reason : "device rejected the write");
                 deadLettered++;
                 deliverNext();
             }

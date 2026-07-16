@@ -221,7 +221,7 @@ class SouthboundWriteQueueTest {
         }
 
         private void settleLast(final @NotNull SouthboundWriteOutcome outcome) {
-            requests.get(requests.size() - 1).completion().settle(outcome);
+            requests.get(requests.size() - 1).completion().settle(outcome, null);
         }
     }
 

@@ -15,6 +15,8 @@
  */
 package com.hivemq.protocols.v2.southbound;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -22,8 +24,6 @@ import java.util.Deque;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * An <b>interim, in-memory</b> {@link SouthboundWriteBacklog}: a bounded FIFO that models the durable MQTT client

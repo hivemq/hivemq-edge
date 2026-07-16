@@ -35,8 +35,6 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
@@ -46,6 +44,7 @@ import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
+import com.hivemq.protocols.v2.southbound.SouthboundBrokerRuntime;
 import com.hivemq.protocols.v2.southbound.SouthboundMqttIntake;
 import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
@@ -108,8 +107,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     private final @NotNull ObjectMapper objectMapper;
     private final @Nullable TagManager tagManager;
     private final @Nullable NorthboundConsumerFactory northboundConsumerFactory;
-    private final @Nullable LocalTopicTree localTopicTree;
-    private final @Nullable ClientQueuePersistence clientQueuePersistence;
+    private final @Nullable SouthboundBrokerRuntime southboundBrokerRuntime;
     private final long tickPeriodMillis;
 
     /**
@@ -127,8 +125,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull ObjectMapper objectMapper,
             final long tickPeriodMillis) {
-        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null, null,
-                null);
+        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null, null);
     }
 
     /**
@@ -153,8 +150,16 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final long tickPeriodMillis,
             final @Nullable TagManager tagManager,
             final @Nullable NorthboundConsumerFactory northboundConsumerFactory) {
-        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, tagManager,
-                northboundConsumerFactory, null, null);
+        this(
+                clock,
+                dispatcher,
+                metricRegistry,
+                dataPointFactory,
+                objectMapper,
+                tickPeriodMillis,
+                tagManager,
+                northboundConsumerFactory,
+                null);
     }
 
     /**
@@ -167,10 +172,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
      * @param tagManager               the shared tag manager used by MQTT northbound consumers.
      * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
-     * @param localTopicTree           the broker topic tree the southbound MQTT intake subscribes on; {@code null}
-     *                                 (unit rigs) falls the southbound plane back to in-memory backlogs.
-     * @param clientQueuePersistence   the durable client queue store the southbound backlogs lease from;
-     *                                 {@code null} falls back with the topic tree.
+     * @param southboundBrokerRuntime  the broker collaborators the southbound write path stands on (topic tree,
+     *                                 client queues, publish path, retained store); {@code null} (unit rigs) falls
+     *                                 the southbound plane back to in-memory backlogs.
      */
     public DefaultProtocolAdapterWrapperFactory(
             final @NotNull Clock clock,
@@ -181,8 +185,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final long tickPeriodMillis,
             final @Nullable TagManager tagManager,
             final @Nullable NorthboundConsumerFactory northboundConsumerFactory,
-            final @Nullable LocalTopicTree localTopicTree,
-            final @Nullable ClientQueuePersistence clientQueuePersistence) {
+            final @Nullable SouthboundBrokerRuntime southboundBrokerRuntime) {
         this.clock = clock;
         this.dispatcher = dispatcher;
         this.metricRegistry = metricRegistry;
@@ -190,8 +193,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         this.objectMapper = objectMapper;
         this.tagManager = tagManager;
         this.northboundConsumerFactory = northboundConsumerFactory;
-        this.localTopicTree = localTopicTree;
-        this.clientQueuePersistence = clientQueuePersistence;
+        this.southboundBrokerRuntime = southboundBrokerRuntime;
         this.tickPeriodMillis = tickPeriodMillis;
     }
 
@@ -275,10 +277,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // queues; without it (unit rigs), the plane falls back to the interim in-memory backlogs.
         final SouthboundMqttIntake southboundIntake;
         final SouthboundWritePlane southboundWritePlane;
-        if (localTopicTree != null && clientQueuePersistence != null && !entity.getSouthboundMappings().isEmpty()) {
+        if (southboundBrokerRuntime != null && !entity.getSouthboundMappings().isEmpty()) {
             southboundIntake = new SouthboundMqttIntake(
-                    adapterId, localTopicTree, clientQueuePersistence, dataPointFactory,
-                    entity.getSouthboundMappings());
+                    adapterId, southboundBrokerRuntime, dataPointFactory, objectMapper, entity.getSouthboundMappings());
             southboundWritePlane =
                     new SouthboundWritePlane(adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed);
         } else {
@@ -330,7 +331,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // still released.
         final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
-        final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot, southboundWritePlane);
+        final ProtocolAdapterHandle handle =
+                new ProtocolAdapterHandle(adapterId, mailbox, snapshot, southboundWritePlane);
         return new ProtocolAdapterContainer(
                 handle,
                 dispatcherHandle,
