@@ -216,8 +216,10 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                     outcome);
             return;
         }
-        // The verdict is retained BEFORE the delete: a crash between the two replays the command, and the retained
-        // verdict is what recognizes and re-commits it instead of executing it twice.
+        // The verdict is retained before the delete — initiation order, not durability order (two independent async
+        // stores): a crash between the two replays the command, and the retained verdict recognizes and re-commits
+        // it instead of executing it twice. The reverse interleaving (delete persists, verdict lost) is an accepted
+        // risk — see the spec's §4.14.
         verdictReporter.report(id, outcome, reason, false, command, correlationData);
         FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, id));
         prefetch();
