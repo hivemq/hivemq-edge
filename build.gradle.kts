@@ -3,8 +3,8 @@ group = "com.hivemq"
 plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
-    id("com.hivemq.tools.oci-version-catalog") version "0.3.0"
-    id("io.github.sgtsilvio.gradle.oci") version "0.27.0"
+    id("com.hivemq.tools.oci-version-catalog") version "0.4.0"
+    id("io.github.sgtsilvio.gradle.oci") version "0.28.0"
     id("jacoco")
 }
 
@@ -203,6 +203,18 @@ oci {
     registries {
         dockerHub {
             optionalCredentials()
+        }
+        // The eclipse-temurin base image is served from ECR Public (PLT-1261). The registry host, namespace and
+        // group are read from oci.versions.toml so the image is declared in exactly one place; anonymous pulls
+        // need no credentials. exclusiveContent keeps this group from also being looked up on Docker Hub.
+        registry(ociImages.eclipse.temurin.registry!!) {
+            url = uri("https://${ociImages.eclipse.temurin.registry}")
+            exclusiveContent { includeGroup(ociImages.eclipse.temurin.group) }
+        }
+    }
+    imageMapping {
+        mapGroup(ociImages.eclipse.temurin.group) {
+            toImage(nameSpec("${ociImages.eclipse.temurin.namespace}/") + name)
         }
     }
     imageDefinitions.register("main") {
