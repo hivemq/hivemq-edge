@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
+import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog;
 import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import com.hivemq.protocols.v2.tag.TagWriteReadinessListener;
 import java.util.List;
@@ -97,8 +99,8 @@ class SouthboundWriteReadinessWiringTest {
         assertThat(rig.channel().queue().windowViolations()).isZero();
         assertThat(rig.fixture
                         .metricRegistry
-                        .counter(com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics.ADAPTER_PREFIX
-                                + rig.fixture.adapterId + ".tag." + TAG + ".writes.rejected")
+                        .counter(ProtocolAdapterMetrics.ADAPTER_PREFIX + rig.fixture.adapterId + ".tag." + TAG
+                                + ".writes.rejected")
                         .getCount())
                 .isZero();
     }
@@ -169,9 +171,7 @@ class SouthboundWriteReadinessWiringTest {
         }
 
         private int pending() {
-            return ((com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog)
-                            channel().backlog())
-                    .pendingSize();
+            return ((InMemorySouthboundWriteBacklog) channel().backlog()).pendingSize();
         }
 
         /** Acknowledge the in-flight write with success and drain the cascade (settle → commit → deliver next). */

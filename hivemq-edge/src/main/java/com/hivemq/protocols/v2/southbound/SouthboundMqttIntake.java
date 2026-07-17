@@ -126,7 +126,7 @@ public final class SouthboundMqttIntake implements AutoCloseable {
                 // write-used derives from the southbound mappings this intake was built from; a channel for a tag
                 // with no queue means those two views diverged — fail loudly rather than deliver nothing silently.
                 throw new IllegalStateException("tag [" + tagName + "] on adapter [" + adapterId
-                        + "] is write-mapped but has no southbound " + "queue");
+                        + "] is write-mapped but has no southbound" + " queue");
             }
             final SouthboundWriteVerdictReporter verdictReporter = new MqttSouthboundWriteVerdictReporter(
                     brokerRuntime.internalPublishService(),

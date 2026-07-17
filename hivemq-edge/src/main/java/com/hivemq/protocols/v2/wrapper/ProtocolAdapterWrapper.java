@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The Protocol Adapter Wrapper — a {@link MessageHandler} that owns the adapter machine and <b>all</b> policy
- *. Every input arrives as one {@link ProtocolAdapterWrapperMessage}:
+ * The Protocol Adapter Wrapper — a {@link MessageHandler} that owns the adapter machine and <b>all</b> policy.
+ * Every input arrives as one {@link ProtocolAdapterWrapperMessage}:
  * <ul>
  * <li>a {@link ProtocolAdapterWrapperTick} fires the due timers and dispatches the pending batches;</li>
  * <li>a {@link ProtocolAdapterWrapperCommand} runs through the goal-command bypass (mutate the goal, then

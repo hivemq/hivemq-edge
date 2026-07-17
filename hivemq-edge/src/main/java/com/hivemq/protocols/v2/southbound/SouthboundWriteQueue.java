@@ -63,7 +63,15 @@ public final class SouthboundWriteQueue {
     private final @NotNull SouthboundWriteBacklog backlog;
 
     private @Nullable String inFlightId;
-    private boolean suspended;
+
+    /**
+     * Queues are born suspended: the first {@link #resume()} — in production the tag's first {@code tagWritable}
+     * — opens the window. Starting open would leave a gap between the constructor registering the backlog wakeup
+     * and the creator's {@code suspend()}, in which an arriving command could be delivered to a tag that never
+     * verified.
+     */
+    private boolean suspended = true;
+
     private long deliveries;
     private long committed;
     private long deadLettered;

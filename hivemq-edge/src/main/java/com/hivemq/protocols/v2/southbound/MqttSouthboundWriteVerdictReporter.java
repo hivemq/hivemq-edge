@@ -29,6 +29,7 @@ import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.util.FutureUtils;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
+import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -128,7 +129,7 @@ final class MqttSouthboundWriteVerdictReporter implements SouthboundWriteVerdict
         if (correlationData == null) {
             verdict.putNull("correlationData");
         } else {
-            verdict.put("correlationData", java.util.Base64.getEncoder().encodeToString(correlationData));
+            verdict.put("correlationData", Base64.getEncoder().encodeToString(correlationData));
         }
         verdict.put("completedAtMillis", System.currentTimeMillis());
         final byte[] payload = verdict.toString().getBytes(UTF_8);

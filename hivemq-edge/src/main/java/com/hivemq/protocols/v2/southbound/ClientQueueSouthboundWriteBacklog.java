@@ -15,6 +15,8 @@
  */
 package com.hivemq.protocols.v2.southbound;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -184,15 +186,35 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             final @NotNull String id, final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
         final String command;
         final byte[] correlationData;
+        final boolean closedBeforeSettle;
         synchronized (this) {
-            if (head == null || !id.equals(head.id())) {
-                throw new IllegalStateException("dispose of a command that is not the head: " + id);
+            closedBeforeSettle = closed;
+            if (closedBeforeSettle) {
+                command = null;
+                correlationData = null;
+            } else {
+                if (head == null || !id.equals(head.id())) {
+                    throw new IllegalStateException("dispose of a command that is not the head: " + id);
+                }
+                command = headCommand;
+                correlationData = headCorrelationData;
+                head = null;
+                headCommand = null;
+                headCorrelationData = null;
             }
-            command = headCommand;
-            correlationData = headCorrelationData;
-            head = null;
-            headCommand = null;
-            headCorrelationData = null;
+        }
+        if (closedBeforeSettle) {
+            // The write settled after close() — a recreate or tags-only drop raced the device acknowledgment.
+            // close() already released the lease, so the command stays durably queued and a successor backlog
+            // redelivers it (at-least-once); swallow the disposal rather than blow up the settling thread.
+            log.warn(
+                    "Southbound command '{}' for tag '{}' on adapter '{}' settled {} after its backlog closed — "
+                            + "left queued for a successor",
+                    id,
+                    tagName,
+                    adapterId,
+                    outcome);
+            return;
         }
         // The verdict is retained BEFORE the delete: a crash between the two replays the command, and the retained
         // verdict is what recognizes and re-commits it instead of executing it twice.
@@ -238,7 +260,21 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             }
             return;
         }
-        final PUBLISH publish = publishes.get(0); // READ_LIMIT = 1
+        final PUBLISH publish = publishes.getFirst(); // READ_LIMIT = 1
+        final boolean closedBeforeRead;
+        synchronized (this) {
+            closedBeforeRead = closed;
+            if (closedBeforeRead) {
+                fetching = false;
+            }
+        }
+        if (closedBeforeRead) {
+            // The read completed after close(): it leased the command broker-side, but nobody owns that lease
+            // anymore — close() could only release the cached head, not a read still in flight. Release the
+            // in-flight marker so a successor backlog can lease the command instead of it stranding.
+            FutureUtils.addExceptionLogger(clientQueuePersistence.removeInFlightMarker(queueId, publish.getUniqueId()));
+            return;
+        }
         // Crash-replay dedup, first lease only: a crash between the device acknowledgment and the queue delete
         // replays an already-executed command — recognize it by the recovered verdict, re-commit it, and re-report
         // its verdict flagged as deduplicated instead of executing it twice.
@@ -294,15 +330,23 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             return;
         }
         final Runnable nudge;
+        final boolean closedMeanwhile;
         synchronized (this) {
             fetching = false;
-            if (closed) {
-                return;
+            closedMeanwhile = closed;
+            if (closedMeanwhile) {
+                nudge = null;
+            } else {
+                head = new SouthboundCommand(publish.getUniqueId(), value);
+                headCommand = payloadOf(publish);
+                headCorrelationData = publish.getCorrelationData();
+                nudge = wakeup;
             }
-            head = new SouthboundCommand(publish.getUniqueId(), value);
-            headCommand = payloadOf(publish);
-            headCorrelationData = publish.getCorrelationData();
-            nudge = wakeup;
+        }
+        if (closedMeanwhile) {
+            // close() landed between the entry check and here — same ownerless lease as above; release it.
+            FutureUtils.addExceptionLogger(clientQueuePersistence.removeInFlightMarker(queueId, publish.getUniqueId()));
+            return;
         }
         if (nudge != null) {
             nudge.run();
@@ -329,7 +373,7 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
 
     private static @Nullable String payloadOf(final @NotNull PUBLISH publish) {
         final byte[] payload = publish.getPayload();
-        return payload == null ? null : new String(payload, java.nio.charset.StandardCharsets.UTF_8);
+        return payload == null ? null : new String(payload, UTF_8);
     }
 
     private @Nullable DataPoint translate(final @NotNull PUBLISH publish) {

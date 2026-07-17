@@ -21,14 +21,8 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
-import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
-import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
-import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
-import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperWriteRequest;
-import java.util.ArrayList;
-import java.util.EnumSet;
+import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
 import java.util.List;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
@@ -77,14 +71,14 @@ class SouthboundWritePlaneTest {
         // The tag became unwritable (disconnect/deactivation): the window closes; the in-flight write is aborted by
         // the aspect in production — here the test settles it — and the command stays at the head.
         plane.tagUnwritable(TAG);
-        sender.settleLast(com.hivemq.protocols.v2.tag.SouthboundWriteOutcome.ABORTED);
+        sender.settleLast(SouthboundWriteOutcome.ABORTED);
         assertThat(sender.requests).hasSize(1); // suspended: nothing redelivered
 
         // Writable again: the SAME command is redelivered.
         plane.tagWritable(TAG);
         assertThat(sender.requests).hasSize(2);
         assertThat(sender.requests.get(1).value())
-                .isEqualTo(sender.requests.get(0).value());
+                .isEqualTo(sender.requests.getFirst().value());
 
         // Notifications for unknown tags are ignored.
         plane.tagWritable("unknown");
@@ -158,58 +152,5 @@ class SouthboundWritePlaneTest {
 
     private static @NotNull DataPoint value(final int i) {
         return new TestDataPoint(TAG, i);
-    }
-
-    /** A send-only mailbox stand-in that records each write request and lets the test settle it as the adapter would. */
-    private static final class CapturingSender implements MailboxSender<ProtocolAdapterWrapperMessage> {
-
-        private final @NotNull List<ProtocolAdapterWrapperWriteRequest> requests = new ArrayList<>();
-
-        @Override
-        public void tell(final @NotNull ProtocolAdapterWrapperMessage message) {
-            requests.add((ProtocolAdapterWrapperWriteRequest) message);
-        }
-
-        private void settleLast(final @NotNull com.hivemq.protocols.v2.tag.SouthboundWriteOutcome outcome) {
-            requests.get(requests.size() - 1).completion().settle(outcome, null);
-        }
-    }
-
-    private record TestDataPoint(
-            @NotNull String tagName, @NotNull Object value) implements DataPoint {
-
-        @Override
-        public @NotNull Object getTagValue() {
-            return value;
-        }
-
-        @Override
-        public @NotNull String getTagName() {
-            return tagName;
-        }
-    }
-
-    private static final class TestNode extends Node {
-
-        private final @NotNull String identifier;
-
-        private TestNode(final @NotNull String identifier) {
-            this.identifier = identifier;
-        }
-
-        @Override
-        public @NotNull String nodeId() {
-            return identifier;
-        }
-
-        @Override
-        public @NotNull String nodeString() {
-            return "{\"identifier\":\"" + identifier + "\"}";
-        }
-
-        @Override
-        public @NotNull EnumSet<NodeProperty> properties() {
-            return EnumSet.of(NodeProperty.UNIQUE);
-        }
     }
 }

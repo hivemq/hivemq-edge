@@ -398,6 +398,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
      * Settle the in-flight write's completion exactly once, then clear it. A no-op when nothing is in flight.
      *
      * @param outcome the terminal outcome to report.
+     * @param reason  what made it terminal, or {@code null} — travels into the published verdict.
      */
     private void settleInFlight(final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
         final SouthboundWriteCompletion completion = inFlightCompletion;

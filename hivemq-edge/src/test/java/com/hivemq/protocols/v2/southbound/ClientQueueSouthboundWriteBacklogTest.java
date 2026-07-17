@@ -16,26 +16,22 @@
 package com.hivemq.protocols.v2.southbound;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
-import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
+import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
-import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
-import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperWriteRequest;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -50,7 +47,9 @@ import org.junit.jupiter.api.Test;
  * {@link com.hivemq.persistence.clientqueue.ClientQueuePersistence}: it leases the queue head by prefetching and
  * serves it idempotently, deletes only on a terminal outcome and leases the next, keeps an abandoned lease cached
  * for redelivery, self-dead-letters an untranslatable publish, does not spin on a read failure, and releases its
- * callback on close. The last test drives a real {@link SouthboundWriteQueue} over it, end to end.
+ * callback on close — including the lease of a read that completes only after the close, and tolerating (as a
+ * WARN no-op) a settle that arrives after it. The last test drives a real {@link SouthboundWriteQueue} over it,
+ * end to end.
  */
 class ClientQueueSouthboundWriteBacklogTest {
 
@@ -180,9 +179,45 @@ class ClientQueueSouthboundWriteBacklogTest {
         // An adapter recreate in the same process: the successor backlog leases the very same command — the closed
         // backlog released its in-flight marker, so the head is not stranded until a restart.
         final ClientQueueSouthboundWriteBacklog successor = newBacklog();
-        final SouthboundCommand relesed = successor.head();
-        assertThat(relesed).isNotNull();
-        assertThat(relesed.id()).isEqualTo(leased.id());
+        final SouthboundCommand released = successor.head();
+        assertThat(released).isNotNull();
+        assertThat(released.id()).isEqualTo(leased.id());
+    }
+
+    @Test
+    void aReadCompletingAfterClose_releasesItsOwnLease_soASuccessorBacklogCanTakeOver() {
+        fake.enqueue(publish(1, "a"));
+        fake.deferNextRead = true;
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        assertThat(backlog.head()).isNull(); // the construction-time read is still outstanding
+
+        // close() can only release the cached head — there is none; the outstanding read still leases broker-side.
+        backlog.close();
+        fake.completeDeferredRead();
+
+        // The landed read detected the close and released the ownerless lease: a successor leases the command.
+        final ClientQueueSouthboundWriteBacklog successor = newBacklog();
+        final SouthboundCommand released = successor.head();
+        assertThat(released).isNotNull();
+        assertThat(released.value().getTagValue()).isEqualTo("a");
+        assertThat(fake.removed).isEmpty(); // released, never deleted — the storage is untouched
+    }
+
+    @Test
+    void aSettleArrivingAfterClose_isANoOp_theCommandStaysQueuedForASuccessor() {
+        fake.enqueue(publish(1, "a"));
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        final SouthboundCommand leased = backlog.head();
+        assertThat(leased).isNotNull();
+
+        // A recreate races the device acknowledgment: the backlog closes before the write settles.
+        backlog.close();
+
+        // The late disposal must not blow up the settling thread — and must not delete the command.
+        assertThatCode(() -> backlog.removeHead(leased.id())).doesNotThrowAnyException();
+        assertThatCode(() -> backlog.deadLetterHead(leased.id(), "late")).doesNotThrowAnyException();
+        assertThat(fake.removed).isEmpty();
+        assertThat(fake.pending()).isEqualTo(1); // still there for the successor to redeliver
     }
 
     @Test
@@ -197,8 +232,7 @@ class ClientQueueSouthboundWriteBacklogTest {
 
         final List<Object> delivered = new ArrayList<>();
         while (queue.inFlight()) {
-            delivered.add(
-                    sender.requests.get(sender.requests.size() - 1).value().getTagValue());
+            delivered.add(sender.requests.getLast().value().getTagValue());
             sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
         }
 
@@ -248,9 +282,24 @@ class ClientQueueSouthboundWriteBacklogTest {
         private final @NotNull List<String> removed = new ArrayList<>();
         private int reads;
         private boolean failNextRead;
+        private boolean deferNextRead;
+        private @Nullable SettableFuture<ImmutableList<PUBLISH>> deferredRead;
 
         private void enqueue(final @NotNull PUBLISH publish) {
             queue.addLast(publish);
+        }
+
+        /** Complete the deferred read now, leasing exactly as an immediate read would have. */
+        private void completeDeferredRead() {
+            final SettableFuture<ImmutableList<PUBLISH>> read = requireNonNull(deferredRead);
+            deferredRead = null;
+            for (final PUBLISH publish : queue) {
+                if (leased.add(publish.getUniqueId())) {
+                    read.set(ImmutableList.of(publish));
+                    return;
+                }
+            }
+            read.set(ImmutableList.of());
         }
 
         private void firePublishAvailable() {
@@ -272,9 +321,13 @@ class ClientQueueSouthboundWriteBacklogTest {
                 failNextRead = false;
                 return Futures.immediateFailedFuture(new RuntimeException("scripted read failure"));
             }
+            if (deferNextRead) {
+                deferNextRead = false;
+                deferredRead = SettableFuture.create();
+                return deferredRead;
+            }
             for (final PUBLISH publish : queue) {
-                if (!leased.contains(publish.getUniqueId())) {
-                    leased.add(publish.getUniqueId());
+                if (leased.add(publish.getUniqueId())) {
                     return Futures.immediateFuture(ImmutableList.of(publish));
                 }
             }
@@ -307,59 +360,6 @@ class ClientQueueSouthboundWriteBacklogTest {
         @Override
         public void removePublishAvailableCallback(final @NotNull String queueId) {
             callbacks.remove(queueId);
-        }
-    }
-
-    /** A send-only mailbox stand-in that records each write request and lets the test settle it as the adapter would. */
-    private static final class CapturingSender implements MailboxSender<ProtocolAdapterWrapperMessage> {
-
-        private final @NotNull List<ProtocolAdapterWrapperWriteRequest> requests = new ArrayList<>();
-
-        @Override
-        public void tell(final @NotNull ProtocolAdapterWrapperMessage message) {
-            requests.add((ProtocolAdapterWrapperWriteRequest) message);
-        }
-
-        private void settleLast(final @NotNull SouthboundWriteOutcome outcome) {
-            requests.get(requests.size() - 1).completion().settle(outcome, null);
-        }
-    }
-
-    private record TestDataPoint(
-            @NotNull String tagName, @NotNull Object value) implements DataPoint {
-
-        @Override
-        public @NotNull Object getTagValue() {
-            return value;
-        }
-
-        @Override
-        public @NotNull String getTagName() {
-            return tagName;
-        }
-    }
-
-    private static final class TestNode extends Node {
-
-        private final @NotNull String identifier;
-
-        private TestNode(final @NotNull String identifier) {
-            this.identifier = identifier;
-        }
-
-        @Override
-        public @NotNull String nodeId() {
-            return identifier;
-        }
-
-        @Override
-        public @NotNull String nodeString() {
-            return "{\"identifier\":\"" + identifier + "\"}";
-        }
-
-        @Override
-        public @NotNull EnumSet<NodeProperty> properties() {
-            return EnumSet.of(NodeProperty.UNIQUE);
         }
     }
 }
