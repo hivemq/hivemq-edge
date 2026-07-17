@@ -91,22 +91,17 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
 
     @Override
     public synchronized void removeHead(final @NotNull String id) {
+        // requireHead proved the deque non-empty, so pollFirst cannot return null.
         requireHead(id);
-        final SouthboundCommand done = pending.pollFirst();
+        committedCommands.add(requireNonNull(pending.pollFirst()));
         committed++;
-        if (done != null) {
-            committedCommands.add(done);
-        }
     }
 
     @Override
     public synchronized void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
         requireHead(id);
-        final SouthboundCommand dead = pending.pollFirst();
+        deadLetters.add(requireNonNull(pending.pollFirst()));
         deadLettered++;
-        if (dead != null) {
-            deadLetters.add(dead);
-        }
     }
 
     @Override

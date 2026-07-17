@@ -22,16 +22,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
-import java.util.EnumSet;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -116,7 +115,7 @@ class SouthboundMqttIntakeTest {
         assertThat(first).isNotNull();
         backlog.removeHead(first.id());
         assertThat(broker.publishService.published).hasSize(1);
-        final PUBLISH successVerdict = broker.publishService.published.get(0);
+        final PUBLISH successVerdict = broker.publishService.published.getFirst();
         assertThat(successVerdict.getTopic()).isEqualTo("cmd/setpoint/result");
         assertThat(successVerdict.isRetain()).isTrue();
         assertThat(successVerdict.getQoS()).isEqualTo(QoS.AT_LEAST_ONCE);
@@ -152,8 +151,7 @@ class SouthboundMqttIntakeTest {
         clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(2, "b"));
         final String verdictJson = "{\"commandId\":\"" + replayed.getUniqueId() + "\",\"outcome\":\"SUCCEEDED\"}";
         broker.retainedStore.retained.put(
-                "cmd/setpoint/result",
-                new com.hivemq.persistence.RetainedMessage(verdictJson.getBytes(UTF_8), QoS.AT_LEAST_ONCE, 1L, 3600));
+                "cmd/setpoint/result", new RetainedMessage(verdictJson.getBytes(UTF_8), QoS.AT_LEAST_ONCE, 1L, 3600));
 
         final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
         final SouthboundWriteBacklog backlog = intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
@@ -166,7 +164,7 @@ class SouthboundMqttIntakeTest {
         assertThat(clientQueue.removed).containsExactly(replayed.getUniqueId());
         assertThat(broker.publishService.published).hasSize(1);
         final var dedupVerdict = new ObjectMapper()
-                .readTree(broker.publishService.published.get(0).getPayload());
+                .readTree(broker.publishService.published.getFirst().getPayload());
         assertThat(dedupVerdict.get("commandId").asText()).isEqualTo(replayed.getUniqueId());
         assertThat(dedupVerdict.get("outcome").asText()).isEqualTo("SUCCEEDED");
         assertThat(dedupVerdict.get("deduplicated").asBoolean()).isTrue();
@@ -178,7 +176,7 @@ class SouthboundMqttIntakeTest {
         clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(7, "fresh"));
         broker.retainedStore.retained.put(
                 "cmd/setpoint/result",
-                new com.hivemq.persistence.RetainedMessage(
+                new RetainedMessage(
                         "{\"commandId\":\"some-older-command\",\"outcome\":\"SUCCEEDED\"}".getBytes(UTF_8),
                         QoS.AT_LEAST_ONCE,
                         1L,
@@ -231,8 +229,7 @@ class SouthboundMqttIntakeTest {
         };
     }
 
-    private static @NotNull PUBLISH publish(
-            final long publishId, final @org.jetbrains.annotations.Nullable String payload) {
+    private static @NotNull PUBLISH publish(final long publishId, final @Nullable String payload) {
         final PUBLISHFactory.Mqtt3Builder builder = new PUBLISHFactory.Mqtt3Builder()
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
@@ -241,43 +238,5 @@ class SouthboundMqttIntakeTest {
                 .withHivemqId("hivemqId");
         builder.withPayload(payload == null ? null : payload.getBytes(UTF_8));
         return builder.build();
-    }
-
-    private record TestDataPoint(
-            @NotNull String tagName, @NotNull Object value) implements DataPoint {
-
-        @Override
-        public @NotNull Object getTagValue() {
-            return value;
-        }
-
-        @Override
-        public @NotNull String getTagName() {
-            return tagName;
-        }
-    }
-
-    private static final class TestNode extends Node {
-
-        private final @NotNull String identifier;
-
-        private TestNode(final @NotNull String identifier) {
-            this.identifier = identifier;
-        }
-
-        @Override
-        public @NotNull String nodeId() {
-            return identifier;
-        }
-
-        @Override
-        public @NotNull String nodeString() {
-            return "{\"identifier\":\"" + identifier + "\"}";
-        }
-
-        @Override
-        public @NotNull EnumSet<NodeProperty> properties() {
-            return EnumSet.of(NodeProperty.UNIQUE);
-        }
     }
 }

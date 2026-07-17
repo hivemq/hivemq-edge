@@ -120,6 +120,7 @@ class SouthboundWriteBackPressureTest {
         final Node node = fixture.nodeFor(TAG);
         final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(1_000);
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(fixture.mailbox, node, backlog);
+        queue.resume();
 
         final int burst = 30;
         for (int i = 0; i < burst; i++) {

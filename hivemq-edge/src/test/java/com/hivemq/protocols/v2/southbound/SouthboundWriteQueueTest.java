@@ -18,15 +18,8 @@ package com.hivemq.protocols.v2.southbound;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
-import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
-import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperWriteRequest;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +39,7 @@ class SouthboundWriteQueueTest {
         final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
         final CapturingSender sender = new CapturingSender();
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        queue.resume();
 
         backlog.offer(value(0));
         backlog.offer(value(1));
@@ -79,6 +73,7 @@ class SouthboundWriteQueueTest {
         final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
         final CapturingSender sender = new CapturingSender();
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        queue.resume();
         backlog.offer(value(0));
         backlog.offer(value(1));
 
@@ -96,9 +91,10 @@ class SouthboundWriteQueueTest {
         final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
         final CapturingSender sender = new CapturingSender();
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        queue.resume();
         backlog.offer(value(0));
         backlog.offer(value(1));
-        final DataPoint firstValue = sender.requests.get(0).value();
+        final DataPoint firstValue = sender.requests.getFirst().value();
 
         // The adapter aborts the in-flight write (connection lost / deactivated).
         sender.settleLast(SouthboundWriteOutcome.ABORTED);
@@ -122,6 +118,7 @@ class SouthboundWriteQueueTest {
         final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
         final CapturingSender sender = new CapturingSender();
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        queue.resume();
         backlog.offer(value(0));
 
         sender.settleLast(SouthboundWriteOutcome.REJECTED_BUSY);
@@ -158,6 +155,7 @@ class SouthboundWriteQueueTest {
         final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
         final CapturingSender sender = new CapturingSender();
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        queue.resume();
         backlog.offer(value(0));
         backlog.offer(value(1));
         assertThat(queue.inFlight()).isTrue();
@@ -179,7 +177,7 @@ class SouthboundWriteQueueTest {
     void crashReplay_aFreshQueueOverTheSameBacklog_redeliversTheUncommittedHead() {
         final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
         final CapturingSender sender = new CapturingSender();
-        new SouthboundWriteQueue(sender, NODE, backlog);
+        new SouthboundWriteQueue(sender, NODE, backlog).resume();
         backlog.offer(value(0));
         backlog.offer(value(1));
 
@@ -194,8 +192,8 @@ class SouthboundWriteQueueTest {
         queueAfterRestart.resume();
 
         assertThat(senderAfterRestart.requests).hasSize(1);
-        assertThat(senderAfterRestart.requests.get(0).value())
-                .isEqualTo(sender.requests.get(0).value());
+        assertThat(senderAfterRestart.requests.getFirst().value())
+                .isEqualTo(sender.requests.getFirst().value());
 
         // Draining after the restart delivers every command exactly once — at-least-once, nothing lost.
         senderAfterRestart.settleLast(SouthboundWriteOutcome.SUCCEEDED);
@@ -208,58 +206,5 @@ class SouthboundWriteQueueTest {
 
     private static @NotNull DataPoint value(final int i) {
         return new TestDataPoint("setpoint", i);
-    }
-
-    /** A send-only mailbox stand-in that records each write request and lets the test settle it as the adapter would. */
-    private static final class CapturingSender implements MailboxSender<ProtocolAdapterWrapperMessage> {
-
-        private final @NotNull List<ProtocolAdapterWrapperWriteRequest> requests = new ArrayList<>();
-
-        @Override
-        public void tell(final @NotNull ProtocolAdapterWrapperMessage message) {
-            requests.add((ProtocolAdapterWrapperWriteRequest) message);
-        }
-
-        private void settleLast(final @NotNull SouthboundWriteOutcome outcome) {
-            requests.get(requests.size() - 1).completion().settle(outcome, null);
-        }
-    }
-
-    private record TestDataPoint(
-            @NotNull String tagName, @NotNull Object value) implements DataPoint {
-
-        @Override
-        public @NotNull Object getTagValue() {
-            return value;
-        }
-
-        @Override
-        public @NotNull String getTagName() {
-            return tagName;
-        }
-    }
-
-    private static final class TestNode extends Node {
-
-        private final @NotNull String identifier;
-
-        private TestNode(final @NotNull String identifier) {
-            this.identifier = identifier;
-        }
-
-        @Override
-        public @NotNull String nodeId() {
-            return identifier;
-        }
-
-        @Override
-        public @NotNull String nodeString() {
-            return "{\"identifier\":\"" + identifier + "\"}";
-        }
-
-        @Override
-        public @NotNull EnumSet<NodeProperty> properties() {
-            return EnumSet.of(NodeProperty.UNIQUE);
-        }
     }
 }

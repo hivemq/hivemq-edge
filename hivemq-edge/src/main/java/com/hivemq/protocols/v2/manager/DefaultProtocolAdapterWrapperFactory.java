@@ -72,8 +72,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one configuration
- *, exactly as the wrapper test rig does but driven from the read-only configuration and the
+ * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one
+ * configuration, exactly as the wrapper test rig does but driven from the read-only configuration and the
  * injected runtime. For each adapter it
  * <ol>
  * <li>creates the wrapper mailbox and the tell-façade the protocol adapter reports through;</li>
@@ -275,17 +275,20 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // write aspects' readiness notifications (the plane IS the readiness listener). With the broker runtime
         // present, the MQTT intake subscribes each mapping's topic and the backlogs lease from the durable client
         // queues; without it (unit rigs), the plane falls back to the interim in-memory backlogs.
+        // Both join the scope as they are acquired, so a construction that throws afterwards — including the
+        // LinkageError case the scope exists for — releases the intake's shared subscriptions and the plane's
+        // backlogs and leases. The durable queues and their contents survive, as always.
         final SouthboundMqttIntake southboundIntake;
         final SouthboundWritePlane southboundWritePlane;
         if (southboundBrokerRuntime != null && !entity.getSouthboundMappings().isEmpty()) {
-            southboundIntake = new SouthboundMqttIntake(
-                    adapterId, southboundBrokerRuntime, dataPointFactory, objectMapper, entity.getSouthboundMappings());
-            southboundWritePlane =
-                    new SouthboundWritePlane(adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed);
+            southboundIntake = scope.register(new SouthboundMqttIntake(
+                    adapterId, southboundBrokerRuntime, dataPointFactory, objectMapper, entity.getSouthboundMappings()));
+            southboundWritePlane = scope.register(
+                    new SouthboundWritePlane(adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed));
         } else {
             southboundIntake = null;
-            southboundWritePlane = new SouthboundWritePlane(
-                    adapterId, mailbox, entity.getSouthboundWriteBacklogCapacity(), nodes, writeUsed);
+            southboundWritePlane = scope.register(new SouthboundWritePlane(
+                    adapterId, mailbox, entity.getSouthboundWriteBacklogCapacity(), nodes, writeUsed));
         }
         final TagAspectRuntimeCoordinator tagPlane = new TagAspectRuntimeCoordinator(
                 adapterId,
@@ -333,7 +336,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
 
         final ProtocolAdapterHandle handle =
                 new ProtocolAdapterHandle(adapterId, mailbox, snapshot, southboundWritePlane);
-        return new ProtocolAdapterContainer(
+        return scope.commit(new ProtocolAdapterContainer(
                 handle,
                 dispatcherHandle,
                 adapterDispatcherHandle,
@@ -341,7 +344,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 metrics,
                 northboundConsumers,
                 southboundIntake,
-                entity);
+                entity));
     }
 
     /** Builds the empty registry; the caller registers it with the scope and only then wires its mappings. */

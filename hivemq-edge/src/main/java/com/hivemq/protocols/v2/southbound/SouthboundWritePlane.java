@@ -110,10 +110,18 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
         this.adapterId = adapterId;
         this.wrapperSender = wrapperSender;
         this.backlogFactory = backlogFactory;
-        for (final NodeTagPair pair : nodes) {
-            if (writeUsedTagNames.contains(pair.tag().name())) {
-                channels.put(pair.tag().name(), newSuspendedChannel(pair.tag().name(), pair.node()));
+        try {
+            for (final NodeTagPair pair : nodes) {
+                if (writeUsedTagNames.contains(pair.tag().name())) {
+                    channels.put(
+                            pair.tag().name(), newSuspendedChannel(pair.tag().name(), pair.node()));
+                }
             }
+        } catch (final RuntimeException failure) {
+            // A failed channel build must not leak the channels already created (their backlogs hold broker-side
+            // callbacks and possibly a lease) — release them before rethrowing.
+            close();
+            throw failure;
         }
     }
 
@@ -238,10 +246,9 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
 
     private @NotNull TagChannel newSuspendedChannel(final @NotNull String tagName, final @NotNull Node node) {
         final SouthboundWriteBacklog backlog = backlogFactory.create(tagName, node);
+        // Queues are born suspended: the window opens on the tag's first tagWritable (verified); until then
+        // commands wait in the backlog instead of bouncing off an aspect that can only abort them.
         final SouthboundWriteQueue queue = new SouthboundWriteQueue(wrapperSender, node, backlog);
-        // The window opens on the tag's first tagWritable (verified); until then commands wait in the backlog
-        // instead of bouncing off an aspect that can only abort them.
-        queue.suspend();
         return new TagChannel(node, backlog, queue);
     }
 
