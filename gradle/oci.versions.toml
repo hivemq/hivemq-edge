@@ -1,5 +1,6 @@
-# https://hub.docker.com/_/eclipse-temurin/tags?name=25-jre-noble
+# Security-patched base image published to ECR Public by hivemq/images (PLT-941).
+# Renovate bumps the digest via the oci.versions.toml custom manager.
 [[oci]]
 name = "eclipse-temurin"
-image = "library/eclipse-temurin"
-reference = "25-jre-noble@sha256:2f1da100788559b397bcf48c736169ea5b070bde84e55f203bbee8e83d87a175"
+image = "public.ecr.aws/y7j2u9c5/base-images/eclipse-temurin"
+reference = "25-jre-noble@sha256:7d8edf605e835fecd06fe9bfb9fe7f4c6d28990ed89ea1538defc504cba4f15b"
