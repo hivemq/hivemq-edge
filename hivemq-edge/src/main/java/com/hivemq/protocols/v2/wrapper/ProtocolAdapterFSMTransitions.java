@@ -36,6 +36,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.DataPointRece
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.Disconnected;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.ErrorEvent;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.NodeErrorReceived;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.PollCompleted;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.PollTimerFired;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.Started;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.Stopped;
@@ -178,6 +179,8 @@ public final class ProtocolAdapterFSMTransitions {
                 .on(ERROR, AllVerified.class)
                 .then(absorb)
                 .on(ERROR, DataPointReceived.class)
+                .then(absorb)
+                .on(ERROR, PollCompleted.class)
                 .then(absorb)
                 .on(ERROR, NodeErrorReceived.class)
                 .then(absorb)

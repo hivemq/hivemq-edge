@@ -103,6 +103,21 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
     }
 
     /**
+     * Reports that the poll for this node has produced all its values — possibly zero — so the node's poll cadence
+     * resumes. Deliberately in the {@code DATA} band, like {@link DataPointReceived}: within-band FIFO guarantees the
+     * completion is delivered <b>after</b> the values the adapter reported before it — in a higher band it would
+     * overtake them and end the poll while they were still queued, absorbing them.
+     *
+     * @param node the node whose poll is complete.
+     */
+    record PollCompleted(@NotNull Node node) implements ProtocolAdapterWrapperEvent {
+        @Override
+        public @NotNull MailboxMessagePriority priority() {
+            return MailboxMessagePriority.DATA;
+        }
+    }
+
+    /**
      * Reports a per-node failure (failed poll, failed or lost subscription).
      *
      * @param node        the node the failure belongs to.

@@ -127,6 +127,11 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     }
 
     @Override
+    public void routePollComplete(final @NotNull Node node) {
+        // No read aspect yet; the completion is absorbed.
+    }
+
+    @Override
     public void routeNodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {
         // No read aspect yet; the failure is absorbed.
     }

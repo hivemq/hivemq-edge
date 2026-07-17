@@ -187,6 +187,14 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     @Override
+    public void routePollComplete(final @NotNull Node node) {
+        final TagRuntime tagRuntime = findTagRuntime(node);
+        if (tagRuntime != null) {
+            tagRuntime.onPollComplete();
+        }
+    }
+
+    @Override
     public void routeNodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {

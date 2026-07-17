@@ -31,6 +31,7 @@ import com.hivemq.protocols.v2.tag.TagAspectSnapshotOnlyCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.view.TagStatus;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +61,12 @@ final class WrapperTestFixture {
     final @NotNull AtomicReference<AdapterStatusSnapshot> snapshotReference;
     final @NotNull ProtocolAdapterWrapper wrapper;
     final @NotNull List<NodeTagPair> nodes;
+
+    /**
+     * The stamped data points the wrapper offered to northbound consumers, in order — captures what actually
+     * publishes, beyond the aspect-state view of the snapshot.
+     */
+    final @NotNull List<DataPoint> northboundDataPoints = new ArrayList<>();
 
     private WrapperTestFixture(final @NotNull Builder builder) {
         this.adapterId = builder.adapterId;
@@ -112,7 +119,8 @@ final class WrapperTestFixture {
                 activation,
                 tagPlane,
                 health,
-                metrics);
+                metrics,
+                northboundDataPoints::add);
         if (runningTagPlane != null) {
             runningTagPlane.bindRuntime(
                     context.clock(),

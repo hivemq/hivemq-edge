@@ -164,7 +164,8 @@ class ChaosProtocolAdapterTest {
                                 .poll(NodeMatcher.all(), PollBehavior.value(VALUE))
                                 .build())
                 .pollBatch(List.of(NODE_A));
-        assertThat(value.events).containsExactly("dataPoint:a");
+        // A scripted value is followed by the explicit poll completion, mirroring the template's synchronous path.
+        assertThat(value.events).containsExactly("dataPoint:a", "pollComplete:a");
 
         final RecordingOutput error = new RecordingOutput();
         new ChaosProtocolAdapter(
@@ -175,6 +176,60 @@ class ChaosProtocolAdapterTest {
                                 .build())
                 .pollBatch(List.of(NODE_A));
         assertThat(error.events).containsExactly("nodeError:a:false");
+    }
+
+    @Test
+    void pollValues_deliversEveryValueThenOneCompletion() {
+        final RecordingOutput output = new RecordingOutput();
+        new ChaosProtocolAdapter(
+                        "a",
+                        output,
+                        ChaosScript.builder()
+                                .poll(
+                                        NodeMatcher.all(),
+                                        PollBehavior.values(
+                                                new ChaosDataPoint("a", "1"),
+                                                new ChaosDataPoint("a", "2"),
+                                                new ChaosDataPoint("a", "3")))
+                                .build())
+                .pollBatch(List.of(NODE_A));
+
+        assertThat(output.events).containsExactly("dataPoint:a", "dataPoint:a", "dataPoint:a", "pollComplete:a");
+    }
+
+    @Test
+    void pollCompletionWithoutValue_completesAZeroValuePoll() {
+        final RecordingOutput output = new RecordingOutput();
+        new ChaosProtocolAdapter(
+                        "a",
+                        output,
+                        ChaosScript.builder()
+                                .poll(NodeMatcher.all(), PollBehavior.completionWithoutValue())
+                                .build())
+                .pollBatch(List.of(NODE_A));
+
+        assertThat(output.events).containsExactly("pollComplete:a");
+    }
+
+    @Test
+    void pollValueThenDeferredCompletion_splitsTheValueAndTheCompletionAcrossTicks() {
+        final RecordingOutput output = new RecordingOutput();
+        final ChaosProtocolAdapter adapter = new ChaosProtocolAdapter(
+                "a",
+                output,
+                ChaosScript.builder()
+                        .poll(NodeMatcher.all(), PollBehavior.valueThenCompletionAfterTicks(VALUE, 2))
+                        .build());
+
+        adapter.pollBatch(List.of(NODE_A));
+        // The value publishes within the poll call; the poll stays open — no completion yet.
+        assertThat(output.events).containsExactly("dataPoint:a");
+
+        adapter.onTick(); // tick 1 — the completion is not yet due
+        assertThat(output.events).containsExactly("dataPoint:a");
+
+        adapter.onTick(); // tick 2 — the completion fires
+        assertThat(output.events).containsExactly("dataPoint:a", "pollComplete:a");
     }
 
     @Test
@@ -342,6 +397,11 @@ class ChaosProtocolAdapterTest {
         @Override
         public void dataPoint(final @NotNull Node node, final @NotNull DataPoint value) {
             events.add("dataPoint:" + node.nodeId());
+        }
+
+        @Override
+        public void pollComplete(final @NotNull Node node) {
+            events.add("pollComplete:" + node.nodeId());
         }
 
         @Override

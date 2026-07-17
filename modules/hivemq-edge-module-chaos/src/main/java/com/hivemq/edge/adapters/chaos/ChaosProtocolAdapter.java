@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.chaos;
 
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
@@ -268,10 +269,30 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
 
     private void applyPoll(final @NotNull Node node, final @NotNull PollBehavior behavior) {
         switch (behavior) {
-            case final PollBehavior.Value value -> output.dataPoint(node, value.value());
+            case final PollBehavior.Value value -> {
+                output.dataPoint(node, value.value());
+                // Values never end a poll; the explicit completion resumes the poll cadence — mirroring the
+                // template's automatic completion on the synchronous path.
+                output.pollComplete(node);
+            }
+            case final PollBehavior.Values values -> {
+                for (final DataPoint value : values.values()) {
+                    output.dataPoint(node, value);
+                }
+                output.pollComplete(node);
+            }
+            case final PollBehavior.ValueThenDeferredCompletion split -> {
+                // The split shape: the value publishes now, but the poll stays open until the completion's tick
+                // comes due — letting a scenario observe WAITING_FOR_POLL_DATAPOINT with the value already out.
+                output.dataPoint(node, split.value());
+                final int delay = Math.max(1, split.ticks());
+                scheduleAt(currentTick + delay, () -> output.pollComplete(node));
+            }
+            case final PollBehavior.CompletionWithoutValue ignored -> output.pollComplete(node);
             case final PollBehavior.NodeErrorResponse error -> output.nodeError(node, error.reason(), false);
             case final PollBehavior.NoResponse ignored -> {
-                // The poll never returns; the read aspect waits and the next scheduled poll is the retry.
+                // The poll never returns — no value and no completion; the read aspect waits in
+                // WAITING_FOR_POLL_DATAPOINT until a scripted event moves it.
             }
         }
     }

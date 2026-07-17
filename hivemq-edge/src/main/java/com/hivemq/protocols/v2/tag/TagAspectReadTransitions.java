@@ -71,13 +71,19 @@ public final class TagAspectReadTransitions {
                     aspect.requestPoll();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT;
                 })
-                // A value came back: schedule the next poll. No new state — the cadence simply continues.
+                // A value came back: publish it and keep collecting — a poll may produce any number of values
+                // (a multi-row read publishes one value per row), so a value never ends the poll.
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.ValueReceived.class)
+                .then((current, event, aspect) -> current)
+                // The poll completed — all its values (possibly zero) have been published: schedule the next poll.
+                // No new state — the cadence simply continues.
+                .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.PollCompleted.class)
                 .then((current, event, aspect) -> {
                     aspect.scheduleNextPoll();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
                 })
-                // A poll failed: count it, schedule the next poll. The next scheduled poll IS the retry.
+                // A poll failed: count it, schedule the next poll. The next scheduled poll IS the retry. A failure
+                // ends the poll on its own; a completion trailing it is absorbed by the lenient unmatched slot.
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.NodeFailed.class)
                 .then((current, event, aspect) -> {
                     aspect.onPollFailure(TagAspectPreOperatingTransitions.reasonOf(event));

@@ -35,6 +35,7 @@ public sealed interface TagAspectEvent extends com.hivemq.protocols.v2.fsm.FSMEv
                 TagAspectEvent.VerificationRetryElapsed,
                 TagAspectEvent.PollIntervalElapsed,
                 TagAspectEvent.ValueReceived,
+                TagAspectEvent.PollCompleted,
                 TagAspectEvent.NodeFailed,
                 TagAspectEvent.SubscriptionRetryElapsed,
                 TagAspectEvent.WriteRequested,
@@ -76,6 +77,12 @@ public sealed interface TagAspectEvent extends com.hivemq.protocols.v2.fsm.FSMEv
      * @param value the reused v1 value.
      */
     record ValueReceived(@NotNull DataPoint value) implements TagAspectEvent {}
+
+    /**
+     * The poll produced all its values — possibly zero — so the poll cadence resumes. Consumed only by the polled
+     * read aspect; values never end a poll, only this signal (or a {@link NodeFailed}) does.
+     */
+    record PollCompleted() implements TagAspectEvent {}
 
     /**
      * A per-node failure arrived — a failed poll, or a failed or lost subscription.

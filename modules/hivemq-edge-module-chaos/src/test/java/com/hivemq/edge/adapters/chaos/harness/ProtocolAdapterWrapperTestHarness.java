@@ -650,6 +650,12 @@ public final class ProtocolAdapterWrapperTestHarness {
         }
 
         @Override
+        public void pollComplete(final @NotNull Node node) {
+            events.add("pollComplete");
+            delegate.pollComplete(node);
+        }
+
+        @Override
         public void nodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {
             events.add("nodeError");
             delegate.nodeError(node, reason, spontaneous);

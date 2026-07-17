@@ -144,6 +144,8 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 context.onVerifyResultReceived(verify.node(), verify.outcome());
             case ProtocolAdapterWrapperEvent.DataPointReceived data ->
                 context.routeDataPointToTags(data.node(), data.value());
+            case ProtocolAdapterWrapperEvent.PollCompleted pollCompleted ->
+                context.routePollCompleteToTags(pollCompleted.node());
             case ProtocolAdapterWrapperEvent.NodeErrorReceived nodeError ->
                 context.routeNodeErrorToTags(nodeError.node(), nodeError.reason(), nodeError.spontaneous());
             case ProtocolAdapterWrapperEvent.WriteResultReceived write ->

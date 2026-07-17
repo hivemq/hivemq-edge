@@ -422,6 +422,11 @@ class OpcUaFoundationConformanceTest {
         }
 
         @Override
+        public void pollComplete(final @NotNull Node node) {
+            // Poll cadence is the framework's concern; the conformance rig only inspects values and errors.
+        }
+
+        @Override
         public void nodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {
             synchronized (lock) {
                 nodeErrors.add(node.nodeId() + ": " + reason);

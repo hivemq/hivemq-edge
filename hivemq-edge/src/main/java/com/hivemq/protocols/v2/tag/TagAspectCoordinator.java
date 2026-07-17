@@ -96,6 +96,14 @@ public interface TagAspectCoordinator {
     DataPoint routeDataPoint(@NotNull Node node, @NotNull DataPoint value, @NotNull String adapterId);
 
     /**
+     * Route a poll completion to the node's read aspect — the node's poll has produced all its values (possibly
+     * zero), so its poll cadence resumes.
+     *
+     * @param node the node whose poll is complete.
+     */
+    void routePollComplete(@NotNull Node node);
+
+    /**
      * Route a per-node failure to the node's read aspect.
      *
      * @param node        the node the failure belongs to.

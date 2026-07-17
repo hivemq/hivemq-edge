@@ -84,6 +84,11 @@ public final class ProtocolAdapterOutputFacade implements ProtocolAdapterOutput 
     }
 
     @Override
+    public void pollComplete(final @NotNull Node node) {
+        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.PollCompleted(node));
+    }
+
+    @Override
     public void nodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {
         wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.NodeErrorReceived(node, reason, spontaneous));
     }

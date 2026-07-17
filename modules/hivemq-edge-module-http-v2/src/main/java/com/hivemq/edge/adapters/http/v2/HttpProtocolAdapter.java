@@ -144,27 +144,41 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
         // what preserves v1's per-cycle parallelism, and the dispatch thread does not block on it.
         final var unused = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .whenComplete((response, throwable) -> {
-                    if (httpClient != client) {
-                        return;
-                    }
+                    // Every completion path ends with pollComplete, so the node's poll cadence can never be left
+                    // hanging — including the no-body response (a zero-value poll) and the stale-client drop (the
+                    // late completion is harmlessly absorbed after the reconnect power-cycled the tag).
                     try {
-                        if (throwable != null) {
+                        if (httpClient != client) {
+                            return;
+                        }
+                        try {
+                            if (throwable != null) {
+                                output.nodeError(
+                                        node,
+                                        "the HTTP request to '" + httpNode.url() + "' failed: " + describe(throwable),
+                                        false);
+                            } else {
+                                handleResponse(httpNode, node, response);
+                            }
+                        } catch (final RuntimeException e) {
+                            LOG.debug("Could not process the HTTP response from '{}'.", httpNode.url(), e);
                             output.nodeError(
                                     node,
-                                    "the HTTP request to '" + httpNode.url() + "' failed: " + describe(throwable),
+                                    "the HTTP response from '" + httpNode.url() + "' could not be processed: "
+                                            + e.getMessage(),
                                     false);
-                        } else {
-                            handleResponse(httpNode, node, response);
                         }
-                    } catch (final RuntimeException e) {
-                        LOG.debug("Could not process the HTTP response from '{}'.", httpNode.url(), e);
-                        output.nodeError(
-                                node,
-                                "the HTTP response from '" + httpNode.url() + "' could not be processed: "
-                                        + e.getMessage(),
-                                false);
+                    } finally {
+                        output.pollComplete(node);
                     }
                 });
+    }
+
+    @Override
+    protected boolean pollCompletesSynchronously() {
+        // The value arrives on the HTTP client's completion thread after doPoll returned, so the template must not
+        // auto-complete the poll; the completion handler above emits pollComplete itself.
+        return false;
     }
 
     private @NotNull HttpRequest buildRequest(final @NotNull HttpNode node) {

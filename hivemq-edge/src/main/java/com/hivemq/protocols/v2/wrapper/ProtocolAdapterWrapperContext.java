@@ -512,6 +512,16 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
+     * Route a poll completion to its read aspect — the node's poll has produced all its values, so its poll cadence
+     * resumes. Carries no value, so nothing is published northbound.
+     *
+     * @param node the node whose poll is complete.
+     */
+    public void routePollCompleteToTags(final @NotNull Node node) {
+        tagPlane.routePollComplete(node);
+    }
+
+    /**
      * Route a per-node failure to its read aspect.
      *
      * @param node        the node the failure belongs to.

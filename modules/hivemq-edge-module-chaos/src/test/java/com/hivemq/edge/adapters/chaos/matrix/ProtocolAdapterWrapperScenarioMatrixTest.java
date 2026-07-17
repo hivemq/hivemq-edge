@@ -476,6 +476,84 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
         assertThat(harness.tagStatus("temperature")).isEqualTo(NORTHBOUND_ONLY);
     }
 
+    // ── poll-completion boundary: a value never ends a poll, the trailing completion does ───────────────────────
+
+    @Test
+    void aPollValueIsFollowedByItsCompletion_whichResumesTheCadence() {
+        final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
+                .poll(NodeMatcher.all(), PollBehavior.value(new ChaosDataPoint("temperature", "21.5")))
+                .build());
+        harness.activateNorthbound();
+
+        harness.advance(1); // the poll delivers a value and then the explicit completion
+
+        assertThat(harness.eventsSeen()).containsSubsequence("dataPoint", "pollComplete");
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+
+        harness.advance(1); // the cadence continues: the next interval elapses and the next poll completes too
+        assertThat(harness.eventsSeen().stream().filter("pollComplete"::equals).count())
+                .isEqualTo(2);
+    }
+
+    @Test
+    void aMultiValuePoll_publishesEveryValueBeforeTheSingleCompletion() {
+        final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
+                .poll(
+                        NodeMatcher.all(),
+                        PollBehavior.values(
+                                new ChaosDataPoint("temperature", "1"),
+                                new ChaosDataPoint("temperature", "2"),
+                                new ChaosDataPoint("temperature", "3")))
+                .build());
+        harness.activateNorthbound();
+
+        harness.advance(1); // one poll delivers three values, then the single completion
+
+        assertThat(harness.eventsSeen()).containsSubsequence("dataPoint", "dataPoint", "dataPoint", "pollComplete");
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(harness.tag("temperature").failureCount()).isZero();
+    }
+
+    @Test
+    void aZeroValuePoll_completesWithoutPublishingAndResumesTheCadence() {
+        final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
+                .poll(NodeMatcher.all(), PollBehavior.completionWithoutValue())
+                .build());
+        harness.activateNorthbound();
+
+        harness.advance(1); // an empty result: only the completion arrives
+
+        assertThat(harness.eventsSeen()).contains("pollComplete").doesNotContain("dataPoint");
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(harness.tag("temperature").failureCount()).isZero();
+
+        harness.advance(1); // the cadence continues: the next poll also completes empty
+        assertThat(harness.eventsSeen().stream().filter("pollComplete"::equals).count())
+                .isEqualTo(2);
+    }
+
+    @Test
+    void aDeferredCompletion_holdsThePollOpenWithTheValuePublishedUntilItsTick() {
+        final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
+                .poll(NodeMatcher.all(), PollBehavior.valueThenCompletionAfterTicks(TEMPERATURE, 2))
+                .build());
+        harness.activateNorthbound();
+
+        harness.advance(1); // the poll fires: the value publishes, but the completion is deferred two ticks
+
+        assertThat(harness.eventsSeen()).contains("dataPoint").doesNotContain("pollComplete");
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+
+        harness.advance(1); // one tick later the completion is still not due — the poll stays open
+        assertThat(harness.eventsSeen()).doesNotContain("pollComplete");
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+
+        harness.advance(1); // the completion's tick comes due: the poll ends and the cadence resumes
+        assertThat(harness.eventsSeen()).containsSubsequence("dataPoint", "pollComplete");
+        assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(harness.tag("temperature").failureCount()).isZero();
+    }
+
     // ── S24: time-as-a-message ordering (EVENT > TICK) ──────────────────────────────────────────────────────────
 
     @Test

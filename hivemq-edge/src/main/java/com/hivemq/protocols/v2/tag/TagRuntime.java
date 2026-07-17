@@ -219,6 +219,14 @@ public final class TagRuntime {
     }
 
     /**
+     * Route a poll completion to the read aspect — the tag's poll has produced all its values, so its poll cadence
+     * resumes.
+     */
+    public void onPollComplete() {
+        readAspect.onPollComplete();
+    }
+
+    /**
      * Route a per-node failure to the read aspect.
      *
      * @param reason      a human-readable description.

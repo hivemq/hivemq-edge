@@ -296,6 +296,16 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
+     * Feed a poll completion — the poll has produced all its values (possibly zero), so the poll cadence resumes.
+     * Only the polled variant has a transition for it; anywhere else (a late completion after a poll failure already
+     * ended the poll, or a completion reaching a subscribed aspect) it is harmlessly absorbed by the lenient
+     * {@code unmatched} slot.
+     */
+    public void onPollComplete() {
+        dispatch(new TagAspectEvent.PollCompleted());
+    }
+
+    /**
      * Feed a per-node failure.
      *
      * @param reason      a human-readable description.
