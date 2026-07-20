@@ -1,0 +1,2 @@
+com.hivemq.edge.adapters.workload.WorkloadProtocolAdapterFactory
+com.hivemq.edge.adapters.workload.WorkloadSubscriptionsOnlyProtocolAdapterFactory
