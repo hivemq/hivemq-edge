@@ -248,6 +248,12 @@ public final class WorkloadControlChannel {
                 journal("EMIT disconnected");
                 output.disconnected();
             }
+            case "connectionerror" -> {
+                // a connection-level error WHILE connected — the wrapper responds with disconnect() (reconnect path),
+                // entering WAITING_FOR_DISCONNECTED_BEFORE_RECONNECT; used to exercise the disconnect watchdog.
+                journal("EMIT connectionerror");
+                output.error(com.hivemq.adapter.sdk.api.v2.model.ErrorScope.CONNECTION, "control: injected connection error");
+            }
             case "nodeerror" -> {
                 journal("EMIT nodeerror node=" + a[2] + " spontaneous=" + a[3]);
                 output.nodeError(new WorkloadNode(a[2]), "control: injected nodeError", Boolean.parseBoolean(a[3]));
