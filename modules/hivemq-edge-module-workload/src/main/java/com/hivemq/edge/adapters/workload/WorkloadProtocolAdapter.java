@@ -59,7 +59,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
      * loaded (defeats the {@code build/hivemq-environment/base} stale-jar cache trap that caused the retracted #8/#9/#10).
      * Emitted at {@link #start()} as {@code WL_BUILD} and journalled as {@code BUILD <token>}.
      */
-    public static final @NotNull String BUILD = "wl-2026-07-20-v2b3";
+    public static final @NotNull String BUILD = "wl-2026-07-20-v2b4";
 
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterOutput output;
