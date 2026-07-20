@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.databases.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -118,6 +119,71 @@ class DatabasesProtocolAdapterLifecycleTest {
         assertThat(output.events).containsExactly("connected");
         assertThat(connection.opened).isTrue();
         assertThat(connection.closed).isFalse();
+    }
+
+    @Test
+    void stop_closesThePoolEvenWithoutAPrecedingDisconnect() throws SQLException {
+        // The wrapper can stop the adapter directly from ERROR — a watchdog timeout, defensive reset, or ADAPTER-scope
+        // error — with the pool still open and no intervening disconnect. doStop must release it, not only
+        // doDisconnect, or the Hikari housekeeper threads and pooled connections survive the adapter's removal.
+        final ScriptedDatabaseConnection connection =
+                new ScriptedDatabaseConnection(configuration(), validConnection(), false);
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+
+        adapter.connect(); // opens the pool
+        adapter.stop(); // stops without an intervening disconnect
+        dispatcher.drainAll();
+
+        assertThat(output.events).containsExactly("connected", "stopped");
+        assertThat(connection.closed).isTrue();
+    }
+
+    @Test
+    void connectWhereReturningTheValidationConnectionFails_reportsAConnectionErrorWithoutConnected()
+            throws SQLException {
+        // The validation connection is valid, but returning it to the pool (its close) throws. The result must be the
+        // single connection error, never a premature connected() followed by a contradictory error.
+        final Connection validButUncloseable = mock(Connection.class);
+        when(validButUncloseable.isValid(anyInt())).thenReturn(true);
+        doThrow(new SQLException("returning the validation connection to the pool failed"))
+                .when(validButUncloseable)
+                .close();
+        final ScriptedDatabaseConnection connection =
+                new ScriptedDatabaseConnection(configuration(), validButUncloseable, false);
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+
+        adapter.connect();
+        dispatcher.drainAll();
+
+        assertThat(output.events).hasSize(1);
+        assertThat(output.events.get(0))
+                .startsWith("error:CONNECTION")
+                .contains("returning the validation connection to the pool failed");
+        assertThat(output.events).doesNotContain("connected");
+        assertThat(connection.closed).isTrue();
+    }
+
+    @Test
+    void connectWithAnUnsupportedEngine_reportsAConnectionErrorWithoutOpeningThePool() throws SQLException {
+        final ScriptedDatabaseConnection connection =
+                new ScriptedDatabaseConnection(configuration(), validConnection(), false);
+        final DatabasesProtocolAdapter adapter = new DatabasesProtocolAdapter(
+                DatabasesAdapterTestFixtures.input(
+                        "databases-v2-1",
+                        dispatcher,
+                        new DatabasesAdapterTestFixtures.TestDataPointFactory(),
+                        DatabasesAdapterTestFixtures.configuration("ORACLE", 1521),
+                        List.of()),
+                output,
+                configuration -> connection);
+
+        adapter.connect();
+        dispatcher.drainAll();
+
+        // A clear connection error, and the pool is never opened with the placeholder default engine's driver.
+        assertThat(output.events).hasSize(1);
+        assertThat(output.events.get(0)).startsWith("error:CONNECTION").contains("unsupported database type 'ORACLE'");
+        assertThat(connection.opened).isFalse();
     }
 
     @Test

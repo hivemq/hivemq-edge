@@ -154,6 +154,38 @@ class TagAspectReadPolledTest {
     }
 
     @Test
+    void aPollFailureTrailingAValueBacklog_isDeliveredAfterEveryValueSoNoRowIsLost() {
+        final WrapperTestFixture fixture = polledFixture();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
+
+        // A split-lines poll streams two rows, then its cursor throws mid-stream. The values and the failure all ride
+        // the DATA band, so within-band FIFO delivers the failure strictly after the rows it trails — every row
+        // publishes northbound before the failure ends the poll. (Regression guard: with the failure in the higher
+        // EVENT band it overtook the queued rows, parked the tag, and the rows were absorbed as stale and discarded.)
+        fixture.output.dataPoints(
+                fixture.nodeFor("temperature"),
+                List.of(
+                        WrapperTestSupport.dataPoint("temperature", "1"),
+                        WrapperTestSupport.dataPoint("temperature", "2")));
+        fixture.output.nodeError(fixture.nodeFor("temperature"), "cursor broke mid-stream", false);
+
+        fixture.deliverOne(); // the first row
+        assertThat(fixture.northboundDataPoints).hasSize(1);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+        fixture.deliverOne(); // the second row — the failure has not overtaken it
+        assertThat(fixture.northboundDataPoints).hasSize(2);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+
+        fixture.deliverOne(); // the failure, last: it ends the poll only now that every row is published
+        assertThat(fixture.northboundDataPoints).hasSize(2);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.tag("temperature").failureCount()).isEqualTo(1);
+        assertThat(fixture.tag("temperature").lastFailureReason()).isEqualTo("cursor broke mid-stream");
+        assertThat(fixture.defensiveResets()).isZero();
+    }
+
+    @Test
     void aCompletionTrailingAPollFailure_isAbsorbedWithoutDisturbingTheCadence() {
         final WrapperTestFixture fixture = polledFixture();
         fixture.activate(ProtocolAdapterDirection.NORTHBOUND);

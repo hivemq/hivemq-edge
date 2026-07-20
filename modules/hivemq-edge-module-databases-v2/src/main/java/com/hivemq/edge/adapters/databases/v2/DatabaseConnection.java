@@ -40,11 +40,20 @@ public class DatabaseConnection {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabaseConnection.class);
 
+    /**
+     * The pool holds at most one connection: the adapter runs on a single dispatch thread and executes every query
+     * synchronously, so it can never use more than one connection at a time. Hikari's default maximum of ten (with an
+     * effective minimum-idle of ten) would keep nine idle connections per adapter instance for no throughput gain,
+     * exhausting a shared database as instances multiply.
+     */
+    private static final int MAX_POOL_SIZE = 1;
+
     private final @NotNull HikariConfig config;
     private @Nullable HikariDataSource dataSource;
 
     public DatabaseConnection(final @NotNull DatabasesAdapterConfiguration configuration) {
         config = new HikariConfig();
+        config.setMaximumPoolSize(MAX_POOL_SIZE);
 
         switch (configuration.type()) {
             case POSTGRESQL -> {
@@ -94,8 +103,13 @@ public class DatabaseConnection {
     /**
      * Open the connection pool. The pool eagerly establishes its first connection, so a wrong address or credential
      * fails here.
+     * <p>
+     * A reconnect after a spontaneous connection loss re-enters {@code connect()} without an intervening
+     * {@link #close()} (the wrapper's connection-retry path issues no disconnect), so any previous pool is closed
+     * first — otherwise its housekeeper threads and pooled connections would be orphaned each retry.
      */
     public void connect() {
+        close();
         log.debug("Connection settings : {}", config);
         this.dataSource = new HikariDataSource(config);
     }
@@ -116,11 +130,15 @@ public class DatabaseConnection {
     }
 
     /**
-     * Close the pool and every idle connection it holds. Safe to call when the pool was never opened.
+     * Close the pool and every idle connection it holds, then clear the reference. Safe and idempotent: closing a
+     * never-opened or already-closed pool is a no-op. Clearing the reference first means a subsequent
+     * {@link #getConnection()} fails fast with a clear "pool not started" error rather than borrowing from a closed
+     * pool, and a repeated {@code close()} does nothing even if this close throws.
      */
     public void close() {
         final HikariDataSource currentDataSource = dataSource;
         if (currentDataSource != null) {
+            dataSource = null;
             currentDataSource.close();
         }
     }

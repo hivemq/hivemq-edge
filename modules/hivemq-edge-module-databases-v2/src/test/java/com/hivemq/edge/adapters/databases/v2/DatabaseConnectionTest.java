@@ -90,6 +90,18 @@ class DatabaseConnectionTest {
     }
 
     @Test
+    void thePoolIsBoundedToASingleConnectionForTheSerialExecutionModel() {
+        // The adapter polls serially on one dispatch thread, so it can never use more than one connection; the pool is
+        // capped at one rather than Hikari's default of ten idle connections per adapter instance.
+        for (final DatabaseType type : DatabaseType.values()) {
+            final DatabaseConnection connection = new DatabaseConnection(configuration(type, false, false));
+            assertThat(connection.hikariConfiguration().getMaximumPoolSize())
+                    .as("maximum pool size for %s", type)
+                    .isEqualTo(1);
+        }
+    }
+
+    @Test
     void theConnectionTimeoutIsTheConfiguredSecondsInMilliseconds() {
         // v1 multiplied the configured seconds by 2000, doubling every timeout; the v2 port corrects this.
         final DatabaseConnection connection =

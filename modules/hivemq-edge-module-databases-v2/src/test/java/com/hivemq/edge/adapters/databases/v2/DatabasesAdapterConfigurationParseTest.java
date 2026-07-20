@@ -140,10 +140,27 @@ class DatabasesAdapterConfigurationParseTest {
     }
 
     @Test
-    void anUnknownEngineFallsBackToPostgresql() {
-        final DatabasesAdapterConfiguration configuration =
-                DatabasesAdapterConfiguration.parse(configOf(Map.of("type", "ORACLE")), objectMapper);
+    void aRecognizedEngineIsNotReportedAsUnsupported() {
+        assertThat(DatabasesAdapterConfiguration.unsupportedTypeError(configOf(Map.of("type", "MYSQL")), objectMapper))
+                .isNull();
+    }
 
-        assertThat(configuration.type()).isEqualTo(DatabaseType.POSTGRESQL);
+    @Test
+    void anAbsentEngineIsNotReportedAsUnsupported() {
+        // An absent type is not an unsupported-engine error: parse applies the default engine, and the schema marks
+        // type as required.
+        assertThat(DatabasesAdapterConfiguration.unsupportedTypeError(
+                        configOf(Map.of("server", "localhost")), objectMapper))
+                .isNull();
+    }
+
+    @Test
+    void anUnknownEngineIsReportedAsUnsupportedInsteadOfSilentlyBecomingPostgresql() {
+        // The parse stays total (a placeholder engine keeps construction from throwing), but the unsupported name is
+        // surfaced so the adapter reports a clear connection error rather than connecting through the wrong driver.
+        assertThat(DatabasesAdapterConfiguration.unsupportedTypeError(configOf(Map.of("type", "ORACLE")), objectMapper))
+                .isNotNull()
+                .contains("ORACLE")
+                .contains("POSTGRESQL", "MYSQL", "MSSQL");
     }
 }

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The v2 Databases adapter's instance configuration — the connection parameters carried over from the v1 adapter.
@@ -62,10 +63,11 @@ public record DatabasesAdapterConfiguration(
     static final int MAX_BATCH_SIZE = 1000;
 
     /**
-     * Parse the adapter's instance configuration, applying the v1 defaults for any absent setting and clamping the
-     * connection timeout to the documented range. Tolerant of unknown keys and unparseable values — the framework
-     * validates the configuration against the type's schema before the adapter is constructed, so this parse never
-     * throws.
+     * Parse the adapter's instance configuration, applying the documented defaults for any absent setting and clamping
+     * the connection timeout and batch size to their documented ranges. The parse is total — it never throws — so a
+     * malformed value cannot abort adapter construction: an absent or non-textual field takes its default, and an
+     * explicitly-configured but unrecognized engine is reported separately by {@link #unsupportedTypeError} (the
+     * adapter surfaces it as a connection error) rather than silently masquerading as the default engine.
      *
      * @param adapterConfig the reused v1 configuration value handed to the adapter.
      * @param objectMapper  the mapper used to read the configuration map.
@@ -89,12 +91,42 @@ public record DatabasesAdapterConfiguration(
                 Math.max(MIN_BATCH_SIZE, Math.min(batchSize, MAX_BATCH_SIZE)));
     }
 
+    /**
+     * Report an explicitly-configured but unrecognized database engine, so the adapter can surface it as a clear
+     * connection error at connect time instead of silently falling back to the default engine and attempting a
+     * connection through the wrong JDBC driver. An absent or non-textual {@code type} is not reported here — the
+     * framework projects {@code type} as a required field, and {@link #parse} applies the default engine for an
+     * absent value.
+     *
+     * @param adapterConfig the reused v1 configuration value handed to the adapter.
+     * @param objectMapper  the mapper used to read the configuration map.
+     * @return a human-readable description of the unsupported engine, or {@code null} when the engine is recognized
+     *         (or absent/non-textual).
+     */
+    static @Nullable String unsupportedTypeError(
+            final @NotNull DataPoint adapterConfig, final @NotNull ObjectMapper objectMapper) {
+        final JsonNode value =
+                objectMapper.valueToTree(adapterConfig.getTagValue()).get("type");
+        if (value == null || !value.isTextual()) {
+            return null;
+        }
+        final String raw = value.textValue();
+        for (final DatabaseType type : DatabaseType.values()) {
+            if (type.name().equals(raw)) {
+                return null;
+            }
+        }
+        return "unsupported database type '" + raw + "' (expected one of POSTGRESQL, MYSQL, MSSQL)";
+    }
+
     private static @NotNull DatabaseType typeField(final @NotNull JsonNode node) {
         final JsonNode value = node.get("type");
         if (value != null && value.isTextual()) {
             try {
                 return DatabaseType.valueOf(value.textValue());
             } catch (final IllegalArgumentException ignored) {
+                // Keep the parse total. This is a placeholder only: the adapter never opens a pool with it because
+                // unsupportedTypeError() flags the same value and the adapter reports a connection error first.
                 return DatabaseType.POSTGRESQL;
             }
         }

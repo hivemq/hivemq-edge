@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.databases.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -301,6 +302,178 @@ class DatabasesProtocolAdapterPollTest {
         assertThat(row.get("doubleColumn").asDouble()).isEqualTo(0.5);
         assertThat(row.get("textColumn").isTextual()).isTrue();
         assertThat(row.get("textColumn").asText()).isEqualTo("text");
+    }
+
+    @Test
+    void sqlNullInAPrimitiveNumericColumn_publishesJsonNullNotZero() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(resultSet.next()).thenReturn(true, false);
+        when(metaData.getColumnCount()).thenReturn(3);
+        when(metaData.getColumnLabel(1)).thenReturn("intColumn");
+        when(metaData.getColumnType(1)).thenReturn(Types.INTEGER);
+        when(resultSet.getInt(1)).thenReturn(0);
+        when(metaData.getColumnLabel(2)).thenReturn("longColumn");
+        when(metaData.getColumnType(2)).thenReturn(Types.BIGINT);
+        when(resultSet.getLong(2)).thenReturn(0L);
+        when(metaData.getColumnLabel(3)).thenReturn("doubleColumn");
+        when(metaData.getColumnType(3)).thenReturn(Types.DOUBLE);
+        when(resultSet.getDouble(3)).thenReturn(0.0);
+        // Every primitive getter returned its zero, but each value was actually SQL NULL.
+        when(resultSet.wasNull()).thenReturn(true);
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT * FROM readings", true)));
+        dispatcher.drainAll();
+
+        assertThat(output.dataPoints).hasSize(1);
+        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        // A SQL NULL is JSON null — not a fabricated real 0/0L/0.0.
+        assertThat(row.get("intColumn").isNull()).isTrue();
+        assertThat(row.get("longColumn").isNull()).isTrue();
+        assertThat(row.get("doubleColumn").isNull()).isTrue();
+    }
+
+    @Test
+    void aNumericColumnIsCarriedAsBigDecimalPreservingPrecisionBeyondADouble() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(resultSet.next()).thenReturn(true, false);
+        when(metaData.getColumnCount()).thenReturn(1);
+        when(metaData.getColumnLabel(1)).thenReturn("amount");
+        when(metaData.getColumnType(1)).thenReturn(Types.NUMERIC);
+        final BigDecimal precise = new BigDecimal("12345678901234567890.123456789");
+        when(resultSet.getBigDecimal(1)).thenReturn(precise);
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT amount FROM ledger", true)));
+        dispatcher.drainAll();
+
+        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        // NUMERIC goes through BigDecimal like DECIMAL — mapping it to double (as v1 did) would truncate the value.
+        assertThat(row.get("amount").isBigDecimal()).isTrue();
+        assertThat(row.get("amount").decimalValue()).isEqualByComparingTo(precise);
+    }
+
+    @Test
+    void theJsonKeyIsTheColumnLabelSoAnAliasIsPortableAcrossDrivers() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(resultSet.next()).thenReturn(true, false);
+        when(metaData.getColumnCount()).thenReturn(1);
+        // The query aliased product_no AS id; the JSON key must be the label (the alias), not the underlying name.
+        when(metaData.getColumnLabel(1)).thenReturn("id");
+        when(metaData.getColumnName(1)).thenReturn("product_no");
+        when(metaData.getColumnType(1)).thenReturn(Types.INTEGER);
+        when(resultSet.getInt(1)).thenReturn(7);
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT product_no AS id FROM products", true)));
+        dispatcher.drainAll();
+
+        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        assertThat(row.has("id")).isTrue();
+        assertThat(row.has("product_no")).isFalse();
+        assertThat(row.get("id").asInt()).isEqualTo(7);
+    }
+
+    @Test
+    void aBlankColumnLabelFallsBackToTheColumnName() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(resultSet.next()).thenReturn(true, false);
+        when(metaData.getColumnCount()).thenReturn(1);
+        // A driver that reports no label: the underlying column name is used instead of an empty JSON key.
+        when(metaData.getColumnLabel(1)).thenReturn("");
+        when(metaData.getColumnName(1)).thenReturn("product_no");
+        when(metaData.getColumnType(1)).thenReturn(Types.INTEGER);
+        when(resultSet.getInt(1)).thenReturn(7);
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT product_no FROM products", true)));
+        dispatcher.drainAll();
+
+        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        assertThat(row.has("product_no")).isTrue();
+        assertThat(row.get("product_no").asInt()).isEqualTo(7);
+    }
+
+    @Test
+    void arrayMode_aResourceCloseFailure_reportsASingleNodeErrorAndNoSuccessTerminator() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(metaData.getColumnCount()).thenReturn(1);
+        when(metaData.getColumnLabel(1)).thenReturn("name");
+        when(metaData.getColumnType(1)).thenReturn(Types.VARCHAR);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString(1)).thenReturn("apple");
+        // Returning the result set to the driver fails after every row was read.
+        doThrow(new SQLException("cursor close failed")).when(resultSet).close();
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", false)));
+        dispatcher.drainAll();
+
+        // The success dataPoint is emitted only after the resources close, so a close failure yields exactly one
+        // terminator — the node error — never a success terminator followed by a contradictory failure.
+        assertThat(output.dataPoints).isEmpty();
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).reason()).contains("cursor close failed");
+        assertThat(output.events).containsExactly("nodeError");
+    }
+
+    @Test
+    void splitMode_aResourceCloseFailureAfterRows_deliversTheRowsThenExactlyOneNodeError() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(metaData.getColumnCount()).thenReturn(1);
+        when(metaData.getColumnLabel(1)).thenReturn("name");
+        when(metaData.getColumnType(1)).thenReturn(Types.VARCHAR);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString(1)).thenReturn("apple", "banana");
+        doThrow(new SQLException("cursor close failed")).when(resultSet).close();
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", true)));
+        dispatcher.drainAll();
+
+        // The rows were streamed before the close failed; the close failure is the single terminator — pollComplete
+        // (the success terminator) is emitted only after the resources close, so it is never reported here.
+        assertThat(output.dataPoints).hasSize(2);
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).reason()).contains("cursor close failed");
+        assertThat(output.events).containsExactly("dataPoints", "nodeError");
+        assertThat(output.events).doesNotContain("pollComplete");
     }
 
     @Test
