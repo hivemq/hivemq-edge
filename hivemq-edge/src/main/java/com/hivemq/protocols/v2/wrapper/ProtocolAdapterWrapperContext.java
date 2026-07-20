@@ -501,11 +501,14 @@ public final class ProtocolAdapterWrapperContext {
     /**
      * Route one value to its read aspect.
      *
-     * @param node  the node the value belongs to.
-     * @param value the reused v1 value.
+     * @param node          the node the value belongs to.
+     * @param value         the reused v1 value.
+     * @param completesPoll whether this value also completes the node's poll (a single {@code dataPoint}) or leaves
+     *                      it open for more (a non-terminating {@code dataPoints} value).
      */
-    public void routeDataPointToTags(final @NotNull Node node, final @NotNull DataPoint value) {
-        final DataPoint northboundDataPoint = tagPlane.routeDataPoint(node, value, adapterId);
+    public void routeDataPointToTags(
+            final @NotNull Node node, final @NotNull DataPoint value, final boolean completesPoll) {
+        final DataPoint northboundDataPoint = tagPlane.routeDataPoint(node, value, adapterId, completesPoll);
         if (northboundDataPoint != null) {
             northboundDataPointSink.accept(northboundDataPoint);
         }

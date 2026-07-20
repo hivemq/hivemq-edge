@@ -58,11 +58,11 @@ class ProtocolAdapterWrapperMailboxOrderingTest {
 
         final Node node = WrapperTestSupport.node("x");
         fixture.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(
-                node, WrapperTestSupport.dataPoint("temperature", "1")));
+                node, WrapperTestSupport.dataPoint("temperature", "1"), true));
         fixture.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(
-                node, WrapperTestSupport.dataPoint("temperature", "2")));
+                node, WrapperTestSupport.dataPoint("temperature", "2"), true));
         fixture.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(
-                node, WrapperTestSupport.dataPoint("temperature", "3")));
+                node, WrapperTestSupport.dataPoint("temperature", "3"), true));
         fixture.tell(new ProtocolAdapterWrapperCommand.StopAdapter());
 
         fixture.deliverOne(); // the highest-priority message must be the CONTROL command

@@ -37,15 +37,26 @@ class DatabasesAdapterConfigurationParseTest {
     void aFullConfigurationParsesEveryField() {
         final DatabasesAdapterConfiguration configuration = DatabasesAdapterConfiguration.parse(
                 configOf(Map.of(
-                        "type", "MSSQL",
-                        "server", "database.example.com",
-                        "port", 1433,
-                        "database", "warehouse",
-                        "username", "reader",
-                        "password", "secret",
-                        "encrypt", true,
-                        "trustCertificate", true,
-                        "connectionTimeoutSeconds", 60)),
+                        "type",
+                        "MSSQL",
+                        "server",
+                        "database.example.com",
+                        "port",
+                        1433,
+                        "database",
+                        "warehouse",
+                        "username",
+                        "reader",
+                        "password",
+                        "secret",
+                        "encrypt",
+                        true,
+                        "trustCertificate",
+                        true,
+                        "connectionTimeoutSeconds",
+                        60,
+                        "batchSize",
+                        250)),
                 objectMapper);
 
         assertThat(configuration.type()).isEqualTo(DatabaseType.MSSQL);
@@ -57,6 +68,7 @@ class DatabasesAdapterConfigurationParseTest {
         assertThat(configuration.encrypt()).isTrue();
         assertThat(configuration.trustCertificate()).isTrue();
         assertThat(configuration.connectionTimeoutSeconds()).isEqualTo(60);
+        assertThat(configuration.batchSize()).isEqualTo(250);
     }
 
     @Test
@@ -75,6 +87,7 @@ class DatabasesAdapterConfigurationParseTest {
         assertThat(configuration.trustCertificate()).isFalse();
         assertThat(configuration.connectionTimeoutSeconds())
                 .isEqualTo(DatabasesAdapterConfiguration.DEFAULT_CONNECTION_TIMEOUT_SECONDS);
+        assertThat(configuration.batchSize()).isEqualTo(DatabasesAdapterConfiguration.DEFAULT_BATCH_SIZE);
     }
 
     @ParameterizedTest
@@ -105,6 +118,17 @@ class DatabasesAdapterConfigurationParseTest {
                 .isEqualTo(DatabasesAdapterConfiguration.MAX_CONNECTION_TIMEOUT_SECONDS);
         assertThat(tooSmall.connectionTimeoutSeconds())
                 .isEqualTo(DatabasesAdapterConfiguration.MIN_CONNECTION_TIMEOUT_SECONDS);
+    }
+
+    @Test
+    void theBatchSizeIsClampedToItsRange() {
+        final DatabasesAdapterConfiguration tooLarge =
+                DatabasesAdapterConfiguration.parse(configOf(Map.of("batchSize", 10_000)), objectMapper);
+        final DatabasesAdapterConfiguration tooSmall =
+                DatabasesAdapterConfiguration.parse(configOf(Map.of("batchSize", 0)), objectMapper);
+
+        assertThat(tooLarge.batchSize()).isEqualTo(DatabasesAdapterConfiguration.MAX_BATCH_SIZE);
+        assertThat(tooSmall.batchSize()).isEqualTo(DatabasesAdapterConfiguration.MIN_BATCH_SIZE);
     }
 
     @Test

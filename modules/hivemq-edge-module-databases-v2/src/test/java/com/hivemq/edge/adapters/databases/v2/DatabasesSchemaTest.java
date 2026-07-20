@@ -61,6 +61,16 @@ class DatabasesSchemaTest {
     }
 
     @Test
+    void theBatchSizeProjectsAsABoundedInteger() {
+        final ObjectNode json = SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.adapterConfigSchema());
+
+        final ObjectNode batchSize = (ObjectNode) json.get("properties").get("batchSize");
+        assertThat(batchSize.get("type").asText()).isEqualTo("integer");
+        assertThat(batchSize.get("minimum").asLong()).isEqualTo(1);
+        assertThat(batchSize.get("maximum").asLong()).isEqualTo(1001);
+    }
+
+    @Test
     void theConnectionParametersAreRequiredButTheOptionsAreNot() {
         final ObjectNode json = SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.adapterConfigSchema());
 

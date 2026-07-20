@@ -90,12 +90,17 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
     record AllVerified() implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * Reports one value — a poll response or a subscription push; the {@link Node} is the correlation key.
+     * Reports one value — a poll response or a subscription push; the {@link Node} is the correlation key. For a
+     * poll, {@code completesPoll} says whether this value also ends the poll cycle (a single completing
+     * {@code dataPoint}) or leaves it open for more (a non-terminating {@code dataPoints} value); a subscribed
+     * aspect ignores the bit.
      *
-     * @param node  the node the value belongs to.
-     * @param value the reused v1 value.
+     * @param node          the node the value belongs to.
+     * @param value         the reused v1 value.
+     * @param completesPoll whether this value also completes the node's poll.
      */
-    record DataPointReceived(@NotNull Node node, @NotNull DataPoint value) implements ProtocolAdapterWrapperEvent {
+    record DataPointReceived(@NotNull Node node, @NotNull DataPoint value, boolean completesPoll)
+            implements ProtocolAdapterWrapperEvent {
         @Override
         public @NotNull MailboxMessagePriority priority() {
             return MailboxMessagePriority.DATA;

@@ -23,6 +23,7 @@ import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
@@ -42,9 +43,15 @@ public final class RecordingProtocolAdapterOutput implements ProtocolAdapterOutp
     public final @NotNull List<String> events = new CopyOnWriteArrayList<>();
 
     /**
-     * The reported data points, in order.
+     * The reported data points, flattened in order across every {@code dataPoint}/{@code dataPoints} call.
      */
     public final @NotNull List<DataPointRecord> dataPoints = new CopyOnWriteArrayList<>();
+
+    /**
+     * The reported {@code dataPoints} calls, one entry per call — each the batch (page) of values passed to that
+     * call, so a test can assert how the rows were chunked.
+     */
+    public final @NotNull List<List<DataPointRecord>> batches = new CopyOnWriteArrayList<>();
 
     /**
      * The reported per-node errors, in order.
@@ -90,6 +97,19 @@ public final class RecordingProtocolAdapterOutput implements ProtocolAdapterOutp
     public void dataPoint(final @NotNull Node node, final @NotNull DataPoint value) {
         events.add("dataPoint");
         dataPoints.add(new DataPointRecord(node, value));
+    }
+
+    @Override
+    public void dataPoints(final @NotNull Node node, final @NotNull List<DataPoint> values) {
+        // One event per call (a batch/page), plus the batch of per-row records and the flattened records.
+        events.add("dataPoints");
+        final List<DataPointRecord> batch = new ArrayList<>(values.size());
+        for (final DataPoint value : values) {
+            final DataPointRecord record = new DataPointRecord(node, value);
+            dataPoints.add(record);
+            batch.add(record);
+        }
+        batches.add(List.copyOf(batch));
     }
 
     @Override

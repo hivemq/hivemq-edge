@@ -476,22 +476,22 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
         assertThat(harness.tagStatus("temperature")).isEqualTo(NORTHBOUND_ONLY);
     }
 
-    // ── poll-completion boundary: a value never ends a poll, the trailing completion does ───────────────────────
+    // ── poll value-contract: a single dataPoint completes the poll; dataPoints stay open until a completion ─────────
 
     @Test
-    void aPollValueIsFollowedByItsCompletion_whichResumesTheCadence() {
+    void aSingleValuePollCompletesItselfAndResumesTheCadence() {
         final ProtocolAdapterWrapperTestHarness harness = harness(ChaosScript.builder()
                 .poll(NodeMatcher.all(), PollBehavior.value(new ChaosDataPoint("temperature", "21.5")))
                 .build());
         harness.activateNorthbound();
 
-        harness.advance(1); // the poll delivers a value and then the explicit completion
+        harness.advance(1); // the poll delivers a single value that also completes the poll
 
-        assertThat(harness.eventsSeen()).containsSubsequence("dataPoint", "pollComplete");
+        assertThat(harness.eventsSeen()).contains("dataPoint");
         assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
 
-        harness.advance(1); // the cadence continues: the next interval elapses and the next poll completes too
-        assertThat(harness.eventsSeen().stream().filter("pollComplete"::equals).count())
+        harness.advance(1); // the cadence continues: the next interval elapses and the next value arrives
+        assertThat(harness.eventsSeen().stream().filter("dataPoint"::equals).count())
                 .isEqualTo(2);
     }
 
@@ -507,9 +507,9 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
                 .build());
         harness.activateNorthbound();
 
-        harness.advance(1); // one poll delivers three values, then the single completion
+        harness.advance(1); // one poll delivers three non-terminating values, then the single completion
 
-        assertThat(harness.eventsSeen()).containsSubsequence("dataPoint", "dataPoint", "dataPoint", "pollComplete");
+        assertThat(harness.eventsSeen()).containsSubsequence("dataPoints", "dataPoints", "dataPoints", "pollComplete");
         assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
         assertThat(harness.tag("temperature").failureCount()).isZero();
     }
@@ -539,9 +539,10 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
                 .build());
         harness.activateNorthbound();
 
-        harness.advance(1); // the poll fires: the value publishes, but the completion is deferred two ticks
+        harness.advance(1); // the poll fires: the value publishes as a non-terminating dataPoints value, but the
+        // completion is deferred two ticks
 
-        assertThat(harness.eventsSeen()).contains("dataPoint").doesNotContain("pollComplete");
+        assertThat(harness.eventsSeen()).contains("dataPoints").doesNotContain("pollComplete");
         assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
 
         harness.advance(1); // one tick later the completion is still not due — the poll stays open
@@ -549,7 +550,7 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
         assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
 
         harness.advance(1); // the completion's tick comes due: the poll ends and the cadence resumes
-        assertThat(harness.eventsSeen()).containsSubsequence("dataPoint", "pollComplete");
+        assertThat(harness.eventsSeen()).containsSubsequence("dataPoints", "pollComplete");
         assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
         assertThat(harness.tag("temperature").failureCount()).isZero();
     }

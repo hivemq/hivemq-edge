@@ -44,7 +44,8 @@ public final class MyAdapter extends AbstractProtocolAdapter {
 
     @Override protected void doPoll(final Node node) {
         final Object value = readFromDevice(node);
-        // Build the value with the REUSED v1 DataPointFactory (never new your own DataPoint type):
+        // Build the value with the REUSED v1 DataPointFactory (never new your own DataPoint type).
+        // A single dataPoint also COMPLETES the poll — no separate call needed:
         output.dataPoint(node, dataPointFactory.create(node.nodeId(), value));
     }
 
@@ -52,6 +53,20 @@ public final class MyAdapter extends AbstractProtocolAdapter {
     @Override protected void doWrite(final Node node, final DataPoint value) { /* write; output.writeResult(node, true, null) */ }
 }
 ```
+
+**The poll value-contract.** A poll may report **0..N** values, and every `doPoll` must end the poll with its own
+terminator (the template never completes it for you):
+
+- **one value** → `output.dataPoint(node, value)` — the value *also completes* the poll (the common case);
+- **many values** → `output.dataPoints(node, values)` (call it repeatedly to stream a large result set page by page)
+  then `output.pollComplete(node)`;
+- **no value** (an empty result, or a value deduplicated within a window) → `output.pollComplete(node)`;
+- **a failure** → `output.nodeError(node, reason, false)` — itself a terminator, so a mid-stream failure never hangs
+  the tag.
+
+An **asynchronous** adapter (values arriving on a client thread after `doPoll` returns) issues the very same
+terminating calls from its completion callback — there is no opt-out hook to override. A **subscription** just pushes
+values with `output.dataPoint(...)`; the completion is meaningless there and is ignored.
 
 You may also override the batch and discovery defaults:
 

@@ -30,6 +30,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +41,9 @@ import org.slf4j.LoggerFactory;
  * Databases adapter's behavior: a northbound poll-only reader that executes each tag's SQL query against the
  * configured PostgreSQL, MySQL (via the MariaDB driver), or MS SQL database on each scheduled poll and reports the
  * result set as JSON — either one value carrying all rows as an array, or, with the tag's
- * {@code spiltLinesInIndividualMessages} choice, one value per row. It never writes, browses, or subscribes — its
- * type advertises an empty capability set, so the framework never issues those commands.
+ * {@code spiltLinesInIndividualMessages} choice, one value per row (each row its own data point), the rows drained
+ * in {@code batchSize}-row pages per {@code dataPoints} call. It never writes, browses, or subscribes — its type
+ * advertises an empty capability set, so the framework never issues those commands.
  * <p>
  * The adapter owns a real connection lifecycle: {@code doConnect} registers the three bundled JDBC drivers under the
  * module's own classloader (the module loader isolates each module's classloader, so the drivers are invisible to the
@@ -61,6 +64,7 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
     private static final int CONNECTION_VALIDATION_TIMEOUT_SECONDS = 30;
 
     private final @NotNull DatabaseConnection databaseConnection;
+    private final int batchSize;
 
     /**
      * @param input  everything this adapter instance is constructed from.
@@ -79,6 +83,7 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
         final DatabasesAdapterConfiguration configuration =
                 DatabasesAdapterConfiguration.parse(input.adapterConfig(), OBJECT_MAPPER);
         this.databaseConnection = databaseConnectionFactory.create(configuration);
+        this.batchSize = configuration.batchSize();
     }
 
     /**
@@ -157,21 +162,30 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
                 final PreparedStatement preparedStatement = connection.prepareStatement(databaseNode.query());
                 final ResultSet result = preparedStatement.executeQuery()) {
             final ResultSetMetaData resultSetMetaData = result.getMetaData();
-            final ArrayNode allRows = OBJECT_MAPPER.createArrayNode();
-            while (result.next()) {
-                final int numberOfColumns = resultSetMetaData.getColumnCount();
-                final ObjectNode row = OBJECT_MAPPER.createObjectNode();
-                for (int i = 1; i <= numberOfColumns; i++) {
-                    parseAndAddValue(i, result, resultSetMetaData, row);
+            if (databaseNode.spiltLinesInIndividualMessages()) {
+                // Split-lines mode: each row is its own value. The rows are drained in batches of at most batchSize
+                // per dataPoints call (a cursor page — one call carries a whole page rather than paying a call per
+                // row), none ending the poll. The poll closes on the explicit completion below (an empty result set
+                // closes with the bare completion); a mid-stream SQLException is caught as the node-error terminator,
+                // so the tag never hangs.
+                List<DataPoint> batch = new ArrayList<>(batchSize);
+                while (result.next()) {
+                    batch.add(toDataPoint(databaseNode, readRow(result, resultSetMetaData)));
+                    if (batch.size() >= batchSize) {
+                        output.dataPoints(node, batch);
+                        batch = new ArrayList<>(batchSize);
+                    }
                 }
-                if (databaseNode.spiltLinesInIndividualMessages()) {
-                    LOG.debug("Publishing row as an individual message : {}", row);
-                    output.dataPoint(node, toDataPoint(databaseNode, row));
-                } else {
-                    allRows.add(row);
+                if (!batch.isEmpty()) {
+                    output.dataPoints(node, batch);
                 }
-            }
-            if (!databaseNode.spiltLinesInIndividualMessages()) {
+                output.pollComplete(node);
+            } else {
+                // One value carrying every row completes the poll; an empty result set is an empty-array value.
+                final ArrayNode allRows = OBJECT_MAPPER.createArrayNode();
+                while (result.next()) {
+                    allRows.add(readRow(result, resultSetMetaData));
+                }
                 LOG.debug("Publishing all rows in a single message : {}", allRows);
                 output.dataPoint(node, toDataPoint(databaseNode, allRows));
             }
@@ -182,6 +196,16 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
                     "An exception occurred while executing the query '" + databaseNode.query() + "': " + e.getMessage(),
                     false);
         }
+    }
+
+    private static @NotNull ObjectNode readRow(
+            final @NotNull ResultSet result, final @NotNull ResultSetMetaData resultSetMetaData) throws SQLException {
+        final int numberOfColumns = resultSetMetaData.getColumnCount();
+        final ObjectNode row = OBJECT_MAPPER.createObjectNode();
+        for (int i = 1; i <= numberOfColumns; i++) {
+            parseAndAddValue(i, result, resultSetMetaData, row);
+        }
+        return row;
     }
 
     // according to https://www.ibm.com/docs/en/db2/11.1?topic=djr-sql-data-type-representation

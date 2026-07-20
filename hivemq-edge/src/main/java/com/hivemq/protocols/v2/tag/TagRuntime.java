@@ -211,11 +211,12 @@ public final class TagRuntime {
     /**
      * Route a received value to the read aspect.
      *
-     * @param value the reused v1 value.
+     * @param value         the reused v1 value.
+     * @param completesPoll whether this value also completes the node's poll; a subscribed aspect ignores it.
      * @return whether the read aspect accepted the value as part of its operating flow.
      */
-    public boolean onValue(final @NotNull DataPoint value) {
-        return readAspect.onValue(value);
+    public boolean onValue(final @NotNull DataPoint value, final boolean completesPoll) {
+        return readAspect.onValue(value, completesPoll);
     }
 
     /**

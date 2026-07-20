@@ -148,6 +148,19 @@ public final class DatabasesProtocolAdapterFactory implements ProtocolAdapterFac
                         false,
                         true,
                         false));
+        properties.put(
+                "batchSize",
+                new ScalarSchema(
+                        ScalarType.LONG,
+                        1,
+                        1001,
+                        "Batch Size",
+                        "The number of result rows drained per output call when a tag splits lines into individual"
+                                + " messages (a cursor page size; each row is still published as its own message)."
+                                + " Absent means 100.",
+                        false,
+                        true,
+                        false));
         return new ObjectSchema(
                 properties,
                 List.of("type", "server", "port", "database", "username", "password"),

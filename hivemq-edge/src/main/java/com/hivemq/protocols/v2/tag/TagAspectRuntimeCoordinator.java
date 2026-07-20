@@ -176,10 +176,13 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
 
     @Override
     public @Nullable DataPoint routeDataPoint(
-            final @NotNull Node node, final @NotNull DataPoint value, final @NotNull String adapterId) {
+            final @NotNull Node node,
+            final @NotNull DataPoint value,
+            final @NotNull String adapterId,
+            final boolean completesPoll) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {
-            if (tagRuntime.onValue(value)) {
+            if (tagRuntime.onValue(value, completesPoll)) {
                 return DataPointStamping.stamp(value, tagRuntime.pair().tag(), adapterId);
             }
         }

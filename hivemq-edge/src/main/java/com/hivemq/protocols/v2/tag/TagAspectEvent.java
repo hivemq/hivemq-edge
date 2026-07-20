@@ -74,9 +74,12 @@ public sealed interface TagAspectEvent extends com.hivemq.protocols.v2.fsm.FSMEv
     /**
      * A value arrived for the node — a poll response or a subscription push.
      *
-     * @param value the reused v1 value.
+     * @param value         the reused v1 value.
+     * @param completesPoll whether this value also completes the node's poll (a single completing {@code dataPoint})
+     *                      or leaves it open for more (a non-terminating {@code dataPoints} value). The polled read
+     *                      aspect branches on it; the subscribed aspect ignores it.
      */
-    record ValueReceived(@NotNull DataPoint value) implements TagAspectEvent {}
+    record ValueReceived(@NotNull DataPoint value, boolean completesPoll) implements TagAspectEvent {}
 
     /**
      * The poll produced all its values — possibly zero — so the poll cadence resumes. Consumed only by the polled

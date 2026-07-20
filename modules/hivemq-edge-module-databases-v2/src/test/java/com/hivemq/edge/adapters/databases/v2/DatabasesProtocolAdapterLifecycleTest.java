@@ -204,6 +204,7 @@ class DatabasesProtocolAdapterLifecycleTest {
                 "testpassword",
                 false,
                 false,
-                30);
+                30,
+                100);
     }
 }

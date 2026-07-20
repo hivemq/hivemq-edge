@@ -22,18 +22,38 @@ points the thread context classloader at it while HikariCP creates the data sour
 
 The v1 adapter's `spiltLinesInIndividualMessages` (the historical key spelling is preserved) publishes **one MQTT
 message per result row** — N values per poll. The v2 polled-read aspect previously ended a poll on its **first**
-value, absorbing the rest. To keep this feature exactly, this port added an explicit **poll-completion boundary** to
-the shared framework:
+value, absorbing the rest. To keep this feature exactly, this port aligned the poll value-message with the subscribe
+value-message so a poll may emit **0..N** values, carried by three `ProtocolAdapterOutput` methods:
 
-- `ProtocolAdapterOutput.pollComplete(Node)` (SDK v2) ends a poll; values never do. A poll may report 0..N values.
-- The wrapper event `PollCompleted` rides the **`DATA`** band — within-band FIFO delivers it strictly after the
-  values it terminates, so none are absorbed.
-- The polled read aspect publishes-and-stays in `WAITING_FOR_POLL_DATAPOINT` on a value; the completion (or a
-  per-node error) schedules the next poll. A zero-value poll (an empty result set) therefore completes cleanly
-  instead of hanging.
-- `AbstractProtocolAdapter` completes each poll automatically after `doPoll` returns (even when it throws);
-  asynchronous adapters override `pollCompletesSynchronously()` to `false` and complete from their callback —
-  the v2 HTTP adapter does exactly that.
+- `dataPoint(node, value)` — one value that **also completes** the poll (the common single-value case, and every
+  subscription push). Unchanged for single-value adapters.
+- `dataPoints(node, values)` — zero or more values that do **not** complete the poll; call it (repeatedly, to stream
+  a cursor per page without materializing it whole) and end the poll with an explicit `pollComplete`.
+- `pollComplete(node)` — completes a poll with no (further) value: an empty result set, or the terminator after one
+  or more `dataPoints`. A `nodeError` also terminates a poll (a mid-stream failure never hangs the tag).
+
+Internally the completion rides on the value message: `dataPoint` tells `DataPointReceived(…, completesPoll=true)`
+and `dataPoints` tells `DataPointReceived(…, completesPoll=false)` per value; both ride the **`DATA`** band with
+`PollCompleted`, so within-band FIFO delivers a completion strictly after the values it terminates. The polled read
+aspect publishes every value and stays in `WAITING_FOR_POLL_DATAPOINT` until a completing value, a `pollComplete`, or
+a `nodeError` schedules the next poll; a subscribed aspect ignores the completion bit. `AbstractProtocolAdapter`'s
+`doPollBatch` is just a loop over `doPoll` — it never completes a poll on the adapter's behalf, so every `doPoll`
+(synchronous or asynchronous) owns its own terminator.
+
+This adapter uses all three: **array mode** is a single completing `dataPoint(node, allRows)`; **split-lines mode**
+reports each row as its own value, draining the rows in `dataPoints(node, page)` pages (see the batch size below) then
+`pollComplete(node)` (an empty result set is the bare `pollComplete`); a query failure is a `nodeError`.
+
+### Split-lines batch size
+
+The adapter configuration has a `batchSize` field (integer, **1–1000, default 100**) controlling how many result
+rows are drained per `dataPoints` call — a cursor page size. **Each row is always its own data point** (its own
+value, hence its own MQTT message); `batchSize` never packs rows into one message. It only bounds how much of the
+result set is materialized per output call: a batch size of 1 hands the framework one row at a time, a larger size a
+page of that many rows at once, so a large result set drains page by page instead of paying one call per row or
+materializing the whole set. `dataPoints(node, values)` takes a **list of per-row data points**, so a page is that
+list. The field is only meaningful when a tag sets `spiltLinesInIndividualMessages`; array mode ships every row in one
+message regardless.
 
 ## Behavior parity with the v1 Databases adapter
 

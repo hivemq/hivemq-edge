@@ -24,6 +24,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -59,6 +60,21 @@ public final class DatabasesAdapterTestFixtures {
                 "testuser",
                 "password",
                 "testpassword");
+    }
+
+    /**
+     * As {@link #configuration(String, int)}, plus an explicit split-lines batch size.
+     *
+     * @param type      the database engine name.
+     * @param port      the server port.
+     * @param batchSize the number of result rows carried by each split-lines message.
+     * @return the configuration map.
+     */
+    public static @NotNull Map<String, Object> configuration(
+            final @NotNull String type, final int port, final int batchSize) {
+        final Map<String, Object> configuration = new HashMap<>(configuration(type, port));
+        configuration.put("batchSize", batchSize);
+        return configuration;
     }
 
     /**

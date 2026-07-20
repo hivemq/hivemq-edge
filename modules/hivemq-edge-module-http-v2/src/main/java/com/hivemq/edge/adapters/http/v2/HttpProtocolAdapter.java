@@ -144,41 +144,31 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
         // what preserves v1's per-cycle parallelism, and the dispatch thread does not block on it.
         final var unused = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .whenComplete((response, throwable) -> {
-                    // Every completion path ends with pollComplete, so the node's poll cadence can never be left
-                    // hanging — including the no-body response (a zero-value poll) and the stale-client drop (the
-                    // late completion is harmlessly absorbed after the reconnect power-cycled the tag).
+                    // The value arrives on the client's completion thread; each path ends the poll itself — a decoded
+                    // value completes it (dataPoint), a no-body response completes it with nothing (pollComplete), and
+                    // a failure completes it as an error (nodeError). A stale client means the reconnect already
+                    // power-cycled the tag, so report nothing.
+                    if (httpClient != client) {
+                        return;
+                    }
                     try {
-                        if (httpClient != client) {
-                            return;
-                        }
-                        try {
-                            if (throwable != null) {
-                                output.nodeError(
-                                        node,
-                                        "the HTTP request to '" + httpNode.url() + "' failed: " + describe(throwable),
-                                        false);
-                            } else {
-                                handleResponse(httpNode, node, response);
-                            }
-                        } catch (final RuntimeException e) {
-                            LOG.debug("Could not process the HTTP response from '{}'.", httpNode.url(), e);
+                        if (throwable != null) {
                             output.nodeError(
                                     node,
-                                    "the HTTP response from '" + httpNode.url() + "' could not be processed: "
-                                            + e.getMessage(),
+                                    "the HTTP request to '" + httpNode.url() + "' failed: " + describe(throwable),
                                     false);
+                        } else {
+                            handleResponse(httpNode, node, response);
                         }
-                    } finally {
-                        output.pollComplete(node);
+                    } catch (final RuntimeException e) {
+                        LOG.debug("Could not process the HTTP response from '{}'.", httpNode.url(), e);
+                        output.nodeError(
+                                node,
+                                "the HTTP response from '" + httpNode.url() + "' could not be processed: "
+                                        + e.getMessage(),
+                                false);
                     }
                 });
-    }
-
-    @Override
-    protected boolean pollCompletesSynchronously() {
-        // The value arrives on the HTTP client's completion thread after doPoll returned, so the template must not
-        // auto-complete the poll; the completion handler above emits pollComplete itself.
-        return false;
     }
 
     private @NotNull HttpRequest buildRequest(final @NotNull HttpNode node) {
@@ -225,7 +215,9 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
             return;
         }
         if (payload == null) {
-            // The response carried no body; nothing to publish and the next scheduled poll is the retry.
+            // The response carried no body: nothing to publish, so complete the poll with no value and let the
+            // cadence resume (a zero-value poll).
+            output.pollComplete(key);
             return;
         }
         output.dataPoint(key, toDataPoint(node, payload));

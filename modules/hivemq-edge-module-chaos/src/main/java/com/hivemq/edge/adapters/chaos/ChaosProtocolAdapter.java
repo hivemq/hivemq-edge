@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.chaos;
 
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
@@ -269,22 +268,17 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
 
     private void applyPoll(final @NotNull Node node, final @NotNull PollBehavior behavior) {
         switch (behavior) {
-            case final PollBehavior.Value value -> {
-                output.dataPoint(node, value.value());
-                // Values never end a poll; the explicit completion resumes the poll cadence — mirroring the
-                // template's automatic completion on the synchronous path.
-                output.pollComplete(node);
-            }
+            // A single value carries its own completion: it publishes and ends the poll in one call.
+            case final PollBehavior.Value value -> output.dataPoint(node, value.value());
             case final PollBehavior.Values values -> {
-                for (final DataPoint value : values.values()) {
-                    output.dataPoint(node, value);
-                }
+                // Non-terminating values, then one explicit completion — a multi-value poll.
+                output.dataPoints(node, values.values());
                 output.pollComplete(node);
             }
             case final PollBehavior.ValueThenDeferredCompletion split -> {
-                // The split shape: the value publishes now, but the poll stays open until the completion's tick
-                // comes due — letting a scenario observe WAITING_FOR_POLL_DATAPOINT with the value already out.
-                output.dataPoint(node, split.value());
+                // The split shape: the value publishes now as a non-terminating dataPoints value, so the poll stays
+                // open in WAITING_FOR_POLL_DATAPOINT until the completion's tick comes due.
+                output.dataPoints(node, List.of(split.value()));
                 final int delay = Math.max(1, split.ticks());
                 scheduleAt(currentTick + delay, () -> output.pollComplete(node));
             }

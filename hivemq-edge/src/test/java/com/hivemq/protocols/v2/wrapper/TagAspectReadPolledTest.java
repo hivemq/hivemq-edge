@@ -55,16 +55,16 @@ class TagAspectReadPolledTest {
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
         assertThat(fixture.commands()).contains("pollBatch");
 
-        // A value publishes but never ends the poll — the explicit completion does.
+        // A single value both publishes and ends the poll — the common single-value case.
         fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "21"));
         fixture.drain();
-        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
-        assertThat(fixture.northboundDataPoints).hasSize(1);
-
-        fixture.output.pollComplete(fixture.nodeFor("temperature"));
-        fixture.drain();
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.northboundDataPoints).hasSize(1);
         assertThat(fixture.tag("temperature").failureCount()).isZero();
+
+        // The cadence continues: the next interval elapses and the next poll is requested.
+        fixture.advance(1000);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
     }
 
     @Test
@@ -73,14 +73,20 @@ class TagAspectReadPolledTest {
         fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
         fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
 
-        // One poll produces three values (a split-lines multi-row read); all three publish northbound.
-        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "1"));
-        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "2"));
-        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "3"));
+        // One poll produces three non-terminating values (a split-lines multi-row read); all three publish
+        // northbound and the poll stays open until the explicit completion.
+        fixture.output.dataPoints(
+                fixture.nodeFor("temperature"),
+                List.of(
+                        WrapperTestSupport.dataPoint("temperature", "1"),
+                        WrapperTestSupport.dataPoint("temperature", "2"),
+                        WrapperTestSupport.dataPoint("temperature", "3")));
+        fixture.drain();
+        assertThat(fixture.northboundDataPoints).hasSize(3);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+
         fixture.output.pollComplete(fixture.nodeFor("temperature"));
         fixture.drain();
-
-        assertThat(fixture.northboundDataPoints).hasSize(3);
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
         assertThat(fixture.tag("temperature").failureCount()).isZero();
 
@@ -128,10 +134,13 @@ class TagAspectReadPolledTest {
         fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
         fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
 
-        // Both DataPointReceived and PollCompleted ride the DATA band; within-band FIFO delivers the completion
-        // strictly after the backlog of values it terminates, so no value is absorbed.
-        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "1"));
-        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "2"));
+        // The non-terminating values and the completion all ride the DATA band; within-band FIFO delivers the
+        // completion strictly after the backlog of values it terminates, so no value is absorbed.
+        fixture.output.dataPoints(
+                fixture.nodeFor("temperature"),
+                List.of(
+                        WrapperTestSupport.dataPoint("temperature", "1"),
+                        WrapperTestSupport.dataPoint("temperature", "2")));
         fixture.output.pollComplete(fixture.nodeFor("temperature"));
 
         fixture.deliverOne(); // the first value
@@ -150,8 +159,8 @@ class TagAspectReadPolledTest {
         fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
         fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
 
-        // The template's finally-guarded completion trails a reported failure: the failure already ended the poll,
-        // so the completion lands in WAITING_FOR_POLL_INTERVAL and is absorbed.
+        // A completion trailing a reported failure: nodeError already ended the poll, so a stray completion lands in
+        // WAITING_FOR_POLL_INTERVAL and is absorbed.
         fixture.output.nodeError(fixture.nodeFor("temperature"), "read timeout", false);
         fixture.output.pollComplete(fixture.nodeFor("temperature"));
         fixture.drain();

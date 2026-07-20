@@ -27,6 +27,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -154,6 +155,13 @@ class DatabasesProtocolAdapterWrapperTest {
         CONTAINERS.clear();
     }
 
+    private static @NotNull Map<String, Object> configurationFor(
+            final @NotNull DatabaseType type, final int batchSize) {
+        final Map<String, Object> configuration = new HashMap<>(configurationFor(type));
+        configuration.put("batchSize", batchSize);
+        return configuration;
+    }
+
     private static @NotNull Map<String, Object> configurationFor(final @NotNull DatabaseType type) {
         final GenericContainer<?> container = containerFor(type);
         return Map.of(
@@ -212,7 +220,7 @@ class DatabasesProtocolAdapterWrapperTest {
             throws Exception {
         try (final DatabasesWrapperTestFixture fixture = new DatabasesWrapperTestFixture(
                 "databases-v2-" + type,
-                configurationFor(type),
+                configurationFor(type, 2), // batch size 2 over the three-row table drains in pages of 2 then 1
                 List.of(DatabasesAdapterTestFixtures.queryTag(
                         "products", "SELECT product_no, name FROM products ORDER BY product_no", true)),
                 POLL_INTERVAL_MILLIS)) {
@@ -220,12 +228,17 @@ class DatabasesProtocolAdapterWrapperTest {
             fixture.activateNorthbound();
             fixture.advanceOnePollInterval();
 
-            // Split-lines mode: one data point per row — the poll-completion boundary's payoff.
+            // Split-lines mode: each row is its own data point, so the three rows publish as three per-row messages —
+            // the batch size only pages the cursor drain (2 then 1), it never packs rows into one message.
             assertThat(fixture.northboundDataPoints).hasSize(3);
             assertThat(((ObjectNode) fixture.northboundDataPoints.get(0).getTagValue())
                             .get("name")
                             .asText())
                     .isEqualTo("apple");
+            assertThat(((ObjectNode) fixture.northboundDataPoints.get(1).getTagValue())
+                            .get("name")
+                            .asText())
+                    .isEqualTo("banana");
             assertThat(((ObjectNode) fixture.northboundDataPoints.get(2).getTagValue())
                             .get("name")
                             .asText())
