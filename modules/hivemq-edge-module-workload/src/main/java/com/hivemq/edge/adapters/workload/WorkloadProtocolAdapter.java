@@ -59,7 +59,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
      * loaded (defeats the {@code build/hivemq-environment/base} stale-jar cache trap that caused the retracted #8/#9/#10).
      * Emitted at {@link #start()} as {@code WL_BUILD} and journalled as {@code BUILD <token>}.
      */
-    public static final @NotNull String BUILD = "wl-2026-07-20-v2b2";
+    public static final @NotNull String BUILD = "wl-2026-07-20-v2b3";
 
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterOutput output;
@@ -146,7 +146,9 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
         // calling the thread-safe output callback — the SDK's model for library-callback (push) adapters
         subExecutor = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "workload-sub-" + adapterId));
         subExecutor.scheduleAtFixedRate(this::pushSubscriptions, 500, 500, TimeUnit.MILLISECONDS);
-        output.started();
+        if (!"start-no-ack".equals(scenario.misbehave())) {
+            output.started();
+        } // else: suppress started() to leave the wrapper in WAITING_FOR_STARTED so its watchdog must fire
         if ("double-start".equals(scenario.misbehave())) {
             // CONTRACT VIOLATION: start() must NOT call back with both started() and error()
             output.error(ErrorScope.ADAPTER, "workload: MISBEHAVE — double callback (started + error) from start()");
@@ -163,7 +165,9 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
         subscribed.clear();
         // NOTE: the control channel is intentionally left RUNNING after stop() so a test can inject callbacks AFTER
         // STOPPED (NV-C07). Its watcher is a daemon thread and dies with the node.
-        output.stopped();
+        if (!"stop-no-ack".equals(scenario.misbehave())) {
+            output.stopped();
+        } // else: suppress stopped() to leave the wrapper in WAITING_FOR_STOPPED so its watchdog must fire
     }
 
     @Override
@@ -206,7 +210,9 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
     public void disconnect() {
         journal("DISCONNECT");
         subscribed.clear(); // subscriptions are gone on disconnect; the wrapper re-issues addSubscriptionBatch on reconnect
-        output.disconnected();
+        if (!"disconnect-no-ack".equals(scenario.misbehave())) {
+            output.disconnected();
+        } // else: suppress disconnected() to leave the wrapper in WAITING_FOR_DISCONNECTED so its watchdog must fire
     }
 
     @Override
