@@ -90,10 +90,11 @@ public final class WorkloadControlChannel {
             final Path dir = Path.of(controlDir).toAbsolutePath().normalize();
             if (!isControlDirAllowed(dir)) {
                 // Defense-in-depth: this module is test-only and excluded from the GA distribution. Refuse to turn an
-                // arbitrary configured path into a file-write primitive unless it is under the JVM temp dir or the
-                // process working directory (override with -Dhivemq.workload.control.allowAnyPath=true).
-                log.warn("WL_CTL disabled: controlDir '{}' is outside the allowed roots (java.io.tmpdir / user.dir); "
-                        + "set -Dhivemq.workload.control.allowAnyPath=true to override.", dir);
+                // arbitrary configured path into a file-write primitive unless it is under a known-safe root — the JVM
+                // temp dir, the process working directory, or the user home (which covers dev + CI workspaces where the
+                // node directories live). Override with -Dhivemq.workload.control.allowAnyPath=true for unusual layouts.
+                log.warn("WL_CTL disabled: controlDir '{}' is outside the allowed roots (java.io.tmpdir / user.dir / "
+                        + "user.home); set -Dhivemq.workload.control.allowAnyPath=true to override.", dir);
                 this.ctlFile = null;
                 this.journalFile = null;
             } else {
@@ -116,14 +117,16 @@ public final class WorkloadControlChannel {
     /**
      * Restricts where the control channel may create files. The Workload module is test-only and is not part of the GA
      * distribution; this guard means that even if it were ever accidentally packaged, a configured {@code controlDir}
-     * cannot become an arbitrary-file-write primitive. Allowed: anything under {@code java.io.tmpdir} or the process
-     * working directory ({@code user.dir}); override with {@code -Dhivemq.workload.control.allowAnyPath=true}.
+     * cannot become an arbitrary-file-write primitive. Allowed: anything under {@code java.io.tmpdir}, the process
+     * working directory ({@code user.dir}), or the user home ({@code user.home}) — which together cover dev and CI
+     * workspaces where the test node directories live; override with {@code -Dhivemq.workload.control.allowAnyPath=true}.
      */
     private static boolean isControlDirAllowed(final @NotNull Path dir) {
         if (Boolean.getBoolean("hivemq.workload.control.allowAnyPath")) {
             return true;
         }
-        for (final String root : new String[]{System.getProperty("java.io.tmpdir"), System.getProperty("user.dir")}) {
+        for (final String root : new String[]{
+                System.getProperty("java.io.tmpdir"), System.getProperty("user.dir"), System.getProperty("user.home")}) {
             if (root != null && !root.isBlank() && dir.startsWith(Path.of(root).toAbsolutePath().normalize())) {
                 return true;
             }
