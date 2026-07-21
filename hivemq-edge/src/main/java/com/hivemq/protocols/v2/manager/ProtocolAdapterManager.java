@@ -233,6 +233,9 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             stopAndDiscard(updated.getAdapterId(), updated);
             return;
         }
+        // The write plane must learn the new channel set BEFORE the wrapper rebuilds its aspects: a rebuilt aspect's
+        // readiness notification must always find its channel in place.
+        existing.updateSouthboundWritePlane(nodes, updated.getWriteUsedTagNames());
         tellWrapper(
                 existing,
                 new ProtocolAdapterWrapperCommand.UpdateTagSet(

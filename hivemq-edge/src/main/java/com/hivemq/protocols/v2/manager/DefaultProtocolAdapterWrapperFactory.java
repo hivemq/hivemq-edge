@@ -43,6 +43,9 @@ import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
+import com.hivemq.protocols.v2.southbound.SouthboundBrokerRuntime;
+import com.hivemq.protocols.v2.southbound.SouthboundMqttIntake;
+import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
@@ -64,8 +67,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one configuration
- *, exactly as the wrapper test rig does but driven from the read-only configuration and the
+ * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one
+ * configuration, exactly as the wrapper test rig does but driven from the read-only configuration and the
  * injected runtime. For each adapter it
  * <ol>
  * <li>creates the wrapper mailbox and the tell-façade the protocol adapter reports through;</li>
@@ -91,6 +94,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     private final @NotNull ObjectMapper objectMapper;
     private final @Nullable TagManager tagManager;
     private final @Nullable NorthboundConsumerFactory northboundConsumerFactory;
+    private final @Nullable SouthboundBrokerRuntime southboundBrokerRuntime;
     private final long tickPeriodMillis;
 
     /**
@@ -108,7 +112,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull ObjectMapper objectMapper,
             final long tickPeriodMillis) {
-        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null);
+        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null, null);
     }
 
     /**
@@ -131,6 +135,42 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final long tickPeriodMillis,
             final @Nullable TagManager tagManager,
             final @Nullable NorthboundConsumerFactory northboundConsumerFactory) {
+        this(
+                clock,
+                dispatcher,
+                metricRegistry,
+                dataPointFactory,
+                objectMapper,
+                tickPeriodMillis,
+                tagManager,
+                northboundConsumerFactory,
+                null);
+    }
+
+    /**
+     * @param clock                    the clock the wrapper timers and tick are scheduled against.
+     * @param dispatcher               the dispatcher each wrapper mailbox is attached to.
+     * @param metricRegistry           the shared registry per-adapter metrics are registered on.
+     * @param dataPointFactory         the reused v1 factory the protocol adapter builds its values with.
+     * @param objectMapper             the JSON mapper that deserializes a {@code node-string} into the type's node
+     *                                 class.
+     * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
+     * @param tagManager               the shared tag manager used by MQTT northbound consumers.
+     * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
+     * @param southboundBrokerRuntime  the broker collaborators the southbound write path stands on (topic tree,
+     *                                 client queues, publish path, retained store); {@code null} (unit rigs) falls
+     *                                 the southbound plane back to in-memory backlogs.
+     */
+    public DefaultProtocolAdapterWrapperFactory(
+            final @NotNull Clock clock,
+            final @NotNull MessageDispatcher dispatcher,
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull DataPointFactory dataPointFactory,
+            final @NotNull ObjectMapper objectMapper,
+            final long tickPeriodMillis,
+            final @Nullable TagManager tagManager,
+            final @Nullable NorthboundConsumerFactory northboundConsumerFactory,
+            final @Nullable SouthboundBrokerRuntime southboundBrokerRuntime) {
         this.clock = clock;
         this.dispatcher = dispatcher;
         this.metricRegistry = metricRegistry;
@@ -138,6 +178,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         this.objectMapper = objectMapper;
         this.tagManager = tagManager;
         this.northboundConsumerFactory = northboundConsumerFactory;
+        this.southboundBrokerRuntime = southboundBrokerRuntime;
         this.tickPeriodMillis = tickPeriodMillis;
     }
 
@@ -187,52 +228,90 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final Set<String> writeUsed = entity.getWriteUsedTagNames();
         final RetryPolicy retryPolicy = entity.getRetryPolicy().toRetryPolicy();
 
-        final TagAspectRuntimeCoordinator tagPlane = new TagAspectRuntimeCoordinator(
-                adapterId,
-                nodes,
-                activation,
-                readUsed,
-                writeUsed,
-                goal,
-                ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
-                retryPolicy);
-        final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
-                adapterId,
-                protocolAdapter,
-                mailbox,
-                clock,
-                retryPolicy,
-                entity.getWatchdogTimeoutMillis(),
-                entity.isSkipVerification(),
-                goal,
-                activation,
-                tagPlane,
-                healthListener,
-                metrics,
-                northboundDataPointSink);
-        tagPlane.bindRuntime(
-                context.clock(),
-                context.timers(),
-                context.batches(),
-                context.metrics(),
-                context.protocolAdapter()::verifyBatch);
+        // The southbound delivery side: one suspended queue+backlog per write-mapped tag, opened and closed by the
+        // write aspects' readiness notifications (the plane IS the readiness listener). With the broker runtime
+        // present, the MQTT intake subscribes each mapping's topic and the backlogs lease from the durable client
+        // queues; without it (unit rigs), the plane falls back to the interim in-memory backlogs.
+        final SouthboundMqttIntake southboundIntake;
+        final SouthboundWritePlane southboundWritePlane;
+        if (southboundBrokerRuntime != null && !entity.getSouthboundMappings().isEmpty()) {
+            southboundIntake = new SouthboundMqttIntake(
+                    adapterId, southboundBrokerRuntime, dataPointFactory, objectMapper, entity.getSouthboundMappings());
+            southboundWritePlane =
+                    new SouthboundWritePlane(adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed);
+        } else {
+            southboundIntake = null;
+            southboundWritePlane = new SouthboundWritePlane(
+                    adapterId, mailbox, entity.getSouthboundWriteBacklogCapacity(), nodes, writeUsed);
+        }
+        try {
+            final TagAspectRuntimeCoordinator tagPlane = new TagAspectRuntimeCoordinator(
+                    adapterId,
+                    nodes,
+                    activation,
+                    readUsed,
+                    writeUsed,
+                    goal,
+                    ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
+                    retryPolicy,
+                    southboundWritePlane);
+            final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
+                    adapterId,
+                    protocolAdapter,
+                    mailbox,
+                    clock,
+                    retryPolicy,
+                    entity.getWatchdogTimeoutMillis(),
+                    entity.isSkipVerification(),
+                    goal,
+                    activation,
+                    tagPlane,
+                    healthListener,
+                    metrics,
+                    northboundDataPointSink);
+            tagPlane.bindRuntime(
+                    context.clock(),
+                    context.timers(),
+                    context.batches(),
+                    context.metrics(),
+                    context.protocolAdapter()::verifyBatch);
 
-        final AtomicReference<AdapterStatusSnapshot> snapshot = new AtomicReference<>();
-        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(context, snapshot);
-        final MessageDispatcherHandle dispatcherHandle = dispatcher.attach(mailbox, wrapper);
-        final AutoCloseable tickHandle =
-                clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis()));
-        // The container owns the teardown of everything the adapter attached through the framework dispatcher, so its
-        // dispatch threads are released when the adapter is discarded, exactly as the wrapper's binding is. The
-        // adapter's own close() (if it is AutoCloseable) runs first to release any non-dispatch resources; the
-        // recording dispatcher then closes every remaining binding it opened, each at most once — so a template's
-        // single self-closed binding is never double-closed and a non-AutoCloseable direct adapter's binding is
-        // still released.
-        final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
+            final AtomicReference<AdapterStatusSnapshot> snapshot = new AtomicReference<>();
+            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(context, snapshot);
+            final MessageDispatcherHandle dispatcherHandle = dispatcher.attach(mailbox, wrapper);
+            final AutoCloseable tickHandle = clock.scheduleTick(
+                    tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis()));
+            // The container owns the teardown of everything the adapter attached through the framework dispatcher, so
+            // its dispatch threads are released when the adapter is discarded, exactly as the wrapper's binding is. The
+            // adapter's own close() (if it is AutoCloseable) runs first to release any non-dispatch resources; the
+            // recording dispatcher then closes every remaining binding it opened, each at most once — so a template's
+            // single self-closed binding is never double-closed and a non-AutoCloseable direct adapter's binding is
+            // still released.
+            final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
-        final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
-        return new ProtocolAdapterContainer(
-                handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, northboundConsumers, entity);
+            final ProtocolAdapterHandle handle =
+                    new ProtocolAdapterHandle(adapterId, mailbox, snapshot, southboundWritePlane);
+            return new ProtocolAdapterContainer(
+                    handle,
+                    dispatcherHandle,
+                    adapterDispatcherHandle,
+                    tickHandle,
+                    metrics,
+                    northboundConsumers,
+                    southboundIntake,
+                    entity);
+        } catch (final RuntimeException failure) {
+            // Same rule as the adapter-construction guard above, extended to the broker side: a failed construction
+            // must leak no residue. The intake first (its shared subscriptions stop feeding the queues), then the
+            // plane (backlog callbacks and leases) — the order the container's close() uses — then the dispatch
+            // bindings. The durable queues and their contents survive, as always.
+            if (southboundIntake != null) {
+                southboundIntake.close();
+            }
+            southboundWritePlane.close();
+            recordingDispatcher.close();
+            throw failure;
+        }
     }
 
     private @Nullable NorthboundTagConsumerRegistry createNorthboundConsumers(
@@ -292,7 +371,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull ProtocolAdapter protocolAdapter, final @NotNull RecordingDispatcher recordingDispatcher) {
         return () -> {
             try {
-                if (protocolAdapter instanceof AutoCloseable closeable) {
+                if (protocolAdapter instanceof final AutoCloseable closeable) {
                     closeable.close();
                 }
             } finally {

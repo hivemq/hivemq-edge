@@ -61,6 +61,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     private final @NotNull String adapterId;
     private final long pollIntervalMillis;
     private final @NotNull RetryPolicy retryPolicy;
+    private final @NotNull TagWriteReadinessListener readinessListener;
 
     private @NotNull List<NodeTagPair> nodes;
     private @NotNull Map<String, TagAspectActivationPreference> activation;
@@ -91,7 +92,42 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             final @NotNull ProtocolAdapterGoalState initialGoal,
             final long pollIntervalMillis,
             final @NotNull RetryPolicy retryPolicy) {
+        this(
+                adapterId,
+                nodes,
+                activation,
+                readUsedTagNames,
+                writeUsedTagNames,
+                initialGoal,
+                pollIntervalMillis,
+                retryPolicy,
+                TagWriteReadinessListener.NONE);
+    }
+
+    /**
+     * @param adapterId          the owning adapter's id.
+     * @param nodes              the configured node/tag pairs.
+     * @param activation         the per-tag activation preferences.
+     * @param readUsedTagNames   the tags consumed by a northbound mapping.
+     * @param writeUsedTagNames  the tags produced to by a southbound mapping.
+     * @param initialGoal        the initial adapter direction goal (from configuration).
+     * @param pollIntervalMillis the poll cadence for polled read aspects, in milliseconds.
+     * @param retryPolicy        the backoff policy for verification and subscription retries.
+     * @param readinessListener  notified when a write aspect crosses its writability boundary — the seam the
+     *                           southbound delivery side hangs its suspend/resume on.
+     */
+    public TagAspectRuntimeCoordinator(
+            final @NotNull String adapterId,
+            final @NotNull List<NodeTagPair> nodes,
+            final @NotNull Map<String, TagAspectActivationPreference> activation,
+            final @NotNull Set<String> readUsedTagNames,
+            final @NotNull Set<String> writeUsedTagNames,
+            final @NotNull ProtocolAdapterGoalState initialGoal,
+            final long pollIntervalMillis,
+            final @NotNull RetryPolicy retryPolicy,
+            final @NotNull TagWriteReadinessListener readinessListener) {
         this.adapterId = adapterId;
+        this.readinessListener = readinessListener;
         this.nodes = List.copyOf(nodes);
         this.activation = new HashMap<>(activation);
         this.readUsedTagNames = new HashSet<>(readUsedTagNames);
@@ -195,10 +231,16 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     @Override
-    public void submitWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+    public void submitWrite(
+            final @NotNull Node node,
+            final @NotNull DataPoint value,
+            final @NotNull SouthboundWriteCompletion completion) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {
-            tagRuntime.submitWrite(value);
+            tagRuntime.submitWrite(value, completion);
+        } else {
+            // No such tag under this adapter: settle so a back-pressuring producer is never left waiting.
+            completion.settle(SouthboundWriteOutcome.REJECTED_BUSY, "no such tag under this adapter");
         }
     }
 
@@ -280,6 +322,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
                     bound.batches(),
                     bound.metrics(),
                     bound.sharedNodeVerification(),
+                    readinessListener,
                     pollIntervalMillis,
                     retryPolicy);
             rebuilt.add(tagRuntime);

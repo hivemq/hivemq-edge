@@ -91,6 +91,20 @@ class ProtocolAdapterEntityTest {
     }
 
     @Test
+    void duplicateSouthboundTopic_isRejected() {
+        // Two mappings on one topic would share one durable command queue between two tags (and the second
+        // backlog's wakeup would replace the first's) — one command topic feeds exactly one tag.
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("setpoint"));
+        entity.getTags().add(tag("ramp-rate"));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity("plant/a/cmd", "setpoint"));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity("plant/a/cmd", "ramp-rate"));
+
+        assertThat(messages(entity))
+                .anyMatch(message -> message.contains("duplicate topic") && message.contains("plant/a/cmd"));
+    }
+
+    @Test
     void mappingToDeclaredTag_isAccepted() {
         final ProtocolAdapterEntity entity = validAdapter();
         entity.getTags().add(tag("temperature"));

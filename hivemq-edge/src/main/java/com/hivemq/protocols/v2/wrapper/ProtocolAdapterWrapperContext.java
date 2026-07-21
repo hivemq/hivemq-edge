@@ -45,6 +45,7 @@ import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
+import com.hivemq.protocols.v2.tag.SouthboundWriteCompletion;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import java.util.List;
@@ -537,11 +538,15 @@ public final class ProtocolAdapterWrapperContext {
     /**
      * Route a southbound write request to its write aspect — the "write arrives" trigger.
      *
-     * @param node  the node to write to.
-     * @param value the reused v1 value to write.
+     * @param node       the node to write to.
+     * @param value      the reused v1 value to write.
+     * @param completion the one-shot back-pressure signal, settled with the write's outcome.
      */
-    public void routeWriteRequestToTags(final @NotNull Node node, final @NotNull DataPoint value) {
-        tagPlane.submitWrite(node, value);
+    public void routeWriteRequestToTags(
+            final @NotNull Node node,
+            final @NotNull DataPoint value,
+            final @NotNull SouthboundWriteCompletion completion) {
+        tagPlane.submitWrite(node, value, completion);
     }
 
     private void synthesizeAllVerified() {

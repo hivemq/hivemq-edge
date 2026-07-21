@@ -143,6 +143,8 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
     public void writeBatch(final @NotNull List<WriteEntry> entries) {
         commands.add("writeBatch");
         for (final WriteEntry entry : entries) {
+            // The device's own record of what reached it — for exactly-once / at-least-once assertions.
+            ChaosControl.recordWrite(adapterId, entry);
             script.writeOutcomeFor(entry.node())
                     .ifPresent(outcome -> output.writeResult(entry.node(), outcome.success(), outcome.reason()));
         }

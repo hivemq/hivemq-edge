@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The Protocol Adapter Wrapper — a {@link MessageHandler} that owns the adapter machine and <b>all</b> policy
- *. Every input arrives as one {@link ProtocolAdapterWrapperMessage}:
+ * The Protocol Adapter Wrapper — a {@link MessageHandler} that owns the adapter machine and <b>all</b> policy.
+ * Every input arrives as one {@link ProtocolAdapterWrapperMessage}:
  * <ul>
  * <li>a {@link ProtocolAdapterWrapperTick} fires the due timers and dispatches the pending batches;</li>
  * <li>a {@link ProtocolAdapterWrapperCommand} runs through the goal-command bypass (mutate the goal, then
@@ -85,7 +85,7 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
             case ProtocolAdapterWrapperWriteRequest write ->
                 // A southbound write: route it to the node's write aspect. It changes no adapter
                 // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
-                context.routeWriteRequestToTags(write.node(), write.value());
+                context.routeWriteRequestToTags(write.node(), write.value(), write.completion());
             case ProtocolAdapterWrapperBrowseRequest browse ->
                 // A REST browse request: bridge it to the protocol adapter. It changes no adapter
                 // goal or machine state — it issues one browse() when CONNECTED and stashes the future.

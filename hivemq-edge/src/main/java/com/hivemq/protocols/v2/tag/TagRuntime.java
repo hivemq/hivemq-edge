@@ -55,6 +55,7 @@ public final class TagRuntime {
      * @param batches                the actor's batch collector.
      * @param metrics                the per-adapter metrics.
      * @param sharedNodeVerification the shared verification authority.
+     * @param readinessListener      notified when the write aspect crosses its writability boundary.
      * @param pollIntervalMillis     the poll cadence for a polled read aspect, in milliseconds.
      * @param retryPolicy            the backoff policy for verification and subscription retries.
      */
@@ -66,6 +67,7 @@ public final class TagRuntime {
             final @NotNull BatchCollector batches,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
+            final @NotNull TagWriteReadinessListener readinessListener,
             final long pollIntervalMillis,
             final @NotNull RetryPolicy retryPolicy) {
         this.pair = pair;
@@ -89,6 +91,7 @@ public final class TagRuntime {
                 batches,
                 metrics,
                 sharedNodeVerification,
+                readinessListener,
                 retryPolicy);
     }
 
@@ -231,10 +234,11 @@ public final class TagRuntime {
     /**
      * Route a southbound write request to the write aspect.
      *
-     * @param value the reused v1 value to write.
+     * @param value      the reused v1 value to write.
+     * @param completion the one-shot back-pressure signal for this write.
      */
-    public void submitWrite(final @NotNull DataPoint value) {
-        writeAspect.onWriteRequested(value);
+    public void submitWrite(final @NotNull DataPoint value, final @NotNull SouthboundWriteCompletion completion) {
+        writeAspect.onWriteRequested(value, completion);
     }
 
     /**

@@ -34,9 +34,11 @@ import org.jetbrains.annotations.NotNull;
  * The classification is layered, gentlest last to win only when nothing more disruptive changed:
  * <ol>
  * <li>any <b>connection-critical</b> field differs (protocol id, config version, skip-verification, adapter
- * configuration, retry policy, watchdog / command timeouts) &rarr; {@link ProtocolAdapterConfigStateTransition#FULL_RECREATE};</li>
- * <li>otherwise, if the <b>tag set</b> (a tag's identity beyond its activation flags) or the <b>mappings</b> (which
- * drive {@code used}) differ &rarr; {@link ProtocolAdapterConfigStateTransition#TAGS_ONLY};</li>
+ * configuration, retry policy, watchdog / command timeouts, southbound write-backlog capacity, southbound
+ * mappings — the last two are baked into the adapter's southbound write plane and MQTT intake) &rarr;
+ * {@link ProtocolAdapterConfigStateTransition#FULL_RECREATE};</li>
+ * <li>otherwise, if the <b>tag set</b> (a tag's identity beyond its activation flags) or the <b>northbound
+ * mappings</b> (which drive {@code read-used}) differ &rarr; {@link ProtocolAdapterConfigStateTransition#TAGS_ONLY};</li>
  * <li>otherwise, if any <b>activation flag</b> differs (adapter {@code northbound-activated} /
  * {@code southbound-activated} or a tag's {@code read-activated} / {@code write-activated}) &rarr;
  * {@link ProtocolAdapterConfigStateTransition#ACTIVATION_ONLY};</li>
@@ -97,7 +99,9 @@ public final class ProtocolAdapterConfigDiffUtils {
             @NotNull Map<String, Object> adapterConfiguration,
             @NotNull RetryPolicyEntity retryPolicy,
             long watchdogTimeoutMillis,
-            long commandTimeoutMillis) {}
+            long commandTimeoutMillis,
+            int southboundWriteBacklogCapacity,
+            @NotNull List<SouthboundMappingEntity> southboundMappings) {}
 
     private static @NotNull ConnectionCritical connectionCritical(final @NotNull ProtocolAdapterEntity entity) {
         return new ConnectionCritical(
@@ -107,7 +111,13 @@ public final class ProtocolAdapterConfigDiffUtils {
                 entity.getAdapterConfiguration(),
                 entity.getRetryPolicy(),
                 entity.getWatchdogTimeoutMillis(),
-                entity.getCommandTimeoutMillis());
+                entity.getCommandTimeoutMillis(),
+                // The backlog bound is baked into the southbound write plane at creation; changing it rebuilds the
+                // adapter (and deliberately drops the interim in-memory backlogs with it).
+                entity.getSouthboundWriteBacklogCapacity(),
+                // Southbound mappings define the MQTT intake subscriptions and durable queues, baked in at creation;
+                // a change recreates the adapter — the durable queues themselves survive the recreate.
+                entity.getSouthboundMappings());
     }
 
     /**
@@ -138,11 +148,11 @@ public final class ProtocolAdapterConfigDiffUtils {
 
     private static boolean mappingsChanged(
             final @NotNull ProtocolAdapterEntity running, final @NotNull ProtocolAdapterEntity updated) {
+        // Northbound only: southbound mappings are connection-critical (they define the adapter's MQTT intake
+        // subscriptions and durable queues, which never mutate in place — see SouthboundMqttIntake).
         final List<NorthboundMappingEntity> runningNorth = running.getNorthboundMappings();
         final List<NorthboundMappingEntity> updatedNorth = updated.getNorthboundMappings();
-        final List<SouthboundMappingEntity> runningSouth = running.getSouthboundMappings();
-        final List<SouthboundMappingEntity> updatedSouth = updated.getSouthboundMappings();
-        return !runningNorth.equals(updatedNorth) || !runningSouth.equals(updatedSouth);
+        return !runningNorth.equals(updatedNorth);
     }
 
     private static boolean activationChanged(

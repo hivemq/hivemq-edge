@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.manager;
 
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
+import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import java.util.Collection;
@@ -74,16 +75,38 @@ public final class ProtocolAdapterHandleRegistry {
     }
 
     /**
-     * A REST-readable handle to one adapter: its id, the send-only handle of its wrapper mailbox, and the reference
-     * the wrapper publishes its immutable status snapshot into. For an adapter whose type has no
-     * registered factory the wrapper sender is a no-op and the snapshot is a fixed {@code ERROR}.
+     * A REST-readable handle to one adapter: its id, the send-only handle of its wrapper mailbox, the reference
+     * the wrapper publishes its immutable status snapshot into, and the adapter's southbound write plane — the
+     * producer-facing intake southbound commands are offered to. For an adapter whose type has no
+     * registered factory the wrapper sender is a no-op, the snapshot is a fixed {@code ERROR}, and there is no
+     * write plane.
      *
-     * @param adapterId     the adapter instance id.
-     * @param wrapperSender the send-only handle of the wrapper mailbox — {@code tell}-only, callable from any thread.
-     * @param snapshot      the reference holding the wrapper's latest immutable status snapshot.
+     * @param adapterId           the adapter instance id.
+     * @param wrapperSender       the send-only handle of the wrapper mailbox — {@code tell}-only, callable from any
+     *                            thread.
+     * @param snapshot            the reference holding the wrapper's latest immutable status snapshot.
+     * @param southboundWritePlane the adapter's southbound delivery side (one queue per write-mapped tag), or
+     *                            {@code null} for an adapter with no running wrapper.
      */
     public record ProtocolAdapterHandle(
             @NotNull String adapterId,
             @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender,
-            @NotNull AtomicReference<AdapterStatusSnapshot> snapshot) {}
+            @NotNull AtomicReference<AdapterStatusSnapshot> snapshot,
+            @Nullable SouthboundWritePlane southboundWritePlane) {
+
+        /**
+         * A handle with no southbound write plane — for adapters with no running wrapper and tests that never
+         * exercise the write path.
+         *
+         * @param adapterId     the adapter instance id.
+         * @param wrapperSender the send-only handle of the wrapper mailbox.
+         * @param snapshot      the reference holding the wrapper's latest immutable status snapshot.
+         */
+        public ProtocolAdapterHandle(
+                final @NotNull String adapterId,
+                final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender,
+                final @NotNull AtomicReference<AdapterStatusSnapshot> snapshot) {
+            this(adapterId, wrapperSender, snapshot, null);
+        }
+    }
 }

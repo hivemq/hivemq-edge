@@ -107,10 +107,11 @@ public interface TagAspectCoordinator {
     /**
      * Submit a southbound write to the node's write aspect — the "write arrives" trigger.
      *
-     * @param node  the node to write to.
-     * @param value the reused v1 value to write.
+     * @param node       the node to write to.
+     * @param value      the reused v1 value to write.
+     * @param completion the one-shot back-pressure signal, settled with the write's outcome.
      */
-    void submitWrite(@NotNull Node node, @NotNull DataPoint value);
+    void submitWrite(@NotNull Node node, @NotNull DataPoint value, @NotNull SouthboundWriteCompletion completion);
 
     /**
      * Route a write acknowledgment to the node's write aspect.
