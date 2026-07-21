@@ -66,7 +66,7 @@ zeroallocationhashing = "0.27ea1"
 
 #Plugin Versions
 plugin-cyclonedx = "1.10.0"
-plugin-spotless = "7.2.1"
+plugin-spotless = "8.8.0"
 plugin-defaults = "0.3.0"
 plugin-errorprone = "5.1.0"
 plugin-forbiddenapis = "3.10"
