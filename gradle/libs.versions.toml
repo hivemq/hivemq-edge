@@ -28,7 +28,6 @@ jackson-nullable = "0.2.10"
 jacoco = "0.8.15"
 jakarta-annotation-api = "3.0.0"
 javassist = "3.32.0-GA"
-jaxb2 = "2.3.9"
 jaxb4-bind = "4.0.5"
 jaxb4-impl = "4.0.9"
 jctools = "4.0.6"
@@ -117,7 +116,6 @@ jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jakarta.rs:jacks
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation-api" }
 javacrumbs-futureconverter = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref = "future-converter" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
-jaxb2-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb2" }
 jaxb4-bind = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jaxb4-bind" }
 jaxb4-impl = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "jaxb4-impl" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
