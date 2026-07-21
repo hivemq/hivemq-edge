@@ -108,6 +108,48 @@ public record DatabasesAdapterConfiguration(
         return "unsupported database type '" + raw + "' (expected one of POSTGRESQL, MYSQL, MSSQL)";
     }
 
+    /**
+     * The characters that would break out of the MySQL/MariaDB JDBC connection URL
+     * ({@code jdbc:mariadb://server:port/database?params}) and let a crafted server or database name inject or
+     * override connection parameters: the query/fragment/path separators and any whitespace or control character. A
+     * legitimate host name (including a bracketed IPv6 literal) or database name never contains any of these, so the
+     * check restores the allowlist the v1 adapter enforced through its {@code database} field pattern — which the v2
+     * scalar schema cannot express.
+     */
+    private static final @NotNull String FORBIDDEN_URL_IDENTIFIER_CHARACTERS = "/\\?#&";
+
+    /**
+     * Report a MySQL {@code server} or {@code database} that would break out of the JDBC connection URL, so the adapter
+     * can surface it as a clear connection error at connect time instead of opening a pool with an injected URL. Only
+     * MySQL interpolates these values into a URL; PostgreSQL and MS SQL pass them as data-source properties, where the
+     * same characters cannot alter the connection, so they are not checked here.
+     *
+     * @return a human-readable description of the offending identifier, or {@code null} when both are safe (or the
+     *         engine is not MySQL).
+     */
+    @Nullable
+    String mysqlUrlIdentifierError() {
+        if (type != DatabaseType.MYSQL) {
+            return null;
+        }
+        final String serverError = urlIdentifierError("server", server);
+        return serverError != null ? serverError : urlIdentifierError("database", database);
+    }
+
+    private static @Nullable String urlIdentifierError(final @NotNull String field, final @NotNull String value) {
+        for (int i = 0; i < value.length(); i++) {
+            final char character = value.charAt(i);
+            if (character <= ' ' || FORBIDDEN_URL_IDENTIFIER_CHARACTERS.indexOf(character) >= 0) {
+                return "the MySQL "
+                        + field
+                        + " '"
+                        + value
+                        + "' contains a character that is not allowed in the connection URL";
+            }
+        }
+        return null;
+    }
+
     private static @NotNull DatabaseType typeField(final @NotNull JsonNode node) {
         final JsonNode value = node.get("type");
         if (value != null && value.isTextual()) {

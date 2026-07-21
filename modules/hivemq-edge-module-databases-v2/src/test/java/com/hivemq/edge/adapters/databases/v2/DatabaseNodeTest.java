@@ -120,13 +120,24 @@ class DatabaseNodeTest {
     }
 
     @Test
-    void ignoresUnknownFieldsWhenTheMapperIsLenient() throws Exception {
+    void rejectsAnUnknownFieldEvenWhenTheMapperIsLenient() {
+        // The node enforces its own additionalProperties=false contract, so a stray field fails loudly even under a
+        // mapper that would otherwise ignore unknown properties — a typo can never be silently dropped.
         final ObjectMapper lenient =
                 new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        final String nodeString = "{\"query\":\"SELECT 1\",\"legacyExtra\":true}";
 
-        final DatabaseNode node = lenient.readValue(nodeString, DatabaseNode.class);
+        assertThatThrownBy(() -> lenient.readValue("{\"query\":\"SELECT 1\",\"legacyExtra\":true}", DatabaseNode.class))
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("legacyExtra");
+    }
 
-        assertThat(node.query()).isEqualTo("SELECT 1");
+    @Test
+    void rejectsTheLegacySplitLinesFieldInsteadOfSilentlyDefaultingToAllInOne() {
+        // Migrating from the v1 boolean (or guessing a plausible splitLines): the stale key must fail loudly rather
+        // than be dropped, which would silently leave the tag on AllInOne and lose the intended per-row shaping.
+        assertThatThrownBy(() -> objectMapper.readValue(
+                        "{\"query\":\"SELECT 1\",\"spiltLinesInIndividualMessages\":true}", DatabaseNode.class))
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("spiltLinesInIndividualMessages");
     }
 }

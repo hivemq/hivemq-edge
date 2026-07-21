@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.databases.v2;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -98,6 +99,25 @@ public final class DatabaseNode extends Node {
      */
     public int batchSize() {
         return batchSize;
+    }
+
+    /**
+     * Reject any field other than {@code query}, {@code splitMode}, and {@code batchSize}. The node definition schema
+     * declares {@code additionalProperties=false}, and enforcing it here — whatever the leniency of the deserializing
+     * mapper — means a misspelled or stale key (the v1 {@code spiltLinesInIndividualMessages} boolean, or a plausible
+     * {@code splitLines}) fails loudly at load time instead of being silently dropped and leaving the node on its
+     * {@link SplitMode#ALL_IN_ONE} default.
+     *
+     * @param name  the unexpected field name.
+     * @param value the unexpected field value (never inspected — it is not echoed, so a secret cannot leak).
+     */
+    // Invoked reflectively by Jackson for every unknown property; ErrorProne cannot see that use, and the value
+    // parameter is deliberately not read so no configured value is echoed into the error.
+    @SuppressWarnings("unused")
+    @JsonAnySetter
+    private void rejectUnknownField(final @NotNull String name, final @Nullable Object value) {
+        throw new IllegalArgumentException(
+                "unknown database node field '" + name + "' (expected one of query, splitMode, batchSize)");
     }
 
     @Override

@@ -64,14 +64,21 @@ public class DatabaseConnection {
                 config.addDataSourceProperty("user", configuration.username());
                 config.addDataSourceProperty("password", configuration.password());
                 config.setConnectionTimeout(configuration.connectionTimeoutSeconds() * 1000L);
+                // A socket read must not block the dispatch thread forever if the database wedges. The PostgreSQL
+                // driver's socketTimeout is in seconds.
+                config.addDataSourceProperty("socketTimeout", configuration.connectionTimeoutSeconds());
             }
             case MYSQL -> {
+                // The MariaDB driver's socketTimeout URL option is in milliseconds. server and database are validated
+                // (DatabasesAdapterConfiguration#mysqlUrlIdentifierError) before a pool is opened, so neither can carry
+                // a character that breaks out of this URL.
                 config.setJdbcUrl(String.format(
-                        "jdbc:mariadb://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s",
+                        "jdbc:mariadb://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s&socketTimeout=%d",
                         configuration.server(),
                         configuration.port(),
                         configuration.database(),
-                        configuration.encrypt()));
+                        configuration.encrypt(),
+                        configuration.connectionTimeoutSeconds() * 1000L));
                 config.addDataSourceProperty("user", configuration.username());
                 config.addDataSourceProperty("password", configuration.password());
                 config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
@@ -87,6 +94,8 @@ public class DatabaseConnection {
                 config.addDataSourceProperty("user", configuration.username());
                 config.addDataSourceProperty("password", configuration.password());
                 config.setConnectionTimeout(configuration.connectionTimeoutSeconds() * 1000L);
+                // The MS SQL driver's socketTimeout is in milliseconds.
+                config.addDataSourceProperty("socketTimeout", configuration.connectionTimeoutSeconds() * 1000);
                 final Properties properties = new Properties();
                 if (configuration.encrypt()) {
                     properties.setProperty("encrypt", "true");

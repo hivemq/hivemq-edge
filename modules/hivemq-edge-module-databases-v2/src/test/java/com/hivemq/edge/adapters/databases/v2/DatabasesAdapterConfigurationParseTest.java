@@ -148,4 +148,53 @@ class DatabasesAdapterConfigurationParseTest {
                 .contains("ORACLE")
                 .contains("POSTGRESQL", "MYSQL", "MSSQL");
     }
+
+    @Test
+    void aCleanMysqlConfigurationHasNoUrlIdentifierError() {
+        assertThat(mysqlConfiguration("database.example.com", "warehouse").mysqlUrlIdentifierError())
+                .isNull();
+    }
+
+    @Test
+    void aMysqlServerCarryingAUrlBreakingCharacterIsReported() {
+        // A server that closes the authority and opens query parameters would inject connection options.
+        assertThat(mysqlConfiguration("host/inject?useSSL=true", "warehouse").mysqlUrlIdentifierError())
+                .isNotNull()
+                .contains("server")
+                .contains("connection URL");
+    }
+
+    @Test
+    void aMysqlDatabaseCarryingAUrlBreakingCharacterIsReported() {
+        // A database name with a query separator would append arbitrary MariaDB connection parameters.
+        assertThat(mysqlConfiguration("database.example.com", "warehouse?allowLoadLocalInfile=true")
+                        .mysqlUrlIdentifierError())
+                .isNotNull()
+                .contains("database")
+                .contains("connection URL");
+    }
+
+    @Test
+    void aNonMysqlEngineIsNotCheckedForUrlIdentifiers() {
+        // PostgreSQL and MS SQL pass the server and database as data-source properties, not URL segments, so the same
+        // characters cannot alter the connection and are not rejected.
+        assertThat(new DatabasesAdapterConfiguration(
+                                DatabaseType.POSTGRESQL,
+                                "host",
+                                5432,
+                                "weird?name",
+                                "user",
+                                "password",
+                                false,
+                                false,
+                                30)
+                        .mysqlUrlIdentifierError())
+                .isNull();
+    }
+
+    private static @NotNull DatabasesAdapterConfiguration mysqlConfiguration(
+            final @NotNull String server, final @NotNull String database) {
+        return new DatabasesAdapterConfiguration(
+                DatabaseType.MYSQL, server, 3306, database, "user", "password", false, false, 30);
+    }
 }

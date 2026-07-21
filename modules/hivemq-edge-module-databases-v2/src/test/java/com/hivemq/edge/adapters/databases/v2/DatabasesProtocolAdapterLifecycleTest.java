@@ -25,7 +25,9 @@ import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.protocols.v2.runtime.ManualDispatcher;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -183,6 +185,33 @@ class DatabasesProtocolAdapterLifecycleTest {
         // A clear connection error, and the pool is never opened with the placeholder default engine's driver.
         assertThat(output.events).hasSize(1);
         assertThat(output.events.get(0)).startsWith("error:CONNECTION").contains("unsupported database type 'ORACLE'");
+        assertThat(connection.opened).isFalse();
+    }
+
+    @Test
+    void connectWithAMysqlIdentifierThatWouldBreakTheUrl_reportsAConnectionErrorWithoutOpeningThePool()
+            throws SQLException {
+        // A MySQL database name carrying a URL query separator would inject MariaDB connection parameters; the adapter
+        // must refuse to connect rather than open a pool with the crafted URL.
+        final Map<String, Object> injected = new HashMap<>(DatabasesAdapterTestFixtures.configuration("MYSQL", 3306));
+        injected.put("database", "warehouse?allowLoadLocalInfile=true");
+        final ScriptedDatabaseConnection connection =
+                new ScriptedDatabaseConnection(configuration(), validConnection(), false);
+        final DatabasesProtocolAdapter adapter = new DatabasesProtocolAdapter(
+                DatabasesAdapterTestFixtures.input(
+                        "databases-v2-1",
+                        dispatcher,
+                        new DatabasesAdapterTestFixtures.TestDataPointFactory(),
+                        injected,
+                        List.of()),
+                output,
+                configuration -> connection);
+
+        adapter.connect();
+        dispatcher.drainAll();
+
+        assertThat(output.events).hasSize(1);
+        assertThat(output.events.get(0)).startsWith("error:CONNECTION").contains("not allowed in the connection URL");
         assertThat(connection.opened).isFalse();
     }
 

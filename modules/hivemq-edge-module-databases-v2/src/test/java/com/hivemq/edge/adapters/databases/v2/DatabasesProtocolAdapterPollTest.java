@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -556,6 +557,59 @@ class DatabasesProtocolAdapterPollTest {
         assertThat(output.nodeErrors.get(0).spontaneous()).isFalse();
         // nodeError is itself the terminator — no trailing pollComplete.
         assertThat(output.events).containsExactly("nodeError");
+    }
+
+    @Test
+    void aPollAgainstAClosedPool_reportsANodeErrorInsteadOfFailingTheWholeAdapter() {
+        // A clean deactivate/disconnect can close the pool while a poll sits queued behind it; the queued poll then
+        // borrows from a closed pool, which throws an IllegalStateException (not a SQLException). The widened catch
+        // turns that into a per-node error so the failure is isolated to this tag — letting it escape doPoll would
+        // reach the actor's command-failure fence and park the whole adapter in ERROR.
+        final DatabasesProtocolAdapter adapter = new DatabasesProtocolAdapter(
+                DatabasesAdapterTestFixtures.input(
+                        "databases-v2-1",
+                        dispatcher,
+                        new DatabasesAdapterTestFixtures.TestDataPointFactory(),
+                        DatabasesAdapterTestFixtures.configuration("POSTGRESQL", 5432),
+                        List.of()),
+                output,
+                configuration -> new DatabaseConnection(configuration) {
+                    @Override
+                    public @NotNull Connection getConnection() {
+                        throw new IllegalStateException("Hikari Connection Pool must be started before usage.");
+                    }
+                });
+        final DatabaseNode node = new DatabaseNode("SELECT 1", SplitMode.ALL_IN_ONE, 100);
+
+        adapter.pollBatch(List.of(node));
+        dispatcher.drainAll();
+
+        assertThat(output.dataPoints).isEmpty();
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).node()).isSameAs(node);
+        assertThat(output.nodeErrors.get(0).reason()).contains("Hikari Connection Pool must be started");
+        assertThat(output.events).containsExactly("nodeError");
+    }
+
+    @Test
+    void thePollBoundsTheQueryWithTheConfiguredTimeout() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(metaData.getColumnCount()).thenReturn(0);
+        when(resultSet.next()).thenReturn(false);
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT 1", SplitMode.ALL_IN_ONE, 100)));
+        dispatcher.drainAll();
+
+        // A hung database must not wedge the dispatch thread: the poll caps the query at the configured connection
+        // timeout (the fixture applies the 30s default).
+        verify(statement).setQueryTimeout(30);
     }
 
     @Test

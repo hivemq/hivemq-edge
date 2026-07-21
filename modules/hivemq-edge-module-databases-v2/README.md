@@ -105,6 +105,28 @@ Preserved verbatim:
 
 PostgreSQL continues to ignore `encrypt` exactly as v1 did (no `sslmode` is added — out of scope).
 
+### Robustness hardening
+
+1. **A poll failure never parks the whole adapter.** `doPoll` catches broadly (as v1 did), not only `SQLException`, so
+   an unchecked exception — most importantly the `IllegalStateException` from borrowing a connection out of a pool that
+   a concurrent deactivate/disconnect just closed — is reported as a per-node error and isolated to that tag. Letting
+   it escape `doPoll` would reach the actor's command-failure fence and drive the whole adapter to `ERROR` (needing
+   manual recovery), taking every other tag with it. One bad row or a lifecycle race fails only its own tag.
+2. **A hung database cannot wedge the dispatch thread.** The poll runs synchronously on the single dispatch thread
+   that serves every tag on the adapter, so each query is bounded with `Statement.setQueryTimeout`, and each engine's
+   JDBC socket timeout is set as the lower-level backstop (PostgreSQL in seconds, MariaDB and MS SQL in milliseconds).
+   Both reuse the configured `connectionTimeoutSeconds`.
+3. **MySQL connection-URL injection is blocked.** The MariaDB connection is a JDBC URL that interpolates `server` and
+   `database`; a value carrying a URL separator (`?`, `&`, `/`, `#`, `\`, whitespace) could inject or override
+   connection parameters. Those two identifiers are validated before a pool is opened and a bad value is surfaced as a
+   connection error — restoring the allowlist the v1 adapter enforced through its `database` field pattern, which the
+   v2 scalar schema cannot express. (PostgreSQL and MS SQL pass the same values as data-source properties, not URL
+   segments, so they are not affected.)
+4. **A stale or misspelled node field fails loudly.** The node definition schema is `additionalProperties=false`, and
+   `DatabaseNode` enforces it on deserialization regardless of the mapper's leniency: an unknown field — the v1
+   `spiltLinesInIndividualMessages` boolean, or a plausible `splitLines` — is rejected rather than silently dropped,
+   which would otherwise leave the tag on its `AllInOne` default and lose the intended shaping.
+
 ## Excluded southbound path
 
 Databases has no write path at all — not even a dormant one in v1 — so `capabilities()` is an empty set and the

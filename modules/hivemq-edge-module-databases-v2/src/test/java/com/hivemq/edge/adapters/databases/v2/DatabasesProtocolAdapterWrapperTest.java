@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.databases.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -31,8 +32,10 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 
 /**
@@ -55,6 +58,13 @@ class DatabasesProtocolAdapterWrapperTest {
     private static final @NotNull Duration STARTUP_AT_MOST = Duration.ofSeconds(180);
 
     private static final @NotNull Map<DatabaseType, GenericContainer<?>> CONTAINERS = new EnumMap<>(DatabaseType.class);
+
+    @BeforeAll
+    static void requireDocker() {
+        // These are Testcontainers-backed tests; skip the whole class (rather than fail it) when no Docker daemon is
+        // reachable, so the module's unit tests do not require Docker while the container coverage still runs in CI.
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable(), "Docker is not available");
+    }
 
     private static synchronized @NotNull GenericContainer<?> containerFor(final @NotNull DatabaseType type) {
         return CONTAINERS.computeIfAbsent(type, ignored -> {

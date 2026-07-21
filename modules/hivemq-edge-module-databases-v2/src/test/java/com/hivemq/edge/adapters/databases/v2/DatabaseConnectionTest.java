@@ -46,7 +46,9 @@ class DatabaseConnectionTest {
                 .containsEntry("portNumber", 4444)
                 .containsEntry("databaseName", "warehouse")
                 .containsEntry("user", "reader")
-                .containsEntry("password", "secret");
+                .containsEntry("password", "secret")
+                // The PostgreSQL socketTimeout is in seconds — the configured connection timeout.
+                .containsEntry("socketTimeout", 30);
     }
 
     @Test
@@ -54,12 +56,13 @@ class DatabaseConnectionTest {
         final DatabaseConnection plain = new DatabaseConnection(configuration(DatabaseType.MYSQL, false, false));
         final DatabaseConnection encrypted = new DatabaseConnection(configuration(DatabaseType.MYSQL, true, false));
 
+        // The MariaDB socketTimeout URL option is in milliseconds — the configured connection timeout.
         assertThat(plain.hikariConfiguration().getJdbcUrl())
                 .isEqualTo("jdbc:mariadb://database.example.com:4444/warehouse"
-                        + "?allowPublicKeyRetrieval=true&useSSL=false");
+                        + "?allowPublicKeyRetrieval=true&useSSL=false&socketTimeout=30000");
         assertThat(encrypted.hikariConfiguration().getJdbcUrl())
-                .isEqualTo(
-                        "jdbc:mariadb://database.example.com:4444/warehouse?allowPublicKeyRetrieval=true&useSSL=true");
+                .isEqualTo("jdbc:mariadb://database.example.com:4444/warehouse"
+                        + "?allowPublicKeyRetrieval=true&useSSL=true&socketTimeout=30000");
         assertThat(plain.hikariConfiguration().getDataSourceProperties())
                 .containsEntry("user", "reader")
                 .containsEntry("password", "secret");
@@ -77,7 +80,9 @@ class DatabaseConnectionTest {
                 .containsEntry("databaseName", "warehouse")
                 .containsEntry("user", "reader")
                 .containsEntry("password", "secret")
-                .containsEntry("encrypt", "false");
+                .containsEntry("encrypt", "false")
+                // The MS SQL socketTimeout is in milliseconds — the configured connection timeout.
+                .containsEntry("socketTimeout", 30_000);
     }
 
     @Test

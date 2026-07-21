@@ -68,12 +68,20 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
     private final @NotNull DatabaseConnection databaseConnection;
 
     /**
-     * A human-readable description of an explicitly-configured but unrecognized database engine, or {@code null} when
-     * the engine is recognized. When set, {@link #doConnect()} reports it as a connection error instead of connecting
-     * — the parsed configuration used the placeholder default engine, which must never open a pool with the wrong
-     * driver.
+     * The timeout, in seconds, applied to every poll query ({@link java.sql.Statement#setQueryTimeout(int)}). The poll
+     * runs synchronously on the single dispatch thread that serves every tag on this adapter, so a hung database would
+     * otherwise wedge that thread indefinitely; the query is bounded by the configured connection timeout (which the
+     * pool's connection-establishment timeout and the drivers' socket timeouts also use).
      */
-    private final @Nullable String unsupportedTypeError;
+    private final int queryTimeoutSeconds;
+
+    /**
+     * A human-readable description of a configuration that must not open a pool — an explicitly-configured but
+     * unrecognized database engine, or a MySQL server/database identifier carrying a character that would break out of
+     * the JDBC connection URL — or {@code null} when the configuration is safe to connect with. When set,
+     * {@link #doConnect()} reports it as a connection error instead of connecting.
+     */
+    private final @Nullable String configurationError;
 
     /**
      * @param input  everything this adapter instance is constructed from.
@@ -92,8 +100,11 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
         final DatabasesAdapterConfiguration configuration =
                 DatabasesAdapterConfiguration.parse(input.adapterConfig(), OBJECT_MAPPER);
         this.databaseConnection = databaseConnectionFactory.create(configuration);
-        this.unsupportedTypeError =
+        this.queryTimeoutSeconds = configuration.connectionTimeoutSeconds();
+        final String unsupportedTypeError =
                 DatabasesAdapterConfiguration.unsupportedTypeError(input.adapterConfig(), OBJECT_MAPPER);
+        this.configurationError =
+                unsupportedTypeError != null ? unsupportedTypeError : configuration.mysqlUrlIdentifierError();
     }
 
     /**
@@ -126,10 +137,11 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
 
     @Override
     protected void doConnect() {
-        if (unsupportedTypeError != null) {
-            // An explicitly-configured but unrecognized engine: fail with a clear connection error rather than
-            // connecting through the placeholder default engine's driver.
-            output.error(ErrorScope.CONNECTION, unsupportedTypeError);
+        if (configurationError != null) {
+            // A configuration that must never open a pool — an unrecognized engine (which parsed to the placeholder
+            // default engine) or a MySQL identifier that would break out of the JDBC URL: fail with a clear
+            // connection error rather than connecting through the wrong driver or an injected URL.
+            output.error(ErrorScope.CONNECTION, configurationError);
             return;
         }
         // The module loader isolates this module's classloader, so the bundled JDBC drivers must be registered under
@@ -192,18 +204,27 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
         // pollComplete below.
         DataPoint allInOneValue = null;
         try (final Connection connection = databaseConnection.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(databaseNode.query());
-                final ResultSet result = preparedStatement.executeQuery()) {
-            final ResultSetMetaData resultSetMetaData = result.getMetaData();
-            switch (splitMode) {
-                case ALL_IN_ONE ->
-                    // Buffer every row into one value (an empty result set is an empty-array value). The value is
-                    // emitted below, only after the JDBC resources have closed.
-                    allInOneValue = toDataPoint(databaseNode, readAllRows(result, resultSetMetaData));
-                case ONE_PER_ROW -> streamOnePerRow(node, databaseNode, result, resultSetMetaData);
-                case ONE_PER_BATCH -> streamOnePerBatch(node, databaseNode, result, resultSetMetaData);
+                final PreparedStatement preparedStatement = connection.prepareStatement(databaseNode.query())) {
+            // Bound the query so a hung database cannot wedge the single dispatch thread that serves every tag on this
+            // adapter (the drivers' socket timeouts are the lower-level backstop).
+            preparedStatement.setQueryTimeout(queryTimeoutSeconds);
+            try (final ResultSet result = preparedStatement.executeQuery()) {
+                final ResultSetMetaData resultSetMetaData = result.getMetaData();
+                switch (splitMode) {
+                    case ALL_IN_ONE ->
+                        // Buffer every row into one value (an empty result set is an empty-array value). The value is
+                        // emitted below, only after the JDBC resources have closed.
+                        allInOneValue = toDataPoint(databaseNode, readAllRows(result, resultSetMetaData));
+                    case ONE_PER_ROW -> streamOnePerRow(node, databaseNode, result, resultSetMetaData);
+                    case ONE_PER_BATCH -> streamOnePerBatch(node, databaseNode, result, resultSetMetaData);
+                }
             }
-        } catch (final SQLException e) {
+        } catch (final Exception e) {
+            // Catch broadly (as the v1 adapter did), not just SQLException: a poll can also throw an unchecked
+            // exception — most importantly an IllegalStateException from a pool that was closed by a concurrent
+            // deactivate/disconnect while this poll sat queued. Reporting it as a per-node error isolates the failure
+            // to this tag (the framework counts it and retries on the next poll); letting it escape doPoll would reach
+            // the actor's command-failure fence and park the WHOLE adapter in ERROR, needing manual recovery.
             LOG.debug("An exception occurred while executing the query '{}'.", databaseNode.query(), e);
             output.nodeError(
                     node,
