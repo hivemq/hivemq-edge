@@ -100,6 +100,7 @@ dropwizard-metrics-logback = { module = "io.dropwizard.metrics:metrics-logback",
 equalsverifier = { module = "nl.jqno.equalsverifier:equalsverifier", version.ref = "equalsverifier" }
 errorprone = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
+gradle-errorprone-plugin = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "plugin-errorprone" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 hivemq-edge-adaptersdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", version.ref = "hivemq-edge-adaptersdk" }
@@ -162,6 +163,7 @@ shrinkwrap-api = { module = "org.jboss.shrinkwrap:shrinkwrap-api", version.ref =
 shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", version.ref = "shrinkwrap" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jultoslf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
+spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "plugin-spotless" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
 swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
 systemstubs = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "systemstubs" }
