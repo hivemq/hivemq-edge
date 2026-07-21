@@ -76,6 +76,7 @@ class ProtocolAdapterWrapperDefensiveResetTest {
 
         fixture.output.connected();
         fixture.output.dataPoint(WrapperTestSupport.node("x"), WrapperTestSupport.dataPoint("temperature", "v"));
+        fixture.output.pollComplete(WrapperTestSupport.node("x"));
         fixture.output.nodeError(WrapperTestSupport.node("x"), "boom", true);
         fixture.output.error(com.hivemq.adapter.sdk.api.v2.model.ErrorScope.CONNECTION, "noise");
         fixture.drain();

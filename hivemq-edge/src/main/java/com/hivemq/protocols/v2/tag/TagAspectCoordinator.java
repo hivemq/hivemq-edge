@@ -89,11 +89,22 @@ public interface TagAspectCoordinator {
      * @param node  the node the value belongs to.
      * @param value the reused v1 value.
      * @param adapterId the adapter instance id used to stamp values accepted by the read aspect.
+     * @param completesPoll whether this value also completes the node's poll (a single {@code dataPoint}) or leaves
+     *                      it open for more (a non-terminating {@code dataPoints} value); a subscribed aspect ignores it.
      * @return a stamped data point for northbound consumers when the read aspect accepted the value; {@code null}
      *         for unknown nodes or values ignored by the aspect state machine.
      */
     @Nullable
-    DataPoint routeDataPoint(@NotNull Node node, @NotNull DataPoint value, @NotNull String adapterId);
+    DataPoint routeDataPoint(
+            @NotNull Node node, @NotNull DataPoint value, @NotNull String adapterId, boolean completesPoll);
+
+    /**
+     * Route a poll completion to the node's read aspect — the node's poll has produced all its values (possibly
+     * zero), so its poll cadence resumes.
+     *
+     * @param node the node whose poll is complete.
+     */
+    void routePollComplete(@NotNull Node node);
 
     /**
      * Route a per-node failure to the node's read aspect.

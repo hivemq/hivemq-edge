@@ -80,7 +80,23 @@ public final class ProtocolAdapterOutputFacade implements ProtocolAdapterOutput 
 
     @Override
     public void dataPoint(final @NotNull Node node, final @NotNull DataPoint value) {
-        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(node, value));
+        // A single value carries its own completion: for a poll it publishes and ends the cycle; for a subscription
+        // the completion bit is ignored (a subscription never completes).
+        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(node, value, true));
+    }
+
+    @Override
+    public void dataPoints(final @NotNull Node node, final @NotNull List<DataPoint> values) {
+        // Non-terminating values: each publishes but leaves the poll open until an explicit pollComplete (or a
+        // nodeError). One tell per value keeps within-DATA-band FIFO ordering with the completion that follows.
+        for (final DataPoint value : values) {
+            wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(node, value, false));
+        }
+    }
+
+    @Override
+    public void pollComplete(final @NotNull Node node) {
+        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.PollCompleted(node));
     }
 
     @Override

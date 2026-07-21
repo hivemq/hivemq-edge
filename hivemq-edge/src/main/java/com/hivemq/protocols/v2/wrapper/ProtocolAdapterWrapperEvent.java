@@ -35,10 +35,14 @@ import org.jetbrains.annotations.Nullable;
  * matching row runs the table's defensive reset.
  * <p>
  * Band: {@link MailboxMessagePriority#EVENT} (the {@link com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage}
- * default), except {@link DataPointReceived} and the browse events ({@link BrowsePageReceived},
- * {@link AttributesResolved}, {@link BrowseFailed}), which override to
- * {@link MailboxMessagePriority#DATA} so the chatty push channel never starves control, acknowledgments, or time
- *. The timer-expiry events ({@link WatchdogFired}, {@link BackoffFired}, {@link PollTimerFired},
+ * default), except the per-node poll/subscription trio — {@link DataPointReceived}, {@link PollCompleted}, and
+ * {@link NodeErrorReceived} — and the browse events ({@link BrowsePageReceived}, {@link AttributesResolved},
+ * {@link BrowseFailed}), which override to {@link MailboxMessagePriority#DATA} so the chatty push channel never
+ * starves control, acknowledgments, or time. The trio shares the DATA band so within-band FIFO delivers each node's
+ * values, its completion, and any failure in the exact order the adapter reported them: a failure in the higher
+ * {@code EVENT} band would overtake values still queued behind it in {@code DATA} and end the poll while they were
+ * unprocessed, silently discarding rows already reported (see the {@code dataPoints} + mid-stream {@code nodeError}
+ * contract). The timer-expiry events ({@link WatchdogFired}, {@link BackoffFired}, {@link PollTimerFired},
  * {@link VerificationRetryTimerFired}, {@link SubscriptionRetryTimerFired}) never enter the mailbox — they are
  * generated inside the tick handler on the dispatch thread and fed straight to the machine — so their band is
  * never consulted.
@@ -90,12 +94,17 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
     record AllVerified() implements ProtocolAdapterWrapperEvent {}
 
     /**
-     * Reports one value — a poll response or a subscription push; the {@link Node} is the correlation key.
+     * Reports one value — a poll response or a subscription push; the {@link Node} is the correlation key. For a
+     * poll, {@code completesPoll} says whether this value also ends the poll cycle (a single completing
+     * {@code dataPoint}) or leaves it open for more (a non-terminating {@code dataPoints} value); a subscribed
+     * aspect ignores the bit.
      *
-     * @param node  the node the value belongs to.
-     * @param value the reused v1 value.
+     * @param node          the node the value belongs to.
+     * @param value         the reused v1 value.
+     * @param completesPoll whether this value also completes the node's poll.
      */
-    record DataPointReceived(@NotNull Node node, @NotNull DataPoint value) implements ProtocolAdapterWrapperEvent {
+    record DataPointReceived(@NotNull Node node, @NotNull DataPoint value, boolean completesPoll)
+            implements ProtocolAdapterWrapperEvent {
         @Override
         public @NotNull MailboxMessagePriority priority() {
             return MailboxMessagePriority.DATA;
@@ -103,7 +112,27 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
     }
 
     /**
-     * Reports a per-node failure (failed poll, failed or lost subscription).
+     * Reports that the poll for this node has produced all its values — possibly zero — so the node's poll cadence
+     * resumes. Deliberately in the {@code DATA} band, like {@link DataPointReceived}: within-band FIFO guarantees the
+     * completion is delivered <b>after</b> the values the adapter reported before it — in a higher band it would
+     * overtake them and end the poll while they were still queued, absorbing them.
+     *
+     * @param node the node whose poll is complete.
+     */
+    record PollCompleted(@NotNull Node node) implements ProtocolAdapterWrapperEvent {
+        @Override
+        public @NotNull MailboxMessagePriority priority() {
+            return MailboxMessagePriority.DATA;
+        }
+    }
+
+    /**
+     * Reports a per-node failure (failed poll, failed or lost subscription). Deliberately in the {@code DATA} band,
+     * like {@link DataPointReceived} and {@link PollCompleted}: a failure is a poll terminator, so within-band FIFO
+     * must deliver it <b>after</b> the values the adapter reported before it. In the higher {@code EVENT} band it
+     * would overtake those queued values and end the poll while they were still unprocessed — the tag would park and
+     * absorb the late values as stale, discarding rows the adapter had already reported (e.g. a split-lines cursor
+     * that streams several pages, then throws mid-stream).
      *
      * @param node        the node the failure belongs to.
      * @param reason      a human-readable description.
@@ -111,7 +140,12 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
      *                    recovery path.
      */
     record NodeErrorReceived(@NotNull Node node, @NotNull String reason, boolean spontaneous)
-            implements ProtocolAdapterWrapperEvent {}
+            implements ProtocolAdapterWrapperEvent {
+        @Override
+        public @NotNull MailboxMessagePriority priority() {
+            return MailboxMessagePriority.DATA;
+        }
+    }
 
     /**
      * Acknowledges one entry of a write batch.

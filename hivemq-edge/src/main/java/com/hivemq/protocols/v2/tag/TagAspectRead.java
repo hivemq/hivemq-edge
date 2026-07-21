@@ -283,16 +283,29 @@ public final class TagAspectRead implements TagAspectVerifying {
     /**
      * Feed a received value — a poll response or a subscription push.
      *
-     * @param value the reused v1 value.
+     * @param value         the reused v1 value.
+     * @param completesPoll whether this value also completes the node's poll (a single completing {@code dataPoint})
+     *                      or leaves it open for more (a non-terminating {@code dataPoints} value); the subscribed
+     *                      variant ignores it.
      * @return whether the value was expected in the current read-aspect state.
      */
-    public boolean onValue(final @NotNull DataPoint value) {
+    public boolean onValue(final @NotNull DataPoint value, final boolean completesPoll) {
         final TagAspectState state = machine.state();
         final boolean accepted = state == TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT
                 || state == TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION
                 || state == TagAspectReadSubscribedState.SUBSCRIBED;
-        dispatch(new TagAspectEvent.ValueReceived(value));
+        dispatch(new TagAspectEvent.ValueReceived(value, completesPoll));
         return accepted;
+    }
+
+    /**
+     * Feed a poll completion — the poll has produced all its values (possibly zero), so the poll cadence resumes.
+     * Only the polled variant has a transition for it; anywhere else (a late completion after a poll failure already
+     * ended the poll, or a completion reaching a subscribed aspect) it is harmlessly absorbed by the lenient
+     * {@code unmatched} slot.
+     */
+    public void onPollComplete() {
+        dispatch(new TagAspectEvent.PollCompleted());
     }
 
     /**
