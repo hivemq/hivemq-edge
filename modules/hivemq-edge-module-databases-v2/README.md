@@ -8,7 +8,8 @@ protocol id **`databases-v2`**. It runs side by side with the v1 `hivemq-edge-mo
 multi-value-poll** adapter (alongside the stateless `FileProtocolAdapter`, the asynchronous `HttpProtocolAdapter`,
 and the synthetic `ChaosProtocolAdapter`): it extends `AbstractProtocolAdapter`, opens a HikariCP pool against
 **PostgreSQL, MySQL (via the MariaDB driver), or MS SQL** on connect, and executes each tag's SQL query on its
-scheduled poll, publishing the result set as JSON — one array message, or one message per row.
+scheduled poll, publishing the result set as JSON shaped by the tag's `splitMode` — all rows in one array message, one
+message per row, or one message per batch of rows.
 
 ## The fat jar
 
@@ -20,10 +21,10 @@ points the thread context classloader at it while HikariCP creates the data sour
 
 ## The framework enhancement — multi-value polls
 
-The v1 adapter's `spiltLinesInIndividualMessages` (the historical key spelling is preserved) publishes **one MQTT
-message per result row** — N values per poll. The v2 polled-read aspect previously ended a poll on its **first**
-value, absorbing the rest. To keep this feature exactly, this port aligned the poll value-message with the subscribe
-value-message so a poll may emit **0..N** values, carried by three `ProtocolAdapterOutput` methods:
+The v1 adapter's `spiltLinesInIndividualMessages` publishes **one MQTT message per result row** — N values per poll.
+The v2 polled-read aspect previously ended a poll on its **first** value, absorbing the rest. To keep this feature —
+and to add the new per-batch shaping (see the split mode below) — this port aligned the poll value-message with the
+subscribe value-message so a poll may emit **0..N** values, carried by three `ProtocolAdapterOutput` methods:
 
 - `dataPoint(node, value)` — one value that **also completes** the poll (the common single-value case, and every
   subscription push). Unchanged for single-value adapters.
@@ -40,20 +41,27 @@ a `nodeError` schedules the next poll; a subscribed aspect ignores the completio
 `doPollBatch` is just a loop over `doPoll` — it never completes a poll on the adapter's behalf, so every `doPoll`
 (synchronous or asynchronous) owns its own terminator.
 
-This adapter uses all three: **array mode** is a single completing `dataPoint(node, allRows)`; **split-lines mode**
-reports each row as its own value, draining the rows in `dataPoints(node, page)` pages (see the batch size below) then
+This adapter uses all three: **`AllInOne`** is a single completing `dataPoint(node, allRows)`; **`OnePerRow`** and
+**`OnePerBatch`** report their values through non-terminating `dataPoints(node, …)` calls then a terminating
 `pollComplete(node)` (an empty result set is the bare `pollComplete`); a query failure is a `nodeError`.
 
-### Split-lines batch size
+### Split mode and batch size
 
-The adapter configuration has a `batchSize` field (integer, **1–1000, default 100**) controlling how many result
-rows are drained per `dataPoints` call — a cursor page size. **Each row is always its own data point** (its own
-value, hence its own MQTT message); `batchSize` never packs rows into one message. It only bounds how much of the
-result set is materialized per output call: a batch size of 1 hands the framework one row at a time, a larger size a
-page of that many rows at once, so a large result set drains page by page instead of paying one call per row or
-materializing the whole set. `dataPoints(node, values)` takes a **list of per-row data points**, so a page is that
-list. The field is only meaningful when a tag sets `spiltLinesInIndividualMessages`; array mode ships every row in one
-message regardless.
+The message shaping lives on each **tag** (the `DatabaseNode`), not on the adapter configuration. A tag chooses a
+`splitMode` (default `AllInOne`) and, for `OnePerBatch`, a `batchSize` (integer, **1–1000, default 100**):
+
+| `splitMode`    | Data points per poll   | Each data point         | `batchSize` |
+|----------------|------------------------|-------------------------|-------------|
+| `AllInOne`     | 1                      | a JSON array of all rows | ignored     |
+| `OnePerRow`    | one per row            | a single row object      | rows drained per output call (cursor page size) |
+| `OnePerBatch`  | one per batch of rows  | a JSON array of ≤ `batchSize` rows | the rows per array |
+
+`OnePerRow` and `OnePerBatch` stream their values as the cursor is drained — one page of rows, or one filled batch, is
+materialized at a time — so a large result set never has to be held whole (`AllInOne` inevitably materializes the
+whole array). `batchSize` is the batch size for both split modes: in `OnePerRow` it is a **cursor page size** — how
+many rows are drained per output call, with each row still its own data point (its own message) — and in `OnePerBatch`
+it is the **number of rows packed into each array message**. `AllInOne` ignores it. An unrecognized `splitMode` value
+is rejected when the node is loaded (a typo fails loudly rather than silently becoming `AllInOne`).
 
 ## Behavior parity with the v1 Databases adapter
 
@@ -62,8 +70,9 @@ Preserved verbatim:
 - All three engines (`POSTGRESQL`, `MYSQL` via the MariaDB driver, `MSSQL`) and their per-engine Hikari
   configuration.
 - The `java.sql.Types` row-to-JSON mapping (integer/long/decimal/double, everything else as a string).
-- Both message-shaping modes: all rows as one array message, or `spiltLinesInIndividualMessages` for one message
-  per row.
+- The v1 message-shaping modes: all rows as one array message (`AllInOne`) or one message per row (`OnePerRow`). The
+  v1 `spiltLinesInIndividualMessages` boolean is replaced by the `splitMode` enum, which also adds the new
+  `OnePerBatch` mode.
 - The connect-time classloader dance and the connection validation after the pool opens.
 
 ### Intentional deltas (the framework now owns these)
@@ -109,5 +118,5 @@ remains a documented extension point.
   machines — against **real PostgreSQL, MySQL, and MSSQL Testcontainers**, deterministically (`FakeClock`; the
   synchronous JDBC poll executes inside the manual drain).
 - `DatabasesV2AdapterEndToEndTest` (in `hivemq-edge-test`) boots a real Edge runtime that loads this module's fat jar
-  through the standard module loader and proves catalog listability, both message-shaping modes over MQTT, the
+  through the standard module loader and proves catalog listability, all three `splitMode` shapes over MQTT, the
   flag-only activation reload, and v1/v2 catalog disjointness against all three real engines.

@@ -27,7 +27,6 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -155,13 +154,6 @@ class DatabasesProtocolAdapterWrapperTest {
         CONTAINERS.clear();
     }
 
-    private static @NotNull Map<String, Object> configurationFor(
-            final @NotNull DatabaseType type, final int batchSize) {
-        final Map<String, Object> configuration = new HashMap<>(configurationFor(type));
-        configuration.put("batchSize", batchSize);
-        return configuration;
-    }
-
     private static @NotNull Map<String, Object> configurationFor(final @NotNull DatabaseType type) {
         final GenericContainer<?> container = containerFor(type);
         return Map.of(
@@ -186,7 +178,7 @@ class DatabasesProtocolAdapterWrapperTest {
                 "databases-v2-" + type,
                 configurationFor(type),
                 List.of(DatabasesAdapterTestFixtures.queryTag(
-                        "products", "SELECT product_no, name FROM products ORDER BY product_no", false)),
+                        "products", "SELECT product_no, name FROM products ORDER BY product_no", SplitMode.ALL_IN_ONE)),
                 POLL_INTERVAL_MILLIS)) {
 
             fixture.activateNorthbound();
@@ -216,20 +208,20 @@ class DatabasesProtocolAdapterWrapperTest {
 
     @ParameterizedTest
     @EnumSource(DatabaseType.class)
-    void splitLines_publishesOneDataPointPerRowThroughTheRealWrapper(final @NotNull DatabaseType type)
-            throws Exception {
+    void onePerRow_publishesOneDataPointPerRowThroughTheRealWrapper(final @NotNull DatabaseType type) throws Exception {
         try (final DatabasesWrapperTestFixture fixture = new DatabasesWrapperTestFixture(
                 "databases-v2-" + type,
-                configurationFor(type, 2), // batch size 2 over the three-row table drains in pages of 2 then 1
+                configurationFor(type),
                 List.of(DatabasesAdapterTestFixtures.queryTag(
-                        "products", "SELECT product_no, name FROM products ORDER BY product_no", true)),
+                        "products",
+                        "SELECT product_no, name FROM products ORDER BY product_no",
+                        SplitMode.ONE_PER_ROW)),
                 POLL_INTERVAL_MILLIS)) {
 
             fixture.activateNorthbound();
             fixture.advanceOnePollInterval();
 
-            // Split-lines mode: each row is its own data point, so the three rows publish as three per-row messages —
-            // the batch size only pages the cursor drain (2 then 1), it never packs rows into one message.
+            // OnePerRow mode: each row is its own data point, so the three rows publish as three per-row messages.
             assertThat(fixture.northboundDataPoints).hasSize(3);
             assertThat(((ObjectNode) fixture.northboundDataPoints.get(0).getTagValue())
                             .get("name")
@@ -250,6 +242,40 @@ class DatabasesProtocolAdapterWrapperTest {
 
     @ParameterizedTest
     @EnumSource(DatabaseType.class)
+    void onePerBatch_publishesOneArrayDataPointPerBatchThroughTheRealWrapper(final @NotNull DatabaseType type)
+            throws Exception {
+        try (final DatabasesWrapperTestFixture fixture = new DatabasesWrapperTestFixture(
+                "databases-v2-" + type,
+                configurationFor(type),
+                List.of(DatabasesAdapterTestFixtures.queryTag(
+                        "products",
+                        "SELECT product_no, name FROM products ORDER BY product_no",
+                        SplitMode.ONE_PER_BATCH,
+                        2)), // batch size 2 over the three-row table → arrays of 2 then 1
+                POLL_INTERVAL_MILLIS)) {
+
+            fixture.activateNorthbound();
+            fixture.advanceOnePollInterval();
+
+            // OnePerBatch mode: each batch of up to two rows is one array data point, so the three rows publish as two
+            // array messages — the first holding apple + banana, the second holding cherry.
+            assertThat(fixture.northboundDataPoints).hasSize(2);
+            final ArrayNode firstBatch =
+                    (ArrayNode) fixture.northboundDataPoints.get(0).getTagValue();
+            final ArrayNode secondBatch =
+                    (ArrayNode) fixture.northboundDataPoints.get(1).getTagValue();
+            assertThat(firstBatch).hasSize(2);
+            assertThat(firstBatch.get(0).get("name").asText()).isEqualTo("apple");
+            assertThat(firstBatch.get(1).get("name").asText()).isEqualTo("banana");
+            assertThat(secondBatch).hasSize(1);
+            assertThat(secondBatch.get(0).get("name").asText()).isEqualTo("cherry");
+            assertThat(fixture.readState("products")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+            assertThat(fixture.tag("products").failureCount()).isZero();
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(DatabaseType.class)
     void aFailingQuery_countsTheFailureAndRecoversWhenTheTableReturns(final @NotNull DatabaseType type)
             throws Exception {
         final GenericContainer<?> container = containerFor(type);
@@ -257,7 +283,8 @@ class DatabasesProtocolAdapterWrapperTest {
         try (final DatabasesWrapperTestFixture fixture = new DatabasesWrapperTestFixture(
                 "databases-v2-" + type,
                 configurationFor(type),
-                List.of(DatabasesAdapterTestFixtures.queryTag("recovery", "SELECT name FROM " + tableName, false)),
+                List.of(DatabasesAdapterTestFixtures.queryTag(
+                        "recovery", "SELECT name FROM " + tableName, SplitMode.ALL_IN_ONE)),
                 POLL_INTERVAL_MILLIS)) {
 
             fixture.activateNorthbound();

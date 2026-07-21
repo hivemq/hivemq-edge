@@ -247,7 +247,7 @@ class DatabasesProtocolAdapterLifecycleTest {
     void subscriptionsAndWrites_areDefensivelyRejected() throws SQLException {
         final DatabasesProtocolAdapter adapter =
                 adapterOver(new ScriptedDatabaseConnection(configuration(), validConnection(), false));
-        final DatabaseNode node = new DatabaseNode("SELECT 1", false);
+        final DatabaseNode node = new DatabaseNode("SELECT 1", SplitMode.ALL_IN_ONE, 100);
 
         adapter.addSubscriptionBatch(List.of(node));
         adapter.writeBatch(
@@ -270,7 +270,6 @@ class DatabasesProtocolAdapterLifecycleTest {
                 "testpassword",
                 false,
                 false,
-                30,
-                100);
+                30);
     }
 }

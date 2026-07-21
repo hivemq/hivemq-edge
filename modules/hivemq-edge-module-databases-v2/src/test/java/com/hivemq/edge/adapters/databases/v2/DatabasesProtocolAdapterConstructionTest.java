@@ -29,8 +29,10 @@ class DatabasesProtocolAdapterConstructionTest {
 
     @Test
     void constructsFromAnInputWithTwoQueryTagsAndExposesItsAdapterId() {
-        final NodeTagPair first = DatabasesAdapterTestFixtures.queryTag("products", "SELECT * FROM products", false);
-        final NodeTagPair second = DatabasesAdapterTestFixtures.queryTag("orders", "SELECT * FROM orders", true);
+        final NodeTagPair first =
+                DatabasesAdapterTestFixtures.queryTag("products", "SELECT * FROM products", SplitMode.ALL_IN_ONE);
+        final NodeTagPair second =
+                DatabasesAdapterTestFixtures.queryTag("orders", "SELECT * FROM orders", SplitMode.ONE_PER_ROW);
 
         final DatabasesProtocolAdapter adapter = new DatabasesProtocolAdapter(
                 DatabasesAdapterTestFixtures.input(

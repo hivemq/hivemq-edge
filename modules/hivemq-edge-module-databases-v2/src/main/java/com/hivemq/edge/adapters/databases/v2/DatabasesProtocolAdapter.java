@@ -42,10 +42,10 @@ import org.slf4j.LoggerFactory;
  * The v2 Databases adapter runtime — an actor built on {@link AbstractProtocolAdapter}. It reproduces the v1
  * Databases adapter's behavior: a northbound poll-only reader that executes each tag's SQL query against the
  * configured PostgreSQL, MySQL (via the MariaDB driver), or MS SQL database on each scheduled poll and reports the
- * result set as JSON — either one value carrying all rows as an array, or, with the tag's
- * {@code spiltLinesInIndividualMessages} choice, one value per row (each row its own data point), the rows drained
- * in {@code batchSize}-row pages per {@code dataPoints} call. It never writes, browses, or subscribes — its type
- * advertises an empty capability set, so the framework never issues those commands.
+ * result set as JSON, shaped by the tag's {@link SplitMode} — one value carrying every row as an array
+ * ({@link SplitMode#ALL_IN_ONE}), one value per row ({@link SplitMode#ONE_PER_ROW}), or one value per batch of
+ * {@link DatabaseNode#batchSize()} rows ({@link SplitMode#ONE_PER_BATCH}). It never writes, browses, or subscribes —
+ * its type advertises an empty capability set, so the framework never issues those commands.
  * <p>
  * The adapter owns a real connection lifecycle: {@code doConnect} registers the three bundled JDBC drivers under the
  * module's own classloader (the module loader isolates each module's classloader, so the drivers are invisible to the
@@ -66,7 +66,6 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
     private static final int CONNECTION_VALIDATION_TIMEOUT_SECONDS = 30;
 
     private final @NotNull DatabaseConnection databaseConnection;
-    private final int batchSize;
 
     /**
      * A human-readable description of an explicitly-configured but unrecognized database engine, or {@code null} when
@@ -93,7 +92,6 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
         final DatabasesAdapterConfiguration configuration =
                 DatabasesAdapterConfiguration.parse(input.adapterConfig(), OBJECT_MAPPER);
         this.databaseConnection = databaseConnectionFactory.create(configuration);
-        this.batchSize = configuration.batchSize();
         this.unsupportedTypeError =
                 DatabasesAdapterConfiguration.unsupportedTypeError(input.adapterConfig(), OBJECT_MAPPER);
     }
@@ -188,38 +186,22 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
             return;
         }
         LOG.debug("Executing query : {}", databaseNode.query());
-        final boolean splitLines = databaseNode.spiltLinesInIndividualMessages();
-        // The array-mode value, built inside the try body but emitted only after the JDBC resources have closed.
-        DataPoint arrayValue = null;
+        final SplitMode splitMode = databaseNode.splitMode();
+        // The all-in-one value, built inside the try body but emitted only after the JDBC resources have closed. The
+        // split modes stream their values inside the try body (non-terminating dataPoints) and are terminated by the
+        // pollComplete below.
+        DataPoint allInOneValue = null;
         try (final Connection connection = databaseConnection.getConnection();
                 final PreparedStatement preparedStatement = connection.prepareStatement(databaseNode.query());
                 final ResultSet result = preparedStatement.executeQuery()) {
             final ResultSetMetaData resultSetMetaData = result.getMetaData();
-            if (splitLines) {
-                // Split-lines mode: each row is its own non-terminating value. The rows are drained in batches of at
-                // most batchSize per dataPoints call (a cursor page — one call carries a whole page rather than paying
-                // a call per row), none ending the poll. The poll terminator (pollComplete) is emitted below, only
-                // after every JDBC resource has closed; a mid-stream or close-time SQLException is caught as the single
-                // node-error terminator instead, so the tag never hangs and never sees two terminators.
-                List<DataPoint> batch = new ArrayList<>(batchSize);
-                while (result.next()) {
-                    batch.add(toDataPoint(databaseNode, readRow(result, resultSetMetaData)));
-                    if (batch.size() >= batchSize) {
-                        output.dataPoints(node, batch);
-                        batch = new ArrayList<>(batchSize);
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    output.dataPoints(node, batch);
-                }
-            } else {
-                // Array mode: buffer every row into one value (an empty result set is an empty-array value). The value
-                // is emitted below, only after the JDBC resources have closed.
-                final ArrayNode allRows = OBJECT_MAPPER.createArrayNode();
-                while (result.next()) {
-                    allRows.add(readRow(result, resultSetMetaData));
-                }
-                arrayValue = toDataPoint(databaseNode, allRows);
+            switch (splitMode) {
+                case ALL_IN_ONE ->
+                    // Buffer every row into one value (an empty result set is an empty-array value). The value is
+                    // emitted below, only after the JDBC resources have closed.
+                    allInOneValue = toDataPoint(databaseNode, readAllRows(result, resultSetMetaData));
+                case ONE_PER_ROW -> streamOnePerRow(node, databaseNode, result, resultSetMetaData);
+                case ONE_PER_BATCH -> streamOnePerBatch(node, databaseNode, result, resultSetMetaData);
             }
         } catch (final SQLException e) {
             LOG.debug("An exception occurred while executing the query '{}'.", databaseNode.query(), e);
@@ -229,14 +211,72 @@ public final class DatabasesProtocolAdapter extends AbstractProtocolAdapter {
                     false);
             return;
         }
-        // Every JDBC resource closed successfully: only now emit the single success terminator. Emitting it inside the
-        // try body would let a resource close() failure report a second terminator (the node error above) for the same
-        // poll — violating the exactly-one-terminator contract.
-        if (splitLines) {
-            output.pollComplete(node);
-        } else {
+        // Every JDBC resource closed successfully: only now emit the single success terminator. Emitting the all-in-one
+        // value inside the try body would let a resource close() failure report a second terminator (the node error
+        // above) for the same poll — violating the exactly-one-terminator contract.
+        if (splitMode == SplitMode.ALL_IN_ONE) {
             LOG.debug("Publishing all rows in a single message");
-            output.dataPoint(node, Objects.requireNonNull(arrayValue, "the array-mode value must be built on success"));
+            output.dataPoint(
+                    node, Objects.requireNonNull(allInOneValue, "the all-in-one value must be built on success"));
+        } else {
+            output.pollComplete(node);
+        }
+    }
+
+    private @NotNull ArrayNode readAllRows(
+            final @NotNull ResultSet result, final @NotNull ResultSetMetaData resultSetMetaData) throws SQLException {
+        final ArrayNode allRows = OBJECT_MAPPER.createArrayNode();
+        while (result.next()) {
+            allRows.add(readRow(result, resultSetMetaData));
+        }
+        return allRows;
+    }
+
+    private void streamOnePerRow(
+            final @NotNull Node node,
+            final @NotNull DatabaseNode databaseNode,
+            final @NotNull ResultSet result,
+            final @NotNull ResultSetMetaData resultSetMetaData)
+            throws SQLException {
+        // Each row is its own non-terminating value (its own data point, hence its own message). Rows are drained in
+        // pages of up to batchSize per dataPoints call — the batch size is a cursor page size here: each row stays its
+        // own data point, the page only bounds how many rows are handed over per call, so the whole result set is
+        // never materialized. The poll terminator (pollComplete) is emitted by the caller after every JDBC resource
+        // has closed.
+        final int batchSize = databaseNode.batchSize();
+        List<DataPoint> page = new ArrayList<>(batchSize);
+        while (result.next()) {
+            page.add(toDataPoint(databaseNode, readRow(result, resultSetMetaData)));
+            if (page.size() >= batchSize) {
+                output.dataPoints(node, page);
+                page = new ArrayList<>(batchSize);
+            }
+        }
+        if (!page.isEmpty()) {
+            output.dataPoints(node, page);
+        }
+    }
+
+    private void streamOnePerBatch(
+            final @NotNull Node node,
+            final @NotNull DatabaseNode databaseNode,
+            final @NotNull ResultSet result,
+            final @NotNull ResultSetMetaData resultSetMetaData)
+            throws SQLException {
+        // Each batch of up to batchSize rows is one non-terminating array value. Batches stream as they fill, so at
+        // most one batch is materialized at a time. The poll terminator (pollComplete) is emitted by the caller after
+        // every JDBC resource has closed.
+        final int batchSize = databaseNode.batchSize();
+        ArrayNode batch = OBJECT_MAPPER.createArrayNode();
+        while (result.next()) {
+            batch.add(readRow(result, resultSetMetaData));
+            if (batch.size() >= batchSize) {
+                output.dataPoints(node, List.of(toDataPoint(databaseNode, batch)));
+                batch = OBJECT_MAPPER.createArrayNode();
+            }
+        }
+        if (!batch.isEmpty()) {
+            output.dataPoints(node, List.of(toDataPoint(databaseNode, batch)));
         }
     }
 

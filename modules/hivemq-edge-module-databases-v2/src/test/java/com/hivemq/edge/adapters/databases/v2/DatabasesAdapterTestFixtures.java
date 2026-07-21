@@ -24,7 +24,6 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -63,30 +62,30 @@ public final class DatabasesAdapterTestFixtures {
     }
 
     /**
-     * As {@link #configuration(String, int)}, plus an explicit split-lines batch size.
-     *
-     * @param type      the database engine name.
-     * @param port      the server port.
-     * @param batchSize the number of result rows carried by each split-lines message.
-     * @return the configuration map.
+     * @param name      the tag name.
+     * @param query     the SQL query the tag's node carries.
+     * @param splitMode how the node shapes result rows into messages.
+     * @return a pair whose {@link DatabaseNode} carries the query, with the default batch size.
      */
-    public static @NotNull Map<String, Object> configuration(
-            final @NotNull String type, final int port, final int batchSize) {
-        final Map<String, Object> configuration = new HashMap<>(configuration(type, port));
-        configuration.put("batchSize", batchSize);
-        return configuration;
+    public static @NotNull NodeTagPair queryTag(
+            final @NotNull String name, final @NotNull String query, final @NotNull SplitMode splitMode) {
+        return queryTag(name, query, splitMode, DatabaseNode.DEFAULT_BATCH_SIZE);
     }
 
     /**
-     * @param name  the tag name.
-     * @param query the SQL query the tag's node carries.
-     * @param split whether the node splits result rows into individual messages.
+     * @param name      the tag name.
+     * @param query     the SQL query the tag's node carries.
+     * @param splitMode how the node shapes result rows into messages.
+     * @param batchSize the rows-per-message batch size (only meaningful in {@link SplitMode#ONE_PER_BATCH}).
      * @return a pair whose {@link DatabaseNode} carries the query.
      */
     public static @NotNull NodeTagPair queryTag(
-            final @NotNull String name, final @NotNull String query, final boolean split) {
+            final @NotNull String name,
+            final @NotNull String query,
+            final @NotNull SplitMode splitMode,
+            final int batchSize) {
         final Schema schema = new ScalarSchema(ScalarType.STRING, null, null, name, null, false, true, false);
-        return NodeTagPair.create(new DatabaseNode(query, split), name, schema, true, false);
+        return NodeTagPair.create(new DatabaseNode(query, splitMode, batchSize), name, schema, true, false);
     }
 
     /**

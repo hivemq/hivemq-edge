@@ -31,16 +31,7 @@ class DatabaseConnectionTest {
     private static @NotNull DatabasesAdapterConfiguration configuration(
             final @NotNull DatabaseType type, final boolean encrypt, final boolean trustCertificate) {
         return new DatabasesAdapterConfiguration(
-                type,
-                "database.example.com",
-                4444,
-                "warehouse",
-                "reader",
-                "secret",
-                encrypt,
-                trustCertificate,
-                30,
-                100);
+                type, "database.example.com", 4444, "warehouse", "reader", "secret", encrypt, trustCertificate, 30);
     }
 
     @Test

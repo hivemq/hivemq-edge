@@ -61,13 +61,11 @@ class DatabasesSchemaTest {
     }
 
     @Test
-    void theBatchSizeProjectsAsABoundedInteger() {
+    void theAdapterConfigSchemaNoLongerCarriesTheBatchSize() {
+        // The batch size moved to the node definition, so it must not appear on the adapter configuration.
         final ObjectNode json = SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.adapterConfigSchema());
 
-        final ObjectNode batchSize = (ObjectNode) json.get("properties").get("batchSize");
-        assertThat(batchSize.get("type").asText()).isEqualTo("integer");
-        assertThat(batchSize.get("minimum").asLong()).isEqualTo(1);
-        assertThat(batchSize.get("maximum").asLong()).isEqualTo(1001);
+        assertThat(json.get("properties").has("batchSize")).isFalse();
     }
 
     @Test
@@ -80,17 +78,24 @@ class DatabasesSchemaTest {
     }
 
     @Test
-    void nodeDefinitionSchemaProjectsTheQueryAndTheSplitFlag() {
+    void nodeDefinitionSchemaProjectsTheQuerySplitModeAndBatchSize() {
         final ObjectNode json = SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.nodeDefinitionSchema());
 
         assertThat(json.get("type").asText()).isEqualTo("object");
         assertThat(json.get("properties").get("query").get("type").asText()).isEqualTo("string");
-        assertThat(json.get("properties")
-                        .get("spiltLinesInIndividualMessages")
-                        .get("type")
-                        .asText())
-                .isEqualTo("boolean");
+        // The reused Schema has no enum constraint, so the split mode projects as a plain string.
+        assertThat(json.get("properties").get("splitMode").get("type").asText()).isEqualTo("string");
         assertThat(json.get("required")).extracting(node -> node.asText()).containsExactly("query");
         assertThat(json.get("additionalProperties").asBoolean()).isFalse();
+    }
+
+    @Test
+    void theBatchSizeProjectsAsABoundedIntegerOnTheNodeDefinition() {
+        final ObjectNode json = SchemaJsonRepresentation.INSTANCE.toJsonSchema(factory.nodeDefinitionSchema());
+
+        final ObjectNode batchSize = (ObjectNode) json.get("properties").get("batchSize");
+        assertThat(batchSize.get("type").asText()).isEqualTo("integer");
+        assertThat(batchSize.get("minimum").asLong()).isEqualTo(1);
+        assertThat(batchSize.get("maximum").asLong()).isEqualTo(1001);
     }
 }

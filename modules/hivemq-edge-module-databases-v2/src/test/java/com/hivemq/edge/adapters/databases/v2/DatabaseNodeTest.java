@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.databases.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,35 +30,72 @@ class DatabaseNodeTest {
 
     @Test
     void deserializesFromItsNodeStringViaAPlainObjectMapper() throws Exception {
-        final String nodeString = "{\"query\":\"SELECT * FROM products\",\"spiltLinesInIndividualMessages\":true}";
+        final String nodeString = "{\"query\":\"SELECT * FROM products\",\"splitMode\":\"OnePerRow\",\"batchSize\":50}";
 
         final DatabaseNode node = objectMapper.readValue(nodeString, DatabaseNode.class);
 
         assertThat(node.query()).isEqualTo("SELECT * FROM products");
-        assertThat(node.spiltLinesInIndividualMessages()).isTrue();
+        assertThat(node.splitMode()).isEqualTo(SplitMode.ONE_PER_ROW);
+        assertThat(node.batchSize()).isEqualTo(50);
         assertThat(node.nodeId()).isEqualTo("SELECT * FROM products");
     }
 
     @Test
-    void theMisspelledSplitLinesKeyIsPreservedForConfigCompatibility() throws Exception {
-        final DatabaseNode node = new DatabaseNode("SELECT 1", true);
+    void theSplitModeSerializesAsItsPascalCaseNameAndRoundTrips() throws Exception {
+        final DatabaseNode node = new DatabaseNode("SELECT 1", SplitMode.ONE_PER_BATCH, 25);
 
-        assertThat(node.nodeString()).contains("\"spiltLinesInIndividualMessages\":true");
+        assertThat(node.nodeString()).contains("\"splitMode\":\"OnePerBatch\"").contains("\"batchSize\":25");
         final DatabaseNode reparsed = objectMapper.readValue(node.nodeString(), DatabaseNode.class);
-        assertThat(reparsed.spiltLinesInIndividualMessages()).isTrue();
+        assertThat(reparsed.splitMode()).isEqualTo(SplitMode.ONE_PER_BATCH);
+        assertThat(reparsed.batchSize()).isEqualTo(25);
     }
 
     @Test
-    void anAbsentSplitLinesFlagDefaultsToFalse() throws Exception {
+    void everySplitModeRoundTripsThroughItsJsonValue() throws Exception {
+        for (final SplitMode mode : SplitMode.values()) {
+            final DatabaseNode reparsed =
+                    objectMapper.readValue(new DatabaseNode("SELECT 1", mode, 100).nodeString(), DatabaseNode.class);
+            assertThat(reparsed.splitMode()).isEqualTo(mode);
+        }
+    }
+
+    @Test
+    void anAbsentSplitModeDefaultsToAllInOne() throws Exception {
         final DatabaseNode node = objectMapper.readValue("{\"query\":\"SELECT 1\"}", DatabaseNode.class);
 
-        assertThat(node.spiltLinesInIndividualMessages()).isFalse();
+        assertThat(node.splitMode()).isEqualTo(SplitMode.ALL_IN_ONE);
+    }
+
+    @Test
+    void anAbsentBatchSizeDefaultsTo100() throws Exception {
+        final DatabaseNode node =
+                objectMapper.readValue("{\"query\":\"SELECT 1\",\"splitMode\":\"OnePerBatch\"}", DatabaseNode.class);
+
+        assertThat(node.batchSize()).isEqualTo(100);
+    }
+
+    @Test
+    void theBatchSizeIsClampedToItsRange() {
+        assertThat(new DatabaseNode("SELECT 1", SplitMode.ONE_PER_BATCH, 0).batchSize())
+                .isEqualTo(DatabaseNode.MIN_BATCH_SIZE);
+        assertThat(new DatabaseNode("SELECT 1", SplitMode.ONE_PER_BATCH, 10_000).batchSize())
+                .isEqualTo(DatabaseNode.MAX_BATCH_SIZE);
+    }
+
+    @Test
+    void anUnknownSplitModeIsRejectedRatherThanSilentlyDefaulted() {
+        // Jackson wraps the creator's IllegalArgumentException, but the unrecognized name still surfaces in the
+        // message — a typo fails loudly instead of silently becoming AllInOne.
+        assertThatThrownBy(() -> objectMapper.readValue(
+                        "{\"query\":\"SELECT 1\",\"splitMode\":\"Sideways\"}", DatabaseNode.class))
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Sideways");
     }
 
     @Test
     void isTypedButNotUnique() {
         // Two tags may carry the identical query text, so a query does not pin a unique source.
-        final DatabaseNode node = new DatabaseNode("SELECT * FROM products", false);
+        final DatabaseNode node = new DatabaseNode("SELECT * FROM products", SplitMode.ALL_IN_ONE, 100);
 
         assertThat(node.properties()).containsExactly(NodeProperty.TYPED);
         assertThat(node.is(NodeProperty.UNIQUE)).isFalse();
@@ -66,18 +104,19 @@ class DatabaseNodeTest {
     @Test
     void rejectsANullQuery() {
         assertThatNullPointerException()
-                .isThrownBy(() -> new DatabaseNode(null, false))
+                .isThrownBy(() -> new DatabaseNode(null, SplitMode.ALL_IN_ONE, 100))
                 .withMessage("query must not be null");
     }
 
     @Test
     void nodeStringRoundTripsIncludingAQueryThatNeedsJsonEscaping() throws Exception {
-        final DatabaseNode node = new DatabaseNode("SELECT \"name\" FROM products WHERE name = 'a\\b'", false);
+        final DatabaseNode node =
+                new DatabaseNode("SELECT \"name\" FROM products WHERE name = 'a\\b'", SplitMode.ALL_IN_ONE, 100);
 
         final DatabaseNode reparsed = objectMapper.readValue(node.nodeString(), DatabaseNode.class);
 
         assertThat(reparsed.query()).isEqualTo(node.query());
-        assertThat(reparsed.spiltLinesInIndividualMessages()).isFalse();
+        assertThat(reparsed.splitMode()).isEqualTo(SplitMode.ALL_IN_ONE);
     }
 
     @Test

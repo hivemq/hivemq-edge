@@ -148,19 +148,6 @@ public final class DatabasesProtocolAdapterFactory implements ProtocolAdapterFac
                         false,
                         true,
                         false));
-        properties.put(
-                "batchSize",
-                new ScalarSchema(
-                        ScalarType.LONG,
-                        1,
-                        1001,
-                        "Batch Size",
-                        "The number of result rows drained per output call when a tag splits lines into individual"
-                                + " messages (a cursor page size; each row is still published as its own message)."
-                                + " Absent means 100.",
-                        false,
-                        true,
-                        false));
         return new ObjectSchema(
                 properties,
                 List.of("type", "server", "port", "database", "username", "password"),
@@ -185,15 +172,31 @@ public final class DatabasesProtocolAdapterFactory implements ProtocolAdapterFac
                         false,
                         true,
                         false));
+        // The reused v1 Schema has no enum constraint, so the split mode projects as a plain string; the accepted
+        // values are the PascalCase SplitMode names.
         properties.put(
-                "spiltLinesInIndividualMessages",
+                "splitMode",
                 new ScalarSchema(
-                        ScalarType.BOOLEAN,
+                        ScalarType.STRING,
                         null,
                         null,
-                        "Split lines into individual messages?",
-                        "Select this option to create a single message per line returned by the query (by default all"
-                                + " lines are sent in a single message as an array). Absent means false.",
+                        "Split Mode",
+                        "How the query's result rows are shaped into messages: AllInOne (every row in one array"
+                                + " message), OnePerRow (one message per row), or OnePerBatch (one message per batch of"
+                                + " batchSize rows). Absent means AllInOne.",
+                        false,
+                        true,
+                        false));
+        properties.put(
+                "batchSize",
+                new ScalarSchema(
+                        ScalarType.LONG,
+                        1,
+                        1001,
+                        "Batch Size",
+                        "The batch size: the number of rows drained per output call in OnePerRow mode (each row is"
+                                + " still its own message) and the number of rows per array message in OnePerBatch"
+                                + " mode; ignored in AllInOne. Absent means 100.",
                         false,
                         true,
                         false));

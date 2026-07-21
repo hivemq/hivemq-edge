@@ -36,11 +36,6 @@ import org.jetbrains.annotations.Nullable;
  * @param encrypt                  whether to use TLS to communicate with the remote database.
  * @param trustCertificate         whether to trust the remote server certificate implicitly (MS SQL only).
  * @param connectionTimeoutSeconds the timeout, in seconds, for connection establishment to the database.
- * @param batchSize                the number of result rows drained per split-lines {@code dataPoints} call (1..1000)
- *                                 — a cursor page size. Each row is emitted as its own value (its own data point)
- *                                 regardless; a larger batch size simply carries more rows per call rather than one
- *                                 call per row. Meaningful only when a tag's {@code spiltLinesInIndividualMessages} is
- *                                 set; array mode always ships every row in one message regardless.
  */
 public record DatabasesAdapterConfiguration(
         @NotNull DatabaseType type,
@@ -51,23 +46,19 @@ public record DatabasesAdapterConfiguration(
         @NotNull String password,
         boolean encrypt,
         boolean trustCertificate,
-        int connectionTimeoutSeconds,
-        int batchSize) {
+        int connectionTimeoutSeconds) {
 
     static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 30;
     static final int MIN_CONNECTION_TIMEOUT_SECONDS = 1;
     static final int MAX_CONNECTION_TIMEOUT_SECONDS = 180;
 
-    static final int DEFAULT_BATCH_SIZE = 100;
-    static final int MIN_BATCH_SIZE = 1;
-    static final int MAX_BATCH_SIZE = 1000;
-
     /**
      * Parse the adapter's instance configuration, applying the documented defaults for any absent setting and clamping
-     * the connection timeout and batch size to their documented ranges. The parse is total — it never throws — so a
-     * malformed value cannot abort adapter construction: an absent or non-textual field takes its default, and an
+     * the connection timeout to its documented range. The parse is total — it never throws — so a malformed value
+     * cannot abort adapter construction: an absent or non-textual field takes its default, and an
      * explicitly-configured but unrecognized engine is reported separately by {@link #unsupportedTypeError} (the
-     * adapter surfaces it as a connection error) rather than silently masquerading as the default engine.
+     * adapter surfaces it as a connection error) rather than silently masquerading as the default engine. The message
+     * shaping ({@code splitMode}) and its per-mode {@code batchSize} live on each tag's {@link DatabaseNode}, not here.
      *
      * @param adapterConfig the reused v1 configuration value handed to the adapter.
      * @param objectMapper  the mapper used to read the configuration map.
@@ -77,7 +68,6 @@ public record DatabasesAdapterConfiguration(
             final @NotNull DataPoint adapterConfig, final @NotNull ObjectMapper objectMapper) {
         final JsonNode node = objectMapper.valueToTree(adapterConfig.getTagValue());
         final int connectionTimeout = intField(node, "connectionTimeoutSeconds", DEFAULT_CONNECTION_TIMEOUT_SECONDS);
-        final int batchSize = intField(node, "batchSize", DEFAULT_BATCH_SIZE);
         return new DatabasesAdapterConfiguration(
                 typeField(node),
                 stringField(node, "server"),
@@ -87,8 +77,7 @@ public record DatabasesAdapterConfiguration(
                 stringField(node, "password"),
                 boolField(node, "encrypt", false),
                 boolField(node, "trustCertificate", false),
-                Math.max(MIN_CONNECTION_TIMEOUT_SECONDS, Math.min(connectionTimeout, MAX_CONNECTION_TIMEOUT_SECONDS)),
-                Math.max(MIN_BATCH_SIZE, Math.min(batchSize, MAX_BATCH_SIZE)));
+                Math.max(MIN_CONNECTION_TIMEOUT_SECONDS, Math.min(connectionTimeout, MAX_CONNECTION_TIMEOUT_SECONDS)));
     }
 
     /**

@@ -29,40 +29,52 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * The Databases adapter's protocol {@link Node}: a SQL {@code SELECT} query to execute against the configured
- * database, together with the message-shaping choice — one message carrying all result rows as an array, or one
- * message per row. A query is {@link NodeProperty#TYPED} (its result shape is fixed by the statement), but it is not
- * {@link NodeProperty#UNIQUE}: two tags may legitimately carry the identical query text, and node correlation across
- * the adapter boundary is by reference identity anyway, so this class deliberately does not override
- * {@code equals}/{@code hashCode}.
+ * database, together with how its result rows are shaped into northbound messages — a {@link SplitMode} choosing
+ * between all rows in one array message ({@link SplitMode#ALL_IN_ONE}), one message per row
+ * ({@link SplitMode#ONE_PER_ROW}), or one message per batch of {@link #batchSize()} rows
+ * ({@link SplitMode#ONE_PER_BATCH}). A query is {@link NodeProperty#TYPED} (its result shape is fixed by the
+ * statement), but it is not {@link NodeProperty#UNIQUE}: two tags may legitimately carry the identical query text, and
+ * node correlation across the adapter boundary is by reference identity anyway, so this class deliberately does not
+ * override {@code equals}/{@code hashCode}.
  * <p>
  * The fields carry a Jackson creator and property annotations so the framework's own {@code ObjectMapper}
  * deserializes this node from its {@link #nodeString()} when an Edge runtime loads a configured Databases adapter.
- * The {@code spiltLinesInIndividualMessages} key preserves the historical (misspelled) v1 configuration key exactly,
- * so existing tag definitions carry over unchanged.
  */
-@JsonPropertyOrder({"query", "spiltLinesInIndividualMessages"})
+@JsonPropertyOrder({"query", "splitMode", "batchSize"})
 public final class DatabaseNode extends Node {
+
+    static final int DEFAULT_BATCH_SIZE = 100;
+    static final int MIN_BATCH_SIZE = 1;
+    static final int MAX_BATCH_SIZE = 1000;
 
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @JsonProperty("query")
     private final @NotNull String query;
 
-    @JsonProperty("spiltLinesInIndividualMessages")
-    private final boolean spiltLinesInIndividualMessages;
+    @JsonProperty("splitMode")
+    private final @NotNull SplitMode splitMode;
+
+    @JsonProperty("batchSize")
+    private final int batchSize;
 
     /**
-     * @param query                          the SQL query to execute on the database.
-     * @param spiltLinesInIndividualMessages whether each result row is published as its own message instead of all
-     *                                       rows in one array message. Absent means {@code false}.
+     * @param query     the SQL query to execute on the database.
+     * @param splitMode how the result rows are shaped into messages. Absent means {@link SplitMode#ALL_IN_ONE}.
+     * @param batchSize the batch size — the number of rows drained per output call in {@link SplitMode#ONE_PER_ROW}
+     *                  mode and the number of rows per array message in {@link SplitMode#ONE_PER_BATCH} mode (ignored
+     *                  in {@link SplitMode#ALL_IN_ONE}), clamped to {@value #MIN_BATCH_SIZE}..{@value #MAX_BATCH_SIZE}.
+     *                  Absent means {@value #DEFAULT_BATCH_SIZE}.
      */
     @JsonCreator
     public DatabaseNode(
             @JsonProperty(value = "query", required = true) final @NotNull String query,
-            @JsonProperty(value = "spiltLinesInIndividualMessages")
-                    final @Nullable Boolean spiltLinesInIndividualMessages) {
+            @JsonProperty("splitMode") final @Nullable SplitMode splitMode,
+            @JsonProperty("batchSize") final @Nullable Integer batchSize) {
         this.query = Objects.requireNonNull(query, "query must not be null");
-        this.spiltLinesInIndividualMessages = Objects.requireNonNullElse(spiltLinesInIndividualMessages, false);
+        this.splitMode = Objects.requireNonNullElse(splitMode, SplitMode.ALL_IN_ONE);
+        final int requestedBatchSize = Objects.requireNonNullElse(batchSize, DEFAULT_BATCH_SIZE);
+        this.batchSize = Math.max(MIN_BATCH_SIZE, Math.min(requestedBatchSize, MAX_BATCH_SIZE));
     }
 
     /**
@@ -73,10 +85,19 @@ public final class DatabaseNode extends Node {
     }
 
     /**
-     * @return whether each result row is published as its own message instead of all rows in one array message.
+     * @return how the result rows are shaped into northbound messages.
      */
-    public boolean spiltLinesInIndividualMessages() {
-        return spiltLinesInIndividualMessages;
+    public @NotNull SplitMode splitMode() {
+        return splitMode;
+    }
+
+    /**
+     * @return the batch size — rows drained per output call in {@link SplitMode#ONE_PER_ROW} mode and rows per array
+     *         message in {@link SplitMode#ONE_PER_BATCH} mode (ignored in {@link SplitMode#ALL_IN_ONE}), in
+     *         {@value #MIN_BATCH_SIZE}..{@value #MAX_BATCH_SIZE}.
+     */
+    public int batchSize() {
+        return batchSize;
     }
 
     @Override

@@ -40,11 +40,13 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Drives {@link DatabasesProtocolAdapter#pollBatch(List)} against a stubbed JDBC layer — no real database — and
- * asserts the two message-shaping modes, the split-lines batch size, the zero-row poll, the row-to-JSON type mapping,
- * and the failure path. The adapter owns its own terminator: array mode is a single completing {@code dataPoint};
- * split mode reports each row as its own value, draining them in {@code batchSize}-row pages per non-terminating
- * {@code dataPoints} call, then an explicit {@code pollComplete}; a failure is a {@code nodeError}, which is itself
- * the terminator.
+ * asserts the three message-shaping modes, the batch size (a cursor page size in {@link SplitMode#ONE_PER_ROW} and the
+ * array size in {@link SplitMode#ONE_PER_BATCH}), the zero-row poll, the row-to-JSON type mapping, and the failure
+ * path. The adapter owns its own terminator: {@link SplitMode#ALL_IN_ONE} is a single completing {@code dataPoint};
+ * {@link SplitMode#ONE_PER_ROW} reports each row as its own value (drained in batch-size pages) and
+ * {@link SplitMode#ONE_PER_BATCH} reports each batch of rows as one array value, both via non-terminating
+ * {@code dataPoints} calls then an explicit {@code pollComplete}; a failure is a {@code nodeError}, which is itself the
+ * terminator.
  */
 class DatabasesProtocolAdapterPollTest {
 
@@ -81,16 +83,12 @@ class DatabasesProtocolAdapterPollTest {
     }
 
     private @NotNull DatabasesProtocolAdapter adapterOver(final @NotNull Connection connection) {
-        return adapterOver(connection, DatabasesAdapterConfiguration.DEFAULT_BATCH_SIZE);
-    }
-
-    private @NotNull DatabasesProtocolAdapter adapterOver(final @NotNull Connection connection, final int batchSize) {
         return new DatabasesProtocolAdapter(
                 DatabasesAdapterTestFixtures.input(
                         "databases-v2-1",
                         dispatcher,
                         new DatabasesAdapterTestFixtures.TestDataPointFactory(),
-                        DatabasesAdapterTestFixtures.configuration("POSTGRESQL", 5432, batchSize),
+                        DatabasesAdapterTestFixtures.configuration("POSTGRESQL", 5432),
                         List.of()),
                 output,
                 configuration -> new StubbedDatabaseConnection(configuration, connection));
@@ -136,11 +134,15 @@ class DatabasesProtocolAdapterPollTest {
         return connection;
     }
 
+    private static @NotNull ObjectNode rowOf(final @NotNull RecordingProtocolAdapterOutput.DataPointRecord record) {
+        return (ObjectNode) record.value().getTagValue();
+    }
+
     @Test
-    void arrayMode_emitsOneDataPointCarryingAllRows_thenCompletes() throws SQLException {
+    void allInOneMode_emitsOneDataPointCarryingAllRows_thenCompletes() throws SQLException {
         final DatabasesProtocolAdapter adapter =
                 adapterOver(connectionReturningStringRows(List.of(List.of("first"), List.of("second"))));
-        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", false);
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ALL_IN_ONE, 100);
 
         adapter.pollBatch(List.of(node));
         dispatcher.drainAll();
@@ -158,83 +160,98 @@ class DatabasesProtocolAdapterPollTest {
     }
 
     @Test
-    void splitModeWithBatchSizeOne_emitsOneRowPerDataPointsCall() throws SQLException {
+    void onePerRowMode_emitsEachRowAsItsOwnDataPoint_drainedInOnePageAtTheDefaultBatchSize() throws SQLException {
         final DatabasesProtocolAdapter adapter = adapterOver(
-                connectionReturningStringRows(List.of(List.of("first"), List.of("second"), List.of("third"))), 1);
-        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", true);
+                connectionReturningStringRows(List.of(List.of("first"), List.of("second"), List.of("third"))));
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_ROW, 100);
 
         adapter.pollBatch(List.of(node));
         dispatcher.drainAll();
 
         assertThat(output.nodeErrors).isEmpty();
-        // Batch size 1: one dataPoints call per row, each carrying a single bare-row value, then one completion.
-        assertThat(output.batches).extracting(List::size).containsExactly(1, 1, 1);
+        // The default batch size (100) exceeds the row count, so all three bare-row values are drained in one page,
+        // then one completion. Each row is still its own data point — never packed into an array.
+        assertThat(output.batches).extracting(List::size).containsExactly(3);
         assertThat(output.dataPoints).hasSize(3);
         for (final RecordingProtocolAdapterOutput.DataPointRecord record : output.dataPoints) {
             assertThat(record.node()).isSameAs(node);
             assertThat(record.value().getTagValue()).isInstanceOf(ObjectNode.class);
         }
-        assertThat(((ObjectNode) output.dataPoints.get(0).value().getTagValue())
-                        .get("column1")
-                        .asText())
-                .isEqualTo("first");
-        assertThat(output.events).containsExactly("dataPoints", "dataPoints", "dataPoints", "pollComplete");
+        assertThat(rowOf(output.dataPoints.get(0)).get("column1").asText()).isEqualTo("first");
+        assertThat(rowOf(output.dataPoints.get(2)).get("column1").asText()).isEqualTo("third");
+        assertThat(output.events).containsExactly("dataPoints", "pollComplete");
     }
 
     @Test
-    void splitModeDrainsRowsInBatchesOfTheBatchSize() throws SQLException {
-        final DatabasesProtocolAdapter adapter = adapterOver(
-                connectionReturningStringRows(
-                        List.of(List.of("a"), List.of("b"), List.of("c"), List.of("d"), List.of("e"))),
-                2);
-        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", true);
+    void onePerRowMode_drainsRowsInBatchSizePages_eachRowStillItsOwnDataPoint() throws SQLException {
+        final DatabasesProtocolAdapter adapter = adapterOver(connectionReturningStringRows(
+                List.of(List.of("a"), List.of("b"), List.of("c"), List.of("d"), List.of("e"))));
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_ROW, 2);
 
         adapter.pollBatch(List.of(node));
         dispatcher.drainAll();
 
         assertThat(output.nodeErrors).isEmpty();
-        // Five rows drained in batches of two → dataPoints calls carrying 2, 2, and 1 bare-row values, then one
-        // completion. Each row is its own data point — never packed into an array.
+        // Five rows drained in pages of two → dataPoints calls carrying 2, 2, and 1 bare-row values, then one
+        // completion. The batch size only pages the cursor drain; each row is still its own data point (an object),
+        // never packed into an array.
         assertThat(output.batches).extracting(List::size).containsExactly(2, 2, 1);
         assertThat(output.dataPoints).hasSize(5);
         for (final RecordingProtocolAdapterOutput.DataPointRecord record : output.dataPoints) {
             assertThat(record.value().getTagValue()).isInstanceOf(ObjectNode.class);
         }
-        assertThat(((ObjectNode) output.dataPoints.get(0).value().getTagValue())
-                        .get("column1")
-                        .asText())
-                .isEqualTo("a");
-        assertThat(((ObjectNode) output.dataPoints.get(4).value().getTagValue())
-                        .get("column1")
-                        .asText())
-                .isEqualTo("e");
+        assertThat(rowOf(output.dataPoints.get(0)).get("column1").asText()).isEqualTo("a");
+        assertThat(rowOf(output.dataPoints.get(4)).get("column1").asText()).isEqualTo("e");
         assertThat(output.events).containsExactly("dataPoints", "dataPoints", "dataPoints", "pollComplete");
     }
 
     @Test
-    void splitModeWithADefaultBatchSize_drainsEveryRowInOneCall() throws SQLException {
-        final DatabasesProtocolAdapter adapter = adapterOver(
-                connectionReturningStringRows(List.of(List.of("first"), List.of("second"), List.of("third"))));
-        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", true);
+    void onePerBatchMode_packsRowsIntoArraysOfTheBatchSize_thenCompletes() throws SQLException {
+        final DatabasesProtocolAdapter adapter = adapterOver(connectionReturningStringRows(
+                List.of(List.of("a"), List.of("b"), List.of("c"), List.of("d"), List.of("e"))));
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_BATCH, 2);
 
         adapter.pollBatch(List.of(node));
         dispatcher.drainAll();
 
         assertThat(output.nodeErrors).isEmpty();
-        // The default batch size (100) exceeds the row count, so one dataPoints call carries all three bare-row
-        // values (still one row per data point).
-        assertThat(output.batches).extracting(List::size).containsExactly(3);
+        // Five rows in batches of two → three array data points holding 2, 2, and 1 rows, then one completion.
         assertThat(output.dataPoints).hasSize(3);
-        for (final RecordingProtocolAdapterOutput.DataPointRecord record : output.dataPoints) {
-            assertThat(record.value().getTagValue()).isInstanceOf(ObjectNode.class);
-        }
+        final ArrayNode firstBatch =
+                (ArrayNode) output.dataPoints.get(0).value().getTagValue();
+        final ArrayNode secondBatch =
+                (ArrayNode) output.dataPoints.get(1).value().getTagValue();
+        final ArrayNode lastBatch = (ArrayNode) output.dataPoints.get(2).value().getTagValue();
+        assertThat(firstBatch).hasSize(2);
+        assertThat(secondBatch).hasSize(2);
+        assertThat(lastBatch).hasSize(1);
+        assertThat(firstBatch.get(0).get("column1").asText()).isEqualTo("a");
+        assertThat(firstBatch.get(1).get("column1").asText()).isEqualTo("b");
+        assertThat(lastBatch.get(0).get("column1").asText()).isEqualTo("e");
+        assertThat(output.events).containsExactly("dataPoints", "dataPoints", "dataPoints", "pollComplete");
+    }
+
+    @Test
+    void onePerBatchMode_withABatchSizeLargerThanTheResult_emitsASingleArrayDataPoint() throws SQLException {
+        final DatabasesProtocolAdapter adapter = adapterOver(
+                connectionReturningStringRows(List.of(List.of("first"), List.of("second"), List.of("third"))));
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_BATCH, 100);
+
+        adapter.pollBatch(List.of(node));
+        dispatcher.drainAll();
+
+        assertThat(output.nodeErrors).isEmpty();
+        // The batch size exceeds the row count, so all three rows land in one array data point.
+        assertThat(output.dataPoints).hasSize(1);
+        final ArrayNode onlyBatch = (ArrayNode) output.dataPoints.get(0).value().getTagValue();
+        assertThat(onlyBatch).hasSize(3);
         assertThat(output.events).containsExactly("dataPoints", "pollComplete");
     }
 
     @Test
-    void aZeroRowQueryInSplitMode_emitsNothingButStillCompletes() throws SQLException {
+    void aZeroRowQueryInOnePerRowMode_emitsNothingButStillCompletes() throws SQLException {
         final DatabasesProtocolAdapter adapter = adapterOver(connectionReturningStringRows(List.of()));
-        final DatabaseNode node = new DatabaseNode("SELECT name FROM products WHERE 1 = 0", true);
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products WHERE 1 = 0", SplitMode.ONE_PER_ROW, 100);
 
         adapter.pollBatch(List.of(node));
         dispatcher.drainAll();
@@ -245,16 +262,29 @@ class DatabasesProtocolAdapterPollTest {
     }
 
     @Test
-    void aZeroRowQueryInArrayMode_emitsAnEmptyArray_thenCompletes() throws SQLException {
+    void aZeroRowQueryInOnePerBatchMode_emitsNothingButStillCompletes() throws SQLException {
         final DatabasesProtocolAdapter adapter = adapterOver(connectionReturningStringRows(List.of()));
-        final DatabaseNode node = new DatabaseNode("SELECT name FROM products WHERE 1 = 0", false);
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products WHERE 1 = 0", SplitMode.ONE_PER_BATCH, 2);
+
+        adapter.pollBatch(List.of(node));
+        dispatcher.drainAll();
+
+        assertThat(output.dataPoints).isEmpty();
+        assertThat(output.nodeErrors).isEmpty();
+        assertThat(output.events).containsExactly("pollComplete");
+    }
+
+    @Test
+    void aZeroRowQueryInAllInOneMode_emitsAnEmptyArray_thenCompletes() throws SQLException {
+        final DatabasesProtocolAdapter adapter = adapterOver(connectionReturningStringRows(List.of()));
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products WHERE 1 = 0", SplitMode.ALL_IN_ONE, 100);
 
         adapter.pollBatch(List.of(node));
         dispatcher.drainAll();
 
         assertThat(output.dataPoints).hasSize(1);
         assertThat((ArrayNode) output.dataPoints.get(0).value().getTagValue()).isEmpty();
-        // An empty result in array mode is still one completing dataPoint carrying an empty array.
+        // An empty result in all-in-one mode is still one completing dataPoint carrying an empty array.
         assertThat(output.events).containsExactly("dataPoint");
     }
 
@@ -285,13 +315,13 @@ class DatabasesProtocolAdapterPollTest {
         when(metaData.getColumnType(5)).thenReturn(Types.VARCHAR);
         when(resultSet.getString(5)).thenReturn("text");
 
-        // Each split-lines row is its own bare-object value, so the type mapping is asserted directly on the row.
+        // Each one-per-row value is its own bare object, so the type mapping is asserted directly on the row.
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        adapter.pollBatch(List.of(new DatabaseNode("SELECT * FROM readings", true)));
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT * FROM readings", SplitMode.ONE_PER_ROW, 100)));
         dispatcher.drainAll();
 
         assertThat(output.dataPoints).hasSize(1);
-        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        final ObjectNode row = rowOf(output.dataPoints.get(0));
         assertThat(row.get("intColumn").isInt()).isTrue();
         assertThat(row.get("intColumn").asInt()).isEqualTo(21);
         assertThat(row.get("longColumn").isLong()).isTrue();
@@ -328,11 +358,11 @@ class DatabasesProtocolAdapterPollTest {
         when(resultSet.wasNull()).thenReturn(true);
 
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        adapter.pollBatch(List.of(new DatabaseNode("SELECT * FROM readings", true)));
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT * FROM readings", SplitMode.ONE_PER_ROW, 100)));
         dispatcher.drainAll();
 
         assertThat(output.dataPoints).hasSize(1);
-        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        final ObjectNode row = rowOf(output.dataPoints.get(0));
         // A SQL NULL is JSON null — not a fabricated real 0/0L/0.0.
         assertThat(row.get("intColumn").isNull()).isTrue();
         assertThat(row.get("longColumn").isNull()).isTrue();
@@ -356,10 +386,10 @@ class DatabasesProtocolAdapterPollTest {
         when(resultSet.getBigDecimal(1)).thenReturn(precise);
 
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        adapter.pollBatch(List.of(new DatabaseNode("SELECT amount FROM ledger", true)));
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT amount FROM ledger", SplitMode.ONE_PER_ROW, 100)));
         dispatcher.drainAll();
 
-        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        final ObjectNode row = rowOf(output.dataPoints.get(0));
         // NUMERIC goes through BigDecimal like DECIMAL — mapping it to double (as v1 did) would truncate the value.
         assertThat(row.get("amount").isBigDecimal()).isTrue();
         assertThat(row.get("amount").decimalValue()).isEqualByComparingTo(precise);
@@ -383,10 +413,11 @@ class DatabasesProtocolAdapterPollTest {
         when(resultSet.getInt(1)).thenReturn(7);
 
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        adapter.pollBatch(List.of(new DatabaseNode("SELECT product_no AS id FROM products", true)));
+        adapter.pollBatch(
+                List.of(new DatabaseNode("SELECT product_no AS id FROM products", SplitMode.ONE_PER_ROW, 100)));
         dispatcher.drainAll();
 
-        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        final ObjectNode row = rowOf(output.dataPoints.get(0));
         assertThat(row.has("id")).isTrue();
         assertThat(row.has("product_no")).isFalse();
         assertThat(row.get("id").asInt()).isEqualTo(7);
@@ -410,16 +441,16 @@ class DatabasesProtocolAdapterPollTest {
         when(resultSet.getInt(1)).thenReturn(7);
 
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        adapter.pollBatch(List.of(new DatabaseNode("SELECT product_no FROM products", true)));
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT product_no FROM products", SplitMode.ONE_PER_ROW, 100)));
         dispatcher.drainAll();
 
-        final ObjectNode row = (ObjectNode) output.dataPoints.get(0).value().getTagValue();
+        final ObjectNode row = rowOf(output.dataPoints.get(0));
         assertThat(row.has("product_no")).isTrue();
         assertThat(row.get("product_no").asInt()).isEqualTo(7);
     }
 
     @Test
-    void arrayMode_aResourceCloseFailure_reportsASingleNodeErrorAndNoSuccessTerminator() throws SQLException {
+    void allInOneMode_aResourceCloseFailure_reportsASingleNodeErrorAndNoSuccessTerminator() throws SQLException {
         final Connection connection = mock(Connection.class);
         final PreparedStatement statement = mock(PreparedStatement.class);
         final ResultSet resultSet = mock(ResultSet.class);
@@ -436,7 +467,7 @@ class DatabasesProtocolAdapterPollTest {
         doThrow(new SQLException("cursor close failed")).when(resultSet).close();
 
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", false)));
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", SplitMode.ALL_IN_ONE, 100)));
         dispatcher.drainAll();
 
         // The success dataPoint is emitted only after the resources close, so a close failure yields exactly one
@@ -448,7 +479,38 @@ class DatabasesProtocolAdapterPollTest {
     }
 
     @Test
-    void splitMode_aResourceCloseFailureAfterRows_deliversTheRowsThenExactlyOneNodeError() throws SQLException {
+    void onePerRowMode_aResourceCloseFailureAfterRows_deliversTheRowsThenExactlyOneNodeError() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(metaData.getColumnCount()).thenReturn(1);
+        when(metaData.getColumnLabel(1)).thenReturn("name");
+        when(metaData.getColumnType(1)).thenReturn(Types.VARCHAR);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString(1)).thenReturn("apple", "banana");
+        doThrow(new SQLException("cursor close failed")).when(resultSet).close();
+
+        // Batch size 1 flushes each row as its own page before the cursor is closed.
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_ROW, 1)));
+        dispatcher.drainAll();
+
+        // The rows were streamed before the close failed; the close failure is the single terminator — pollComplete
+        // (the success terminator) is emitted only after the resources close, so it is never reported here.
+        assertThat(output.dataPoints).hasSize(2);
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).reason()).contains("cursor close failed");
+        assertThat(output.events).containsExactly("dataPoints", "dataPoints", "nodeError");
+        assertThat(output.events).doesNotContain("pollComplete");
+    }
+
+    @Test
+    void onePerBatchMode_aResourceCloseFailureAfterABatch_deliversTheBatchThenExactlyOneNodeError()
+            throws SQLException {
         final Connection connection = mock(Connection.class);
         final PreparedStatement statement = mock(PreparedStatement.class);
         final ResultSet resultSet = mock(ResultSet.class);
@@ -464,12 +526,13 @@ class DatabasesProtocolAdapterPollTest {
         doThrow(new SQLException("cursor close failed")).when(resultSet).close();
 
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", true)));
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_BATCH, 2)));
         dispatcher.drainAll();
 
-        // The rows were streamed before the close failed; the close failure is the single terminator — pollComplete
-        // (the success terminator) is emitted only after the resources close, so it is never reported here.
-        assertThat(output.dataPoints).hasSize(2);
+        // The two rows filled one batch (of size two) that was streamed before the close failed; the close failure is
+        // the single terminator, and no pollComplete follows it.
+        assertThat(output.dataPoints).hasSize(1);
+        assertThat((ArrayNode) output.dataPoints.get(0).value().getTagValue()).hasSize(2);
         assertThat(output.nodeErrors).hasSize(1);
         assertThat(output.nodeErrors.get(0).reason()).contains("cursor close failed");
         assertThat(output.events).containsExactly("dataPoints", "nodeError");
@@ -481,7 +544,7 @@ class DatabasesProtocolAdapterPollTest {
         final Connection connection = mock(Connection.class);
         when(connection.prepareStatement(anyString())).thenThrow(new SQLException("relation does not exist"));
         final DatabasesProtocolAdapter adapter = adapterOver(connection);
-        final DatabaseNode node = new DatabaseNode("SELECT name FROM missing", false);
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM missing", SplitMode.ALL_IN_ONE, 100);
 
         adapter.pollBatch(List.of(node));
         dispatcher.drainAll();
