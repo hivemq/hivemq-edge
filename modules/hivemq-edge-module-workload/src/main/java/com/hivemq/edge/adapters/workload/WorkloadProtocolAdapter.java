@@ -59,7 +59,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
      * loaded (defeats the {@code build/hivemq-environment/base} stale-jar cache trap that caused the retracted #8/#9/#10).
      * Emitted at {@link #start()} as {@code WL_BUILD} and journalled as {@code BUILD <token>}.
      */
-    public static final @NotNull String BUILD = "wl-2026-07-20-v2b4";
+    public static final @NotNull String BUILD = "wl-2026-07-21-v2b5";
 
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterOutput output;
@@ -144,7 +144,13 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
         journal("START");
         // a device push loop for subscribed nodes: pushes datapoints (and spontaneous errors) on its own timer,
         // calling the thread-safe output callback — the SDK's model for library-callback (push) adapters
-        subExecutor = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "workload-sub-" + adapterId));
+        subExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            // daemon: if the adapter is not stopped cleanly (harness crash / abrupt shutdown) this thread must not
+            // keep the JVM alive and hang CI teardown
+            final Thread t = new Thread(r, "workload-sub-" + adapterId);
+            t.setDaemon(true);
+            return t;
+        });
         subExecutor.scheduleAtFixedRate(this::pushSubscriptions, 500, 500, TimeUnit.MILLISECONDS);
         if (!"start-no-ack".equals(scenario.misbehave())) {
             output.started();

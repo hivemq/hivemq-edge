@@ -17,14 +17,17 @@ package com.hivemq.edge.adapters.workload;
 
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
+import java.nio.file.StandardOpenOption;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -69,7 +72,8 @@ public final class WorkloadControlChannel {
     private final @NotNull Map<String, Boolean> held = new ConcurrentHashMap<>();      // key: "op" (all nodes) or "op:node"
     private final @NotNull Map<String, Deque<Runnable>> pending = new ConcurrentHashMap<>(); // key: "op:node"
     private final @NotNull Map<String, Long> blockMs = new ConcurrentHashMap<>();      // op -> ms to block the NEXT such command
-    private volatile int processedLines;
+    private long ctlOffset;              // bytes of the .ctl file already consumed (watcher thread only)
+    private final @NotNull StringBuilder ctlCarry = new StringBuilder(); // partial trailing line across polls (watcher thread only)
     private @Nullable ScheduledExecutorService watcher;
 
     WorkloadControlChannel(final @NotNull String adapterId,
@@ -83,20 +87,48 @@ public final class WorkloadControlChannel {
             this.ctlFile = null;
             this.journalFile = null;
         } else {
-            final Path dir = Path.of(controlDir);
-            this.ctlFile = dir.resolve(adapterId + ".ctl");
-            this.journalFile = dir.resolve(adapterId + ".journal");
-            try {
-                Files.createDirectories(dir);
-                // Do NOT truncate: the journal must survive a PA restart (e.g. a reconfigure that recreates the adapter),
-                // otherwise cross-restart oracles (retry-timer supersession NV-D05, subscription leak NV-F03) lose history.
-                // A session separator lets a test scope its scan to the current life if needed.
-                Files.writeString(journalFile, "==WL_SESSION_START==\n", StandardCharsets.UTF_8,
-                        java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (final Exception e) {
-                log.warn("WL_CTL init failed id={}: {}", adapterId, e.toString());
+            final Path dir = Path.of(controlDir).toAbsolutePath().normalize();
+            if (!isControlDirAllowed(dir)) {
+                // Defense-in-depth: this module is test-only and excluded from the GA distribution. Refuse to turn an
+                // arbitrary configured path into a file-write primitive unless it is under the JVM temp dir or the
+                // process working directory (override with -Dhivemq.workload.control.allowAnyPath=true).
+                log.warn("WL_CTL disabled: controlDir '{}' is outside the allowed roots (java.io.tmpdir / user.dir); "
+                        + "set -Dhivemq.workload.control.allowAnyPath=true to override.", dir);
+                this.ctlFile = null;
+                this.journalFile = null;
+            } else {
+                this.ctlFile = dir.resolve(adapterId + ".ctl");
+                this.journalFile = dir.resolve(adapterId + ".journal");
+                try {
+                    Files.createDirectories(dir);
+                    // Do NOT truncate: the journal must survive a PA restart (e.g. a reconfigure that recreates the
+                    // adapter), otherwise cross-restart checks (retry-timer supersession, subscription-leak) lose
+                    // history. The session separator lets a test scope its scan to the current life if needed.
+                    Files.writeString(journalFile, "==WL_SESSION_START==\n", StandardCharsets.UTF_8,
+                            StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                } catch (final Exception e) {
+                    log.warn("WL_CTL init failed id={}: {}", adapterId, e.toString());
+                }
             }
         }
+    }
+
+    /**
+     * Restricts where the control channel may create files. The Workload module is test-only and is not part of the GA
+     * distribution; this guard means that even if it were ever accidentally packaged, a configured {@code controlDir}
+     * cannot become an arbitrary-file-write primitive. Allowed: anything under {@code java.io.tmpdir} or the process
+     * working directory ({@code user.dir}); override with {@code -Dhivemq.workload.control.allowAnyPath=true}.
+     */
+    private static boolean isControlDirAllowed(final @NotNull Path dir) {
+        if (Boolean.getBoolean("hivemq.workload.control.allowAnyPath")) {
+            return true;
+        }
+        for (final String root : new String[]{System.getProperty("java.io.tmpdir"), System.getProperty("user.dir")}) {
+            if (root != null && !root.isBlank() && dir.startsWith(Path.of(root).toAbsolutePath().normalize())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     boolean enabled() {
@@ -146,8 +178,9 @@ public final class WorkloadControlChannel {
     void emit(final @NotNull String op, final @NotNull String node, final @NotNull Runnable emission) {
         final String key = op + ":" + node;
         if (enabled() && (Boolean.TRUE.equals(held.get(op)) || Boolean.TRUE.equals(held.get(key)))) {
-            pending.computeIfAbsent(key, k -> new ArrayDeque<>()).add(emission);
-            journal("HELD key=" + key + " depth=" + pending.get(key).size());
+            final Deque<Runnable> q = pending.computeIfAbsent(key, k -> new ConcurrentLinkedDeque<>());
+            q.add(emission);
+            journal("HELD key=" + key + " depth=" + q.size());
         } else {
             emission.run();
         }
@@ -174,10 +207,29 @@ public final class WorkloadControlChannel {
             if (!Files.exists(ctlFile)) {
                 return;
             }
-            final List<String> lines = Files.readAllLines(ctlFile, StandardCharsets.UTF_8);
-            for (int i = processedLines; i < lines.size(); i++) {
-                final String line = lines.get(i).trim();
-                processedLines = i + 1;
+            // Read only the bytes appended since the last poll — the .ctl file is append-only, so re-reading the whole
+            // file every 100ms would grow O(n) over a long run. Carry any partial trailing line to the next poll.
+            final long size = Files.size(ctlFile);
+            if (size < ctlOffset) {         // truncated/rewritten — restart from the top
+                ctlOffset = 0;
+                ctlCarry.setLength(0);
+            }
+            if (size == ctlOffset) {        // nothing new appended
+                return;
+            }
+            final ByteBuffer buf = ByteBuffer.allocate((int) (size - ctlOffset));
+            try (final SeekableByteChannel ch = Files.newByteChannel(ctlFile, StandardOpenOption.READ)) {
+                ch.position(ctlOffset);
+                while (buf.hasRemaining() && ch.read(buf) > 0) {
+                    // drain the appended range
+                }
+            }
+            ctlOffset += buf.position();
+            ctlCarry.append(new String(buf.array(), 0, buf.position(), StandardCharsets.UTF_8));
+            int nl;
+            while ((nl = ctlCarry.indexOf("\n")) >= 0) {
+                final String line = ctlCarry.substring(0, nl).trim();
+                ctlCarry.delete(0, nl + 1);
                 if (!line.isEmpty() && !line.startsWith("#")) {
                     handle(line);
                 }
@@ -209,10 +261,17 @@ public final class WorkloadControlChannel {
                     }
                 }
                 case "releaseone" -> {
-                    final String key = a.length > 2 ? a[1] + ":" + a[2] : a[1] + ":";
-                    final Deque<Runnable> q = pending.get(key);
-                    if (q != null && !q.isEmpty()) {
-                        q.poll().run();
+                    // Release the OLDEST single held emission for this op. With a node, target op:node exactly; without
+                    // a node, node-scoped emissions live under op:<nodeId>, so scan every op:* queue (not just op:) and
+                    // release one from the first non-empty one — otherwise "releaseone poll" would be a silent no-op.
+                    if (a.length > 2) {
+                        releaseOneFrom(a[1] + ":" + a[2]);
+                    } else if (!releaseOneFrom(a[1] + ":")) {
+                        for (final String key : List.copyOf(pending.keySet())) {
+                            if (key.startsWith(a[1] + ":") && releaseOneFrom(key)) {
+                                break;
+                            }
+                        }
                     }
                 }
                 case "block" -> blockMs.put(a[1], Long.parseLong(a[2])); // block <op> <ms>
@@ -227,10 +286,23 @@ public final class WorkloadControlChannel {
     private void flush(final @NotNull String key) {
         final Deque<Runnable> q = pending.get(key);
         if (q != null) {
-            while (!q.isEmpty()) {
-                q.poll().run();
+            for (Runnable r; (r = q.poll()) != null; ) {   // poll until empty; null-safe under concurrency
+                r.run();
             }
         }
+    }
+
+    /** Poll+run one emission from the queue at {@code key} if present; returns true if one was released. */
+    private boolean releaseOneFrom(final @NotNull String key) {
+        final Deque<Runnable> q = pending.get(key);
+        if (q != null) {
+            final Runnable r = q.poll();   // null-safe under concurrency; do not gate on isEmpty()
+            if (r != null) {
+                r.run();
+                return true;
+            }
+        }
+        return false;
     }
 
     private void emitInjected(final @NotNull String[] a) {
