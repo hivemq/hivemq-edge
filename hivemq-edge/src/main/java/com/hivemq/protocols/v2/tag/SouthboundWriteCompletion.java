@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * <b>Invoked on the adapter's single dispatch thread</b>, exactly once per write. Implementations must not block
  * that thread: hand the outcome to the submitter (release a gate, complete a future) and return. This is
  * <em>not</em> an acknowledgement to the external MQTT client — it is an internal queue↔adapter completion
- * signal; a correlation-id reply to the sender is a separate, deferred concern.
+ * signal; the southbound path is deliberately fire-and-forget and sends the external client no reply.
  */
 @FunctionalInterface
 public interface SouthboundWriteCompletion {
@@ -39,7 +39,7 @@ public interface SouthboundWriteCompletion {
      * @param outcome the terminal outcome.
      * @param reason  what made it terminal — the device's own failure reason for a {@code FAILED} write, why the
      *                write was abandoned for an {@code ABORTED} one; {@code null} on success. Travels into the
-     *                published verdict, so the device's words are what the operator reads.
+     *                dead-letter log line, so the device's words are what the operator reads.
      */
     void settle(@NotNull SouthboundWriteOutcome outcome, @Nullable String reason);
 

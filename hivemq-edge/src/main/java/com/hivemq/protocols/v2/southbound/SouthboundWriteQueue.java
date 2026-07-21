@@ -140,7 +140,7 @@ public final class SouthboundWriteQueue {
                 deliverNext();
             }
             case FAILED -> {
-                // The device's own words travel into the dead-letter record and the published verdict.
+                // The device's own words travel into the dead-letter record.
                 backlog.deadLetterHead(command.id(), reason != null ? reason : "device rejected the write");
                 deadLettered++;
                 deliverNext();

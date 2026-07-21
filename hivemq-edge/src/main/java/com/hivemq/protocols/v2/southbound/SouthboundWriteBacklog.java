@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * <li>{@link #head()} returns the next command <b>without removing it</b> — a crash before its outcome is known
  *     replays it on restart (at-least-once);</li>
  * <li>{@link #removeHead} deletes a command the device acknowledged (the commit);</li>
- * <li>{@link #deadLetterHead} deletes an undeliverable command after routing it aside (e.g. {@code $invalid/…});</li>
+ * <li>{@link #deadLetterHead} deletes an undeliverable command;</li>
  * <li>an <b>abandoned</b> command needs no call at all: it was never removed, so it stays at the head and is
  *     redelivered when delivery resumes.</li>
  * </ul>

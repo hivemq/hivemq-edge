@@ -17,7 +17,6 @@ package com.hivemq.protocols.v2.southbound;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.subscribe.Topic;
@@ -63,7 +62,6 @@ public final class SouthboundMqttIntake implements AutoCloseable {
     private final @NotNull String adapterId;
     private final @NotNull SouthboundBrokerRuntime brokerRuntime;
     private final @NotNull DataPointFactory dataPointFactory;
-    private final @NotNull ObjectMapper objectMapper;
     private final @NotNull String shareName;
     private final @NotNull String clientId;
     private final @NotNull Map<String, String> queueIdByTag = new LinkedHashMap<>();
@@ -73,21 +71,18 @@ public final class SouthboundMqttIntake implements AutoCloseable {
      * Registers one shared subscription per mapping (first mapping wins for a tag mapped more than once).
      *
      * @param adapterId        the owning adapter's id.
-     * @param brokerRuntime    the broker collaborators: topic tree, client queues, publish path, retained store.
+     * @param brokerRuntime    the broker collaborators: topic tree and client queues.
      * @param dataPointFactory builds the values queued publishes are translated into.
-     * @param objectMapper     builds and parses the verdict JSON.
      * @param mappings         the adapter's southbound mappings.
      */
     public SouthboundMqttIntake(
             final @NotNull String adapterId,
             final @NotNull SouthboundBrokerRuntime brokerRuntime,
             final @NotNull DataPointFactory dataPointFactory,
-            final @NotNull ObjectMapper objectMapper,
             final @NotNull List<SouthboundMappingEntity> mappings) {
         this.adapterId = adapterId;
         this.brokerRuntime = brokerRuntime;
         this.dataPointFactory = dataPointFactory;
-        this.objectMapper = objectMapper;
         final LocalTopicTree topicTree = brokerRuntime.topicTree();
         this.shareName = SHARE_PREFIX + "adapter-writer-v2-" + adapterId;
         this.clientId = shareName + "#";
@@ -128,21 +123,8 @@ public final class SouthboundMqttIntake implements AutoCloseable {
                 throw new IllegalStateException("tag [" + tagName + "] on adapter [" + adapterId
                         + "] is write-mapped but has no southbound" + " queue");
             }
-            final SouthboundWriteVerdictReporter verdictReporter = new MqttSouthboundWriteVerdictReporter(
-                    brokerRuntime.internalPublishService(),
-                    brokerRuntime.retainedMessagePersistence(),
-                    objectMapper,
-                    clientId,
-                    adapterId,
-                    tagName,
-                    commandTopic);
             return new ClientQueueSouthboundWriteBacklog(
-                    brokerRuntime.clientQueuePersistence(),
-                    queueId,
-                    translator(tagName),
-                    verdictReporter,
-                    adapterId,
-                    tagName);
+                    brokerRuntime.clientQueuePersistence(), queueId, translator(tagName), adapterId, tagName);
         };
     }
 

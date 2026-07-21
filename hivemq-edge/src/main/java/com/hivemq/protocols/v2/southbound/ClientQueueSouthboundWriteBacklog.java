@@ -15,8 +15,6 @@
  */
 package com.hivemq.protocols.v2.southbound;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -45,13 +43,15 @@ import org.slf4j.LoggerFactory;
  * Durability and at-least-once come from the client queue: a command is {@code removeShared}-deleted only on a
  * terminal outcome, and a crash discards the in-memory lease while the message stays queued — the restarted Edge
  * reads it again (the in-flight marker does not outlive the process; QoS 0 commands are removed on read by the
- * broker and are therefore at-most-once — QoS ≥ 1 is the durability precondition).
+ * broker and are therefore at-most-once — QoS ≥ 1 is the durability precondition). The contract is strictly
+ * at-least-once: a crash between the device acknowledgment and the queue delete replays the command on restart
+ * and it executes again — the southbound path is deliberately fire-and-forget and keeps no executed-command
+ * record to recognize a replay by.
  * <p>
  * An <b>untranslatable</b> publish (the {@link SouthboundPublishTranslator} returns {@code null} or throws) is
- * dead-lettered by the backlog itself — removed and logged, so a malformed command never wedges the tag; routing
- * it aside to {@code $invalid/…} arrives with the MQTT-intake task. A failed {@code readShared} is logged at
- * {@code ERROR} and <b>not</b> retried in place (an immediate retry on the direct executor could spin); the next
- * arriving command re-triggers the prefetch via the publish-available callback.
+ * dead-lettered by the backlog itself — removed and logged, so a malformed command never wedges the tag. A failed
+ * {@code readShared} is logged at {@code ERROR} and <b>not</b> retried in place (an immediate retry on the direct
+ * executor could spin); the next arriving command re-triggers the prefetch via the publish-available callback.
  * <p>
  * Thread-safety: {@link #head()}/{@link #removeHead}/{@link #deadLetterHead} run under the delivering queue's
  * monitor (lock order queue→backlog); the read callback and the publish-available callback run on persistence
@@ -67,52 +67,21 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull String queueId;
     private final @NotNull SouthboundPublishTranslator translator;
-    private final @NotNull SouthboundWriteVerdictReporter verdictReporter;
     private final @NotNull String adapterId;
     private final @NotNull String tagName;
 
     private @Nullable Runnable wakeup;
     private @Nullable SouthboundCommand head;
-    private @Nullable String headCommand;
-    private byte @Nullable [] headCorrelationData;
     private boolean fetching;
     private boolean closed;
 
     /**
-     * The crash-replay dedup candidate: the last verdict recovered from durable storage, compared against the
-     * <b>first</b> lease only (a crash leaves at most one executed-but-uncommitted command, and it is the head).
-     * Cleared after that first comparison, matched or not.
-     */
-    private @Nullable SouthboundWriteVerdictReporter.ExecutedVerdict pendingDedup;
-
-    /**
-     * A backlog that keeps no verdicts — see the reporting constructor.
-     *
-     * @param clientQueuePersistence the durable client queue store.
-     * @param queueId                the shared-subscription queue id this tag's commands arrive on.
-     * @param translator             turns a queued publish into the value to write.
-     * @param adapterId              the owning adapter's id, for logging.
-     * @param tagName                the tag this backlog feeds, for logging.
-     */
-    public ClientQueueSouthboundWriteBacklog(
-            final @NotNull ClientQueuePersistence clientQueuePersistence,
-            final @NotNull String queueId,
-            final @NotNull SouthboundPublishTranslator translator,
-            final @NotNull String adapterId,
-            final @NotNull String tagName) {
-        this(clientQueuePersistence, queueId, translator, SouthboundWriteVerdictReporter.NONE, adapterId, tagName);
-    }
-
-    /**
      * Registers on the queue's publish-available callback and prefetches immediately, so commands already queued
-     * (e.g. across a restart) surface without waiting for a new arrival. The reporter's recovered verdict primes
-     * the crash-replay dedup for the first lease.
+     * (e.g. across a restart) surface without waiting for a new arrival.
      *
      * @param clientQueuePersistence the durable client queue store.
      * @param queueId                the shared-subscription queue id this tag's commands arrive on.
      * @param translator             turns a queued publish into the value to write.
-     * @param verdictReporter        where each command's terminal verdict is reported (the correlation reply), and
-     *                               where the last executed command is recovered from for crash-replay dedup.
      * @param adapterId              the owning adapter's id, for logging.
      * @param tagName                the tag this backlog feeds, for logging.
      */
@@ -120,16 +89,13 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull String queueId,
             final @NotNull SouthboundPublishTranslator translator,
-            final @NotNull SouthboundWriteVerdictReporter verdictReporter,
             final @NotNull String adapterId,
             final @NotNull String tagName) {
         this.clientQueuePersistence = clientQueuePersistence;
         this.queueId = queueId;
         this.translator = translator;
-        this.verdictReporter = verdictReporter;
         this.adapterId = adapterId;
         this.tagName = tagName;
-        this.pendingDedup = verdictReporter.lastExecutedVerdict();
         clientQueuePersistence.addPublishAvailableCallback(ignored -> prefetch(), queueId);
         prefetch();
     }
@@ -173,8 +139,6 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             closed = true;
             leased = head;
             head = null;
-            headCommand = null;
-            headCorrelationData = null;
         }
         clientQueuePersistence.removePublishAvailableCallback(queueId);
         if (leased != null) {
@@ -184,23 +148,14 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
 
     private void deleteHead(
             final @NotNull String id, final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
-        final String command;
-        final byte[] correlationData;
         final boolean closedBeforeSettle;
         synchronized (this) {
             closedBeforeSettle = closed;
-            if (closedBeforeSettle) {
-                command = null;
-                correlationData = null;
-            } else {
+            if (!closedBeforeSettle) {
                 if (head == null || !id.equals(head.id())) {
                     throw new IllegalStateException("dispose of a command that is not the head: " + id);
                 }
-                command = headCommand;
-                correlationData = headCorrelationData;
                 head = null;
-                headCommand = null;
-                headCorrelationData = null;
             }
         }
         if (closedBeforeSettle) {
@@ -216,11 +171,6 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                     outcome);
             return;
         }
-        // The verdict is retained before the delete — initiation order, not durability order (two independent async
-        // stores): a crash between the two replays the command, and the retained verdict recognizes and re-commits
-        // it instead of executing it twice. The reverse interleaving (delete persists, verdict lost) is an accepted
-        // risk — see the spec's §4.14.
-        verdictReporter.report(id, outcome, reason, false, command, correlationData);
         FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, id));
         prefetch();
     }
@@ -277,36 +227,6 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             FutureUtils.addExceptionLogger(clientQueuePersistence.removeInFlightMarker(queueId, publish.getUniqueId()));
             return;
         }
-        // Crash-replay dedup, first lease only: a crash between the device acknowledgment and the queue delete
-        // replays an already-executed command — recognize it by the recovered verdict, re-commit it, and re-report
-        // its verdict flagged as deduplicated instead of executing it twice.
-        final SouthboundWriteVerdictReporter.ExecutedVerdict dedupCandidate;
-        synchronized (this) {
-            dedupCandidate = pendingDedup;
-            pendingDedup = null;
-        }
-        if (dedupCandidate != null && dedupCandidate.commandId().equals(publish.getUniqueId())) {
-            synchronized (this) {
-                fetching = false;
-            }
-            log.warn(
-                    "Southbound command '{}' for tag '{}' on adapter '{}' already reached {} before the restart — "
-                            + "re-committing without executing it again (crash-replay dedup)",
-                    publish.getUniqueId(),
-                    tagName,
-                    adapterId,
-                    dedupCandidate.outcome());
-            verdictReporter.report(
-                    publish.getUniqueId(),
-                    dedupCandidate.outcome(),
-                    null,
-                    true,
-                    payloadOf(publish),
-                    publish.getCorrelationData());
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, publish.getUniqueId()));
-            prefetch();
-            return;
-        }
         final DataPoint value = translate(publish);
         if (value == null) {
             // Untranslatable: dead-letter it here and lease the next — a malformed command never wedges the tag.
@@ -320,13 +240,6 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                     publish.getTopic(),
                     tagName,
                     adapterId);
-            verdictReporter.report(
-                    publish.getUniqueId(),
-                    SouthboundWriteOutcome.FAILED,
-                    "untranslatable payload",
-                    false,
-                    payloadOf(publish),
-                    publish.getCorrelationData());
             FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, publish.getUniqueId()));
             prefetch();
             return;
@@ -340,8 +253,6 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                 nudge = null;
             } else {
                 head = new SouthboundCommand(publish.getUniqueId(), value);
-                headCommand = payloadOf(publish);
-                headCorrelationData = publish.getCorrelationData();
                 nudge = wakeup;
             }
         }
@@ -371,11 +282,6 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                 tagName,
                 adapterId,
                 throwable);
-    }
-
-    private static @Nullable String payloadOf(final @NotNull PUBLISH publish) {
-        final byte[] payload = publish.getPayload();
-        return payload == null ? null : new String(payload, UTF_8);
     }
 
     private @Nullable DataPoint translate(final @NotNull PUBLISH publish) {

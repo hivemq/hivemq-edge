@@ -282,7 +282,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final SouthboundWritePlane southboundWritePlane;
         if (southboundBrokerRuntime != null && !entity.getSouthboundMappings().isEmpty()) {
             southboundIntake = scope.register(new SouthboundMqttIntake(
-                    adapterId, southboundBrokerRuntime, dataPointFactory, objectMapper, entity.getSouthboundMappings()));
+                    adapterId, southboundBrokerRuntime, dataPointFactory, entity.getSouthboundMappings()));
             southboundWritePlane = scope.register(
                     new SouthboundWritePlane(adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed));
         } else {
