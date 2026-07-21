@@ -43,7 +43,27 @@ public final class WorkloadNode extends Node {
 
     @Override
     public @NotNull String nodeString() {
-        return "{\"identifier\":\"" + identifier + "\"}";
+        // Escape the identifier so a value containing " \ or a control character still produces valid JSON that the
+        // framework ObjectMapper can round-trip when Edge reloads the configuration.
+        final StringBuilder sb = new StringBuilder(identifier.length() + 16).append("{\"identifier\":\"");
+        for (int i = 0; i < identifier.length(); i++) {
+            final char c = identifier.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.append("\"}").toString();
     }
 
     @Override
