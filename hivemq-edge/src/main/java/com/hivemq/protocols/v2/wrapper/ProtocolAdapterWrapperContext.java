@@ -283,7 +283,11 @@ public final class ProtocolAdapterWrapperContext {
             case ProtocolAdapterWrapperCommand.UpdateTagSet update -> {
                 activation = Map.copyOf(update.activation());
                 tagPlane.updateTagSet(
-                        update.nodes(), update.activation(), update.readUsedTagNames(), update.writeUsedTagNames());
+                        update.nodes(),
+                        update.activation(),
+                        update.readUsedTagNames(),
+                        update.writeUsedTagNames(),
+                        update.pollIntervalMillis());
             }
             case ProtocolAdapterWrapperCommand.ApplyActivation apply -> {
                 goal = apply.adapterDirections();
@@ -343,6 +347,10 @@ public final class ProtocolAdapterWrapperContext {
     @NotNull
     ProtocolAdapterWrapperState connectionRetryStep() {
         clearVerification();
+        // The tag plane must learn the connection is gone even when it dropped mid-verification: without the
+        // downgrade the coordinator's phase mirror stays VERIFYING through the whole retry window, and a tags-only
+        // reload in that window would replay a stale phase into rebuilt aspects (QA round on EDG-824 #2).
+        tagPlane.onAdapterUnavailable();
         return enterConnectionRetry();
     }
 
@@ -357,6 +365,8 @@ public final class ProtocolAdapterWrapperContext {
     ProtocolAdapterWrapperState disconnectBeforeReconnectStep() {
         clearTimers();
         clearVerification();
+        // Same phase downgrade as connectionRetryStep: the verification watchdog path also leaves VERIFYING.
+        tagPlane.onAdapterUnavailable();
         protocolAdapter.disconnect();
         armWatchdog();
         return WAITING_FOR_DISCONNECTED_BEFORE_RECONNECT;
@@ -448,11 +458,48 @@ public final class ProtocolAdapterWrapperContext {
         return ERROR;
     }
 
+    /**
+     * An adapter-facing call threw on the dispatch thread — the contract-violation case (EDG-824 #7).
+     * Without this step the exception would kill the dispatch loop and freeze the last (GREEN) snapshot forever;
+     * instead the wrapper counts it as a defensive reset and enters {@code ERROR} — never false-green.
+     */
+    /**
+     * A last-resort status for {@code publishSnapshot} when building the full snapshot itself throws (a
+     * half-mutated tag plane): never leave a stale healthy-looking snapshot in place.
+     */
+    @NotNull
+    AdapterStatusSnapshot fallbackErrorSnapshot(final @NotNull String reason) {
+        return new AdapterStatusSnapshot(
+                adapterId,
+                ERROR,
+                goal.northboundActivated(),
+                goal.southboundActivated(),
+                java.util.List.of(),
+                clock.nowMillis(),
+                reason);
+    }
+
+    @NotNull
+    ProtocolAdapterWrapperState adapterThrowStep(
+            final @NotNull ProtocolAdapterWrapperState current, final @NotNull Throwable exception) {
+        metrics.incrementDefensiveReset();
+        final String reason = "adapter threw " + exception.getClass().getSimpleName() + " while in " + current + ": "
+                + exception.getMessage();
+        log.error("Adapter '{}' threw from an adapter-facing call; entering ERROR", adapterId, exception);
+        return enterError(reason, true);
+    }
+
     private @NotNull ProtocolAdapterWrapperState enterError(final @NotNull String reason, final boolean issueStop) {
         clearTimers();
         clearVerification();
         if (issueStop) {
-            protocolAdapter.stop();
+            // Best effort in every error path: a broken or hung adapter may throw from stop() too, and the
+            // transition into ERROR must complete regardless.
+            try {
+                protocolAdapter.stop();
+            } catch (final RuntimeException stopFailure) {
+                log.warn("Adapter '{}' threw while being stopped on the way to ERROR", adapterId, stopFailure);
+            }
         }
         lastErrorReason = reason;
         tagPlane.onAdapterUnavailable();

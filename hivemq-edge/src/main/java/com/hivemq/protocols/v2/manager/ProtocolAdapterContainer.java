@@ -16,11 +16,14 @@
 package com.hivemq.protocols.v2.manager;
 
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
+import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.NorthboundMappingEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
+import com.hivemq.protocols.v2.southbound.SouthboundWriterRegistry;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +52,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     private final @Nullable AutoCloseable tickHandle;
     private final @Nullable ProtocolAdapterMetrics metrics;
     private final @Nullable NorthboundTagConsumerRegistry northboundConsumers;
+    private final @Nullable SouthboundWriterRegistry southboundWriters;
     private @NotNull ProtocolAdapterEntity appliedEntity;
 
     /**
@@ -69,7 +73,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
-        this(handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, null, appliedEntity);
+        this(handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, null, null, appliedEntity);
     }
 
     /**
@@ -82,6 +86,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
      * @param tickHandle              the periodic wrapper tick schedule.
      * @param metrics                 the per-adapter metrics.
      * @param northboundConsumers     the MQTT northbound consumers registered for this adapter.
+     * @param southboundWriters       the MQTT southbound write wiring registered for this adapter (EDG-824 #3).
      * @param appliedEntity           the configuration this adapter is running.
      */
     public ProtocolAdapterContainer(
@@ -91,6 +96,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull AutoCloseable tickHandle,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @Nullable NorthboundTagConsumerRegistry northboundConsumers,
+            final @Nullable SouthboundWriterRegistry southboundWriters,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
         this.handle = handle;
         this.dispatcherHandle = dispatcherHandle;
@@ -98,6 +104,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
         this.tickHandle = tickHandle;
         this.metrics = metrics;
         this.northboundConsumers = northboundConsumers;
+        this.southboundWriters = southboundWriters;
         this.appliedEntity = appliedEntity;
     }
 
@@ -109,6 +116,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
         this.tickHandle = null;
         this.metrics = null;
         this.northboundConsumers = null;
+        this.southboundWriters = null;
         this.appliedEntity = entity;
     }
 
@@ -168,6 +176,19 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     }
 
     /**
+     * Refresh the southbound write wiring after a tags-only reload changed the mappings or the node set.
+     *
+     * @param mappings the updated v2 southbound mappings.
+     * @param nodes    the adapter's current node/tag pairs.
+     */
+    public void updateSouthboundMappings(
+            final @NotNull List<SouthboundMappingEntity> mappings, final @NotNull List<NodeTagPair> nodes) {
+        if (southboundWriters != null) {
+            southboundWriters.updateMappings(mappings, nodes);
+        }
+    }
+
+    /**
      * Release the adapter's runtime resources: stop the periodic tick, detach the wrapper from the dispatcher, and
      * deregister the per-adapter metrics so a recreated adapter with the same id starts clean. Each step is best
      * effort; a failure in one never prevents the others. A no-op for an unknown adapter.
@@ -179,6 +200,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
         closeQuietly(adapterDispatcherHandle, "adapter dispatcher bindings");
         closeQuietly(metrics, "metrics");
         closeQuietly(northboundConsumers, "northbound consumers");
+        closeQuietly(southboundWriters, "southbound writers");
     }
 
     private void closeQuietly(final @Nullable AutoCloseable closeable, final @NotNull String what) {

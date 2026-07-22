@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.protocols.v2.browse.BrowsedNode;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.RejectedAdapterEntity;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterDirection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,12 +44,21 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     /**
      * A freshly-loaded {@code <v2>} section from the extractor — the same
      * path at startup and on every reload. The manager diffs it against the running set and applies the gentlest
-     * correct transition per adapter.
+     * correct transition per adapter. Invalid new adapter entries arrive in {@code rejected}, already scoped by the
+     * extractor: the manager surfaces each as an {@code ERROR} adapter with no impact on its siblings or the node.
      *
-     * @param adapters the complete new set of adapter configurations.
+     * @param adapters the complete new set of accepted adapter configurations.
+     * @param rejected the new adapter entries whose configuration failed validation.
      */
-    record ConfigurationChanged(@NotNull List<ProtocolAdapterEntity> adapters)
-            implements ProtocolAdapterManagerMessage {
+    record ConfigurationChanged(
+            @NotNull List<ProtocolAdapterEntity> adapters,
+            @NotNull List<RejectedAdapterEntity> rejected) implements ProtocolAdapterManagerMessage {
+
+        /** Convenience for the common no-rejections case (tests and internal callers). */
+        public ConfigurationChanged(final @NotNull List<ProtocolAdapterEntity> adapters) {
+            this(adapters, List.of());
+        }
+
         @Override
         public @NotNull MailboxMessagePriority priority() {
             return MailboxMessagePriority.CONTROL;

@@ -137,7 +137,9 @@ class V2ProtocolAdaptersParsingTest {
         // missing read-activated / write-activated default to true
         assertThat(tag.isReadActivated()).isTrue();
         assertThat(tag.isWriteActivated()).isTrue();
-        assertThat(tag.getAccess().getReadable()).isEqualTo(AccessTriState.NO);
+        // an omitted <access> element means "no access declaration" — unconstrained, so enforcement (EDG-824 #14)
+        // never silently deactivates a tag whose config predates the access model
+        assertThat(tag.getAccess()).isEqualTo(AccessFlagsEntity.unrestricted());
     }
 
     @Test

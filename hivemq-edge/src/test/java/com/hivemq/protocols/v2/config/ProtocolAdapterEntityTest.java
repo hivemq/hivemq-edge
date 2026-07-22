@@ -100,6 +100,87 @@ class ProtocolAdapterEntityTest {
         assertThat(validate(entity)).isEmpty();
     }
 
+    // EDG-824 #12: a topic the broker cannot deliver to is a config error, not a silent GREEN data drop.
+    @Test
+    void northboundMappingWithWildcardTopic_isRejected() {
+        assertThat(northboundTopicMessages("plant/#")).anyMatch(message -> message.contains("not a valid topic"));
+        assertThat(northboundTopicMessages("plant/+/temperature"))
+                .anyMatch(message -> message.contains("not a valid topic"));
+        assertThat(northboundTopicMessages("plant/temp#erature"))
+                .anyMatch(message -> message.contains("not a valid topic"));
+        assertThat(northboundTopicMessages("plant/temp\0erature"))
+                .anyMatch(message -> message.contains("not a valid topic"));
+    }
+
+    // EDG-824 #13: the '$' namespace is broker-owned; an adapter must not be able to publish into $SYS.
+    @Test
+    void northboundMappingIntoTheDollarNamespace_isRejected() {
+        assertThat(northboundTopicMessages("$SYS/edge/injected"))
+                .anyMatch(message -> message.contains("reserved '$' namespace"));
+        assertThat(northboundTopicMessages("$share/group/plant"))
+                .anyMatch(message -> message.contains("reserved '$' namespace"));
+    }
+
+    // EDG-824 #12: MQTT cannot carry a topic beyond 65535 UTF-8 bytes.
+    @Test
+    void northboundMappingWithOverlongTopic_isRejected() {
+        final String overlong = "plant/" + "x".repeat(NorthboundMappingEntity.MAX_TOPIC_LENGTH_BYTES);
+        assertThat(northboundTopicMessages(overlong)).anyMatch(message -> message.contains("maximum length"));
+        // Byte semantics, not char count: multi-byte characters trip the limit below 65535 chars.
+        final String multiByte = "plant/" + "é".repeat(33_000); // 2 bytes each -> 66006 bytes
+        assertThat(northboundTopicMessages(multiByte)).anyMatch(message -> message.contains("maximum length"));
+        final String longestLegal = "x".repeat(NorthboundMappingEntity.MAX_TOPIC_LENGTH_BYTES);
+        assertThat(northboundTopicMessages(longestLegal)).isEmpty();
+    }
+
+    @Test
+    void southboundMappingTopicFilter_allowsWildcardsButRejectsIllegalFiltersAndDollar() {
+        assertThat(southboundTopicMessages("plant/+/setpoint")).isEmpty();
+        assertThat(southboundTopicMessages("plant/#")).isEmpty();
+        assertThat(southboundTopicMessages("plant/#/setpoint"))
+                .anyMatch(message -> message.contains("not a valid topic filter"));
+        assertThat(southboundTopicMessages("plant/set+point"))
+                .anyMatch(message -> message.contains("not a valid topic filter"));
+        assertThat(southboundTopicMessages("$SYS/edge/commands"))
+                .anyMatch(message -> message.contains("reserved '$' namespace"));
+    }
+
+    // EDG-824 #11: two tags on one topic is legal but never silent — a WARNING event carries the collision.
+    @Test
+    void collidingNorthboundTopics_raiseAWarningNotAnError() {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("temperature"));
+        entity.getTags().add(tag("pressure"));
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("temperature", "plant/a/data"));
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("pressure", "plant/a/data"));
+
+        assertThat(entity.getCollidingNorthboundTopics())
+                .containsOnlyKeys("plant/a/data")
+                .satisfies(collisions ->
+                        assertThat(collisions.get("plant/a/data")).containsExactly("temperature", "pressure"));
+        final List<ValidationEvent> events = validate(entity);
+        assertThat(events)
+                .anyMatch(event -> event.getSeverity() == ValidationEvent.WARNING
+                        && event.getMessage().contains("plant/a/data")
+                        && event.getMessage().contains("interleave"));
+        // strictly a warning: no ERROR/FATAL_ERROR raised for the collision
+        assertThat(events)
+                .noneMatch(event -> event.getSeverity() == ValidationEvent.FATAL_ERROR
+                        || event.getSeverity() == ValidationEvent.ERROR);
+    }
+
+    @Test
+    void distinctNorthboundTopics_produceNoCollisionWarning() {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("temperature"));
+        entity.getTags().add(tag("pressure"));
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("temperature", "plant/a/temperature"));
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("pressure", "plant/a/pressure"));
+
+        assertThat(entity.getCollidingNorthboundTopics()).isEmpty();
+        assertThat(validate(entity)).isEmpty();
+    }
+
     // S32: the watchdog must be strictly greater than the PA command timeout.
     @Test
     void watchdogNotGreaterThanCommandTimeout_isRejected() {
@@ -215,6 +296,20 @@ class ProtocolAdapterEntityTest {
                 false,
                 5_000,
                 new AccessFlagsEntity(AccessTriState.YES, AccessTriState.YES, AccessTriState.YES, AccessTriState.NO));
+    }
+
+    private static @NotNull List<String> northboundTopicMessages(final @NotNull String topic) {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("temperature"));
+        entity.getNorthboundMappings().add(new NorthboundMappingEntity("temperature", topic));
+        return messages(entity);
+    }
+
+    private static @NotNull List<String> southboundTopicMessages(final @NotNull String topic) {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("setpoint"));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity(topic, "setpoint"));
+        return messages(entity);
     }
 
     private static @NotNull List<ValidationEvent> validate(final @NotNull ProtocolAdapterEntity entity) {

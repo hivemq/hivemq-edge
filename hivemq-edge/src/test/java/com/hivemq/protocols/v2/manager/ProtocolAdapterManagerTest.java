@@ -19,9 +19,11 @@ import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.
 import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.tag;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.RejectedAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ActivateAdapter;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ConfigurationChanged;
@@ -33,6 +35,7 @@ import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterDirection;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,9 +65,12 @@ class ProtocolAdapterManagerTest {
         mailbox = new DefaultMailbox<>();
         handleRegistry = new ProtocolAdapterHandleRegistry();
         wrapperFactory = new RecordingWrapperFactory();
-        final ProtocolAdapterFactoryRegistry factories = new ProtocolAdapterFactoryRegistry(
-                Set.of(new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
-                        ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID)));
+        final ProtocolAdapterFactoryRegistry factories = new ProtocolAdapterFactoryRegistry(Set.of(
+                new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
+                        ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID),
+                // a capability-less type (declares neither WRITE nor SUBSCRIPTIONS) for the EDG-824 #17 tests
+                new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
+                        "capability-less", EnumSet.noneOf(ProtocolAdapterCapability.class))));
         manager = new ProtocolAdapterManager(factories, handleRegistry, wrapperFactory, clock);
         dispatcher.attach(mailbox, manager);
         manager.bindSelf(mailbox);
@@ -253,6 +259,142 @@ class ProtocolAdapterManagerTest {
         assertThat(summary.connectedAdapters()).isEqualTo(1);
         assertThat(summary.stoppedAdapters()).isEqualTo(1);
         assertThat(summary.lastUpdatedAtMillis()).isEqualTo(123L);
+    }
+
+    // EDG-824 #17: the capability declaration is enforced at config acceptance — a type declaring no WRITE is
+    // refused a configuration with southbound mappings and surfaces ERROR instead of starting normally.
+    @Test
+    void configDemandingWriteFromACapabilityLessType_isRefusedAsAnErrorAdapter() {
+        send(new ConfigurationChanged(List.of(adapter("subonly")
+                .protocolId("capability-less")
+                .southboundMapping("plant/a/setpoint", "temperature")
+                .build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+        final ProtocolAdapterHandle handle = handleRegistry.find("subonly");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("WRITE");
+    }
+
+    @Test
+    void configDemandingSubscriptionsFromACapabilityLessType_isRefusedAsAnErrorAdapter() {
+        send(new ConfigurationChanged(List.of(adapter("subonly")
+                .protocolId("capability-less")
+                .tags(tag("temperature").subscribable(true).build())
+                .build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+        final ProtocolAdapterHandle handle = handleRegistry.find("subonly");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("SUBSCRIPTIONS");
+    }
+
+    @Test
+    void configWithinTheDeclaredCapabilities_startsNormallyOnTheCapabilityLessType() {
+        // polled-only northbound demands neither WRITE nor SUBSCRIPTIONS — the capability-less type serves it.
+        send(new ConfigurationChanged(
+                List.of(adapter("polled").protocolId("capability-less").build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("polled");
+    }
+
+    @Test
+    void tagsOnlyReloadIntroducingAnUnservableDemand_isRefusedViaTheRecreatePath() {
+        send(new ConfigurationChanged(
+                List.of(adapter("polled").protocolId("capability-less").build())));
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("polled");
+
+        // the reload adds a subscribable tag the type cannot serve
+        send(new ConfigurationChanged(List.of(adapter("polled")
+                .protocolId("capability-less")
+                .tags(tag("temperature").subscribable(true).build())
+                .build())));
+        fireWrapperStopped("polled");
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("polled");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("SUBSCRIPTIONS");
+    }
+
+    // EDG-824 #4: an invalid new adapter arrives pre-scoped in the rejected list and surfaces as an ERROR handle —
+    // the sibling runs, nothing shuts down.
+    @Test
+    void rejectedAdapter_isSurfacedAsAnErrorHandleWhileSiblingsRun() {
+        send(new ConfigurationChanged(
+                List.of(adapter("good").build()),
+                List.of(new RejectedAdapterEntity(adapter("bad").build(), "duplicate tag name [temperature]"))));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("good");
+        final ProtocolAdapterHandle handle = handleRegistry.find("bad");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("duplicate tag name");
+    }
+
+    @Test
+    void rejectedAdapter_keepsItsErrorHandleWithTheFreshReasonAcrossReloads() {
+        send(new ConfigurationChanged(
+                List.of(), List.of(new RejectedAdapterEntity(adapter("bad").build(), "reason-1"))));
+        send(new ConfigurationChanged(
+                List.of(), List.of(new RejectedAdapterEntity(adapter("bad").build(), "reason-2"))));
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("bad");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.lastErrorReason()).contains("reason-2");
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+    }
+
+    @Test
+    void rejectedAdapter_fixedOnTheNextReload_becomesARunningAdapter() {
+        send(new ConfigurationChanged(
+                List.of(),
+                List.of(new RejectedAdapterEntity(
+                        adapter("a")
+                                .adapterConfiguration(Map.of("broken", true))
+                                .build(),
+                        "reason"))));
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+        final ProtocolAdapterHandle handle = handleRegistry.find("a");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isNotEqualTo(ProtocolAdapterWrapperState.ERROR);
+    }
+
+    // Defensive: the extractor keeps the previous configuration for a known id, so a rejected id colliding with a
+    // running adapter is a contract violation — the running instance must never be clobbered.
+    @Test
+    void rejectedIdCollidingWithARunningAdapter_neverClobbersTheRunningInstance() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(
+                List.of(adapter("a").build()),
+                List.of(new RejectedAdapterEntity(adapter("a").build(), "bogus"))));
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("a");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.CONNECTED);
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
     }
 
     private void send(final @NotNull ProtocolAdapterManagerMessage message) {

@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import jakarta.xml.bind.ValidationEvent;
@@ -29,6 +30,7 @@ import jakarta.xml.bind.helpers.ValidationEventImpl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -257,6 +259,31 @@ public class ProtocolAdapterEntity implements EntityValidatable {
 
         retryPolicy.validate(validationEvents);
         tags.forEach(tag -> tag.validate(validationEvents));
+        // The access model is enforced at runtime (EDG-824 #14): an activated aspect with no permitted capability
+        // silently never operates. That must be a deliberate choice, so surface the contradiction as a warning —
+        // including the omitted-<access> case, where every flag defaults to NO.
+        tags.forEach(tag -> {
+            final AccessFlagsEntity access = tag.getAccess();
+            final boolean readPermitted = access.getReadable() == AccessTriState.YES
+                    && ((tag.isPollable() && access.getPollable() == AccessTriState.YES)
+                            || (tag.isSubscribable() && access.getSubscribable() == AccessTriState.YES));
+            if (tag.isReadActivated() && !readPermitted) {
+                validationEvents.add(new ValidationEventImpl(
+                        ValidationEvent.WARNING,
+                        "adapter [" + adapterId + "] tag [" + tag.getName()
+                                + "] is read-activated but its <access> flags permit no read transport;"
+                                + " the tag will never be read",
+                        null));
+            }
+            if (tag.isWriteActivated() && access.getWritable() != AccessTriState.YES) {
+                validationEvents.add(new ValidationEventImpl(
+                        ValidationEvent.WARNING,
+                        "adapter [" + adapterId + "] tag [" + tag.getName()
+                                + "] is write-activated but its <access> flags do not permit writing;"
+                                + " the tag will never be written",
+                        null));
+            }
+        });
         getDuplicatedTagNameSet()
                 .forEach(duplicate -> validationEvents.add(new ValidationEventImpl(
                         ValidationEvent.FATAL_ERROR,
@@ -266,6 +293,14 @@ public class ProtocolAdapterEntity implements EntityValidatable {
         final Set<String> declaredTagNames =
                 tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
         northboundMappings.forEach(mapping -> mapping.validate(validationEvents));
+        // Two tags mapped to one topic interleave on that topic with no source identity by default. Legal, but
+        // never silent: surface it as a warning so the collision is a deliberate choice, not an accident.
+        getCollidingNorthboundTopics()
+                .forEach((topic, tagNames) -> validationEvents.add(new ValidationEventImpl(
+                        ValidationEvent.WARNING,
+                        "adapter [" + adapterId + "] maps tags " + tagNames + " to the same topic [" + topic
+                                + "]; their values will interleave without source identity",
+                        null)));
         northboundMappings.forEach(mapping -> EntityValidatable.notMatch(
                 validationEvents,
                 () -> declaredTagNames.contains(mapping.getTagName()),
@@ -283,6 +318,22 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + "] which is not declared in adapter ["
                         + adapterId
                         + "]"));
+    }
+
+    /**
+     * @return topic &rarr; the distinct tag names of the northbound mappings sharing it, for every topic mapped by
+     *         more than one tag, in first-seen order; empty when there are no collisions.
+     */
+    @JsonIgnore
+    public @NotNull Map<String, List<String>> getCollidingNorthboundTopics() {
+        final Map<String, List<String>> tagsByTopic = new LinkedHashMap<>();
+        // Counted per MAPPING, not per distinct tag: two identical mappings (same tag, same topic) are a silent
+        // double-publish of every value and must warn just like two different tags sharing a topic.
+        northboundMappings.forEach(mapping -> tagsByTopic
+                .computeIfAbsent(mapping.getTopic(), topic -> new ArrayList<>())
+                .add(mapping.getTagName()));
+        tagsByTopic.values().removeIf(tagNames -> tagNames.size() < 2);
+        return tagsByTopic;
     }
 
     /**

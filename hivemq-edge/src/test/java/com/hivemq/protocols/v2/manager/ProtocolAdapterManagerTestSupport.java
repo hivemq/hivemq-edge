@@ -32,6 +32,7 @@ import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.protocols.v2.config.AccessFlagsEntity;
@@ -53,7 +54,7 @@ import org.jetbrains.annotations.NotNull;
  * and a factory) the real wiring is exercised against. The doubles are deliberately tiny — the manager and the
  * wrapper factory are what these tests prove, not a real protocol.
  */
-final class ProtocolAdapterManagerTestSupport {
+public final class ProtocolAdapterManagerTestSupport {
 
     static final @NotNull String TEST_PROTOCOL_ID = "test";
 
@@ -196,7 +197,10 @@ final class ProtocolAdapterManagerTestSupport {
         private boolean pollable = true;
         private boolean subscribable = false;
         private long pollIntervalMillis = 5000;
-        private @NotNull AccessFlagsEntity access = new AccessFlagsEntity();
+        // Permissive by default: the access model is enforced (EDG-824 #14), so a tag that should operate in these
+        // tests must declare its capabilities. Access-specific tests override via access(...).
+        private @NotNull AccessFlagsEntity access =
+                new AccessFlagsEntity(AccessTriState.YES, AccessTriState.YES, AccessTriState.YES, AccessTriState.YES);
 
         private TagBuilder(final @NotNull String name) {
             this.name = name;
@@ -230,6 +234,18 @@ final class ProtocolAdapterManagerTestSupport {
         @NotNull
         TagBuilder pollIntervalMillis(final long pollIntervalMillis) {
             this.pollIntervalMillis = pollIntervalMillis;
+            return this;
+        }
+
+        @NotNull
+        TagBuilder subscribable(final boolean subscribable) {
+            this.subscribable = subscribable;
+            return this;
+        }
+
+        @NotNull
+        TagBuilder access(final @NotNull AccessFlagsEntity access) {
+            this.access = access;
             return this;
         }
 
@@ -396,12 +412,19 @@ final class ProtocolAdapterManagerTestSupport {
      * The {@link ProtocolAdapterInformation} of {@link TestProtocolAdapter}: only {@code protocolId} and
      * {@code nodeClass} matter to the manager and the wrapper factory.
      */
-    static final class TestProtocolAdapterInformation implements ProtocolAdapterInformation {
+    public static final class TestProtocolAdapterInformation implements ProtocolAdapterInformation {
 
         private final @NotNull String protocolId;
+        private final @NotNull EnumSet<ProtocolAdapterCapability> capabilities;
 
-        TestProtocolAdapterInformation(final @NotNull String protocolId) {
+        public TestProtocolAdapterInformation(final @NotNull String protocolId) {
+            this(protocolId, EnumSet.of(ProtocolAdapterCapability.SUBSCRIPTIONS, ProtocolAdapterCapability.WRITE));
+        }
+
+        public TestProtocolAdapterInformation(
+                final @NotNull String protocolId, final @NotNull EnumSet<ProtocolAdapterCapability> capabilities) {
             this.protocolId = protocolId;
+            this.capabilities = capabilities;
         }
 
         @Override
@@ -446,7 +469,7 @@ final class ProtocolAdapterManagerTestSupport {
 
         @Override
         public @NotNull EnumSet<ProtocolAdapterCapability> capabilities() {
-            return EnumSet.of(ProtocolAdapterCapability.SUBSCRIPTIONS, ProtocolAdapterCapability.WRITE);
+            return capabilities;
         }
 
         @Override
@@ -469,6 +492,11 @@ final class ProtocolAdapterManagerTestSupport {
 
         TestProtocolAdapterFactory(final @NotNull String protocolId) {
             this.information = new TestProtocolAdapterInformation(protocolId);
+        }
+
+        TestProtocolAdapterFactory(
+                final @NotNull String protocolId, final @NotNull EnumSet<ProtocolAdapterCapability> capabilities) {
+            this.information = new TestProtocolAdapterInformation(protocolId, capabilities);
         }
 
         @Override
