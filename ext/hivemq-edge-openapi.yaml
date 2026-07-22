@@ -5733,17 +5733,6 @@ components:
         token:
           type: string
           description: The token associated a set of authenticated credentials
-    AuthMode:
-      type: object
-      properties:
-        mode:
-          type: string
-          description: The authentication mode the gateway is configured for.
-          enum:
-            - local
-            - oidc
-      required:
-        - mode
     Error:
       type: object
       properties:
@@ -5778,6 +5767,17 @@ components:
           format: uri
       required:
         - title
+    AuthMode:
+      type: object
+      properties:
+        mode:
+          type: string
+          description: The authentication mode the gateway is configured for.
+          enum:
+            - local
+            - oidc
+      required:
+        - mode
     PaginationCursor:
       type: object
       description: Links for pagination

@@ -27,9 +27,15 @@ import { parseJWT } from '@/api/utils.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PasswordInput from '@/components/PasswordInput.tsx'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
+import { useOidcLogin } from '@/modules/Auth/hooks/useOidcLogin.ts'
 
-const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }> = ({ first, preLoadError }) => {
+const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null; ssoEnabled?: boolean }> = ({
+  first,
+  preLoadError,
+  ssoEnabled,
+}) => {
   const auth = useAuth()
+  const { startLogin } = useOidcLogin()
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
@@ -69,6 +75,17 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
       .then(verifyCredential)
       .catch((e: ApiError) => {
         setError('root.ApiError', { type: e.message, message: e.body.title })
+      })
+  }
+
+  const onSsoLogin = () => {
+    startLogin()
+      .then((token) => verifyCredential({ token }))
+      .catch((e: Error) => {
+        setError('root.ApiError', {
+          type: t('login.error.tokenType'),
+          message: e.message === 'popup-blocked' ? t('login.error.ssoPopupBlocked') : t('login.error.ssoCancelled'),
+        })
       })
   }
 
@@ -151,6 +168,14 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
           </Button>
         </form>
       </Box>
+
+      {ssoEnabled && (
+        <Box width="100%" maxWidth="450px" px={4} pb={4}>
+          <Button data-testid="loginPage-sso" width="100%" variant="outline" onClick={onSsoLogin}>
+            {t('translation:login.sso.label')}
+          </Button>
+        </Box>
+      )}
 
       {(!first?.firstUseDescription || !first?.firstUseTitle) && (
         <Text fontFamily="heading" textAlign="center">

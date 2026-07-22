@@ -1,0 +1,14 @@
+get:
+  description: Log out of the OIDC session. Clears the SPA token and, when the Identity Provider advertises an end-session endpoint, redirects there to terminate the IdP session too.
+  operationId: oidc-logout
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
+  responses:
+    '204':
+      description: Logged out; no IdP end-session endpoint to redirect to.
+    '302':
+      description: Redirect to the Identity Provider's end-session endpoint.
+  summary: Log out of the OIDC session.
+  tags:
+    - Authentication
+    - Authentication Endpoint

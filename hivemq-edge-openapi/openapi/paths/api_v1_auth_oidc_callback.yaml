@@ -1,0 +1,50 @@
+get:
+  description: The OIDC redirect URI. Validates the returned state and ID token, exchanges the authorization code for tokens, maps the IdP roles to Edge roles, and issues a HiveMQ Edge JWT delivered to the SPA.
+  operationId: oidc-callback
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
+  parameters:
+    - description: The authorization code returned by the Identity Provider.
+      in: query
+      name: code
+      required: false
+      schema:
+        type: string
+    - description: The opaque state token echoed back by the Identity Provider.
+      in: query
+      name: state
+      required: false
+      schema:
+        type: string
+    - description: An OAuth2 error code, present instead of code/state when the login failed.
+      in: query
+      name: error
+      required: false
+      schema:
+        type: string
+    - description: A human-readable description of the error.
+      in: query
+      name: error_description
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        text/html:
+          schema:
+            type: string
+        application/json:
+          schema:
+            $ref: ../components/schemas/ApiBearerToken.yaml
+      description: Login succeeded; the HiveMQ Edge JWT is delivered to the SPA (by default via an HTML page that posts the token to the opener window).
+    '401':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: The login could not be completed (invalid or expired state, token validation failure, or an IdP error).
+  summary: Complete the OIDC login flow.
+  tags:
+    - Authentication
+    - Authentication Endpoint

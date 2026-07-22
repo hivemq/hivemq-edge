@@ -113,6 +113,9 @@
     "submit": {
       "label": "Sign in"
     },
+    "sso": {
+      "label": "Login with SSO"
+    },
     "error": {
       "noConfiguration": {
         "title": "Problem loading Edge configuration",
@@ -122,7 +125,9 @@
       "verifyCredentials": "We cannot verify your credentials. Please try again later",
       "tokenType": "Authentication Token",
       "tokenInvalid": "There is a problem with your credentials. Contact us",
-      "tokenExpired": "Your credentials have expired. Contact us"
+      "tokenExpired": "Your credentials have expired. Contact us",
+      "ssoPopupBlocked": "The sign-in window was blocked. Please allow pop-ups for this site and try again.",
+      "ssoCancelled": "The sign-in window was closed before completing. Please try again."
     }
   },
   "welcome": {

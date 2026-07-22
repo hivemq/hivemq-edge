@@ -1,0 +1,10 @@
+type: object
+properties:
+  mode:
+    type: string
+    description: The authentication mode the gateway is configured for.
+    enum:
+      - local
+      - oidc
+required:
+  - mode
