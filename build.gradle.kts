@@ -204,6 +204,15 @@ oci {
         dockerHub {
             optionalCredentials()
         }
+        registry(ociImages.eclipse.temurin.registry!!) {
+            url = uri("https://${ociImages.eclipse.temurin.registry}")
+            exclusiveContent { includeGroup(ociImages.eclipse.temurin.group) }
+        }
+    }
+    imageMapping {
+        mapGroup(ociImages.eclipse.temurin.group) {
+            toImage(nameSpec("${ociImages.eclipse.temurin.namespace}/") + name)
+        }
     }
     imageDefinitions.register("main") {
         imageName.set("hivemq/hivemq-edge")
