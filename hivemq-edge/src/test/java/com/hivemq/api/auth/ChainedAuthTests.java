@@ -30,6 +30,7 @@ import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
+import com.hivemq.api.auth.oidc.OidcService;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
@@ -91,7 +92,10 @@ public class ChainedAuthTests {
         final var apiAuthenticationFeature =
                 new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService);
         final var authenticationResource = new AuthenticationResourceImpl(
-                usernamePasswordProvider, jwtAuthenticationProvider, jwtAuthenticationProvider);
+                usernamePasswordProvider,
+                jwtAuthenticationProvider,
+                jwtAuthenticationProvider,
+                mock(OidcService.class));
 
         final var resourceConfig = new ResourceConfig();
         resourceConfig.register(apiAuthenticationFeature);

@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.auth.AuthenticationException;
+import com.hivemq.api.auth.oidc.OidcService;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
@@ -29,6 +30,7 @@ import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.model.ApiBearerToken;
+import com.hivemq.edge.api.model.AuthMode;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
 import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
@@ -48,15 +50,43 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     private final @NotNull ITokenGenerator tokenGenerator;
     private final @NotNull ITokenVerifier tokenVerifier;
     private final @NotNull IUsernameRolesProvider usernamePasswordProvider;
+    private final @NotNull OidcService oidcService;
 
     @Inject
     public AuthenticationResourceImpl(
             final @NotNull IUsernameRolesProvider usernamePasswordProvider,
             final @NotNull ITokenGenerator tokenGenerator,
-            final @NotNull ITokenVerifier tokenVerifier) {
+            final @NotNull ITokenVerifier tokenVerifier,
+            final @NotNull OidcService oidcService) {
         this.usernamePasswordProvider = usernamePasswordProvider;
         this.tokenGenerator = tokenGenerator;
         this.tokenVerifier = tokenVerifier;
+        this.oidcService = oidcService;
+    }
+
+    @Override
+    public @NotNull Response authMode() {
+        final AuthMode.ModeEnum mode = oidcService.isEnabled() ? AuthMode.ModeEnum.OIDC : AuthMode.ModeEnum.LOCAL;
+        return Response.ok(new AuthMode().mode(mode)).build();
+    }
+
+    @Override
+    public @NotNull Response oidcLogin() {
+        return oidcService.beginLogin();
+    }
+
+    @Override
+    public @NotNull Response oidcCallback(
+            final @Nullable String code,
+            final @Nullable String state,
+            final @Nullable String error,
+            final @Nullable String errorDescription) {
+        return oidcService.completeLogin(code, state, error, errorDescription);
+    }
+
+    @Override
+    public @NotNull Response oidcLogout() {
+        return oidcService.logout();
     }
 
     @Override

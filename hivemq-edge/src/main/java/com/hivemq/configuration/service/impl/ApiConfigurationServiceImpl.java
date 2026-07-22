@@ -19,6 +19,7 @@ import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
+import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.http.core.UsernamePasswordRoles;
@@ -38,6 +39,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     private @Nullable ApiJwtConfiguration apiJwtConfiguration;
     private @NotNull PreLoginNotice preLoginNotice = new PreLoginNotice();
     private @Nullable LdapConnectionProperties ldapConnectionProperties;
+    private @Nullable OidcConfiguration oidcConfiguration;
     private boolean enforceApiAuth = true;
 
     @Override
@@ -98,6 +100,16 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     @Override
     public @Nullable LdapConnectionProperties getLdapConnectionProperties() {
         return ldapConnectionProperties;
+    }
+
+    @Override
+    public void setOidcConfiguration(final @NotNull OidcConfiguration oidcConfiguration) {
+        this.oidcConfiguration = oidcConfiguration;
+    }
+
+    @Override
+    public @Nullable OidcConfiguration getOidcConfiguration() {
+        return oidcConfiguration;
     }
 
     @Override

@@ -206,6 +206,114 @@ paths:
       tags:
         - Authentication
         - Authentication Endpoint
+  /api/v1/auth/mode:
+    get:
+      description: Report which authentication mode the gateway is configured for, so the UI can present the matching login (local username/password form or OIDC single sign-on).
+      operationId: auth-mode
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMode'
+          description: The configured authentication mode.
+      summary: Report the configured authentication mode.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/oidc/login:
+    get:
+      description: Begin the OIDC authorization-code flow. Redirects the browser to the configured Identity Provider's authorization endpoint with a freshly minted state, nonce, and PKCE challenge.
+      operationId: oidc-login
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
+      responses:
+        '302':
+          description: Redirect to the Identity Provider's authorization endpoint.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Too many concurrent logins in flight; retry shortly.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: OIDC is not configured or the Identity Provider is unreachable.
+      summary: Begin the OIDC login flow.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/oidc/callback:
+    get:
+      description: The OIDC redirect URI. Validates the returned state and ID token, exchanges the authorization code for tokens, maps the IdP roles to Edge roles, and issues a HiveMQ Edge JWT delivered to the SPA.
+      operationId: oidc-callback
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
+      parameters:
+        - description: The authorization code returned by the Identity Provider.
+          in: query
+          name: code
+          required: false
+          schema:
+            type: string
+        - description: The opaque state token echoed back by the Identity Provider.
+          in: query
+          name: state
+          required: false
+          schema:
+            type: string
+        - description: An OAuth2 error code, present instead of code/state when the login failed.
+          in: query
+          name: error
+          required: false
+          schema:
+            type: string
+        - description: A human-readable description of the error.
+          in: query
+          name: error_description
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiBearerToken'
+          description: Login succeeded; the HiveMQ Edge JWT is delivered to the SPA (by default via an HTML page that posts the token to the opener window).
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: The login could not be completed (invalid or expired state, token validation failure, or an IdP error).
+      summary: Complete the OIDC login flow.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/oidc/logout:
+    get:
+      description: Log out of the OIDC session. Clears the SPA token and, when the Identity Provider advertises an end-session endpoint, redirects there to terminate the IdP session too.
+      operationId: oidc-logout
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
+      responses:
+        '204':
+          description: Logged out; no IdP end-session endpoint to redirect to.
+        '302':
+          description: Redirect to the Identity Provider's end-session endpoint.
+      summary: Log out of the OIDC session.
+      tags:
+        - Authentication
+        - Authentication Endpoint
   /api/v1/data-hub/behavior-validation/policies:
     get:
       description: |-
@@ -5625,6 +5733,17 @@ components:
         token:
           type: string
           description: The token associated a set of authenticated credentials
+    AuthMode:
+      type: object
+      properties:
+        mode:
+          type: string
+          description: The authentication mode the gateway is configured for.
+          enum:
+            - local
+            - oidc
+      required:
+        - mode
     Error:
       type: object
       properties:

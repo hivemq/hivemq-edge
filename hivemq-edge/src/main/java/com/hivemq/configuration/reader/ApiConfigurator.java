@@ -25,6 +25,7 @@ import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpListener;
 import com.hivemq.api.config.HttpsListener;
+import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
@@ -35,6 +36,7 @@ import com.hivemq.configuration.entity.api.HttpListenerEntity;
 import com.hivemq.configuration.entity.api.HttpsListenerEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.entity.api.UserEntity;
+import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
@@ -69,6 +71,10 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 Objects.requireNonNull(userEntity.getUserName()),
                 Objects.requireNonNull(userEntity.getPassword()).getBytes(StandardCharsets.UTF_8),
                 Set.copyOf(userEntity.getRoles()));
+    }
+
+    private static boolean isBlank(final @Nullable String value) {
+        return value == null || value.isBlank();
     }
 
     // -- Converts XML entity types to bean types
@@ -113,6 +119,19 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 .withExpiryTimeMinutes(jwsEntity.getExpiryTimeMinutes())
                 .withTokenEarlyEpochThresholdMinutes(jwsEntity.getTokenEarlyEpochThresholdMinutes())
                 .build());
+
+        // OIDC (optional; only wired when enabled and fully configured)
+        final OidcAuthenticationEntity oidcEntity = entity.getOidc();
+        if (oidcEntity != null && oidcEntity.isEnabled()) {
+            if (isBlank(oidcEntity.getIssuerUri())
+                    || isBlank(oidcEntity.getClientId())
+                    || isBlank(oidcEntity.getRedirectUri())) {
+                log.error("OIDC authentication is enabled but incomplete: <issuer-uri>, <client-id> and <redirect-uri> "
+                        + "are all required. OIDC login will be unavailable.");
+            } else {
+                apiCfgService.setOidcConfiguration(OidcConfiguration.fromEntity(oidcEntity));
+            }
+        }
 
         if (entity.getListeners().isEmpty()) {
             // set default listener

@@ -19,6 +19,7 @@ import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
+import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import java.util.List;
@@ -58,6 +59,11 @@ public interface ApiConfigurationService {
 
     @Nullable
     LdapConnectionProperties getLdapConnectionProperties();
+
+    void setOidcConfiguration(final @NotNull OidcConfiguration oidcConfiguration);
+
+    @Nullable
+    OidcConfiguration getOidcConfiguration();
 
     @NotNull
     PreLoginNotice getPreLoginNotice();
