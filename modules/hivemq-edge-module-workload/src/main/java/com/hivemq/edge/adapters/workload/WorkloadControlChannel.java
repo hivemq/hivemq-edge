@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.workload;
 
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +68,12 @@ public final class WorkloadControlChannel {
     private final @Nullable Path ctlFile;
     private final @Nullable Path journalFile;
     private final @NotNull ProtocolAdapterOutput output;
+    // Resolves a nodeId to the ORIGINAL Node instance the engine is tracking. The engine keys its node→tag-runtime map
+    // by object identity (Node has no equals/hashCode), so an injected callback must reuse the exact instance the
+    // adapter was handed — a fresh `new WorkloadNode(id)` would be a different object and the engine would silently drop
+    // the callback (findTagRuntime returns null). Falls back to a fresh node when the id is genuinely unknown, which is
+    // exactly what the "unknown/ghost node" tests want (an untracked node whose callback must be ignored).
+    private final @NotNull java.util.function.Function<String, Node> nodeResolver;
     private final long startMs;
 
     private final @NotNull Map<String, Boolean> held = new ConcurrentHashMap<>();      // key: "op" (all nodes) or "op:node"
@@ -74,14 +81,20 @@ public final class WorkloadControlChannel {
     private final @NotNull Map<String, Long> blockMs = new ConcurrentHashMap<>();      // op -> ms to block the NEXT such command
     private long ctlOffset;              // bytes of the .ctl file already consumed (watcher thread only)
     private final @NotNull StringBuilder ctlCarry = new StringBuilder(); // partial trailing line across polls (watcher thread only)
+    // Serialises the gate mutations that span BOTH `held` and `pending`: emit's (check-held → enqueue) must be atomic
+    // with respect to release's (clear-held → flush). Without it a release landing between emit's check and its enqueue
+    // drops the emission into a queue that has already been flushed, so the callback is silently lost (test hangs).
+    private final @NotNull Object gateLock = new Object();
     private @Nullable ScheduledExecutorService watcher;
 
     WorkloadControlChannel(final @NotNull String adapterId,
                            final @Nullable String controlDir,
                            final @NotNull ProtocolAdapterOutput output,
+                           final @NotNull java.util.function.Function<String, Node> nodeResolver,
                            final long startMs) {
         this.adapterId = adapterId;
         this.output = output;
+        this.nodeResolver = nodeResolver;
         this.startMs = startMs;
         if (controlDir == null || controlDir.isBlank()) {
             this.ctlFile = null;
@@ -102,6 +115,11 @@ public final class WorkloadControlChannel {
                 this.journalFile = dir.resolve(adapterId + ".journal");
                 try {
                     Files.createDirectories(dir);
+                    // Start reading the command file from its CURRENT end, not byte 0. The .ctl file is append-only and
+                    // survives a PA restart (reconfigure recreates the adapter), so a new session that started at 0 would
+                    // re-read and RE-EXECUTE every historical command against the freshly-started adapter. A new session
+                    // must only act on commands appended AFTER it started.
+                    this.ctlOffset = Files.exists(ctlFile) ? Files.size(ctlFile) : 0;
                     // Do NOT truncate: the journal must survive a PA restart (e.g. a reconfigure that recreates the
                     // adapter), otherwise cross-restart checks (retry-timer supersession, subscription-leak) lose
                     // history. The session separator lets a test scope its scan to the current life if needed.
@@ -180,13 +198,17 @@ public final class WorkloadControlChannel {
      */
     void emit(final @NotNull String op, final @NotNull String node, final @NotNull Runnable emission) {
         final String key = op + ":" + node;
-        if (enabled() && (Boolean.TRUE.equals(held.get(op)) || Boolean.TRUE.equals(held.get(key)))) {
-            final Deque<Runnable> q = pending.computeIfAbsent(key, k -> new ConcurrentLinkedDeque<>());
-            q.add(emission);
-            journal("HELD key=" + key + " depth=" + q.size());
-        } else {
-            emission.run();
+        // Decide-and-enqueue atomically vs release/flush (see gateLock). If held, park under the lock and return; if not,
+        // run the emission OUTSIDE the lock (it calls back into the engine and must not run while holding the gate).
+        synchronized (gateLock) {
+            if (enabled() && (Boolean.TRUE.equals(held.get(op)) || Boolean.TRUE.equals(held.get(key)))) {
+                final Deque<Runnable> q = pending.computeIfAbsent(key, k -> new ConcurrentLinkedDeque<>());
+                q.add(emission);
+                journal("HELD key=" + key + " depth=" + q.size());
+                return;
+            }
         }
+        emission.run();
     }
 
     /** If a {@code block <op> <ms>} was armed, consume it and return the ms to sleep inside that command (else 0). */
@@ -247,18 +269,26 @@ public final class WorkloadControlChannel {
         journal("CTL " + line);
         try {
             switch (a[0]) {
-                // hold <op> [node] — whole op, or one node
-                case "hold" -> held.put(a.length > 2 ? a[1] + ":" + a[2] : a[1], Boolean.TRUE);
+                // hold <op> [node] — whole op, or one node. Guarded by gateLock so it is atomic vs a concurrent emit().
+                case "hold" -> {
+                    synchronized (gateLock) {
+                        held.put(a.length > 2 ? a[1] + ":" + a[2] : a[1], Boolean.TRUE);
+                    }
+                }
                 case "release" -> {
-                    if (a.length > 2) {                       // release <op> <node>
-                        held.remove(a[1] + ":" + a[2]);
-                        flush(a[1] + ":" + a[2]);
-                    } else {                                  // release <op> — clear op gate + flush ALL its per-node FIFOs
-                        held.remove(a[1]);
-                        for (final String key : List.copyOf(pending.keySet())) {
-                            if (key.equals(a[1] + ":") || key.startsWith(a[1] + ":")) {
-                                held.remove(key);
-                                flush(key);
+                    // Guarded by gateLock: clear-held + flush must be atomic vs emit's check-held + enqueue, else an
+                    // emission can land in a queue that was already flushed and never fire.
+                    synchronized (gateLock) {
+                        if (a.length > 2) {                       // release <op> <node>
+                            held.remove(a[1] + ":" + a[2]);
+                            flush(a[1] + ":" + a[2]);
+                        } else {                                  // release <op> — clear op gate + flush ALL its per-node FIFOs
+                            held.remove(a[1]);
+                            for (final String key : List.copyOf(pending.keySet())) {
+                                if (key.equals(a[1] + ":") || key.startsWith(a[1] + ":")) {
+                                    held.remove(key);
+                                    flush(key);
+                                }
                             }
                         }
                     }
@@ -267,12 +297,15 @@ public final class WorkloadControlChannel {
                     // Release the OLDEST single held emission for this op. With a node, target op:node exactly; without
                     // a node, node-scoped emissions live under op:<nodeId>, so scan every op:* queue (not just op:) and
                     // release one from the first non-empty one — otherwise "releaseone poll" would be a silent no-op.
-                    if (a.length > 2) {
-                        releaseOneFrom(a[1] + ":" + a[2]);
-                    } else if (!releaseOneFrom(a[1] + ":")) {
-                        for (final String key : List.copyOf(pending.keySet())) {
-                            if (key.startsWith(a[1] + ":") && releaseOneFrom(key)) {
-                                break;
+                    // Guarded by gateLock for the same reason as release.
+                    synchronized (gateLock) {
+                        if (a.length > 2) {
+                            releaseOneFrom(a[1] + ":" + a[2]);
+                        } else if (!releaseOneFrom(a[1] + ":")) {
+                            for (final String key : List.copyOf(pending.keySet())) {
+                                if (key.startsWith(a[1] + ":") && releaseOneFrom(key)) {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -313,7 +346,7 @@ public final class WorkloadControlChannel {
             case "datapoint" -> {
                 final String node = a[2];
                 journal("EMIT datapoint node=" + node + " value=" + a[3]);
-                output.dataPoint(new WorkloadNode(node), new WorkloadDataPoint(node, parseValue(a[3])));
+                output.dataPoint(resolveNode(node), new WorkloadDataPoint(node, parseValue(a[3])));
             }
             case "connected" -> {
                 journal("EMIT connected");
@@ -331,7 +364,7 @@ public final class WorkloadControlChannel {
             }
             case "nodeerror" -> {
                 journal("EMIT nodeerror node=" + a[2] + " spontaneous=" + a[3]);
-                output.nodeError(new WorkloadNode(a[2]), "control: injected nodeError", Boolean.parseBoolean(a[3]));
+                output.nodeError(resolveNode(a[2]), "control: injected nodeError", Boolean.parseBoolean(a[3]));
             }
             case "verify" -> {
                 journal("EMIT verify node=" + a[2] + " outcome=" + a[3]);
@@ -340,14 +373,24 @@ public final class WorkloadControlChannel {
                     case "transient" -> new VerifyOutcome.TransientFailure("control: injected transient");
                     default -> new VerifyOutcome.Success();
                 };
-                output.verifyResult(new WorkloadNode(a[2]), outcome);
+                output.verifyResult(resolveNode(a[2]), outcome);
             }
             case "writeresult" -> {
                 journal("EMIT writeresult node=" + a[2] + " ok=" + a[3]);
-                output.writeResult(new WorkloadNode(a[2]), Boolean.parseBoolean(a[3]), null);
+                output.writeResult(resolveNode(a[2]), Boolean.parseBoolean(a[3]), null);
             }
             default -> log.warn("WL_CTL unknown emit id={}: {}", adapterId, String.join(" ", a));
         }
+    }
+
+    /**
+     * Resolve a nodeId to the ORIGINAL Node instance the adapter was handed (so the engine's identity-keyed lookup
+     * finds its tag runtime and the injected callback actually lands). If the id is unknown to the adapter — e.g. a
+     * deliberately-untracked "ghost"/"intruder" node — return a fresh node, which the engine correctly ignores.
+     */
+    private @NotNull Node resolveNode(final @NotNull String nodeId) {
+        final Node resolved = nodeResolver.apply(nodeId);
+        return resolved != null ? resolved : new WorkloadNode(nodeId);
     }
 
     private static @NotNull Object parseValue(final @NotNull String s) {
