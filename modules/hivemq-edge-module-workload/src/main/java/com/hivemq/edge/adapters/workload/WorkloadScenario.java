@@ -23,8 +23,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The parsed, config-declared scenario the {@link WorkloadProtocolAdapter} plays autonomously on the real wall clock.
@@ -61,33 +64,72 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class WorkloadScenario {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(WorkloadScenario.class);
+
     private static final @NotNull ObjectMapper MAPPER = new ObjectMapper();
 
+    // Known values per enum-like field. An unknown value silently falls back to a well-behaved default — which turns a
+    // config typo into a healthy device and a hanging test with no diagnostic. Each is WARNed once at parse time.
+    private static final @NotNull Set<String> KNOWN_WAVES = Set.of("sine", "ramp", "constant", "counter");
+    private static final @NotNull Set<String> KNOWN_VERIFY = Set.of(
+            "success", "permanent", "transient", "transient-then-success", "success-then-permanent", "no-response");
+    private static final @NotNull Set<String> KNOWN_POLL =
+            Set.of("value", "error", "no-response", "garbage", "literal", "double");
+    private static final @NotNull Set<String> KNOWN_WRITE = Set.of("success", "fail", "no-response");
+    private static final @NotNull Set<String> KNOWN_CONNECT = Set.of("succeed", "fail", "no-response", "drop");
+    private static final @NotNull Set<String> KNOWN_MISBEHAVE = Set.of(
+            "",
+            "start-no-ack",
+            "stop-no-ack",
+            "disconnect-no-ack",
+            "double-start",
+            "spurious-events",
+            "verify-partial",
+            "throw-in-poll",
+            "fake-node-flood");
+    private static final @NotNull Set<String> KNOWN_ACTIONS =
+            Set.of("disconnect", "reconnect", "fault", "recover", "mute", "unmute");
+
     /** A per-node data stream. */
-    public record Wave(@NotNull String kind, double periodMs, double amplitude, double offset,
-                       double slopePerSec, double constant, double noise) {}
+    public record Wave(
+            @NotNull String kind,
+            double periodMs,
+            double amplitude,
+            double offset,
+            double slopePerSec,
+            double constant,
+            double noise) {}
 
     /** A per-node deterministic fault behavior (verification, poll, and write outcomes). */
-    public record Fault(@NotNull String verify, @NotNull String poll, @NotNull String write,
-                        @NotNull String reason, int transientCount) {
+    public record Fault(
+            @NotNull String verify,
+            @NotNull String poll,
+            @NotNull String write,
+            @NotNull String reason,
+            int transientCount) {
         static @NotNull Fault healthy() {
             return new Fault("success", "value", "success", "", 1);
         }
     }
 
     /** A wall-clock scheduled behavior change. */
-    public record Event(long atMs, @NotNull String action, @NotNull String tag) {}
+    public record Event(
+            long atMs, @NotNull String action, @NotNull String tag) {}
 
-    private final @NotNull Map<String, Wave> waves;   // nodeId → wave;  "*" is the default
+    private final @NotNull Map<String, Wave> waves; // nodeId → wave;  "*" is the default
     private final @NotNull Map<String, Fault> faults; // nodeId → fault; "*" is the default
     private final @NotNull String connect;
     private final @NotNull String misbehave; // adversarial: a contract-violating adapter behavior ("" = well-behaved)
     private final @NotNull String controlDir; // deterministic test control channel dir ("" = disabled)
     private final @NotNull List<Event> timeline;
 
-    private WorkloadScenario(final @NotNull Map<String, Wave> waves, final @NotNull Map<String, Fault> faults,
-                             final @NotNull String connect, final @NotNull String misbehave, final @NotNull String controlDir,
-                             final @NotNull List<Event> timeline) {
+    private WorkloadScenario(
+            final @NotNull Map<String, Wave> waves,
+            final @NotNull Map<String, Fault> faults,
+            final @NotNull String connect,
+            final @NotNull String misbehave,
+            final @NotNull String controlDir,
+            final @NotNull List<Event> timeline) {
         this.waves = waves;
         this.faults = faults;
         this.connect = connect;
@@ -109,6 +151,10 @@ public final class WorkloadScenario {
         try {
             return parse(MAPPER.readTree(json));
         } catch (final Exception e) {
+            // The empty-scenario fallback keeps the adapter runnable, but silence here turned a JSON typo into a
+            // healthy default device with NO control channel and NO journal — a hanging test with zero diagnostic.
+            // WL_SCENARIO_PARSE_FAILED mirrors WL_BUILD: together they prove "right jar" AND "right config".
+            log.warn("WL_SCENARIO_PARSE_FAILED falling back to the empty scenario: {} — json: {}", e, json);
             return new WorkloadScenario(new HashMap<>(), new HashMap<>(), "succeed", "", "", List.of());
         }
     }
@@ -138,23 +184,39 @@ public final class WorkloadScenario {
                 faults.put(e.getKey(), fault(e.getValue()));
             }
         }
-        final String connect = root.path("connect").asText("succeed");
-        final String misbehave = root.path("misbehave").asText("");
+        final String connect = warnIfUnknown("connect", root.path("connect").asText("succeed"), KNOWN_CONNECT);
+        final String misbehave =
+                warnIfUnknown("misbehave", root.path("misbehave").asText(""), KNOWN_MISBEHAVE);
         final String controlDir = root.path("controlDir").asText("");
         final List<Event> tl = new ArrayList<>();
         final JsonNode timeline = root.path("timeline");
         if (timeline.isArray()) {
             for (final JsonNode ev : timeline) {
-                tl.add(new Event(ev.path("atMs").asLong(0),
-                        ev.path("action").asText(""), ev.path("tag").asText("")));
+                tl.add(new Event(
+                        ev.path("atMs").asLong(0),
+                        warnIfUnknown("timeline.action", ev.path("action").asText(""), KNOWN_ACTIONS),
+                        ev.path("tag").asText("")));
             }
         }
         return new WorkloadScenario(waves, faults, connect, misbehave, controlDir, tl);
     }
 
+    /** Pass the value through unchanged (defaulting behavior is unaffected) but WARN when it is not a known one. */
+    private static @NotNull String warnIfUnknown(
+            final @NotNull String field, final @NotNull String value, final @NotNull Set<String> known) {
+        if (!known.contains(value)) {
+            log.warn(
+                    "WL_SCENARIO unknown {} value '{}' (known: {}) — falls back to the default behavior",
+                    field,
+                    value,
+                    known);
+        }
+        return value;
+    }
+
     private static @NotNull Wave wave(final @NotNull JsonNode n) {
         return new Wave(
-                n.path("wave").asText("constant"),
+                warnIfUnknown("wave", n.path("wave").asText("constant"), KNOWN_WAVES),
                 n.path("periodMs").asDouble(10_000),
                 n.path("amplitude").asDouble(1),
                 n.path("offset").asDouble(0),
@@ -165,9 +227,9 @@ public final class WorkloadScenario {
 
     private static @NotNull Fault fault(final @NotNull JsonNode n) {
         return new Fault(
-                n.path("verify").asText("success"),
-                n.path("poll").asText("value"),
-                n.path("write").asText("success"),
+                warnIfUnknown("verify", n.path("verify").asText("success"), KNOWN_VERIFY),
+                warnIfUnknown("poll", n.path("poll").asText("value"), KNOWN_POLL),
+                warnIfUnknown("write", n.path("write").asText("success"), KNOWN_WRITE),
                 n.path("reason").asText(""),
                 n.path("transientCount").asInt(1));
     }

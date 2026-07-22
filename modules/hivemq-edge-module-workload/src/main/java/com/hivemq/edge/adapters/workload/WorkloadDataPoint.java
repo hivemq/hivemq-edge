@@ -22,7 +22,8 @@ import org.jetbrains.annotations.NotNull;
  * A minimal reused-v1 {@link DataPoint} the workload adapter emits from its stream generator; the wrapper stamps the
  * owning tag's name before handing it northbound.
  */
-public record WorkloadDataPoint(@NotNull String tagName, @NotNull Object value) implements DataPoint {
+public record WorkloadDataPoint(
+        @NotNull String tagName, @NotNull Object value) implements DataPoint {
 
     @Override
     public @NotNull Object getTagValue() {
