@@ -16,8 +16,8 @@ repositories {
 }
 
 dependencies {
-    implementation("net.ltgt.gradle:gradle-errorprone-plugin:${libs.versions.plugin.errorprone.get()}")
-    implementation("com.diffplug.spotless:spotless-plugin-gradle:7.2.1")
+    implementation(libs.gradle.errorprone.plugin)
+    implementation(libs.spotless.plugin.gradle)
 }
 
 gradlePlugin {

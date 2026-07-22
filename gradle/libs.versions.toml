@@ -26,13 +26,12 @@ hivemq-mqtt-client = "1.3.17"
 jackson = "2.22.1"
 jackson-nullable = "0.2.10"
 jacoco = "0.8.15"
-jakarta-annotation-api = "2.1.1"
+jakarta-annotation-api = "3.0.0"
 javassist = "3.32.0-GA"
-jaxb2 = "2.3.9"
 jaxb4-bind = "4.0.5"
 jaxb4-impl = "4.0.9"
 jctools = "4.0.6"
-jersey = "3.1.12"
+jersey = "4.0.2"
 jose4j = "0.9.6"
 json = "20250107"
 json-path = "2.10.0"
@@ -44,18 +43,18 @@ junit = "4.13.2"
 kotlin = "1.9.25"
 logback = "1.5.38"
 mariadb = "3.5.9"
-milo = "1.1.4"
+milo = "1.1.5"
 mockito = "5.23.0"
 mssql = "12.10.2.jre11"
 mtconnect-protocol = "1.0.0"
 netty = "4.2.16.Final"
-nullaway = "0.13.7"
+nullaway = "0.13.8"
 pmd = "6.55.0"
 postgresql = "42.7.13"
 protobuf = "4.35.1"
 shrinkwrap = "1.2.6"
 slf4j = "2.0.18"
-spotBugs = "4.10.2"
+spotBugs = "4.10.3"
 swagger-annotations = "2.2.52"
 swagger-jaxrs = "1.6.16"
 systemstubs = "2.1.8"
@@ -67,7 +66,7 @@ zeroallocationhashing = "0.27ea1"
 
 #Plugin Versions
 plugin-cyclonedx = "1.10.0"
-plugin-spotless = "7.2.1"
+plugin-spotless = "8.8.0"
 plugin-defaults = "0.3.0"
 plugin-errorprone = "5.1.0"
 plugin-forbiddenapis = "3.10"
@@ -76,8 +75,8 @@ plugin-javadoc-links = "0.10.0"
 plugin-hivemq-license = "1.3.6"
 plugin-metadata = "0.7.0"
 plugin-openapigenerator = "7.23.0"
-plugin-shadow = "9.5.1"
-plugin-spotbugs = "6.5.8"
+plugin-shadow = "9.6.0"
+plugin-spotbugs = "6.5.9"
 plugin-versions = "0.54.0"
 
 [libraries]
@@ -101,6 +100,7 @@ dropwizard-metrics-logback = { module = "io.dropwizard.metrics:metrics-logback",
 equalsverifier = { module = "nl.jqno.equalsverifier:equalsverifier", version.ref = "equalsverifier" }
 errorprone = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
+gradle-errorprone-plugin = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "plugin-errorprone" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 hivemq-edge-adaptersdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", version.ref = "hivemq-edge-adaptersdk" }
@@ -117,7 +117,6 @@ jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jakarta.rs:jacks
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation-api" }
 javacrumbs-futureconverter = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref = "future-converter" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
-jaxb2-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb2" }
 jaxb4-bind = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jaxb4-bind" }
 jaxb4-impl = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "jaxb4-impl" }
 jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
@@ -164,6 +163,7 @@ shrinkwrap-api = { module = "org.jboss.shrinkwrap:shrinkwrap-api", version.ref =
 shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", version.ref = "shrinkwrap" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jultoslf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
+spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "plugin-spotless" }
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
 swagger-jaxrs = { module = "io.swagger:swagger-jaxrs", version.ref = "swagger-jaxrs" }
 systemstubs = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "systemstubs" }

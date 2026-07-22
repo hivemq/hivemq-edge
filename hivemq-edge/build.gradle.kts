@@ -161,7 +161,6 @@ dependencies {
     }
 
     // config
-    implementation(libs.jaxb2.impl)
     implementation(libs.jaxb4.impl)
     implementation(libs.jaxb4.bind)
 
