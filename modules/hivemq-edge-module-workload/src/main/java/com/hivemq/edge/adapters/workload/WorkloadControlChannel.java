@@ -64,6 +64,10 @@ public final class WorkloadControlChannel {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(WorkloadControlChannel.class);
 
+    // How often the watcher polls the .ctl command file. Kept short so test commands (hold/release/emit) take effect
+    // near-instantly — the control channel must feel synchronous to a test even though it is file-driven.
+    private static final long CTL_POLL_INTERVAL_MILLIS = 100L;
+
     private final @NotNull String adapterId;
     private final @Nullable Path ctlFile;
     private final @Nullable Path journalFile;
@@ -165,7 +169,7 @@ public final class WorkloadControlChannel {
             t.setDaemon(true);
             return t;
         });
-        watcher.scheduleAtFixedRate(this::poll, 100, 100, TimeUnit.MILLISECONDS);
+        watcher.scheduleAtFixedRate(this::poll, CTL_POLL_INTERVAL_MILLIS, CTL_POLL_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     void stop() {
