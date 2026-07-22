@@ -52,6 +52,18 @@ public class AccessFlagsEntity {
     // no-arg constructor for JAXB; field initializers carry the defaults
     public AccessFlagsEntity() {}
 
+    /**
+     * The access model of a tag whose {@code <access>} element is omitted: unconstrained. An omitted element means
+     * the configuration makes no access declaration — enforcement (EDG-824 #14) applies only to an EXPLICIT
+     * declaration; treating omission as all-{@code NO} would silently deactivate every tag of every config written
+     * without the element (verified by the v2 end-to-end suite).
+     *
+     * @return an all-{@link AccessTriState#YES} access model.
+     */
+    public static @NotNull AccessFlagsEntity unrestricted() {
+        return new AccessFlagsEntity(AccessTriState.YES, AccessTriState.YES, AccessTriState.YES, AccessTriState.YES);
+    }
+
     public AccessFlagsEntity(
             final @NotNull AccessTriState readable,
             final @NotNull AccessTriState writable,

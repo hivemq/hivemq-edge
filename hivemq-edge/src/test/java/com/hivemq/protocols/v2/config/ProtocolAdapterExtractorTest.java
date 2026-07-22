@@ -32,17 +32,18 @@ class ProtocolAdapterExtractorTest {
     @Test
     void registerConsumer_notifiesImmediatelyWithTheCurrentConfigs() {
         final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
-        final AtomicReference<List<ProtocolAdapterEntity>> received = new AtomicReference<>();
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
 
         extractor.registerConsumer(received::set);
 
-        assertThat(received.get()).isEmpty();
+        assertThat(received.get().adapters()).isEmpty();
+        assertThat(received.get().rejected()).isEmpty();
     }
 
     @Test
     void validSection_isAppliedAndTheConsumerIsNotified() {
         final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
-        final AtomicReference<List<ProtocolAdapterEntity>> received = new AtomicReference<>();
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
         extractor.registerConsumer(received::set);
 
         final Configurator.ConfigResult result = extractor.updateConfig(config(adapter("chaos-1")));
@@ -50,8 +51,9 @@ class ProtocolAdapterExtractorTest {
         assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
         assertThat(extractor.getAllConfigs()).hasSize(1);
         assertThat(extractor.getAdapterByAdapterId("chaos-1")).isPresent();
-        assertThat(received.get()).hasSize(1);
-        assertThat(received.get().getFirst().getAdapterId()).isEqualTo("chaos-1");
+        assertThat(received.get().adapters()).hasSize(1);
+        assertThat(received.get().adapters().getFirst().getAdapterId()).isEqualTo("chaos-1");
+        assertThat(received.get().rejected()).isEmpty();
     }
 
     @Test
@@ -62,33 +64,86 @@ class ProtocolAdapterExtractorTest {
         assertThat(extractor.getAllConfigs()).isEmpty();
     }
 
-    // S32 at the load boundary: a watchdog that does not outlast the command timeout fails the whole section.
+    // EDG-824 #4: a bad adapter is scoped to itself — the section applies, the sibling runs, the bad adapter is
+    // surfaced in the rejected list instead of rejecting the section (which used to shut the whole node down).
     @Test
-    void invalidSection_isRejectedAndLeavesThePreviousConfigUntouched() {
+    void invalidNewAdapter_isScopedToThatAdapterAndSurfacedAsRejected() {
         final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
-        final AtomicInteger notifications = new AtomicInteger();
-        extractor.registerConsumer(configs -> notifications.incrementAndGet());
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
+        extractor.registerConsumer(received::set);
 
-        assertThat(extractor.updateConfig(config(adapter("chaos-1")))).isEqualTo(Configurator.ConfigResult.SUCCESS);
-        final int notificationsAfterValid = notifications.get();
+        final ProtocolAdapterEntity invalid = adapterWithTimeouts("chaos-2", 5_000, 10_000); // violates S32
+        final Configurator.ConfigResult result = extractor.updateConfig(config(adapter("chaos-1"), invalid));
 
-        final ProtocolAdapterEntity invalid = adapterWithTimeouts("chaos-2", 5_000, 10_000);
-        assertThat(extractor.updateConfig(config(invalid))).isEqualTo(Configurator.ConfigResult.ERROR);
-
-        // previous good config retained; the rejected section never reached the consumer
+        assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
         assertThat(extractor.getAllConfigs()).hasSize(1);
         assertThat(extractor.getAllConfigs().getFirst().getAdapterId()).isEqualTo("chaos-1");
-        assertThat(notifications.get()).isEqualTo(notificationsAfterValid);
+        assertThat(received.get().rejected()).hasSize(1);
+        assertThat(received.get().rejected().getFirst().entity().getAdapterId()).isEqualTo("chaos-2");
+        assertThat(received.get().rejected().getFirst().reason()).contains("watchdog-timeout-millis");
+    }
+
+    // EDG-824 #4 (transactional per-adapter rejection): an invalid replacement for a previously-accepted adapter
+    // keeps the previously-applied configuration running untouched — it is neither removed nor marked rejected.
+    @Test
+    void invalidReplacement_keepsThePreviouslyAppliedConfiguration() {
+        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+        final ProtocolAdapterEntity original = adapter("chaos-1");
+        assertThat(extractor.updateConfig(config(original))).isEqualTo(Configurator.ConfigResult.SUCCESS);
+
+        final ProtocolAdapterEntity invalidReplacement = adapterWithTimeouts("chaos-1", 5_000, 10_000);
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
+        extractor.registerConsumer(received::set);
+        assertThat(extractor.updateConfig(config(invalidReplacement))).isEqualTo(Configurator.ConfigResult.SUCCESS);
+
+        assertThat(extractor.getAllConfigs()).hasSize(1);
+        assertThat(extractor.getAllConfigs().getFirst()).isEqualTo(original);
+        assertThat(received.get().adapters()).containsExactly(original);
+        assertThat(received.get().rejected()).isEmpty();
     }
 
     @Test
-    void duplicateAdapterIds_areRejected() {
+    void duplicateAdapterIds_keepTheFirstDeclaration() {
         final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
 
-        final Configurator.ConfigResult result = extractor.updateConfig(config(adapter("chaos-1"), adapter("chaos-1")));
+        final ProtocolAdapterEntity first = adapter("chaos-1");
+        final ProtocolAdapterEntity second = adapterWithTimeouts("chaos-1", 60_000, 10_000);
+        final Configurator.ConfigResult result = extractor.updateConfig(config(first, second));
 
-        assertThat(result).isEqualTo(Configurator.ConfigResult.ERROR);
+        assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
+        assertThat(extractor.getAllConfigs()).containsExactly(first);
+    }
+
+    @Test
+    void adapterWithoutAnAdapterId_isDroppedWithoutRejectingTheSection() {
+        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
+        extractor.registerConsumer(received::set);
+
+        final ProtocolAdapterEntity anonymous = adapterWithId("");
+        final Configurator.ConfigResult result = extractor.updateConfig(config(anonymous, adapter("chaos-1")));
+
+        assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
+        assertThat(extractor.getAllConfigs()).hasSize(1);
+        assertThat(extractor.getAllConfigs().getFirst().getAdapterId()).isEqualTo("chaos-1");
+        assertThat(received.get().rejected()).isEmpty();
+    }
+
+    // A previously-rejected adapter whose configuration is fixed on the next reload becomes a normal accepted
+    // adapter — the rejection is not sticky.
+    @Test
+    void fixedReplacementOfARejectedAdapter_isAccepted() {
+        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+        extractor.updateConfig(config(adapterWithTimeouts("chaos-1", 5_000, 10_000)));
         assertThat(extractor.getAllConfigs()).isEmpty();
+
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
+        extractor.registerConsumer(received::set);
+        assertThat(extractor.updateConfig(config(adapter("chaos-1")))).isEqualTo(Configurator.ConfigResult.SUCCESS);
+
+        assertThat(extractor.getAllConfigs()).hasSize(1);
+        assertThat(received.get().adapters()).hasSize(1);
+        assertThat(received.get().rejected()).isEmpty();
     }
 
     @Test
@@ -111,6 +166,19 @@ class ProtocolAdapterExtractorTest {
                 .isFalse();
     }
 
+    @Test
+    void everyUpdate_notifiesTheConsumer() {
+        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+        final AtomicInteger notifications = new AtomicInteger();
+        extractor.registerConsumer(update -> notifications.incrementAndGet());
+        final int notificationsAfterRegistration = notifications.get();
+
+        extractor.updateConfig(config(adapter("chaos-1")));
+        extractor.updateConfig(config(adapterWithTimeouts("chaos-1", 5_000, 10_000)));
+
+        assertThat(notifications.get()).isEqualTo(notificationsAfterRegistration + 2);
+    }
+
     private static @NotNull HiveMQConfigEntity config(final @NotNull ProtocolAdapterEntity... adapters) {
         final HiveMQConfigEntity entity = new HiveMQConfigEntity();
         entity.getV2().getProtocolAdapters().addAll(List.of(adapters));
@@ -118,6 +186,10 @@ class ProtocolAdapterExtractorTest {
     }
 
     private static @NotNull ProtocolAdapterEntity adapter(final @NotNull String adapterId) {
+        return adapterWithTimeouts(adapterId, 30_000, 10_000);
+    }
+
+    private static @NotNull ProtocolAdapterEntity adapterWithId(final @NotNull String adapterId) {
         return adapterWithTimeouts(adapterId, 30_000, 10_000);
     }
 

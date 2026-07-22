@@ -153,7 +153,8 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
             final @NotNull List<NodeTagPair> nodes,
             final @NotNull Map<String, TagAspectActivationPreference> activation,
             final @NotNull Set<String> readUsedTagNames,
-            final @NotNull Set<String> writeUsedTagNames) {
+            final @NotNull Set<String> writeUsedTagNames,
+            final long pollIntervalMillis) {
         this.nodes = List.copyOf(nodes);
         this.activation = new HashMap<>(activation);
         this.readUsedTagNames = new HashSet<>(readUsedTagNames);

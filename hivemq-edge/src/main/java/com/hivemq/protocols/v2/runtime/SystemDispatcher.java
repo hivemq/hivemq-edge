@@ -23,6 +23,8 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Production {@link MessageDispatcher}: one dedicated daemon thread per handler that blocks in
@@ -35,6 +37,8 @@ import org.jetbrains.annotations.Nullable;
  * re-check after the fetch, so a message arriving alongside {@code close()} is never delivered.
  */
 public final class SystemDispatcher implements MessageDispatcher {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(SystemDispatcher.class);
 
     private static final long POLL_TIMEOUT_MILLIS = 1_000L;
     private static final @NotNull AtomicLong THREAD_COUNTER = new AtomicLong();
@@ -85,7 +89,17 @@ public final class SystemDispatcher implements MessageDispatcher {
                     break;
                 }
                 if (message != null) {
-                    handler.receive(message);
+                    try {
+                        handler.receive(message);
+                    } catch (final Throwable exception) {
+                        // The dispatch loop is the actor's heartbeat: a throwing handler must never kill it —
+                        // a dead loop leaves a mailbox that accepts tells nobody processes and a stale snapshot
+                        // that reads healthy forever (EDG-824 #7). Handlers guard their own state; this is the
+                        // backstop.
+                        log.error(
+                                "Actor handler threw while processing a message; the dispatch loop continues",
+                                exception);
+                    }
                 }
             }
         }

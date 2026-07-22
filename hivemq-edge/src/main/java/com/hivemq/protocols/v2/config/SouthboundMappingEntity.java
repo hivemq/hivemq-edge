@@ -16,11 +16,13 @@
 package com.hivemq.protocols.v2.config;
 
 import com.hivemq.configuration.entity.EntityValidatable;
+import com.hivemq.util.Topics;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlType;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -63,8 +65,39 @@ public class SouthboundMappingEntity implements EntityValidatable {
 
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        EntityValidatable.notEmpty(validationEvents, topic, "southbound-mapping topic");
+        if (EntityValidatable.notEmpty(validationEvents, topic, "southbound-mapping topic")) {
+            // The southbound topic is an MQTT subscription filter: wildcards are legal, but the filter itself must
+            // be subscribable and must stay out of the broker-owned '$' namespace.
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> Topics.isValidToSubscribe(topic),
+                    () -> "southbound-mapping topic [" + topic + "] is not a valid topic filter to subscribe to");
+            // '$share/…' is a legitimate client-side shared-subscription filter; only the broker-owned '$'
+            // namespace itself (e.g. $SYS) is off limits — including when smuggled INSIDE a shared filter
+            // ($share/group/$SYS/# effectively subscribes to $SYS).
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> !Topics.isDollarTopic(topic)
+                            || (topic.startsWith("$share/") && !sharedFilterTargetsDollarNamespace(topic)),
+                    () -> "southbound-mapping topic [" + topic
+                            + "] is in the reserved '$' namespace, which is owned by the broker");
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> topic.getBytes(StandardCharsets.UTF_8).length
+                            <= NorthboundMappingEntity.MAX_TOPIC_LENGTH_BYTES,
+                    () -> "southbound-mapping topic exceeds the maximum length of "
+                            + NorthboundMappingEntity.MAX_TOPIC_LENGTH_BYTES + " bytes");
+        }
         EntityValidatable.notEmpty(validationEvents, tagName, "southbound-mapping tag-name");
+    }
+
+    /**
+     * @return whether a {@code $share/<group>/<filter>} topic's inner filter itself starts with {@code $} —
+     *         a shared subscription into the broker-owned namespace.
+     */
+    private static boolean sharedFilterTargetsDollarNamespace(final @NotNull String topic) {
+        final int groupEnd = topic.indexOf('/', "$share/".length());
+        return groupEnd >= 0 && topic.startsWith("$", groupEnd + 1);
     }
 
     @Override

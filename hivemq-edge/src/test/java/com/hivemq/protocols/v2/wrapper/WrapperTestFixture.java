@@ -92,6 +92,7 @@ final class WrapperTestFixture {
                     writeUsed,
                     builder.initialGoal,
                     builder.pollIntervalMillis,
+                    builder.pollResultTimeoutMillis,
                     builder.retryPolicy);
             snapshotOnlyTagPlane = null;
             tagPlane = runningTagPlane;
@@ -301,6 +302,7 @@ final class WrapperTestFixture {
         private long tickPeriodMillis = 100;
         private boolean runningCoordinator;
         private long pollIntervalMillis = 1000;
+        private long pollResultTimeoutMillis = 10_000;
         private @Nullable Map<String, TagAspectActivationPreference> activation;
         private @Nullable Set<String> readUsed;
         private @Nullable Set<String> writeUsed;
@@ -354,6 +356,12 @@ final class WrapperTestFixture {
         @NotNull
         Builder runningCoordinator() {
             this.runningCoordinator = true;
+            return this;
+        }
+
+        @NotNull
+        Builder pollResultTimeoutMillis(final long pollResultTimeoutMillis) {
+            this.pollResultTimeoutMillis = pollResultTimeoutMillis;
             return this;
         }
 

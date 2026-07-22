@@ -52,6 +52,11 @@ final class WrapperTestSupport {
         return new TestDataPoint(tagName, value);
     }
 
+    /** A polled pair with an explicit declared value schema — for the schema-enforcement tests (EDG-824 #6). */
+    static @NotNull NodeTagPair typedPair(final @NotNull String tagName, final @NotNull Schema schema) {
+        return NodeTagPair.create(new TestNode(tagName), tagName, schema, true, false);
+    }
+
     static final class TestNode extends Node {
 
         private final @NotNull String identifier;

@@ -63,6 +63,14 @@ public final class TagAspectRead implements TagAspectVerifying {
     private static final int SUSTAINED_FAILURE_THRESHOLD = 5;
 
     /**
+     * Consecutive poll failures (missing results or poll-time node errors) after which the aspect escalates through
+     * re-verification instead of silently riding the cadence (EDG-824 #15): if the device still answers, the tag
+     * resumes; if the adapter is mute, the aspect parks in verification — active-but-not-operating — and the coarse
+     * {@code TagStatus} folds to {@code ERROR} instead of a healthy-looking {@code NORTHBOUND_ONLY}.
+     */
+    private static final int POLL_FAILURE_ESCALATION_THRESHOLD = 3;
+
+    /**
      * The two read-aspect variants — which transition table and operating cycle the aspect runs.
      */
     private enum Variant {
@@ -90,6 +98,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     private final @NotNull ProtocolAdapterMetrics metrics;
     private final @NotNull SharedNodeVerification sharedNodeVerification;
     private final long pollIntervalMillis;
+    private final long pollResultTimeoutMillis;
     private final @NotNull Backoff verificationRetryBackoff;
     private final @NotNull Backoff subscriptionRetryBackoff;
 
@@ -103,6 +112,7 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     private @NotNull TagAspectGoal goal = TagAspectGoal.inactive();
     private @NotNull AdapterPhase adapterPhase = AdapterPhase.DISCONNECTED;
+    private int consecutivePollFailures;
     private int failureCount;
     private @Nullable String lastFailureReason;
     private long lastTransitionAtMillis;
@@ -118,6 +128,8 @@ public final class TagAspectRead implements TagAspectVerifying {
      * @param metrics                 the per-adapter metrics (per-tag failure counters).
      * @param sharedNodeVerification the shared verification authority for re-verifications.
      * @param pollIntervalMillis      the poll cadence for a polled aspect, in milliseconds.
+     * @param pollResultTimeoutMillis the deadline for a requested poll's result — the adapter's command timeout; a
+     *                                poll that never answers is failed instead of waiting forever (EDG-824 #15).
      * @param retryPolicy             the backoff policy for verification and subscription retries.
      */
     public TagAspectRead(
@@ -130,6 +142,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
             final long pollIntervalMillis,
+            final long pollResultTimeoutMillis,
             final @NotNull RetryPolicy retryPolicy) {
         this.adapterId = adapterId;
         this.node = node;
@@ -141,6 +154,7 @@ public final class TagAspectRead implements TagAspectVerifying {
         this.metrics = metrics;
         this.sharedNodeVerification = sharedNodeVerification;
         this.pollIntervalMillis = pollIntervalMillis;
+        this.pollResultTimeoutMillis = pollResultTimeoutMillis;
         this.verificationRetryBackoff = new Backoff(retryPolicy);
         this.subscriptionRetryBackoff = new Backoff(retryPolicy);
         if (variant == Variant.SUBSCRIBED) {
@@ -239,6 +253,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             cancelActiveTimer();
             verificationRetryBackoff.reset();
             subscriptionRetryBackoff.reset();
+            consecutivePollFailures = 0;
             moveTo(waitingForAdapterReady);
         }
     }
@@ -305,11 +320,22 @@ public final class TagAspectRead implements TagAspectVerifying {
         dispatch(new TagAspectEvent.NodeFailed(reason, spontaneous));
     }
 
+    /**
+     * Record a declared-schema conformance failure: counted and surfaced, no machine event — the
+     * transport is alive, only the value was refused (EDG-824 #6).
+     *
+     * @param reason a human-readable description of the violation.
+     */
+    public void recordConformanceFailure(final @NotNull String reason) {
+        recordFailure(reason);
+    }
+
     // ── actions the transition table runs (package-private) ─────────────────────────────────────────────────────
 
     @Override
     public @NotNull TagAspectState enterVerified() {
         verificationRetryBackoff.reset();
+        consecutivePollFailures = 0;
         if (variant == Variant.SUBSCRIBED) {
             batches.addSubscription(node);
         } else {
@@ -320,6 +346,26 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     void requestPoll() {
         batches.poll(node);
+        // A poll that never answers must not read healthy forever (EDG-824 #15): arm the result deadline on the
+        // aspect's single timer slot — a received value or failure replaces it with the next-poll timer.
+        scheduleTimer(
+                pollResultTimeoutMillis,
+                () -> dispatch(new TagAspectEvent.NodeFailed(
+                        "no poll result within " + pollResultTimeoutMillis + " ms", false)));
+    }
+
+    void onPollSucceeded() {
+        consecutivePollFailures = 0;
+        scheduleNextPoll();
+    }
+
+    /**
+     * A value arrived outside the poll window — typically the answer to a poll that was already failed at the
+     * result deadline. The value itself is discarded (the cadence has moved on), but it is proof the device is
+     * alive: a consistently-slow-but-answering device must not walk into the verification escalation.
+     */
+    void onLateValueProofOfLife() {
+        consecutivePollFailures = 0;
     }
 
     void scheduleNextPoll() {
@@ -352,9 +398,25 @@ public final class TagAspectRead implements TagAspectVerifying {
         recordFailure(reason);
     }
 
-    void onPollFailure(final @NotNull String reason) {
+    /**
+     * A poll failed — a poll-time node error or a missing result. The next scheduled poll is the retry; after
+     * {@link #POLL_FAILURE_ESCALATION_THRESHOLD} consecutive failures the aspect escalates through re-verification
+     * instead (EDG-824 #15), so a persistently-stalled poll surfaces at the coarse status level.
+     *
+     * @return the state the transition row moves to.
+     */
+    @NotNull
+    TagAspectState onPollFailure(final @NotNull String reason) {
         recordFailure(reason);
+        consecutivePollFailures++;
+        if (consecutivePollFailures >= POLL_FAILURE_ESCALATION_THRESHOLD) {
+            consecutivePollFailures = 0;
+            cancelActiveTimer();
+            requestVerification();
+            return waitingForVerification;
+        }
         scheduleNextPoll();
+        return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
     }
 
     void onSubscriptionFailure(final @NotNull String reason) {
@@ -365,6 +427,10 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     void onSpontaneousSubscriptionLoss(final @NotNull String reason) {
+        // The documented power cycle (EDG-824 #16): cancel the subscription FIRST, then reset to verification and
+        // re-subscribe only after a fresh verify succeeds. Without the explicit cancel the old subscription is
+        // never released — a shadow-set-consistency deviation the adapter cannot repair on its own.
+        batches.removeSubscription(node);
         recordFailure(reason);
         requestVerification();
     }
@@ -470,7 +536,10 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     private void scheduleTimer(final long delayMillis, final @NotNull Runnable onFire) {
         cancelActiveTimer();
-        activeTimer = timers.schedule(clock.nowMillis() + delayMillis, onFire);
+        // Saturate: a near-Long.MAX_VALUE configured delay must mean "practically never", not an overflowed
+        // negative deadline that fires immediately.
+        final long fireAtMillis = clock.nowMillis() + delayMillis;
+        activeTimer = timers.schedule(fireAtMillis < 0 ? Long.MAX_VALUE : fireAtMillis, onFire);
     }
 
     private void cancelActiveTimer() {

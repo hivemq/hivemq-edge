@@ -35,6 +35,7 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
@@ -43,6 +44,7 @@ import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
+import com.hivemq.protocols.v2.southbound.SouthboundWriterRegistry;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
@@ -91,6 +93,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     private final @NotNull ObjectMapper objectMapper;
     private final @Nullable TagManager tagManager;
     private final @Nullable NorthboundConsumerFactory northboundConsumerFactory;
+    private final @Nullable InternalProtocolAdapterWritingService writingService;
     private final long tickPeriodMillis;
 
     /**
@@ -108,7 +111,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull ObjectMapper objectMapper,
             final long tickPeriodMillis) {
-        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null);
+        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null, null);
     }
 
     /**
@@ -121,6 +124,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
      * @param tagManager               the shared tag manager used by MQTT northbound consumers.
      * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
+     * @param writingService           the reused writing service that drives southbound MQTT&rarr;adapter writes
+     *                                 (EDG-824 #3); {@code null} disables southbound wiring (unit-test rigs).
      */
     public DefaultProtocolAdapterWrapperFactory(
             final @NotNull Clock clock,
@@ -130,7 +135,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull ObjectMapper objectMapper,
             final long tickPeriodMillis,
             final @Nullable TagManager tagManager,
-            final @Nullable NorthboundConsumerFactory northboundConsumerFactory) {
+            final @Nullable NorthboundConsumerFactory northboundConsumerFactory,
+            final @Nullable InternalProtocolAdapterWritingService writingService) {
         this.clock = clock;
         this.dispatcher = dispatcher;
         this.metricRegistry = metricRegistry;
@@ -138,6 +144,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         this.objectMapper = objectMapper;
         this.tagManager = tagManager;
         this.northboundConsumerFactory = northboundConsumerFactory;
+        this.writingService = writingService;
         this.tickPeriodMillis = tickPeriodMillis;
     }
 
@@ -195,6 +202,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 writeUsed,
                 goal,
                 ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
+                entity.getCommandTimeoutMillis(),
                 retryPolicy);
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,
@@ -230,9 +238,18 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // still released.
         final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
+        final SouthboundWriterRegistry southboundWriters =
+                createSouthboundWriters(adapterId, factory, entity, mailbox, nodes);
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
         return new ProtocolAdapterContainer(
-                handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, northboundConsumers, entity);
+                handle,
+                dispatcherHandle,
+                adapterDispatcherHandle,
+                tickHandle,
+                metrics,
+                northboundConsumers,
+                southboundWriters,
+                entity);
     }
 
     private @Nullable NorthboundTagConsumerRegistry createNorthboundConsumers(
@@ -249,6 +266,26 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 northboundConsumerFactory,
                 new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
                 entity.getNorthboundMappings());
+    }
+
+    private @Nullable SouthboundWriterRegistry createSouthboundWriters(
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterFactory factory,
+            final @NotNull ProtocolAdapterEntity entity,
+            final @NotNull Mailbox<ProtocolAdapterWrapperMessage> mailbox,
+            final @NotNull List<NodeTagPair> nodes) {
+        if (writingService == null) {
+            return null;
+        }
+        return new SouthboundWriterRegistry(
+                adapterId,
+                factory.information(),
+                writingService,
+                new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
+                mailbox,
+                dataPointFactory,
+                nodes,
+                entity.getSouthboundMappings());
     }
 
     @Override
@@ -270,8 +307,15 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                                 + nodeClass.getSimpleName(),
                         exception);
             }
+            // The access model is enforced here (EDG-824 #14): the pair carries the tag's EFFECTIVE transports —
+            // a transport is usable only when declared on the tag AND permitted by the access flags. The read
+            // variant (polled vs subscribed) is then selected from what is actually permitted.
             nodes.add(NodeTagPair.create(
-                    node, tag.getName(), factory.nodeDefinitionSchema(), tag.isPollable(), tag.isSubscribable()));
+                    node,
+                    tag.getName(),
+                    factory.nodeDefinitionSchema(),
+                    ProtocolAdapterConfigSupport.effectivePollable(tag),
+                    ProtocolAdapterConfigSupport.effectiveSubscribable(tag)));
         }
         return nodes;
     }

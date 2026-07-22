@@ -137,9 +137,15 @@ final class MockProtocolAdapter implements ProtocolAdapter {
         }
     }
 
+    /** When set, {@link #pollBatch(List)} throws — the contract-violating adapter case (EDG-824 #7). */
+    boolean pollThrow;
+
     @Override
     public void pollBatch(final @NotNull List<Node> nodes) {
         commands.add("pollBatch");
+        if (pollThrow) {
+            throw new IllegalStateException("misbehaving adapter: pollBatch blew up");
+        }
     }
 
     @Override
