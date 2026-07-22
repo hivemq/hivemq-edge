@@ -1,5 +1,5 @@
 {
-  "realm": "hivemq",
+  "realm": "acme",
   "enabled": true,
   "sslRequired": "none",
   "clients": [
@@ -41,43 +41,69 @@
   ],
   "roles": {
     "realm": [
-      { "name": "hivemq-admin" },
-      { "name": "hivemq-user" }
+      {
+        "name": "acme-admin"
+      },
+      {
+        "name": "acme-user"
+      }
     ]
   },
   "users": [
     {
       "username": "alice",
       "enabled": true,
-      "email": "alice@example.com",
+      "email": "alice@acme.example",
       "firstName": "Alice",
       "lastName": "Admin",
       "credentials": [
-        { "type": "password", "value": "alice-password", "temporary": false }
+        {
+          "type": "password",
+          "value": "alice-password",
+          "temporary": false
+        }
       ],
-      "realmRoles": [ "hivemq-admin" ]
+      "realmRoles": [
+        "acme-admin"
+      ],
+      "emailVerified": true,
+      "requiredActions": []
     },
     {
       "username": "bob",
       "enabled": true,
-      "email": "bob@example.com",
+      "email": "bob@acme.example",
       "firstName": "Bob",
       "lastName": "User",
       "credentials": [
-        { "type": "password", "value": "bob-password", "temporary": false }
+        {
+          "type": "password",
+          "value": "bob-password",
+          "temporary": false
+        }
       ],
-      "realmRoles": [ "hivemq-user" ]
+      "realmRoles": [
+        "acme-user"
+      ],
+      "emailVerified": true,
+      "requiredActions": []
     },
     {
       "username": "carol",
       "enabled": true,
-      "email": "carol@example.com",
+      "email": "carol@acme.example",
       "firstName": "Carol",
       "lastName": "Unmapped",
       "credentials": [
-        { "type": "password", "value": "carol-password", "temporary": false }
+        {
+          "type": "password",
+          "value": "carol-password",
+          "temporary": false
+        }
       ],
-      "realmRoles": []
+      "realmRoles": [],
+      "emailVerified": true,
+      "requiredActions": []
     }
   ]
 }

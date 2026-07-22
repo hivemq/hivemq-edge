@@ -85,7 +85,7 @@ class OidcServiceKeycloakIntegrationTest {
                 URI.create(REDIRECT_URI),
                 "roles",
                 List.of(),
-                Map.of("hivemq-admin", ApiRoles.ADMIN, "hivemq-user", ApiRoles.USER));
+                Map.of("acme-admin", ApiRoles.ADMIN, "acme-user", ApiRoles.USER));
 
         apiConfigurationService = Mockito.mock(ApiConfigurationService.class);
         Mockito.when(apiConfigurationService.getOidcConfiguration()).thenReturn(config);
