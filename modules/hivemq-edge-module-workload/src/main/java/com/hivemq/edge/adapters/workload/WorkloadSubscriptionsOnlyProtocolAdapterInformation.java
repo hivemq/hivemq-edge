@@ -86,6 +86,8 @@ public final class WorkloadSubscriptionsOnlyProtocolAdapterInformation implement
 
     @Override
     public int currentConfigVersion() {
+        // Config schema version for this adapter type (the SDK-v2 adapter config format), NOT the adapter "world"/API
+        // generation. Bump only when this adapter's own configuration schema changes in an incompatible way.
         return 2;
     }
 }
