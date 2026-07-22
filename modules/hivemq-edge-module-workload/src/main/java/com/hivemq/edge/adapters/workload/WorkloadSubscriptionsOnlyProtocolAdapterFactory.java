@@ -30,7 +30,8 @@ public final class WorkloadSubscriptionsOnlyProtocolAdapterFactory implements Pr
     private static final @NotNull Schema STRING_SCHEMA =
             new ScalarSchema(ScalarType.STRING, null, null, null, null, false, true, false);
 
-    private final @NotNull ProtocolAdapterInformation information = new WorkloadSubscriptionsOnlyProtocolAdapterInformation();
+    private final @NotNull ProtocolAdapterInformation information =
+            new WorkloadSubscriptionsOnlyProtocolAdapterInformation();
 
     @Override
     public @NotNull ProtocolAdapterInformation information() {
@@ -41,7 +42,9 @@ public final class WorkloadSubscriptionsOnlyProtocolAdapterFactory implements Pr
     public @NotNull WorkloadProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
         return new WorkloadProtocolAdapter(
-                input.adapterId(), output, WorkloadScenario.parseOrEmpty(input.adapterConfig().getTagValue()));
+                input.adapterId(),
+                output,
+                WorkloadScenario.parseOrEmpty(input.adapterConfig().getTagValue()));
     }
 
     @Override
