@@ -16,11 +16,13 @@
 package com.hivemq.protocols.v2.config;
 
 import com.hivemq.configuration.entity.EntityValidatable;
+import com.hivemq.util.Topics;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlType;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +41,9 @@ import org.jetbrains.annotations.Nullable;
 // com.hivemq.configuration.entity.adapter.NorthboundMappingEntity without a type-name collision.
 @XmlType(name = "v2NorthboundMappingEntity")
 public class NorthboundMappingEntity implements EntityValidatable {
+
+    /** MQTT's UTF-8 string limit; a longer topic can never be delivered (matches the broker's restriction default). */
+    public static final int MAX_TOPIC_LENGTH_BYTES = 65_535;
 
     @XmlAttribute(name = "tag-name", required = true)
     private @NotNull String tagName = "";
@@ -65,7 +70,25 @@ public class NorthboundMappingEntity implements EntityValidatable {
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
         EntityValidatable.notEmpty(validationEvents, tagName, "northbound-mapping tag-name");
-        EntityValidatable.notEmpty(validationEvents, topic, "northbound-mapping topic");
+        if (EntityValidatable.notEmpty(validationEvents, topic, "northbound-mapping topic")) {
+            // A topic the broker cannot deliver to must be rejected here: accepting it silently drops every
+            // reading behind a healthy-looking adapter status.
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> Topics.isValidTopicToPublish(topic),
+                    () -> "northbound-mapping topic [" + topic
+                            + "] is not a valid topic to publish to (wildcards and null characters are not allowed)");
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> !Topics.isDollarTopic(topic),
+                    () -> "northbound-mapping topic [" + topic
+                            + "] is in the reserved '$' namespace, which is owned by the broker");
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> topic.getBytes(StandardCharsets.UTF_8).length <= MAX_TOPIC_LENGTH_BYTES,
+                    () -> "northbound-mapping topic exceeds the maximum length of " + MAX_TOPIC_LENGTH_BYTES
+                            + " bytes");
+        }
     }
 
     @Override

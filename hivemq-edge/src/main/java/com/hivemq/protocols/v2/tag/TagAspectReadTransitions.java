@@ -74,13 +74,19 @@ public final class TagAspectReadTransitions {
                 // A value came back: schedule the next poll. No new state — the cadence simply continues.
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.ValueReceived.class)
                 .then((current, event, aspect) -> {
-                    aspect.scheduleNextPoll();
+                    aspect.onPollSucceeded();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
                 })
-                // A poll failed: count it, schedule the next poll. The next scheduled poll IS the retry.
+                // A poll failed (node error or missing result): count it and retry on the cadence — or, after
+                // repeated consecutive failures, escalate through re-verification (EDG-824 #15).
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.NodeFailed.class)
+                .then((current, event, aspect) ->
+                        aspect.onPollFailure(TagAspectPreOperatingTransitions.reasonOf(event)))
+                // A late value (after the result deadline failed the poll): discarded, but it proves the device is
+                // alive — reset the consecutive-failure escalation counter.
+                .on(TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL, TagAspectEvent.ValueReceived.class)
                 .then((current, event, aspect) -> {
-                    aspect.onPollFailure(TagAspectPreOperatingTransitions.reasonOf(event));
+                    aspect.onLateValueProofOfLife();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
                 })
                 .unmatched((current, event, aspect) -> {

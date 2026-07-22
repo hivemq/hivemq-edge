@@ -55,6 +55,9 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
      * @param snapshot the reference the wrapper publishes its status into — created by the manager's handle in
      *                 production, by the test fixture in unit tests.
      */
+    private static final @NotNull org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
+
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterWrapperContext context,
             final @NotNull AtomicReference<AdapterStatusSnapshot> snapshot) {
@@ -68,28 +71,42 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
     @Override
     public void receive(final @NotNull ProtocolAdapterWrapperMessage message) {
         final ProtocolAdapterWrapperState before = machine.state();
-        switch (message) {
-            case ProtocolAdapterWrapperTick tick -> {
-                context.onTick(tick.nowMillis());
-                context.stepTowardGoal();
-            }
-            case ProtocolAdapterWrapperCommand command ->
-                machine.onGoalChange(() -> {
-                    context.applyCommand(command);
+        try {
+            switch (message) {
+                case ProtocolAdapterWrapperTick tick -> {
+                    context.onTick(tick.nowMillis());
                     context.stepTowardGoal();
-                });
-            case ProtocolAdapterWrapperEvent event -> {
-                handleEvent(event);
-                context.stepTowardGoal();
+                }
+                case ProtocolAdapterWrapperCommand command ->
+                    machine.onGoalChange(() -> {
+                        context.applyCommand(command);
+                        context.stepTowardGoal();
+                    });
+                case ProtocolAdapterWrapperEvent event -> {
+                    handleEvent(event);
+                    context.stepTowardGoal();
+                }
+                case ProtocolAdapterWrapperWriteRequest write ->
+                    // A southbound write: route it to the node's write aspect. It changes no adapter
+                    // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
+                    context.routeWriteRequestToTags(write.node(), write.value());
+                case ProtocolAdapterWrapperBrowseRequest browse ->
+                    // A REST browse request: bridge it to the protocol adapter. It changes no adapter
+                    // goal or machine state — it issues one browse() when CONNECTED and stashes the future.
+                    context.handleBrowseRequest(browse.filter(), browse.completion());
             }
-            case ProtocolAdapterWrapperWriteRequest write ->
-                // A southbound write: route it to the node's write aspect. It changes no adapter
-                // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
-                context.routeWriteRequestToTags(write.node(), write.value());
-            case ProtocolAdapterWrapperBrowseRequest browse ->
-                // A REST browse request: bridge it to the protocol adapter. It changes no adapter
-                // goal or machine state — it issues one browse() when CONNECTED and stashes the future.
-                context.handleBrowseRequest(browse.filter(), browse.completion());
+        } catch (final Throwable exception) {
+            // The green-while-dead guard (EDG-824 #7): a contract-violating adapter throwing from a synchronous
+            // adapter-facing call must not kill the dispatch loop and freeze the last (GREEN) snapshot — the
+            // wrapper enters ERROR and keeps processing messages. Throwable, not RuntimeException: a mispackaged
+            // adapter jar throws LinkageErrors, the very case this guard exists for. The handler itself is guarded
+            // too: if the error path also throws (a half-mutated tag plane), the machine still lands in ERROR.
+            try {
+                machine.transitionTo(context.adapterThrowStep(machine.state(), exception));
+            } catch (final Throwable secondary) {
+                log.error("The error path of a v2 adapter wrapper failed too; forcing ERROR", secondary);
+                machine.transitionTo(ProtocolAdapterWrapperState.ERROR);
+            }
         }
         if (machine.state() != before) {
             context.recordTransition();
@@ -165,6 +182,12 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
     }
 
     private void publishSnapshot() {
-        snapshot.set(context.buildSnapshot(machine.state()));
+        try {
+            snapshot.set(context.buildSnapshot(machine.state()));
+        } catch (final Throwable exception) {
+            // Never leave a stale healthy-looking snapshot published: a failing snapshot build is itself an ERROR.
+            log.error("Failed to build the status snapshot of a v2 adapter; publishing a fallback ERROR", exception);
+            snapshot.set(context.fallbackErrorSnapshot("status snapshot failed: " + exception.getMessage()));
+        }
     }
 }

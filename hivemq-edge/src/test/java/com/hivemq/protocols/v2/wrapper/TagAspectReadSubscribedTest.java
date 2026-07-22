@@ -88,6 +88,28 @@ class TagAspectReadSubscribedTest {
         assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore); // no re-verify on a command loss
     }
 
+    // EDG-824 #16: the documented power cycle CANCELS the old subscription — REMOVESUB is actually issued, and it
+    // is dispatched before the re-subscription's ADDSUB.
+    @Test
+    void spontaneousLoss_cancelsTheOldSubscriptionBeforeResubscribing() {
+        final WrapperTestFixture fixture = subscribedAndConfirmed();
+        final long removesBefore = count(fixture, "removeSubscriptionBatch");
+
+        fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
+        fixture.drain(); // the cancel is queued, the re-verification succeeds, the re-add is queued
+        fixture.advance(100); // a tick dispatches the power cycle: remove first, then add
+
+        assertThat(count(fixture, "removeSubscriptionBatch")).isEqualTo(removesBefore + 1);
+        final List<String> commands = fixture.commands();
+        assertThat(commands.lastIndexOf("removeSubscriptionBatch"))
+                .isLessThan(commands.lastIndexOf("addSubscriptionBatch"));
+
+        // The cycle completes: the first pushed value confirms the fresh subscription.
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "23"));
+        fixture.drain();
+        assertThat(fixture.readState("temperature")).isEqualTo("SUBSCRIBED");
+    }
+
     @Test
     void spontaneousLoss_powerCyclesThroughVerification() {
         final WrapperTestFixture fixture = subscribedAndConfirmed();

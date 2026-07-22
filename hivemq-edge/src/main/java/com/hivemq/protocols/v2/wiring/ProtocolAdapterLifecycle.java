@@ -102,8 +102,8 @@ public class ProtocolAdapterLifecycle {
                 () -> new ProtocolAdapterManagerMessage.ProtocolAdapterManagerTick(clock.nowMillis()));
         // The extractor notifies the consumer synchronously on registration with the current section, so the manager
         // — already bound and pumping above — reconciles the startup configuration here.
-        configExtractor.registerConsumer(
-                configs -> managerMailbox.tell(new ProtocolAdapterManagerMessage.ConfigurationChanged(configs)));
+        configExtractor.registerConsumer(update -> managerMailbox.tell(
+                new ProtocolAdapterManagerMessage.ConfigurationChanged(update.adapters(), update.rejected())));
         started = true;
         log.info("Started the v2 protocol-adapter subsystem");
     }

@@ -64,8 +64,10 @@ public class TagEntity implements EntityValidatable {
     @XmlElement(name = "poll-interval-millis")
     private long pollIntervalMillis = DEFAULT_POLL_INTERVAL_MILLIS;
 
+    // Omitted <access> = no access declaration = unconstrained. An explicit element (whose per-attribute defaults
+    // are NO) is the declared model and is enforced at runtime (EDG-824 #14).
     @XmlElement(name = "access")
-    private @NotNull AccessFlagsEntity access = new AccessFlagsEntity();
+    private @NotNull AccessFlagsEntity access = AccessFlagsEntity.unrestricted();
 
     // no-arg constructor for JAXB; field initializers carry the defaults
     public TagEntity() {}

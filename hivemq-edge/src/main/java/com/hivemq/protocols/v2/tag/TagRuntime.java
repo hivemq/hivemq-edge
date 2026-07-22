@@ -55,8 +55,9 @@ public final class TagRuntime {
      * @param batches                the actor's batch collector.
      * @param metrics                the per-adapter metrics.
      * @param sharedNodeVerification the shared verification authority.
-     * @param pollIntervalMillis     the poll cadence for a polled read aspect, in milliseconds.
-     * @param retryPolicy            the backoff policy for verification and subscription retries.
+     * @param pollIntervalMillis      the poll cadence for a polled read aspect, in milliseconds.
+     * @param pollResultTimeoutMillis the deadline for a requested poll's result (EDG-824 #15).
+     * @param retryPolicy             the backoff policy for verification and subscription retries.
      */
     public TagRuntime(
             final @NotNull String adapterId,
@@ -67,6 +68,7 @@ public final class TagRuntime {
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
             final long pollIntervalMillis,
+            final long pollResultTimeoutMillis,
             final @NotNull RetryPolicy retryPolicy) {
         this.pair = pair;
         this.readAspect = new TagAspectRead(
@@ -79,6 +81,7 @@ public final class TagRuntime {
                 metrics,
                 sharedNodeVerification,
                 pollIntervalMillis,
+                pollResultTimeoutMillis,
                 retryPolicy);
         this.writeAspect = new TagAspectWrite(
                 adapterId,
@@ -216,6 +219,17 @@ public final class TagRuntime {
      */
     public boolean onValue(final @NotNull DataPoint value) {
         return readAspect.onValue(value);
+    }
+
+    /**
+     * Record a declared-schema conformance failure on the read aspect: counted and surfaced in the
+     * snapshot, but never fed into the aspect machine — a violating value is a data-quality problem on a live
+     * transport, not a transport failure (EDG-824 #6).
+     *
+     * @param reason a human-readable description of the violation.
+     */
+    public void recordReadConformanceFailure(final @NotNull String reason) {
+        readAspect.recordConformanceFailure(reason);
     }
 
     /**

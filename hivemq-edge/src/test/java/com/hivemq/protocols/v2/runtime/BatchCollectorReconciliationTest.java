@@ -51,8 +51,10 @@ class BatchCollectorReconciliationTest {
         assertThat(adapter.removed).containsExactly(List.of(node));
     }
 
+    // EDG-824 #16: cancel-then-resubscribe is a power cycle — BOTH are dispatched, remove first, so the
+    // spec'd REMOVESUB → ADDSUB sequence survives same-tick reconciliation.
     @Test
-    void cancelThenResubscribeSameTick_netsToASingleAdd() {
+    void cancelThenResubscribeSameTick_dispatchesThePowerCycleRemoveFirst() {
         final BatchCollector collector = new BatchCollector();
         final RecordingProtocolAdapter adapter = new RecordingProtocolAdapter();
         final Node node = new TestNode("n1");
@@ -61,8 +63,24 @@ class BatchCollectorReconciliationTest {
         collector.addSubscription(node);
         collector.dispatch(adapter);
 
-        assertThat(adapter.removed).isEmpty();
+        assertThat(adapter.removed).containsExactly(List.of(node));
         assertThat(adapter.added).containsExactly(List.of(node));
+        assertThat(adapter.callOrder).containsExactly("remove", "add");
+    }
+
+    @Test
+    void powerCycleFollowedByARemove_collapsesBackToAPlainRemove() {
+        final BatchCollector collector = new BatchCollector();
+        final RecordingProtocolAdapter adapter = new RecordingProtocolAdapter();
+        final Node node = new TestNode("n1");
+
+        collector.removeSubscription(node);
+        collector.addSubscription(node); // power cycle pending
+        collector.removeSubscription(node); // ...but the aspect deactivated: net effect is the remove
+        collector.dispatch(adapter);
+
+        assertThat(adapter.removed).containsExactly(List.of(node));
+        assertThat(adapter.added).isEmpty();
     }
 
     @Test

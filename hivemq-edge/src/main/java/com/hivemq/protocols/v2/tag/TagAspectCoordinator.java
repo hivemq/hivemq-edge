@@ -135,16 +135,18 @@ public interface TagAspectCoordinator {
     /**
      * Replace the tag set in place — the tags-only transition. Never reconnects.
      *
-     * @param nodes             the new node/tag pairs.
-     * @param activation        the per-tag activation preferences.
-     * @param readUsedTagNames  the tags consumed by a northbound mapping.
-     * @param writeUsedTagNames the tags produced to by a southbound mapping.
+     * @param nodes              the new node/tag pairs.
+     * @param activation         the per-tag activation preferences.
+     * @param readUsedTagNames   the tags consumed by a northbound mapping.
+     * @param writeUsedTagNames  the tags produced to by a southbound mapping.
+     * @param pollIntervalMillis the poll cadence derived from the new configuration.
      */
     void updateTagSet(
             @NotNull List<NodeTagPair> nodes,
             @NotNull Map<String, TagAspectActivationPreference> activation,
             @NotNull Set<String> readUsedTagNames,
-            @NotNull Set<String> writeUsedTagNames);
+            @NotNull Set<String> writeUsedTagNames,
+            long pollIntervalMillis);
 
     /**
      * Retry a permanently-failed tag: each of its aspects in permanent verification
