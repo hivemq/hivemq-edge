@@ -504,3 +504,4 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
         }
     }
 }
+
