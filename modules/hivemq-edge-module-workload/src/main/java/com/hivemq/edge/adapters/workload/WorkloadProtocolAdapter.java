@@ -659,4 +659,3 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
         }
     }
 }
-
