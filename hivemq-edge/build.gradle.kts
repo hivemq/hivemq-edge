@@ -216,14 +216,8 @@ dependencies {
     // JWT
     implementation(libs.jose4j)
 
-    // OIDC (OpenID Connect authentication — discovery, code exchange, ID token validation).
-    // Exclude the SAML transitive tree: oauth2-oidc-sdk bundles OpenSAML, which we do not use (only the
-    // OIDC authorization-code paths) and which drags in a conflicting jakarta.ws.rs-api / servlet stack.
-    implementation(libs.nimbus.oauth2.oidc.sdk) {
-        exclude(group = "org.opensaml")
-        exclude(group = "org.glassfish.jersey.core")
-        exclude(group = "org.glassfish.jersey.connectors")
-    }
+    // OIDC (OpenID Connect authentication — discovery, code exchange, ID token validation)
+    implementation(libs.nimbus.oauth2.oidc.sdk)
 
     // LDAP
     implementation(libs.unboundid.ldap.sdk)
