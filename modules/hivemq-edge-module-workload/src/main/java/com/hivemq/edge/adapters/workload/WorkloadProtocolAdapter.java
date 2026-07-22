@@ -59,7 +59,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
      * loaded (defeats the {@code build/hivemq-environment/base} stale-jar cache trap that caused the retracted #8/#9/#10).
      * Emitted at {@link #start()} as {@code WL_BUILD} and journalled as {@code BUILD <token>}.
      */
-    public static final @NotNull String BUILD = "wl-2026-07-21-v2b5";
+    public static final @NotNull String BUILD = "wl-2026-07-22-v2b7";
 
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterOutput output;
@@ -75,6 +75,11 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
     private final @NotNull Map<String, Integer> verifyAttempts = new HashMap<>(); // dispatch-thread only (verifyBatch)
     private final @NotNull Map<String, Long> counters = new ConcurrentHashMap<>(); // per-node monotonic counter (wave "counter")
     private final @NotNull Map<String, Node> subscribed = new ConcurrentHashMap<>(); // the subscription SHADOW SET (nodeId → node)
+    // Registry of every ORIGINAL Node instance the engine has handed this adapter (via poll/verify/subscribe/attribute
+    // batches). The control channel resolves an injected "emit datapoint|nodeerror|verify|writeresult <nodeId>" through
+    // this map so the callback carries the exact instance the engine tracks (its node→tag map is identity-keyed); a
+    // fresh node would be silently dropped by findTagRuntime.
+    private final @NotNull Map<String, Node> knownNodes = new ConcurrentHashMap<>();
     private @Nullable ScheduledExecutorService subExecutor; // the "device" push loop for subscribed nodes
     private @Nullable WorkloadControlChannel control; // deterministic test control (gates/callback-injection/journal)
 
@@ -137,7 +142,13 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
     @Override
     public void start() {
         startMs = System.currentTimeMillis();
-        control = new WorkloadControlChannel(adapterId, scenario.controlDir(), output, startMs);
+        // Reap a watcher left alive by a prior stop() (kept running so a test can inject callbacks AFTER STOPPED, NV-C07)
+        // before opening a fresh session — otherwise a restart (reconfigure recreates the adapter) leaves the old watcher
+        // polling the same .ctl file, and every subsequent command is executed by BOTH watchers (k+1 times after k restarts).
+        if (control != null) {
+            control.stop();
+        }
+        control = new WorkloadControlChannel(adapterId, scenario.controlDir(), output, knownNodes::get, startMs);
         control.start();
         log.warn("WL_BUILD id={} build={}", adapterId, BUILD); // prove which jar is loaded (stale-cache tripwire)
         journal("BUILD " + BUILD);
@@ -223,6 +234,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
 
     @Override
     public void verifyBatch(final @NotNull List<Node> nodes) {
+        nodes.forEach(n -> knownNodes.put(n.nodeId(), n)); // capture original instances for control-channel injection
         log.warn("WL_VERIFY_CALLED id={} nodes={} misbehave={}", adapterId, nodes.size(), scenario.misbehave());
         blockSleep("verify");
         if ("verify-partial".equals(scenario.misbehave())) {
@@ -298,6 +310,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
 
     @Override
     public void pollBatch(final @NotNull List<Node> nodes) {
+        nodes.forEach(n -> knownNodes.put(n.nodeId(), n)); // capture original instances for control-channel injection
         for (final Node n : nodes) {
             log.warn("WL_POLL id={} node={}", adapterId, n.nodeId()); // which nodes Edge actually polls (used-goal probe)
         }
@@ -351,6 +364,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
 
     @Override
     public void addSubscriptionBatch(final @NotNull List<Node> nodes) {
+        nodes.forEach(n -> knownNodes.put(n.nodeId(), n)); // capture original instances for control-channel injection
         for (final Node node : nodes) {
             subscribed.put(node.nodeId(), node); // INCREMENTAL — must never reset the existing shadow set
             journal("ADDSUB node=" + node.nodeId());
@@ -456,6 +470,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter {
 
     @Override
     public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
+        nodes.forEach(n -> knownNodes.put(n.nodeId(), n)); // capture original instances for control-channel injection
         final List<ResolvedAttributes> resolved = new ArrayList<>(nodes.size());
         for (final Node node : nodes) {
             resolved.add(new ResolvedAttributes(node, "workload:double",
