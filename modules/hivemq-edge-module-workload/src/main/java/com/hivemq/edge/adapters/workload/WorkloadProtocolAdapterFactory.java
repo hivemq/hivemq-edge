@@ -36,8 +36,8 @@ public final class WorkloadProtocolAdapterFactory implements ProtocolAdapterFact
     // A DELIBERATE typed contract for QA: the node schema declares each reading is a DOUBLE in [0, 100]. This lets a
     // black-box test check whether Edge (a) projects/exposes this typed contract and (b) actually ENFORCES it against
     // the data the adapter emits (out-of-range or wrong-typed values).
-    private static final @NotNull Schema NODE_SCHEMA =
-            new ScalarSchema(ScalarType.DOUBLE, 0.0, 100.0, "reading", "workload sensor reading in [0,100]", false, true, false);
+    private static final @NotNull Schema NODE_SCHEMA = new ScalarSchema(
+            ScalarType.DOUBLE, 0.0, 100.0, "reading", "workload sensor reading in [0,100]", false, true, false);
 
     private final @NotNull ProtocolAdapterInformation information = new WorkloadProtocolAdapterInformation();
 
@@ -50,7 +50,9 @@ public final class WorkloadProtocolAdapterFactory implements ProtocolAdapterFact
     public @NotNull WorkloadProtocolAdapter createAdapter(
             final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
         return new WorkloadProtocolAdapter(
-                input.adapterId(), output, WorkloadScenario.parseOrEmpty(input.adapterConfig().getTagValue()));
+                input.adapterId(),
+                output,
+                WorkloadScenario.parseOrEmpty(input.adapterConfig().getTagValue()));
     }
 
     @Override
