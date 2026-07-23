@@ -85,9 +85,22 @@ public class OpcUaClientConnection {
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
+        if (parsedConfig.trustAnyServerCertificate()) {
+            log.warn(
+                    "OPC UA adapter '{}' configured for endpoint '{}' with trustLevel=TRUST: "
+                            + "all server certificates will be accepted without chain validation. "
+                            + "Intended for self-signed / factory environments only.",
+                    adapterId,
+                    config.getUri());
+        }
         final OpcUaClient client;
         final var activityListener = new OpcUaSessionActivityListener(
-                protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                protocolAdapterState,
+                parsedConfig.trustAnyServerCertificate(),
+                config.getUri());
 
         // Determine preferred MessageSecurityMode with intelligent defaults
         final MessageSecurityMode preferredMode;

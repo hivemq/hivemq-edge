@@ -144,6 +144,19 @@ public class KeyChain {
         return new GeneratedCert(cert, certKeyPair);
     }
 
+    public @NotNull X509Certificate getRootCertificate() {
+        return root.certificate();
+    }
+
+    /**
+     * @param domain one of the leaf-cert domains passed to {@link #createKeyChain}.
+     * @return the leaf certificate for that domain. Its SubjectAltName carries both the DNS name
+     *     {@code domain} and the URI {@code urn:hivemq:edge:domain}.
+     */
+    public @NotNull X509Certificate getLeafCertificate(final @NotNull String domain) {
+        return leafCerts.get(domain).certificate();
+    }
+
     public @NotNull File wrapInKeyStoreWithPrivateKey(
             final @NotNull String filename,
             final @NotNull String cnName,
