@@ -21,6 +21,21 @@ dependencies {
     compileOnly(libs.hivemq.edge.adaptersdk)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.slf4j.api)
+
+    // Unit layer (the chaos-module pattern): fast, engine-free tests of the module's own machinery — scenario parsing
+    // (incl. the whole-object "*" shadowing rule), verb→callback mapping, wave math, and control-channel gate
+    // semantics. The wired e2e (hivemq-edge-test) and the black-box QA suite (hivemq-testsuite) sit above this layer.
+    testImplementation(libs.hivemq.edge.adaptersdk)
+    testImplementation(libs.jackson.databind)
+    testImplementation(libs.slf4j.api)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.assertj)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 // Test-only consumable variant (the chaos-module pattern): exposes the plain library jar so `hivemq-edge-test`'s
