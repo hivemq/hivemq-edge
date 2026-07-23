@@ -15,7 +15,7 @@ runs:
       name: Install pnpm
       id: pnpm-install
       with:
-        version: 11.14.0
+        version: 11.16.0
         run_install: ${{ inputs.run-install }}
 
     - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
