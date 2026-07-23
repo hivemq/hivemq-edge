@@ -114,7 +114,7 @@
       "label": "Sign in"
     },
     "sso": {
-      "label": "Login with SSO"
+      "buttonLabel": "Login with SSO"
     },
     "error": {
       "noConfiguration": {

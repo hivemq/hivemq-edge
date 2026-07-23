@@ -194,7 +194,7 @@ const Login: FC<{
       {ssoEnabled && (
         <Box width="100%" maxWidth="450px" px={4} pb={4}>
           <Button data-testid="loginPage-sso" width="100%" variant="outline" onClick={onSsoLogin}>
-            {t('translation:login.sso.label')}
+            {t('translation:login.sso.buttonLabel')}
           </Button>
         </Box>
       )}
