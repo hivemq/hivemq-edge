@@ -34,16 +34,19 @@ get:
         text/html:
           schema:
             type: string
-        application/json:
-          schema:
-            $ref: ../components/schemas/ApiBearerToken.yaml
-      description: Login succeeded; the HiveMQ Edge JWT is delivered to the SPA (by default via an HTML page that posts the token to the opener window).
+      description: |-
+        Login succeeded. This is a browser endpoint: the response is an HTML page that posts
+        `{ type: "oidc-result", token: "<the HiveMQ Edge JWT>" }` to the opener window and closes itself.
     '401':
       content:
-        application/json:
+        text/html:
           schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: The login could not be completed (invalid or expired state, token validation failure, or an IdP error).
+            type: string
+      description: |-
+        The login could not be completed. The response is an HTML page that posts
+        `{ type: "oidc-result", errorCode: "<code>" }` to the opener window and closes itself, so the
+        SPA always settles the pending login. Codes: `idp-error`, `invalid-request`, `invalid-state`,
+        `exchange-failed`, `no-roles`. Identity Provider error descriptions are logged, not returned.
   summary: Complete the OIDC login flow.
   tags:
     - Authentication

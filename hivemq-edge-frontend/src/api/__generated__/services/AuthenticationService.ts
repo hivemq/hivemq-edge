@@ -89,7 +89,6 @@ export class AuthenticationService {
             url: '/api/v1/auth/oidc/login',
             errors: {
                 302: `Redirect to the Identity Provider's authorization endpoint.`,
-                429: `Too many concurrent logins in flight; retry shortly.`,
                 503: `OIDC is not configured or the Identity Provider is unreachable.`,
             },
         });
@@ -101,7 +100,8 @@ export class AuthenticationService {
      * @param state The opaque state token echoed back by the Identity Provider.
      * @param error An OAuth2 error code, present instead of code/state when the login failed.
      * @param errorDescription A human-readable description of the error.
-     * @returns ApiBearerToken Login succeeded; the HiveMQ Edge JWT is delivered to the SPA (by default via an HTML page that posts the token to the opener window).
+     * @returns string Login succeeded. This is a browser endpoint: the response is an HTML page that posts
+     * `{ type: "oidc-result", token: "<the HiveMQ Edge JWT>" }` to the opener window and closes itself.
      * @throws ApiError
      */
     public oidcCallback(
@@ -109,7 +109,7 @@ export class AuthenticationService {
         state?: string,
         error?: string,
         errorDescription?: string,
-    ): CancelablePromise<ApiBearerToken> {
+    ): CancelablePromise<string> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/auth/oidc/callback',
@@ -120,7 +120,10 @@ export class AuthenticationService {
                 'error_description': errorDescription,
             },
             errors: {
-                401: `The login could not be completed (invalid or expired state, token validation failure, or an IdP error).`,
+                401: `The login could not be completed. The response is an HTML page that posts
+                \`{ type: "oidc-result", errorCode: "<code>" }\` to the opener window and closes itself, so the
+                SPA always settles the pending login. Codes: \`idp-error\`, \`invalid-request\`, \`invalid-state\`,
+                \`exchange-failed\`, \`no-roles\`. Identity Provider error descriptions are logged, not returned.`,
             },
         });
     }

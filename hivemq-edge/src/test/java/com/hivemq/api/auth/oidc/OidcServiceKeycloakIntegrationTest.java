@@ -59,7 +59,7 @@ class OidcServiceKeycloakIntegrationTest {
     private static final @NotNull String REDIRECT_URI = "http://localhost:28080/api/v1/auth/oidc/callback";
 
     // The Edge JWT is embedded in the callback HTML as: var token = "<jwt>";
-    private static final @NotNull Pattern TOKEN_IN_HTML = Pattern.compile("var token = \"([^\"]+)\"");
+    private static final @NotNull Pattern TOKEN_IN_HTML = Pattern.compile("token: \"([^\"]+)\"");
     // Keycloak login form: <form ... action="<url>" ...>
     private static final @NotNull Pattern FORM_ACTION = Pattern.compile("action=\"([^\"]+)\"");
     // The code arrives on the redirect Location as ...?code=...&state=...
@@ -115,12 +115,16 @@ class OidcServiceKeycloakIntegrationTest {
 
     @Test
     void unmappedUser_isDenied() throws Exception {
-        // carol has no realm roles → no Edge roles after mapping → 401 (no token issued).
+        // carol has no realm roles → no Edge roles after mapping → denied.
         final String html = drive("carol", "carol-password");
-        final Matcher tokenMatcher = TOKEN_IN_HTML.matcher(html);
-        assertThat(tokenMatcher.find())
+        assertThat(TOKEN_IN_HTML.matcher(html).find())
                 .as("no Edge JWT should be issued for a user with no mapped roles")
                 .isFalse();
+        // Assert the specific reason: without this the test would also pass if the login had failed
+        // earlier (discovery, code exchange, nonce), which would not prove role mapping denies access.
+        assertThat(html)
+                .as("the callback should report that no roles were mapped")
+                .contains("errorCode: \"" + OidcErrorCode.NO_ROLES.getCode() + "\"");
     }
 
     /**

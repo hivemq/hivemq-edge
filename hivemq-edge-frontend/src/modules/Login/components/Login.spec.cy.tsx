@@ -10,6 +10,41 @@ const makeValidJwt = () => {
   return `${header}.${payload}.signature`
 }
 
+// The hook correlates the result message against the window it opened, and the browser only sets
+// event.source to a real window (a plain object is coerced to null). So the popup is modelled with a
+// same-origin iframe: its contentWindow stands in for the popup and can genuinely post to the opener.
+const makePopupWindow = (win: Window): HTMLIFrameElement => {
+  const frame = win.document.createElement('iframe')
+  frame.srcdoc = '<html><body></body></html>'
+  win.document.body.appendChild(frame)
+  return frame
+}
+
+// Posts a message to the opener from inside the popup's own realm, so the browser sets event.source
+// to the popup — which is what the hook checks. Posting from the parent realm instead would attribute
+// the message to the main window, which the hook must reject.
+const postFromPopup = (popup: Window, opener: Window, data: unknown) => {
+  const evalInPopup = (popup as unknown as { eval: (script: string) => void }).eval
+  evalInPopup(`parent.postMessage(${JSON.stringify(data)}, ${JSON.stringify(opener.location.origin)})`)
+}
+
+// Mounts the SSO login with window.open stubbed to return a real popup window, clicks the SSO button,
+// then runs `act` to model what the callback page does.
+const withPopup = (act: (win: Window, popup: Window) => void) => {
+  cy.window().then((win) => {
+    const frame = makePopupWindow(win)
+    cy.wrap(null).then(() => {
+      const popup = frame.contentWindow as Window
+      cy.stub(win, 'open').as('windowOpen').returns(popup)
+
+      cy.mountWithProviders(<Login ssoEnabled />)
+      cy.getByTestId('loginPage-sso').click()
+      cy.get('@windowOpen').should('have.been.calledOnce')
+      cy.then(() => act(win, popup))
+    })
+  })
+}
+
 describe('Login', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
@@ -78,24 +113,33 @@ describe('Login', () => {
     })
 
     it('should sign in when the popup posts back a valid token', () => {
-      const stubbedPopup = { closed: false, close: cy.stub() }
-      cy.mountWithProviders(<Login ssoEnabled />, {
-        wrapper: ({ children }) => {
-          cy.stub(window, 'open').as('windowOpen').returns(stubbedPopup)
-          return <>{children}</>
-        },
-      })
-
-      cy.getByTestId('loginPage-sso').click()
-      cy.get('@windowOpen').should('have.been.calledOnce')
-
-      // Simulate the callback page posting the Edge JWT back to the opener.
-      cy.window().then((win) => {
-        win.postMessage({ token: makeValidJwt() }, win.location.origin)
+      withPopup((win, popup) => {
+        // The callback page posts the Edge JWT back to its opener.
+        postFromPopup(popup, win, { type: 'oidc-result', token: makeValidJwt() })
       })
 
       // A valid token → no error alert (login succeeds and navigates away).
       cy.get("[role='alert']").should('not.exist')
+    })
+
+    it('should show a role error when the callback reports no mapped roles', () => {
+      withPopup((win, popup) => {
+        // The callback page posts a failure instead of a token: the opener must settle, not hang.
+        postFromPopup(popup, win, { type: 'oidc-result', errorCode: 'no-roles' })
+      })
+
+      cy.get("[role='alert']").should('contain.text', 'no roles that grant access')
+    })
+
+    it('should ignore a result message that is not from the popup', () => {
+      withPopup((win) => {
+        // Same origin, right shape, but posted by the main window rather than the popup.
+        win.postMessage({ type: 'oidc-result', token: makeValidJwt() }, win.location.origin)
+      })
+
+      // The attempt stays pending: neither signed in nor errored.
+      cy.get("[role='alert']").should('not.exist')
+      cy.getByTestId('loginPage-sso').should('be.visible')
     })
 
     it('should show an error when the popup is blocked', () => {

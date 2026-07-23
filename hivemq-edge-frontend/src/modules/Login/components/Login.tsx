@@ -79,13 +79,32 @@ const Login: FC<{
       })
   }
 
+  // Maps the stable codes rejected by startLogin (browser-side, and the backend's callback errorCode)
+  // onto localized messages. Anything unrecognised falls back to a generic failure.
+  const ssoErrorMessage = (code: string) => {
+    switch (code) {
+      case 'popup-blocked':
+        return t('login.error.ssoPopupBlocked')
+      case 'popup-closed':
+        return t('login.error.ssoCancelled')
+      case 'no-roles':
+        return t('login.error.ssoNoRoles')
+      case 'idp-error':
+        return t('login.error.ssoIdpError')
+      default:
+        return t('login.error.ssoFailed')
+    }
+  }
+
   const onSsoLogin = () => {
     startLogin()
       .then((token) => verifyCredential({ token }))
       .catch((e: Error) => {
+        // A login superseded by another attempt, or one dropped by unmount, is not a user-facing error.
+        if (e.message === 'login-already-in-progress' || e.message === 'unmounted') return
         setError('root.ApiError', {
           type: t('login.error.tokenType'),
-          message: e.message === 'popup-blocked' ? t('login.error.ssoPopupBlocked') : t('login.error.ssoCancelled'),
+          message: ssoErrorMessage(e.message),
         })
       })
   }

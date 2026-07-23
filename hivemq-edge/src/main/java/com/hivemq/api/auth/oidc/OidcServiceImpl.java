@@ -86,6 +86,10 @@ public class OidcServiceImpl implements OidcService {
     // Cap the JWKS response size to bound memory from a hostile IdP.
     private static final int JWKS_SIZE_LIMIT_BYTES = 512 * 1024;
 
+    // Discriminator for the message the callback page posts to the SPA, so the opener can tell our
+    // result apart from any other same-origin message.
+    private static final @NotNull String OIDC_RESULT_MESSAGE_TYPE = "oidc-result";
+
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull ITokenGenerator tokenGenerator;
     private final @NotNull OidcStateStore stateStore;
@@ -155,23 +159,26 @@ public class OidcServiceImpl implements OidcService {
             final @Nullable String state,
             final @Nullable String error,
             final @Nullable String errorDescription) {
-        if (error != null) {
-            final String detail = errorDescription != null ? errorDescription : error;
-            log.info("OIDC login returned an error from the Identity Provider: {}", detail);
-            return unauthorized("Login failed: " + detail);
-        }
-        if (code == null || state == null) {
-            return unauthorized("Missing authorization code or state.");
-        }
-
         final OidcConfiguration config = apiConfigurationService.getOidcConfiguration();
         if (config == null) {
             return oidcNotConfigured();
         }
 
-        final Optional<OidcStateStore.StateEntry> entryOpt = stateStore.consume(state);
+        // Release the login state on every callback, including error and cancellation, so a denied or
+        // abandoned flow does not hold its slot until the TTL expires.
+        final Optional<OidcStateStore.StateEntry> entryOpt =
+                state != null ? stateStore.consume(state) : Optional.empty();
+
+        if (error != null) {
+            final String detail = errorDescription != null ? errorDescription : error;
+            log.info("OIDC login returned an error from the Identity Provider: {}", detail);
+            return callbackError(OidcErrorCode.IDP_ERROR, config);
+        }
+        if (code == null || state == null) {
+            return callbackError(OidcErrorCode.INVALID_REQUEST, config);
+        }
         if (entryOpt.isEmpty()) {
-            return unauthorized("Unknown or expired login state.");
+            return callbackError(OidcErrorCode.INVALID_STATE, config);
         }
         final OidcStateStore.StateEntry entry = entryOpt.get();
 
@@ -190,7 +197,7 @@ public class OidcServiceImpl implements OidcService {
                 log.info(
                         "OIDC token exchange failed: {}",
                         tokenResponse.toErrorResponse().getErrorObject());
-                return unauthorized("Token exchange failed.");
+                return callbackError(OidcErrorCode.EXCHANGE_FAILED, config);
             }
             final JWT idToken = ((OIDCTokenResponse) tokenResponse.toSuccessResponse())
                     .getOIDCTokens()
@@ -211,18 +218,18 @@ public class OidcServiceImpl implements OidcService {
             final Set<String> edgeRoles = mapRoles(config, claims);
             if (edgeRoles.isEmpty()) {
                 log.warn("OIDC login for subject '{}' produced no Edge roles after mapping; denying.", subject);
-                return unauthorized("No authorized roles for this user.");
+                return callbackError(OidcErrorCode.NO_ROLES, config);
             }
             final String edgeJwt = tokenGenerator.generateToken(new ApiPrincipal(subject, edgeRoles));
 
-            return Response.ok(tokenDeliveryHtml(edgeJwt, config.getRedirectUri()), MediaType.TEXT_HTML)
+            return noStore(Response.ok(tokenDeliveryHtml(edgeJwt, config.getRedirectUri()), MediaType.TEXT_HTML))
                     .build();
         } catch (final AuthenticationException e) {
             log.warn("OIDC login failed while issuing the Edge token", e);
-            return unauthorized("Could not issue a session token.");
+            return callbackError(OidcErrorCode.EXCHANGE_FAILED, config);
         } catch (final Exception e) {
             log.warn("OIDC login failed during code exchange / token validation: {}", e.getMessage());
-            return unauthorized("Login could not be completed.");
+            return callbackError(OidcErrorCode.EXCHANGE_FAILED, config);
         }
     }
 
@@ -311,11 +318,26 @@ public class OidcServiceImpl implements OidcService {
                 .build();
     }
 
-    private static @NotNull Response unauthorized(final @NotNull String message) {
-        return Response.status(Response.Status.UNAUTHORIZED)
-                .type(MediaType.TEXT_PLAIN)
-                .entity(message)
+    /**
+     * Callback failure: a 401 whose body is the result page, so the popup posts a stable error code to
+     * the opener and closes. The status still marks the failure for any non-browser caller.
+     */
+    private static @NotNull Response callbackError(
+            final @NotNull OidcErrorCode errorCode, final @NotNull OidcConfiguration config) {
+        return noStore(Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(errorDeliveryHtml(errorCode, config.getRedirectUri()))
+                        .type(MediaType.TEXT_HTML))
                 .build();
+    }
+
+    /**
+     * Applies no-store headers. The callback response carries a bearer token (or the outcome of a login)
+     * and must not be retained by a browser, proxy, or back/forward cache.
+     */
+    private static Response.@NotNull ResponseBuilder noStore(final Response.@NotNull ResponseBuilder builder) {
+        return builder.header("Cache-Control", "no-store, no-cache, max-age=0")
+                .header("Pragma", "no-cache")
+                .header("Referrer-Policy", "no-referrer");
     }
 
     /**
@@ -323,16 +345,36 @@ public class OidcServiceImpl implements OidcService {
      * and closes the popup, keeping the JWT out of URLs. The origin is derived from the redirect URI.
      */
     private static @NotNull String tokenDeliveryHtml(final @NotNull String jwt, final @NotNull URI redirectUri) {
-        final String origin = originOf(redirectUri);
         // jwt is a compact JWS (base64url segments + dots) — safe to embed in a JSON string literal.
-        return "<!DOCTYPE html><html><head><title>Signing in…</title></head><body><script>\n"
+        return resultDeliveryHtml("token: \"" + jwt + "\"", "Signed in. You may close this window.", redirectUri);
+    }
+
+    /**
+     * Minimal HTML page delivered on failure: posts a stable error code to the opener window and closes
+     * the popup, so the opener always settles instead of waiting for a message that never arrives. Only
+     * the code is posted — raw Identity Provider error descriptions are logged, not surfaced to the user.
+     */
+    private static @NotNull String errorDeliveryHtml(
+            final @NotNull OidcErrorCode errorCode, final @NotNull URI redirectUri) {
+        return resultDeliveryHtml(
+                "errorCode: \"" + errorCode.getCode() + "\"", "Login failed. You may close this window.", redirectUri);
+    }
+
+    /**
+     * Builds the callback result page. Both outcomes post a discriminated {@code oidc-result} message to
+     * the opener and close the popup, so the opener can settle on either path.
+     */
+    private static @NotNull String resultDeliveryHtml(
+            final @NotNull String payloadField, final @NotNull String fallbackText, final @NotNull URI redirectUri) {
+        final String origin = originOf(redirectUri);
+        return "<!DOCTYPE html><html><head><title>HiveMQ Edge</title></head><body><script>\n"
                 + "(function () {\n"
-                + "  var token = \"" + jwt + "\";\n"
+                + "  var result = { type: \"" + OIDC_RESULT_MESSAGE_TYPE + "\", " + payloadField + " };\n"
                 + "  if (window.opener) {\n"
-                + "    window.opener.postMessage({ token: token }, \"" + origin + "\");\n"
+                + "    window.opener.postMessage(result, \"" + origin + "\");\n"
                 + "    window.close();\n"
                 + "  } else {\n"
-                + "    document.body.textContent = \"Signed in. You may close this window.\";\n"
+                + "    document.body.textContent = \"" + fallbackText + "\";\n"
                 + "  }\n"
                 + "})();\n"
                 + "</script></body></html>";

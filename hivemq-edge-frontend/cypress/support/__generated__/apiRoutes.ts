@@ -208,7 +208,7 @@ export const API_ROUTES = {
     /**
      * @see {@link AuthenticationService.oidcCallback}
      */
-    oidcCallback: route<ApiBearerToken>('GET', '/api/v1/auth/oidc/callback'),
+    oidcCallback: route<string>('GET', '/api/v1/auth/oidc/callback'),
   },
 
   /**
@@ -243,7 +243,7 @@ export const API_ROUTES = {
     /**
      * @see {@link AuthenticationEndpointService.oidcCallback}
      */
-    oidcCallback: route<ApiBearerToken>('GET', '/api/v1/auth/oidc/callback'),
+    oidcCallback: route<string>('GET', '/api/v1/auth/oidc/callback'),
   },
 
   /**
