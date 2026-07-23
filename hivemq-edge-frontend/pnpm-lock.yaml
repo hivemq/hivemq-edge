@@ -319,7 +319,7 @@ importers:
         version: 0.16.2(@types/node@25.9.5)(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/cli':
         specifier: 1.32.4
-        version: 1.32.4(typescript@5.9.3)
+        version: 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/cypress':
         specifier: 3.1.9
         version: 3.1.9(cypress@15.18.1)
@@ -468,8 +468,8 @@ importers:
         specifier: 7.3.6
         version: 7.3.6(@types/node@25.9.5)(sass@1.101.6)(terser@5.49.0)(yaml@2.8.3)
       vite-plugin-istanbul:
-        specifier: 7.2.1
-        version: 7.2.1(vite@7.3.6(@types/node@25.9.5)(sass@1.101.6)(terser@5.49.0)(yaml@2.8.3))
+        specifier: 9.0.1
+        version: 9.0.1(vite@7.3.6(@types/node@25.9.5)(sass@1.101.6)(terser@5.49.0)(yaml@2.8.3))
       vitest:
         specifier: 3.2.7
         version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.5)(@vitest/ui@3.2.7)(jsdom@24.1.3(supports-color@8.1.1))(msw@2.15.0(@types/node@25.9.5)(typescript@5.9.3))(sass@1.101.6)(supports-color@8.1.1)(terser@5.49.0)(yaml@2.8.3)
@@ -517,14 +517,6 @@ packages:
 
   '@babel/core@7.28.6':
     resolution: {integrity: sha512-H3mcG6ZDLTlYfaSNi0iOKkigqMFvkTKlGUYlD8GW7nNOYRrevuA46iTypPyv+06V3fEmvvazfntkBU34L0azAw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/generator@7.28.6':
-    resolution: {integrity: sha512-lOoVRwADj8hjf7al89tvQ2a1lf53Z+7tiXMgpZJL3maQPDxh0DgLMN62B2MKUOFcoodBHLMbDM6WAbKgNy5Suw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/generator@7.29.1':
-    resolution: {integrity: sha512-qsaF+9Qcm2Qv8SRIMMscAvG4O3lJ0F1GuMo5HR/Bp02LopNgnZBC/EkbevHFeGs4ls/oPz9v+Bsmzbkbe+0dUw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/generator@7.29.7':
@@ -640,11 +632,6 @@ packages:
 
   '@babel/parser@7.28.6':
     resolution: {integrity: sha512-TeR9zWR18BvbfPmGbLampPMW+uW1NZnJlRuuHso8i87QZNq2JRF9i6RgxRqtEq+wQGsS19NNTWr2duhnE49mfQ==}
-    engines: {node: '>=6.0.0'}
-    hasBin: true
-
-  '@babel/parser@7.29.2':
-    resolution: {integrity: sha512-4GgRzy/+fsBa72/RZVJmGKPmZu9Byn8o4MoLpmNe1m8ZfYnz5emHLQz3U4gLud6Zwl0RZIcgiLD7Uq7ySFuDLA==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -2669,9 +2656,6 @@ packages:
   '@types/babel__generator@7.27.0':
     resolution: {integrity: sha512-ufFd2Xi92OAVPYsy+P4n7/U7e68fex0+Ee8gSG9KX7eo084CWiQ4sdxktvdl0bOPupXtVJPY19zk6EwWqUQ8lg==}
 
-  '@types/babel__generator@7.6.8':
-    resolution: {integrity: sha512-ASsj+tpEDsEiFr1arWrlN6V3mdfjRMZt6LtK/Vp/kreFLnr5QH5+DhvD5nINYZXzwJvXeGq+05iUXcAzVrqWtw==}
-
   '@types/babel__template@7.4.4':
     resolution: {integrity: sha512-h/NUaSyG5EyxBIp8YRxo4RMe2/qQgvyowRwVMzhYhBCONbW8PUsg4lkFMrhgZhUe5z3L3MiLDuvyJ/CaPa2A8A==}
 
@@ -4432,6 +4416,10 @@ packages:
     resolution: {integrity: sha512-j6PAQ2uUr79PZhBjP5C5fhl8e39FmRnOjsD5lGnWrFU8i2G776tBK7+nP8KuQUTTyAZUwfQqXAgrVH5MbH9CYQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  espree@11.2.0:
+    resolution: {integrity: sha512-7p3DrVEIopW1B1avAGLuCSh1jubc01H2JHc8B4qqGblmg5gI9yumBgACjWo4JlIc04ufug4xJ3SQI8HkS/Rgzw==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
   esprima@4.0.1:
     resolution: {integrity: sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==}
     engines: {node: '>=4'}
@@ -4789,6 +4777,10 @@ packages:
   glob@13.0.1:
     resolution: {integrity: sha512-B7U/vJpE3DkJ5WXTgTpTRN63uV42DseiXXKMwG14LQBXmsdeIoHAPbU/MEo6II0k5ED74uc2ZGTC6MwHFQhF6w==}
     engines: {node: 20 || >=22}
+
+  glob@13.0.6:
+    resolution: {integrity: sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==}
+    engines: {node: 18 || 20 || >=22}
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
@@ -6032,6 +6024,10 @@ packages:
     resolution: {integrity: sha512-oWyT4gICAu+kaA7QWk/jvCHWarMKNs6pXOGWKDTr7cw4IGcUbW+PeTfbaQiLGheFRpjo6O9J0PmyMfQPjH71oA==}
     engines: {node: 20 || >=22}
 
+  path-scurry@2.0.2:
+    resolution: {integrity: sha512-3O/iVVsJAPsOnpwWIeD+d6z/7PmqApyQePUtCndjatj/9I5LylHvt5qluFaBT3I5h3r1ejfR056c+FCv+NnNXg==}
+    engines: {node: 18 || 20 || >=22}
+
   path-to-regexp@6.3.0:
     resolution: {integrity: sha512-Yhpw4T9C6hPpgPeA28us07OJeqZ5EzQTkbfwuhsUg0c237RomFoETJgmp2sa3F/41gfLE6G5cqcYwznmeEeOlQ==}
 
@@ -7087,6 +7083,10 @@ packages:
     resolution: {integrity: sha512-pFYqmTw68LXVjeWJMST4+borgQP2AyMNbg1BpZh9LbyhUeNkeaPF9gzfPGUAnSMV3qPYdWUwDIjjCLiSDOl7vg==}
     engines: {node: '>=18'}
 
+  test-exclude@8.0.0:
+    resolution: {integrity: sha512-ZOffsNrXYggvU1mDGHk54I96r26P8SyMjO5slMKSc7+IWmtB/MQKnEC2fP51imB3/pT6YK5cT5E8f+Dd9KdyOQ==}
+    engines: {node: 20 || >=22}
+
   throttleit@1.0.1:
     resolution: {integrity: sha512-vDZpf9Chs9mAdfY046mcPt8fg5QSZr37hEH4TXYBnDF+izxgrbRGUAAaBvIk/fJm9aOFCGFd1EsNg5AZCbnQCQ==}
 
@@ -7421,10 +7421,10 @@ packages:
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
 
-  vite-plugin-istanbul@7.2.1:
-    resolution: {integrity: sha512-DSPi4ulvYsjnP44sTI5oriNosbM0E6m3uoCxjdxboTtVzxSkFwcDy3/JnSYKebjr+ZToJwVLTms+2CM0rmbbzQ==}
+  vite-plugin-istanbul@9.0.1:
+    resolution: {integrity: sha512-zgcdcqa4r3urX+xqhMQG2uLR2s6IdklQW+acBEtLw6fvUWhuvXswYqxjHAZZ5HCfHEgRs7RH7qIZCklTLRsKLg==}
     peerDependencies:
-      vite: '>=4 <=7'
+      vite: '>=7'
 
   vite@7.3.6:
     resolution: {integrity: sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg==}
@@ -7810,7 +7810,7 @@ snapshots:
 
   '@babel/code-frame@7.29.0':
     dependencies:
-      '@babel/helper-validator-identifier': 7.28.5
+      '@babel/helper-validator-identifier': 7.29.7
       js-tokens: 4.0.0
       picocolors: 1.1.1
 
@@ -7841,22 +7841,6 @@ snapshots:
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
-
-  '@babel/generator@7.28.6':
-    dependencies:
-      '@babel/parser': 7.29.2
-      '@babel/types': 7.29.0
-      '@jridgewell/gen-mapping': 0.3.13
-      '@jridgewell/trace-mapping': 0.3.31
-      jsesc: 3.1.0
-
-  '@babel/generator@7.29.1':
-    dependencies:
-      '@babel/parser': 7.29.7
-      '@babel/types': 7.29.7
-      '@jridgewell/gen-mapping': 0.3.13
-      '@jridgewell/trace-mapping': 0.3.31
-      jsesc: 3.1.0
 
   '@babel/generator@7.29.7':
     dependencies:
@@ -8002,10 +7986,6 @@ snapshots:
   '@babel/parser@7.28.6':
     dependencies:
       '@babel/types': 7.29.7
-
-  '@babel/parser@7.29.2':
-    dependencies:
-      '@babel/types': 7.29.0
 
   '@babel/parser@7.29.7':
     dependencies:
@@ -8518,7 +8498,7 @@ snapshots:
   '@babel/traverse@7.29.0(supports-color@8.1.1)':
     dependencies:
       '@babel/code-frame': 7.29.0
-      '@babel/generator': 7.29.1
+      '@babel/generator': 7.29.7
       '@babel/helper-globals': 7.28.0
       '@babel/parser': 7.29.7
       '@babel/template': 7.28.6
@@ -8546,8 +8526,8 @@ snapshots:
 
   '@babel/types@7.29.0':
     dependencies:
-      '@babel/helper-string-parser': 7.27.1
-      '@babel/helper-validator-identifier': 7.28.5
+      '@babel/helper-string-parser': 7.29.7
+      '@babel/helper-validator-identifier': 7.29.7
 
   '@babel/types@7.29.7':
     dependencies:
@@ -9744,7 +9724,7 @@ snapshots:
   '@percy/cli-doctor@1.32.4(typescript@5.9.3)':
     dependencies:
       '@percy/cli-command': 1.32.4(typescript@5.9.3)
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/core': 1.32.4(typescript@5.9.3)
       '@percy/env': 1.32.4
@@ -9791,7 +9771,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/cli@1.32.4(typescript@5.9.3)':
+  '@percy/cli@1.32.4(supports-color@8.1.1)(typescript@5.9.3)':
     dependencies:
       '@percy/cli-app': 1.32.4(typescript@5.9.3)
       '@percy/cli-build': 1.32.4(typescript@5.9.3)
@@ -9801,7 +9781,7 @@ snapshots:
       '@percy/cli-exec': 1.32.4(typescript@5.9.3)
       '@percy/cli-snapshot': 1.32.4(typescript@5.9.3)
       '@percy/cli-upload': 1.32.4(typescript@5.9.3)
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/logger': 1.32.4
     transitivePeerDependencies:
       - bufferutil
@@ -9809,12 +9789,12 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/client@1.32.4(typescript@5.9.3)':
+  '@percy/client@1.32.4(supports-color@8.1.1)(typescript@5.9.3)':
     dependencies:
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/env': 1.32.4
       '@percy/logger': 1.32.4
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
       pako: 2.1.0
     transitivePeerDependencies:
       - supports-color
@@ -9833,7 +9813,7 @@ snapshots:
     dependencies:
       '@grpc/grpc-js': 1.14.4
       '@grpc/proto-loader': 0.8.1
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/dom': 1.32.4
       '@percy/logger': 1.32.4
@@ -9887,13 +9867,13 @@ snapshots:
 
   '@percy/sdk-utils@1.32.3-beta.1':
     dependencies:
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
   '@percy/sdk-utils@1.32.4':
     dependencies:
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -10357,20 +10337,16 @@ snapshots:
 
   '@types/babel__generator@7.27.0':
     dependencies:
-      '@babel/types': 7.29.0
-
-  '@types/babel__generator@7.6.8':
-    dependencies:
-      '@babel/types': 7.29.0
+      '@babel/types': 7.29.7
 
   '@types/babel__template@7.4.4':
     dependencies:
-      '@babel/parser': 7.29.2
-      '@babel/types': 7.29.0
+      '@babel/parser': 7.29.7
+      '@babel/types': 7.29.7
 
   '@types/babel__traverse@7.28.0':
     dependencies:
-      '@babel/types': 7.29.0
+      '@babel/types': 7.29.7
 
   '@types/chai@5.2.3':
     dependencies:
@@ -12487,6 +12463,12 @@ snapshots:
       acorn-jsx: 5.3.2(acorn@8.17.0)
       eslint-visitor-keys: 4.2.1
 
+  espree@11.2.0:
+    dependencies:
+      acorn: 8.17.0
+      acorn-jsx: 5.3.2(acorn@8.17.0)
+      eslint-visitor-keys: 5.0.1
+
   esprima@4.0.1: {}
 
   esquery@1.7.0:
@@ -12821,7 +12803,7 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
 
-  get-uri@6.0.5:
+  get-uri@6.0.5(supports-color@8.1.1):
     dependencies:
       basic-ftp: 5.1.0
       data-uri-to-buffer: 6.0.2
@@ -12857,6 +12839,12 @@ snapshots:
       minimatch: 10.2.5
       minipass: 7.1.2
       path-scurry: 2.0.1
+
+  glob@13.0.6:
+    dependencies:
+      minimatch: 10.2.5
+      minipass: 7.1.3
+      path-scurry: 2.0.2
 
   glob@7.2.3:
     dependencies:
@@ -14165,16 +14153,16 @@ snapshots:
 
   p-try@2.2.0: {}
 
-  pac-proxy-agent@7.2.0:
+  pac-proxy-agent@7.2.0(supports-color@8.1.1):
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
-      get-uri: 6.0.5
+      get-uri: 6.0.5(supports-color@8.1.1)
       http-proxy-agent: 7.0.2(supports-color@8.1.1)
       https-proxy-agent: 7.0.6(supports-color@8.1.1)
       pac-resolver: 7.0.1
-      socks-proxy-agent: 8.0.5
+      socks-proxy-agent: 8.0.5(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -14239,6 +14227,11 @@ snapshots:
     dependencies:
       lru-cache: 11.2.5
       minipass: 7.1.2
+
+  path-scurry@2.0.2:
+    dependencies:
+      lru-cache: 11.2.5
+      minipass: 7.1.3
 
   path-to-regexp@6.3.0: {}
 
@@ -15077,7 +15070,7 @@ snapshots:
 
   smart-buffer@4.2.0: {}
 
-  socks-proxy-agent@8.0.5:
+  socks-proxy-agent@8.0.5(supports-color@8.1.1):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
@@ -15432,6 +15425,12 @@ snapshots:
       glob: 10.5.0
       minimatch: 9.0.9
 
+  test-exclude@8.0.0:
+    dependencies:
+      '@istanbuljs/schema': 0.1.3
+      glob: 13.0.6
+      minimatch: 10.2.5
+
   throttleit@1.0.1: {}
 
   through2@2.0.5:
@@ -15771,16 +15770,16 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-istanbul@7.2.1(vite@7.3.6(@types/node@25.9.5)(sass@1.101.6)(terser@5.49.0)(yaml@2.8.3)):
+  vite-plugin-istanbul@9.0.1(vite@7.3.6(@types/node@25.9.5)(sass@1.101.6)(terser@5.49.0)(yaml@2.8.3)):
     dependencies:
-      '@babel/generator': 7.28.6
+      '@babel/generator': 7.29.7
       '@istanbuljs/load-nyc-config': 1.1.0
-      '@types/babel__generator': 7.6.8
-      espree: 10.4.0
+      '@types/babel__generator': 7.27.0
+      espree: 11.2.0
       istanbul-lib-instrument: 6.0.3
       picocolors: 1.1.1
       source-map: 0.7.6
-      test-exclude: 7.0.1
+      test-exclude: 8.0.0
       vite: 7.3.6(@types/node@25.9.5)(sass@1.101.6)(terser@5.49.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - supports-color
