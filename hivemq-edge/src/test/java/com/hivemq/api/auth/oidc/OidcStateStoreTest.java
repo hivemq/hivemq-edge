@@ -22,7 +22,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link OidcStateStore}.
+ * Unit tests for {@link OidcStateStore}, a fixed-size ring buffer of login-flow state.
  */
 class OidcStateStoreTest {
 
@@ -30,10 +30,11 @@ class OidcStateStoreTest {
     void put_thenConsume_returnsTheStoredNonceAndVerifier() {
         final OidcStateStore store = new OidcStateStore();
 
-        assertThat(store.put("state-1", "nonce-1", "verifier-1")).isTrue();
+        store.put("state-1", "nonce-1", "verifier-1");
 
         final Optional<StateEntry> entry = store.consume("state-1");
         assertThat(entry).isPresent();
+        assertThat(entry.get().state()).isEqualTo("state-1");
         assertThat(entry.get().nonce()).isEqualTo("nonce-1");
         assertThat(entry.get().codeVerifier()).isEqualTo("verifier-1");
     }
@@ -64,38 +65,35 @@ class OidcStateStoreTest {
     }
 
     @Test
-    void consume_removesEntryEvenWhenExpired() {
-        final OidcStateStore store = new OidcStateStore(0L);
-        store.put("state-1", "nonce-1", "verifier-1");
-        assertThat(store.size()).isEqualTo(1);
+    void consume_stillFindsAnEntryBehindAConsumedHole() {
+        // Regression: consuming a middle entry clears its slot; older entries behind the hole must remain findable.
+        final OidcStateStore store = new OidcStateStore();
+        store.put("A", "nonce-a", "verifier-a");
+        store.put("B", "nonce-b", "verifier-b");
+        store.put("C", "nonce-c", "verifier-c");
 
-        store.consume("state-1");
+        // Consume B (the middle entry), punching a hole between A and C.
+        assertThat(store.consume("B")).isPresent();
 
-        assertThat(store.size()).isEqualTo(0);
+        // A (behind the hole) and C (ahead of it) must both still be consumable.
+        assertThat(store.consume("A")).map(StateEntry::nonce).contains("nonce-a");
+        assertThat(store.consume("C")).map(StateEntry::nonce).contains("nonce-c");
     }
 
     @Test
-    void put_atCapacity_isRejected() {
-        // A long TTL so nothing prunes; fill to the cap, then the next put must be rejected.
+    void put_whenRingIsFull_overwritesTheOldestEntry() {
         final OidcStateStore store = new OidcStateStore(60_000L);
-        for (int i = 0; i < OidcStateStore.MAX_ENTRIES; i++) {
-            assertThat(store.put("state-" + i, "nonce", "verifier")).isTrue();
+        // Fill the ring; the very first entry occupies the oldest slot.
+        for (int i = 0; i < OidcStateStore.CAPACITY; i++) {
+            store.put("state-" + i, "nonce-" + i, "verifier-" + i);
         }
-        assertThat(store.size()).isEqualTo(OidcStateStore.MAX_ENTRIES);
+        // One more put wraps around and overwrites the oldest slot (state-0).
+        store.put("newest", "nonce-newest", "verifier-newest");
 
-        assertThat(store.put("one-too-many", "nonce", "verifier")).isFalse();
-    }
-
-    @Test
-    void put_atCapacityWithExpiredEntries_prunesAndAccepts() {
-        // Fill the store with already-expired entries (TTL 0), then a fresh put should prune and succeed.
-        final OidcStateStore store = new OidcStateStore(0L);
-        for (int i = 0; i < OidcStateStore.MAX_ENTRIES; i++) {
-            store.put("state-" + i, "nonce", "verifier");
-        }
-        assertThat(store.size()).isEqualTo(OidcStateStore.MAX_ENTRIES);
-
-        // the expired entries are pruned inside put(), making room
-        assertThat(store.put("fresh", "nonce", "verifier")).isTrue();
+        assertThat(store.consume("state-0")).as("oldest entry was overwritten").isEmpty();
+        assertThat(store.consume("newest")).as("newest entry is present").isPresent();
+        assertThat(store.consume("state-1"))
+                .as("second-oldest is still present")
+                .isPresent();
     }
 }

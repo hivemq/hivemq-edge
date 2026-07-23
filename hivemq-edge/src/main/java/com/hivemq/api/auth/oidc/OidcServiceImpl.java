@@ -122,11 +122,7 @@ public class OidcServiceImpl implements OidcService {
         final Nonce nonce = new Nonce();
         final CodeVerifier codeVerifier = new CodeVerifier();
 
-        if (!stateStore.put(state.getValue(), nonce.getValue(), codeVerifier.getValue())) {
-            return Response.status(429)
-                    .entity("Too many concurrent logins; please retry.")
-                    .build();
-        }
+        stateStore.put(state.getValue(), nonce.getValue(), codeVerifier.getValue());
 
         final AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
                         new ResponseType(ResponseType.Value.CODE),

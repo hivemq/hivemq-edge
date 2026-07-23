@@ -18,10 +18,7 @@ package com.hivemq.api.auth.oidc;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * In-memory store for OIDC login-flow state, bridging the {@code /login} and {@code /callback}
@@ -30,37 +27,48 @@ import org.slf4j.LoggerFactory;
  * Each entry keys a random {@code state} token to the {@code nonce} and PKCE {@code codeVerifier}
  * minted at login time. Entries are:
  * <ul>
- *     <li><b>one-time use</b> — {@link #consume} removes the entry, preventing replay;</li>
- *     <li><b>short-lived</b> — expired entries (default 10 min) are rejected and pruned lazily on access;</li>
- *     <li><b>bounded</b> — the map is capped ({@value #MAX_ENTRIES}); {@link #put} is rejected when full,
- *         to bound memory under a flood of login requests.</li>
+ *     <li><b>one-time use</b> — {@link #consume} clears the matched slot, preventing replay;</li>
+ *     <li><b>short-lived</b> — the TTL (default 10 min) is checked on consume; an expired entry is a miss;</li>
+ *     <li><b>bounded</b> — the store is a fixed-size ring buffer ({@value #CAPACITY} slots). {@link #put}
+ *         never fails; when the ring is full it overwrites the oldest slot.</li>
  * </ul>
- * If the process restarts mid-login the user simply restarts login; losing in-flight state is acceptable.
+ * A flooded {@code /login} endpoint therefore churns the ring rather than blocking new logins; a
+ * legitimate user whose slot is overwritten before completing simply restarts login. If the process
+ * restarts mid-login, in-flight state is lost, which is acceptable.
+ * <p>
+ * All access is synchronized on this instance.
  */
 @Singleton
 public class OidcStateStore {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(OidcStateStore.class);
-
     static final long DEFAULT_TTL_MILLIS = 10 * 60 * 1000L;
-    static final int MAX_ENTRIES = 1000;
+    static final int CAPACITY = 1000;
 
     /**
      * The per-login secrets recovered on callback.
      *
+     * @param state        the random state token this entry is keyed by
      * @param nonce        the nonce embedded in the auth request and verified against the ID token claim
      * @param codeVerifier the PKCE code verifier presented at token exchange
-     * @param expiryMillis  absolute epoch-millis after which the entry is invalid
+     * @param expiryMillis absolute epoch-millis after which the entry is invalid
      */
-    public record StateEntry(@NotNull String nonce, @NotNull String codeVerifier, long expiryMillis) {
+    public record StateEntry(
+            @NotNull String state,
+            @NotNull String nonce,
+            @NotNull String codeVerifier,
+            long expiryMillis) {
 
         boolean isExpired(final long nowMillis) {
             return nowMillis >= expiryMillis;
         }
     }
 
-    private final @NotNull ConcurrentHashMap<String, StateEntry> entries = new ConcurrentHashMap<>();
+    // Fixed-size ring; a slot holds null when empty or after its entry has been consumed.
+    private final @NotNull StateEntry[] ring = new StateEntry[CAPACITY];
     private final long ttlMillis;
+
+    // Index of the next slot to write. Entries are written in time order around the ring.
+    private int writeIndex = 0;
 
     @Inject
     public OidcStateStore() {
@@ -72,44 +80,35 @@ public class OidcStateStore {
     }
 
     /**
-     * Stores the nonce and PKCE verifier for a login, keyed by {@code state}.
-     *
-     * @return {@code true} if stored; {@code false} if the store is at capacity (login should be rejected).
+     * Stores the nonce and PKCE verifier for a login, keyed by {@code state}. Never fails: when the ring is
+     * full the oldest slot is overwritten.
      */
-    public boolean put(final @NotNull String state, final @NotNull String nonce, final @NotNull String codeVerifier) {
-        if (entries.size() >= MAX_ENTRIES) {
-            pruneExpired();
-            if (entries.size() >= MAX_ENTRIES) {
-                log.warn("OIDC state store is at capacity ({} entries); rejecting login request.", MAX_ENTRIES);
-                return false;
-            }
-        }
-        entries.put(state, new StateEntry(nonce, codeVerifier, System.currentTimeMillis() + ttlMillis));
-        return true;
+    public synchronized void put(
+            final @NotNull String state, final @NotNull String nonce, final @NotNull String codeVerifier) {
+        ring[writeIndex] = new StateEntry(state, nonce, codeVerifier, System.currentTimeMillis() + ttlMillis);
+        writeIndex = (writeIndex + 1) % CAPACITY;
     }
 
     /**
-     * Atomically removes and returns the entry for {@code state} (one-time use).
-     *
-     * @return the entry, or empty if the state is unknown or expired.
+     * Removes and returns the entry for {@code state} (one-time use), or empty if it is unknown or expired.
+     * <p>
+     * Scans backward from the write pointer, so newer entries are found first, and continues around the whole
+     * ring. Null slots (never written or already consumed) and expired entries are skipped rather than used as
+     * an early stop: consuming an entry clears its slot, so a live entry can sit behind a hole.
      */
-    public @NotNull Optional<StateEntry> consume(final @NotNull String state) {
-        final StateEntry entry = entries.remove(state);
-        if (entry == null) {
-            return Optional.empty();
-        }
-        if (entry.isExpired(System.currentTimeMillis())) {
-            return Optional.empty();
-        }
-        return Optional.of(entry);
-    }
-
-    private void pruneExpired() {
+    public synchronized @NotNull Optional<StateEntry> consume(final @NotNull String state) {
         final long now = System.currentTimeMillis();
-        entries.values().removeIf(entry -> entry.isExpired(now));
-    }
-
-    int size() {
-        return entries.size();
+        for (int i = 0; i < CAPACITY; i++) {
+            final int index = Math.floorMod(writeIndex - 1 - i, CAPACITY);
+            final StateEntry entry = ring[index];
+            if (entry == null || entry.isExpired(now)) {
+                continue;
+            }
+            if (entry.state().equals(state)) {
+                ring[index] = null;
+                return Optional.of(entry);
+            }
+        }
+        return Optional.empty();
     }
 }

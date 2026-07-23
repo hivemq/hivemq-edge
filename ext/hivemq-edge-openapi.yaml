@@ -232,12 +232,6 @@ paths:
       responses:
         '302':
           description: Redirect to the Identity Provider's authorization endpoint.
-        '429':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Too many concurrent logins in flight; retry shortly.
         '503':
           content:
             application/json:
