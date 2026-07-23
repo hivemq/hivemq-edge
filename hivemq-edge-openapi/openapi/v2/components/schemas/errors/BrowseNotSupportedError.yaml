@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter that does not support browsing.
+        example: "my-adapter"
+    required:
+      - adapterId
+example:
+  general:
+    status: 400
+    title: "Browsing Not Supported"
+    detail: "The protocol adapter 'my-adapter' does not support browsing."
+    adapterId: "my-adapter"
+    type: "https://hivemq.com/edge/api/v2/model/BrowseNotSupportedError"

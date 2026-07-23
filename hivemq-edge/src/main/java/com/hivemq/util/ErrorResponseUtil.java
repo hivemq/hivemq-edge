@@ -38,4 +38,11 @@ public class ErrorResponseUtil {
                 .type(HttpConstants.APPLICATION_PROBLEM_JSON_TYPE)
                 .build();
     }
+
+    public static @NotNull Response errorResponse(final @NotNull com.hivemq.edge.api.v2.model.ApiProblemDetails error) {
+        return Response.status(error.getStatus())
+                .entity(error)
+                .type(HttpConstants.APPLICATION_PROBLEM_JSON_TYPE)
+                .build();
+    }
 }

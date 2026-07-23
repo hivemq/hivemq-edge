@@ -127,7 +127,9 @@ dependencies {
     edgeModule("com.hivemq:hivemq-edge-module-etherip")
     edgeModule("com.hivemq:hivemq-edge-module-etherip-cip-odva")
     edgeModule("com.hivemq:hivemq-edge-module-file")
+    edgeModule("com.hivemq:hivemq-edge-module-file-v2")
     edgeModule("com.hivemq:hivemq-edge-module-http")
+    edgeModule("com.hivemq:hivemq-edge-module-http-v2")
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
@@ -160,7 +162,9 @@ val edgeProjectsToUpdate = setOf(
     "hivemq-edge-module-etherip",
     "hivemq-edge-module-etherip-cip-odva",
     "hivemq-edge-module-file",
+    "hivemq-edge-module-file-v2",
     "hivemq-edge-module-http",
+    "hivemq-edge-module-http-v2",
     "hivemq-edge-module-modbus",
     "hivemq-edge-module-mtconnect",
     "hivemq-edge-module-databases",

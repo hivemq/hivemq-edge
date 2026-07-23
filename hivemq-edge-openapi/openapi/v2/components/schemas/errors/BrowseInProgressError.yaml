@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter that already has a browse in flight.
+        example: "my-adapter"
+    required:
+      - adapterId
+example:
+  general:
+    status: 409
+    title: "Browse Already in Progress"
+    detail: "A browse operation is already in progress on the protocol adapter 'my-adapter'."
+    adapterId: "my-adapter"
+    type: "https://hivemq.com/edge/api/v2/model/BrowseInProgressError"

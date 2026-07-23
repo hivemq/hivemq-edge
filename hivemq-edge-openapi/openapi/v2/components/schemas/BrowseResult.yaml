@@ -1,0 +1,7 @@
+type: object
+description: The result of a browse — the enumerated child nodes.
+properties:
+  entries:
+    type: array
+    items:
+      $ref: ./BrowseResultEntry.yaml

@@ -85,6 +85,10 @@ class NorthboundTagConsumerTest {
 
     @BeforeEach
     void setUp() {
+        when(protocolAdapter.getId()).thenReturn("adapter-1");
+        when(protocolAdapter.getAdapter()).thenReturn(adapter);
+        when(protocolAdapter.getAdapterInformation()).thenReturn(adapterInformation);
+        when(adapterInformation.getProtocolId()).thenReturn("modbus");
         consumer = new NorthboundTagConsumer(
                 pollingContext, protocolAdapter, objectMapper, publishService, metricsService, eventService);
     }
@@ -107,13 +111,9 @@ class NorthboundTagConsumerTest {
         when(publishBuilder.withPayload(any(byte[].class))).thenReturn(publishBuilder);
         when(publishBuilder.withAdapter(any())).thenReturn(publishBuilder);
         when(publishBuilder.send()).thenReturn(CompletableFuture.completedFuture(ProtocolPublishResult.DELIVERED));
-        when(protocolAdapter.getAdapter()).thenReturn(adapter);
     }
 
     private void setupEventBuilder() {
-        when(protocolAdapter.getId()).thenReturn("adapter-1");
-        when(protocolAdapter.getAdapterInformation()).thenReturn(adapterInformation);
-        when(adapterInformation.getProtocolId()).thenReturn("modbus");
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
         when(eventBuilder.withSeverity(any())).thenReturn(eventBuilder);
         when(eventBuilder.withTimestamp(any())).thenReturn(eventBuilder);
@@ -245,7 +245,6 @@ class NorthboundTagConsumerTest {
         when(publishBuilder.withPayload(any(byte[].class))).thenReturn(publishBuilder);
         when(publishBuilder.withAdapter(any())).thenReturn(publishBuilder);
         when(publishBuilder.send()).thenReturn(CompletableFuture.failedFuture(new RuntimeException("publish failed")));
-        when(protocolAdapter.getAdapter()).thenReturn(adapter);
 
         consumer.accept(createDataPoint("tag", 1));
 

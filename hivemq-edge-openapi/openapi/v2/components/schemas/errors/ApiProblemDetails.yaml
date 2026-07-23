@@ -1,0 +1,21 @@
+allOf:
+  - $ref: "../../../../components/schemas/ProblemDetails.yaml"
+  - type: object
+    required:
+      - detail
+      - status
+      - type
+discriminator:
+  propertyName: type
+  mapping:
+    https://hivemq.com/edge/api/v2/model/AdapterNotFoundError: "./AdapterNotFoundError.yaml"
+    https://hivemq.com/edge/api/v2/model/AdapterTypeNotFoundError: "./AdapterTypeNotFoundError.yaml"
+    https://hivemq.com/edge/api/v2/model/TagNotFoundError: "./TagNotFoundError.yaml"
+    https://hivemq.com/edge/api/v2/model/BrowseNotSupportedError: "./BrowseNotSupportedError.yaml"
+    https://hivemq.com/edge/api/v2/model/BrowseFilterInvalidError: "./BrowseFilterInvalidError.yaml"
+    https://hivemq.com/edge/api/v2/model/AdapterNotConnectedError: "./AdapterNotConnectedError.yaml"
+    https://hivemq.com/edge/api/v2/model/BrowseInProgressError: "./BrowseInProgressError.yaml"
+    https://hivemq.com/edge/api/v2/model/BrowseTimeoutError: "./BrowseTimeoutError.yaml"
+    https://hivemq.com/edge/api/v2/model/AdapterActivationInvalidError: "./AdapterActivationInvalidError.yaml"
+    https://hivemq.com/edge/api/v2/model/BrowseInterruptedError: "./BrowseInterruptedError.yaml"
+    https://hivemq.com/edge/api/v2/model/BrowseFailedError: "./BrowseFailedError.yaml"
