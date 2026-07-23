@@ -168,7 +168,7 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "5.2.0",
     "eslint-plugin-react-refresh": "0.5.3",
-    "eslint-plugin-sonarjs": "^3.0.2",
+    "eslint-plugin-sonarjs": "^4.0.0",
     "fs-extra": "11.3.6",
     "globals": "16.5.0",
     "i18next-pseudo": "2.2.1",
