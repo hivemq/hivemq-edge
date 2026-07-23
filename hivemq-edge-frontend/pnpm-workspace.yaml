@@ -8,7 +8,7 @@ allowBuilds:
   msw: true
   protobufjs: true
 overrides:
-  minimatch@3: 3.1.5
+  minimatch@3: 10.2.5
   minimatch@8: 8.0.7
   minimatch@9: 9.0.9
   minimatch@10: 10.2.5
