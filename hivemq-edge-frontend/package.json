@@ -46,7 +46,7 @@
     "@chakra-ui/anatomy": "2.3.4",
     "@chakra-ui/icons": "2.2.4",
     "@chakra-ui/radio": "2.1.2",
-    "@chakra-ui/react": "2.10.10",
+    "@chakra-ui/react": "3.36.1",
     "@chakra-ui/skip-nav": "2.1.0",
     "@chakra-ui/theme-tools": "2.2.10",
     "@chakra-ui/utils": "2.2.2",
@@ -131,7 +131,7 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "2.3.1",
-    "@chakra-ui/cli": "2.5.8",
+    "@chakra-ui/cli": "3.36.1",
     "@cypress/code-coverage": "3.14.7",
     "@cypress/grep": "^5.0.0",
     "@eslint/js": "9.39.5",
