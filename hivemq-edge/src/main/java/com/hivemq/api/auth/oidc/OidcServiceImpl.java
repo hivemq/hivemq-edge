@@ -178,15 +178,10 @@ public class OidcServiceImpl implements OidcService {
         try {
             final OIDCProviderMetadata metadata = resolveMetadata(config);
 
-            // 1. Exchange the code for tokens (PKCE verifier + client-secret basic auth).
+            // 1. Exchange the code for tokens.
             final AuthorizationCodeGrant grant = new AuthorizationCodeGrant(
                     new AuthorizationCode(code), config.getRedirectUri(), new CodeVerifier(entry.codeVerifier()));
-            final TokenRequest tokenRequest = new TokenRequest(
-                    metadata.getTokenEndpointURI(),
-                    new ClientSecretBasic(
-                            new ClientID(config.getClientId()),
-                            new Secret(config.getClientSecret() != null ? config.getClientSecret() : "")),
-                    grant);
+            final TokenRequest tokenRequest = buildTokenRequest(metadata.getTokenEndpointURI(), config, grant);
             final HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
             tokenHttpRequest.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MILLIS);
             tokenHttpRequest.setReadTimeout(HTTP_READ_TIMEOUT_MILLIS);
@@ -238,6 +233,25 @@ public class OidcServiceImpl implements OidcService {
             scope.add(extra);
         }
         return scope;
+    }
+
+    /**
+     * Builds the token-endpoint request. PKCE (carried in the {@code grant}) always proves the code
+     * redemption. When a client secret is configured, the request additionally authenticates as a
+     * confidential client via HTTP Basic; without one it is a public-client request that carries the
+     * {@code client_id} in the body and no {@code Authorization} header. The secret is optional in the
+     * configuration and guaranteed non-empty when present (enforced by the config schema).
+     */
+    static @NotNull TokenRequest buildTokenRequest(
+            final @NotNull URI tokenEndpoint,
+            final @NotNull OidcConfiguration config,
+            final @NotNull AuthorizationCodeGrant grant) {
+        final ClientID clientId = new ClientID(config.getClientId());
+        final String clientSecret = config.getClientSecret();
+        if (clientSecret != null) {
+            return new TokenRequest(tokenEndpoint, new ClientSecretBasic(clientId, new Secret(clientSecret)), grant);
+        }
+        return new TokenRequest(tokenEndpoint, clientId, grant);
     }
 
     /**
