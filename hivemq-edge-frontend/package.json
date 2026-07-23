@@ -150,7 +150,7 @@
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
     "@types/uuid": "9.0.8",
-    "@vitejs/plugin-react": "4.7.0",
+    "@vitejs/plugin-react": "6.0.4",
     "@vitest/coverage-istanbul": "3.2.7",
     "@vitest/ui": "3.2.7",
     "axe-core": "4.12.1",
