@@ -50,7 +50,7 @@
     "@chakra-ui/skip-nav": "2.1.0",
     "@chakra-ui/theme-tools": "2.2.10",
     "@chakra-ui/utils": "2.2.2",
-    "@dagrejs/dagre": "^1.1.5",
+    "@dagrejs/dagre": "^3.0.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@fontsource/roboto": "5.2.10",
