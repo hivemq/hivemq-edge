@@ -19,7 +19,9 @@ import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.config.OidcConfiguration;
+import com.hivemq.api.errors.authentication.OidcUnavailableError;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.util.ErrorResponseUtil;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.jwt.JWT;
@@ -140,9 +142,8 @@ public class OidcServiceImpl implements OidcService {
             metadata = resolveMetadata(config);
         } catch (final Exception e) {
             log.warn("OIDC discovery failed for issuer {}: {}", config.getIssuerUri(), e.getMessage());
-            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                    .entity("Identity Provider is unreachable")
-                    .build();
+            return ErrorResponseUtil.errorResponse(
+                    new OidcUnavailableError("The Identity Provider could not be reached."));
         }
 
         final State state = new State();
@@ -354,9 +355,8 @@ public class OidcServiceImpl implements OidcService {
     }
 
     private static @NotNull Response oidcNotConfigured() {
-        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                .entity("OIDC authentication is not configured")
-                .build();
+        return ErrorResponseUtil.errorResponse(
+                new OidcUnavailableError("OIDC authentication is not configured on this instance."));
     }
 
     /**

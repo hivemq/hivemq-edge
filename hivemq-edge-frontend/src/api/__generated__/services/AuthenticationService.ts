@@ -89,7 +89,7 @@ export class AuthenticationService {
             url: '/api/v1/auth/oidc/login',
             errors: {
                 302: `Redirect to the Identity Provider's authorization endpoint.`,
-                503: `OIDC is not configured or the Identity Provider is unreachable.`,
+                503: `OIDC is not configured on this instance, or the Identity Provider could not be reached. The \`detail\` field distinguishes the two.`,
             },
         });
     }
