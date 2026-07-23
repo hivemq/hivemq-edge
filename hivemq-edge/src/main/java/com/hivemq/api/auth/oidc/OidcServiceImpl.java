@@ -247,7 +247,10 @@ public class OidcServiceImpl implements OidcService {
 
     /**
      * Maps the IdP role claim (string or string-array) onto Edge roles via the configured mappings.
-     * Unmapped roles are dropped; matching is case-insensitive.
+     * <p>
+     * Fails closed: only IdP roles with an explicit mapping produce an Edge role. An IdP role without a
+     * mapping is dropped, so an unrelated or generic IdP role (for example a realm role named {@code admin})
+     * never becomes an Edge role without an operator decision. Matching is case-insensitive.
      */
     private static @NotNull Set<String> mapRoles(
             final @NotNull OidcConfiguration config, final @NotNull IDTokenClaimsSet claims) {
@@ -258,9 +261,6 @@ public class OidcServiceImpl implements OidcService {
             final String mapped = mappings.get(idpRole.toLowerCase(Locale.ROOT));
             if (mapped != null) {
                 edgeRoles.add(mapped);
-            } else if (mappings.isEmpty()) {
-                // no mappings configured: pass the IdP role through verbatim (case-insensitive match downstream)
-                edgeRoles.add(idpRole);
             }
         }
         return edgeRoles;

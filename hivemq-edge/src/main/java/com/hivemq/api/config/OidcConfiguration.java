@@ -16,6 +16,7 @@
 package com.hivemq.api.config;
 
 import com.google.common.base.Preconditions;
+import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
 import java.net.URI;
@@ -84,16 +85,26 @@ public class OidcConfiguration {
 
         final List<String> scopes = parseScopes(entity.getExtraScopes());
 
-        // last mapping for a given IdP role wins; keys lower-cased for case-insensitive lookup
+        // Keys are lower-cased for case-insensitive lookup. Duplicate IdP roles and unknown Edge roles are
+        // rejected rather than silently accepted, so authorization is never opened up by a config mistake.
         final Map<String, String> mappings = new LinkedHashMap<>();
         final List<OidcRoleMappingEntity> mappingEntities = entity.getRoleMappings();
         if (mappingEntities != null) {
             for (final OidcRoleMappingEntity mapping : mappingEntities) {
                 final String idpRole = mapping.getIdpRole();
                 final String edgeRole = mapping.getEdgeRole();
-                if (idpRole != null && !idpRole.isBlank() && edgeRole != null && !edgeRole.isBlank()) {
-                    mappings.put(idpRole.toLowerCase(Locale.ROOT), edgeRole);
-                }
+                Preconditions.checkArgument(
+                        idpRole != null && !idpRole.isBlank(), "OIDC role mapping is missing an <idp-role>");
+                Preconditions.checkArgument(
+                        edgeRole != null && !edgeRole.isBlank(), "OIDC role mapping is missing an <edge-role>");
+                Preconditions.checkArgument(
+                        isValidEdgeRole(edgeRole),
+                        "OIDC role mapping has an invalid <edge-role> '%s'; must be one of admin, super, user",
+                        edgeRole);
+                final String key = idpRole.toLowerCase(Locale.ROOT);
+                Preconditions.checkArgument(
+                        !mappings.containsKey(key), "OIDC role mapping has a duplicate <idp-role> '%s'", idpRole);
+                mappings.put(key, edgeRole);
             }
         }
 
@@ -105,6 +116,12 @@ public class OidcConfiguration {
                 entity.getRoleClaimName(),
                 scopes,
                 mappings);
+    }
+
+    private static boolean isValidEdgeRole(final @NotNull String edgeRole) {
+        return edgeRole.equalsIgnoreCase(ApiRoles.ADMIN)
+                || edgeRole.equalsIgnoreCase(ApiRoles.SUPER)
+                || edgeRole.equalsIgnoreCase(ApiRoles.USER);
     }
 
     private static @NotNull List<String> parseScopes(final @Nullable String extraScopes) {

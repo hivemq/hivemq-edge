@@ -174,7 +174,12 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                         + "<redirect-uri> are all required.");
                 throw new UnrecoverableException(false);
             }
-            apiCfgService.setOidcConfiguration(OidcConfiguration.fromEntity(oidcEntity));
+            try {
+                apiCfgService.setOidcConfiguration(OidcConfiguration.fromEntity(oidcEntity));
+            } catch (final IllegalArgumentException e) {
+                log.error("Invalid OIDC configuration: {}", e.getMessage());
+                throw new UnrecoverableException(false);
+            }
         }
 
         if (entity.getListeners().isEmpty()) {

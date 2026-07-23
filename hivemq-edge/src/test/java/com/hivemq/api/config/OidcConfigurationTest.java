@@ -109,6 +109,52 @@ class OidcConfigurationTest {
                 .hasMessageContaining("redirect-uri");
     }
 
+    @Test
+    void fromEntity_invalidEdgeRole_throws() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity(
+                        "https://idp",
+                        "client",
+                        null,
+                        "https://edge/cb",
+                        "roles",
+                        null,
+                        new OidcRoleMappingEntity("idp-role", "wizard"))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("edge-role");
+    }
+
+    @Test
+    void fromEntity_acceptsAllValidEdgeRolesCaseInsensitively() {
+        final OidcConfiguration config = OidcConfiguration.fromEntity(entity(
+                "https://idp",
+                "client",
+                null,
+                "https://edge/cb",
+                "roles",
+                null,
+                new OidcRoleMappingEntity("a", "ADMIN"),
+                new OidcRoleMappingEntity("b", "Super"),
+                new OidcRoleMappingEntity("c", "user")));
+
+        assertThat(config.getRoleMappings()).containsValues("ADMIN", "Super", "user");
+    }
+
+    @Test
+    void fromEntity_duplicateIdpRole_throws() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity(
+                        "https://idp",
+                        "client",
+                        null,
+                        "https://edge/cb",
+                        "roles",
+                        null,
+                        new OidcRoleMappingEntity("Team-Admins", "admin"),
+                        // same IdP role in a different case → duplicate after normalization
+                        new OidcRoleMappingEntity("team-admins", "user"))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("duplicate");
+    }
+
     // -- helpers: OidcAuthenticationEntity fields are populated by JAXB, so set them reflectively for tests.
 
     private static @org.jetbrains.annotations.NotNull OidcAuthenticationEntity entity(
