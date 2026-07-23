@@ -42,7 +42,7 @@
     "docs:security-scan:verbose": "./tools/scan-docs-security.sh --verbose"
   },
   "dependencies": {
-    "@atlaskit/pragmatic-drag-and-drop": "1.8.1",
+    "@atlaskit/pragmatic-drag-and-drop": "2.0.1",
     "@chakra-ui/anatomy": "2.3.4",
     "@chakra-ui/icons": "2.2.4",
     "@chakra-ui/radio": "2.1.2",
