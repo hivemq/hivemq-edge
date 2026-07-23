@@ -25,7 +25,7 @@ overrides:
   dompurify@>=3 <4: ^3.4.1
   markdown-it: ^14.1.1
   postcss@^8: ^8.5.12
-  yaml@^1: ^1.10.3
+  yaml@^1: ^2.0.0
   yaml@^2: ^2.8.3
   follow-redirects: ^1.16.0
   ws@^8: ^8.20.1
