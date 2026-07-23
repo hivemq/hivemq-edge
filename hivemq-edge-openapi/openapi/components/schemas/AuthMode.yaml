@@ -1,10 +1,12 @@
 type: object
 properties:
-  mode:
-    type: string
-    description: The authentication mode the gateway is configured for.
-    enum:
-      - local
-      - oidc
+  modes:
+    type: array
+    description: The authentication mechanisms the gateway accepts. Drives which login options the UI presents.
+    items:
+      type: string
+      enum:
+        - USERNAME_PASSWORD
+        - OPEN_ID
 required:
-  - mode
+  - modes

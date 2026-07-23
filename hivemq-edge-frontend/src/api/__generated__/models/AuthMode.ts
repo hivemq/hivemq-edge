@@ -4,17 +4,8 @@
 /* eslint-disable */
 export type AuthMode = {
     /**
-     * The authentication mode the gateway is configured for.
+     * The authentication mechanisms the gateway accepts. Drives which login options the UI presents.
      */
-    mode: AuthMode.mode;
+    modes: Array<'USERNAME_PASSWORD' | 'OPEN_ID'>;
 };
-export namespace AuthMode {
-    /**
-     * The authentication mode the gateway is configured for.
-     */
-    export enum mode {
-        LOCAL = 'local',
-        OIDC = 'oidc',
-    }
-}
 

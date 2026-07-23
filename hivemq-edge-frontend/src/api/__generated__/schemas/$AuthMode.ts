@@ -4,8 +4,11 @@
 /* eslint-disable */
 export const $AuthMode = {
     properties: {
-        mode: {
-            type: 'Enum',
+        modes: {
+            type: 'array',
+            contains: {
+                type: 'Enum',
+            },
             isRequired: true,
         },
     },

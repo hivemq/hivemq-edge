@@ -8,7 +8,6 @@ import logoDark from '@/assets/edge/02-hivemq-industrial-edge-neg.svg'
 import bgImage from '@/assets/app/background-sidepanel.svg'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import { useGetAuthMode } from '@/api/hooks/useFrontendServices/useGetAuthMode.ts'
-import { AuthMode } from '@/api/__generated__'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PreLoginNoticeForm from '@/modules/Login/components/PreLoginNoticeForm.tsx'
@@ -30,6 +29,11 @@ const LoginPage: FC = () => {
     if (data.preLoginNotice?.enabled && !acceptNotice) return data.preLoginNotice
     return undefined
   }, [acceptNotice, data, isLoading])
+
+  // Default to local-only when the auth-mode call has not resolved yet.
+  const modes = authMode?.modes ?? ['USERNAME_PASSWORD']
+  const ssoEnabled = modes.includes('OPEN_ID')
+  const localEnabled = modes.includes('USERNAME_PASSWORD')
 
   return (
     <main>
@@ -73,7 +77,8 @@ const LoginPage: FC = () => {
               <Login
                 first={data?.firstUseInformation}
                 preLoadError={error}
-                ssoEnabled={authMode?.mode === AuthMode.mode.OIDC}
+                ssoEnabled={ssoEnabled}
+                localEnabled={localEnabled}
               />
             )}
           </div>

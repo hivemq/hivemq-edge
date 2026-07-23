@@ -1240,6 +1240,20 @@
                     </xs:all>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="auth-modes" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="auth-mode" minOccurs="1" maxOccurs="unbounded">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="USERNAME_PASSWORD"/>
+                                    <xs:enumeration value="OPEN_ID"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="enforce-api-auth" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:all>
     </xs:complexType>

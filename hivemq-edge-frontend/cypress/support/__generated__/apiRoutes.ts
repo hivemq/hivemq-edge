@@ -30,6 +30,7 @@ import type {
   Adapter,
   AdaptersList,
   ApiBearerToken,
+  AuthMode,
   BehaviorPolicy,
   BehaviorPolicyList,
   Blob,
@@ -193,6 +194,26 @@ export const API_ROUTES = {
      * @see {@link AuthenticationService.validateToken}
      */
     validateToken: route<unknown>('POST', '/api/v1/auth/validate-token'),
+
+    /**
+     * @see {@link AuthenticationService.authMode}
+     */
+    authMode: route<AuthMode>('GET', '/api/v1/auth/mode'),
+
+    /**
+     * @see {@link AuthenticationService.oidcLogin}
+     */
+    oidcLogin: route<void>('GET', '/api/v1/auth/oidc/login'),
+
+    /**
+     * @see {@link AuthenticationService.oidcCallback}
+     */
+    oidcCallback: route<ApiBearerToken>('GET', '/api/v1/auth/oidc/callback'),
+
+    /**
+     * @see {@link AuthenticationService.oidcLogout}
+     */
+    oidcLogout: route<void>('GET', '/api/v1/auth/oidc/logout'),
   },
 
   /**
@@ -213,6 +234,26 @@ export const API_ROUTES = {
      * @see {@link AuthenticationEndpointService.validateToken}
      */
     validateToken: route<unknown>('POST', '/api/v1/auth/validate-token'),
+
+    /**
+     * @see {@link AuthenticationEndpointService.authMode}
+     */
+    authMode: route<AuthMode>('GET', '/api/v1/auth/mode'),
+
+    /**
+     * @see {@link AuthenticationEndpointService.oidcLogin}
+     */
+    oidcLogin: route<void>('GET', '/api/v1/auth/oidc/login'),
+
+    /**
+     * @see {@link AuthenticationEndpointService.oidcCallback}
+     */
+    oidcCallback: route<ApiBearerToken>('GET', '/api/v1/auth/oidc/callback'),
+
+    /**
+     * @see {@link AuthenticationEndpointService.oidcLogout}
+     */
+    oidcLogout: route<void>('GET', '/api/v1/auth/oidc/logout'),
   },
 
   /**
@@ -257,10 +298,7 @@ export const API_ROUTES = {
     /**
      * @see {@link BridgesService.transitionBridgeStatus}
      */
-    transitionBridgeStatus: routeWithParams<StatusTransitionResult>()(
-      'PUT',
-      '/api/v1/management/bridges/{bridgeId}/status'
-    ),
+    transitionBridgeStatus: routeWithParams<StatusTransitionResult>()('PUT', '/api/v1/management/bridges/{bridgeId}/status'),
   },
 
   /**
@@ -295,18 +333,12 @@ export const API_ROUTES = {
     /**
      * @see {@link CombinersService.getCombinerMappings}
      */
-    getCombinerMappings: routeWithParams<DataCombiningList>()(
-      'GET',
-      '/api/v1/management/combiners/{combinerId}/mappings'
-    ),
+    getCombinerMappings: routeWithParams<DataCombiningList>()('GET', '/api/v1/management/combiners/{combinerId}/mappings'),
 
     /**
      * @see {@link CombinersService.getMappingInstructions}
      */
-    getMappingInstructions: routeWithParams<Array<Instruction>>()(
-      'GET',
-      '/api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions'
-    ),
+    getMappingInstructions: routeWithParams<Array<Instruction>>()('GET', '/api/v1/management/combiners/{combinerId}/mappings/{mappingId}/instructions'),
   },
 
   /**
@@ -331,18 +363,12 @@ export const API_ROUTES = {
     /**
      * @see {@link DataHubBehaviorPoliciesService.getBehaviorPolicy}
      */
-    getBehaviorPolicy: routeWithParams<BehaviorPolicy>()(
-      'GET',
-      '/api/v1/data-hub/behavior-validation/policies/{policyId}'
-    ),
+    getBehaviorPolicy: routeWithParams<BehaviorPolicy>()('GET', '/api/v1/data-hub/behavior-validation/policies/{policyId}'),
 
     /**
      * @see {@link DataHubBehaviorPoliciesService.updateBehaviorPolicy}
      */
-    updateBehaviorPolicy: routeWithParams<BehaviorPolicy>()(
-      'PUT',
-      '/api/v1/data-hub/behavior-validation/policies/{policyId}'
-    ),
+    updateBehaviorPolicy: routeWithParams<BehaviorPolicy>()('PUT', '/api/v1/data-hub/behavior-validation/policies/{policyId}'),
   },
 
   /**
@@ -467,10 +493,7 @@ export const API_ROUTES = {
     /**
      * @see {@link DataHubStateService.getClientState}
      */
-    getClientState: routeWithParams<FsmStatesInformationListItem>()(
-      'GET',
-      '/api/v1/data-hub/behavior-validation/states/{clientId}'
-    ),
+    getClientState: routeWithParams<FsmStatesInformationListItem>()('GET', '/api/v1/data-hub/behavior-validation/states/{clientId}'),
   },
 
   /**
@@ -480,18 +503,12 @@ export const API_ROUTES = {
     /**
      * @see {@link DeviceTagBrowsingService.browseDeviceTags}
      */
-    browseDeviceTags: routeWithParams<Blob>()(
-      'POST',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/browse'
-    ),
+    browseDeviceTags: routeWithParams<Blob>()('POST', '/api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/browse'),
 
     /**
      * @see {@link DeviceTagBrowsingService.importDeviceTags}
      */
-    importDeviceTags: routeWithParams<ImportResult>()(
-      'POST',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/import'
-    ),
+    importDeviceTags: routeWithParams<ImportResult>()('POST', '/api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/import'),
   },
 
   /**
@@ -501,18 +518,12 @@ export const API_ROUTES = {
     /**
      * @see {@link DomainService.getNorthboundMappings}
      */
-    getNorthboundMappings: route<NorthboundMappingOwnerList>(
-      'GET',
-      '/api/v1/management/protocol-adapters/mappings/northboundMappings'
-    ),
+    getNorthboundMappings: route<NorthboundMappingOwnerList>('GET', '/api/v1/management/protocol-adapters/mappings/northboundMappings'),
 
     /**
      * @see {@link DomainService.getSouthboundMappings}
      */
-    getSouthboundMappings: route<SouthboundMappingOwnerList>(
-      'GET',
-      '/api/v1/management/protocol-adapters/mappings/southboundMappings'
-    ),
+    getSouthboundMappings: route<SouthboundMappingOwnerList>('GET', '/api/v1/management/protocol-adapters/mappings/southboundMappings'),
 
     /**
      * @see {@link DomainService.getDomainTags}
@@ -647,10 +658,7 @@ export const API_ROUTES = {
     /**
      * @see {@link ProtocolAdaptersService.createCompleteAdapter}
      */
-    createCompleteAdapter: routeWithParams<unknown>()(
-      'PUT',
-      '/api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}'
-    ),
+    createCompleteAdapter: routeWithParams<unknown>()('PUT', '/api/v1/management/protocol-adapters/adapterconfigs/{adaptertype}/{adaptername}'),
 
     /**
      * @see {@link ProtocolAdaptersService.getAdapters}
@@ -675,98 +683,62 @@ export const API_ROUTES = {
     /**
      * @see {@link ProtocolAdaptersService.discoverDataPoints}
      */
-    discoverDataPoints: routeWithParams<ValuesTree>()(
-      'GET',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/discover'
-    ),
+    discoverDataPoints: routeWithParams<ValuesTree>()('GET', '/api/v1/management/protocol-adapters/adapters/{adapterId}/discover'),
 
     /**
      * @see {@link ProtocolAdaptersService.getAdapterNorthboundMappings}
      */
-    getAdapterNorthboundMappings: routeWithParams<NorthboundMappingList>()(
-      'GET',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings'
-    ),
+    getAdapterNorthboundMappings: routeWithParams<NorthboundMappingList>()('GET', '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings'),
 
     /**
      * @see {@link ProtocolAdaptersService.updateAdapterNorthboundMappings}
      */
-    updateAdapterNorthboundMappings: routeWithParams<unknown>()(
-      'PUT',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings'
-    ),
+    updateAdapterNorthboundMappings: routeWithParams<unknown>()('PUT', '/api/v1/management/protocol-adapters/adapters/{adapterId}/northboundMappings'),
 
     /**
      * @see {@link ProtocolAdaptersService.getAdapterSouthboundMappings}
      */
-    getAdapterSouthboundMappings: routeWithParams<SouthboundMappingList>()(
-      'GET',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings'
-    ),
+    getAdapterSouthboundMappings: routeWithParams<SouthboundMappingList>()('GET', '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings'),
 
     /**
      * @see {@link ProtocolAdaptersService.updateAdapterSouthboundMappings}
      */
-    updateAdapterSouthboundMappings: routeWithParams<unknown>()(
-      'PUT',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings'
-    ),
+    updateAdapterSouthboundMappings: routeWithParams<unknown>()('PUT', '/api/v1/management/protocol-adapters/adapters/{adapterId}/southboundMappings'),
 
     /**
      * @see {@link ProtocolAdaptersService.getAdapterStatus}
      */
-    getAdapterStatus: routeWithParams<Status>()(
-      'GET',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/status'
-    ),
+    getAdapterStatus: routeWithParams<Status>()('GET', '/api/v1/management/protocol-adapters/adapters/{adapterId}/status'),
 
     /**
      * @see {@link ProtocolAdaptersService.transitionAdapterStatus}
      */
-    transitionAdapterStatus: routeWithParams<StatusTransitionResult>()(
-      'PUT',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/status'
-    ),
+    transitionAdapterStatus: routeWithParams<StatusTransitionResult>()('PUT', '/api/v1/management/protocol-adapters/adapters/{adapterId}/status'),
 
     /**
      * @see {@link ProtocolAdaptersService.getAdapterDomainTags}
      */
-    getAdapterDomainTags: routeWithParams<DomainTagList>()(
-      'GET',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags'
-    ),
+    getAdapterDomainTags: routeWithParams<DomainTagList>()('GET', '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags'),
 
     /**
      * @see {@link ProtocolAdaptersService.addAdapterDomainTags}
      */
-    addAdapterDomainTags: routeWithParams<unknown>()(
-      'POST',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags'
-    ),
+    addAdapterDomainTags: routeWithParams<unknown>()('POST', '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags'),
 
     /**
      * @see {@link ProtocolAdaptersService.updateAdapterDomainTags}
      */
-    updateAdapterDomainTags: routeWithParams<unknown>()(
-      'PUT',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags'
-    ),
+    updateAdapterDomainTags: routeWithParams<unknown>()('PUT', '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags'),
 
     /**
      * @see {@link ProtocolAdaptersService.deleteAdapterDomainTags}
      */
-    deleteAdapterDomainTags: routeWithParams<unknown>()(
-      'DELETE',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}'
-    ),
+    deleteAdapterDomainTags: routeWithParams<unknown>()('DELETE', '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}'),
 
     /**
      * @see {@link ProtocolAdaptersService.updateAdapterDomainTag}
      */
-    updateAdapterDomainTag: routeWithParams<unknown>()(
-      'PUT',
-      '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}'
-    ),
+    updateAdapterDomainTag: routeWithParams<unknown>()('PUT', '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}'),
 
     /**
      * @see {@link ProtocolAdaptersService.addAdapter}
@@ -776,18 +748,12 @@ export const API_ROUTES = {
     /**
      * @see {@link ProtocolAdaptersService.getNorthboundMappings}
      */
-    getNorthboundMappings: route<NorthboundMappingOwnerList>(
-      'GET',
-      '/api/v1/management/protocol-adapters/mappings/northboundMappings'
-    ),
+    getNorthboundMappings: route<NorthboundMappingOwnerList>('GET', '/api/v1/management/protocol-adapters/mappings/northboundMappings'),
 
     /**
      * @see {@link ProtocolAdaptersService.getSouthboundMappings}
      */
-    getSouthboundMappings: route<SouthboundMappingOwnerList>(
-      'GET',
-      '/api/v1/management/protocol-adapters/mappings/southboundMappings'
-    ),
+    getSouthboundMappings: route<SouthboundMappingOwnerList>('GET', '/api/v1/management/protocol-adapters/mappings/southboundMappings'),
 
     /**
      * @see {@link ProtocolAdaptersService.getAdaptersStatus}
@@ -817,18 +783,12 @@ export const API_ROUTES = {
     /**
      * @see {@link ProtocolAdaptersService.getAdaptersForType}
      */
-    getAdaptersForType: routeWithParams<AdaptersList>()(
-      'GET',
-      '/api/v1/management/protocol-adapters/types/{adapterType}'
-    ),
+    getAdaptersForType: routeWithParams<AdaptersList>()('GET', '/api/v1/management/protocol-adapters/types/{adapterType}'),
 
     /**
      * @see {@link ProtocolAdaptersService.getWritingSchema}
      */
-    getWritingSchema: routeWithParams<void>()(
-      'GET',
-      '/api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}'
-    ),
+    getWritingSchema: routeWithParams<void>()('GET', '/api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}'),
 
     /**
      * @see {@link ProtocolAdaptersService.getSchema}
@@ -903,18 +863,12 @@ export const API_ROUTES = {
     /**
      * @see {@link PulseService.getAssetMapperMappings}
      */
-    getAssetMapperMappings: routeWithParams<DataCombiningList>()(
-      'GET',
-      '/api/v1/management/pulse/asset-mappers/{combinerId}/mappings'
-    ),
+    getAssetMapperMappings: routeWithParams<DataCombiningList>()('GET', '/api/v1/management/pulse/asset-mappers/{combinerId}/mappings'),
 
     /**
      * @see {@link PulseService.getAssetMapperInstructions}
      */
-    getAssetMapperInstructions: routeWithParams<Array<Instruction>>()(
-      'GET',
-      '/api/v1/management/pulse/asset-mappers/{combinerId}/mappings/{mappingId}/instructions'
-    ),
+    getAssetMapperInstructions: routeWithParams<Array<Instruction>>()('GET', '/api/v1/management/pulse/asset-mappers/{combinerId}/mappings/{mappingId}/instructions'),
   },
 
   /**

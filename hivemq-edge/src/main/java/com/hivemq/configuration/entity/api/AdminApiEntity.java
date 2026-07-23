@@ -57,6 +57,9 @@ public class AdminApiEntity extends EnabledEntity {
     private @Nullable OidcAuthenticationEntity oidcAuthentication;
 
     @XmlElementRef(required = false)
+    private @Nullable AuthModesEntity authModes;
+
+    @XmlElementRef(required = false)
     private @Nullable ApiTlsEntity tls;
 
     @XmlElementRef(required = false)
@@ -92,6 +95,10 @@ public class AdminApiEntity extends EnabledEntity {
         return oidcAuthentication;
     }
 
+    public @Nullable AuthModesEntity getAuthModes() {
+        return authModes;
+    }
+
     public @Nullable ApiTlsEntity getTls() {
         return tls;
     }
@@ -119,6 +126,7 @@ public class AdminApiEntity extends EnabledEntity {
                     && Objects.equals(users, that.users)
                     && Objects.equals(ldapAuthentication, that.ldapAuthentication)
                     && Objects.equals(oidcAuthentication, that.oidcAuthentication)
+                    && Objects.equals(authModes, that.authModes)
                     && Objects.equals(preLoginNotice, that.preLoginNotice)
                     && Objects.equals(enforceApiAuth, that.enforceApiAuth);
         }
@@ -135,6 +143,7 @@ public class AdminApiEntity extends EnabledEntity {
                 users,
                 ldapAuthentication,
                 oidcAuthentication,
+                authModes,
                 preLoginNotice,
                 enforceApiAuth);
     }

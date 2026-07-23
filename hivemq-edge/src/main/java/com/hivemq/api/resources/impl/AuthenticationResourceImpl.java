@@ -28,6 +28,7 @@ import com.hivemq.api.errors.authentication.AuthenticationValidationError;
 import com.hivemq.api.errors.authentication.UnauthorizedError;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.AuthMode;
@@ -37,6 +38,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,23 +53,31 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     private final @NotNull ITokenVerifier tokenVerifier;
     private final @NotNull IUsernameRolesProvider usernamePasswordProvider;
     private final @NotNull OidcService oidcService;
+    private final @NotNull ApiConfigurationService apiConfigurationService;
 
     @Inject
     public AuthenticationResourceImpl(
             final @NotNull IUsernameRolesProvider usernamePasswordProvider,
             final @NotNull ITokenGenerator tokenGenerator,
             final @NotNull ITokenVerifier tokenVerifier,
-            final @NotNull OidcService oidcService) {
+            final @NotNull OidcService oidcService,
+            final @NotNull ApiConfigurationService apiConfigurationService) {
         this.usernamePasswordProvider = usernamePasswordProvider;
         this.tokenGenerator = tokenGenerator;
         this.tokenVerifier = tokenVerifier;
         this.oidcService = oidcService;
+        this.apiConfigurationService = apiConfigurationService;
     }
 
     @Override
     public @NotNull Response authMode() {
-        final AuthMode.ModeEnum mode = oidcService.isEnabled() ? AuthMode.ModeEnum.OIDC : AuthMode.ModeEnum.LOCAL;
-        return Response.ok(new AuthMode().mode(mode)).build();
+        final List<AuthMode.ModesEnum> modes = apiConfigurationService.getAuthModes().stream()
+                .map(mode -> switch (mode) {
+                    case USERNAME_PASSWORD -> AuthMode.ModesEnum.USERNAME_PASSWORD;
+                    case OPEN_ID -> AuthMode.ModesEnum.OPEN_ID;
+                })
+                .toList();
+        return Response.ok(new AuthMode().modes(modes)).build();
     }
 
     @Override
@@ -91,6 +101,13 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
 
     @Override
     public @NotNull Response authenticate(final @Nullable UsernamePasswordCredentials credentials) {
+
+        // Local username/password login is only available when USERNAME_PASSWORD is an active auth mode.
+        // Reject before consulting any provider, so this endpoint is genuinely closed (not merely unmatched).
+        if (!apiConfigurationService.getAuthModes().contains(com.hivemq.api.config.AuthMode.USERNAME_PASSWORD)) {
+            return ErrorResponseUtil.errorResponse(
+                    new UnauthorizedError("Username and password authentication is not enabled"));
+        }
 
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(

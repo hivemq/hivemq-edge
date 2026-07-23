@@ -19,12 +19,14 @@ import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
+import com.hivemq.api.config.AuthMode;
 import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import jakarta.inject.Singleton;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +42,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     private @NotNull PreLoginNotice preLoginNotice = new PreLoginNotice();
     private @Nullable LdapConnectionProperties ldapConnectionProperties;
     private @Nullable OidcConfiguration oidcConfiguration;
+    private @NotNull Set<AuthMode> authModes = Set.of(AuthMode.USERNAME_PASSWORD);
     private boolean enforceApiAuth = true;
 
     @Override
@@ -110,6 +113,16 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
     @Override
     public @Nullable OidcConfiguration getOidcConfiguration() {
         return oidcConfiguration;
+    }
+
+    @Override
+    public void setAuthModes(final @NotNull Set<AuthMode> authModes) {
+        this.authModes = Set.copyOf(authModes);
+    }
+
+    @Override
+    public @NotNull Set<AuthMode> getAuthModes() {
+        return authModes;
     }
 
     @Override

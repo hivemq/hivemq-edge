@@ -16,7 +16,7 @@ export type { AdaptersList } from './models/AdaptersList';
 export type { ApiBearerToken } from './models/ApiBearerToken';
 export type { ApiProblemDetails } from './models/ApiProblemDetails';
 export type { Asset } from './models/Asset';
-export { AuthMode } from './models/AuthMode';
+export type { AuthMode } from './models/AuthMode';
 export type { AssetId } from './models/AssetId';
 export { AssetMapping } from './models/AssetMapping';
 export type { AtLeastOneFieldMissingValidationError } from './models/AtLeastOneFieldMissingValidationError';

@@ -46,6 +46,21 @@ describe('Login', () => {
       cy.getByTestId('loginPage-sso').should('be.visible').should('contain.text', 'Login with SSO')
     })
 
+    it('should hide the username/password form when local login is disabled', () => {
+      cy.mountWithProviders(<Login ssoEnabled localEnabled={false} />)
+
+      cy.getByTestId('loginPage-submit').should('not.exist')
+      cy.get('#username').should('not.exist')
+      cy.getByTestId('loginPage-sso').should('be.visible')
+    })
+
+    it('should show only the SSO button when local login is disabled and SSO is the only mode', () => {
+      cy.mountWithProviders(<Login ssoEnabled localEnabled={false} />)
+
+      cy.getByTestId('loginPage-sso').should('be.visible')
+      cy.get('form').should('not.exist')
+    })
+
     it('should open the OIDC login popup when the SSO button is clicked', () => {
       const stubbedPopup = { closed: false, close: cy.stub() }
       cy.mountWithProviders(<Login ssoEnabled />, {

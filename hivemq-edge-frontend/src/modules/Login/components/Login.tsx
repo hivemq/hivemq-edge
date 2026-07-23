@@ -29,11 +29,12 @@ import PasswordInput from '@/components/PasswordInput.tsx'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 import { useOidcLogin } from '@/modules/Auth/hooks/useOidcLogin.ts'
 
-const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null; ssoEnabled?: boolean }> = ({
-  first,
-  preLoadError,
-  ssoEnabled,
-}) => {
+const Login: FC<{
+  first?: FirstUseInformation
+  preLoadError?: ApiError | null
+  ssoEnabled?: boolean
+  localEnabled?: boolean
+}> = ({ first, preLoadError, ssoEnabled, localEnabled = true }) => {
   const auth = useAuth()
   const { startLogin } = useOidcLogin()
   const navigate = useNavigate()
@@ -127,47 +128,49 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null; s
         </Heading>
       </Box>
 
-      <Box p={4} width="100%" maxWidth="450px">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <FormControl isInvalid={!!errors.userName} isRequired>
-            <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
-            <Input
-              autoFocus
-              id="username"
-              placeholder={t('translation:login.username.placeholder')}
-              autoComplete="username"
-              {...register('userName', {
-                required: t('translation:login.username.error.required'),
-              })}
-            />
-            <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
-          </FormControl>
-          <FormControl isInvalid={!!errors.password} mt="2em" isRequired>
-            <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
-            <PasswordInput
-              id="password"
-              name="password"
-              placeholder={t('translation:login.password.placeholder')}
-              autoComplete="current-password"
-              register={register}
-              options={{
-                required: t('translation:login.password.error.required'),
-              }}
-            />
-            <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
-          </FormControl>
-          <Button
-            data-testid="loginPage-submit"
-            width="100%"
-            mt="7em"
-            type="submit"
-            isLoading={isPending}
-            variant="primary"
-          >
-            {t('translation:login.submit.label')}
-          </Button>
-        </form>
-      </Box>
+      {localEnabled && (
+        <Box p={4} width="100%" maxWidth="450px">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <FormControl isInvalid={!!errors.userName} isRequired>
+              <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
+              <Input
+                autoFocus
+                id="username"
+                placeholder={t('translation:login.username.placeholder')}
+                autoComplete="username"
+                {...register('userName', {
+                  required: t('translation:login.username.error.required'),
+                })}
+              />
+              <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
+            </FormControl>
+            <FormControl isInvalid={!!errors.password} mt="2em" isRequired>
+              <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
+              <PasswordInput
+                id="password"
+                name="password"
+                placeholder={t('translation:login.password.placeholder')}
+                autoComplete="current-password"
+                register={register}
+                options={{
+                  required: t('translation:login.password.error.required'),
+                }}
+              />
+              <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
+            </FormControl>
+            <Button
+              data-testid="loginPage-submit"
+              width="100%"
+              mt="7em"
+              type="submit"
+              isLoading={isPending}
+              variant="primary"
+            >
+              {t('translation:login.submit.label')}
+            </Button>
+          </form>
+        </Box>
+      )}
 
       {ssoEnabled && (
         <Box width="100%" maxWidth="450px" px={4} pb={4}>
