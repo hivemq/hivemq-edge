@@ -181,7 +181,7 @@
     "openapi-typescript-codegen": "0.31.0",
     "prettier": "3.9.6",
     "sass": "1.101.6",
-    "stylelint": "16.26.1",
+    "stylelint": "17.14.1",
     "stylelint-config-standard": "37.0.0",
     "stylelint-config-standard-scss": "14.0.0",
     "typescript": "5.9.3",
