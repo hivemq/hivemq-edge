@@ -12,7 +12,7 @@ concurrentunit = "0.4.6"
 dagger = "2.60.1"
 digitalpetri-modbus-tcp = "2.1.5"
 dropwizard-metrics = "4.2.39"
-equalsverifier = "3.19.4"
+equalsverifier = "4.5"
 errorprone = "2.50.0"
 
 freemarker = "2.3.34"
