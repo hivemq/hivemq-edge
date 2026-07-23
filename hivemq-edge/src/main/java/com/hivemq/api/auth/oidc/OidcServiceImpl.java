@@ -21,6 +21,7 @@ import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
@@ -30,6 +31,7 @@ import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.State;
@@ -76,6 +78,13 @@ public class OidcServiceImpl implements OidcService {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OidcServiceImpl.class);
 
     private static final long DISCOVERY_TTL_MILLIS = 60 * 60 * 1000L; // 1 hour
+
+    // Bounded timeouts for all outbound IdP calls (discovery, token exchange, JWKS). Nimbus defaults these
+    // to 0 (no timeout); without bounds an unavailable or malicious IdP could hold request threads forever.
+    private static final int HTTP_CONNECT_TIMEOUT_MILLIS = 5_000;
+    private static final int HTTP_READ_TIMEOUT_MILLIS = 5_000;
+    // Cap the JWKS response size to bound memory from a hostile IdP.
+    private static final int JWKS_SIZE_LIMIT_BYTES = 512 * 1024;
 
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull ITokenGenerator tokenGenerator;
@@ -178,8 +187,10 @@ public class OidcServiceImpl implements OidcService {
                             new ClientID(config.getClientId()),
                             new Secret(config.getClientSecret() != null ? config.getClientSecret() : "")),
                     grant);
-            final TokenResponse tokenResponse =
-                    OIDCTokenResponseParser.parse(tokenRequest.toHTTPRequest().send());
+            final HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
+            tokenHttpRequest.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MILLIS);
+            tokenHttpRequest.setReadTimeout(HTTP_READ_TIMEOUT_MILLIS);
+            final TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenHttpRequest.send());
             if (!tokenResponse.indicatesSuccess()) {
                 log.info(
                         "OIDC token exchange failed: {}",
@@ -195,7 +206,9 @@ public class OidcServiceImpl implements OidcService {
                     new Issuer(config.getIssuerUri()),
                     new ClientID(config.getClientId()),
                     JWSAlgorithm.RS256,
-                    metadata.getJWKSetURI().toURL());
+                    metadata.getJWKSetURI().toURL(),
+                    new DefaultResourceRetriever(
+                            HTTP_CONNECT_TIMEOUT_MILLIS, HTTP_READ_TIMEOUT_MILLIS, JWKS_SIZE_LIMIT_BYTES));
             final IDTokenClaimsSet claims = validator.validate(idToken, new Nonce(entry.nonce()));
 
             // 3. Map roles and mint the Edge JWT.
@@ -288,7 +301,8 @@ public class OidcServiceImpl implements OidcService {
                 && System.currentTimeMillis() < cachedMetadataExpiry) {
             return cached;
         }
-        final OIDCProviderMetadata metadata = OIDCProviderMetadata.resolve(new Issuer(issuer));
+        final OIDCProviderMetadata metadata =
+                OIDCProviderMetadata.resolve(new Issuer(issuer), HTTP_CONNECT_TIMEOUT_MILLIS, HTTP_READ_TIMEOUT_MILLIS);
         cachedMetadata = metadata;
         cachedMetadataIssuer = issuer;
         cachedMetadataExpiry = System.currentTimeMillis() + DISCOVERY_TTL_MILLIS;
