@@ -110,6 +110,74 @@ class OidcConfigurationTest {
     }
 
     @Test
+    void fromEntity_relativeIssuerUri_throws() {
+        // URI.create accepts a relative reference; it must not survive into the runtime config, where it
+        // would produce a null://null postMessage origin.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("idp.example.com/auth", "client", null, "https://edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("absolute");
+    }
+
+    @Test
+    void fromEntity_relativeRedirectUri_throws() {
+        assertThatThrownBy(() ->
+                        OidcConfiguration.fromEntity(entity("https://idp", "client", null, "callback", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("absolute");
+    }
+
+    @Test
+    void fromEntity_nonHttpScheme_throws() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("ftp://idp.example.com", "client", null, "https://edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("http or https");
+    }
+
+    @Test
+    void fromEntity_uriWithoutHost_throws() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("https:///path", "client", null, "https://edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("host");
+    }
+
+    @Test
+    void fromEntity_redirectWithUserInfo_throws() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("https://idp", "client", null, "https://user:pw@edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("user information");
+    }
+
+    @Test
+    void fromEntity_redirectWithFragment_throws() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("https://idp", "client", null, "https://edge/cb#frag", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("fragment");
+    }
+
+    @Test
+    void fromEntity_plainHttpIsAccepted() {
+        // http is legitimate for local QA and for TLS terminated at a reverse proxy: warn, do not reject.
+        final OidcConfiguration config = OidcConfiguration.fromEntity(
+                entity("http://localhost:8080/realms/edge", "client", null, "http://localhost:8080/cb", "roles", null));
+
+        assertThat(config.getIssuerUri()).isEqualTo(URI.create("http://localhost:8080/realms/edge"));
+    }
+
+    @Test
+    void fromEntity_blankRoleClaimName_throws() {
+        // A blank claim name extracts no roles at all, denying every user for a non-obvious reason.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("https://idp", "client", null, "https://edge/cb", "  ", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("role-claim-name");
+    }
+
+    @Test
     void fromEntity_invalidEdgeRole_throws() {
         assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity(
                         "https://idp",

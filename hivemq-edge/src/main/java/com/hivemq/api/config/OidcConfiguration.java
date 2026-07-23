@@ -20,6 +20,7 @@ import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -27,6 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Runtime configuration for OpenID Connect (OIDC) authentication.
@@ -39,6 +42,8 @@ import org.jetbrains.annotations.Nullable;
  * should lower-case the incoming IdP role first (role matching is case-insensitive).
  */
 public class OidcConfiguration {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OidcConfiguration.class);
 
     private final @NotNull URI issuerUri;
     private final @NotNull String clientId;
@@ -83,6 +88,14 @@ public class OidcConfiguration {
         Preconditions.checkArgument(clientId != null && !clientId.isBlank(), "OIDC client-id must be configured");
         Preconditions.checkArgument(redirect != null && !redirect.isBlank(), "OIDC redirect-uri must be configured");
 
+        final URI issuerUri = parseHttpUri(issuer, "issuer-uri");
+        final URI redirectUri = parseHttpUri(redirect, "redirect-uri");
+
+        // A blank claim name would extract no roles at all, denying every user with no obvious cause.
+        final String roleClaimName = entity.getRoleClaimName();
+        Preconditions.checkArgument(
+                roleClaimName != null && !roleClaimName.isBlank(), "OIDC role-claim-name must not be blank");
+
         final List<String> scopes = parseScopes(entity.getExtraScopes());
 
         // Keys are lower-cased for case-insensitive lookup. Duplicate IdP roles and unknown Edge roles are
@@ -109,13 +122,52 @@ public class OidcConfiguration {
         }
 
         return new OidcConfiguration(
-                URI.create(issuer.trim()),
-                clientId.trim(),
-                entity.getClientSecret(),
-                URI.create(redirect.trim()),
-                entity.getRoleClaimName(),
-                scopes,
-                mappings);
+                issuerUri, clientId.trim(), entity.getClientSecret(), redirectUri, roleClaimName, scopes, mappings);
+    }
+
+    /**
+     * Parses a configured URI, requiring an absolute {@code http}/{@code https} URI with a host.
+     * <p>
+     * {@code URI.create} accepts a relative reference such as {@code "callback"}, which later yields a
+     * nonsensical {@code null://null} postMessage origin and a login that can never succeed. Rejecting
+     * it here turns a silent runtime failure into a precise startup error.
+     * <p>
+     * Plain {@code http} is permitted: local QA and deployments that terminate TLS at a reverse proxy
+     * legitimately use it. A non-HTTPS URI is logged as a warning instead.
+     */
+    private static @NotNull URI parseHttpUri(final @NotNull String value, final @NotNull String element) {
+        final URI uri;
+        try {
+            uri = new URI(value.trim());
+        } catch (final URISyntaxException e) {
+            throw new IllegalArgumentException(
+                    String.format("OIDC %s '%s' is not a valid URI: %s", element, value, e.getReason()), e);
+        }
+        Preconditions.checkArgument(
+                uri.isAbsolute(),
+                "OIDC %s '%s' must be an absolute URI, for example https://idp.example.com",
+                element,
+                value);
+        final String scheme = uri.getScheme();
+        Preconditions.checkArgument(
+                "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme),
+                "OIDC %s '%s' must use http or https, but uses '%s'",
+                element,
+                value,
+                scheme);
+        Preconditions.checkArgument(uri.getHost() != null, "OIDC %s '%s' must include a host", element, value);
+        Preconditions.checkArgument(
+                uri.getUserInfo() == null, "OIDC %s '%s' must not contain user information", element, value);
+        Preconditions.checkArgument(
+                uri.getFragment() == null, "OIDC %s '%s' must not contain a fragment", element, value);
+        if (!"https".equalsIgnoreCase(scheme)) {
+            log.warn(
+                    "OIDC {} '{}' does not use HTTPS. This is only appropriate for local testing or when TLS "
+                            + "is terminated by a reverse proxy.",
+                    element,
+                    value);
+        }
+        return uri;
     }
 
     private static boolean isValidEdgeRole(final @NotNull String edgeRole) {
