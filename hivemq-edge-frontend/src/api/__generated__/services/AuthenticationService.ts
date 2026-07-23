@@ -124,19 +124,4 @@ export class AuthenticationService {
             },
         });
     }
-    /**
-     * Log out of the OIDC session.
-     * Log out of the OIDC session. Clears the SPA token and, when the Identity Provider advertises an end-session endpoint, redirects there to terminate the IdP session too.
-     * @returns void
-     * @throws ApiError
-     */
-    public oidcLogout(): CancelablePromise<void> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/v1/auth/oidc/logout',
-            errors: {
-                302: `Redirect to the Identity Provider's end-session endpoint.`,
-            },
-        });
-    }
 }

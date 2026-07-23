@@ -58,12 +58,4 @@ public interface OidcService {
     @NotNull
     Response completeLogin(
             @Nullable String code, @Nullable String state, @Nullable String error, @Nullable String errorDescription);
-
-    /**
-     * Logs out of the OIDC session, redirecting to the IdP end-session endpoint when one is advertised.
-     *
-     * @return a 302 to the IdP end-session endpoint, or 204 when there is nothing to redirect to.
-     */
-    @NotNull
-    Response logout();
 }

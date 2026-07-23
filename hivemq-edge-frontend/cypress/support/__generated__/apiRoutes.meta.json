@@ -5,7 +5,6 @@
   "GET /api/v1/auth/mode": "API_ROUTES.authentication.authMode",
   "GET /api/v1/auth/oidc/login": "API_ROUTES.authentication.oidcLogin",
   "GET /api/v1/auth/oidc/callback": "API_ROUTES.authentication.oidcCallback",
-  "GET /api/v1/auth/oidc/logout": "API_ROUTES.authentication.oidcLogout",
   "GET /api/v1/management/bridges": "API_ROUTES.bridges.getBridges",
   "POST /api/v1/management/bridges": "API_ROUTES.bridges.addBridge",
   "GET /api/v1/management/bridges/status": "API_ROUTES.bridges.getBridgesStatus",

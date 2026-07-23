@@ -231,24 +231,6 @@ public class OidcServiceImpl implements OidcService {
         }
     }
 
-    @Override
-    public @NotNull Response logout() {
-        final OidcConfiguration config = apiConfigurationService.getOidcConfiguration();
-        if (config != null) {
-            try {
-                final URI endSession = resolveMetadata(config).getEndSessionEndpointURI();
-                if (endSession != null) {
-                    return Response.status(Response.Status.FOUND)
-                            .location(endSession)
-                            .build();
-                }
-            } catch (final Exception e) {
-                log.debug("OIDC logout: could not resolve end-session endpoint: {}", e.getMessage());
-            }
-        }
-        return Response.noContent().build();
-    }
-
     private static @NotNull Scope scopeFor(final @NotNull OidcConfiguration config) {
         final Scope scope = new Scope();
         scope.add("openid");

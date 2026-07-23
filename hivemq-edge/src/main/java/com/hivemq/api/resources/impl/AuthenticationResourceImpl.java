@@ -95,11 +95,6 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     }
 
     @Override
-    public @NotNull Response oidcLogout() {
-        return oidcService.logout();
-    }
-
-    @Override
     public @NotNull Response authenticate(final @Nullable UsernamePasswordCredentials credentials) {
 
         // Local username/password login is only available when USERNAME_PASSWORD is an active auth mode.

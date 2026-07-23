@@ -180,8 +180,6 @@ paths:
     $ref: paths/api_v1_auth_oidc_login.yaml
   /api/v1/auth/oidc/callback:
     $ref: paths/api_v1_auth_oidc_callback.yaml
-  /api/v1/auth/oidc/logout:
-    $ref: paths/api_v1_auth_oidc_logout.yaml
 
   # Data hub paths
   /api/v1/data-hub/behavior-validation/policies:
