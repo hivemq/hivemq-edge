@@ -88,10 +88,6 @@ public class OidcServiceImpl implements OidcService {
     // Cap the JWKS response size to bound memory from a hostile IdP.
     private static final int JWKS_SIZE_LIMIT_BYTES = 512 * 1024;
 
-    // Discriminator for the message the callback page posts to the SPA, so the opener can tell our
-    // result apart from any other same-origin message.
-    private static final @NotNull String OIDC_RESULT_MESSAGE_TYPE = "oidc-result";
-
     // ID token signing algorithms we accept, in preference order. Asymmetric only: the provider signs
     // with its private key and we verify with the public key from its JWKS. Symmetric (HS*) and 'none'
     // are deliberately absent — see selectSigningAlgorithm.
@@ -237,7 +233,7 @@ public class OidcServiceImpl implements OidcService {
             }
             final String edgeJwt = tokenGenerator.generateToken(new ApiPrincipal(subject, edgeRoles));
 
-            return noStore(Response.ok(tokenDeliveryHtml(edgeJwt, config.getRedirectUri()), MediaType.TEXT_HTML))
+            return noStore(Response.ok(OidcCallbackPage.success(edgeJwt, config.getRedirectUri()), MediaType.TEXT_HTML))
                     .build();
         } catch (final AuthenticationException e) {
             log.warn("OIDC login failed while issuing the Edge token", e);
@@ -366,7 +362,7 @@ public class OidcServiceImpl implements OidcService {
     private static @NotNull Response callbackError(
             final @NotNull OidcErrorCode errorCode, final @NotNull OidcConfiguration config) {
         return noStore(Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(errorDeliveryHtml(errorCode, config.getRedirectUri()))
+                        .entity(OidcCallbackPage.failure(errorCode, config.getRedirectUri()))
                         .type(MediaType.TEXT_HTML))
                 .build();
     }
@@ -379,57 +375,5 @@ public class OidcServiceImpl implements OidcService {
         return builder.header("Cache-Control", "no-store, no-cache, max-age=0")
                 .header("Pragma", "no-cache")
                 .header("Referrer-Policy", "no-referrer");
-    }
-
-    /**
-     * Minimal HTML page delivered on success: posts the token to the opener window (the popup pattern)
-     * and closes the popup, keeping the JWT out of URLs. The origin is derived from the redirect URI.
-     */
-    private static @NotNull String tokenDeliveryHtml(final @NotNull String jwt, final @NotNull URI redirectUri) {
-        // jwt is a compact JWS (base64url segments + dots) — safe to embed in a JSON string literal.
-        return resultDeliveryHtml("token: \"" + jwt + "\"", "Signed in. You may close this window.", redirectUri);
-    }
-
-    /**
-     * Minimal HTML page delivered on failure: posts a stable error code to the opener window and closes
-     * the popup, so the opener always settles instead of waiting for a message that never arrives. Only
-     * the code is posted — raw Identity Provider error descriptions are logged, not surfaced to the user.
-     */
-    private static @NotNull String errorDeliveryHtml(
-            final @NotNull OidcErrorCode errorCode, final @NotNull URI redirectUri) {
-        return resultDeliveryHtml(
-                "errorCode: \"" + errorCode.getCode() + "\"", "Login failed. You may close this window.", redirectUri);
-    }
-
-    /**
-     * Builds the callback result page. Both outcomes post a discriminated {@code oidc-result} message to
-     * the opener and close the popup, so the opener can settle on either path.
-     */
-    private static @NotNull String resultDeliveryHtml(
-            final @NotNull String payloadField, final @NotNull String fallbackText, final @NotNull URI redirectUri) {
-        final String origin = originOf(redirectUri);
-        return "<!DOCTYPE html><html><head><title>HiveMQ Edge</title></head><body><script>\n"
-                + "(function () {\n"
-                + "  var result = { type: \"" + OIDC_RESULT_MESSAGE_TYPE + "\", " + payloadField + " };\n"
-                + "  if (window.opener) {\n"
-                + "    window.opener.postMessage(result, \"" + origin + "\");\n"
-                + "    window.close();\n"
-                + "  } else {\n"
-                + "    document.body.textContent = \"" + fallbackText + "\";\n"
-                + "  }\n"
-                + "})();\n"
-                + "</script></body></html>";
-    }
-
-    private static @NotNull String originOf(final @NotNull URI uri) {
-        final String scheme = uri.getScheme();
-        final String host = uri.getHost();
-        final int port = uri.getPort();
-        final StringBuilder sb = new StringBuilder();
-        sb.append(scheme).append("://").append(host);
-        if (port != -1 && !(("https".equals(scheme) && port == 443) || ("http".equals(scheme) && port == 80))) {
-            sb.append(':').append(port);
-        }
-        return sb.toString();
     }
 }
