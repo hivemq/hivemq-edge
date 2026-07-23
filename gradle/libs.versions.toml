@@ -60,7 +60,7 @@ swagger-jaxrs = "1.6.16"
 systemstubs = "2.1.8"
 testcontainers = "2.0.5"
 unboundid-ldap-sdk = "7.0.5"
-victools = "4.38.0"
+victools = "5.0.0"
 wiremock = "3.0.1"
 zeroallocationhashing = "0.27ea1"
 
