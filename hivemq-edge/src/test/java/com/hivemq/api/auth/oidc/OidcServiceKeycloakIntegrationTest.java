@@ -24,6 +24,7 @@ import com.hivemq.api.auth.oidc.testcontainer.KeycloakContainer;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -116,12 +117,17 @@ class OidcServiceKeycloakIntegrationTest {
     @Test
     void unmappedUser_isDenied() throws Exception {
         // carol has no realm roles → no Edge roles after mapping → denied.
-        final String html = drive("carol", "carol-password");
+        final Response callback = drive("carol", "carol-password");
+
+        // Assert the exact outcome, not just the absence of a token: a discovery, code-exchange, or nonce
+        // failure would also produce a token-free body, and would not prove that role mapping denies access.
+        assertThat(callback.getStatus()).as("a denied login is a 401").isEqualTo(401);
+        assertThat(callback.getMediaType()).hasToString(MediaType.TEXT_HTML);
+
+        final String html = bodyOf(callback);
         assertThat(TOKEN_IN_HTML.matcher(html).find())
                 .as("no Edge JWT should be issued for a user with no mapped roles")
                 .isFalse();
-        // Assert the specific reason: without this the test would also pass if the login had failed
-        // earlier (discovery, code exchange, nonce), which would not prove role mapping denies access.
         assertThat(html)
                 .as("the callback should report that no roles were mapped")
                 .contains("errorCode: \"" + OidcErrorCode.NO_ROLES.getCode() + "\"");
@@ -132,8 +138,14 @@ class OidcServiceKeycloakIntegrationTest {
      */
     private @NotNull ApiPrincipal loginAndVerify(final @NotNull String user, final @NotNull String password)
             throws Exception {
-        final String html = drive(user, password);
-        final Matcher tokenMatcher = TOKEN_IN_HTML.matcher(html);
+        final Response callback = drive(user, password);
+
+        assertThat(callback.getStatus()).as("a successful login is a 200").isEqualTo(200);
+        assertThat(callback.getMediaType()).hasToString(MediaType.TEXT_HTML);
+        // The response carries a bearer token and must never be cached.
+        assertThat(callback.getHeaderString("Cache-Control")).contains("no-store");
+
+        final Matcher tokenMatcher = TOKEN_IN_HTML.matcher(bodyOf(callback));
         assertThat(tokenMatcher.find())
                 .as("callback HTML should carry the Edge JWT")
                 .isTrue();
@@ -146,9 +158,10 @@ class OidcServiceKeycloakIntegrationTest {
 
     /**
      * Plays the browser: begins login, authenticates at Keycloak headlessly, and drives the captured
-     * authorization code back through {@link OidcServiceImpl#completeLogin}. Returns the callback HTML.
+     * authorization code back through {@link OidcServiceImpl#completeLogin}. Returns the callback
+     * {@link Response} itself, so tests can assert its status and media type rather than only its body.
      */
-    private @NotNull String drive(final @NotNull String user, final @NotNull String password) throws Exception {
+    private @NotNull Response drive(final @NotNull String user, final @NotNull String password) throws Exception {
         // Manage cookies by hand (name -> value) and set the Cookie header explicitly. This sidesteps the
         // JDK CookieManager, which mangles Keycloak's Domain=localhost cookies into domain "localhost.local"
         // and then fails to attach them — Keycloak answers the login POST with "Cookie not found".
@@ -188,9 +201,12 @@ class OidcServiceKeycloakIntegrationTest {
         final String code = codeMatcher.group(1);
         final String state = stateFrom(location);
 
-        // 4. completeLogin() → the callback response (postMessage HTML on success, or a 401 with no token).
-        final Response callback = oidcService.completeLogin(code, state, null, null);
-        final Object entity = callback.getEntity();
+        // 4. completeLogin() → the callback response (a result page: 200 on success, 401 on failure).
+        return oidcService.completeLogin(code, state, null, null);
+    }
+
+    private static @NotNull String bodyOf(final @NotNull Response response) {
+        final Object entity = response.getEntity();
         return entity != null ? entity.toString() : "";
     }
 
