@@ -108,7 +108,7 @@ importers:
         version: 0.99.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@rjsf/chakra-ui':
         specifier: 5.24.13
-        version: 5.24.13(e50e685e159f6d51c091bc3eafe9505d)
+        version: 5.24.13(789f8f68e89547038c13d7330bf49463)
       '@rjsf/core':
         specifier: 5.24.13
         version: 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))(react@18.3.1)
@@ -188,8 +188,8 @@ importers:
         specifier: 1.18.1
         version: 1.18.1(debug@4.4.3(supports-color@8.1.1))
       chakra-react-select:
-        specifier: 4.10.1
-        version: 4.10.1(@chakra-ui/react@2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 6.1.3
+        version: 6.1.3(@chakra-ui/react@2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.31)(next-themes@0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       csstype:
         specifier: 3.2.3
         version: 3.2.3
@@ -319,7 +319,7 @@ importers:
         version: 0.16.2(@types/node@25.9.5)(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/cli':
         specifier: 1.32.4
-        version: 1.32.4(typescript@5.9.3)
+        version: 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/cypress':
         specifier: 3.1.9
         version: 3.1.9(cypress@15.18.1)
@@ -3536,13 +3536,12 @@ packages:
     resolution: {integrity: sha512-4zNhdJD/iOjSH0A05ea+Ke6MU5mmpQcbQsSOkgdaUMJ9zTlDTD/GYlwohmIE2u0gaxHYiVHEn1Fw9mZ/ktJWgw==}
     engines: {node: '>=18'}
 
-  chakra-react-select@4.10.1:
-    resolution: {integrity: sha512-0d7lubrmcm7molVYNYWEYi7o71W8wn/WruINon+m23XQLYvJ+bZlYVawDdWYdJjX8O1nzJlTDo4b7CB6zTsr4A==}
+  chakra-react-select@6.1.3:
+    resolution: {integrity: sha512-U02sJqqM4rEBdzje1IXUY3Of6W+u6r+hln+a1+hOhKsj9KWGwJOb6Yxlpdblsgp+K52WAoKW8PkrJIcm2p82dw==}
     peerDependencies:
-      '@chakra-ui/react': 2.x
-      '@emotion/react': ^11.8.1
-      react: ^18.0.0
-      react-dom: ^18.0.0
+      '@chakra-ui/react': 3.x
+      next-themes: 0.x
+      react: 18.x || 19.x
 
   chalk@2.4.2:
     resolution: {integrity: sha512-Mti+f9lpJNcwF4tWV8/OrTTtF1gZi+f8FqlyAdouralcFWFQWF2+NgCHShjkCb+IFBLq9buZwE1xckQU4peSuQ==}
@@ -5790,6 +5789,12 @@ packages:
     resolution: {integrity: sha512-dBpDMdxv9Irdq66304OLfEmQ9tbNRFnFTuZiLo+bD+r332bBmMJ8GBLXklIXXgxd3+v9+KUnZaUR5PJMa75Gsg==}
     engines: {node: '>= 0.4.0'}
 
+  next-themes@0.4.6:
+    resolution: {integrity: sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==}
+    peerDependencies:
+      react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
@@ -6397,12 +6402,6 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  react-select@5.8.3:
-    resolution: {integrity: sha512-lVswnIq8/iTj1db7XCG74M/3fbGB6ZaluCzvwPGT5ZOjCdL/k0CLWhEK0vCBLuU5bHTEf6Gj8jtSvi+3v+tO1w==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
 
   react-smooth@4.0.4:
     resolution: {integrity: sha512-gnGKTpYwqL0Iii09gHobNolvX4Kiq4PKx6eWBCYYix+8cdw+cGo3do906l1NBPKkSWx1DghC1dlWG9L2uGd61Q==}
@@ -9744,7 +9743,7 @@ snapshots:
   '@percy/cli-doctor@1.32.4(typescript@5.9.3)':
     dependencies:
       '@percy/cli-command': 1.32.4(typescript@5.9.3)
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/core': 1.32.4(typescript@5.9.3)
       '@percy/env': 1.32.4
@@ -9791,7 +9790,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/cli@1.32.4(typescript@5.9.3)':
+  '@percy/cli@1.32.4(supports-color@8.1.1)(typescript@5.9.3)':
     dependencies:
       '@percy/cli-app': 1.32.4(typescript@5.9.3)
       '@percy/cli-build': 1.32.4(typescript@5.9.3)
@@ -9801,7 +9800,7 @@ snapshots:
       '@percy/cli-exec': 1.32.4(typescript@5.9.3)
       '@percy/cli-snapshot': 1.32.4(typescript@5.9.3)
       '@percy/cli-upload': 1.32.4(typescript@5.9.3)
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/logger': 1.32.4
     transitivePeerDependencies:
       - bufferutil
@@ -9809,12 +9808,12 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/client@1.32.4(typescript@5.9.3)':
+  '@percy/client@1.32.4(supports-color@8.1.1)(typescript@5.9.3)':
     dependencies:
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/env': 1.32.4
       '@percy/logger': 1.32.4
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
       pako: 2.1.0
     transitivePeerDependencies:
       - supports-color
@@ -9833,7 +9832,7 @@ snapshots:
     dependencies:
       '@grpc/grpc-js': 1.14.4
       '@grpc/proto-loader': 0.8.1
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/dom': 1.32.4
       '@percy/logger': 1.32.4
@@ -9887,13 +9886,13 @@ snapshots:
 
   '@percy/sdk-utils@1.32.3-beta.1':
     dependencies:
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
   '@percy/sdk-utils@1.32.4':
     dependencies:
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -9980,14 +9979,14 @@ snapshots:
 
   '@remix-run/router@1.23.3': {}
 
-  '@rjsf/chakra-ui@5.24.13(e50e685e159f6d51c091bc3eafe9505d)':
+  '@rjsf/chakra-ui@5.24.13(789f8f68e89547038c13d7330bf49463)':
     dependencies:
       '@chakra-ui/icons': 2.2.4(@chakra-ui/react@2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@chakra-ui/react': 2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@chakra-ui/system': 2.6.2(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(react@18.3.1)
       '@rjsf/core': 5.24.13(@rjsf/utils@5.24.13(react@18.3.1))(react@18.3.1)
       '@rjsf/utils': 5.24.13(react@18.3.1)
-      chakra-react-select: 4.10.1(@chakra-ui/react@2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      chakra-react-select: 6.1.3(@chakra-ui/react@2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.31)(next-themes@0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       framer-motion: 10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-select: 5.10.2(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11398,15 +11397,15 @@ snapshots:
       loupe: 3.2.1
       pathval: 2.0.1
 
-  chakra-react-select@4.10.1(@chakra-ui/react@2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  chakra-react-select@6.1.3(@chakra-ui/react@2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.31)(next-themes@0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@chakra-ui/react': 2.10.10(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@emotion/react': 11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1)
+      next-themes: 0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-select: 5.8.3(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-select: 5.10.2(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
+      - react-dom
       - supports-color
 
   chalk@2.4.2:
@@ -12821,7 +12820,7 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
 
-  get-uri@6.0.5:
+  get-uri@6.0.5(supports-color@8.1.1):
     dependencies:
       basic-ftp: 5.1.0
       data-uri-to-buffer: 6.0.2
@@ -13920,6 +13919,11 @@ snapshots:
 
   netmask@2.0.2: {}
 
+  next-themes@0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   node-addon-api@7.1.1:
     optional: true
 
@@ -14165,16 +14169,16 @@ snapshots:
 
   p-try@2.2.0: {}
 
-  pac-proxy-agent@7.2.0:
+  pac-proxy-agent@7.2.0(supports-color@8.1.1):
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
-      get-uri: 6.0.5
+      get-uri: 6.0.5(supports-color@8.1.1)
       http-proxy-agent: 7.0.2(supports-color@8.1.1)
       https-proxy-agent: 7.0.6(supports-color@8.1.1)
       pac-resolver: 7.0.1
-      socks-proxy-agent: 8.0.5
+      socks-proxy-agent: 8.0.5(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -14628,23 +14632,6 @@ snapshots:
       - '@types/react'
       - supports-color
 
-  react-select@5.8.3(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      '@babel/runtime': 7.29.2
-      '@emotion/cache': 11.14.0
-      '@emotion/react': 11.14.0(@types/react@18.3.31)(react@18.3.1)(supports-color@8.1.1)
-      '@floating-ui/dom': 1.7.4
-      '@types/react-transition-group': 4.4.12(@types/react@18.3.31)
-      memoize-one: 6.0.0
-      prop-types: 15.8.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-transition-group: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      use-isomorphic-layout-effect: 1.2.1(@types/react@18.3.31)(react@18.3.1)
-    transitivePeerDependencies:
-      - '@types/react'
-      - supports-color
-
   react-smooth@4.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       fast-equals: 5.4.0
@@ -15077,7 +15064,7 @@ snapshots:
 
   smart-buffer@4.2.0: {}
 
-  socks-proxy-agent@8.0.5:
+  socks-proxy-agent@8.0.5(supports-color@8.1.1):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
