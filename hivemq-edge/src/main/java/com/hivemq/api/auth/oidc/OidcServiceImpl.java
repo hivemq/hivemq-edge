@@ -90,6 +90,20 @@ public class OidcServiceImpl implements OidcService {
     // result apart from any other same-origin message.
     private static final @NotNull String OIDC_RESULT_MESSAGE_TYPE = "oidc-result";
 
+    // ID token signing algorithms we accept, in preference order. Asymmetric only: the provider signs
+    // with its private key and we verify with the public key from its JWKS. Symmetric (HS*) and 'none'
+    // are deliberately absent — see selectSigningAlgorithm.
+    private static final @NotNull List<JWSAlgorithm> PREFERRED_JWS_ALGORITHMS = List.of(
+            JWSAlgorithm.RS256,
+            JWSAlgorithm.RS384,
+            JWSAlgorithm.RS512,
+            JWSAlgorithm.PS256,
+            JWSAlgorithm.PS384,
+            JWSAlgorithm.PS512,
+            JWSAlgorithm.ES256,
+            JWSAlgorithm.ES384,
+            JWSAlgorithm.ES512);
+
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull ITokenGenerator tokenGenerator;
     private final @NotNull OidcStateStore stateStore;
@@ -207,7 +221,7 @@ public class OidcServiceImpl implements OidcService {
             final IDTokenValidator validator = new IDTokenValidator(
                     new Issuer(config.getIssuerUri()),
                     new ClientID(config.getClientId()),
-                    JWSAlgorithm.RS256,
+                    selectSigningAlgorithm(metadata),
                     metadata.getJWKSetURI().toURL(),
                     new DefaultResourceRetriever(
                             HTTP_CONNECT_TIMEOUT_MILLIS, HTTP_READ_TIMEOUT_MILLIS, JWKS_SIZE_LIMIT_BYTES));
@@ -240,6 +254,33 @@ public class OidcServiceImpl implements OidcService {
             scope.add(extra);
         }
         return scope;
+    }
+
+    /**
+     * Chooses the JWS algorithm to verify the ID token with, from the algorithms the provider advertises
+     * in its discovery document.
+     * <p>
+     * The algorithm is never taken from the token's own header: that value is attacker-controlled, and
+     * trusting it is the classic algorithm-confusion attack. Only asymmetric algorithms are accepted —
+     * {@code none} would skip verification entirely, and an HMAC algorithm would let anyone holding the
+     * client secret forge a token. {@link #PREFERRED_JWS_ALGORITHMS} is consulted in order, so a provider
+     * advertising several algorithms yields a deterministic choice. RS256 is the default when the
+     * provider advertises nothing, since it is required of every OpenID Provider.
+     *
+     * @throws IllegalStateException if the provider advertises only algorithms we do not accept
+     */
+    static @NotNull JWSAlgorithm selectSigningAlgorithm(final @NotNull OIDCProviderMetadata metadata) {
+        final List<JWSAlgorithm> advertised = metadata.getIDTokenJWSAlgs();
+        if (advertised == null || advertised.isEmpty()) {
+            return JWSAlgorithm.RS256;
+        }
+        for (final JWSAlgorithm candidate : PREFERRED_JWS_ALGORITHMS) {
+            if (advertised.contains(candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("The Identity Provider advertises no supported ID token signing algorithm. "
+                + "Advertised: " + advertised + "; supported: " + PREFERRED_JWS_ALGORITHMS);
     }
 
     /**
