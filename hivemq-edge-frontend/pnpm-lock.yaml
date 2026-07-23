@@ -293,8 +293,8 @@ importers:
         specifier: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
         version: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
       zustand:
-        specifier: 4.5.7
-        version: 4.5.7(@types/react@18.3.31)(react@18.3.1)
+        specifier: 5.0.14
+        version: 5.0.14(@types/react@18.3.31)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     devDependencies:
       '@4tw/cypress-drag-drop':
         specifier: 2.3.1
@@ -319,7 +319,7 @@ importers:
         version: 0.16.2(@types/node@25.9.5)(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/cli':
         specifier: 1.32.4
-        version: 1.32.4(typescript@5.9.3)
+        version: 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/cypress':
         specifier: 3.1.9
         version: 3.1.9(cypress@15.18.1)
@@ -7771,6 +7771,24 @@ packages:
       react:
         optional: true
 
+  zustand@5.0.14:
+    resolution: {integrity: sha512-/8tAspM5LMPr28b3fwLYrtdj77ECpfZviaP75CMTnwO8ISyaE4GDIG/9rDDYq/cH9D2Xw2A2RXglLInmVBQB/g==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
+
 snapshots:
 
   '@4tw/cypress-drag-drop@2.3.1(cypress@15.18.1)':
@@ -9744,7 +9762,7 @@ snapshots:
   '@percy/cli-doctor@1.32.4(typescript@5.9.3)':
     dependencies:
       '@percy/cli-command': 1.32.4(typescript@5.9.3)
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/core': 1.32.4(typescript@5.9.3)
       '@percy/env': 1.32.4
@@ -9791,7 +9809,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/cli@1.32.4(typescript@5.9.3)':
+  '@percy/cli@1.32.4(supports-color@8.1.1)(typescript@5.9.3)':
     dependencies:
       '@percy/cli-app': 1.32.4(typescript@5.9.3)
       '@percy/cli-build': 1.32.4(typescript@5.9.3)
@@ -9801,7 +9819,7 @@ snapshots:
       '@percy/cli-exec': 1.32.4(typescript@5.9.3)
       '@percy/cli-snapshot': 1.32.4(typescript@5.9.3)
       '@percy/cli-upload': 1.32.4(typescript@5.9.3)
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/logger': 1.32.4
     transitivePeerDependencies:
       - bufferutil
@@ -9809,12 +9827,12 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/client@1.32.4(typescript@5.9.3)':
+  '@percy/client@1.32.4(supports-color@8.1.1)(typescript@5.9.3)':
     dependencies:
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/env': 1.32.4
       '@percy/logger': 1.32.4
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
       pako: 2.1.0
     transitivePeerDependencies:
       - supports-color
@@ -9833,7 +9851,7 @@ snapshots:
     dependencies:
       '@grpc/grpc-js': 1.14.4
       '@grpc/proto-loader': 0.8.1
-      '@percy/client': 1.32.4(typescript@5.9.3)
+      '@percy/client': 1.32.4(supports-color@8.1.1)(typescript@5.9.3)
       '@percy/config': 1.32.4(typescript@5.9.3)
       '@percy/dom': 1.32.4
       '@percy/logger': 1.32.4
@@ -9887,13 +9905,13 @@ snapshots:
 
   '@percy/sdk-utils@1.32.3-beta.1':
     dependencies:
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
   '@percy/sdk-utils@1.32.4':
     dependencies:
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -12821,7 +12839,7 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
 
-  get-uri@6.0.5:
+  get-uri@6.0.5(supports-color@8.1.1):
     dependencies:
       basic-ftp: 5.1.0
       data-uri-to-buffer: 6.0.2
@@ -14165,16 +14183,16 @@ snapshots:
 
   p-try@2.2.0: {}
 
-  pac-proxy-agent@7.2.0:
+  pac-proxy-agent@7.2.0(supports-color@8.1.1):
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
-      get-uri: 6.0.5
+      get-uri: 6.0.5(supports-color@8.1.1)
       http-proxy-agent: 7.0.2(supports-color@8.1.1)
       https-proxy-agent: 7.0.6(supports-color@8.1.1)
       pac-resolver: 7.0.1
-      socks-proxy-agent: 8.0.5
+      socks-proxy-agent: 8.0.5(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -15077,7 +15095,7 @@ snapshots:
 
   smart-buffer@4.2.0: {}
 
-  socks-proxy-agent@8.0.5:
+  socks-proxy-agent@8.0.5(supports-color@8.1.1):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
@@ -16172,3 +16190,9 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.31
       react: 18.3.1
+
+  zustand@5.0.14(@types/react@18.3.31)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)):
+    optionalDependencies:
+      '@types/react': 18.3.31
+      react: 18.3.1
+      use-sync-external-store: 1.6.0(react@18.3.1)
