@@ -140,7 +140,7 @@
     "@percy/cli": "1.32.4",
     "@percy/cypress": "3.1.9",
     "@tanstack/eslint-plugin-query": "5.101.4",
-    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
     "@types/chai": "^5.2.2",
     "@types/dagre": "^0.7.53",
