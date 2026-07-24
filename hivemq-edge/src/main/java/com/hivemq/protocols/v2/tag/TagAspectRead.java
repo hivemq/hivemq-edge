@@ -347,6 +347,7 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     @Override
     public @NotNull TagAspectState enterVerified() {
+        cancelActiveTimer(); // clear the verify-result deadline (V-DEADLINE); the poll branch re-arms below
         verificationRetryBackoff.reset();
         consecutivePollFailures = 0;
         if (variant == Variant.SUBSCRIBED) {
@@ -399,6 +400,23 @@ public final class TagAspectRead implements TagAspectVerifying {
     @Override
     public void requestVerification() {
         sharedNodeVerification.requestVerification(node);
+        armVerifyResultDeadline();
+    }
+
+    /**
+     * Arm the verify-result deadline on the aspect's single timer slot. Without it, an adapter that accepts a
+     * post-connect re-verification but never reports an outcome would park the aspect in WAITING_FOR_VERIFICATION
+     * forever — silent, yet the adapter status stays CONNECTED/green (the connect-gate watchdog covers only the
+     * connect-time gate). On expiry the outstanding verify is abandoned and a transient failure is raised so the
+     * aspect retries on the verification backoff instead of hanging. This is the verify-path analogue of the
+     * poll-result deadline (EDG-824 #15) and reuses the same adapter command timeout (QA finding V-DEADLINE).
+     */
+    private void armVerifyResultDeadline() {
+        scheduleTimer(pollResultTimeoutMillis, () -> {
+            sharedNodeVerification.abandonVerification(node);
+            dispatch(new TagAspectEvent.VerifyTransientlyFailed(
+                    "no verify result within " + pollResultTimeoutMillis + " ms"));
+        });
     }
 
     @Override
@@ -411,6 +429,7 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     @Override
     public void onPermanentVerificationFailure(final @NotNull String reason) {
+        cancelActiveTimer(); // clear the verify-result deadline (V-DEADLINE)
         recordFailure(reason);
     }
 
@@ -457,6 +476,7 @@ public final class TagAspectRead implements TagAspectVerifying {
         if (sharedNodeVerification.beginDeferredVerification(node)) {
             batches.verify(node);
         }
+        armVerifyResultDeadline(); // unconditional: a de-duplicated aspect still needs its own liveness deadline
     }
 
     void logUnexpectedEvent(final @NotNull TagAspectEvent event) {

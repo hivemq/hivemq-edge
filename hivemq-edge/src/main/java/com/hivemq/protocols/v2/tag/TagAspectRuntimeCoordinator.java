@@ -284,6 +284,13 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
         this.readUsedTagNames = new HashSet<>(newReadUsedTagNames);
         this.writeUsedTagNames = new HashSet<>(newWriteUsedTagNames);
         this.pollIntervalMillis = newPollIntervalMillis;
+        // Drop any in-flight verification for a node this reconfigure removed, so it cannot hold the connect gate
+        // false into a later reconnect (F-ORPHAN). Surviving nodes keep their in-flight verify for in-place recovery.
+        final Set<Node> currentNodes = new HashSet<>();
+        for (final NodeTagPair pair : this.nodes) {
+            currentNodes.add(pair.node());
+        }
+        runtime().sharedNodeVerification().retainOnly(currentNodes);
         rebuildTagRuntimes();
         replayAdapterPhase();
         applyGoalToAll();

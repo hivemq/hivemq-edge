@@ -132,4 +132,29 @@ class TagAspectReadSubscribedTest {
         assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore + 1);
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION"); // held by verifyDrop
     }
+
+    // EDG-824 V-DEADLINE: a re-verification the adapter accepts but never answers must not park the aspect in
+    // WAITING_FOR_VERIFICATION forever (silent, adapter still green). A verify-result deadline (the adapter command
+    // timeout) drops it to the verification retry, and it recovers when the device answers.
+    @Test
+    void spontaneousLoss_whenTheReVerifyIsNeverAnswered_theDeadlineRetriesInsteadOfParkingForever() {
+        final WrapperTestFixture fixture = subscribedAndConfirmed();
+        fixture.adapter.verifyDrop = true; // the adapter accepts verifyBatch but never reports an outcome
+
+        fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
+        fixture.drain();
+        fixture.advance(100); // the deferred re-verify is issued; its result never comes
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION");
+
+        // Without the deadline this stays WAITING_FOR_VERIFICATION forever; the deadline drops it to the retry.
+        fixture.advance(10_000); // the command-timeout deadline elapses
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION_RETRY");
+
+        // The device answers on the retry: the aspect re-verifies and recovers to a live subscription.
+        fixture.adapter.verifyDrop = false;
+        fixture.advance(30_000); // the verification backoff elapses -> re-verify succeeds -> re-subscribe dispatched
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "24"));
+        fixture.drain();
+        assertThat(fixture.readState("temperature")).isEqualTo("SUBSCRIBED");
+    }
 }

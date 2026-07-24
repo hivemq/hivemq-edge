@@ -136,6 +136,39 @@ class SharedNodeVerificationTest {
     }
 
     @Test
+    void abandonVerification_releasesTheNodeSoAFreshRequestReissues() {
+        final List<List<Node>> requests = new ArrayList<>();
+        final SharedNodeVerification coordinator = new SharedNodeVerification(requests::add, node -> null);
+        final Node node = new CountingNode("a");
+
+        coordinator.requestVerification(node);
+        coordinator.abandonVerification(node); // gave up waiting on the result (a verify-result deadline, V-DEADLINE)
+
+        assertThat(coordinator.allReported()).isTrue();
+        assertThat(coordinator.needsVerify(node)).isTrue();
+        coordinator.requestVerification(node); // re-issues rather than de-duplicating against the abandoned request
+        assertThat(requests).hasSize(2);
+    }
+
+    @Test
+    void retainOnly_dropsInFlightNodesNoLongerInTheTagSet_keepsSurvivors() {
+        final List<List<Node>> requests = new ArrayList<>();
+        final SharedNodeVerification coordinator = new SharedNodeVerification(requests::add, node -> null);
+        final Node kept = new CountingNode("keep");
+        final Node removed = new CountingNode("drop");
+        coordinator.requestVerification(kept);
+        coordinator.requestVerification(removed);
+
+        coordinator.retainOnly(java.util.Set.of(kept)); // a tags-only reconfigure removed 'drop' (F-ORPHAN)
+
+        assertThat(coordinator.needsVerify(removed)).isTrue(); // pruned — no longer holds the gate
+        assertThat(coordinator.needsVerify(kept)).isFalse();   // survivor keeps its outstanding verify
+        assertThat(coordinator.allReported()).isFalse();       // still legitimately waiting on the survivor
+        coordinator.onVerifyResult(kept, new VerifyOutcome.Success());
+        assertThat(coordinator.allReported()).isTrue();
+    }
+
+    @Test
     void reset_dropsOutstandingInFlightSoTheGateDoesNotLinger() {
         final List<List<Node>> requests = new ArrayList<>();
         final SharedNodeVerification coordinator = new SharedNodeVerification(requests::add, node -> null);

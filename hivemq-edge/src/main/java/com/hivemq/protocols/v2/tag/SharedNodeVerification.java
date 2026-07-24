@@ -101,6 +101,33 @@ public final class SharedNodeVerification {
     }
 
     /**
+     * Release a node's outstanding verification without delivering an outcome — the caller has given up waiting on
+     * it (a verify-result deadline elapsed). Clears the in-flight registration so a subsequent
+     * {@link #requestVerification(Node)} / {@link #beginDeferredVerification(Node)} re-issues instead of
+     * de-duplicating against the abandoned request; a late result for the abandoned verify then finds the node
+     * absent and its fan-out is a harmless no-op. Symmetric to the poll-result deadline (EDG-824 #15) on the verify
+     * path (QA finding V-DEADLINE).
+     *
+     * @param node the node whose outstanding verification is abandoned.
+     */
+    public void abandonVerification(final @NotNull Node node) {
+        inFlight.remove(node);
+    }
+
+    /**
+     * Drop every in-flight node that is no longer part of the adapter's tag set — called on a tags-only
+     * reconfigure. Surviving nodes keep their outstanding verification (so a rebuilt aspect de-duplicates against it
+     * and recovers in place, EDG-824 #2); a node removed by the reconfigure would otherwise linger in flight,
+     * holding {@link #allReported()} false into the next connect gate and costing one spurious watchdog {@code ERROR}
+     * bounce before {@link #reset()} clears it (QA finding F-ORPHAN).
+     *
+     * @param currentNodes the nodes still present after the reconfigure.
+     */
+    public void retainOnly(final @NotNull Set<Node> currentNodes) {
+        inFlight.retainAll(currentNodes);
+    }
+
+    /**
      * Begin the connect-time verification: register every given node as in flight (de-duplicated)
      * and issue them as <b>one</b> {@code verifyBatch} — a read-and-write tag therefore yields a single entry.
      * {@link #allReported()} then gates the {@code CONNECTED} transition. An empty list issues nothing and leaves

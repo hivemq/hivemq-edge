@@ -140,7 +140,12 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     }
 
     public @NotNull String getAdapterId() {
-        return adapterId;
+        // Honor the @NotNull contract even when JAXB set the field null via xsi:nil (the element sits under an
+        // xs:any skip region, so the schema never nil-checks it). Coalescing to "" keeps the duplicate-id pre-scan
+        // and the per-entry loop NPE-free and routes a nil id through the normal "adapter-id is missing" containment
+        // (dropped per-adapter, siblings survive) instead of NPE-ing out of updateConfig and crash-looping the node
+        // (EDG-824 #4 containment; QA finding F-NULLID).
+        return adapterId == null ? "" : adapterId;
     }
 
     public @NotNull String getProtocolId() {
