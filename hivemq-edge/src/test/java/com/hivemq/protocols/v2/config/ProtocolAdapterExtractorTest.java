@@ -83,6 +83,30 @@ class ProtocolAdapterExtractorTest {
         assertThat(received.get().rejected().getFirst().reason()).contains("watchdog-timeout-millis");
     }
 
+    // EDG-824 #4 — reproduces the QA MalformedAdapterConfigDoesNotCrashTheNodeTest tripwire input exactly: a NEW
+    // adapter with an empty <protocol-id> declared alongside a healthy sibling in the same (re)load. The empty
+    // protocol-id is scoped to the rejected list; the healthy sibling is applied and the section succeeds — proving
+    // the node is never shut down by the malformed adapter. (The sibling-survival mechanism is also covered by
+    // invalidNewAdapter_isScopedToThatAdapterAndSurfacedAsRejected using an S32 violation; this pins the tripwire's
+    // exact empty-protocol-id malformation.)
+    @Test
+    void newAdapterWithEmptyProtocolId_isRejectedWhileTheHealthySiblingIsApplied() {
+        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
+        extractor.registerConsumer(received::set);
+
+        final ProtocolAdapterEntity emptyProtocolId = adapterWithProtocolId("bad-one", "");
+        final Configurator.ConfigResult result =
+                extractor.updateConfig(config(adapter("healthy-one"), emptyProtocolId));
+
+        assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
+        assertThat(extractor.getAllConfigs()).hasSize(1);
+        assertThat(extractor.getAllConfigs().getFirst().getAdapterId()).isEqualTo("healthy-one");
+        assertThat(received.get().rejected()).hasSize(1);
+        assertThat(received.get().rejected().getFirst().entity().getAdapterId()).isEqualTo("bad-one");
+        assertThat(received.get().rejected().getFirst().reason()).contains("protocol-id");
+    }
+
     // EDG-824 #4 (transactional per-adapter rejection): an invalid replacement for a previously-accepted adapter
     // keeps the previously-applied configuration running untouched — it is neither removed nor marked rejected.
     @Test
@@ -191,6 +215,24 @@ class ProtocolAdapterExtractorTest {
 
     private static @NotNull ProtocolAdapterEntity adapterWithId(final @NotNull String adapterId) {
         return adapterWithTimeouts(adapterId, 30_000, 10_000);
+    }
+
+    private static @NotNull ProtocolAdapterEntity adapterWithProtocolId(
+            final @NotNull String adapterId, final @NotNull String protocolId) {
+        return new ProtocolAdapterEntity(
+                adapterId,
+                protocolId,
+                2,
+                true,
+                false,
+                false,
+                Map.of(),
+                new RetryPolicyEntity(),
+                30_000,
+                10_000,
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new ArrayList<>());
     }
 
     private static @NotNull ProtocolAdapterEntity adapterWithTimeouts(
