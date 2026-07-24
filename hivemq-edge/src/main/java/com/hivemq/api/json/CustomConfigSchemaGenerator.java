@@ -16,6 +16,7 @@
 package com.hivemq.api.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.FieldScope;
@@ -49,6 +50,13 @@ public class CustomConfigSchemaGenerator {
     /** Transient marker attribute embedded during schema generation; stripped in the post-process walk. */
     private static final String MEF_MARKER = "x-hivemq-mutually-exclusive";
 
+    /**
+     * victools 5 emits its schema tree using the Jackson 3 ({@code tools.jackson}) node model, but this class'
+     * public contract and every downstream consumer (the networknt validator, the generated {@code TagSchema}
+     * model) stay on Jackson 2. This mapper re-parses the generated tree back into a Jackson 2 tree.
+     */
+    private static final @NotNull ObjectMapper JACKSON_2_MAPPER = new ObjectMapper();
+
     public @NotNull JsonNode generateJsonSchema(final @NotNull Class clazz) {
         SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
                         SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
@@ -61,12 +69,25 @@ public class CustomConfigSchemaGenerator {
         withMutuallyExclusiveFieldsMarker(configBuilder);
         SchemaGeneratorConfig config = configBuilder.build();
         SchemaGenerator generator = new SchemaGenerator(config);
-        final JsonNode schema = generator.generateSchema(clazz);
+        final JsonNode schema = toJackson2Tree(generator.generateSchema(clazz));
         rewriteMarkedNodes(schema);
         if (schema instanceof ObjectNode root) {
             inlineDefs(root);
         }
         return schema;
+    }
+
+    /**
+     * Bridges a victools 5 (Jackson 3 / {@code tools.jackson}) schema tree back into the Jackson 2
+     * ({@code com.fasterxml.jackson}) tree consumed by the rest of Edge, by round-tripping through the
+     * serialized JSON.
+     */
+    private static @NotNull JsonNode toJackson2Tree(final @NotNull tools.jackson.databind.JsonNode schema) {
+        try {
+            return JACKSON_2_MAPPER.readTree(schema.toString());
+        } catch (final com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("Failed to convert generated JSON schema to a Jackson 2 tree", e);
+        }
     }
 
     /**
@@ -134,7 +155,7 @@ public class CustomConfigSchemaGenerator {
         configBuilder
                 .forTypesInGeneral()
                 .withTypeAttributeOverride(
-                        (final ObjectNode collectedTypeAttributes,
+                        (final tools.jackson.databind.node.ObjectNode collectedTypeAttributes,
                                 final TypeScope scope,
                                 final SchemaGenerationContext context) -> {
                             final Class<?> clazz = scope.getType().getErasedType();
@@ -145,12 +166,13 @@ public class CustomConfigSchemaGenerator {
                             if (mef == null || mef.value().length == 0) {
                                 return;
                             }
-                            final ObjectNode marker = collectedTypeAttributes.putObject(MEF_MARKER);
-                            final ArrayNode valueArr = marker.putArray("value");
+                            final tools.jackson.databind.node.ObjectNode marker =
+                                    collectedTypeAttributes.putObject(MEF_MARKER);
+                            final tools.jackson.databind.node.ArrayNode valueArr = marker.putArray("value");
                             for (final String v : mef.value()) {
                                 valueArr.add(v);
                             }
-                            final ArrayNode titlesArr = marker.putArray("titles");
+                            final tools.jackson.databind.node.ArrayNode titlesArr = marker.putArray("titles");
                             for (final String t : mef.titles()) {
                                 titlesArr.add(t);
                             }
@@ -270,7 +292,8 @@ public class CustomConfigSchemaGenerator {
             if (configField != null) {
                 String[] displayValues = configField.enumDisplayValues();
                 if (displayValues != null && displayValues.length > 0) {
-                    ArrayNode node = (ArrayNode) collectedMemberAttributes.get(ENUM_NAMES_ATTRIBUTE);
+                    tools.jackson.databind.node.ArrayNode node =
+                            (tools.jackson.databind.node.ArrayNode) collectedMemberAttributes.get(ENUM_NAMES_ATTRIBUTE);
                     if (node == null) {
                         node = collectedMemberAttributes.putArray(ENUM_NAMES_ATTRIBUTE);
                     }
@@ -310,7 +333,7 @@ public class CustomConfigSchemaGenerator {
         }
 
         private void customAttributes(
-                final @NotNull ObjectNode jsonNodes,
+                final @NotNull tools.jackson.databind.node.ObjectNode jsonNodes,
                 final @NotNull MemberScope<?, ?> memberScope,
                 final @NotNull SchemaGenerationContext schemaGenerationContext) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
