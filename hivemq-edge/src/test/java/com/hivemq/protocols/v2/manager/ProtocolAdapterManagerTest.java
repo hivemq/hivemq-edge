@@ -397,6 +397,50 @@ class ProtocolAdapterManagerTest {
         assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
     }
 
+    // EDG-824 #4/R1: a mispackaged adapter jar throws a LinkageError (an Error) from create. The reconcile guard is
+    // Throwable, not RuntimeException, so the failure is scoped to that adapter — the sibling declared after it still
+    // starts, and the thrower surfaces as an ERROR handle instead of aborting the whole reconcile pass.
+    @Test
+    void reconcile_whenAnAdapterFactoryThrowsALinkageError_scopesItAndKeepsSiblingsRunning() {
+        wrapperFactory.throwOnCreate("bad", new NoClassDefFoundError("com/example/Missing"));
+
+        send(new ConfigurationChanged(
+                List.of(adapter("bad").build(), adapter("good").build())));
+
+        // The sibling declared after the throwing adapter is still created and registered.
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("good");
+        assertThat(handleRegistry.find("good")).isNotNull();
+        // The thrower is surfaced as an ERROR handle, not silently dropped.
+        final ProtocolAdapterHandle bad = handleRegistry.find("bad");
+        assertThat(bad).isNotNull();
+        final AdapterStatusSnapshot snapshot = bad.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("NoClassDefFoundError");
+    }
+
+    // EDG-824 #4/R2: the recreate after a full-recreate reload runs outside the reconcile guard. A LinkageError from a
+    // mispackaged jar on that recreate is scoped to the adapter — it surfaces as an ERROR handle instead of escaping
+    // the manager's dispatch thread.
+    @Test
+    void recreateAfterStop_whenTheFactoryThrowsALinkageError_scopesItToAnErrorHandle() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        wrapperFactory.throwOnCreate("a", new NoClassDefFoundError("com/example/Missing"));
+
+        // A connection-critical change forces a full recreate: stop now, recreate on the stop ack.
+        send(new ConfigurationChanged(List.of(
+                adapter("a").adapterConfiguration(Map.of("changed", true)).build())));
+        fireWrapperStopped("a");
+
+        final ProtocolAdapterHandle a = handleRegistry.find("a");
+        assertThat(a).isNotNull();
+        final AdapterStatusSnapshot snapshot = a.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("NoClassDefFoundError");
+    }
+
     private void send(final @NotNull ProtocolAdapterManagerMessage message) {
         mailbox.tell(message);
         dispatcher.drainAll();

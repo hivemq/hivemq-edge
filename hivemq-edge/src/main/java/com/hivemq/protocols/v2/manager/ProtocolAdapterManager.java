@@ -208,7 +208,11 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 } else {
                     createAdapter(entity);
                 }
-            } catch (final RuntimeException exception) {
+            } catch (final @NotNull Throwable exception) {
+                // Throwable, not RuntimeException (EDG-824 #4/R1): a mispackaged or version-skewed adapter jar throws
+                // a LinkageError from wrapperFactory.create — an Error. Catching only RuntimeException would let it
+                // abort the whole pass, skipping every sibling after it and leaving the thrower with no ERROR handle;
+                // this is the same defensive posture ProtocolAdapterWrapper.receive already takes.
                 log.error("Failed to reconcile v2 adapter '{}'; scoping the failure to it", adapterId, exception);
                 if (!containerMap.containsKey(adapterId) && !pendingRemovalMap.containsKey(adapterId)) {
                     registerErrorAdapter(
@@ -449,7 +453,23 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                         adapterId);
                 return;
             }
-            createAdapter(pending.recreateAs());
+            try {
+                createAdapter(pending.recreateAs());
+            } catch (final @NotNull Throwable exception) {
+                // EDG-824 #4/R2: the recreate runs outside the reconcile loop's guard, so a LinkageError (or any
+                // throwable) from a mispackaged adapter jar would otherwise escape the manager's dispatch thread.
+                // Scope it to this adapter — surface it as an ERROR handle instead of tearing the manager down.
+                log.error(
+                        "Failed to recreate v2 adapter '{}' after its stop; scoping the failure to it",
+                        adapterId,
+                        exception);
+                if (!containerMap.containsKey(adapterId)) {
+                    registerErrorAdapter(
+                            pending.recreateAs(),
+                            "recreation failed: " + exception.getClass().getSimpleName() + ": "
+                                    + exception.getMessage());
+                }
+            }
         }
     }
 

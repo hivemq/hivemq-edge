@@ -687,10 +687,10 @@ public class ConfigFileReaderWriter {
                 fileModified.set(modified);
                 switch (loadConfigFromXML(configFile)) {
                     case APPLIED -> {}
-                    case REJECTED_INVALID -> log.error(
-                            "Configuration reload rejected because the new configuration is invalid; " +
-                                    "keeping the previously applied configuration. " +
-                                    "Fix the reported errors above and save the file again.");
+                    case REJECTED_INVALID ->
+                        log.error("Configuration reload rejected because the new configuration is invalid; "
+                                + "keeping the previously applied configuration. "
+                                + "Fix the reported errors above and save the file again.");
                     case NEEDS_RESTART -> {
                         if (!isDevMode) {
                             log.error("Restarting because new config can't be hot-reloaded");

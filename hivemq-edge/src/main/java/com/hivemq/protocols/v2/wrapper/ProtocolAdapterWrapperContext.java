@@ -497,7 +497,10 @@ public final class ProtocolAdapterWrapperContext {
             // transition into ERROR must complete regardless.
             try {
                 protocolAdapter.stop();
-            } catch (final RuntimeException stopFailure) {
+            } catch (final @NotNull Throwable stopFailure) {
+                // Throwable, not RuntimeException (EDG-824 #7): a mispackaged adapter jar can throw a LinkageError
+                // from stop() too, and the transition into ERROR — with the health-listener and tag-plane
+                // notifications below — must complete regardless.
                 log.warn("Adapter '{}' threw while being stopped on the way to ERROR", adapterId, stopFailure);
             }
         }

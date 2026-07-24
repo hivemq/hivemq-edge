@@ -49,7 +49,13 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     private final @NotNull List<String> createdAdapterIds = new ArrayList<>();
     private final @NotNull Map<String, Recorded> recordedByAdapterId = new LinkedHashMap<>();
     private final @NotNull List<String> translateNodesAdapterIds = new ArrayList<>();
+    // adapterId → an error create() throws for it, to model a mispackaged adapter jar (EDG-824 #4/R1, #4/R2).
+    private final @NotNull Map<String, Throwable> createFailures = new java.util.HashMap<>();
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
+
+    void throwOnCreate(final @NotNull String adapterId, final @NotNull Throwable error) {
+        createFailures.put(adapterId, error);
+    }
 
     @Override
     public @NotNull ProtocolAdapterContainer create(
@@ -58,6 +64,13 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
             final @NotNull ProtocolAdapterWrapperEventListener healthListener) {
         this.healthListener = healthListener;
         final String adapterId = entity.getAdapterId();
+        final Throwable failure = createFailures.get(adapterId);
+        if (failure instanceof final Error error) {
+            throw error;
+        }
+        if (failure instanceof final RuntimeException runtime) {
+            throw runtime;
+        }
         createdAdapterIds.add(adapterId);
 
         final List<ProtocolAdapterWrapperMessage> commands = new ArrayList<>();
