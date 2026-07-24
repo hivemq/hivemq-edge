@@ -119,9 +119,9 @@ PostgreSQL continues to ignore `encrypt` exactly as v1 did (no `sslmode` is adde
 3. **MySQL connection-URL injection is blocked.** The MariaDB connection is a JDBC URL that interpolates `server` and
    `database`; a value carrying a URL separator (`?`, `&`, `/`, `#`, `\`, whitespace) could inject or override
    connection parameters. Those two identifiers are validated before a pool is opened and a bad value is surfaced as a
-   connection error — restoring the allowlist the v1 adapter enforced through its `database` field pattern, which the
-   v2 scalar schema cannot express. (PostgreSQL and MS SQL pass the same values as data-source properties, not URL
-   segments, so they are not affected.)
+   connection error — a character blocklist restoring the protection the v1 adapter enforced through its `database`
+   field pattern (a character allowlist), which the v2 scalar schema cannot express. (PostgreSQL and MS SQL pass the
+   same values as data-source properties, not URL segments, so they are not affected.)
 4. **A stale or misspelled node field fails loudly.** The node definition schema is `additionalProperties=false`, and
    `DatabaseNode` enforces it on deserialization regardless of the mapper's leniency: an unknown field — the v1
    `spiltLinesInIndividualMessages` boolean, or a plausible `splitLines` — is rejected rather than silently dropped,
@@ -135,10 +135,9 @@ remains a documented extension point.
 
 ## Testing
 
-- Unit tests drive the adapter directly (`ManualDispatcher` + a recording output) against a stubbed JDBC layer.
-- `DatabasesProtocolAdapterWrapperTest` drives a **real `ProtocolAdapterWrapper`** — with the real polled read-aspect
-  machines — against **real PostgreSQL, MySQL, and MSSQL Testcontainers**, deterministically (`FakeClock`; the
-  synchronous JDBC poll executes inside the manual drain).
+- Unit tests drive the adapter directly (`ManualDispatcher` + a recording output) against a stubbed JDBC layer — no
+  Docker, no Testcontainers: container-backed coverage lives exclusively in `hivemq-edge-test`.
 - `DatabasesV2AdapterEndToEndTest` (in `hivemq-edge-test`) boots a real Edge runtime that loads this module's fat jar
   through the standard module loader and proves catalog listability, all three `splitMode` shapes over MQTT, the
-  flag-only activation reload, and v1/v2 catalog disjointness against all three real engines.
+  flag-only activation reload, per-tag failure counting with recovery, and v1/v2 catalog disjointness against all
+  three real engines (mirrored, digest-pinned images).

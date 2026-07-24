@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.databases.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -610,6 +611,182 @@ class DatabasesProtocolAdapterPollTest {
         // A hung database must not wedge the dispatch thread: the poll caps the query at the configured connection
         // timeout (the fixture applies the 30s default).
         verify(statement).setQueryTimeout(30);
+    }
+
+    @Test
+    void aPoisonedNodeInABatch_reportsItsOwnNodeErrorAndTheHealthySiblingStillDelivers() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        // The first node's query fails outright; the sibling's query returns one row.
+        when(connection.prepareStatement("SELECT name FROM missing"))
+                .thenThrow(new SQLException("relation does not exist"));
+        when(connection.prepareStatement("SELECT name FROM products")).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(metaData.getColumnCount()).thenReturn(1);
+        when(metaData.getColumnLabel(1)).thenReturn("name");
+        when(metaData.getColumnType(1)).thenReturn(Types.VARCHAR);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString(1)).thenReturn("apple");
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        final DatabaseNode poisoned = new DatabaseNode("SELECT name FROM missing", SplitMode.ALL_IN_ONE, 100);
+        final DatabaseNode healthy = new DatabaseNode("SELECT name FROM products", SplitMode.ALL_IN_ONE, 100);
+
+        adapter.pollBatch(List.of(poisoned, healthy));
+        dispatcher.drainAll();
+
+        // One node's failure is confined to its own nodeError terminator; the batch loop proceeds and the healthy
+        // sibling still delivers its value in the same batch.
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).node()).isSameAs(poisoned);
+        assertThat(output.nodeErrors.get(0).reason()).contains("relation does not exist");
+        assertThat(output.dataPoints).hasSize(1);
+        assertThat(output.dataPoints.get(0).node()).isSameAs(healthy);
+        assertThat(output.events).containsExactly("nodeError", "dataPoint");
+    }
+
+    @Test
+    void aMidStreamRowConversionFailure_deliversTheEarlierPagesThenExactlyOneNodeError() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+        final ResultSetMetaData metaData = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metaData);
+        when(metaData.getColumnCount()).thenReturn(1);
+        when(metaData.getColumnLabel(1)).thenReturn("name");
+        when(metaData.getColumnType(1)).thenReturn(Types.VARCHAR);
+        when(resultSet.next()).thenReturn(true, true, false);
+        // The first row converts; reading the second row throws an unchecked exception (not a SQLException).
+        when(resultSet.getString(1)).thenReturn("apple").thenThrow(new RuntimeException("value conversion failed"));
+
+        // Page size 1 flushes the first row before the second row's conversion fails mid-stream.
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        adapter.pollBatch(List.of(new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_ROW, 1)));
+        dispatcher.drainAll();
+
+        // The widened catch turns the mid-stream unchecked throw into the single failure terminator; the page already
+        // streamed stays delivered and no success terminator follows.
+        assertThat(output.dataPoints).hasSize(1);
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).reason()).contains("value conversion failed");
+        assertThat(output.events).containsExactly("dataPoints", "nodeError");
+    }
+
+    @Test
+    void aSqlExceptionWithoutAMessage_stillReportsANodeErrorNamingTheQuery() throws SQLException {
+        final Connection connection = mock(Connection.class);
+        // Drivers may throw a SQLException carrying no message at all; the error report must not fail on it.
+        when(connection.prepareStatement(anyString())).thenThrow(new SQLException());
+
+        final DatabasesProtocolAdapter adapter = adapterOver(connection);
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ALL_IN_ONE, 100);
+
+        adapter.pollBatch(List.of(node));
+        dispatcher.drainAll();
+
+        assertThat(output.dataPoints).isEmpty();
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).node()).isSameAs(node);
+        assertThat(output.nodeErrors.get(0).reason()).contains("SELECT name FROM products");
+        assertThat(output.events).containsExactly("nodeError");
+    }
+
+    @Test
+    void onePerBatchMode_anExactMultipleOfTheBatchSize_emitsOnlyFullBatchesAndNoEmptyTrailingMessage()
+            throws SQLException {
+        final DatabasesProtocolAdapter adapter = adapterOver(
+                connectionReturningStringRows(List.of(List.of("a"), List.of("b"), List.of("c"), List.of("d"))));
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_BATCH, 2);
+
+        adapter.pollBatch(List.of(node));
+        dispatcher.drainAll();
+
+        assertThat(output.nodeErrors).isEmpty();
+        // Four rows in batches of two fill exactly two arrays — the exact multiple must not add an empty third
+        // message before the completion.
+        assertThat(output.dataPoints).hasSize(2);
+        assertThat((ArrayNode) output.dataPoints.get(0).value().getTagValue()).hasSize(2);
+        assertThat((ArrayNode) output.dataPoints.get(1).value().getTagValue()).hasSize(2);
+        assertThat(output.events).containsExactly("dataPoints", "dataPoints", "pollComplete");
+    }
+
+    @Test
+    void onePerRowMode_anExactMultipleOfThePageSize_drainsOnlyFullPagesAndNoEmptyTrailingPage() throws SQLException {
+        final DatabasesProtocolAdapter adapter = adapterOver(
+                connectionReturningStringRows(List.of(List.of("a"), List.of("b"), List.of("c"), List.of("d"))));
+        final DatabaseNode node = new DatabaseNode("SELECT name FROM products", SplitMode.ONE_PER_ROW, 2);
+
+        adapter.pollBatch(List.of(node));
+        dispatcher.drainAll();
+
+        assertThat(output.nodeErrors).isEmpty();
+        // Four rows drained in pages of two are exactly two full pages — the exact multiple must not add an empty
+        // trailing dataPoints call before the completion.
+        assertThat(output.batches).extracting(List::size).containsExactly(2, 2);
+        assertThat(output.dataPoints).hasSize(4);
+        assertThat(output.events).containsExactly("dataPoints", "dataPoints", "pollComplete");
+    }
+
+    @Test
+    void aDisconnectOvertakingAQueuedPoll_isolatesTheStalePollToANodeError() throws SQLException {
+        // The mailbox delivers CONTROL ahead of DATA, so a disconnect issued while a poll sits queued closes the pool
+        // before the poll runs — the exact race behind the original closed-pool escalation. The stale poll must land
+        // as a per-node error while the disconnect still succeeds, with no adapter-scope error.
+        final Connection jdbcConnection = mock(Connection.class);
+        when(jdbcConnection.isValid(anyInt())).thenReturn(true);
+        final class LifecycleDatabaseConnection extends DatabaseConnection {
+            private boolean open;
+
+            private LifecycleDatabaseConnection(final @NotNull DatabasesAdapterConfiguration configuration) {
+                super(configuration);
+            }
+
+            @Override
+            public void connect() {
+                open = true;
+            }
+
+            @Override
+            public @NotNull Connection getConnection() {
+                if (!open) {
+                    throw new IllegalStateException("Hikari Connection Pool must be started before usage.");
+                }
+                return jdbcConnection;
+            }
+
+            @Override
+            public void close() {
+                open = false;
+            }
+        }
+        final DatabasesProtocolAdapter adapter = new DatabasesProtocolAdapter(
+                DatabasesAdapterTestFixtures.input(
+                        "databases-v2-1",
+                        dispatcher,
+                        new DatabasesAdapterTestFixtures.TestDataPointFactory(),
+                        DatabasesAdapterTestFixtures.configuration("POSTGRESQL", 5432),
+                        List.of()),
+                output,
+                LifecycleDatabaseConnection::new);
+        final DatabaseNode node = new DatabaseNode("SELECT 1", SplitMode.ALL_IN_ONE, 100);
+
+        adapter.connect();
+        dispatcher.drainAll();
+        // Queue the poll (DATA band), then the disconnect (CONTROL band) — without draining in between, so the
+        // disconnect overtakes the already-queued poll.
+        adapter.pollBatch(List.of(node));
+        adapter.disconnect();
+        dispatcher.drainAll();
+
+        assertThat(output.events).containsExactly("connected", "disconnected", "nodeError");
+        assertThat(output.nodeErrors).hasSize(1);
+        assertThat(output.nodeErrors.get(0).node()).isSameAs(node);
+        assertThat(output.nodeErrors.get(0).reason()).contains("Hikari Connection Pool must be started");
     }
 
     @Test

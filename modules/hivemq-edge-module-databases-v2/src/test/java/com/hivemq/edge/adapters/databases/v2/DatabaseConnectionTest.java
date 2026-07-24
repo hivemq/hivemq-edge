@@ -17,8 +17,14 @@ package com.hivemq.edge.adapters.databases.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -137,5 +143,54 @@ class DatabaseConnectionTest {
                 new DatabaseConnection(configuration(DatabaseType.POSTGRESQL, false, false));
 
         connection.close();
+    }
+
+    /**
+     * A {@link DatabaseConnection} whose pool opening is stubbed, so the open/close lifecycle is observable without a
+     * reachable database.
+     */
+    private static final class StubPoolDatabaseConnection extends DatabaseConnection {
+
+        private final @NotNull List<HikariDataSource> openedPools = new ArrayList<>();
+
+        private StubPoolDatabaseConnection() {
+            super(configuration(DatabaseType.POSTGRESQL, false, false));
+        }
+
+        @Override
+        protected @NotNull HikariDataSource openDataSource(final @NotNull HikariConfig config) {
+            final HikariDataSource dataSource = mock(HikariDataSource.class);
+            openedPools.add(dataSource);
+            return dataSource;
+        }
+    }
+
+    @Test
+    void reconnectingClosesThePreviousPoolBeforeOpeningTheNewOne() {
+        final StubPoolDatabaseConnection connection = new StubPoolDatabaseConnection();
+
+        connection.connect();
+        connection.connect();
+
+        // The wrapper's connection-retry path re-enters connect() without an intervening disconnect, so the previous
+        // pool must be closed first — otherwise its housekeeper threads and pooled connections leak on every retry.
+        assertThat(connection.openedPools).hasSize(2);
+        verify(connection.openedPools.get(0)).close();
+        verify(connection.openedPools.get(1), never()).close();
+    }
+
+    @Test
+    void borrowingAfterThePoolClosedFailsClearlyInsteadOfBorrowingFromAClosedPool() {
+        final StubPoolDatabaseConnection connection = new StubPoolDatabaseConnection();
+
+        connection.connect();
+        connection.close();
+
+        // The pool reference is cleared before the pool closes, so a poll that was queued behind a disconnect fails
+        // fast with the "pool not started" error instead of borrowing from a closed pool.
+        verify(connection.openedPools.get(0)).close();
+        assertThatIllegalStateException()
+                .isThrownBy(connection::getConnection)
+                .withMessage("Hikari Connection Pool must be started before usage.");
     }
 }

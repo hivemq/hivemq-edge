@@ -120,7 +120,18 @@ public class DatabaseConnection {
     public void connect() {
         close();
         log.debug("Connection settings : {}", config);
-        this.dataSource = new HikariDataSource(config);
+        this.dataSource = openDataSource(config);
+    }
+
+    /**
+     * Open the pool for the built configuration. A seam so tests can substitute a stub pool and observe the
+     * open/close lifecycle without a reachable database.
+     *
+     * @param config the pool configuration to open with.
+     * @return the opened pool.
+     */
+    protected @NotNull HikariDataSource openDataSource(final @NotNull HikariConfig config) {
+        return new HikariDataSource(config);
     }
 
     /**

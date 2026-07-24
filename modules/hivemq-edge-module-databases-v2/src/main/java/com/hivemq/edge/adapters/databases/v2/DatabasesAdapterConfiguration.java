@@ -112,9 +112,9 @@ public record DatabasesAdapterConfiguration(
      * The characters that would break out of the MySQL/MariaDB JDBC connection URL
      * ({@code jdbc:mariadb://server:port/database?params}) and let a crafted server or database name inject or
      * override connection parameters: the query/fragment/path separators and any whitespace or control character. A
-     * legitimate host name (including a bracketed IPv6 literal) or database name never contains any of these, so the
-     * check restores the allowlist the v1 adapter enforced through its {@code database} field pattern — which the v2
-     * scalar schema cannot express.
+     * legitimate host name (including a bracketed IPv6 literal) or database name never contains any of these, so this
+     * blocklist restores the protection the v1 adapter enforced through its {@code database} field pattern (a
+     * character allowlist) — which the v2 scalar schema cannot express.
      */
     private static final @NotNull String FORBIDDEN_URL_IDENTIFIER_CHARACTERS = "/\\?#&";
 

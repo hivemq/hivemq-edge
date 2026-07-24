@@ -267,13 +267,34 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                                 + "] tag ["
                                 + tag.getName()
                                 + "] node-string is not a valid "
-                                + nodeClass.getSimpleName(),
+                                + nodeClass.getSimpleName()
+                                + ": "
+                                + parseFailureDetail(exception),
                         exception);
             }
             nodes.add(NodeTagPair.create(
                     node, tag.getName(), factory.nodeDefinitionSchema(), tag.isPollable(), tag.isSubscribable()));
         }
         return nodes;
+    }
+
+    /**
+     * The human-usable detail of a node-string parse failure, woven into the configuration error so an operator can
+     * tell a key typo from a value typo without a stack trace: a node class that rejects a field or value throws from
+     * its creator/setter and that message (the root cause) is the precise one; plain malformed JSON has no cause, so
+     * Jackson's own description (without its location suffix) is the best available.
+     */
+    private static @NotNull String parseFailureDetail(final @NotNull JsonProcessingException exception) {
+        Throwable rootCause = exception;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+        }
+        final String rootCauseMessage = rootCause.getMessage();
+        if (rootCause != exception && rootCauseMessage != null) {
+            return rootCauseMessage;
+        }
+        final String originalMessage = exception.getOriginalMessage();
+        return originalMessage != null ? originalMessage : exception.getClass().getSimpleName();
     }
 
     /**

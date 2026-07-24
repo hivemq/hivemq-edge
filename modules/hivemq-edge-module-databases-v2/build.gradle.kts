@@ -51,13 +51,9 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.assertj)
-    testImplementation(libs.awaitility)
     testImplementation(libs.mockito.junit.jupiter)
-    // Plain Testcontainers only: the engine-specific modules (postgresql/mysql/mssqlserver) live in the
-    // hivemq-edge-test catalog, not here — the wrapper tests run the engines as GenericContainers and gate
-    // readiness through the same JDBC drivers the adapter bundles.
-    testImplementation(libs.testcontainers)
-    testImplementation(libs.testcontainers.junit.jupiter)
+    // No Testcontainers here: container-backed coverage (real engines through a booted runtime) lives in the
+    // hivemq-edge-test end-to-end suite; this module's tests run against stubbed JDBC seams only.
 }
 
 tasks.test {
