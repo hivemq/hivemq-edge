@@ -1,0 +1,18 @@
+get:
+  description: Begin the OIDC authorization-code flow. Redirects the browser to the configured Identity Provider's authorization endpoint with a freshly minted state, nonce, and PKCE challenge.
+  operationId: oidc-login
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
+  responses:
+    '302':
+      description: Redirect to the Identity Provider's authorization endpoint.
+    '503':
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: OIDC is not configured on this instance, or the Identity Provider could not be reached. The `detail` field distinguishes the two.
+  summary: Begin the OIDC login flow.
+  tags:
+    - Authentication
+    - Authentication Endpoint

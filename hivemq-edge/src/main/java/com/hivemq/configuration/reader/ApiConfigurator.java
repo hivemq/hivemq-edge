@@ -23,24 +23,30 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
+import com.hivemq.api.config.AuthMode;
 import com.hivemq.api.config.HttpListener;
 import com.hivemq.api.config.HttpsListener;
+import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.api.ApiJwsEntity;
 import com.hivemq.configuration.entity.api.ApiListenerEntity;
 import com.hivemq.configuration.entity.api.ApiTlsEntity;
+import com.hivemq.configuration.entity.api.AuthModeEntity;
+import com.hivemq.configuration.entity.api.AuthModesEntity;
 import com.hivemq.configuration.entity.api.HttpListenerEntity;
 import com.hivemq.configuration.entity.api.HttpsListenerEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.entity.api.UserEntity;
+import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -71,6 +77,31 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 Set.copyOf(userEntity.getRoles()));
     }
 
+    private static boolean isBlank(final @Nullable String value) {
+        return value == null || value.isBlank();
+    }
+
+    /**
+     * Resolves the active authentication modes. An absent {@code <auth-modes>} defaults to
+     * {@code USERNAME_PASSWORD}, preserving the existing behavior. The XSD guarantees a present
+     * {@code <auth-modes>} carries at least one {@code <auth-mode>}.
+     */
+    private static @NotNull Set<AuthMode> resolveAuthModes(final @NotNull AdminApiEntity entity) {
+        final AuthModesEntity authModesEntity = entity.getAuthModes();
+        if (authModesEntity == null || authModesEntity.getAuthModes().isEmpty()) {
+            return EnumSet.of(AuthMode.USERNAME_PASSWORD);
+        }
+        final EnumSet<AuthMode> modes = EnumSet.noneOf(AuthMode.class);
+        for (final AuthModeEntity mode : authModesEntity.getAuthModes()) {
+            modes.add(
+                    switch (mode) {
+                        case USERNAME_PASSWORD -> AuthMode.USERNAME_PASSWORD;
+                        case OPEN_ID -> AuthMode.OPEN_ID;
+                    });
+        }
+        return modes;
+    }
+
     // -- Converts XML entity types to bean types
 
     @Override
@@ -88,20 +119,40 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         apiCfgService.setEnabled(entity.isEnabled());
         apiCfgService.setEnforceApiAuth(entity.isEnforceApiAuth());
 
-        // Users
-        if (entity.getLdap() != null) {
-            apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
-        } else {
-            final List<UserEntity> users = entity.getUsers();
-            if (!users.isEmpty()) {
-                log.warn(
-                        "The <users> element in the <api> configuration is deprecated and will be removed in future versions. "
-                                + "Please use the <username-roles-source> element instead.");
-                apiCfgService.setUserList(
-                        users.stream().map(ApiConfigurator::fromModel).toList());
+        // Authentication modes: absent <auth-modes> defaults to USERNAME_PASSWORD.
+        final Set<AuthMode> authModes = resolveAuthModes(entity);
+        final OidcAuthenticationEntity oidcEntity = entity.getOidc();
+
+        // Symmetric validation between <auth-modes> and the <oidc-authentication> stanza.
+        if (authModes.contains(AuthMode.OPEN_ID) && oidcEntity == null) {
+            log.error("<auth-modes> lists OPEN_ID but no <oidc-authentication> stanza is configured.");
+            throw new UnrecoverableException(false);
+        }
+        if (oidcEntity != null && !authModes.contains(AuthMode.OPEN_ID)) {
+            log.error("An <oidc-authentication> stanza is configured but <auth-modes> does not list OPEN_ID.");
+            throw new UnrecoverableException(false);
+        }
+        apiCfgService.setAuthModes(authModes);
+
+        // Local users / LDAP — only wired when USERNAME_PASSWORD is an active mode.
+        if (authModes.contains(AuthMode.USERNAME_PASSWORD)) {
+            if (entity.getLdap() != null) {
+                apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
             } else {
-                apiCfgService.setUserList(DEFAULT_USERS);
+                final List<UserEntity> users = entity.getUsers();
+                if (!users.isEmpty()) {
+                    log.warn(
+                            "The <users> element in the <api> configuration is deprecated and will be removed in future versions. "
+                                    + "Please use the <username-roles-source> element instead.");
+                    apiCfgService.setUserList(
+                            users.stream().map(ApiConfigurator::fromModel).toList());
+                } else {
+                    apiCfgService.setUserList(DEFAULT_USERS);
+                }
             }
+        } else {
+            // USERNAME_PASSWORD not active: no local users, no default admin. Local login is closed.
+            apiCfgService.setUserList(List.of());
         }
 
         // JWT
@@ -113,6 +164,23 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 .withExpiryTimeMinutes(jwsEntity.getExpiryTimeMinutes())
                 .withTokenEarlyEpochThresholdMinutes(jwsEntity.getTokenEarlyEpochThresholdMinutes())
                 .build());
+
+        // OIDC (only wired when OPEN_ID is active; validated above to require the stanza).
+        if (authModes.contains(AuthMode.OPEN_ID) && oidcEntity != null) {
+            if (isBlank(oidcEntity.getIssuerUri())
+                    || isBlank(oidcEntity.getClientId())
+                    || isBlank(oidcEntity.getRedirectUri())) {
+                log.error("OIDC authentication is configured but incomplete: <issuer-uri>, <client-id> and "
+                        + "<redirect-uri> are all required.");
+                throw new UnrecoverableException(false);
+            }
+            try {
+                apiCfgService.setOidcConfiguration(OidcConfiguration.fromEntity(oidcEntity));
+            } catch (final IllegalArgumentException e) {
+                log.error("Invalid OIDC configuration: {}", e.getMessage());
+                throw new UnrecoverableException(false);
+            }
+        }
 
         if (entity.getListeners().isEmpty()) {
             // set default listener

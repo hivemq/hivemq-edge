@@ -27,9 +27,16 @@ import { parseJWT } from '@/api/utils.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PasswordInput from '@/components/PasswordInput.tsx'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
+import { useOidcLogin } from '@/modules/Auth/hooks/useOidcLogin.ts'
 
-const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }> = ({ first, preLoadError }) => {
+const Login: FC<{
+  first?: FirstUseInformation
+  preLoadError?: ApiError | null
+  ssoEnabled?: boolean
+  localEnabled?: boolean
+}> = ({ first, preLoadError, ssoEnabled, localEnabled = true }) => {
   const auth = useAuth()
+  const { startLogin } = useOidcLogin()
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
@@ -72,6 +79,36 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
       })
   }
 
+  // Maps the stable codes rejected by startLogin (browser-side, and the backend's callback errorCode)
+  // onto localized messages. Anything unrecognised falls back to a generic failure.
+  const ssoErrorMessage = (code: string) => {
+    switch (code) {
+      case 'popup-blocked':
+        return t('login.error.ssoPopupBlocked')
+      case 'popup-closed':
+        return t('login.error.ssoCancelled')
+      case 'no-roles':
+        return t('login.error.ssoNoRoles')
+      case 'idp-error':
+        return t('login.error.ssoIdpError')
+      default:
+        return t('login.error.ssoFailed')
+    }
+  }
+
+  const onSsoLogin = () => {
+    startLogin()
+      .then((token) => verifyCredential({ token }))
+      .catch((e: Error) => {
+        // A login superseded by another attempt, or one dropped by unmount, is not a user-facing error.
+        if (e.message === 'login-already-in-progress' || e.message === 'unmounted') return
+        setError('root.ApiError', {
+          type: t('login.error.tokenType'),
+          message: ssoErrorMessage(e.message),
+        })
+      })
+  }
+
   useEffect(() => {
     if (!isError) return
 
@@ -110,47 +147,57 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
         </Heading>
       </Box>
 
-      <Box p={4} width="100%" maxWidth="450px">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <FormControl isInvalid={!!errors.userName} isRequired>
-            <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
-            <Input
-              autoFocus
-              id="username"
-              placeholder={t('translation:login.username.placeholder')}
-              autoComplete="username"
-              {...register('userName', {
-                required: t('translation:login.username.error.required'),
-              })}
-            />
-            <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
-          </FormControl>
-          <FormControl isInvalid={!!errors.password} mt="2em" isRequired>
-            <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
-            <PasswordInput
-              id="password"
-              name="password"
-              placeholder={t('translation:login.password.placeholder')}
-              autoComplete="current-password"
-              register={register}
-              options={{
-                required: t('translation:login.password.error.required'),
-              }}
-            />
-            <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
-          </FormControl>
-          <Button
-            data-testid="loginPage-submit"
-            width="100%"
-            mt="7em"
-            type="submit"
-            isLoading={isPending}
-            variant="primary"
-          >
-            {t('translation:login.submit.label')}
+      {localEnabled && (
+        <Box p={4} width="100%" maxWidth="450px">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <FormControl isInvalid={!!errors.userName} isRequired>
+              <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
+              <Input
+                autoFocus
+                id="username"
+                placeholder={t('translation:login.username.placeholder')}
+                autoComplete="username"
+                {...register('userName', {
+                  required: t('translation:login.username.error.required'),
+                })}
+              />
+              <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
+            </FormControl>
+            <FormControl isInvalid={!!errors.password} mt="2em" isRequired>
+              <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
+              <PasswordInput
+                id="password"
+                name="password"
+                placeholder={t('translation:login.password.placeholder')}
+                autoComplete="current-password"
+                register={register}
+                options={{
+                  required: t('translation:login.password.error.required'),
+                }}
+              />
+              <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
+            </FormControl>
+            <Button
+              data-testid="loginPage-submit"
+              width="100%"
+              mt="7em"
+              type="submit"
+              isLoading={isPending}
+              variant="primary"
+            >
+              {t('translation:login.submit.label')}
+            </Button>
+          </form>
+        </Box>
+      )}
+
+      {ssoEnabled && (
+        <Box width="100%" maxWidth="450px" px={4} pb={4}>
+          <Button data-testid="loginPage-sso" width="100%" variant="outline" onClick={onSsoLogin}>
+            {t('translation:login.sso.buttonLabel')}
           </Button>
-        </form>
-      </Box>
+        </Box>
+      )}
 
       {(!first?.firstUseDescription || !first?.firstUseTitle) && (
         <Text fontFamily="heading" textAlign="center">

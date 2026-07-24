@@ -1,0 +1,16 @@
+get:
+  description: Report which authentication mode the gateway is configured for, so the UI can present the matching login (local username/password form or OIDC single sign-on).
+  operationId: auth-mode
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AuthMode.yaml
+      description: The configured authentication mode.
+  summary: Report the configured authentication mode.
+  tags:
+    - Authentication
+    - Authentication Endpoint

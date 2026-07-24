@@ -17,6 +17,7 @@ package com.hivemq.configuration.entity.api;
 
 import com.hivemq.configuration.entity.EnabledEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapAuthenticationEntity;
+import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -53,6 +54,12 @@ public class AdminApiEntity extends EnabledEntity {
     private @Nullable LdapAuthenticationEntity ldapAuthentication;
 
     @XmlElementRef(required = false)
+    private @Nullable OidcAuthenticationEntity oidcAuthentication;
+
+    @XmlElementRef(required = false)
+    private @Nullable AuthModesEntity authModes;
+
+    @XmlElementRef(required = false)
     private @Nullable ApiTlsEntity tls;
 
     @XmlElementRef(required = false)
@@ -84,6 +91,14 @@ public class AdminApiEntity extends EnabledEntity {
         return ldapAuthentication;
     }
 
+    public @Nullable OidcAuthenticationEntity getOidc() {
+        return oidcAuthentication;
+    }
+
+    public @Nullable AuthModesEntity getAuthModes() {
+        return authModes;
+    }
+
     public @Nullable ApiTlsEntity getTls() {
         return tls;
     }
@@ -110,6 +125,8 @@ public class AdminApiEntity extends EnabledEntity {
                     && Objects.equals(jws, that.jws)
                     && Objects.equals(users, that.users)
                     && Objects.equals(ldapAuthentication, that.ldapAuthentication)
+                    && Objects.equals(oidcAuthentication, that.oidcAuthentication)
+                    && Objects.equals(authModes, that.authModes)
                     && Objects.equals(preLoginNotice, that.preLoginNotice)
                     && Objects.equals(enforceApiAuth, that.enforceApiAuth);
         }
@@ -119,6 +136,15 @@ public class AdminApiEntity extends EnabledEntity {
     @Override
     public int hashCode() {
         return Objects.hash(
-                super.hashCode(), listeners, tls, jws, users, ldapAuthentication, preLoginNotice, enforceApiAuth);
+                super.hashCode(),
+                listeners,
+                tls,
+                jws,
+                users,
+                ldapAuthentication,
+                oidcAuthentication,
+                authModes,
+                preLoginNotice,
+                enforceApiAuth);
     }
 }
