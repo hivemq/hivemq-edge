@@ -23,6 +23,10 @@ import com.hivemq.api.errors.authentication.OidcUnavailableError;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.util.ErrorResponseUtil;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
@@ -110,20 +114,6 @@ public class OidcServiceImpl implements OidcService {
         thread.setDaemon(true);
         return thread;
     });
-
-    // ID token signing algorithms we accept, in preference order. Asymmetric only: the provider signs
-    // with its private key and we verify with the public key from its JWKS. Symmetric (HS*) and 'none'
-    // are deliberately absent — see selectSigningAlgorithm.
-    private static final @NotNull List<JWSAlgorithm> PREFERRED_JWS_ALGORITHMS = List.of(
-            JWSAlgorithm.RS256,
-            JWSAlgorithm.RS384,
-            JWSAlgorithm.RS512,
-            JWSAlgorithm.PS256,
-            JWSAlgorithm.PS384,
-            JWSAlgorithm.PS512,
-            JWSAlgorithm.ES256,
-            JWSAlgorithm.ES384,
-            JWSAlgorithm.ES512);
 
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull ITokenGenerator tokenGenerator;
@@ -239,14 +229,14 @@ public class OidcServiceImpl implements OidcService {
                     .getOIDCTokens()
                     .getIDToken();
 
-            // 2. Validate the ID token (signature via JWKS, iss, aud, exp, nonce).
+            // 2. Validate the ID token (signature via JWKS, iss, aud, exp, nonce). The token is accepted
+            //    only if its algorithm is in the configured set; the token header never selects the
+            //    algorithm, which is the defence against downgrade.
             final IDTokenValidator validator = new IDTokenValidator(
                     new Issuer(config.getIssuerUri()),
                     new ClientID(config.getClientId()),
-                    selectSigningAlgorithm(metadata),
-                    metadata.getJWKSetURI().toURL(),
-                    new DefaultResourceRetriever(
-                            HTTP_CONNECT_TIMEOUT_MILLIS, HTTP_READ_TIMEOUT_MILLIS, JWKS_SIZE_LIMIT_BYTES));
+                    new JWSVerificationKeySelector<>(acceptedAlgorithms(config), jwkSource(metadata)),
+                    null);
             final IDTokenClaimsSet claims = validator.validate(idToken, new Nonce(entry.nonce()));
 
             // 3. Map roles and mint the Edge JWT.
@@ -279,30 +269,30 @@ public class OidcServiceImpl implements OidcService {
     }
 
     /**
-     * Chooses the JWS algorithm to verify the ID token with, from the algorithms the provider advertises
-     * in its discovery document.
-     * <p>
-     * The algorithm is never taken from the token's own header: that value is attacker-controlled, and
-     * trusting it is the classic algorithm-confusion attack. Only asymmetric algorithms are accepted —
-     * {@code none} would skip verification entirely, and an HMAC algorithm would let anyone holding the
-     * client secret forge a token. {@link #PREFERRED_JWS_ALGORITHMS} is consulted in order, so a provider
-     * advertising several algorithms yields a deterministic choice. RS256 is the default when the
-     * provider advertises nothing, since it is required of every OpenID Provider.
-     *
-     * @throws IllegalStateException if the provider advertises only algorithms we do not accept
+     * The set of JWS algorithms the ID-token validator will accept, taken from the configuration. A
+     * token whose {@code alg} is outside this set is rejected. The algorithm is never read from the
+     * token header (attacker-controlled) — this set is the sole authority, which is the defence against
+     * algorithm downgrade.
      */
-    static @NotNull JWSAlgorithm selectSigningAlgorithm(final @NotNull OIDCProviderMetadata metadata) {
-        final List<JWSAlgorithm> advertised = metadata.getIDTokenJWSAlgs();
-        if (advertised == null || advertised.isEmpty()) {
-            return JWSAlgorithm.RS256;
+    private static @NotNull Set<JWSAlgorithm> acceptedAlgorithms(final @NotNull OidcConfiguration config) {
+        final Set<JWSAlgorithm> algorithms = new HashSet<>();
+        for (final String name : config.getIdTokenSigningAlgorithms()) {
+            algorithms.add(JWSAlgorithm.parse(name));
         }
-        for (final JWSAlgorithm candidate : PREFERRED_JWS_ALGORITHMS) {
-            if (advertised.contains(candidate)) {
-                return candidate;
-            }
-        }
-        throw new IllegalStateException("The Identity Provider advertises no supported ID token signing algorithm. "
-                + "Advertised: " + advertised + "; supported: " + PREFERRED_JWS_ALGORITHMS);
+        return algorithms;
+    }
+
+    /**
+     * A remote JWK source for the provider's JWKS, fetched through the bounded retriever (connect/read
+     * timeouts and a size cap), so key retrieval is bounded like the other IdP calls.
+     */
+    private static @NotNull JWKSource<SecurityContext> jwkSource(final @NotNull OIDCProviderMetadata metadata)
+            throws Exception {
+        return JWKSourceBuilder.<SecurityContext>create(
+                        metadata.getJWKSetURI().toURL(),
+                        new DefaultResourceRetriever(
+                                HTTP_CONNECT_TIMEOUT_MILLIS, HTTP_READ_TIMEOUT_MILLIS, JWKS_SIZE_LIMIT_BYTES))
+                .build();
     }
 
     /**

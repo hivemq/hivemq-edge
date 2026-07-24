@@ -91,6 +91,10 @@ public class OidcAuthenticationEntity {
     @XmlElement(name = "mapping")
     private @Nullable List<OidcRoleMappingEntity> roleMappings = new ArrayList<>();
 
+    @XmlElementWrapper(name = "id-token-signing-algorithms", required = false)
+    @XmlElement(name = "id-token-signing-algorithm")
+    private @Nullable List<String> idTokenSigningAlgorithms = null;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -123,6 +127,10 @@ public class OidcAuthenticationEntity {
         return roleMappings;
     }
 
+    public @Nullable List<String> getIdTokenSigningAlgorithms() {
+        return idTokenSigningAlgorithms;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof OidcAuthenticationEntity that)) {
@@ -135,7 +143,8 @@ public class OidcAuthenticationEntity {
                 && Objects.equals(getRedirectUri(), that.getRedirectUri())
                 && Objects.equals(getRoleClaimName(), that.getRoleClaimName())
                 && Objects.equals(getExtraScopes(), that.getExtraScopes())
-                && Objects.equals(getRoleMappings(), that.getRoleMappings());
+                && Objects.equals(getRoleMappings(), that.getRoleMappings())
+                && Objects.equals(getIdTokenSigningAlgorithms(), that.getIdTokenSigningAlgorithms());
     }
 
     @Override
@@ -148,6 +157,7 @@ public class OidcAuthenticationEntity {
                 getRedirectUri(),
                 getRoleClaimName(),
                 getExtraScopes(),
-                getRoleMappings());
+                getRoleMappings(),
+                getIdTokenSigningAlgorithms());
     }
 }

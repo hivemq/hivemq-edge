@@ -1237,6 +1237,16 @@
                                 </xs:sequence>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="id-token-signing-algorithms" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="id-token-signing-algorithm"
+                                                type="nonEmptyString"
+                                                minOccurs="1"
+                                                maxOccurs="unbounded"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:all>
                 </xs:complexType>
             </xs:element>

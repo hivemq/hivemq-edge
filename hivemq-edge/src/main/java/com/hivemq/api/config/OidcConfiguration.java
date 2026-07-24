@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -54,6 +55,7 @@ public class OidcConfiguration {
     private final @NotNull String roleClaimName;
     private final @NotNull List<String> extraScopes;
     private final @NotNull Map<String, String> roleMappings;
+    private final @NotNull Set<String> idTokenSigningAlgorithms;
 
     public OidcConfiguration(
             final @NotNull URI issuerUri,
@@ -62,12 +64,14 @@ public class OidcConfiguration {
             final @NotNull URI redirectUri,
             final @NotNull String roleClaimName,
             final @NotNull List<String> extraScopes,
-            final @NotNull Map<String, String> roleMappings) {
+            final @NotNull Map<String, String> roleMappings,
+            final @NotNull Set<String> idTokenSigningAlgorithms) {
         this.issuerUri = Preconditions.checkNotNull(issuerUri);
         this.clientId = Preconditions.checkNotNull(clientId);
         this.clientSecret = clientSecret;
         this.redirectUri = Preconditions.checkNotNull(redirectUri);
         this.roleClaimName = Preconditions.checkNotNull(roleClaimName);
+        this.idTokenSigningAlgorithms = Set.copyOf(idTokenSigningAlgorithms);
         this.extraScopes = List.copyOf(extraScopes);
         this.roleMappings = Map.copyOf(roleMappings);
     }
@@ -137,8 +141,22 @@ public class OidcConfiguration {
             }
         }
 
+        // Accepted ID-token signing algorithms. An absent/empty list defaults to the full asymmetric set;
+        // a configured list is validated against it (the XSD requires at least one entry when present).
+        final List<String> configuredAlgorithms = entity.getIdTokenSigningAlgorithms();
+        final Set<String> signingAlgorithms = configuredAlgorithms == null || configuredAlgorithms.isEmpty()
+                ? OidcSigningAlgorithms.DEFAULT
+                : OidcSigningAlgorithms.validate(configuredAlgorithms);
+
         return new OidcConfiguration(
-                issuerUri, clientId.trim(), entity.getClientSecret(), redirectUri, roleClaimName, scopes, mappings);
+                issuerUri,
+                clientId.trim(),
+                entity.getClientSecret(),
+                redirectUri,
+                roleClaimName,
+                scopes,
+                mappings,
+                signingAlgorithms);
     }
 
     /**
@@ -296,6 +314,14 @@ public class OidcConfiguration {
         return roleMappings;
     }
 
+    /**
+     * The JWS algorithms accepted when verifying an ID token's signature. A token whose {@code alg} is
+     * not in this set is rejected. See {@link OidcSigningAlgorithms}.
+     */
+    public @NotNull Set<String> getIdTokenSigningAlgorithms() {
+        return idTokenSigningAlgorithms;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -310,11 +336,20 @@ public class OidcConfiguration {
                 && redirectUri.equals(that.redirectUri)
                 && roleClaimName.equals(that.roleClaimName)
                 && extraScopes.equals(that.extraScopes)
-                && roleMappings.equals(that.roleMappings);
+                && roleMappings.equals(that.roleMappings)
+                && idTokenSigningAlgorithms.equals(that.idTokenSigningAlgorithms);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(issuerUri, clientId, clientSecret, redirectUri, roleClaimName, extraScopes, roleMappings);
+        return Objects.hash(
+                issuerUri,
+                clientId,
+                clientSecret,
+                redirectUri,
+                roleClaimName,
+                extraScopes,
+                roleMappings,
+                idTokenSigningAlgorithms);
     }
 }

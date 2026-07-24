@@ -26,6 +26,7 @@ import com.nimbusds.oauth2.sdk.pkce.CodeVerifier;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -77,7 +78,8 @@ class OidcServiceImplTokenRequestTest {
                 URI.create("https://edge.example.com/callback"),
                 "roles",
                 List.of(),
-                Map.of());
+                Map.of(),
+                Set.of("RS256"));
         final AuthorizationCodeGrant grant = new AuthorizationCodeGrant(
                 new AuthorizationCode("the-code"), config.getRedirectUri(), new CodeVerifier());
         return OidcServiceImpl.buildTokenRequest(TOKEN_ENDPOINT, config, grant);

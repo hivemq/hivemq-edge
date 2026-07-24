@@ -48,6 +48,28 @@ class OidcConfigurationTest {
         assertThat(config.getClientSecret()).isEqualTo("the-secret");
         assertThat(config.getRedirectUri()).isEqualTo(URI.create("https://edge.example.com/api/v1/auth/oidc/callback"));
         assertThat(config.getRoleClaimName()).isEqualTo("roles");
+        // No <id-token-signing-algorithms> configured → the full asymmetric allow-list.
+        assertThat(config.getIdTokenSigningAlgorithms()).isEqualTo(OidcSigningAlgorithms.DEFAULT);
+    }
+
+    @Test
+    void fromEntity_configuredSigningAlgorithms_narrowTheAcceptedSet() {
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "idTokenSigningAlgorithms", List.of("ES256"));
+
+        final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
+
+        assertThat(config.getIdTokenSigningAlgorithms()).containsExactly("ES256");
+    }
+
+    @Test
+    void fromEntity_invalidSigningAlgorithm_throws() {
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "idTokenSigningAlgorithms", List.of("HS256"));
+
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("asymmetric");
     }
 
     @Test
