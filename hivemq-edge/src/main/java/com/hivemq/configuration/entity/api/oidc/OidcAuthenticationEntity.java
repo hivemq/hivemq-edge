@@ -88,7 +88,7 @@ public class OidcAuthenticationEntity {
     private @Nullable String extraScopes = null;
 
     @XmlElementWrapper(name = "role-mappings", required = false)
-    @XmlElement(name = "mapping")
+    @XmlElement(name = "role-mapping")
     private @Nullable List<OidcRoleMappingEntity> roleMappings = new ArrayList<>();
 
     @XmlElementWrapper(name = "id-token-signing-algorithms", required = false)

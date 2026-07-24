@@ -1226,7 +1226,7 @@
                         <xs:element name="role-mappings" minOccurs="0">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="mapping" minOccurs="0" maxOccurs="unbounded">
+                                    <xs:element name="role-mapping" minOccurs="1" maxOccurs="unbounded">
                                         <xs:complexType>
                                             <xs:all>
                                                 <xs:element name="idp-role" type="xs:string"/>

@@ -38,7 +38,7 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     private static final @NotNull String OIDC_FIELDS = "<issuer-uri>https://idp.example.com</issuer-uri>"
             + "<client-id>edge</client-id>"
             + "<redirect-uri>https://edge.example.com/api/v1/auth/oidc/callback</redirect-uri>"
-            + "<role-mappings><mapping><idp-role>admins</idp-role><edge-role>admin</edge-role></mapping></role-mappings>";
+            + "<role-mappings><role-mapping><idp-role>admins</idp-role><edge-role>admin</edge-role></role-mapping></role-mappings>";
 
     private void writeConfig(final @NotNull String adminApiBody) throws Exception {
         Files.write(("<hivemq><admin-api>" + adminApiBody + "</admin-api></hivemq>").getBytes(UTF_8), xmlFile);

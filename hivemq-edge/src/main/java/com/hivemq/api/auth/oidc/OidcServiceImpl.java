@@ -16,6 +16,7 @@
 package com.hivemq.api.auth.oidc;
 
 import com.hivemq.api.auth.ApiPrincipal;
+import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.config.OidcConfiguration;
@@ -319,24 +320,77 @@ public class OidcServiceImpl implements OidcService {
     }
 
     /**
-     * Maps the IdP role claim (string or string-array) onto Edge roles via the configured mappings.
+     * Maps the IdP role claim (string or string-array) onto Edge roles.
      * <p>
-     * Fails closed: only IdP roles with an explicit mapping produce an Edge role. An IdP role without a
-     * mapping is dropped, so an unrelated or generic IdP role (for example a realm role named {@code admin})
-     * never becomes an Edge role without an operator decision. Matching is case-insensitive.
+     * Two modes, selected by whether {@code <role-mappings>} is configured:
+     * <ul>
+     *   <li><b>Verbatim</b> (no mappings): each claim value that is an Edge role ({@code admin} /
+     *       {@code super} / {@code user}) is used directly; others are dropped. The operator's omission of
+     *       a mapping is an explicit statement that the IdP already uses Edge role names.</li>
+     *   <li><b>Strict</b> (mappings present): a claim value must be a mapping key to produce its mapped
+     *       Edge role; an unmapped value is dropped, so no unrelated IdP role ever grants access.</li>
+     * </ul>
+     * Matching is literal — no trimming or case-folding — so a mismatch is honest and visible. When a
+     * literal miss would have matched leniently (ignoring case/whitespace), a warning is logged to point
+     * at the likely typo, but the role is still dropped.
      */
     private static @NotNull Set<String> mapRoles(
             final @NotNull OidcConfiguration config, final @NotNull IDTokenClaimsSet claims) {
-        final List<String> idpRoles = extractRoleClaim(claims, config.getRoleClaimName());
-        final Map<String, String> mappings = config.getRoleMappings();
+        return resolveEdgeRoles(extractRoleClaim(claims, config.getRoleClaimName()), config.getRoleMappings());
+    }
+
+    /**
+     * Resolves the Edge roles for the given IdP role claim values under the two mapping modes. Package
+     * private for direct testing.
+     */
+    static @NotNull Set<String> resolveEdgeRoles(
+            final @NotNull List<String> idpRoles, final @Nullable Map<String, String> mappings) {
         final Set<String> edgeRoles = new HashSet<>();
         for (final String idpRole : idpRoles) {
-            final String mapped = mappings.get(idpRole.toLowerCase(Locale.ROOT));
-            if (mapped != null) {
-                edgeRoles.add(mapped);
+            if (mappings == null) {
+                mapVerbatim(idpRole, edgeRoles);
+            } else {
+                mapStrict(idpRole, mappings, edgeRoles);
             }
         }
         return edgeRoles;
+    }
+
+    private static void mapVerbatim(final @NotNull String idpRole, final @NotNull Set<String> edgeRoles) {
+        if (isEdgeRole(idpRole)) {
+            edgeRoles.add(idpRole);
+        } else if (isEdgeRole(idpRole.strip())) {
+            log.warn("OIDC role '{}' looks like an Edge role but has surrounding whitespace; it was ignored.", idpRole);
+        }
+    }
+
+    private static void mapStrict(
+            final @NotNull String idpRole,
+            final @NotNull Map<String, String> mappings,
+            final @NotNull Set<String> edgeRoles) {
+        final String mapped = mappings.get(idpRole);
+        if (mapped != null) {
+            edgeRoles.add(mapped);
+            return;
+        }
+        // Literal miss: if a mapping key matches leniently, the operator likely has a case/whitespace typo.
+        final String lenient = idpRole.strip().toLowerCase(Locale.ROOT);
+        for (final String key : mappings.keySet()) {
+            if (key.strip().toLowerCase(Locale.ROOT).equals(lenient)) {
+                log.warn(
+                        "OIDC role '{}' did not match mapping key '{}' exactly (they differ only by case or "
+                                + "whitespace); the role was ignored. This may be a configuration typo.",
+                        idpRole,
+                        key);
+                return;
+            }
+        }
+    }
+
+    private static boolean isEdgeRole(final @NotNull String role) {
+        return role.equalsIgnoreCase(ApiRoles.ADMIN)
+                || role.equalsIgnoreCase(ApiRoles.SUPER)
+                || role.equalsIgnoreCase(ApiRoles.USER);
     }
 
     private static @NotNull List<String> extractRoleClaim(

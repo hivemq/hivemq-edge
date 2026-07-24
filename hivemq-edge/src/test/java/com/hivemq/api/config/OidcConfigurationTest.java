@@ -89,7 +89,8 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_roleMappingKeysAreLowerCasedForCaseInsensitiveLookup() {
+    void fromEntity_roleMappingKeysAreStoredVerbatim() {
+        // Keys are matched literally (no case-folding), so they are stored exactly as configured.
         final OidcAuthenticationEntity entity = entity(
                 "https://idp",
                 "client",
@@ -103,8 +104,17 @@ class OidcConfigurationTest {
         final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
 
         assertThat(config.getRoleMappings())
-                .containsEntry("hivemq-admin", "admin")
-                .containsEntry("hivemq-user", "user");
+                .containsEntry("HiveMQ-Admin", "admin")
+                .containsEntry("HIVEMQ-USER", "user");
+    }
+
+    @Test
+    void fromEntity_noRoleMappings_isVerbatimMode() {
+        // No <role-mappings> element → null mappings, signalling verbatim mode.
+        final OidcConfiguration config =
+                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));
+
+        assertThat(config.getRoleMappings()).isNull();
     }
 
     @Test
@@ -306,8 +316,8 @@ class OidcConfigurationTest {
                         "roles",
                         null,
                         new OidcRoleMappingEntity("Team-Admins", "admin"),
-                        // same IdP role in a different case → duplicate after normalization
-                        new OidcRoleMappingEntity("team-admins", "user"))))
+                        // the same IdP role literally repeated
+                        new OidcRoleMappingEntity("Team-Admins", "user"))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("duplicate");
     }

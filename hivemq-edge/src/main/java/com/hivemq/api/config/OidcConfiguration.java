@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -41,8 +40,8 @@ import org.slf4j.LoggerFactory;
  * The IdP endpoints (authorization / token / JWKS) are not held here — they are resolved
  * at runtime from {@code issuerUri}'s discovery document.
  * <p>
- * {@code roleMappings} maps a lower-cased IdP role name onto an Edge role string. Lookups
- * should lower-case the incoming IdP role first (role matching is case-insensitive).
+ * {@code roleMappings} maps an IdP role name onto an Edge role string, or is {@code null} in verbatim
+ * mode (no mappings configured). Keys are matched literally — see {@code OidcServiceImpl#resolveEdgeRoles}.
  */
 public class OidcConfiguration {
 
@@ -54,7 +53,9 @@ public class OidcConfiguration {
     private final @NotNull URI redirectUri;
     private final @NotNull String roleClaimName;
     private final @NotNull List<String> extraScopes;
-    private final @NotNull Map<String, String> roleMappings;
+    // null => verbatim mode (no <role-mappings>): claim values are used as Edge roles directly.
+    // non-null => strict mode: only mapped IdP roles produce an Edge role. Guaranteed non-empty.
+    private final @Nullable Map<String, String> roleMappings;
     private final @NotNull Set<String> idTokenSigningAlgorithms;
 
     public OidcConfiguration(
@@ -64,7 +65,7 @@ public class OidcConfiguration {
             final @NotNull URI redirectUri,
             final @NotNull String roleClaimName,
             final @NotNull List<String> extraScopes,
-            final @NotNull Map<String, String> roleMappings,
+            final @Nullable Map<String, String> roleMappings,
             final @NotNull Set<String> idTokenSigningAlgorithms) {
         this.issuerUri = Preconditions.checkNotNull(issuerUri);
         this.clientId = Preconditions.checkNotNull(clientId);
@@ -73,7 +74,7 @@ public class OidcConfiguration {
         this.roleClaimName = Preconditions.checkNotNull(roleClaimName);
         this.idTokenSigningAlgorithms = Set.copyOf(idTokenSigningAlgorithms);
         this.extraScopes = List.copyOf(extraScopes);
-        this.roleMappings = Map.copyOf(roleMappings);
+        this.roleMappings = roleMappings == null ? null : Map.copyOf(roleMappings);
     }
 
     /**
@@ -115,14 +116,21 @@ public class OidcConfiguration {
         final String roleClaimName = entity.getRoleClaimName();
         Preconditions.checkArgument(
                 roleClaimName != null && !roleClaimName.isBlank(), "OIDC role-claim-name must not be blank");
+        warnOnSurroundingWhitespace("role-claim-name", roleClaimName);
 
         final List<String> scopes = parseScopes(entity.getExtraScopes());
 
-        // Keys are lower-cased for case-insensitive lookup. Duplicate IdP roles and unknown Edge roles are
-        // rejected rather than silently accepted, so authorization is never opened up by a config mistake.
-        final Map<String, String> mappings = new LinkedHashMap<>();
+        // Role mappings define two distinct modes. An absent <role-mappings> element is verbatim mode:
+        // the claim values are used as Edge roles directly. A present element (the XSD guarantees it is
+        // non-empty) is strict mode: only mapped IdP roles produce an Edge role. Keys are stored and
+        // matched literally — no trimming or case-folding — so a stray space or wrong case is an honest
+        // mismatch the operator can see in the logs, not a silent, surprising match.
         final List<OidcRoleMappingEntity> mappingEntities = entity.getRoleMappings();
-        if (mappingEntities != null) {
+        final Map<String, String> mappings;
+        if (mappingEntities == null || mappingEntities.isEmpty()) {
+            mappings = null;
+        } else {
+            mappings = new LinkedHashMap<>();
             for (final OidcRoleMappingEntity mapping : mappingEntities) {
                 final String idpRole = mapping.getIdpRole();
                 final String edgeRole = mapping.getEdgeRole();
@@ -134,10 +142,11 @@ public class OidcConfiguration {
                         isValidEdgeRole(edgeRole),
                         "OIDC role mapping has an invalid <edge-role> '%s'; must be one of admin, super, user",
                         edgeRole);
-                final String key = idpRole.toLowerCase(Locale.ROOT);
+                warnOnSurroundingWhitespace("idp-role", idpRole);
+                warnOnSurroundingWhitespace("edge-role", edgeRole);
                 Preconditions.checkArgument(
-                        !mappings.containsKey(key), "OIDC role mapping has a duplicate <idp-role> '%s'", idpRole);
-                mappings.put(key, edgeRole);
+                        !mappings.containsKey(idpRole), "OIDC role mapping has a duplicate <idp-role> '%s'", idpRole);
+                mappings.put(idpRole, edgeRole);
             }
         }
 
@@ -279,6 +288,21 @@ public class OidcConfiguration {
                 || edgeRole.equalsIgnoreCase(ApiRoles.USER);
     }
 
+    /**
+     * Warns when a configured value has leading or trailing whitespace. The value is kept verbatim (role
+     * matching is literal), so the whitespace is almost certainly a typo that will cause a silent
+     * mismatch at login — surfacing it here makes that diagnosable.
+     */
+    private static void warnOnSurroundingWhitespace(final @NotNull String element, final @NotNull String value) {
+        if (!value.equals(value.strip())) {
+            log.warn(
+                    "OIDC {} '{}' has leading or trailing whitespace. It is used verbatim, so this may be a typo "
+                            + "that prevents role matching.",
+                    element,
+                    value);
+        }
+    }
+
     private static @NotNull List<String> parseScopes(final @Nullable String extraScopes) {
         if (extraScopes == null || extraScopes.isBlank()) {
             return List.of();
@@ -310,7 +334,11 @@ public class OidcConfiguration {
         return extraScopes;
     }
 
-    public @NotNull Map<String, String> getRoleMappings() {
+    /**
+     * The IdP-role → Edge-role mappings, or {@code null} in verbatim mode (no {@code <role-mappings>}
+     * configured). When non-null it is non-empty, and keys are matched literally.
+     */
+    public @Nullable Map<String, String> getRoleMappings() {
         return roleMappings;
     }
 
@@ -336,7 +364,7 @@ public class OidcConfiguration {
                 && redirectUri.equals(that.redirectUri)
                 && roleClaimName.equals(that.roleClaimName)
                 && extraScopes.equals(that.extraScopes)
-                && roleMappings.equals(that.roleMappings)
+                && Objects.equals(roleMappings, that.roleMappings)
                 && idTokenSigningAlgorithms.equals(that.idTokenSigningAlgorithms);
     }
 
