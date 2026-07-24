@@ -60,7 +60,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
      * loaded (defeats the {@code build/hivemq-environment/base} stale-jar cache trap that caused the retracted #8/#9/#10).
      * Emitted at {@link #start()} as {@code WL_BUILD} and journalled as {@code BUILD <token>}.
      */
-    public static final @NotNull String BUILD = "wl-2026-07-22-v2b8";
+    public static final @NotNull String BUILD = "wl-2026-07-24-v2b9";
 
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterOutput output;
@@ -139,11 +139,26 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
     // a duplicate. Closed (set true) at stop() and start() so a straggling push run cannot announce into a stopping
     // adapter or a fresh life.
     private final @NotNull AtomicBoolean downEmittedSinceConnect = new AtomicBoolean(true);
+    // A SPONTANEOUS disconnected() (from the poll/push paths noticing the down timeline) is only a valid event while
+    // the device actually CONNECTED this cycle. After a FAILED connect the wrapper sits in its retry state, where a
+    // Disconnected has no row — announcing there manufactures the exact defensive reset the instrument exists to
+    // detect. The COMMANDED disconnect() ack is different: the wrapper explicitly waits for it (including when
+    // cleaning up a failed connect), so it draws on the budget regardless of this flag. Set true only when
+    // connected() is actually emitted; false at connect() entry, after the commanded ack, and at stop()/start().
+    private volatile boolean connectedThisCycle;
 
     /** Emit at most one disconnected() between consecutive connect() commands, whoever calls first; else no-op. */
     private void emitDownOnce() {
         if (downEmittedSinceConnect.compareAndSet(false, true)) {
             output.disconnected();
+        }
+    }
+
+    /** A spontaneous down-announce: only valid if this cycle actually connected — else silently skip (the wrapper
+     * already knows the device is down from the failed connect and is driving its own retry). */
+    private void emitDownOnceSpontaneous() {
+        if (connectedThisCycle) {
+            emitDownOnce();
         }
     }
 
@@ -217,6 +232,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
         // Disconnected behind the stopped() ack (rowless in WAITING_FOR_STOPPED → defensive reset), nor into the
         // next life (start() keeps it closed until connect() re-opens it).
         downEmittedSinceConnect.set(true);
+        connectedThisCycle = false;
         if (subExecutor != null) {
             subExecutor.shutdownNow();
             // Wait briefly for an in-flight push run to finish: shutdownNow only interrupts, and a straggler that keeps
@@ -274,8 +290,11 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
         journal("CONNECT cycle=" + (++connectCount));
         // Every connect attempt re-opens exactly ONE disconnected() budget (see downEmittedSinceConnect). Done at
         // entry — before the outcome is known — because the wrapper may command a cleanup disconnect() after a FAILED
-        // connect too, and that ack draws on the same budget.
+        // connect too, and that ack draws on the same budget. SPONTANEOUS announces additionally require
+        // connectedThisCycle (set only when connected() actually fires), so a failed attempt cannot be followed by a
+        // rogue Disconnected into the wrapper's retry state.
         downEmittedSinceConnect.set(false);
+        connectedThisCycle = false;
         blockSleep("connect");
         applyTimeline();
         if (downGoal) {
@@ -284,6 +303,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
         }
         if ("spurious-events".equals(scenario.misbehave())) {
             // CONTRACT VIOLATIONS: fire events the FSM never asked for / for a node it never handed us
+            connectedThisCycle = true;
             output.connected();
             output.connected(); // duplicate connected()
             output.verifyResult(new WorkloadNode("ghost"), new VerifyOutcome.Success()); // verifyResult, no verifyBatch
@@ -302,10 +322,16 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
                 /* hung connect — emit nothing, let the connect watchdog fire */
             }
             case "drop" -> {
+                connectedThisCycle = true;
                 output.connected();
                 emitDownOnce(); // connect, then immediately drop — the drop spends this cycle's announce budget
             }
-            default -> emit("connect", output::connected);
+            default ->
+                emit("connect", () -> {
+                    // the flag flips only when connected() ACTUALLY fires (a held connect gate defers both together)
+                    connectedThisCycle = true;
+                    output.connected();
+                });
         }
     }
 
@@ -322,6 +348,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
             // a failed connect), the budget is unspent, so the ack fires.
             emitDownOnce();
         } // else: suppress disconnected() to leave the wrapper in WAITING_FOR_DISCONNECTED so its watchdog must fire
+        connectedThisCycle = false; // no longer connected: spontaneous announces invalid until the next connected()
     }
 
     @Override
@@ -427,7 +454,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
         // responsive
         applyTimeline();
         if (downGoal) {
-            emitDownOnce();
+            emitDownOnceSpontaneous(); // only valid if this cycle actually connected
             return;
         }
         final long elapsed = System.currentTimeMillis() - startMs;
@@ -522,7 +549,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
             blockSleep("subscribe"); // `block subscribe <ms>` — one slow push cycle (sleeps the push thread only)
             applyTimeline();
             if (downGoal) {
-                emitDownOnce();
+                emitDownOnceSpontaneous(); // only valid if this cycle actually connected
                 return;
             }
             final long elapsed = System.currentTimeMillis() - startMs;
