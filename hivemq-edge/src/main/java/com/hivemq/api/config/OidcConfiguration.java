@@ -19,8 +19,10 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -71,6 +73,15 @@ public class OidcConfiguration {
     }
 
     /**
+     * Environment variable (or system property, checked as a fallback) that relaxes the HTTPS
+     * requirement on the issuer for a loopback host. It exists only to run the flow against a local,
+     * plain-HTTP Identity Provider during development and testing. It defaults to off, is restricted to
+     * loopback issuers, and logs a warning on every use — it must never be set in production.
+     */
+    public static final @NotNull String ALLOW_INSECURE_LOCAL_IDP_PROPERTY =
+            "HIVEMQ_EDGE_ENABLE_INSECURE_LOCAL_CONNECTION_FOR_IDENTITY_PROVIDER";
+
+    /**
      * Builds an {@link OidcConfiguration} from its XML entity.
      * <p>
      * Precondition: the entity is enabled and its required fields ({@code issuer-uri},
@@ -81,6 +92,11 @@ public class OidcConfiguration {
      * @throws IllegalArgumentException if a required URI field is missing or malformed
      */
     public static @NotNull OidcConfiguration fromEntity(final @NotNull OidcAuthenticationEntity entity) {
+        return fromEntity(entity, isInsecureLocalIdpAllowed());
+    }
+
+    static @NotNull OidcConfiguration fromEntity(
+            final @NotNull OidcAuthenticationEntity entity, final boolean allowInsecureLoopbackIssuer) {
         final String issuer = entity.getIssuerUri();
         final String clientId = entity.getClientId();
         final String redirect = entity.getRedirectUri();
@@ -88,8 +104,8 @@ public class OidcConfiguration {
         Preconditions.checkArgument(clientId != null && !clientId.isBlank(), "OIDC client-id must be configured");
         Preconditions.checkArgument(redirect != null && !redirect.isBlank(), "OIDC redirect-uri must be configured");
 
-        final URI issuerUri = parseHttpUri(issuer, "issuer-uri");
-        final URI redirectUri = parseHttpUri(redirect, "redirect-uri");
+        final URI issuerUri = parseIssuerUri(issuer, allowInsecureLoopbackIssuer);
+        final URI redirectUri = parseRedirectUri(redirect);
 
         // A blank claim name would extract no roles at all, denying every user with no obvious cause.
         final String roleClaimName = entity.getRoleClaimName();
@@ -126,16 +142,94 @@ public class OidcConfiguration {
     }
 
     /**
-     * Parses a configured URI, requiring an absolute {@code http}/{@code https} URI with a host.
+     * Parses the {@code issuer-uri}. The issuer is the base URL from which Edge fetches the discovery
+     * document, and in turn the token and JWKS endpoints, so its integrity is the root of trust for the
+     * whole flow. It is therefore required to be {@code https}: over plain {@code http} a network
+     * attacker could rewrite discovery, point the endpoints at their own infrastructure, publish their
+     * own signing keys, and mint an ID token Edge would accept.
+     * <p>
+     * Per the OpenID Connect Discovery specification an issuer must use {@code https} and must not carry
+     * a query or fragment component; both are rejected here.
+     * <p>
+     * The single exception is a loopback {@code http} issuer when {@link #ALLOW_INSECURE_LOCAL_IDP_PROPERTY}
+     * is set — a development/testing aid that is off by default and warns on every use.
+     */
+    private static @NotNull URI parseIssuerUri(final @NotNull String value, final boolean allowInsecureLoopbackIssuer) {
+        final URI uri = parseAbsoluteHttpUri(value, "issuer-uri");
+        Preconditions.checkArgument(
+                uri.getQuery() == null, "OIDC issuer-uri '%s' must not contain a query component", value);
+        Preconditions.checkArgument(
+                uri.getFragment() == null, "OIDC issuer-uri '%s' must not contain a fragment", value);
+        if ("https".equalsIgnoreCase(uri.getScheme())) {
+            return uri;
+        }
+        // Not https: only allowed for a loopback host, and only when the insecure-local flag is set.
+        Preconditions.checkArgument(
+                allowInsecureLoopbackIssuer && isLoopbackHost(uri.getHost()),
+                "OIDC issuer-uri '%s' must use https; the issuer is the root of trust for discovery and "
+                        + "signing keys and must not be fetched over plain http",
+                value);
+        log.warn(
+                "OIDC issuer-uri '{}' is using plain HTTP. This is permitted only because {} is set, and is "
+                        + "restricted to a loopback host. It is insecure and must never be used in production.",
+                value,
+                ALLOW_INSECURE_LOCAL_IDP_PROPERTY);
+        return uri;
+    }
+
+    /**
+     * Reads {@link #ALLOW_INSECURE_LOCAL_IDP_PROPERTY} from the environment, falling back to a system
+     * property so it can be set in tests without mutating the process environment. Any value other than
+     * {@code "true"} (case-insensitive) leaves the flag off.
+     */
+    private static boolean isInsecureLocalIdpAllowed() {
+        final String env = System.getenv(ALLOW_INSECURE_LOCAL_IDP_PROPERTY);
+        final String value = env != null ? env : System.getProperty(ALLOW_INSECURE_LOCAL_IDP_PROPERTY);
+        return "true".equalsIgnoreCase(value);
+    }
+
+    private static boolean isLoopbackHost(final @Nullable String host) {
+        if (host == null) {
+            return false;
+        }
+        if ("localhost".equalsIgnoreCase(host)) {
+            return true;
+        }
+        try {
+            return InetAddress.getByName(host).isLoopbackAddress();
+        } catch (final UnknownHostException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Parses the {@code redirect-uri}, the browser-facing callback the Identity Provider redirects to.
+     * <p>
+     * Plain {@code http} is permitted, because the redirect is reached by the browser and a deployment
+     * may legitimately terminate TLS at a reverse proxy; a non-HTTPS redirect is logged as a warning. A
+     * fragment is rejected — the callback carries its result in the query, not the fragment.
+     */
+    private static @NotNull URI parseRedirectUri(final @NotNull String value) {
+        final URI uri = parseAbsoluteHttpUri(value, "redirect-uri");
+        Preconditions.checkArgument(
+                uri.getFragment() == null, "OIDC redirect-uri '%s' must not contain a fragment", value);
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
+            log.warn(
+                    "OIDC redirect-uri '{}' does not use HTTPS. This is only appropriate for local testing or "
+                            + "when TLS is terminated by a reverse proxy.",
+                    value);
+        }
+        return uri;
+    }
+
+    /**
+     * Shared validation: an absolute {@code http}/{@code https} URI with a host and no user information.
      * <p>
      * {@code URI.create} accepts a relative reference such as {@code "callback"}, which later yields a
      * nonsensical {@code null://null} postMessage origin and a login that can never succeed. Rejecting
      * it here turns a silent runtime failure into a precise startup error.
-     * <p>
-     * Plain {@code http} is permitted: local QA and deployments that terminate TLS at a reverse proxy
-     * legitimately use it. A non-HTTPS URI is logged as a warning instead.
      */
-    private static @NotNull URI parseHttpUri(final @NotNull String value, final @NotNull String element) {
+    private static @NotNull URI parseAbsoluteHttpUri(final @NotNull String value, final @NotNull String element) {
         final URI uri;
         try {
             uri = new URI(value.trim());
@@ -158,15 +252,6 @@ public class OidcConfiguration {
         Preconditions.checkArgument(uri.getHost() != null, "OIDC %s '%s' must include a host", element, value);
         Preconditions.checkArgument(
                 uri.getUserInfo() == null, "OIDC %s '%s' must not contain user information", element, value);
-        Preconditions.checkArgument(
-                uri.getFragment() == null, "OIDC %s '%s' must not contain a fragment", element, value);
-        if (!"https".equalsIgnoreCase(scheme)) {
-            log.warn(
-                    "OIDC {} '{}' does not use HTTPS. This is only appropriate for local testing or when TLS "
-                            + "is terminated by a reverse proxy.",
-                    element,
-                    value);
-        }
         return uri;
     }
 

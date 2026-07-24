@@ -23,6 +23,8 @@ import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.oidc.testcontainer.KeycloakContainer;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.OidcConfiguration;
+import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
+import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -79,14 +81,11 @@ class OidcServiceKeycloakIntegrationTest {
         // The real Edge token machinery, so the issued JWT is verified exactly as the gateway would.
         jwtProvider = new JwtAuthenticationProvider(new ApiJwtConfiguration.Builder().build());
 
-        final OidcConfiguration config = new OidcConfiguration(
-                URI.create(keycloak.getIssuerUri()),
-                KeycloakContainer.CLIENT_ID,
-                KeycloakContainer.CLIENT_SECRET,
-                URI.create(REDIRECT_URI),
-                "roles",
-                List.of(),
-                Map.of("acme-admin", ApiRoles.ADMIN, "acme-user", ApiRoles.USER));
+        // Keycloak runs over plain http on a loopback host, which OidcConfiguration rejects by default.
+        // Enable the insecure-local-IdP escape hatch (as a developer running this flow locally would),
+        // so this test also exercises the real fromEntity validation path against the container's issuer.
+        System.setProperty(OidcConfiguration.ALLOW_INSECURE_LOCAL_IDP_PROPERTY, "true");
+        final OidcConfiguration config = OidcConfiguration.fromEntity(oidcEntity(keycloak.getIssuerUri()));
 
         apiConfigurationService = Mockito.mock(ApiConfigurationService.class);
         Mockito.when(apiConfigurationService.getOidcConfiguration()).thenReturn(config);
@@ -96,7 +95,40 @@ class OidcServiceKeycloakIntegrationTest {
 
     @AfterAll
     void stopAll() {
+        System.clearProperty(OidcConfiguration.ALLOW_INSECURE_LOCAL_IDP_PROPERTY);
         keycloak.stop();
+    }
+
+    /**
+     * Builds the OIDC entity for the running Keycloak. Its fields are normally populated by JAXB, so
+     * they are set reflectively here.
+     */
+    private static @NotNull OidcAuthenticationEntity oidcEntity(final @NotNull String issuerUri) {
+        final OidcAuthenticationEntity entity = new OidcAuthenticationEntity();
+        setField(entity, "enabled", true);
+        setField(entity, "issuerUri", issuerUri);
+        setField(entity, "clientId", KeycloakContainer.CLIENT_ID);
+        setField(entity, "clientSecret", KeycloakContainer.CLIENT_SECRET);
+        setField(entity, "redirectUri", REDIRECT_URI);
+        setField(entity, "roleClaimName", "roles");
+        setField(
+                entity,
+                "roleMappings",
+                List.of(
+                        new OidcRoleMappingEntity("acme-admin", ApiRoles.ADMIN),
+                        new OidcRoleMappingEntity("acme-user", ApiRoles.USER)));
+        return entity;
+    }
+
+    private static void setField(
+            final @NotNull Object target, final @NotNull String name, final @NotNull Object value) {
+        try {
+            final java.lang.reflect.Field field = target.getClass().getDeclaredField(name);
+            field.setAccessible(true);
+            field.set(target, value);
+        } catch (final ReflectiveOperationException e) {
+            throw new IllegalStateException("could not set test field " + name, e);
+        }
     }
 
     @Test

@@ -160,12 +160,79 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_plainHttpIsAccepted() {
-        // http is legitimate for local QA and for TLS terminated at a reverse proxy: warn, do not reject.
+    void fromEntity_httpIssuer_throws() {
+        // The issuer is the root of trust for discovery and signing keys; plain http lets an on-path
+        // attacker rewrite them, so it is rejected outright — including http://localhost.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("http://idp.example.com", "client", null, "https://edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("http://localhost:8080/realms/edge", "client", null, "https://edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
+    }
+
+    @Test
+    void fromEntity_issuerWithQuery_throws() {
+        // The OIDC Discovery spec forbids a query component on the issuer.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("https://idp.example.com?realm=edge", "client", null, "https://edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("query");
+    }
+
+    @Test
+    void fromEntity_issuerWithFragment_throws() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("https://idp.example.com#frag", "client", null, "https://edge/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("fragment");
+    }
+
+    @Test
+    void fromEntity_httpsIssuerWithPath_isAccepted() {
         final OidcConfiguration config = OidcConfiguration.fromEntity(
-                entity("http://localhost:8080/realms/edge", "client", null, "http://localhost:8080/cb", "roles", null));
+                entity("https://idp.example.com/realms/edge", "client", null, "https://edge/cb", "roles", null));
+
+        assertThat(config.getIssuerUri()).isEqualTo(URI.create("https://idp.example.com/realms/edge"));
+    }
+
+    @Test
+    void fromEntity_httpLoopbackIssuer_isAcceptedWhenInsecureFlagIsSet() {
+        // The dev/test escape hatch: a loopback http issuer is allowed only with the flag on.
+        final OidcConfiguration config = OidcConfiguration.fromEntity(
+                entity("http://localhost:8080/realms/edge", "client", null, "https://edge/cb", "roles", null), true);
 
         assertThat(config.getIssuerUri()).isEqualTo(URI.create("http://localhost:8080/realms/edge"));
+    }
+
+    @Test
+    void fromEntity_httpLoopbackIssuer_isRejectedWhenInsecureFlagIsOff() {
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("http://localhost:8080/realms/edge", "client", null, "https://edge/cb", "roles", null),
+                        false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
+    }
+
+    @Test
+    void fromEntity_httpNonLoopbackIssuer_isRejectedEvenWhenInsecureFlagIsSet() {
+        // The flag only relaxes loopback; a real remote http issuer stays rejected.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(
+                        entity("http://idp.example.com/realms/edge", "client", null, "https://edge/cb", "roles", null),
+                        true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
+    }
+
+    @Test
+    void fromEntity_plainHttpRedirectIsAccepted() {
+        // The redirect is browser-facing; http stays legitimate (local QA, TLS terminated at a proxy).
+        final OidcConfiguration config = OidcConfiguration.fromEntity(
+                entity("https://idp.example.com", "client", null, "http://localhost:8080/cb", "roles", null));
+
+        assertThat(config.getRedirectUri()).isEqualTo(URI.create("http://localhost:8080/cb"));
     }
 
     @Test
