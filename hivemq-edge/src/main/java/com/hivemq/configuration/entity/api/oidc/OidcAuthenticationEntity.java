@@ -35,7 +35,8 @@ import org.jetbrains.annotations.Nullable;
  * so only the issuer, client credentials, and redirect URI are configured here.
  * <p>
  * Roles are read from the ID token's {@code role-claim-name} claim and translated to
- * Edge roles via {@code role-mappings}. OIDC is disabled by default.
+ * Edge roles via {@code role-mappings}. When the stanza is present, {@code <enabled>} is
+ * required; if the whole stanza is absent, OIDC is off.
  * <p>
  * Example configuration:
  * <pre>{@code
@@ -65,7 +66,7 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class OidcAuthenticationEntity {
 
-    @XmlElement(name = "enabled", defaultValue = "false")
+    @XmlElement(name = "enabled", required = true)
     private boolean enabled = false;
 
     @XmlElement(name = "issuer-uri", required = true)

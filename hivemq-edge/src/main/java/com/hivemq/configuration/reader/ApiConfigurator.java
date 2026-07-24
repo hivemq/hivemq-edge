@@ -33,12 +33,11 @@ import com.hivemq.configuration.entity.api.AdminApiEntity;
 import com.hivemq.configuration.entity.api.ApiJwsEntity;
 import com.hivemq.configuration.entity.api.ApiListenerEntity;
 import com.hivemq.configuration.entity.api.ApiTlsEntity;
-import com.hivemq.configuration.entity.api.AuthModeEntity;
-import com.hivemq.configuration.entity.api.AuthModesEntity;
 import com.hivemq.configuration.entity.api.HttpListenerEntity;
 import com.hivemq.configuration.entity.api.HttpsListenerEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.entity.api.UserEntity;
+import com.hivemq.configuration.entity.api.UsernameAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
@@ -82,24 +81,13 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
     }
 
     /**
-     * Resolves the active authentication modes. An absent {@code <auth-modes>} defaults to
-     * {@code USERNAME_PASSWORD}, preserving the existing behavior. The XSD guarantees a present
-     * {@code <auth-modes>} carries at least one {@code <auth-mode>}.
+     * Resolves whether local username/password authentication is active. An absent
+     * {@code <username-authentication>} defaults to enabled, preserving the behavior of a
+     * configuration that predates the element. When present, {@code <enabled>} is required (XSD).
      */
-    private static @NotNull Set<AuthMode> resolveAuthModes(final @NotNull AdminApiEntity entity) {
-        final AuthModesEntity authModesEntity = entity.getAuthModes();
-        if (authModesEntity == null || authModesEntity.getAuthModes().isEmpty()) {
-            return EnumSet.of(AuthMode.USERNAME_PASSWORD);
-        }
-        final EnumSet<AuthMode> modes = EnumSet.noneOf(AuthMode.class);
-        for (final AuthModeEntity mode : authModesEntity.getAuthModes()) {
-            modes.add(
-                    switch (mode) {
-                        case USERNAME_PASSWORD -> AuthMode.USERNAME_PASSWORD;
-                        case OPEN_ID -> AuthMode.OPEN_ID;
-                    });
-        }
-        return modes;
+    private static boolean resolveUsernameAuthEnabled(final @NotNull AdminApiEntity entity) {
+        final UsernameAuthenticationEntity usernameAuth = entity.getUsernameAuthentication();
+        return usernameAuth == null || usernameAuth.isEnabled();
     }
 
     // -- Converts XML entity types to bean types
@@ -119,23 +107,32 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         apiCfgService.setEnabled(entity.isEnabled());
         apiCfgService.setEnforceApiAuth(entity.isEnforceApiAuth());
 
-        // Authentication modes: absent <auth-modes> defaults to USERNAME_PASSWORD.
-        final Set<AuthMode> authModes = resolveAuthModes(entity);
+        // Each authentication mechanism carries its own <enabled> flag. Local username/password defaults
+        // to enabled when its stanza is absent; OIDC is off when its stanza is absent.
         final OidcAuthenticationEntity oidcEntity = entity.getOidc();
+        final boolean usernameAuthEnabled = resolveUsernameAuthEnabled(entity);
+        final boolean oidcEnabled = oidcEntity != null && oidcEntity.isEnabled();
 
-        // Symmetric validation between <auth-modes> and the <oidc-authentication> stanza.
-        if (authModes.contains(AuthMode.OPEN_ID) && oidcEntity == null) {
-            log.error("<auth-modes> lists OPEN_ID but no <oidc-authentication> stanza is configured.");
+        // Presence rule: an <oidc-authentication> stanza (enabled or not) forces the operator to state
+        // <username-authentication> explicitly, so local login is never left on implicitly alongside OIDC.
+        if (oidcEntity != null && entity.getUsernameAuthentication() == null) {
+            log.error("An <oidc-authentication> stanza is configured but <username-authentication> is absent. "
+                    + "Add <username-authentication><enabled>true|false</enabled></username-authentication> to state "
+                    + "explicitly whether local login is available.");
             throw new UnrecoverableException(false);
         }
-        if (oidcEntity != null && !authModes.contains(AuthMode.OPEN_ID)) {
-            log.error("An <oidc-authentication> stanza is configured but <auth-modes> does not list OPEN_ID.");
-            throw new UnrecoverableException(false);
+
+        final EnumSet<AuthMode> authModes = EnumSet.noneOf(AuthMode.class);
+        if (usernameAuthEnabled) {
+            authModes.add(AuthMode.USERNAME_PASSWORD);
+        }
+        if (oidcEnabled) {
+            authModes.add(AuthMode.OPEN_ID);
         }
         apiCfgService.setAuthModes(authModes);
 
-        // Local users / LDAP — only wired when USERNAME_PASSWORD is an active mode.
-        if (authModes.contains(AuthMode.USERNAME_PASSWORD)) {
+        // Local users / LDAP — only wired when username/password authentication is enabled.
+        if (usernameAuthEnabled) {
             if (entity.getLdap() != null) {
                 apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
             } else {
@@ -151,7 +148,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 }
             }
         } else {
-            // USERNAME_PASSWORD not active: no local users, no default admin. Local login is closed.
+            // Local login disabled: no local users, no default admin. The endpoint is closed.
             apiCfgService.setUserList(List.of());
         }
 
@@ -165,17 +162,19 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 .withTokenEarlyEpochThresholdMinutes(jwsEntity.getTokenEarlyEpochThresholdMinutes())
                 .build());
 
-        // OIDC (only wired when OPEN_ID is active; validated above to require the stanza).
-        if (authModes.contains(AuthMode.OPEN_ID) && oidcEntity != null) {
-            if (isBlank(oidcEntity.getIssuerUri())
-                    || isBlank(oidcEntity.getClientId())
-                    || isBlank(oidcEntity.getRedirectUri())) {
+        // OIDC (only wired when its stanza is enabled).
+        if (oidcEnabled) {
+            // oidcEnabled implies oidcEntity != null; the local makes that visible to null analysis.
+            final OidcAuthenticationEntity enabledOidc = Objects.requireNonNull(oidcEntity);
+            if (isBlank(enabledOidc.getIssuerUri())
+                    || isBlank(enabledOidc.getClientId())
+                    || isBlank(enabledOidc.getRedirectUri())) {
                 log.error("OIDC authentication is configured but incomplete: <issuer-uri>, <client-id> and "
                         + "<redirect-uri> are all required.");
                 throw new UnrecoverableException(false);
             }
             try {
-                apiCfgService.setOidcConfiguration(OidcConfiguration.fromEntity(oidcEntity));
+                apiCfgService.setOidcConfiguration(OidcConfiguration.fromEntity(enabledOidc));
             } catch (final IllegalArgumentException e) {
                 log.error("Invalid OIDC configuration: {}", e.getMessage());
                 throw new UnrecoverableException(false);

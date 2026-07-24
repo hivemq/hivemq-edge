@@ -66,9 +66,9 @@ export class AuthenticationService {
         });
     }
     /**
-     * Report the configured authentication mode.
-     * Report which authentication mode the gateway is configured for, so the UI can present the matching login (local username/password form or OIDC single sign-on).
-     * @returns AuthMode The configured authentication mode.
+     * Report the enabled authentication mechanisms.
+     * Report which authentication mechanisms the gateway accepts, so the UI can present the matching login. Both local username/password and OIDC single sign-on may be returned when both are enabled.
+     * @returns AuthMode The enabled authentication mechanisms.
      * @throws ApiError
      */
     public authMode(): CancelablePromise<AuthMode> {

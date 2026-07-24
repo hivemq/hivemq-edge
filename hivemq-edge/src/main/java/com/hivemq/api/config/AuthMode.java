@@ -16,9 +16,10 @@
 package com.hivemq.api.config;
 
 /**
- * The authentication mechanisms the Admin API accepts, resolved from the {@code <auth-modes>}
- * configuration. When {@code <auth-modes>} is absent the resolved set defaults to
- * {@link #USERNAME_PASSWORD}.
+ * The authentication mechanisms the Admin API accepts. The active set is derived from the per-stanza
+ * {@code <enabled>} flags: {@link #USERNAME_PASSWORD} from {@code <username-authentication>} (enabled
+ * by default when its stanza is absent) and {@link #OPEN_ID} from an enabled
+ * {@code <oidc-authentication>} stanza.
  */
 public enum AuthMode {
     /** Local username/password login, backed by the configured users or LDAP. */

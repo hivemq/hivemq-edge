@@ -1216,7 +1216,7 @@
             <xs:element name="oidc-authentication" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:all>
-                        <xs:element name="enabled" type="xs:boolean" minOccurs="0" default="false"/>
+                        <xs:element name="enabled" type="xs:boolean"/>
                         <xs:element name="issuer-uri" type="xs:string" minOccurs="0"/>
                         <xs:element name="client-id" type="xs:string" minOccurs="0"/>
                         <xs:element name="client-secret" type="nonEmptyString" minOccurs="0"/>
@@ -1240,18 +1240,11 @@
                     </xs:all>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="auth-modes" minOccurs="0" maxOccurs="1">
+            <xs:element name="username-authentication" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="auth-mode" minOccurs="1" maxOccurs="unbounded">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:string">
-                                    <xs:enumeration value="USERNAME_PASSWORD"/>
-                                    <xs:enumeration value="OPEN_ID"/>
-                                </xs:restriction>
-                            </xs:simpleType>
-                        </xs:element>
-                    </xs:sequence>
+                    <xs:all>
+                        <xs:element name="enabled" type="xs:boolean"/>
+                    </xs:all>
                 </xs:complexType>
             </xs:element>
             <xs:element name="enforce-api-auth" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
