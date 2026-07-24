@@ -162,8 +162,8 @@ class SharedNodeVerificationTest {
         coordinator.retainOnly(java.util.Set.of(kept)); // a tags-only reconfigure removed 'drop' (F-ORPHAN)
 
         assertThat(coordinator.needsVerify(removed)).isTrue(); // pruned — no longer holds the gate
-        assertThat(coordinator.needsVerify(kept)).isFalse();   // survivor keeps its outstanding verify
-        assertThat(coordinator.allReported()).isFalse();       // still legitimately waiting on the survivor
+        assertThat(coordinator.needsVerify(kept)).isFalse(); // survivor keeps its outstanding verify
+        assertThat(coordinator.allReported()).isFalse(); // still legitimately waiting on the survivor
         coordinator.onVerifyResult(kept, new VerifyOutcome.Success());
         assertThat(coordinator.allReported()).isTrue();
     }

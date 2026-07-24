@@ -97,7 +97,7 @@ class TagAspectReadSubscribedTest {
         final long removesBefore = count(fixture, "removeSubscriptionBatch");
 
         fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
-        fixture.drain();      // the cancel and the deferred re-verify are queued
+        fixture.drain(); // the cancel and the deferred re-verify are queued
         fixture.advance(100); // a tick dispatches the cancel, then the re-verify, which succeeds and queues the re-add
         fixture.advance(100); // the following tick dispatches the re-subscribe
 
