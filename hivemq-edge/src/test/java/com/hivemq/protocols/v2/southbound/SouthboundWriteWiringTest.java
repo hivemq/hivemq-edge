@@ -68,7 +68,7 @@ class SouthboundWriteWiringTest {
         final SouthboundWriteBridge bridge = bridge(sender, Map.of("setpoint", node));
         final RecordingWritingOutput output = new RecordingWritingOutput();
 
-        bridge.write(input("setpoint", new V2WritePayload(new DoubleNode(21.5))), output);
+        bridge.write(input("setpoint", new WritePayload(new DoubleNode(21.5))), output);
 
         assertThat(sender.told).hasSize(1);
         final ProtocolAdapterWrapperWriteRequest request = (ProtocolAdapterWrapperWriteRequest) sender.told.get(0);
@@ -84,7 +84,7 @@ class SouthboundWriteWiringTest {
         final SouthboundWriteBridge bridge = bridge(sender, Map.of());
         final RecordingWritingOutput output = new RecordingWritingOutput();
 
-        bridge.write(input("ghost", new V2WritePayload(new DoubleNode(1))), output);
+        bridge.write(input("ghost", new WritePayload(new DoubleNode(1))), output);
 
         assertThat(sender.told).isEmpty();
         assertThat(output.finished).isFalse();
@@ -94,7 +94,7 @@ class SouthboundWriteWiringTest {
     @Test
     void payloadClass_isTheConventionalValueShape() {
         assertThat(bridge(new RecordingSender(), Map.of()).getMqttPayloadClass())
-                .isEqualTo(V2WritePayload.class);
+                .isEqualTo(WritePayload.class);
     }
 
     // ── the registry: lifecycle against the reused writing service ─────────────────────────
@@ -181,7 +181,7 @@ class SouthboundWriteWiringTest {
                 false);
     }
 
-    private static @NotNull WritingInput input(final @NotNull String tagName, final @NotNull V2WritePayload payload) {
+    private static @NotNull WritingInput input(final @NotNull String tagName, final @NotNull WritePayload payload) {
         return new WritingInput() {
             @Override
             public @NotNull WritingPayload getWritingPayload() {

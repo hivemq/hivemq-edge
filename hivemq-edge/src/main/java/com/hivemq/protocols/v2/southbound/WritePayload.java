@@ -26,13 +26,13 @@ import org.jetbrains.annotations.NotNull;
  * {@code {"value": <json>}} shape every v1 module uses. The value is kept as raw JSON — the v2 write path carries it
  * to the adapter as a JSON {@code DataPoint}; interpreting it against the node is the protocol adapter's job.
  */
-public class V2WritePayload implements WritingPayload {
+public class WritePayload implements WritingPayload {
 
     @JsonProperty("value")
     private final @NotNull JsonNode value;
 
     @JsonCreator
-    public V2WritePayload(@JsonProperty("value") final @NotNull JsonNode value) {
+    public WritePayload(@JsonProperty("value") final @NotNull JsonNode value) {
         this.value = value;
     }
 

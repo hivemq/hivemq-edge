@@ -83,7 +83,7 @@ public final class SouthboundWriteBridge implements WritingProtocolAdapter {
             writingOutput.fail("no tag [" + tagName + "] on v2 adapter [" + identity.getId() + "]");
             return;
         }
-        final V2WritePayload payload = (V2WritePayload) writingInput.getWritingPayload();
+        final WritePayload payload = (WritePayload) writingInput.getWritingPayload();
         //noinspection ConstantValue — Jackson passes null for an absent "value" property despite the annotation
         if (payload.getValue() == null) {
             writingOutput.fail("southbound write payload for tag [" + tagName + "] has no \"value\" property");
@@ -96,7 +96,7 @@ public final class SouthboundWriteBridge implements WritingProtocolAdapter {
 
     @Override
     public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {
-        return V2WritePayload.class;
+        return WritePayload.class;
     }
 
     @Override
