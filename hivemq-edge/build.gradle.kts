@@ -158,6 +158,9 @@ dependencies {
     implementation(platform(libs.kotlin.bom))
     constraints {
         implementation(libs.apache.commons.compress)
+        // victools 5 pulls in Jackson 3 (tools.jackson) 3.0.3, which has known CVEs; force safe versions
+        implementation(libs.jackson3.core)
+        implementation(libs.jackson3.databind)
     }
 
     // config
