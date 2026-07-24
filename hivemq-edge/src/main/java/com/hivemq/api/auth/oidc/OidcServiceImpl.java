@@ -193,23 +193,27 @@ public class OidcServiceImpl implements OidcService {
             return oidcNotConfigured();
         }
 
-        // Release the login state on every callback, including error and cancellation, so a denied or
-        // abandoned flow does not hold its slot until the TTL expires.
-        final Optional<OidcStateStore.StateEntry> entryOpt =
-                state != null ? stateStore.consume(state) : Optional.empty();
+        // Validate the state before classifying the callback, so an unsolicited or forged callback — with
+        // no state or an attacker-chosen one — cannot be accepted as a genuine IdP error. State is
+        // consumed on every valid callback (success or error), releasing its slot rather than holding it
+        // until the TTL.
+        if (state == null) {
+            return callbackError(OidcErrorCode.INVALID_REQUEST, config);
+        }
+        final Optional<OidcStateStore.StateEntry> entryOpt = stateStore.consume(state);
+        if (entryOpt.isEmpty()) {
+            return callbackError(OidcErrorCode.INVALID_STATE, config);
+        }
+        final OidcStateStore.StateEntry entry = entryOpt.get();
 
         if (error != null) {
             final String detail = errorDescription != null ? errorDescription : error;
             log.info("OIDC login returned an error from the Identity Provider: {}", detail);
             return callbackError(OidcErrorCode.IDP_ERROR, config);
         }
-        if (code == null || state == null) {
+        if (code == null) {
             return callbackError(OidcErrorCode.INVALID_REQUEST, config);
         }
-        if (entryOpt.isEmpty()) {
-            return callbackError(OidcErrorCode.INVALID_STATE, config);
-        }
-        final OidcStateStore.StateEntry entry = entryOpt.get();
 
         try {
             final OIDCProviderMetadata metadata = resolveMetadata(config);
