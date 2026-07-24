@@ -34,6 +34,7 @@ import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
+import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.State;
@@ -50,6 +51,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -58,6 +60,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -85,8 +94,22 @@ public class OidcServiceImpl implements OidcService {
     // to 0 (no timeout); without bounds an unavailable or malicious IdP could hold request threads forever.
     private static final int HTTP_CONNECT_TIMEOUT_MILLIS = 5_000;
     private static final int HTTP_READ_TIMEOUT_MILLIS = 5_000;
-    // Cap the JWKS response size to bound memory from a hostile IdP.
+    // Cap IdP response bodies (discovery, token, JWKS) to bound memory from a hostile or broken IdP.
     private static final int JWKS_SIZE_LIMIT_BYTES = 512 * 1024;
+    private static final int IDP_RESPONSE_SIZE_LIMIT_BYTES = 512 * 1024;
+
+    // Total wall-clock deadline for a single IdP call. The connect/read timeouts only bound periods of no
+    // progress; a peer that trickles bytes just under the read timeout could otherwise hold a request
+    // thread far longer. Set above the connect + read budget with slack.
+    private static final long IDP_REQUEST_DEADLINE_MILLIS = 15_000L;
+
+    // Small bounded pool that runs the outbound IdP call off the request thread, so the deadline can
+    // interrupt a stuck call. Daemon threads, so it never holds up JVM shutdown.
+    private static final @NotNull ExecutorService IDP_CALL_EXECUTOR = Executors.newFixedThreadPool(4, runnable -> {
+        final Thread thread = new Thread(runnable, "oidc-idp-call");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     // ID token signing algorithms we accept, in preference order. Asymmetric only: the provider signs
     // with its private key and we verify with the public key from its JWKS. Symmetric (HS*) and 'none'
@@ -203,7 +226,9 @@ public class OidcServiceImpl implements OidcService {
             final HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
             tokenHttpRequest.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MILLIS);
             tokenHttpRequest.setReadTimeout(HTTP_READ_TIMEOUT_MILLIS);
-            final TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenHttpRequest.send());
+            // Read the token response through a size cap, so a hostile IdP cannot grow the heap unbounded.
+            final TokenResponse tokenResponse =
+                    OIDCTokenResponseParser.parse(withDeadline(() -> tokenHttpRequest.send(boundedSender())));
             if (!tokenResponse.indicatesSuccess()) {
                 log.info(
                         "OIDC token exchange failed: {}",
@@ -342,12 +367,49 @@ public class OidcServiceImpl implements OidcService {
                 && System.currentTimeMillis() < cachedMetadataExpiry) {
             return cached;
         }
-        final OIDCProviderMetadata metadata =
-                OIDCProviderMetadata.resolve(new Issuer(issuer), HTTP_CONNECT_TIMEOUT_MILLIS, HTTP_READ_TIMEOUT_MILLIS);
+        // Fetch discovery through the bounded sender (timeouts + size cap) rather than the default
+        // OIDCProviderMetadata.resolve, whose HTTPRequest.send reads the body into an unbounded buffer.
+        final HTTPRequest discoveryRequest =
+                new HTTPRequest(HTTPRequest.Method.GET, OIDCProviderMetadata.resolveURL(new Issuer(issuer)));
+        discoveryRequest.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MILLIS);
+        discoveryRequest.setReadTimeout(HTTP_READ_TIMEOUT_MILLIS);
+        final HTTPResponse discoveryResponse = withDeadline(() -> discoveryRequest.send(boundedSender()));
+        discoveryResponse.ensureStatusCode(HTTPResponse.SC_OK);
+        final OIDCProviderMetadata metadata = OIDCProviderMetadata.parse(discoveryResponse.getBodyAsJSONObject());
+
         cachedMetadata = metadata;
         cachedMetadataIssuer = issuer;
         cachedMetadataExpiry = System.currentTimeMillis() + DISCOVERY_TTL_MILLIS;
         return metadata;
+    }
+
+    private static @NotNull BoundedHttpRequestSender boundedSender() {
+        return new BoundedHttpRequestSender(IDP_RESPONSE_SIZE_LIMIT_BYTES);
+    }
+
+    private static <T> @NotNull T withDeadline(final @NotNull Callable<T> call) throws Exception {
+        return withDeadline(call, IDP_REQUEST_DEADLINE_MILLIS);
+    }
+
+    /**
+     * Runs an outbound IdP call under a total wall-clock deadline. On timeout the call is interrupted
+     * and an {@link IOException} is thrown, so a peer that stays under the read timeout by trickling
+     * bytes cannot hold the request thread beyond the deadline.
+     */
+    static <T> @NotNull T withDeadline(final @NotNull Callable<T> call, final long deadlineMillis) throws Exception {
+        final Future<T> future = IDP_CALL_EXECUTOR.submit(call);
+        try {
+            return future.get(deadlineMillis, TimeUnit.MILLISECONDS);
+        } catch (final TimeoutException e) {
+            future.cancel(true);
+            throw new IOException("The Identity Provider did not respond within " + deadlineMillis + " ms; aborting.");
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause();
+            if (cause instanceof Exception exception) {
+                throw exception;
+            }
+            throw e;
+        }
     }
 
     private static @NotNull Response oidcNotConfigured() {
