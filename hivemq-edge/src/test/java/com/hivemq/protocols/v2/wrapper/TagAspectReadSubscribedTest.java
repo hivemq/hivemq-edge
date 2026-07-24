@@ -88,21 +88,24 @@ class TagAspectReadSubscribedTest {
         assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore); // no re-verify on a command loss
     }
 
-    // EDG-824 #16: the documented power cycle CANCELS the old subscription — REMOVESUB is actually issued, and it
-    // is dispatched before the re-subscription's ADDSUB.
+    // EDG-824 #16: the documented power cycle is REMOVESUB -> re-VERIFY -> ADDSUB. The cancel is dispatched first,
+    // the re-verification is issued AFTER it (posted through the BatchCollector, never eagerly ahead of the cancel),
+    // and the re-subscribe only follows a successful verify.
     @Test
-    void spontaneousLoss_cancelsTheOldSubscriptionBeforeResubscribing() {
+    void spontaneousLoss_powerCyclesRemoveThenVerifyThenAdd() {
         final WrapperTestFixture fixture = subscribedAndConfirmed();
         final long removesBefore = count(fixture, "removeSubscriptionBatch");
 
         fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
-        fixture.drain(); // the cancel is queued, the re-verification succeeds, the re-add is queued
-        fixture.advance(100); // a tick dispatches the power cycle: remove first, then add
+        fixture.drain();      // the cancel and the deferred re-verify are queued
+        fixture.advance(100); // a tick dispatches the cancel, then the re-verify, which succeeds and queues the re-add
+        fixture.advance(100); // the following tick dispatches the re-subscribe
 
         assertThat(count(fixture, "removeSubscriptionBatch")).isEqualTo(removesBefore + 1);
         final List<String> commands = fixture.commands();
-        assertThat(commands.lastIndexOf("removeSubscriptionBatch"))
-                .isLessThan(commands.lastIndexOf("addSubscriptionBatch"));
+        // The adapter observes remove -> verify -> add, in that order.
+        assertThat(commands.lastIndexOf("removeSubscriptionBatch")).isLessThan(commands.lastIndexOf("verifyBatch"));
+        assertThat(commands.lastIndexOf("verifyBatch")).isLessThan(commands.lastIndexOf("addSubscriptionBatch"));
 
         // The cycle completes: the first pushed value confirms the fresh subscription.
         fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "23"));
@@ -120,8 +123,13 @@ class TagAspectReadSubscribedTest {
         fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
         fixture.drain();
 
-        // A spontaneous loss re-verifies — the aspect parks in verification, not subscription retry.
+        // A spontaneous loss parks the aspect in verification (not subscription retry) at once; the re-verification
+        // itself is posted through the BatchCollector, so it is issued on the next tick — after the cancel.
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION");
+        assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore); // deferred, not issued eagerly
+
+        fixture.advance(100); // the tick dispatches the cancel, then the re-verification
         assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore + 1);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION"); // held by verifyDrop
     }
 }

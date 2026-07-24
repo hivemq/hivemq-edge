@@ -443,12 +443,20 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     void onSpontaneousSubscriptionLoss(final @NotNull String reason) {
-        // The documented power cycle (EDG-824 #16): cancel the subscription FIRST, then reset to verification and
-        // re-subscribe only after a fresh verify succeeds. Without the explicit cancel the old subscription is
-        // never released — a shadow-set-consistency deviation the adapter cannot repair on its own.
+        // The documented power cycle (EDG-824 #16): cancel the subscription FIRST, then re-verify, then re-subscribe
+        // only after the verify succeeds. Without the explicit cancel the old subscription is never released — a
+        // shadow-set-consistency deviation the adapter cannot repair on its own.
+        //
+        // The re-verify is posted through the BatchCollector rather than issued eagerly, so its verifyBatch
+        // dispatches AFTER this tick's removeSubscriptionBatch: the adapter observes remove -> verify -> add, not
+        // verify -> remove -> add. The in-flight registration keeps the dedup and the WAITING_FOR_VERIFICATION
+        // gating; the outcome still flows back through SharedNodeVerification.onVerifyResult -> enterVerified,
+        // which queues the re-subscribe. Costs one tick on this (rare, adapter-driven) path only.
         batches.removeSubscription(node);
         recordFailure(reason);
-        requestVerification();
+        if (sharedNodeVerification.beginDeferredVerification(node)) {
+            batches.verify(node);
+        }
     }
 
     void logUnexpectedEvent(final @NotNull TagAspectEvent event) {

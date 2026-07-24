@@ -86,6 +86,21 @@ public final class SharedNodeVerification {
     }
 
     /**
+     * Register a node in flight for a re-verification whose {@code verifyBatch} the caller will issue itself —
+     * de-duplicated exactly like {@link #requestVerification(Node)}, but <b>without</b> issuing the verify. The
+     * spontaneous-loss power cycle (EDG-824 #16) uses this to post the re-verify through the {@code BatchCollector}
+     * so it dispatches after the same tick's cancel; the in-flight registration keeps {@link #allReported()} gating
+     * and the single-result fan-out through {@link #onVerifyResult(Node, VerifyOutcome)} intact.
+     *
+     * @param node the node to re-verify.
+     * @return {@code true} when a fresh verify is needed (the caller should issue it); {@code false} when the node
+     *         is already in flight and the outstanding result will serve this request too.
+     */
+    public boolean beginDeferredVerification(final @NotNull Node node) {
+        return inFlight.add(node);
+    }
+
+    /**
      * Begin the connect-time verification: register every given node as in flight (de-duplicated)
      * and issue them as <b>one</b> {@code verifyBatch} — a read-and-write tag therefore yields a single entry.
      * {@link #allReported()} then gates the {@code CONNECTED} transition. An empty list issues nothing and leaves
