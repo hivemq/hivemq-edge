@@ -199,22 +199,24 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             final boolean completesPoll) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {
-            // The tag's declared schema is enforced, not just projected (EDG-824 #6). A JSON-carrying value is the
-            // adapter's own structured payload — the scalar rules do not apply to it.
-            if (!value.treatTagValueAsJson()) {
-                final String violation = SchemaConformance.violationOf(
-                        value.getTagValue(), tagRuntime.pair().tag().schema());
-                if (violation != null) {
-                    // A violating value is still PROOF OF LIFE: it advances the aspect exactly like an accepted
-                    // one (the poll loop continues, a pending subscription is confirmed) — it is only refused
-                    // northbound and recorded as a per-tag failure. Feeding it into NodeFailed instead would
-                    // misread a data-quality problem as a transport failure and churn re-subscriptions or
-                    // re-verifications forever on a perfectly healthy device.
-                    if (tagRuntime.onValue(value)) {
-                        tagRuntime.recordReadConformanceFailure("declared-schema violation: " + violation);
-                    }
-                    return null;
+            // The tag's declared schema is enforced on every value (EDG-824 #6/#10). The adapter's per-value
+            // treatTagValueAsJson() flag must NOT exempt a value from a constraint the trusted config declared —
+            // that let an adversarial or buggy adapter self-bypass schema enforcement. SchemaConformance only
+            // enforces range-constrained scalars (unambiguous value declarations) and passes structured/unconstrained
+            // schemas through untouched, so the schema — not the adapter — decides what is checked; a legitimate JSON
+            // structured payload carries a structured schema and is never scalar-checked.
+            final String violation = SchemaConformance.violationOf(
+                    value.getTagValue(), tagRuntime.pair().tag().schema());
+            if (violation != null) {
+                // A violating value is still PROOF OF LIFE: it advances the aspect exactly like an accepted
+                // one (the poll loop continues, a pending subscription is confirmed) — it is only refused
+                // northbound and recorded as a per-tag failure. Feeding it into NodeFailed instead would
+                // misread a data-quality problem as a transport failure and churn re-subscriptions or
+                // re-verifications forever on a perfectly healthy device.
+                if (tagRuntime.onValue(value)) {
+                    tagRuntime.recordReadConformanceFailure("declared-schema violation: " + violation);
                 }
+                return null;
             }
             if (tagRuntime.onValue(value)) {
                 return DataPointStamping.stamp(value, tagRuntime.pair().tag(), adapterId);

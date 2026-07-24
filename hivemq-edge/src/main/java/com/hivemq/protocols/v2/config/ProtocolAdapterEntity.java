@@ -260,8 +260,9 @@ public class ProtocolAdapterEntity implements EntityValidatable {
         retryPolicy.validate(validationEvents);
         tags.forEach(tag -> tag.validate(validationEvents));
         // The access model is enforced at runtime (EDG-824 #14): an activated aspect with no permitted capability
-        // silently never operates. That must be a deliberate choice, so surface the contradiction as a warning —
-        // including the omitted-<access> case, where every flag defaults to NO.
+        // silently never operates. That must be a deliberate choice, so surface the contradiction as a warning. An
+        // omitted <access> element is unrestricted (all flags YES, via TagEntity's initializer) and so never trips
+        // this warning; only an explicit <access> element — whose omitted child attributes default to NO — can.
         tags.forEach(tag -> {
             final AccessFlagsEntity access = tag.getAccess();
             final boolean readPermitted = access.getReadable() == AccessTriState.YES

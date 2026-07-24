@@ -38,6 +38,7 @@ import com.hivemq.protocols.v2.browse.BrowseSink;
 import com.hivemq.protocols.v2.browse.BrowsedNode;
 import com.hivemq.protocols.v2.browse.ProtocolAdapterBrowseEngine;
 import com.hivemq.protocols.v2.fsm.FSM;
+import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Backoff;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.Clock;
@@ -501,6 +502,7 @@ public final class ProtocolAdapterWrapperContext {
                 // Throwable, not RuntimeException (EDG-824 #7): a mispackaged adapter jar can throw a LinkageError
                 // from stop() too, and the transition into ERROR — with the health-listener and tag-plane
                 // notifications below — must complete regardless.
+                AdapterFaults.rethrowIfFatal(stopFailure);
                 log.warn("Adapter '{}' threw while being stopped on the way to ERROR", adapterId, stopFailure);
             }
         }

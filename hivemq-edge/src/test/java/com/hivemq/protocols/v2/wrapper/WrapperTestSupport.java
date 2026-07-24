@@ -49,7 +49,13 @@ final class WrapperTestSupport {
     }
 
     static @NotNull DataPoint dataPoint(final @NotNull String tagName, final @NotNull Object value) {
-        return new TestDataPoint(tagName, value);
+        return new TestDataPoint(tagName, value, false);
+    }
+
+    /** A value the adapter flags as its own JSON payload — used to prove the flag cannot bypass schema enforcement
+     * (EDG-824 #10). */
+    static @NotNull DataPoint jsonDataPoint(final @NotNull String tagName, final @NotNull Object value) {
+        return new TestDataPoint(tagName, value, true);
     }
 
     /** A polled pair with an explicit declared value schema — for the schema-enforcement tests (EDG-824 #6). */
@@ -86,7 +92,7 @@ final class WrapperTestSupport {
         }
     }
 
-    record TestDataPoint(@NotNull String tagName, @NotNull Object value) implements DataPoint {
+    record TestDataPoint(@NotNull String tagName, @NotNull Object value, boolean json) implements DataPoint {
 
         @Override
         public @NotNull Object getTagValue() {
@@ -95,7 +101,7 @@ final class WrapperTestSupport {
 
         @Override
         public boolean treatTagValueAsJson() {
-            return false;
+            return json;
         }
 
         @Override

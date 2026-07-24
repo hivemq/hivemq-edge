@@ -31,6 +31,7 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.RetryTag;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperError;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStarted;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopped;
+import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.BrowseRejectedException;
@@ -213,6 +214,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 // a LinkageError from wrapperFactory.create — an Error. Catching only RuntimeException would let it
                 // abort the whole pass, skipping every sibling after it and leaving the thrower with no ERROR handle;
                 // this is the same defensive posture ProtocolAdapterWrapper.receive already takes.
+                AdapterFaults.rethrowIfFatal(exception);
                 log.error("Failed to reconcile v2 adapter '{}'; scoping the failure to it", adapterId, exception);
                 if (!containerMap.containsKey(adapterId) && !pendingRemovalMap.containsKey(adapterId)) {
                     registerErrorAdapter(
@@ -459,6 +461,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 // EDG-824 #4/R2: the recreate runs outside the reconcile loop's guard, so a LinkageError (or any
                 // throwable) from a mispackaged adapter jar would otherwise escape the manager's dispatch thread.
                 // Scope it to this adapter — surface it as an ERROR handle instead of tearing the manager down.
+                AdapterFaults.rethrowIfFatal(exception);
                 log.error(
                         "Failed to recreate v2 adapter '{}' after its stop; scoping the failure to it",
                         adapterId,

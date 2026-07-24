@@ -373,12 +373,15 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * A value arrived outside the poll window — typically the answer to a poll that was already failed at the
-     * result deadline. The value itself is discarded (the cadence has moved on), but it is proof the device is
-     * alive: a consistently-slow-but-answering device must not walk into the verification escalation.
+     * A value arrived outside the poll window — the answer to a poll already failed at its result deadline. The
+     * value is discarded (the cadence has moved on) and it is NOT a published reading, so the missed publish already
+     * counted by that poll-result timeout must STAND. A device that answers every poll just after the deadline
+     * produces no data, and clearing the escalation counter here is exactly what let such a tag read healthy forever
+     * while publishing nothing (EDG-824 #15); it must instead escalate like any stalled poll. Only an on-time value
+     * ({@link #onPollSucceeded()}) clears the counter.
      */
-    void onLateValueProofOfLife() {
-        consecutivePollFailures = 0;
+    void onLateValueDiscarded() {
+        // Intentionally leaves consecutivePollFailures untouched — see the contract above.
     }
 
     void scheduleNextPoll() {

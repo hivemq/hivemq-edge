@@ -51,6 +51,16 @@ class StalledPollEscalationTest {
         fixture.advance(POLL_RESULT_TIMEOUT); // the result deadline fires
     }
 
+    /** One cycle where the poll misses its result deadline and the device's answer then arrives LATE (after the
+     * deadline, in WAITING_FOR_POLL_INTERVAL): the value is discarded and nothing is published. */
+    private static void lateOnce(final @NotNull WrapperTestFixture fixture) {
+        fixture.advance(POLL_INTERVAL); // WAITING_FOR_POLL_DATAPOINT
+        fixture.advance(POLL_RESULT_TIMEOUT); // the deadline fires the poll → WAITING_FOR_POLL_INTERVAL
+        // the device's answer arrives late, after the deadline — proof of life, but not a published reading
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "21"));
+        fixture.drain();
+    }
+
     @Test
     void aSingleStalledPoll_isFailedAtTheDeadlineAndRetriedOnTheCadence() {
         final WrapperTestFixture fixture = stallFixture();
@@ -91,6 +101,24 @@ class StalledPollEscalationTest {
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
         assertThat(fixture.tagStatus("temperature")).isEqualTo(TagStatus.NORTHBOUND_ONLY);
         assertThat(fixture.tag("temperature").failureCount()).isEqualTo(3);
+    }
+
+    // EDG-824 #15 (Sam #7): a device that answers every poll just AFTER its result deadline publishes nothing. The
+    // late value is discarded and must NOT reset the escalation — otherwise the tag reads healthy forever while
+    // producing no data. Persistent lateness therefore escalates exactly like a mute stall.
+    @Test
+    void persistentlyLateValues_escalate_becauseNothingIsEverPublished() {
+        final WrapperTestFixture fixture = stallFixture();
+        fixture.adapter.verifyDrop = true; // the re-verification the escalation triggers never answers
+
+        lateOnce(fixture);
+        lateOnce(fixture);
+        assertThat(fixture.tagStatus("temperature")).isEqualTo(TagStatus.NORTHBOUND_ONLY); // not yet escalated
+
+        lateOnce(fixture); // third consecutive missed publish: escalate through re-verification
+
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION");
+        assertThat(fixture.tagStatus("temperature")).isEqualTo(TagStatus.ERROR);
     }
 
     @Test

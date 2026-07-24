@@ -96,11 +96,12 @@ public final class TagAspectReadTransitions {
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.NodeFailed.class)
                 .then((current, event, aspect) ->
                         aspect.onPollFailure(TagAspectPreOperatingTransitions.reasonOf(event)))
-                // A late value (after the result deadline failed the poll): discarded, but it proves the device is
-                // alive — reset the consecutive-failure escalation counter.
+                // A late value (arriving after the result deadline already failed the poll): discarded, and it does
+                // NOT clear the stalled-poll escalation — a device that answers every poll late publishes nothing and
+                // must escalate rather than read healthy forever (EDG-824 #15).
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL, TagAspectEvent.ValueReceived.class)
                 .then((current, event, aspect) -> {
-                    aspect.onLateValueProofOfLife();
+                    aspect.onLateValueDiscarded();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
                 })
                 .unmatched((current, event, aspect) -> {

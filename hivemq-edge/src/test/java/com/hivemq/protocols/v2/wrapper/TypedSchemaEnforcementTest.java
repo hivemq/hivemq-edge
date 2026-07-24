@@ -88,6 +88,39 @@ class TypedSchemaEnforcementTest {
         assertThat(fixture.tag("temperature").lastFailureReason()).contains("does not conform");
     }
 
+    // EDG-824 #10: an adapter can no longer self-exempt from the declared schema by flagging the value as JSON. An
+    // out-of-range value on a constrained scalar tag is refused whether or not treatTagValueAsJson() is set.
+    @Test
+    void jsonFlaggedOutOfRangeValue_isRefused_notBypassed() {
+        final NodeTagPair pair = WrapperTestSupport.typedPair("temperature", DOUBLE_0_TO_100);
+        final WrapperTestFixture fixture = rangedFixture(pair);
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000);
+
+        fixture.output.dataPoint(pair.node(), WrapperTestSupport.jsonDataPoint("temperature", 250.0));
+        fixture.drain();
+
+        assertThat(fixture.state()).isEqualTo(CONNECTED);
+        assertThat(fixture.tag("temperature").failureCount()).isEqualTo(1);
+        assertThat(fixture.tag("temperature").lastFailureReason()).contains("declared-schema violation");
+    }
+
+    // EDG-824 #10 (the other side): a legitimate JSON payload for an UNCONSTRAINED tag still flows untouched — the
+    // schema shape, not the adapter's flag, governs, and an unconstrained schema carries nothing to enforce.
+    @Test
+    void jsonFlaggedValueOnUnconstrainedSchema_stillFlows() {
+        final NodeTagPair pair = WrapperTestSupport.pair("temperature"); // STRING, unconstrained
+        final WrapperTestFixture fixture = rangedFixture(pair);
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000);
+
+        fixture.output.dataPoint(pair.node(), WrapperTestSupport.jsonDataPoint("temperature", "{\"any\":\"json\"}"));
+        fixture.drain();
+
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.tag("temperature").failureCount()).isZero();
+    }
+
     @Test
     void unconstrainedSchema_keepsExtremeValuesFlowingByteIdentically() {
         // The verified-robust guarantee is preserved: with no declared constraints, NaN/Infinity/extremes flow.

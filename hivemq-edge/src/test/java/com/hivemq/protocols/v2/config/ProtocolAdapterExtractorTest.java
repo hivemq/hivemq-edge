@@ -126,16 +126,57 @@ class ProtocolAdapterExtractorTest {
         assertThat(received.get().rejected()).isEmpty();
     }
 
+    // Sam #4: a duplicate adapter-id makes the document ambiguous. There is NO "keep the first declaration" winner
+    // any more — neither declaration is applied. For a NEW id, a single ERROR adapter is surfaced (below); for an
+    // already-running id, the last-known-good configuration is kept (below). The result must be identical for every
+    // ordering of the duplicates, for all validity combinations (valid/invalid).
+
     @Test
-    void duplicateAdapterIds_keepTheFirstDeclaration() {
-        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+    void duplicateNewId_bothValid_rejectsAsAmbiguousInAnyOrder() {
+        assertNewIdDuplicateRejectedInEveryOrder(
+                adapterWithTimeouts("dup", 30_000, 10_000), adapterWithTimeouts("dup", 60_000, 10_000));
+    }
 
-        final ProtocolAdapterEntity first = adapter("chaos-1");
-        final ProtocolAdapterEntity second = adapterWithTimeouts("chaos-1", 60_000, 10_000);
-        final Configurator.ConfigResult result = extractor.updateConfig(config(first, second));
+    @Test
+    void duplicateNewId_invalidThenValid_rejectsAsAmbiguousInAnyOrder() {
+        assertNewIdDuplicateRejectedInEveryOrder(
+                adapterWithTimeouts("dup", 5_000, 10_000), adapterWithTimeouts("dup", 30_000, 10_000));
+    }
 
-        assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
-        assertThat(extractor.getAllConfigs()).containsExactly(first);
+    @Test
+    void duplicateNewId_validThenInvalid_rejectsAsAmbiguousInAnyOrder() {
+        assertNewIdDuplicateRejectedInEveryOrder(
+                adapterWithTimeouts("dup", 30_000, 10_000), adapterWithTimeouts("dup", 5_000, 10_000));
+    }
+
+    @Test
+    void duplicateNewId_bothInvalid_rejectsAsAmbiguousInAnyOrder() {
+        assertNewIdDuplicateRejectedInEveryOrder(
+                adapterWithTimeouts("dup", 5_000, 10_000), adapterWithTimeouts("dup", 4_000, 10_000));
+    }
+
+    @Test
+    void duplicateRunningId_bothValid_keepsPreviousInAnyOrder() {
+        assertRunningIdDuplicateKeepsPreviousInEveryOrder(
+                adapterWithTimeouts("dup", 60_000, 10_000), adapterWithTimeouts("dup", 45_000, 10_000));
+    }
+
+    @Test
+    void duplicateRunningId_invalidThenValid_keepsPreviousInAnyOrder() {
+        assertRunningIdDuplicateKeepsPreviousInEveryOrder(
+                adapterWithTimeouts("dup", 5_000, 10_000), adapterWithTimeouts("dup", 60_000, 10_000));
+    }
+
+    @Test
+    void duplicateRunningId_validThenInvalid_keepsPreviousInAnyOrder() {
+        assertRunningIdDuplicateKeepsPreviousInEveryOrder(
+                adapterWithTimeouts("dup", 60_000, 10_000), adapterWithTimeouts("dup", 5_000, 10_000));
+    }
+
+    @Test
+    void duplicateRunningId_bothInvalid_keepsPreviousInAnyOrder() {
+        assertRunningIdDuplicateKeepsPreviousInEveryOrder(
+                adapterWithTimeouts("dup", 5_000, 10_000), adapterWithTimeouts("dup", 4_000, 10_000));
     }
 
     @Test
@@ -201,6 +242,57 @@ class ProtocolAdapterExtractorTest {
         extractor.updateConfig(config(adapterWithTimeouts("chaos-1", 5_000, 10_000)));
 
         assertThat(notifications.get()).isEqualTo(notificationsAfterRegistration + 2);
+    }
+
+    // Both entities must share the same (new, not-yet-running) adapter-id. Asserts that whichever order the two
+    // ambiguous duplicates appear in, the outcome is identical: nothing is applied and exactly one adapter is
+    // rejected — no "winner" is ever selected.
+    private static void assertNewIdDuplicateRejectedInEveryOrder(
+            final @NotNull ProtocolAdapterEntity a, final @NotNull ProtocolAdapterEntity b) {
+        assertNewIdDuplicateRejected(a, b);
+        assertNewIdDuplicateRejected(b, a);
+    }
+
+    private static void assertNewIdDuplicateRejected(
+            final @NotNull ProtocolAdapterEntity first, final @NotNull ProtocolAdapterEntity second) {
+        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
+        extractor.registerConsumer(received::set);
+
+        final Configurator.ConfigResult result = extractor.updateConfig(config(first, second));
+
+        assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
+        assertThat(extractor.getAllConfigs()).isEmpty();
+        assertThat(received.get().adapters()).isEmpty();
+        assertThat(received.get().rejected()).hasSize(1);
+        assertThat(received.get().rejected().getFirst().entity().getAdapterId()).isEqualTo("dup");
+        assertThat(received.get().rejected().getFirst().reason()).containsIgnoringCase("duplicate");
+    }
+
+    // Both entities must share an adapter-id that is already running from a prior updateConfig. Asserts that whichever
+    // order the two ambiguous duplicates appear in, the previously-applied (last-known-good) configuration is kept
+    // untouched and nothing is rejected.
+    private static void assertRunningIdDuplicateKeepsPreviousInEveryOrder(
+            final @NotNull ProtocolAdapterEntity a, final @NotNull ProtocolAdapterEntity b) {
+        assertRunningIdDuplicateKeepsPrevious(a, b);
+        assertRunningIdDuplicateKeepsPrevious(b, a);
+    }
+
+    private static void assertRunningIdDuplicateKeepsPrevious(
+            final @NotNull ProtocolAdapterEntity first, final @NotNull ProtocolAdapterEntity second) {
+        final ProtocolAdapterExtractor extractor = new ProtocolAdapterExtractor();
+        final ProtocolAdapterEntity previous = adapter("dup");
+        assertThat(extractor.updateConfig(config(previous))).isEqualTo(Configurator.ConfigResult.SUCCESS);
+        assertThat(extractor.getAllConfigs()).containsExactly(previous);
+
+        final AtomicReference<ProtocolAdapterConfigUpdate> received = new AtomicReference<>();
+        extractor.registerConsumer(received::set);
+        final Configurator.ConfigResult result = extractor.updateConfig(config(first, second));
+
+        assertThat(result).isEqualTo(Configurator.ConfigResult.SUCCESS);
+        assertThat(extractor.getAllConfigs()).containsExactly(previous);
+        assertThat(received.get().adapters()).containsExactly(previous);
+        assertThat(received.get().rejected()).isEmpty();
     }
 
     private static @NotNull HiveMQConfigEntity config(final @NotNull ProtocolAdapterEntity... adapters) {

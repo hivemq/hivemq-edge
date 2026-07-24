@@ -143,6 +143,55 @@ class V2ProtocolAdaptersParsingTest {
     }
 
     @Test
+    void omittedAccessElement_parsesToUnrestrictedAllYes() throws JAXBException {
+        // A tag with no <access> element at all: the field initializer AccessFlagsEntity.unrestricted() stands,
+        // so every effective capability is YES for backward compatibility (configs predating the access model).
+        final ProtocolAdapterEntity entity = parse("""
+                <protocol-adapter>
+                  <adapter-id>chaos-omitted-access</adapter-id>
+                  <protocol-id>chaos</protocol-id>
+                  <tags>
+                    <tag>
+                      <name>t1</name>
+                      <node-string>{}</node-string>
+                    </tag>
+                  </tags>
+                </protocol-adapter>
+                """);
+
+        final AccessFlagsEntity access = entity.getTags().getFirst().getAccess();
+        assertThat(access).isEqualTo(AccessFlagsEntity.unrestricted());
+        assertThat(access.getReadable()).isEqualTo(AccessTriState.YES);
+        assertThat(access.getWritable()).isEqualTo(AccessTriState.YES);
+        assertThat(access.getPollable()).isEqualTo(AccessTriState.YES);
+        assertThat(access.getSubscribable()).isEqualTo(AccessTriState.YES);
+    }
+
+    @Test
+    void partialAccessElement_defaultsOmittedChildFlagsToNo() throws JAXBException {
+        // A PRESENT <access> element declares the access model: any omitted child attribute defaults to NO.
+        final ProtocolAdapterEntity entity = parse("""
+                <protocol-adapter>
+                  <adapter-id>chaos-partial-access</adapter-id>
+                  <protocol-id>chaos</protocol-id>
+                  <tags>
+                    <tag>
+                      <name>t1</name>
+                      <node-string>{}</node-string>
+                      <access readable="YES"/>
+                    </tag>
+                  </tags>
+                </protocol-adapter>
+                """);
+
+        final AccessFlagsEntity access = entity.getTags().getFirst().getAccess();
+        assertThat(access.getReadable()).isEqualTo(AccessTriState.YES);
+        assertThat(access.getWritable()).isEqualTo(AccessTriState.NO);
+        assertThat(access.getPollable()).isEqualTo(AccessTriState.NO);
+        assertThat(access.getSubscribable()).isEqualTo(AccessTriState.NO);
+    }
+
+    @Test
     void aConfigWithoutTheSection_yieldsAnEmptyList() {
         // touchpoint 1: absent ⇒ empty list, so old configs parse unchanged
         assertThat(new HiveMQConfigEntity().getV2().getProtocolAdapters()).isEmpty();

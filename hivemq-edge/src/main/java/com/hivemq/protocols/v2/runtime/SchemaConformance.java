@@ -93,13 +93,45 @@ public final class SchemaConformance {
             if (unsigned && bigInteger.bitLength() > 64) {
                 return "value " + value + " is not representable as a 64-bit ULONG";
             }
-            return rangeViolation(bigInteger.doubleValue(), scalar);
+            return integralRangeViolation(bigInteger, scalar);
         }
         final long longValue = ((Number) value).longValue();
         if (unsigned && longValue < 0) {
             return "value " + value + " is negative but the declared type is ULONG";
         }
-        return rangeViolation(longValue, scalar);
+        return integralRangeViolation(BigInteger.valueOf(longValue), scalar);
+    }
+
+    /**
+     * Exact range check for INTEGRAL values (LONG, ULONG). Value and bounds are compared as {@link BigInteger} so
+     * adjacent 64-bit integers above 2^53 stay distinct — a {@code double} collapses them onto the same value and
+     * would mis-report a violation at the boundary. Semantics match {@link #rangeViolation}: inclusive minimum,
+     * exclusive maximum.
+     */
+    private static @Nullable String integralRangeViolation(
+            final @NotNull BigInteger value, final @NotNull ScalarSchema scalar) {
+        if (scalar.minimum() != null && value.compareTo(toBigInteger(scalar.minimum())) < 0) {
+            return "value " + value + " is below the declared minimum " + scalar.minimum();
+        }
+        if (scalar.maximum() != null && value.compareTo(toBigInteger(scalar.maximum())) >= 0) {
+            return "value " + value + " is not below the declared (exclusive) maximum " + scalar.maximum();
+        }
+        return null;
+    }
+
+    /**
+     * Convert an integral bound to an exact {@link BigInteger}. Bounds on integral scalars are themselves integral;
+     * {@code longValue()} is exact for the fixed-width carriers and {@code BigInteger}/{@code BigDecimal} are taken
+     * verbatim — no {@code double} round-trip, so large boundaries survive intact.
+     */
+    private static @NotNull BigInteger toBigInteger(final @NotNull Number bound) {
+        if (bound instanceof final BigInteger bigInteger) {
+            return bigInteger;
+        }
+        if (bound instanceof final java.math.BigDecimal bigDecimal) {
+            return bigDecimal.toBigInteger();
+        }
+        return BigInteger.valueOf(bound.longValue());
     }
 
     private static @Nullable String rangeViolation(final double value, final @NotNull ScalarSchema scalar) {
