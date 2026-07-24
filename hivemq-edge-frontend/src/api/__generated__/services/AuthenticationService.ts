@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { ApiBearerToken } from '../models/ApiBearerToken';
 import type { AuthMode } from '../models/AuthMode';
+import type { OidcLoginRedirect } from '../models/OidcLoginRedirect';
 import type { UsernamePasswordCredentials } from '../models/UsernamePasswordCredentials';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -79,16 +80,15 @@ export class AuthenticationService {
     }
     /**
      * Begin the OIDC login flow.
-     * Begin the OIDC authorization-code flow. Redirects the browser to the configured Identity Provider's authorization endpoint with a freshly minted state, nonce, and PKCE challenge.
-     * @returns void
+     * Begin the OIDC authorization-code flow. Mints a fresh state, nonce, and PKCE challenge and returns the Identity Provider authorization URL for the SPA to open. The SPA opens this URL in the login popup, rather than this endpoint redirecting, so that a start-time failure is a normal error response the SPA can present instead of a stranded popup.
+     * @returns OidcLoginRedirect The Identity Provider authorization URL to open.
      * @throws ApiError
      */
-    public oidcLogin(): CancelablePromise<void> {
+    public oidcLogin(): CancelablePromise<OidcLoginRedirect> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/auth/oidc/login',
             errors: {
-                302: `Redirect to the Identity Provider's authorization endpoint.`,
                 503: `OIDC is not configured on this instance, or the Identity Provider could not be reached. The \`detail\` field distinguishes the two.`,
             },
         });

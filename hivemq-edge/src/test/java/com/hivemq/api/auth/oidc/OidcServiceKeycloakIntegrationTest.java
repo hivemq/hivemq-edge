@@ -26,6 +26,7 @@ import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.edge.api.model.OidcLoginRedirect;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
@@ -202,10 +203,10 @@ class OidcServiceKeycloakIntegrationTest {
                 .build();
         final Map<String, String> cookies = new java.util.HashMap<>();
 
-        // 1. beginLogin() → 302 to Keycloak's authorization endpoint.
+        // 1. beginLogin() → 200 with the Keycloak authorization URL for the SPA to open.
         final Response beginResponse = oidcService.beginLogin();
-        assertThat(beginResponse.getStatus()).isEqualTo(302);
-        final URI authUri = beginResponse.getLocation();
+        assertThat(beginResponse.getStatus()).isEqualTo(200);
+        final URI authUri = URI.create(((OidcLoginRedirect) beginResponse.getEntity()).getAuthorizeUrl());
 
         // 2. GET the Keycloak login page, following redirects by hand and collecting cookies.
         final HttpResponse<String> loginPage = getFollowingRedirects(http, authUri, cookies);

@@ -28,9 +28,13 @@ const postFromPopup = (popup: Window, opener: Window, data: unknown) => {
   evalInPopup(`parent.postMessage(${JSON.stringify(data)}, ${JSON.stringify(opener.location.origin)})`)
 }
 
-// Mounts the SSO login with window.open stubbed to return a real popup window, clicks the SSO button,
-// then runs `act` to model what the callback page does.
+// Mounts the SSO login with window.open stubbed to return a real popup window, stubs the login endpoint
+// to return an authorize URL, clicks the SSO button, then runs `act` to model what the callback posts.
 const withPopup = (act: (win: Window, popup: Window) => void) => {
+  // The modelled popup is a same-origin iframe and postFromPopup evaluates inside it, which navigating
+  // to a real (cross-origin) IdP URL would block. Use about:blank so the frame stays same-origin; the
+  // navigation itself is covered separately by the "navigate to the authorization URL" test.
+  cy.interceptApi(API_ROUTES.authentication.oidcLogin, { authorizeUrl: 'about:blank' }).as('oidcLogin')
   cy.window().then((win) => {
     const frame = makePopupWindow(win)
     cy.wrap(null).then(() => {
@@ -40,6 +44,7 @@ const withPopup = (act: (win: Window, popup: Window) => void) => {
       cy.mountWithProviders(<Login ssoEnabled />)
       cy.getByTestId('loginPage-sso').click()
       cy.get('@windowOpen').should('have.been.calledOnce')
+      cy.wait('@oidcLogin')
       cy.then(() => act(win, popup))
     })
   })
@@ -96,8 +101,32 @@ describe('Login', () => {
       cy.get('form').should('not.exist')
     })
 
-    it('should open the OIDC login popup when the SSO button is clicked', () => {
-      const stubbedPopup = { closed: false, close: cy.stub() }
+    it('should open a popup and navigate it to the authorization URL from the backend', () => {
+      cy.interceptApi(API_ROUTES.authentication.oidcLogin, {
+        authorizeUrl: 'https://idp.example.com/authorize',
+      }).as('oidcLogin')
+      const stubbedPopup = { closed: false, close: cy.stub(), location: { href: '' } }
+      cy.mountWithProviders(<Login ssoEnabled />, {
+        wrapper: ({ children }) => {
+          // The popup is opened blank (on the click) and navigated once the backend returns the URL.
+          cy.stub(window, 'open').as('windowOpen').returns(stubbedPopup)
+          return <>{children}</>
+        },
+      })
+
+      cy.getByTestId('loginPage-sso').click()
+      cy.get('@windowOpen').should('have.been.calledOnce').its('firstCall.args.0').should('eq', '')
+      cy.wait('@oidcLogin')
+      cy.then(() => {
+        expect(stubbedPopup.location.href).to.eq('https://idp.example.com/authorize')
+      })
+    })
+
+    it('should settle with an error when the login endpoint fails, not strand the popup', () => {
+      // 02-05: a start-time failure (OIDC not configured / IdP unreachable) must close the popup and
+      // surface an error, rather than leaving the popup on a raw response with the page hanging.
+      cy.interceptApi(API_ROUTES.authentication.oidcLogin, { statusCode: 503 }).as('oidcLogin')
+      const stubbedPopup = { closed: false, close: cy.stub(), location: { href: '' } }
       cy.mountWithProviders(<Login ssoEnabled />, {
         wrapper: ({ children }) => {
           cy.stub(window, 'open').as('windowOpen').returns(stubbedPopup)
@@ -106,10 +135,11 @@ describe('Login', () => {
       })
 
       cy.getByTestId('loginPage-sso').click()
-      cy.get('@windowOpen')
-        .should('have.been.calledOnce')
-        .its('firstCall.args.0')
-        .should('contain', '/api/v1/auth/oidc/login')
+      cy.wait('@oidcLogin')
+      cy.get("[role='alert']").should('be.visible')
+      cy.then(() => {
+        expect(stubbedPopup.close).to.have.been.called
+      })
     })
 
     it('should sign in when the popup posts back a valid token', () => {

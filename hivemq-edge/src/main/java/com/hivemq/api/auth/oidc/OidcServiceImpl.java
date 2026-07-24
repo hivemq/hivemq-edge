@@ -21,6 +21,7 @@ import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.api.errors.authentication.OidcUnavailableError;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.edge.api.model.OidcLoginRedirect;
 import com.hivemq.util.ErrorResponseUtil;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -172,8 +173,11 @@ public class OidcServiceImpl implements OidcService {
                 .codeChallenge(codeVerifier, CodeChallengeMethod.S256)
                 .build();
 
-        return Response.status(Response.Status.FOUND)
-                .location(authRequest.toURI())
+        // Return the authorization URL for the SPA to open, rather than redirecting. A start-time failure
+        // (config missing, IdP unreachable) is then a normal error response the SPA presents, instead of a
+        // popup stranded on this endpoint's response.
+        return Response.ok(
+                        new OidcLoginRedirect().authorizeUrl(authRequest.toURI().toString()))
                 .build();
     }
 

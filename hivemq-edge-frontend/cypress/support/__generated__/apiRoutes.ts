@@ -62,6 +62,7 @@ import type {
   NorthboundMappingList,
   NorthboundMappingOwnerList,
   NotificationList,
+  OidcLoginRedirect,
   PayloadSampleList,
   PolicySchema,
   ProtocolAdaptersList,
@@ -203,7 +204,7 @@ export const API_ROUTES = {
     /**
      * @see {@link AuthenticationService.oidcLogin}
      */
-    oidcLogin: route<void>('GET', '/api/v1/auth/oidc/login'),
+    oidcLogin: route<OidcLoginRedirect>('GET', '/api/v1/auth/oidc/login'),
 
     /**
      * @see {@link AuthenticationService.oidcCallback}
@@ -238,7 +239,7 @@ export const API_ROUTES = {
     /**
      * @see {@link AuthenticationEndpointService.oidcLogin}
      */
-    oidcLogin: route<void>('GET', '/api/v1/auth/oidc/login'),
+    oidcLogin: route<OidcLoginRedirect>('GET', '/api/v1/auth/oidc/login'),
 
     /**
      * @see {@link AuthenticationEndpointService.oidcCallback}

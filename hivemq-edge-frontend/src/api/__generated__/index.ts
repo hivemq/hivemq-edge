@@ -126,6 +126,7 @@ export type { NorthboundMappingOwnerList } from './models/NorthboundMappingOwner
 export { Notification } from './models/Notification';
 export type { NotificationList } from './models/NotificationList';
 export { ObjectNode } from './models/ObjectNode';
+export type { OidcLoginRedirect } from './models/OidcLoginRedirect';
 export type { PaginationCursor } from './models/PaginationCursor';
 export { Payload } from './models/Payload';
 export type { PayloadSample } from './models/PayloadSample';
@@ -310,6 +311,7 @@ export { $NorthboundMappingOwnerList } from './schemas/$NorthboundMappingOwnerLi
 export { $Notification } from './schemas/$Notification';
 export { $NotificationList } from './schemas/$NotificationList';
 export { $ObjectNode } from './schemas/$ObjectNode';
+export { $OidcLoginRedirect } from './schemas/$OidcLoginRedirect';
 export { $PaginationCursor } from './schemas/$PaginationCursor';
 export { $Payload } from './schemas/$Payload';
 export { $PayloadSample } from './schemas/$PayloadSample';
