@@ -85,9 +85,8 @@ import org.slf4j.LoggerFactory;
  * The callback validates the ID token, maps the IdP role claim onto Edge roles, and reuses the
  * existing {@link ITokenGenerator} to mint the HiveMQ Edge JWT — no new token-issuance code.
  * <p>
- * The configuration is read from {@link ApiConfigurationService} on each use, so this service
- * reflects the currently applied config and correctly reports {@link #isEnabled()} as {@code false}
- * when OIDC is not configured.
+ * The configuration is read from {@link ApiConfigurationService} on each use, so this service always
+ * reflects the currently applied config.
  */
 @Singleton
 public class OidcServiceImpl implements OidcService {
@@ -134,11 +133,6 @@ public class OidcServiceImpl implements OidcService {
         this.apiConfigurationService = apiConfigurationService;
         this.tokenGenerator = tokenGenerator;
         this.stateStore = stateStore;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return apiConfigurationService.getOidcConfiguration() != null;
     }
 
     @Override

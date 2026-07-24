@@ -31,9 +31,6 @@ public enum OidcErrorCode {
     /** The callback did not carry an authorization code and state. */
     INVALID_REQUEST("invalid-request"),
 
-    /** OIDC is not configured on this Edge instance. */
-    NOT_CONFIGURED("not-configured"),
-
     /** The login state is unknown or expired — typically a stale or replayed callback. */
     INVALID_STATE("invalid-state"),
 

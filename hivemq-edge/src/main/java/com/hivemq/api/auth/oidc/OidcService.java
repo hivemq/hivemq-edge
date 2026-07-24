@@ -20,28 +20,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Encapsulates the OpenID Connect authorization-code flow: IdP discovery, the login redirect
+ * Encapsulates the OpenID Connect authorization-code flow: IdP discovery, the login start
  * (with state / nonce / PKCE), and the callback (code exchange, ID-token validation, role
  * mapping, and issuance of a HiveMQ Edge JWT).
  * <p>
- * Implementations must tolerate OIDC not being configured — {@link #isEnabled()} reports whether
- * the flow is available, and the flow methods return an appropriate error {@link Response} when it
- * is not. All protocol-specific (Nimbus) types stay inside the implementation; the resource layer
- * deals only in JAX-RS {@link Response}s.
+ * Implementations must tolerate OIDC not being configured — the flow methods return an appropriate
+ * error {@link Response} when it is not. All protocol-specific (Nimbus) types stay inside the
+ * implementation; the resource layer deals only in JAX-RS {@link Response}s.
  */
 public interface OidcService {
 
     /**
-     * @return {@code true} if OIDC authentication is configured and available.
-     */
-    boolean isEnabled();
-
-    /**
-     * Begins the login flow: mints state / nonce / PKCE, stores them, and builds the redirect to the
-     * IdP authorization endpoint.
+     * Begins the login flow: mints state / nonce / PKCE, stores them, and builds the IdP authorization
+     * URL for the SPA to open.
      *
-     * @return a 302 redirect to the IdP, or an error response (503 if not configured / IdP
-     *         unreachable, 429 if the state store is at capacity).
+     * @return a 200 carrying the authorization URL, or a 503 error response if OIDC is not configured or
+     *         the Identity Provider is unreachable.
      */
     @NotNull
     Response beginLogin();
