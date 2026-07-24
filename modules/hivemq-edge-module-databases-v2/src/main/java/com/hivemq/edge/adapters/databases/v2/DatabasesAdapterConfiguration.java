@@ -83,21 +83,25 @@ public record DatabasesAdapterConfiguration(
     /**
      * Report an explicitly-configured but unrecognized database engine, so the adapter can surface it as a clear
      * connection error at connect time instead of silently falling back to the default engine and attempting a
-     * connection through the wrong JDBC driver. An absent or non-textual {@code type} is not reported here — the
-     * framework projects {@code type} as a required field, and {@link #parse} applies the default engine for an
-     * absent value.
+     * connection through the wrong JDBC driver. An absent {@code type} is not reported — the framework projects
+     * {@code type} as a required field, and {@link #parse} applies the default engine for an absent value. A
+     * present-but-non-textual {@code type} (e.g. {@code {"type": 123}}) is reported, because {@link #typeField}
+     * would otherwise default it to POSTGRESQL and open a pool against the configured host under the wrong engine.
      *
      * @param adapterConfig the reused v1 configuration value handed to the adapter.
      * @param objectMapper  the mapper used to read the configuration map.
      * @return a human-readable description of the unsupported engine, or {@code null} when the engine is recognized
-     *         (or absent/non-textual).
+     *         (or absent).
      */
     static @Nullable String unsupportedTypeError(
             final @NotNull DataPoint adapterConfig, final @NotNull ObjectMapper objectMapper) {
         final JsonNode value =
                 objectMapper.valueToTree(adapterConfig.getTagValue()).get("type");
-        if (value == null || !value.isTextual()) {
+        if (value == null) {
             return null;
+        }
+        if (!value.isTextual()) {
+            return "database type must be a string (expected one of POSTGRESQL, MYSQL, MSSQL)";
         }
         final String raw = value.textValue();
         for (final DatabaseType type : DatabaseType.values()) {

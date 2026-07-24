@@ -150,6 +150,16 @@ class DatabasesAdapterConfigurationParseTest {
     }
 
     @Test
+    void aPresentButNonTextualEngineIsReportedInsteadOfSilentlyBecomingPostgresql() {
+        // A non-textual type ({"type": 123}) is not caught by the unknown-name loop; without an explicit report it
+        // would fall through to the POSTGRESQL default in typeField and open a pool against the configured host under
+        // the wrong engine. Surface it as a clear connection error instead.
+        assertThat(DatabasesAdapterConfiguration.unsupportedTypeError(configOf(Map.of("type", 123)), objectMapper))
+                .isNotNull()
+                .contains("POSTGRESQL", "MYSQL", "MSSQL");
+    }
+
+    @Test
     void aCleanMysqlConfigurationHasNoUrlIdentifierError() {
         assertThat(mysqlConfiguration("database.example.com", "warehouse").mysqlUrlIdentifierError())
                 .isNull();
