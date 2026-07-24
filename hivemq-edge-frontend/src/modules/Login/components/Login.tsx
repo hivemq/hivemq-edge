@@ -199,7 +199,7 @@ const Login: FC<{
         </Box>
       )}
 
-      {(!first?.firstUseDescription || !first?.firstUseTitle) && (
+      {localEnabled && (!first?.firstUseDescription || !first?.firstUseTitle) && (
         <Text fontFamily="heading" textAlign="center">
           {t('login.password.support')}
         </Text>

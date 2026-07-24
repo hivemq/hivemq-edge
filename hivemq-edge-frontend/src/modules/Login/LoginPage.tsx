@@ -15,12 +15,19 @@ import EdgeAside from '@/modules/Login/components/EdgeAside.tsx'
 import Login from '@/modules/Login/components/Login.tsx'
 
 const LoginPage: FC = () => {
-  const { data, isLoading, error } = useGetConfiguration()
-  const { data: authMode } = useGetAuthMode()
+  const { data, isLoading: isConfigLoading, error: configError } = useGetConfiguration()
+  const { data: authMode, isLoading: isAuthModeLoading, error: authModeError } = useGetAuthMode()
   const { t } = useTranslation()
   const { colorMode } = useColorMode()
   const bgColour = useColorModeValue('brand.500', 'brand.700')
   const [acceptNotice, setAcceptNotice] = useState<boolean | null>(null)
+
+  // Both the configuration and the authentication mode must be known before a login can be shown: the
+  // mode decides which mechanisms exist, so we wait for it rather than assuming a default. Frontend and
+  // backend ship together, so a failed /auth/mode call is a broken deployment, not an older server —
+  // surface it as an error instead of silently claiming local login (which the backend may reject).
+  const isLoading = isConfigLoading || isAuthModeLoading
+  const error = configError ?? authModeError
 
   const showNotice = useMemo(() => {
     if (isLoading) return undefined
@@ -30,8 +37,7 @@ const LoginPage: FC = () => {
     return undefined
   }, [acceptNotice, data, isLoading])
 
-  // Default to local-only when the auth-mode call has not resolved yet.
-  const modes = authMode?.modes ?? ['USERNAME_PASSWORD']
+  const modes = authMode?.modes ?? []
   const ssoEnabled = modes.includes('OPEN_ID')
   const localEnabled = modes.includes('USERNAME_PASSWORD')
 
@@ -73,7 +79,7 @@ const LoginPage: FC = () => {
                 }}
               />
             )}
-            {!showNotice && data && (
+            {!showNotice && data && authMode && (
               <Login
                 first={data?.firstUseInformation}
                 preLoadError={error}
