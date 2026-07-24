@@ -323,8 +323,15 @@ public class ConfigFileReaderWriter {
     }
 
     public @NotNull HiveMQConfigEntity applyConfig() {
-        if (loadConfigFromXML(getConfigFileOrFail()) != ReloadOutcome.APPLIED) {
-            log.error("Unable to apply the given configuration.");
+        final ReloadOutcome outcome = loadConfigFromXML(getConfigFileOrFail());
+        if (outcome != ReloadOutcome.APPLIED) {
+            // A REJECTED_INVALID load has already logged the detailed validation errors inside
+            // loadConfigFromXML; emitting a second, generic line here would bury that detail (which is the
+            // message operators — and PulseExtractorTest — rely on being the surfaced one). Only NEEDS_RESTART
+            // has nothing more specific to report.
+            if (outcome == ReloadOutcome.NEEDS_RESTART) {
+                log.error("Unable to apply the given configuration.");
+            }
             throw new UnrecoverableException(false);
         }
         final HiveMQConfigEntity entity = configEntity.get();
