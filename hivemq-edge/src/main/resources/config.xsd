@@ -1247,6 +1247,27 @@
                                 </xs:sequence>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="truststore" minOccurs="0">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="truststore-path" type="nonEmptyString" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to the truststore holding the CA that signs the Identity Provider certificate. If not specified, the system default CA certificates are used.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-password" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Password for the truststore.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-type" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Type of truststore (e.g., JKS, PKCS12).</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:all>
                 </xs:complexType>
             </xs:element>

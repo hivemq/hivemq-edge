@@ -65,6 +65,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -197,6 +198,11 @@ public class OidcServiceImpl implements OidcService {
             final HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
             tokenHttpRequest.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MILLIS);
             tokenHttpRequest.setReadTimeout(HTTP_READ_TIMEOUT_MILLIS);
+            // Use the configured truststore for the token TLS connection, if any; otherwise the JVM default.
+            final SSLSocketFactory idpSslSocketFactory = config.getIdpSslSocketFactory();
+            if (idpSslSocketFactory != null) {
+                tokenHttpRequest.setSSLSocketFactory(idpSslSocketFactory);
+            }
             final TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenHttpRequest.send());
             if (!tokenResponse.indicatesSuccess()) {
                 log.info(
@@ -214,7 +220,7 @@ public class OidcServiceImpl implements OidcService {
             final IDTokenValidator validator = new IDTokenValidator(
                     new Issuer(config.getIssuerUri()),
                     new ClientID(config.getClientId()),
-                    new JWSVerificationKeySelector<>(acceptedAlgorithms(config), jwkSource(metadata)),
+                    new JWSVerificationKeySelector<>(acceptedAlgorithms(config), jwkSource(config, metadata)),
                     null);
             final IDTokenClaimsSet claims = validator.validate(idToken, new Nonce(entry.nonce()));
 
@@ -265,20 +271,25 @@ public class OidcServiceImpl implements OidcService {
      * A remote JWK source for the provider's JWKS, fetched through the shared resource retriever
      * (connect/read timeouts and a size cap), so key retrieval is bounded consistently.
      */
-    private static @NotNull JWKSource<SecurityContext> jwkSource(final @NotNull OIDCProviderMetadata metadata)
-            throws Exception {
-        return JWKSourceBuilder.<SecurityContext>create(metadata.getJWKSetURI().toURL(), resourceRetriever())
+    private static @NotNull JWKSource<SecurityContext> jwkSource(
+            final @NotNull OidcConfiguration config, final @NotNull OIDCProviderMetadata metadata) throws Exception {
+        return JWKSourceBuilder.<SecurityContext>create(metadata.getJWKSetURI().toURL(), resourceRetriever(config))
                 .build();
     }
 
     /**
      * The resource retriever used for the GET-style IdP fetches (discovery and JWKS): connect/read
      * timeouts and a response-body size cap, all from the Nimbus library. Redirects are disabled — an
-     * IdP endpoint answers directly, and following a redirect would reopen an unbounded fetch.
+     * IdP endpoint answers directly, and following a redirect would reopen an unbounded fetch. When a
+     * truststore is configured its {@link SSLSocketFactory} is used; otherwise the JVM default CAs apply.
      */
-    private static @NotNull DefaultResourceRetriever resourceRetriever() {
+    private static @NotNull DefaultResourceRetriever resourceRetriever(final @NotNull OidcConfiguration config) {
         return new DefaultResourceRetriever(
-                HTTP_CONNECT_TIMEOUT_MILLIS, HTTP_READ_TIMEOUT_MILLIS, JWKS_SIZE_LIMIT_BYTES, false);
+                HTTP_CONNECT_TIMEOUT_MILLIS,
+                HTTP_READ_TIMEOUT_MILLIS,
+                JWKS_SIZE_LIMIT_BYTES,
+                false,
+                config.getIdpSslSocketFactory());
     }
 
     /**
@@ -401,7 +412,7 @@ public class OidcServiceImpl implements OidcService {
         // unbounded buffer.
         final URL discoveryUrl = OIDCProviderMetadata.resolveURL(new Issuer(issuer));
         final String discoveryJson =
-                resourceRetriever().retrieveResource(discoveryUrl).getContent();
+                resourceRetriever(config).retrieveResource(discoveryUrl).getContent();
         final OIDCProviderMetadata metadata = OIDCProviderMetadata.parse(discoveryJson);
 
         cachedMetadata = metadata;

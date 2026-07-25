@@ -20,10 +20,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
+import com.hivemq.configuration.entity.api.oidc.OidcTruststoreEntity;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Unit tests for {@link OidcConfiguration#fromEntity}.
@@ -320,6 +326,68 @@ class OidcConfigurationTest {
                         new OidcRoleMappingEntity("Team-Admins", "user"))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("duplicate");
+    }
+
+    @Test
+    void fromEntity_noTruststore_usesJvmDefault() {
+        // Absent <truststore> means the IdP certificate is validated against the JVM default CAs: no factory.
+        final OidcConfiguration config =
+                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));
+
+        assertThat(config.getIdpSslSocketFactory()).isNull();
+    }
+
+    @Test
+    void fromEntity_configuredTruststore_buildsAnSslSocketFactory(@TempDir final Path tempDir) throws Exception {
+        final Path truststorePath = writeEmptyTruststore(tempDir, "truststore.p12", "changeit");
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "truststore", truststore(truststorePath.toString(), "changeit", "PKCS12"));
+
+        final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
+
+        assertThat(config.getIdpSslSocketFactory()).isNotNull();
+    }
+
+    @Test
+    void fromEntity_missingTruststoreFile_throwsAConfigurationError() {
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "truststore", truststore("/no/such/truststore.p12", "changeit", "PKCS12"));
+
+        // A missing file is a configuration error surfaced at startup, not a silent fallback to the JVM CAs.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("truststore");
+    }
+
+    @Test
+    void fromEntity_wrongTruststorePassword_throwsAConfigurationError(@TempDir final Path tempDir) throws Exception {
+        final Path truststorePath = writeEmptyTruststore(tempDir, "truststore.p12", "changeit");
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "truststore", truststore(truststorePath.toString(), "wrong-password", "PKCS12"));
+
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("truststore");
+    }
+
+    private static @org.jetbrains.annotations.NotNull OidcTruststoreEntity truststore(
+            final String path, final String password, final String type) {
+        final OidcTruststoreEntity truststore = new OidcTruststoreEntity();
+        set(truststore, "truststorePath", path);
+        set(truststore, "truststorePassword", password);
+        set(truststore, "truststoreType", type);
+        return truststore;
+    }
+
+    private static @org.jetbrains.annotations.NotNull Path writeEmptyTruststore(
+            final Path dir, final String name, final String password) throws Exception {
+        final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(null, null);
+        final Path path = dir.resolve(name);
+        try (final OutputStream out = Files.newOutputStream(path)) {
+            keyStore.store(out, password.toCharArray());
+        }
+        return path;
     }
 
     // -- helpers: OidcAuthenticationEntity fields are populated by JAXB, so set them reflectively for tests.

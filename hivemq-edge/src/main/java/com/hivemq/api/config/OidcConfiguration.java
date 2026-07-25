@@ -19,15 +19,25 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
+import com.hivemq.configuration.entity.api.oidc.OidcTruststoreEntity;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -57,6 +67,8 @@ public class OidcConfiguration {
     // non-null => strict mode: only mapped IdP roles produce an Edge role. Guaranteed non-empty.
     private final @Nullable Map<String, String> roleMappings;
     private final @NotNull Set<String> idTokenSigningAlgorithms;
+    // null => no <truststore> configured: the IdP TLS certificate is validated against the JVM default CAs.
+    private final @Nullable SSLSocketFactory idpSslSocketFactory;
 
     public OidcConfiguration(
             final @NotNull URI issuerUri,
@@ -67,6 +79,28 @@ public class OidcConfiguration {
             final @NotNull List<String> extraScopes,
             final @Nullable Map<String, String> roleMappings,
             final @NotNull Set<String> idTokenSigningAlgorithms) {
+        this(
+                issuerUri,
+                clientId,
+                clientSecret,
+                redirectUri,
+                roleClaimName,
+                extraScopes,
+                roleMappings,
+                idTokenSigningAlgorithms,
+                null);
+    }
+
+    public OidcConfiguration(
+            final @NotNull URI issuerUri,
+            final @NotNull String clientId,
+            final @Nullable String clientSecret,
+            final @NotNull URI redirectUri,
+            final @NotNull String roleClaimName,
+            final @NotNull List<String> extraScopes,
+            final @Nullable Map<String, String> roleMappings,
+            final @NotNull Set<String> idTokenSigningAlgorithms,
+            final @Nullable SSLSocketFactory idpSslSocketFactory) {
         this.issuerUri = Preconditions.checkNotNull(issuerUri);
         this.clientId = Preconditions.checkNotNull(clientId);
         this.clientSecret = clientSecret;
@@ -75,6 +109,7 @@ public class OidcConfiguration {
         this.idTokenSigningAlgorithms = Set.copyOf(idTokenSigningAlgorithms);
         this.extraScopes = List.copyOf(extraScopes);
         this.roleMappings = roleMappings == null ? null : Map.copyOf(roleMappings);
+        this.idpSslSocketFactory = idpSslSocketFactory;
     }
 
     /**
@@ -157,6 +192,10 @@ public class OidcConfiguration {
                 ? OidcSigningAlgorithms.DEFAULT
                 : OidcSigningAlgorithms.validate(configuredAlgorithms);
 
+        // Optional truststore for the IdP TLS connection. Absent, or present with no path, means the IdP
+        // certificate is validated against the JVM default CA certificates.
+        final SSLSocketFactory idpSslSocketFactory = buildSslSocketFactory(entity.getTruststore());
+
         return new OidcConfiguration(
                 issuerUri,
                 clientId.trim(),
@@ -165,7 +204,44 @@ public class OidcConfiguration {
                 roleClaimName,
                 scopes,
                 mappings,
-                signingAlgorithms);
+                signingAlgorithms,
+                idpSslSocketFactory);
+    }
+
+    /**
+     * Builds the {@link SSLSocketFactory} used for the IdP TLS connection from the configured truststore,
+     * mirroring the LDAP truststore behavior. Returns {@code null} when no truststore (or no path) is
+     * configured, so the caller falls back to the JVM default CA certificates. A missing file or wrong
+     * password is a configuration error surfaced at startup, not a silent fallback.
+     */
+    private static @Nullable SSLSocketFactory buildSslSocketFactory(final @Nullable OidcTruststoreEntity truststore) {
+        if (truststore == null
+                || truststore.getTruststorePath() == null
+                || truststore.getTruststorePath().isBlank()) {
+            return null;
+        }
+        final String path = truststore.getTruststorePath().trim();
+        final String type = truststore.getTruststoreType() != null
+                        && !truststore.getTruststoreType().isBlank()
+                ? truststore.getTruststoreType().trim()
+                : KeyStore.getDefaultType();
+        final char[] password = truststore.getTruststorePassword() != null
+                ? truststore.getTruststorePassword().toCharArray()
+                : null;
+        try {
+            final KeyStore keyStore = KeyStore.getInstance(type);
+            try (final InputStream in = Files.newInputStream(Path.of(path))) {
+                keyStore.load(in, password);
+            }
+            final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(keyStore);
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, tmf.getTrustManagers(), null);
+            return sslContext.getSocketFactory();
+        } catch (final IOException | GeneralSecurityException e) {
+            throw new IllegalArgumentException(
+                    String.format("OIDC truststore '%s' could not be loaded: %s", path, e.getMessage()), e);
+        }
     }
 
     /**
@@ -348,6 +424,14 @@ public class OidcConfiguration {
      */
     public @NotNull Set<String> getIdTokenSigningAlgorithms() {
         return idTokenSigningAlgorithms;
+    }
+
+    /**
+     * The {@link SSLSocketFactory} for the IdP TLS connection, or {@code null} to use the JVM default CA
+     * certificates. Built once from the configured truststore.
+     */
+    public @Nullable SSLSocketFactory getIdpSslSocketFactory() {
+        return idpSslSocketFactory;
     }
 
     @Override

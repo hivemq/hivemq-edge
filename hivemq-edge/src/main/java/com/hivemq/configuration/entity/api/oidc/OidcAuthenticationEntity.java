@@ -95,6 +95,9 @@ public class OidcAuthenticationEntity {
     @XmlElement(name = "id-token-signing-algorithm")
     private @Nullable List<String> idTokenSigningAlgorithms = null;
 
+    @XmlElement(name = "truststore")
+    private @Nullable OidcTruststoreEntity truststore = null;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -131,6 +134,10 @@ public class OidcAuthenticationEntity {
         return idTokenSigningAlgorithms;
     }
 
+    public @Nullable OidcTruststoreEntity getTruststore() {
+        return truststore;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof OidcAuthenticationEntity that)) {
@@ -144,7 +151,8 @@ public class OidcAuthenticationEntity {
                 && Objects.equals(getRoleClaimName(), that.getRoleClaimName())
                 && Objects.equals(getExtraScopes(), that.getExtraScopes())
                 && Objects.equals(getRoleMappings(), that.getRoleMappings())
-                && Objects.equals(getIdTokenSigningAlgorithms(), that.getIdTokenSigningAlgorithms());
+                && Objects.equals(getIdTokenSigningAlgorithms(), that.getIdTokenSigningAlgorithms())
+                && Objects.equals(getTruststore(), that.getTruststore());
     }
 
     @Override
@@ -158,6 +166,7 @@ public class OidcAuthenticationEntity {
                 getRoleClaimName(),
                 getExtraScopes(),
                 getRoleMappings(),
-                getIdTokenSigningAlgorithms());
+                getIdTokenSigningAlgorithms(),
+                getTruststore());
     }
 }
