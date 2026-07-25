@@ -98,6 +98,9 @@ public class OidcAuthenticationEntity {
     @XmlElement(name = "truststore")
     private @Nullable OidcTruststoreEntity truststore = null;
 
+    @XmlElement(name = "connection-timeout", defaultValue = "5000")
+    private int connectionTimeoutMillis = 5000;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -138,12 +141,17 @@ public class OidcAuthenticationEntity {
         return truststore;
     }
 
+    public int getConnectionTimeoutMillis() {
+        return connectionTimeoutMillis;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof OidcAuthenticationEntity that)) {
             return false;
         }
         return enabled == that.enabled
+                && connectionTimeoutMillis == that.connectionTimeoutMillis
                 && Objects.equals(getIssuerUri(), that.getIssuerUri())
                 && Objects.equals(getClientId(), that.getClientId())
                 && Objects.equals(getClientSecret(), that.getClientSecret())
@@ -159,6 +167,7 @@ public class OidcAuthenticationEntity {
     public int hashCode() {
         return Objects.hash(
                 enabled,
+                connectionTimeoutMillis,
                 getIssuerUri(),
                 getClientId(),
                 getClientSecret(),

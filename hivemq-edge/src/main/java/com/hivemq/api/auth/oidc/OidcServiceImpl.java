@@ -88,11 +88,9 @@ public class OidcServiceImpl implements OidcService {
 
     private static final long DISCOVERY_TTL_MILLIS = 60 * 60 * 1000L; // 1 hour
 
-    // Connect/read timeouts for the outbound IdP calls (discovery, token exchange, JWKS). Nimbus defaults
-    // these to 0 (no timeout); these bounds ensure a down or hung IdP cannot hold a login thread forever.
-    private static final int HTTP_CONNECT_TIMEOUT_MILLIS = 5_000;
-    private static final int HTTP_READ_TIMEOUT_MILLIS = 5_000;
     // Cap the JWKS response body via the resource retriever, so a broken IdP cannot grow the heap unbounded.
+    // The connect/read timeout for every IdP call comes from the configuration (OidcConfiguration): it
+    // bounds a down or hung IdP, and is operator-tunable for a slow or distant network path.
     private static final int JWKS_SIZE_LIMIT_BYTES = 512 * 1024;
 
     private final @NotNull ApiConfigurationService apiConfigurationService;
@@ -196,8 +194,8 @@ public class OidcServiceImpl implements OidcService {
                     new AuthorizationCode(code), config.getRedirectUri(), new CodeVerifier(entry.codeVerifier()));
             final TokenRequest tokenRequest = buildTokenRequest(metadata.getTokenEndpointURI(), config, grant);
             final HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
-            tokenHttpRequest.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MILLIS);
-            tokenHttpRequest.setReadTimeout(HTTP_READ_TIMEOUT_MILLIS);
+            tokenHttpRequest.setConnectTimeout(config.getConnectionTimeoutMillis());
+            tokenHttpRequest.setReadTimeout(config.getConnectionTimeoutMillis());
             // Use the configured truststore for the token TLS connection, if any; otherwise the JVM default.
             final SSLSocketFactory idpSslSocketFactory = config.getIdpSslSocketFactory();
             if (idpSslSocketFactory != null) {
@@ -284,12 +282,9 @@ public class OidcServiceImpl implements OidcService {
      * truststore is configured its {@link SSLSocketFactory} is used; otherwise the JVM default CAs apply.
      */
     private static @NotNull DefaultResourceRetriever resourceRetriever(final @NotNull OidcConfiguration config) {
+        final int timeout = config.getConnectionTimeoutMillis();
         return new DefaultResourceRetriever(
-                HTTP_CONNECT_TIMEOUT_MILLIS,
-                HTTP_READ_TIMEOUT_MILLIS,
-                JWKS_SIZE_LIMIT_BYTES,
-                false,
-                config.getIdpSslSocketFactory());
+                timeout, timeout, JWKS_SIZE_LIMIT_BYTES, false, config.getIdpSslSocketFactory());
     }
 
     /**

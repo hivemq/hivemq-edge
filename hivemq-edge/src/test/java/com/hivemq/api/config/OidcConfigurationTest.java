@@ -370,6 +370,35 @@ class OidcConfigurationTest {
                 .hasMessageContaining("truststore");
     }
 
+    @Test
+    void fromEntity_noConnectionTimeout_usesTheDefault() {
+        final OidcConfiguration config =
+                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));
+
+        assertThat(config.getConnectionTimeoutMillis()).isEqualTo(OidcConfiguration.DEFAULT_CONNECTION_TIMEOUT_MILLIS);
+    }
+
+    @Test
+    void fromEntity_configuredConnectionTimeout_isCarriedThrough() {
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "connectionTimeoutMillis", 20_000);
+
+        final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
+
+        assertThat(config.getConnectionTimeoutMillis()).isEqualTo(20_000);
+    }
+
+    @Test
+    void fromEntity_nonPositiveConnectionTimeout_throws() {
+        // The XSD guards this (positiveInteger); the check defends a config path that bypasses the schema.
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "connectionTimeoutMillis", 0);
+
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("connection-timeout");
+    }
+
     private static @org.jetbrains.annotations.NotNull OidcTruststoreEntity truststore(
             final String path, final String password, final String type) {
         final OidcTruststoreEntity truststore = new OidcTruststoreEntity();

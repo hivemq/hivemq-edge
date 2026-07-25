@@ -69,6 +69,10 @@ public class OidcConfiguration {
     private final @NotNull Set<String> idTokenSigningAlgorithms;
     // null => no <truststore> configured: the IdP TLS certificate is validated against the JVM default CAs.
     private final @Nullable SSLSocketFactory idpSslSocketFactory;
+    // Connect/read timeout in milliseconds for each IdP call. Defaults to DEFAULT_CONNECTION_TIMEOUT_MILLIS.
+    private final int connectionTimeoutMillis;
+
+    public static final int DEFAULT_CONNECTION_TIMEOUT_MILLIS = 5000;
 
     public OidcConfiguration(
             final @NotNull URI issuerUri,
@@ -88,7 +92,8 @@ public class OidcConfiguration {
                 extraScopes,
                 roleMappings,
                 idTokenSigningAlgorithms,
-                null);
+                null,
+                DEFAULT_CONNECTION_TIMEOUT_MILLIS);
     }
 
     public OidcConfiguration(
@@ -100,7 +105,8 @@ public class OidcConfiguration {
             final @NotNull List<String> extraScopes,
             final @Nullable Map<String, String> roleMappings,
             final @NotNull Set<String> idTokenSigningAlgorithms,
-            final @Nullable SSLSocketFactory idpSslSocketFactory) {
+            final @Nullable SSLSocketFactory idpSslSocketFactory,
+            final int connectionTimeoutMillis) {
         this.issuerUri = Preconditions.checkNotNull(issuerUri);
         this.clientId = Preconditions.checkNotNull(clientId);
         this.clientSecret = clientSecret;
@@ -110,6 +116,7 @@ public class OidcConfiguration {
         this.extraScopes = List.copyOf(extraScopes);
         this.roleMappings = roleMappings == null ? null : Map.copyOf(roleMappings);
         this.idpSslSocketFactory = idpSslSocketFactory;
+        this.connectionTimeoutMillis = connectionTimeoutMillis;
     }
 
     /**
@@ -196,6 +203,14 @@ public class OidcConfiguration {
         // certificate is validated against the JVM default CA certificates.
         final SSLSocketFactory idpSslSocketFactory = buildSslSocketFactory(entity.getTruststore());
 
+        // Connect/read timeout for the IdP calls. The XSD (positiveInteger, default 5000) guarantees a
+        // positive value; this check guards a config path that bypasses schema validation.
+        final int connectionTimeoutMillis = entity.getConnectionTimeoutMillis();
+        Preconditions.checkArgument(
+                connectionTimeoutMillis > 0,
+                "OIDC connection-timeout must be a positive number of milliseconds, but was %s",
+                connectionTimeoutMillis);
+
         return new OidcConfiguration(
                 issuerUri,
                 clientId.trim(),
@@ -205,7 +220,8 @@ public class OidcConfiguration {
                 scopes,
                 mappings,
                 signingAlgorithms,
-                idpSslSocketFactory);
+                idpSslSocketFactory,
+                connectionTimeoutMillis);
     }
 
     /**
@@ -432,6 +448,14 @@ public class OidcConfiguration {
      */
     public @Nullable SSLSocketFactory getIdpSslSocketFactory() {
         return idpSslSocketFactory;
+    }
+
+    /**
+     * The connect and read timeout, in milliseconds, applied to each Identity Provider call (discovery,
+     * token exchange, JWKS). Defaults to {@link #DEFAULT_CONNECTION_TIMEOUT_MILLIS}.
+     */
+    public int getConnectionTimeoutMillis() {
+        return connectionTimeoutMillis;
     }
 
     @Override
