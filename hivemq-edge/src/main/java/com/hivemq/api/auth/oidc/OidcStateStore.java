@@ -19,6 +19,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * In-memory store for OIDC login-flow state, bridging the {@code /login} and {@code /callback}
@@ -40,6 +42,8 @@ import org.jetbrains.annotations.NotNull;
  */
 @Singleton
 public class OidcStateStore {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OidcStateStore.class);
 
     static final long DEFAULT_TTL_MILLIS = 10 * 60 * 1000L;
     static final int CAPACITY = 1000;
@@ -82,9 +86,22 @@ public class OidcStateStore {
     /**
      * Stores the nonce and PKCE verifier for a login, keyed by {@code state}. Never fails: when the ring is
      * full the oldest slot is overwritten.
+     * <p>
+     * If the slot being overwritten still holds a live (non-expired) login, a warning is logged: it means
+     * the store is churning fast enough to evict an in-flight login before its owner completed the callback,
+     * so that user must restart the login. At normal admin-console volume this should never happen; a burst
+     * of it points at a flood of {@code /login} starts.
      */
     public synchronized void put(
             final @NotNull String state, final @NotNull String nonce, final @NotNull String codeVerifier) {
+        final StateEntry overwritten = ring[writeIndex];
+        if (overwritten != null && !overwritten.isExpired(System.currentTimeMillis())) {
+            log.warn(
+                    "OIDC login-state store overwrote a still-live login before it completed (capacity {}). "
+                            + "The affected login must be restarted. If this recurs, the /login endpoint is being "
+                            + "started faster than logins complete.",
+                    CAPACITY);
+        }
         ring[writeIndex] = new StateEntry(state, nonce, codeVerifier, System.currentTimeMillis() + ttlMillis);
         writeIndex = (writeIndex + 1) % CAPACITY;
     }
