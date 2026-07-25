@@ -15,6 +15,8 @@
  */
 package com.hivemq.api.resources.impl;
 
+import static com.hivemq.api.config.AuthMode.USERNAME_PASSWORD;
+
 import com.google.common.base.Preconditions;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.auth.ApiPrincipal;
@@ -99,7 +101,7 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
 
         // Local username/password login is only available when USERNAME_PASSWORD is an active auth mode.
         // Reject before consulting any provider, so this endpoint is genuinely closed (not merely unmatched).
-        if (!apiConfigurationService.getAuthModes().contains(com.hivemq.api.config.AuthMode.USERNAME_PASSWORD)) {
+        if (!apiConfigurationService.getAuthModes().contains(USERNAME_PASSWORD)) {
             return ErrorResponseUtil.errorResponse(
                     new UnauthorizedError("Username and password authentication is not enabled"));
         }

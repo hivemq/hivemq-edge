@@ -58,7 +58,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -391,7 +390,7 @@ public class OidcServiceImpl implements OidcService {
         if (asString != null && !asString.isBlank()) {
             return List.of(asString);
         }
-        return new ArrayList<>();
+        return List.of();
     }
 
     private @NotNull OIDCProviderMetadata resolveMetadata(final @NotNull OidcConfiguration config) throws Exception {
