@@ -22,6 +22,8 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperWriteRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The queue in front of one tag's write aspect — the flow-control point of the southbound write path. The write
@@ -54,15 +56,27 @@ import org.jetbrains.annotations.Nullable;
  * Thread-safety: {@link #suspend()}/{@link #resume()} and the backlog's wakeup may run on producer threads; the
  * completion callback runs on the adapter's dispatch thread. All state is guarded by this queue's monitor, and
  * the backlog's wakeup is invoked outside its own lock, so the lock order is always queue→backlog and there is no
- * deadlock. The critical sections only enqueue to the mailbox (non-blocking).
+ * deadlock. Critical sections enqueue to the mailbox at most (non-blocking); the backlog disposal of a settled
+ * write — which reaches broker persistence, and in in-memory persistence mode may execute persistence work
+ * caller-side — runs <b>outside</b> the monitor, with the in-flight guard left up so no concurrent delivery can
+ * slip in meanwhile. A settle is consumed exactly once: a late duplicate settle of an abandoned attempt is
+ * detected by its delivery token and ignored, so it can never dispose its redelivery.
  */
 public final class SouthboundWriteQueue {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(SouthboundWriteQueue.class);
 
     private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender;
     private final @NotNull Node node;
     private final @NotNull SouthboundWriteBacklog backlog;
 
     private @Nullable String inFlightId;
+
+    /** Advances once per delivery; each completion carries its delivery's token so a stale settle is detectable. */
+    private long deliveryToken;
+
+    /** True from delivery until its first settle is consumed — the exactly-once gate for completions. */
+    private boolean settleArmed;
 
     /**
      * Queues are born suspended: the first {@link #resume()} — in production the tag's first {@code tagWritable}
@@ -124,37 +138,76 @@ public final class SouthboundWriteQueue {
         }
         inFlightId = command.id();
         deliveries++;
+        settleArmed = true;
+        final long token = ++deliveryToken;
         wrapperSender.tell(new ProtocolAdapterWrapperWriteRequest(
-                node, command.value(), (outcome, reason) -> onSettled(command, outcome, reason)));
+                node, command.value(), (outcome, reason) -> onSettled(token, command, outcome, reason)));
     }
 
-    private synchronized void onSettled(
+    private void onSettled(
+            final long token,
             final @NotNull SouthboundCommand command,
             final @NotNull SouthboundWriteOutcome outcome,
             final @Nullable String reason) {
-        inFlightId = null;
-        switch (outcome) {
-            case SUCCEEDED -> {
-                backlog.removeHead(command.id());
-                committed++;
-                deliverNext();
+        synchronized (this) {
+            if (token != deliveryToken || !settleArmed) {
+                // A stale or duplicate settle — e.g. an abandoned attempt's result arriving after its redelivery
+                // started. Acting on it would dispose (or double-dispose) a command whose live delivery is still
+                // unsettled.
+                log.warn(
+                        "Ignoring a stale settle ({}) for southbound command '{}': the delivery it belongs to was "
+                                + "already settled",
+                        outcome,
+                        command.id());
+                return;
             }
-            case FAILED -> {
-                // The device's own words travel into the dead-letter record.
-                backlog.deadLetterHead(command.id(), reason != null ? reason : "device rejected the write");
-                deadLettered++;
-                deliverNext();
-            }
-            case ABORTED -> {
-                // The command was never removed, so it is still the head — kept for redelivery on resume().
-                keptForRedelivery++;
-                suspended = true; // the adapter went away; wait for resume()
-            }
-            case REJECTED_BUSY -> {
-                windowViolations++;
-                suspended = true; // window violation — do not tight-loop
+            settleArmed = false;
+            switch (outcome) {
+                case ABORTED -> {
+                    // The command was never removed, so it is still the head — kept for redelivery on resume().
+                    inFlightId = null;
+                    keptForRedelivery++;
+                    suspended = true; // the adapter went away; wait for resume()
+                    return;
+                }
+                case REJECTED_BUSY -> {
+                    inFlightId = null;
+                    windowViolations++;
+                    suspended = true; // window violation — do not tight-loop
+                    return;
+                }
+                case SUCCEEDED -> committed++;
+                case FAILED -> deadLettered++;
             }
         }
+        // Terminal disposal reaches broker persistence and must not run under the queue monitor (in in-memory
+        // persistence mode the call can execute persistence work caller-side — holding the monitor through that
+        // would block suspend()/resume()/readiness for the duration). inFlightId stays set meanwhile, so no
+        // concurrent deliverNext can double-deliver.
+        try {
+            if (outcome == SouthboundWriteOutcome.SUCCEEDED) {
+                backlog.removeHead(command.id());
+            } else {
+                // The device's own words travel into the dead-letter record.
+                backlog.deadLetterHead(command.id(), reason != null ? reason : "device rejected the write");
+            }
+        } catch (final RuntimeException disposalFailure) {
+            // The backlog contract forbids throwing from disposal, so this is defensive: if one ever does, we must
+            // still release the in-flight slot below rather than leave inFlightId set forever — which would wedge
+            // the tag (every future deliverNext no-ops on inFlightId != null) with no recovery path. The command's
+            // fate is then uncertain (possibly still queued), so at-least-once holds — a redelivery or a successor
+            // backlog covers it. Log and advance.
+            log.error(
+                    "Southbound backlog threw disposing command '{}' ({}) — releasing the delivery slot and "
+                            + "advancing to keep the tag alive",
+                    command.id(),
+                    outcome,
+                    disposalFailure);
+        }
+        synchronized (this) {
+            inFlightId = null;
+        }
+        deliverNext();
     }
 
     /**

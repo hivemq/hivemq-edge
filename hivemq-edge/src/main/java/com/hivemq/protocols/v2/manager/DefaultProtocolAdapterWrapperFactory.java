@@ -320,6 +320,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 context.batches(),
                 context.metrics(),
                 context.protocolAdapter()::verifyBatch);
+        // The wrapper's tick is the only timing surface in the design: the durable backlogs' recovery
+        // retries ride it instead of owning any scheduler.
+        context.bindSouthboundRearm(southboundWritePlane::rearmBacklogs);
 
         final AtomicReference<AdapterStatusSnapshot> snapshot = new AtomicReference<>();
         final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(context, snapshot);

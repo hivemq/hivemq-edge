@@ -138,6 +138,45 @@ class SouthboundWritePlaneTest {
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
 
+    @Test
+    void rearmBacklogs_reachesEveryChannel() {
+        // The tick hook behind QA finding N1: the wrapper's tick → plane → every channel's backlog. The plane
+        // must fan the poke out to each write-mapped tag's backlog, and only to those.
+        final java.util.concurrent.atomic.AtomicInteger rearms = new java.util.concurrent.atomic.AtomicInteger();
+        final SouthboundWriteBacklogFactory factory = (tagName, node) -> new SouthboundWriteBacklog() {
+            @Override
+            public @org.jetbrains.annotations.Nullable SouthboundCommand head() {
+                return null;
+            }
+
+            @Override
+            public void removeHead(final @NotNull String id) {}
+
+            @Override
+            public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {}
+
+            @Override
+            public void onAvailable(final @NotNull Runnable wakeup) {}
+
+            @Override
+            public void rearmIfRequested() {
+                rearms.incrementAndGet();
+            }
+
+            @Override
+            public void close() {}
+        };
+        final SouthboundWritePlane plane = new SouthboundWritePlane(
+                "a1", new CapturingSender(), factory, List.of(pair(TAG), pair(OTHER)), Set.of(TAG, OTHER));
+
+        plane.rearmBacklogs();
+        assertThat(rearms.get()).isEqualTo(2);
+
+        plane.close();
+        plane.rearmBacklogs(); // no channels, no pokes
+        assertThat(rearms.get()).isEqualTo(2);
+    }
+
     private static int pending(final @NotNull SouthboundWritePlane.TagChannel channel) {
         return ((InMemorySouthboundWriteBacklog) channel.backlog()).pendingSize();
     }

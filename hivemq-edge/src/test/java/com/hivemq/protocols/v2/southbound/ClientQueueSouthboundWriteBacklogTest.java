@@ -46,7 +46,8 @@ import org.junit.jupiter.api.Test;
  * The {@link ClientQueueSouthboundWriteBacklog} over a scripted in-memory stand-in for
  * {@link com.hivemq.persistence.clientqueue.ClientQueuePersistence}: it leases the queue head by prefetching and
  * serves it idempotently, deletes only on a terminal outcome and leases the next, keeps an abandoned lease cached
- * for redelivery, self-dead-letters an untranslatable publish, does not spin on a read failure, and releases its
+ * for redelivery, self-dead-letters an untranslatable publish, does not spin on a read failure, never loses a
+ * wakeup that arrives while a read is in flight (empty or failing — the completion replays it), and releases its
  * callback on close — including the lease of a read that completes only after the close, and tolerating (as a
  * WARN no-op) a settle that arrives after it. The last test drives a real {@link SouthboundWriteQueue} over it,
  * end to end.
@@ -161,6 +162,253 @@ class ClientQueueSouthboundWriteBacklogTest {
         final SouthboundCommand head = backlog.head();
         assertThat(head).isNotNull();
         assertThat(head.value().getTagValue()).isEqualTo("a"); // FIFO: the older command still leases first
+    }
+
+    @Test
+    void aWakeupDuringAnInFlightEmptyRead_isNotLost_theCompletionReplaysIt() {
+        // EDG-813 review B1. The read is issued against an empty queue; the command arrives — and fires its one
+        // and only publish-available callback (the broker signals only the 0→1 size transition) — while that read
+        // is still undelivered. The stale empty result must not be the end of the story: dropping the absorbed
+        // wakeup strands the command durably and invisibly until an adapter recreate or an Edge restart.
+        fake.deferNextRead = true;
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog(); // construction-time read, in flight, empty
+
+        fake.enqueue(publish(1, "a"));
+        fake.firePublishAvailable(); // absorbed by the fetching guard — must be remembered
+        fake.firePublishAvailable(); // a second wakeup in the same window must coalesce, not stack re-reads
+        assertThat(backlog.head()).isNull(); // nothing leased while the read is in flight
+        assertThat(fake.reads).isEqualTo(1);
+
+        fake.completeDeferredRead(); // delivers the stale EMPTY result
+
+        // The completion replayed the absorbed wakeup: exactly one follow-up read leased the command.
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+        assertThat(fake.reads).isEqualTo(2);
+    }
+
+    @Test
+    void aWakeupDuringAnInFlightFailingRead_isNotLost_theFailureReplaysIt() {
+        // Same lost-wakeup shape, failure flavor: the wakeup arrives while the read is in flight, and the read
+        // then fails. Without the replay, "the next arriving command re-triggers the prefetch" never happens —
+        // the queue is no longer empty, so no later arrival fires the 0→1 callback.
+        fake.deferNextRead = true;
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog(); // construction-time read, in flight
+
+        fake.enqueue(publish(1, "a"));
+        fake.firePublishAvailable(); // absorbed by the fetching guard — must be remembered
+
+        fake.failDeferredRead();
+
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+        assertThat(fake.reads).isEqualTo(2); // one replay per absorbed wakeup — never a retry loop
+    }
+
+    @Test
+    void theLostWakeupWindow_reopensAfterEveryDisposal_andIsStillCovered() {
+        // The window is not a construction-time special: every deleteHead → prefetch that drains the queue
+        // reopens it. Steady state: a command completes, the follow-up read is in flight against the now-empty
+        // queue, and the next command arrives inside that read.
+        fake.enqueue(publish(1, "a"));
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        final SouthboundCommand first = backlog.head();
+        assertThat(first).isNotNull();
+
+        fake.deferNextRead = true;
+        backlog.removeHead(first.id()); // the post-disposal prefetch is now in flight, and it evaluated EMPTY
+
+        fake.enqueue(publish(2, "b"));
+        fake.firePublishAvailable(); // absorbed
+        fake.completeDeferredRead(); // stale empty delivered
+
+        final SouthboundCommand second = backlog.head();
+        assertThat(second).isNotNull();
+        assertThat(second.value().getTagValue()).isEqualTo("b");
+        assertThat(fake.reads).isEqualTo(3); // construction, post-disposal, replay
+    }
+
+    @Test
+    void aFailedRead_withNoConcurrentArrival_isRetriedByTheTick_untilTheStoreRecovers() {
+        // QA finding N1(a): a transient read failure on a non-empty queue used to strand it forever — the
+        // publish-available callback fires only on the 0→1 size transition, which never recurs. The tick re-arms.
+        fake.enqueue(publish(1, "a"));
+        fake.failNextRead = true;
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        assertThat(backlog.head()).isNull();
+        assertThat(fake.reads).isEqualTo(1);
+
+        // First tick: the retry fails too (store still down) — evidence re-recorded, no spin in between.
+        fake.failNextRead = true;
+        backlog.rearmIfRequested();
+        assertThat(backlog.head()).isNull();
+        assertThat(fake.reads).isEqualTo(2);
+
+        // Second tick: the store recovered — the command leases with no arrival ever needed.
+        backlog.rearmIfRequested();
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+        assertThat(fake.reads).isEqualTo(3);
+
+        // A tick with no evidence is free: no read is issued.
+        backlog.removeHead(head.id());
+        final int readsAfterDrain = fake.reads;
+        backlog.rearmIfRequested();
+        backlog.rearmIfRequested();
+        assertThat(fake.reads).isEqualTo(readsAfterDrain);
+    }
+
+    @Test
+    void anEmptyReadWithANonEmptyStore_isRecheckedImmediately_theBrokenHeadCase() {
+        // QA finding N1(b): a payload-broken head makes the store complete a read EMPTY after dropping it, with
+        // commands still queued behind — the size cross-check catches the lie and one immediate re-read leases.
+        fake.enqueue(publish(2, "b"));
+        fake.emptyReads = 1;
+
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("b");
+        assertThat(fake.reads).isEqualTo(2); // the lying read + the recheck — no tick involved
+        assertThat(fake.markerSweeps).isZero();
+    }
+
+    @Test
+    void anOwnerlessLease_isRecoveredByTheMarkerSweep_theStrandedLeaseCase() {
+        // QA finding N1(c): a read task that failed after in-flight marking leaves a lease nobody owns, hiding
+        // the head from every read. Escalation: recheck (still empty) → sweep the queue's markers (we hold no
+        // lease here, so every marker is ownerless) → the sweep's wakeup re-enters the normal path.
+        final PUBLISH stranded = publish(1, "a");
+        fake.enqueue(stranded);
+        fake.strandLease(stranded);
+
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+        assertThat(fake.markerSweeps).isEqualTo(1);
+        assertThat(fake.reads).isEqualTo(3); // skip-read, recheck, post-sweep lease
+    }
+
+    @Test
+    void anExhaustedRecoveryLadder_fallsBackToTickPacedRearms_andLatchesResetOnALease() {
+        // Three lying empty reads exhaust recheck and sweep; the fourth attempt must wait for a tick — never an
+        // unbounded immediate loop. A successful lease re-arms the whole ladder for the next incident.
+        fake.enqueue(publish(1, "a"));
+        fake.emptyReads = 3;
+
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        assertThat(backlog.head()).isNull(); // ladder exhausted: recheck, sweep-triggered read both lied
+        assertThat(fake.reads).isEqualTo(3);
+        assertThat(fake.markerSweeps).isEqualTo(1);
+
+        backlog.rearmIfRequested(); // the tick
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(fake.reads).isEqualTo(4);
+
+        // The lease reset the latches: a second incident gets its immediate recheck again.
+        backlog.removeHead(head.id());
+        fake.enqueue(publish(2, "b"));
+        fake.emptyReads = 1;
+        fake.firePublishAvailable();
+        final SouthboundCommand second = backlog.head();
+        assertThat(second).isNotNull();
+        assertThat(second.value().getTagValue()).isEqualTo("b");
+    }
+
+    @Test
+    void aFailedSizeCheck_fallsBackToTheTick() {
+        fake.enqueue(publish(1, "a"));
+        fake.emptyReads = 1;
+        fake.failSizeChecks = true;
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        assertThat(backlog.head()).isNull(); // evidence unknown — nothing immediate
+
+        fake.failSizeChecks = false;
+        backlog.rearmIfRequested(); // the tick retries; this read tells the truth
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+    }
+
+    @Test
+    void aFailedMarkerSweep_recordsEvidence_soTheTickRetries_ratherThanStranding() {
+        // QA round-2 finding: a FAILED removeAllInFlightMarkers was only exception-logged and set no evidence.
+        // With both ladder rungs already burned and the 0→1 callback unable to fire on a non-empty queue, the tag
+        // stranded until recreate/restart. The failed sweep must record evidence like a failed read or size check.
+        fake.enqueue(publish(1, "a"));
+        fake.emptyReads = 2; // construction: read → recheck → sweep
+        fake.failNextMarkerSweep = true;
+
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        assertThat(backlog.head()).isNull();
+        assertThat(fake.markerSweeps).isEqualTo(1); // the sweep was attempted and failed
+
+        // The store heals; because the failed sweep recorded evidence, the tick retries and leases — no strand.
+        backlog.rearmIfRequested();
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+    }
+
+    @Test
+    void aStep2Livelock_isBrokenByEachTickReRunningTheLadder_notOnlyByALease() {
+        // QA round-2 finding: the recheck/sweep latches reset only on a successful lease, so a store that keeps a
+        // read empty past step 2 (a persistent re-marking fault) stayed wedged at the tick-paced rung forever —
+        // surviving even the store's own recovery, because nothing re-tried the recheck or the sweep. Each tick
+        // must re-run the ladder from the top.
+        fake.enqueue(publish(1, "a"));
+        fake.emptyReads = 6; // construction burns 3 (read/recheck/sweep-read); one full tick re-run burns 3 more
+
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        assertThat(backlog.head()).isNull();
+        assertThat(fake.markerSweeps).isEqualTo(1); // construction reached step 2 with one sweep
+
+        // A tick with the store STILL lying re-runs the ladder afresh — a fresh recheck and a fresh sweep, not a
+        // jump straight to the burned tick-rung. Proven by a second sweep with no intervening lease.
+        backlog.rearmIfRequested();
+        assertThat(backlog.head()).isNull();
+        assertThat(fake.markerSweeps).isEqualTo(2);
+
+        // The store heals; the next tick leases.
+        backlog.rearmIfRequested();
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+    }
+
+    @Test
+    void aThrowableFromTheTranslator_deadLettersTheCommand_neverWedgesTheTag() {
+        // QA finding N2: only RuntimeException used to be caught — an Error or sneaky-thrown checked exception
+        // from the translator seam left `fetching` stuck true forever, silently. Now it dead-letters like any
+        // untranslatable payload and the tag keeps flowing.
+        fake.enqueue(publish(1, "assert"));
+        fake.enqueue(publish(2, "good"));
+
+        final ClientQueueSouthboundWriteBacklog backlog = new ClientQueueSouthboundWriteBacklog(
+                fake,
+                QUEUE_ID,
+                publish -> {
+                    final byte[] payload = publish.getPayload();
+                    final String value = payload == null ? "" : new String(payload, UTF_8);
+                    if ("assert".equals(value)) {
+                        throw new AssertionError("scripted translator Error");
+                    }
+                    return new TestDataPoint("setpoint", value);
+                },
+                "a1",
+                "setpoint");
+
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("good");
+        assertThat(fake.removed).hasSize(1); // the Error-throwing command was dead-lettered, observably
     }
 
     @Test
@@ -281,25 +529,43 @@ class ClientQueueSouthboundWriteBacklogTest {
         private final @NotNull Map<String, PublishAvailableCallback> callbacks = new HashMap<>();
         private final @NotNull List<String> removed = new ArrayList<>();
         private int reads;
+        private int markerSweeps;
         private boolean failNextRead;
         private boolean deferNextRead;
+        private int emptyReads;
+        private boolean failSizeChecks;
+        private boolean failNextMarkerSweep;
         private @Nullable SettableFuture<ImmutableList<PUBLISH>> deferredRead;
+        private @Nullable ImmutableList<PUBLISH> deferredResult;
 
         private void enqueue(final @NotNull PUBLISH publish) {
             queue.addLast(publish);
         }
 
-        /** Complete the deferred read now, leasing exactly as an immediate read would have. */
+        /** Lease a message to nobody — models a read task that failed after in-flight marking (ownerless lease). */
+        private void strandLease(final @NotNull PUBLISH publish) {
+            leased.add(publish.getUniqueId());
+        }
+
+        /**
+         * Deliver the deferred read with the result it evaluated when it was issued — the real store executes the
+         * read task at submission order and delivers the future later, so a command enqueued in between is NOT in
+         * the result. That gap is where the lost-wakeup races live.
+         */
         private void completeDeferredRead() {
             final SettableFuture<ImmutableList<PUBLISH>> read = requireNonNull(deferredRead);
+            final ImmutableList<PUBLISH> result = requireNonNull(deferredResult);
             deferredRead = null;
-            for (final PUBLISH publish : queue) {
-                if (leased.add(publish.getUniqueId())) {
-                    read.set(ImmutableList.of(publish));
-                    return;
-                }
-            }
-            read.set(ImmutableList.of());
+            deferredResult = null;
+            read.set(result);
+        }
+
+        /** Fail the deferred read now — a read that was in flight when its store broke. */
+        private void failDeferredRead() {
+            final SettableFuture<ImmutableList<PUBLISH>> read = requireNonNull(deferredRead);
+            deferredRead = null;
+            deferredResult = null;
+            read.setException(new RuntimeException("scripted read failure"));
         }
 
         private void firePublishAvailable() {
@@ -321,17 +587,50 @@ class ClientQueueSouthboundWriteBacklogTest {
                 failNextRead = false;
                 return Futures.immediateFailedFuture(new RuntimeException("scripted read failure"));
             }
+            if (emptyReads > 0) {
+                // Models the store completing a read EMPTY while the queue is non-empty (a payload-broken head
+                // dropped by checkPayloadReference, or an ownerless in-flight marker hiding the head).
+                emptyReads--;
+                return Futures.immediateFuture(ImmutableList.of());
+            }
             if (deferNextRead) {
                 deferNextRead = false;
                 deferredRead = SettableFuture.create();
+                deferredResult = leaseFirstUnleased();
                 return deferredRead;
             }
+            return Futures.immediateFuture(leaseFirstUnleased());
+        }
+
+        @Override
+        public @NotNull ListenableFuture<Integer> size(final @NotNull String queueId, final boolean shared) {
+            if (failSizeChecks) {
+                return Futures.immediateFailedFuture(new RuntimeException("scripted size failure"));
+            }
+            return Futures.immediateFuture(queue.size());
+        }
+
+        @Override
+        public @NotNull ListenableFuture<Void> removeAllInFlightMarkers(final @NotNull String sharedSubscription) {
+            markerSweeps++;
+            if (failNextMarkerSweep) {
+                // A store that rejected the op (e.g. an Xodus exclusive-txn abort): the future fails and, as the
+                // real persistence does, the publish-available callback is NOT fired.
+                failNextMarkerSweep = false;
+                return Futures.immediateFailedFuture(new RuntimeException("scripted marker-sweep failure"));
+            }
+            leased.clear();
+            firePublishAvailable(); // as the real persistence does after a sweep
+            return Futures.immediateFuture(null);
+        }
+
+        private @NotNull ImmutableList<PUBLISH> leaseFirstUnleased() {
             for (final PUBLISH publish : queue) {
                 if (leased.add(publish.getUniqueId())) {
-                    return Futures.immediateFuture(ImmutableList.of(publish));
+                    return ImmutableList.of(publish);
                 }
             }
-            return Futures.immediateFuture(ImmutableList.of());
+            return ImmutableList.of();
         }
 
         @Override

@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.southbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -111,6 +112,30 @@ class InMemorySouthboundWriteBacklogTest {
         assertThatThrownBy(() -> backlog.deadLetterHead("not-the-head", "reason"))
                 .isInstanceOf(IllegalStateException.class);
         assertThat(backlog.pendingSize()).isEqualTo(1); // untouched
+    }
+
+    @Test
+    void close_releasesPendingCommands_soAStaleResumeDeliversNothing() {
+        // QA round-2 finding: close() used to be a no-op, so head() kept handing out commands after the channel
+        // was dropped. A stale tagWritable (a dropped/replaced channel whose old aspect still fires readiness)
+        // could then resume this backlog and deliver a command meant to be discarded. close() must release its
+        // pending contents (it is not durable, so nothing outlives it anyway).
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
+        backlog.offer(value("a"));
+        backlog.offer(value("b"));
+        assertThat(backlog.pendingSize()).isEqualTo(2);
+
+        backlog.close();
+
+        assertThat(backlog.head()).isNull(); // a dropped channel hands out nothing
+        assertThat(backlog.pendingSize()).isZero();
+
+        // A late offer must not resurrect it; a settle racing close() is a quiet no-op, never a throw.
+        backlog.offer(value("c"));
+        assertThat(backlog.head()).isNull();
+        assertThat(backlog.pendingSize()).isZero();
+        assertThatCode(() -> backlog.removeHead("0")).doesNotThrowAnyException();
+        assertThatCode(() -> backlog.deadLetterHead("0", "late")).doesNotThrowAnyException();
     }
 
     private static @NotNull DataPoint value(final @NotNull String v) {

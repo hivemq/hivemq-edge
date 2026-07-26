@@ -51,7 +51,31 @@ import org.slf4j.LoggerFactory;
  * An <b>untranslatable</b> publish (the {@link SouthboundPublishTranslator} returns {@code null} or throws) is
  * dead-lettered by the backlog itself — removed and logged, so a malformed command never wedges the tag. A failed
  * {@code readShared} is logged at {@code ERROR} and <b>not</b> retried in place (an immediate retry on the direct
- * executor could spin); the next arriving command re-triggers the prefetch via the publish-available callback.
+ * executor could spin on a persistent failure).
+ * <p>
+ * <b>Wakeups are lossless.</b> The publish-available callback fires only on the queue's 0→1 size transition, so a
+ * wakeup that arrives while a read is already in flight is the only signal that command will ever send — and the
+ * in-flight read may have executed before the command was persisted and come back empty (or failed). Such a
+ * wakeup is therefore remembered under the monitor and replayed as one more prefetch when the read completes;
+ * dropping it would strand a durable command invisibly until an adapter recreate or an Edge restart.
+ * <p>
+ * <b>The 0→1 gate needs a safety net beyond wakeups.</b> Three read outcomes leave the queue non-empty with no
+ * callback ever due (it never re-empties): a failed read, a read the store completed <i>empty</i> after dropping
+ * a payload-broken head, and a read-task failure that left an ownerless in-flight marker hiding the head. Each
+ * records evidence and escalates stepwise: an empty read cross-checks the store's {@code size} and, if non-empty,
+ * re-reads once immediately (the broken-head case), then sweeps the queue's in-flight markers (the ownerless-lease
+ * case). The sweep is re-guarded under the monitor immediately before it issues — skipped if a command was leased
+ * meanwhile — so it only ever runs while this backlog holds no head. A blanket sweep is safe against the residual
+ * single-writer race because this synthetic shared queue has exactly one consumer (this backlog): a transiently
+ * un-marked command can only be re-leased here, where the head-gate holds it, and is {@code removeShared}-deleted
+ * on disposal. Beyond the sweep, and for failed reads/size-checks/sweeps, a {@code rearmRequested} flag asks the
+ * wrapper's tick (via {@link #rearmIfRequested()}) to retry — rate-bounded by the tick period, never a spin, and
+ * costing nothing on a genuinely drained queue; each tick re-runs the ladder from the top so a store that heals
+ * recovers on its own. All recovery latches reset when a lease succeeds.
+ * <p>
+ * Shutdown caveat (accepted): after the persistence shutdown grace period, submitted reads return futures that
+ * never complete — a prefetch in that window stays {@code fetching} silently. The process is exiting; durable
+ * commands replay on restart.
  * <p>
  * Thread-safety: {@link #head()}/{@link #removeHead}/{@link #deadLetterHead} run under the delivering queue's
  * monitor (lock order queue→backlog); the read callback and the publish-available callback run on persistence
@@ -74,6 +98,33 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
     private @Nullable SouthboundCommand head;
     private boolean fetching;
     private boolean closed;
+
+    /**
+     * Set when a prefetch request arrives while a read is in flight; consumed by that read's completion, which
+     * then issues one more prefetch. This is what makes wakeups lossless: the in-flight read may predate the
+     * arriving command and return empty, and the 0→1-transition callback will never fire for that command again.
+     */
+    private boolean wakeupPending;
+
+    /**
+     * Evidence that the store still holds commands the event-driven path cannot surface (failed read, failed size
+     * check, or an empty read that exhausted the immediate recovery steps); consumed by {@link #rearmIfRequested()}
+     * on the wrapper's tick. Cleared whenever a lease succeeds.
+     */
+    private boolean rearmRequested;
+
+    /** One-shot latch: an empty read with a non-empty store re-reads immediately once. Reset on a lease. */
+    private boolean emptyRecheckDone;
+
+    /** One-shot latch: the in-flight-marker sweep runs once per quiet period. Reset on a lease. */
+    private boolean markerSweepDone;
+
+    /**
+     * Throttles the marker-sweep WARN to once per incident: the sweep itself re-fires each tick (it is the recovery
+     * mechanism for a persistent marker fault), but a permanently-degraded tag would otherwise log a WARN every
+     * tick. Set on the first sweep, reset on a lease.
+     */
+    private boolean sweepWarnLogged;
 
     /**
      * Registers on the queue's publish-available callback and prefetches immediately, so commands already queued
@@ -181,10 +232,15 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
      */
     private void prefetch() {
         synchronized (this) {
-            if (closed || fetching || head != null) {
+            if (closed || head != null) {
+                return;
+            }
+            if (fetching) {
+                wakeupPending = true;
                 return;
             }
             fetching = true;
+            wakeupPending = false;
         }
         final ListenableFuture<ImmutableList<PUBLISH>> read = clientQueuePersistence.readShared(
                 queueId, READ_LIMIT, InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES);
@@ -207,8 +263,19 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
 
     private void onRead(final @Nullable ImmutableList<PUBLISH> publishes) {
         if (publishes == null || publishes.isEmpty()) {
+            final boolean reread;
             synchronized (this) {
                 fetching = false;
+                reread = wakeupPending && !closed;
+            }
+            if (reread) {
+                // A command arrived while this read was in flight: the empty result is stale, and the arrival's
+                // wakeup was absorbed by the fetching guard — this re-read is its replay.
+                prefetch();
+            } else {
+                // "Empty" is trusted only after the store confirms it: a payload-broken head or an ownerless
+                // in-flight marker makes a read complete empty while commands still queue behind it.
+                verifyStoreDrained();
             }
             return;
         }
@@ -253,6 +320,11 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                 nudge = null;
             } else {
                 head = new SouthboundCommand(publish.getUniqueId(), value);
+                // A successful lease proves the store is readable again: re-arm the recovery ladder.
+                rearmRequested = false;
+                emptyRecheckDone = false;
+                markerSweepDone = false;
+                sweepWarnLogged = false;
                 nudge = wakeup;
             }
         }
@@ -267,27 +339,199 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
     }
 
     private void onReadFailure(final @NotNull Throwable throwable) {
+        final boolean reread;
         synchronized (this) {
             fetching = false;
             if (closed) {
                 return;
             }
+            // No arrival may ever signal again (0→1 only) — ask the tick to retry, rate-bounded.
+            rearmRequested = true;
+            reread = wakeupPending;
         }
-        // No in-place retry: an immediate retry on the direct executor could spin on a persistent failure. The next
-        // arriving command re-triggers the prefetch via the publish-available callback.
+        // No unconditional in-place retry: an immediate retry on the direct executor could spin on a persistent
+        // failure. A wakeup absorbed while this read was in flight is replayed immediately; otherwise the next
+        // tick re-arms — each attempt consumes its trigger, so a persistently failing store retries once per
+        // arrival or tick, never in a loop.
         log.error(
                 "Failed to read the southbound queue '{}' for tag '{}' on adapter '{}' — will retry on the next "
-                        + "arriving command",
+                        + "tick or arrival",
                 queueId,
                 tagName,
                 adapterId,
                 throwable);
+        if (reread) {
+            prefetch();
+        }
+    }
+
+    /**
+     * The tick-driven safety net (reached from the wrapper's tick through the write plane): re-issue one prefetch
+     * if a previous read left evidence of undelivered commands. A no-op in every other state. Any thread.
+     * <p>
+     * Each tick-driven attempt re-runs the ladder from the top: the one-shot recheck/sweep latches are cleared here
+     * so a store that keeps a read empty across ticks (e.g. a persistent re-marking fault) gets a fresh recheck and
+     * a fresh sweep every tick, and recovers on its own once the store heals — otherwise a single burned sweep would
+     * wedge the tag at the tick-paced rung forever, since the latches otherwise reset only on a successful lease.
+     * The tick period is the rate bound, so this is a paced retry, never a spin.
+     */
+    @Override
+    public void rearmIfRequested() {
+        synchronized (this) {
+            if (closed || fetching || head != null || !rearmRequested) {
+                return;
+            }
+            rearmRequested = false;
+            emptyRecheckDone = false;
+            markerSweepDone = false;
+        }
+        prefetch();
+    }
+
+    /**
+     * An empty read is trusted only if the store agrees it is drained. On disagreement, escalate stepwise — one
+     * immediate re-read (a payload-broken head was dropped by the store; the next command is leasable), then an
+     * in-flight-marker sweep (an ownerless marker from a read that failed after marking hides the head; the sweep
+     * is re-guarded so it runs only while this backlog holds no head — see {@link #onEmptyReadWithNonEmptyStore} —
+     * and its own wakeup re-enters the normal prefetch path), then tick-paced re-arms. The latches reset when a
+     * lease succeeds.
+     */
+    private void verifyStoreDrained() {
+        synchronized (this) {
+            if (closed || fetching || head != null) {
+                return;
+            }
+        }
+        Futures.addCallback(
+                clientQueuePersistence.size(queueId, true),
+                new FutureCallback<>() {
+                    @SuppressWarnings("NullAway") // Guava FutureCallback.onSuccess has @Nullable param
+                    @Override
+                    public void onSuccess(final Integer size) {
+                        if (size != null && size > 0) {
+                            onEmptyReadWithNonEmptyStore(size);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(final @NotNull Throwable throwable) {
+                        synchronized (ClientQueueSouthboundWriteBacklog.this) {
+                            if (!closed) {
+                                rearmRequested = true;
+                            }
+                        }
+                    }
+                },
+                MoreExecutors.directExecutor());
+    }
+
+    private void onEmptyReadWithNonEmptyStore(final int size) {
+        final int step;
+        synchronized (this) {
+            if (closed || fetching || head != null) {
+                return; // the evidence is stale — a newer read is running or already leased
+            }
+            if (!emptyRecheckDone) {
+                emptyRecheckDone = true;
+                step = 0;
+            } else if (!markerSweepDone) {
+                markerSweepDone = true;
+                step = 1;
+            } else {
+                rearmRequested = true;
+                step = 2;
+            }
+        }
+        switch (step) {
+            case 0 -> prefetch();
+            case 1 -> {
+                // Re-check under the monitor immediately before the sweep. The step decision above proved
+                // head==null, but released the monitor; a command may have been leased since — a real 0→1 arrival,
+                // the healthy recovery. If so, skip the sweep: there is no ownerless marker to clear, and a blanket
+                // sweep could clear the marker of that freshly-leased LIVE head. (A residual single-writer window
+                // remains — a lease read submitted between this check and the sweep task — but it is harmless: this
+                // synthetic shared queue has exactly one consumer, this backlog, so a transiently un-marked command
+                // can only be re-leased here, where the head-gate already holds it, and terminal disposal
+                // removeShared-deletes it.)
+                final boolean stillOwnerless;
+                final boolean firstWarn;
+                synchronized (this) {
+                    stillOwnerless = !closed && !fetching && head == null;
+                    firstWarn = stillOwnerless && !sweepWarnLogged;
+                    if (stillOwnerless) {
+                        sweepWarnLogged = true;
+                    }
+                }
+                if (!stillOwnerless) {
+                    return; // a lease covered it (or we closed) — no ownerless marker, no sweep needed
+                }
+                // WARN once per incident: the sweep re-fires each tick (it is the recovery mechanism for a
+                // persistent marker fault), but a permanently-degraded tag must not spam a WARN every 50ms tick.
+                if (firstWarn) {
+                    log.warn(
+                            "Southbound queue '{}' for tag '{}' on adapter '{}' reads empty while the store holds {} "
+                                    + "command(s) — releasing possibly stranded in-flight markers",
+                            queueId,
+                            tagName,
+                            adapterId,
+                            size);
+                } else {
+                    log.debug(
+                            "Southbound queue '{}' for tag '{}' on adapter '{}' still reads empty with {} command(s) "
+                                    + "held — re-sweeping stranded in-flight markers",
+                            queueId,
+                            tagName,
+                            adapterId,
+                            size);
+                }
+                // A successful sweep fires the store's publish-available callback, which re-enters prefetch — the
+                // recovery. A FAILED sweep (the store rejected the op) must not lose the evidence: with both ladder
+                // rungs already burned, nothing else would re-arm, and the 0→1 callback can never fire on a
+                // non-empty queue — the tag would strand until recreate/restart. Record the evidence so the next
+                // tick retries, exactly as a failed read or a failed size check does.
+                Futures.addCallback(
+                        clientQueuePersistence.removeAllInFlightMarkers(queueId),
+                        new FutureCallback<>() {
+                            @Override
+                            public void onSuccess(final @Nullable Void ignored) {}
+
+                            @Override
+                            public void onFailure(final @NotNull Throwable throwable) {
+                                log.error(
+                                        "Failed to release in-flight markers for southbound queue '{}' (tag '{}', "
+                                                + "adapter '{}') — will retry on the next tick",
+                                        queueId,
+                                        tagName,
+                                        adapterId,
+                                        throwable);
+                                synchronized (ClientQueueSouthboundWriteBacklog.this) {
+                                    if (!closed) {
+                                        rearmRequested = true;
+                                    }
+                                }
+                            }
+                        },
+                        MoreExecutors.directExecutor());
+            }
+            default -> {
+                // Tick-paced from here: rearmRequested is set; each retry re-runs this ladder's evidence check.
+            }
+        }
     }
 
     private @Nullable DataPoint translate(final @NotNull PUBLISH publish) {
         try {
             return translator.translate(publish);
-        } catch (final RuntimeException failure) {
+        } catch (final StackOverflowError failure) {
+            // A pathological payload (e.g. absurd nesting) — attributable to the command, and the stack has
+            // unwound by the time we are here: dead-letter it like any other untranslatable publish.
+            log.debug("Southbound publish translation threw", failure);
+            return null;
+        } catch (final VirtualMachineError fatal) {
+            throw fatal; // OOM and friends are not the command's fault — never swallow those
+        } catch (final Throwable failure) {
+            // Not just RuntimeException: an Error or a sneaky-thrown checked exception escaping here would
+            // propagate into the future listener, leave `fetching` stuck true, and wedge the tag silently.
             log.debug("Southbound publish translation threw", failure);
             return null;
         }

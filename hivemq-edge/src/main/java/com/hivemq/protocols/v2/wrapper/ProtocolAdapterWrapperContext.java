@@ -127,6 +127,15 @@ public final class ProtocolAdapterWrapperContext {
 
     private @Nullable TimerHandle watchdog;
     private @Nullable TimerHandle backoffTimer;
+
+    /**
+     * The southbound write plane's tick hook (bound after construction, like the machine): each tick lets the
+     * durable backlogs re-issue a read they recorded evidence for — the rate-bound behind the southbound
+     * recovery ladder, so no scheduler exists outside the wrapper's own tick. A no-op for adapters without
+     * southbound mappings.
+     */
+    private @NotNull Runnable southboundRearm = () -> {};
+
     private final @NotNull ProtocolAdapterBrowseEngine browseEngine = new ProtocolAdapterBrowseEngine();
     private @Nullable PendingBrowse pendingBrowse;
     private @Nullable FSM<ProtocolAdapterWrapperState, ProtocolAdapterWrapperEvent, ProtocolAdapterWrapperContext>
@@ -865,7 +874,19 @@ public final class ProtocolAdapterWrapperContext {
     public void onTick(final long tickMillis) {
         metrics.recordTickLag(clock.nowMillis() - tickMillis);
         timers.fireDue(tickMillis);
+        southboundRearm.run();
         batches.dispatch(protocolAdapter);
+    }
+
+    /**
+     * Bind the southbound write plane's tick hook — set once by the factory when the adapter has southbound
+     * mappings; never rebound.
+     *
+     * @param rearm invoked once per tick; must not block (it only reads a few monitor-guarded flags per
+     *              write-mapped tag and, rarely, enqueues one read to the broker's single-writer).
+     */
+    public void bindSouthboundRearm(final @NotNull Runnable rearm) {
+        this.southboundRearm = rearm;
     }
 
     /**

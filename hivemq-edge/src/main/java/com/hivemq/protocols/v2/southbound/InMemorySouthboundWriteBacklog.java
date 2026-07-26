@@ -45,6 +45,7 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
     private final @NotNull List<SouthboundCommand> deadLetters;
 
     private @Nullable Runnable wakeup;
+    private boolean closed;
     private long nextId;
     private long offered;
     private long droppedByOverflow;
@@ -71,6 +72,10 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
     public void offer(final @NotNull DataPoint value) {
         final Runnable nudge;
         synchronized (this) {
+            if (closed) {
+                // A dropped channel must not be resurrected by a late offer — nothing to deliver from here.
+                return;
+            }
             offered++;
             if (pending.size() >= capacity) {
                 droppedByOverflow++;
@@ -91,6 +96,9 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
 
     @Override
     public synchronized void removeHead(final @NotNull String id) {
+        if (closed) {
+            return; // a settle racing close(): the channel was dropped, nothing to dispose
+        }
         // requireHead proved the deque non-empty, so pollFirst cannot return null.
         requireHead(id);
         committedCommands.add(requireNonNull(pending.pollFirst()));
@@ -99,6 +107,9 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
 
     @Override
     public synchronized void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
+        if (closed) {
+            return; // a settle racing close(): the channel was dropped, nothing to dispose
+        }
         requireHead(id);
         deadLetters.add(requireNonNull(pending.pollFirst()));
         deadLettered++;
@@ -110,8 +121,15 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
     }
 
     @Override
-    public void close() {
-        // Nothing beyond the stored commands to release — and those die with this object anyway (not durable).
+    public synchronized void close() {
+        // Release the pending commands so a stale readiness signal (a dropped/replaced channel whose old aspect
+        // still fires tagWritable) cannot resume this backlog and deliver a command that was meant to be discarded.
+        // head() then returns null and offer()/dispose become no-ops. The committed/dead-letter records stay for
+        // test observability. A durable backlog leaves its storage untouched; this one is not durable, so dropping
+        // the pending contents is correct — they die with the object regardless.
+        closed = true;
+        pending.clear();
+        wakeup = null;
     }
 
     private void requireHead(final @NotNull String id) {

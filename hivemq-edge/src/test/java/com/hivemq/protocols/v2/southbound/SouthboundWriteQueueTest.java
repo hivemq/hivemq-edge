@@ -16,11 +16,15 @@
 package com.hivemq.protocols.v2.southbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -202,6 +206,174 @@ class SouthboundWriteQueueTest {
         assertThat(backlog.committedCommands())
                 .extracting(command -> command.value().getTagValue())
                 .containsExactly(0, 1);
+    }
+
+    @Test
+    void aLateSettleOfAnAbandonedAttempt_neverDisposesItsRedelivery() {
+        // QA finding N4: without a per-delivery token, a late duplicate settle of an abandoned attempt carried
+        // the same command as its live redelivery and would commit or dead-letter it mid-flight.
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        backlog.offer(value(0));
+        queue.resume();
+        assertThat(sender.requests).hasSize(1);
+
+        // The adapter goes away mid-write: the attempt is abandoned, the command kept for redelivery.
+        sender.requests.get(0).completion().settle(SouthboundWriteOutcome.ABORTED, "connection lost");
+        assertThat(queue.suspended()).isTrue();
+        queue.resume(); // reconnect — the SAME command is redelivered as a new attempt
+        assertThat(sender.requests).hasSize(2);
+
+        // The abandoned attempt's result arrives late, through the OLD completion: it must be ignored.
+        sender.requests.get(0).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null);
+        assertThat(queue.committed()).isZero();
+        assertThat(queue.inFlight()).isTrue();
+        assertThat(backlog.pendingSize()).isEqualTo(1);
+
+        // Only the live attempt's settle disposes the command.
+        sender.requests.get(1).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null);
+        assertThat(queue.committed()).isEqualTo(1);
+        assertThat(backlog.pendingSize()).isZero();
+    }
+
+    @Test
+    void aDuplicateSettleOfTheSameDelivery_isIgnored_notADoubleDisposal() {
+        // A settle is consumed exactly once; a second call through the same completion must neither throw into
+        // the settling thread nor dispose twice.
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        backlog.offer(value(0));
+        queue.resume();
+
+        sender.requests.get(0).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null);
+        assertThat(queue.committed()).isEqualTo(1);
+
+        assertThatCode(() -> sender.requests.get(0).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null))
+                .doesNotThrowAnyException();
+        assertThat(queue.committed()).isEqualTo(1);
+        assertThat(queue.windowViolations()).isZero();
+
+        // The queue is unharmed: the next command flows normally.
+        backlog.offer(value(1));
+        assertThat(sender.requests).hasSize(2);
+        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
+        assertThat(queue.committed()).isEqualTo(2);
+    }
+
+    @Test
+    void terminalDisposal_runsOutsideTheQueueMonitor() {
+        // QA finding N3: disposal reaches broker persistence, which in in-memory persistence mode can execute
+        // work caller-side — it must not run under the queue monitor, or suspend()/resume()/readiness block for
+        // the duration.
+        final AtomicReference<SouthboundWriteQueue> queueRef = new AtomicReference<>();
+        final AtomicBoolean monitorHeldDuringDisposal = new AtomicBoolean();
+        final InMemorySouthboundWriteBacklog delegate = new InMemorySouthboundWriteBacklog(10);
+        final SouthboundWriteBacklog probing = new SouthboundWriteBacklog() {
+            @Override
+            public @Nullable SouthboundCommand head() {
+                return delegate.head();
+            }
+
+            @Override
+            public void removeHead(final @NotNull String id) {
+                recordMonitor();
+                delegate.removeHead(id);
+            }
+
+            @Override
+            public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
+                recordMonitor();
+                delegate.deadLetterHead(id, reason);
+            }
+
+            @Override
+            public void onAvailable(final @NotNull Runnable wakeup) {
+                delegate.onAvailable(wakeup);
+            }
+
+            @Override
+            public void close() {
+                delegate.close();
+            }
+
+            private void recordMonitor() {
+                final SouthboundWriteQueue queue = queueRef.get();
+                if (queue != null && Thread.holdsLock(queue)) {
+                    monitorHeldDuringDisposal.set(true);
+                }
+            }
+        };
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, probing);
+        queueRef.set(queue);
+        delegate.offer(value(0));
+        delegate.offer(value(1));
+        queue.resume();
+
+        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED); // the commit path
+        sender.settleLast(SouthboundWriteOutcome.FAILED); // the dead-letter path
+
+        assertThat(queue.committed()).isEqualTo(1);
+        assertThat(queue.deadLettered()).isEqualTo(1);
+        assertThat(monitorHeldDuringDisposal).isFalse();
+    }
+
+    @Test
+    void aBacklogThatThrowsFromDisposal_doesNotWedgeTheTag_itReleasesTheSlotAndAdvances() {
+        // QA round-2 finding: terminal disposal runs off the queue monitor with inFlightId still set; a
+        // synchronous throw from the backlog (contract-forbidden, but previously undefended) skipped the
+        // inFlightId clear, wedging the tag forever — every future deliverNext no-ops on inFlightId != null. The
+        // queue must release the slot and advance even when disposal throws; at-least-once still holds.
+        final AtomicBoolean firstRemoveThrew = new AtomicBoolean();
+        final InMemorySouthboundWriteBacklog delegate = new InMemorySouthboundWriteBacklog(10);
+        final SouthboundWriteBacklog throwing = new SouthboundWriteBacklog() {
+            @Override
+            public @Nullable SouthboundCommand head() {
+                return delegate.head();
+            }
+
+            @Override
+            public void removeHead(final @NotNull String id) {
+                if (firstRemoveThrew.compareAndSet(false, true)) {
+                    throw new RuntimeException("scripted disposal failure");
+                }
+                delegate.removeHead(id);
+            }
+
+            @Override
+            public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
+                delegate.deadLetterHead(id, reason);
+            }
+
+            @Override
+            public void onAvailable(final @NotNull Runnable wakeup) {
+                delegate.onAvailable(wakeup);
+            }
+
+            @Override
+            public void close() {
+                delegate.close();
+            }
+        };
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, throwing);
+        delegate.offer(value(0));
+        queue.resume(); // delivers the command
+        assertThat(sender.requests).hasSize(1);
+
+        // The commit disposal throws — the settle must not propagate it, and the slot must be released so the tag
+        // keeps flowing. The command was never removed, so it is redelivered (at-least-once).
+        assertThatCode(() -> sender.settleLast(SouthboundWriteOutcome.SUCCEEDED))
+                .doesNotThrowAnyException();
+        assertThat(queue.inFlight()).isTrue();
+        assertThat(sender.requests).hasSize(2);
+
+        // The redelivery's disposal succeeds; the tag drains cleanly.
+        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
+        assertThat(delegate.committed()).isEqualTo(1);
+        assertThat(queue.inFlight()).isFalse();
     }
 
     private static @NotNull DataPoint value(final int i) {

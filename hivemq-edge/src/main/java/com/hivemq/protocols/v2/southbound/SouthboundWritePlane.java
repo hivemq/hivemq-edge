@@ -216,6 +216,18 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
     }
 
     /**
+     * Tick hook, reached from the wrapper's tick: give every channel's backlog its chance to re-issue a read it
+     * recorded evidence for (see {@link SouthboundWriteBacklog#rearmIfRequested()}). A cheap no-op per channel in
+     * the common case; the tick is what rate-bounds the recovery retries, so no scheduler exists anywhere in the
+     * southbound path.
+     */
+    public void rearmBacklogs() {
+        for (final TagChannel channel : channels.values()) {
+            channel.backlog().rearmIfRequested();
+        }
+    }
+
+    /**
      * @param tagName the tag to look up.
      * @return the tag's delivery channel, or {@code null} when the tag is not write-mapped — for observation and
      *         tests; producers use {@link #offer}.

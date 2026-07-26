@@ -37,6 +37,13 @@ import org.jetbrains.annotations.Nullable;
  * (mirrors {@code ClientQueuePersistence.addPublishAvailableCallback}). Implementations must invoke the wakeup
  * <b>without holding their own lock</b>, so the queue can call straight back into {@link #head()} without
  * deadlock.
+ * <p>
+ * <b>Disposal must not throw in normal operation.</b> {@link #removeHead}/{@link #deadLetterHead} run on the
+ * adapter's single dispatch thread, off the delivering queue's monitor; the only expected throw is an
+ * {@link IllegalStateException} for a non-head id, which is a programming error. A throw for any other reason
+ * (e.g. a persistence op failing synchronously) is a contract violation — the queue defensively releases the
+ * delivery slot and advances rather than wedging the tag, but implementations must not rely on that: dispose
+ * quietly and surface failures asynchronously (log, retry) instead.
  */
 public interface SouthboundWriteBacklog extends AutoCloseable {
 
@@ -70,6 +77,15 @@ public interface SouthboundWriteBacklog extends AutoCloseable {
      * @param wakeup the callback to run when a command is available.
      */
     void onAvailable(final @NotNull Runnable wakeup);
+
+    /**
+     * Tick-driven maintenance hook: re-issue a read if this backlog recorded evidence of undelivered commands the
+     * event-driven path cannot recover on its own (the broker's publish-available callback fires only on the
+     * queue's 0→1 size transition, so a failed or store-emptied read on a non-empty queue would otherwise strand
+     * it). A cheap no-op unless such evidence exists — an idle drained tag costs a few field reads per tick. Any
+     * thread may call it. Implementations that cannot lose signals ignore it.
+     */
+    default void rearmIfRequested() {}
 
     /**
      * Release whatever the backlog holds onto beyond its stored commands — callbacks, leases. A durable backlog's
