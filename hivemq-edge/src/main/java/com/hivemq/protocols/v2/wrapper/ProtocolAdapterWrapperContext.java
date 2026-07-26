@@ -511,11 +511,6 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * An adapter-facing call threw on the dispatch thread — the contract-violation case (EDG-824 #7).
-     * Without this step the exception would kill the dispatch loop and freeze the last (GREEN) snapshot forever;
-     * instead the wrapper counts it as a defensive reset and enters {@code ERROR} — never false-green.
-     */
-    /**
      * A last-resort status for {@code publishSnapshot} when building the full snapshot itself throws (a
      * half-mutated tag plane): never leave a stale healthy-looking snapshot in place.
      */
@@ -541,6 +536,11 @@ public final class ProtocolAdapterWrapperContext {
                 reason);
     }
 
+    /**
+     * An adapter-facing call threw on the dispatch thread — the contract-violation case (EDG-824 #7).
+     * Without this step the exception would kill the dispatch loop and freeze the last (GREEN) snapshot forever;
+     * instead the wrapper counts it as a defensive reset and enters {@code ERROR} — never false-green.
+     */
     @NotNull
     ProtocolAdapterWrapperState adapterThrowStep(
             final @NotNull ProtocolAdapterWrapperState current, final @NotNull Throwable exception) {
