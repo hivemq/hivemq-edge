@@ -35,7 +35,6 @@ import java.security.KeyStore;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -539,34 +538,9 @@ public class OidcConfiguration {
         return connectionTimeoutMillis;
     }
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof OidcConfiguration that)) {
-            return false;
-        }
-        return issuerUri.equals(that.issuerUri)
-                && clientId.equals(that.clientId)
-                && Objects.equals(clientSecret, that.clientSecret)
-                && redirectUri.equals(that.redirectUri)
-                && roleClaimName.equals(that.roleClaimName)
-                && extraScopes.equals(that.extraScopes)
-                && Objects.equals(roleMappings, that.roleMappings)
-                && idTokenSigningAlgorithms.equals(that.idTokenSigningAlgorithms);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(
-                issuerUri,
-                clientId,
-                clientSecret,
-                redirectUri,
-                roleClaimName,
-                extraScopes,
-                roleMappings,
-                idTokenSigningAlgorithms);
-    }
+    // No equals/hashCode: this runtime configuration has no value-equality caller, and two of its
+    // runtime-significant fields cannot be compared by value here — the SSLSocketFactory has no meaningful
+    // value equality (equivalent truststores yield different instances). Value comparison of an OIDC
+    // configuration belongs on OidcAuthenticationEntity, which does implement equals/hashCode (including the
+    // truststore and timeout) and is what config-change detection compares.
 }
