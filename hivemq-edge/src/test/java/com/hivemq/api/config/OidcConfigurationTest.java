@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcTruststoreEntity;
+import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -417,6 +418,63 @@ class OidcConfigurationTest {
             keyStore.store(out, password.toCharArray());
         }
         return path;
+    }
+
+    @Test
+    void validateDiscoveryMetadata_httpsIssuerAndEndpoints_isAccepted() throws Exception {
+        // The normal case: discovery issuer matches and every endpoint is https.
+        OidcConfiguration.validateDiscoveryMetadata(
+                URI.create("https://idp.example.com/realms/edge"),
+                metadata(
+                        "https://idp.example.com/realms/edge",
+                        "https://idp.example.com/realms/edge/protocol/openid-connect/auth",
+                        "https://idp.example.com/realms/edge/protocol/openid-connect/token",
+                        "https://idp.example.com/realms/edge/protocol/openid-connect/certs"));
+    }
+
+    @Test
+    void validateDiscoveryMetadata_issuerMismatch_throws() throws Exception {
+        // A discovery document whose issuer differs from the configured one is rejected: it means the login
+        // would be driven by a provider other than the trusted issuer.
+        assertThatThrownBy(() -> OidcConfiguration.validateDiscoveryMetadata(
+                        URI.create("https://idp.example.com/realms/edge"),
+                        metadata(
+                                "https://evil.example.com/realms/edge",
+                                "https://idp.example.com/auth",
+                                "https://idp.example.com/token",
+                                "https://idp.example.com/certs")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("does not match the configured issuer");
+    }
+
+    @Test
+    void validateDiscoveryMetadata_httpEndpoint_throws() throws Exception {
+        // An http endpoint (here the token endpoint) is rejected for an https issuer: over plain http the
+        // authorization code and PKCE verifier would be exposed to an on-path attacker.
+        assertThatThrownBy(() -> OidcConfiguration.validateDiscoveryMetadata(
+                        URI.create("https://idp.example.com/realms/edge"),
+                        metadata(
+                                "https://idp.example.com/realms/edge",
+                                "https://idp.example.com/auth",
+                                "http://idp.example.com/token",
+                                "https://idp.example.com/certs")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
+    }
+
+    /**
+     * Builds an {@link OIDCProviderMetadata} the way the service does — by parsing a discovery JSON document
+     * — so the tests exercise the same code path rather than a hand-constructed object.
+     */
+    private static @org.jetbrains.annotations.NotNull OIDCProviderMetadata metadata(
+            final String issuer, final String authEndpoint, final String tokenEndpoint, final String jwksUri)
+            throws Exception {
+        final String json = String.format(
+                "{\"issuer\":\"%s\",\"authorization_endpoint\":\"%s\",\"token_endpoint\":\"%s\","
+                        + "\"jwks_uri\":\"%s\",\"subject_types_supported\":[\"public\"],"
+                        + "\"response_types_supported\":[\"code\"]}",
+                issuer, authEndpoint, tokenEndpoint, jwksUri);
+        return OIDCProviderMetadata.parse(json);
     }
 
     // -- helpers: OidcAuthenticationEntity fields are populated by JAXB, so set them reflectively for tests.

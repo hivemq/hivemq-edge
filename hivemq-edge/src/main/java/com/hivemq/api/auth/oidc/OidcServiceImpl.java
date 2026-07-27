@@ -409,6 +409,13 @@ public class OidcServiceImpl implements OidcService {
                 resourceRetriever(config).retrieveResource(discoveryUrl).getContent();
         final OIDCProviderMetadata metadata = OIDCProviderMetadata.parse(discoveryJson);
 
+        // The size-capped fetch and parse above do not enforce the OpenID Connect Discovery requirements
+        // that the returned issuer match the configured one and that the endpoints use https. Validate them
+        // before the metadata is cached or used, so a misconfigured or substituted discovery document cannot
+        // send the browser or Edge to an insecure or arbitrary endpoint. A violation throws, which the
+        // callers turn into a discovery-failure response rather than a 500 with a stale state entry.
+        OidcConfiguration.validateDiscoveryMetadata(config.getIssuerUri(), metadata);
+
         cachedMetadata = metadata;
         cachedMetadataIssuer = issuer;
         cachedMetadataExpiry = System.currentTimeMillis() + DISCOVERY_TTL_MILLIS;

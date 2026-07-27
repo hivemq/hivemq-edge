@@ -20,6 +20,8 @@ import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcRoleMappingEntity;
 import com.hivemq.configuration.entity.api.oidc.OidcTruststoreEntity;
+import com.nimbusds.oauth2.sdk.id.Issuer;
+import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -319,6 +321,85 @@ public class OidcConfiguration {
         } catch (final UnknownHostException e) {
             return false;
         }
+    }
+
+    /**
+     * Validates the discovery metadata fetched from the issuer before it is used or cached. The discovery
+     * document is fetched with a size cap and parsed, but parsing does not enforce the OpenID Connect
+     * Discovery requirements that the returned issuer match the configured one and that the endpoints use
+     * {@code https}. Without these checks a misconfigured — or, over a compromised path, substituted —
+     * discovery document could send the browser or Edge to a plain-HTTP or arbitrary endpoint, exposing the
+     * state/nonce/PKCE challenge, the authorization code, or (via an HTTP JWKS URL) letting an attacker
+     * supply signing keys and forge an Edge-granting ID token.
+     * <p>
+     * This performs the checks {@code OIDCProviderMetadata.resolve} would have done, so the caller keeps the
+     * size-capped fetch and still gets spec validation:
+     * <ul>
+     *   <li>the discovery {@code issuer} must equal the configured issuer exactly;</li>
+     *   <li>the authorization, token, and JWKS endpoints must each be an absolute {@code https} URI with a
+     *       host and no user information.</li>
+     * </ul>
+     * The single exception mirrors {@link #parseIssuerUri}: a loopback {@code http} endpoint is permitted
+     * only when {@link #ALLOW_INSECURE_LOCAL_IDP_PROPERTY} is set — the same development/testing aid, off by
+     * default. An HTTPS issuer is never allowed to downgrade an individual endpoint to non-loopback HTTP.
+     * <p>
+     * On any violation an {@link IllegalArgumentException} is thrown, which the service turns into a normal
+     * discovery-failure response rather than a {@code 500}.
+     *
+     * @param expectedIssuer the configured {@code issuer-uri}
+     * @param metadata       the discovery document fetched from that issuer
+     */
+    public static void validateDiscoveryMetadata(
+            final @NotNull URI expectedIssuer, final @NotNull OIDCProviderMetadata metadata) {
+        final boolean allowInsecureLoopback = isInsecureLocalIdpAllowed();
+        final Issuer discoveredIssuer = metadata.getIssuer();
+        Preconditions.checkArgument(
+                discoveredIssuer != null && expectedIssuer.toString().equals(discoveredIssuer.getValue()),
+                "OIDC discovery issuer '%s' does not match the configured issuer '%s'",
+                discoveredIssuer,
+                expectedIssuer);
+        requireHttpsEndpoint("authorization_endpoint", metadata.getAuthorizationEndpointURI(), allowInsecureLoopback);
+        requireHttpsEndpoint("token_endpoint", metadata.getTokenEndpointURI(), allowInsecureLoopback);
+        requireHttpsEndpoint("jwks_uri", metadata.getJWKSetURI(), allowInsecureLoopback);
+    }
+
+    /**
+     * Requires a discovery endpoint to be an absolute {@code https} URI with a host and no user information.
+     * A loopback {@code http} endpoint is allowed only when the insecure-local flag is set (see
+     * {@link #validateDiscoveryMetadata}). A query component is permitted — the OIDC specification allows
+     * the authorization and token endpoints to carry one — but a fragment is not.
+     */
+    private static void requireHttpsEndpoint(
+            final @NotNull String name, final @Nullable URI endpoint, final boolean allowInsecureLoopback) {
+        Preconditions.checkArgument(endpoint != null, "OIDC discovery is missing the %s endpoint", name);
+        Preconditions.checkArgument(
+                endpoint.isAbsolute(), "OIDC discovery %s '%s' must be an absolute URI", name, endpoint);
+        Preconditions.checkArgument(
+                endpoint.getHost() != null, "OIDC discovery %s '%s' must include a host", name, endpoint);
+        Preconditions.checkArgument(
+                endpoint.getUserInfo() == null,
+                "OIDC discovery %s '%s' must not contain user information",
+                name,
+                endpoint);
+        Preconditions.checkArgument(
+                endpoint.getFragment() == null, "OIDC discovery %s '%s' must not contain a fragment", name, endpoint);
+        if ("https".equalsIgnoreCase(endpoint.getScheme())) {
+            return;
+        }
+        // Not https: only a loopback http endpoint, and only under the insecure-local development flag.
+        Preconditions.checkArgument(
+                "http".equalsIgnoreCase(endpoint.getScheme())
+                        && allowInsecureLoopback
+                        && isLoopbackHost(endpoint.getHost()),
+                "OIDC discovery %s '%s' must use https",
+                name,
+                endpoint);
+        log.warn(
+                "OIDC discovery {} '{}' is using plain HTTP. This is permitted only because {} is set, and is "
+                        + "restricted to a loopback host. It is insecure and must never be used in production.",
+                name,
+                endpoint,
+                ALLOW_INSECURE_LOCAL_IDP_PROPERTY);
     }
 
     /**
