@@ -22,16 +22,15 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog;
 import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
-import com.hivemq.protocols.v2.tag.TagWriteReadinessListener;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.TagWritability;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The suspend/resume wiring end to end at the wrapper boundary: the write aspects notify their writability
- * boundary ({@link TagWriteReadinessListener}), the {@link SouthboundWritePlane} turns the notifications into
+ * The suspend/resume wiring end to end at the wrapper boundary: the write aspects report their writability
+ * boundary ({@link TagWritability}), the {@link SouthboundWritePlane} turns those reports into
  * delivery-window calls, and <b>no test code ever calls {@code resume()} by hand</b> — the tag's own readiness
  * drives redelivery. Driven on {@code FakeClock} + {@code ManualDispatcher} through the real wrapper and real
  * aspect machines.
@@ -141,27 +140,17 @@ class SouthboundWriteReadinessWiringTest {
         private final @NotNull SouthboundWritePlane plane;
 
         private Rig() {
-            final AtomicReference<TagWriteReadinessListener> delegate =
-                    new AtomicReference<>(TagWriteReadinessListener.NONE);
             this.fixture = WrapperTestFixture.builder()
                     .runningCoordinator()
                     .nodes(List.of(WrapperTestSupport.pair(TAG)))
                     .readUsed(Set.of())
                     .writeUsed(Set.of(TAG))
-                    .writeReadinessListener(new TagWriteReadinessListener() {
-                        @Override
-                        public void tagWritable(final @NotNull String tagName) {
-                            delegate.get().tagWritable(tagName);
-                        }
-
-                        @Override
-                        public void tagUnwritable(final @NotNull String tagName) {
-                            delegate.get().tagUnwritable(tagName);
-                        }
-                    })
                     .build();
-            this.plane = new SouthboundWritePlane(fixture.adapterId, fixture.mailbox, 100, fixture.nodes, Set.of(TAG));
-            delegate.set(plane);
+            this.plane = new SouthboundWritePlane(
+                    fixture.adapterId, fixture.mailbox, 100, fixture.nodes, Set.of(TAG), fixture.metrics);
+            // Bound exactly as the production factory binds it: from here the wrapper routes every southbound
+            // message to the plane, so the tag's own writability reports are the only thing opening a window.
+            fixture.bindSouthboundPlane(plane);
         }
 
         private @NotNull SouthboundWritePlane.TagChannel channel() {
@@ -174,8 +163,13 @@ class SouthboundWriteReadinessWiringTest {
             return ((InMemorySouthboundWriteBacklog) channel().backlog()).pendingSize();
         }
 
-        /** Acknowledge the in-flight write with success and drain the cascade (settle → commit → deliver next). */
+        /**
+         * Acknowledge the in-flight write with success and drain the cascade (settle → commit → deliver next). The
+         * tick first: the write only reaches the adapter when a tick dispatches its batch, so no device result can
+         * precede one.
+         */
         private void ackInFlight() {
+            fixture.advance(100);
             final Node node = fixture.nodeFor(TAG);
             fixture.output.writeResult(node, true, null);
             fixture.drain();

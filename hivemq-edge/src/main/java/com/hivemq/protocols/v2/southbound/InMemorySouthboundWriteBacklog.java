@@ -18,70 +18,66 @@ package com.hivemq.protocols.v2.southbound;
 import static java.util.Objects.requireNonNull;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundArrival;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundRead;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundSize;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * An <b>interim, in-memory</b> {@link SouthboundWriteBacklog}: a bounded FIFO that models the durable MQTT client
- * queue's shape and overflow policy but <b>is not durable</b> — its contents are lost on restart. It exists so the
- * {@link SouthboundWriteQueue} and its tests have a real backlog until a {@code ClientQueuePersistence}-backed one
- * is wired. Do not use it where durability is required.
+ * queue's shape and overflow policy but <b>is not durable</b> — its contents are lost on restart. It exists so
+ * adapters wired without a broker runtime, and the tests, have a real store behind the delivery channel. Do not use
+ * it where durability is required.
  * <p>
- * It honours the backlog contract precisely: {@link #head()} exposes the head without removing it;
- * {@link #removeHead}/{@link #deadLetterHead} delete it — nothing else does, so an abandoned command is simply
- * still there to be redelivered. On overflow the <b>newest</b> offered command is shed observably (the backlog's
- * bound is the back-pressure limit). The wakeup registered via {@link #onAvailable} is invoked outside this
- * object's monitor.
+ * It honours the store contract exactly: a read leases the head <b>without removing it</b>, so an abandoned command
+ * is simply still there to be read again, and only {@link #delete} removes anything. On overflow the <b>newest</b>
+ * offered command is shed observably — the bound is the back-pressure limit.
+ * <p>
+ * Unlike the delivery side, this class is synchronized: {@link #offer} is called from producer threads while the
+ * reads come from the wrapper's dispatch thread. The monitor covers the deque and the counters only; every answer
+ * is told to the mailbox outside it.
  */
 public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBacklog {
 
-    /**
-     * One dead-lettered command and why it was undeliverable. The durable backlog writes the reason to the log —
-     * the operator's only record of a refused command — so the stand-in keeps it too, and tests can assert that the
-     * device's own words travelled the whole way rather than being replaced by a generic string.
-     *
-     * @param command the command that was removed.
-     * @param reason  the failure reason as reported by the device (or the intake, for an untranslatable payload).
-     */
-    public record DeadLetter(
-            @NotNull SouthboundCommand command, @NotNull String reason) {}
-
     private final int capacity;
-    private final @NotNull Deque<SouthboundCommand> pending;
-    private final @NotNull List<SouthboundCommand> committedCommands;
-    private final @NotNull List<DeadLetter> deadLetters;
+    private final @NotNull String tagName;
+    private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender;
+    private final @NotNull Deque<SouthboundCommand> pending = new ArrayDeque<>();
+    private final @NotNull List<SouthboundCommand> deletedCommands = new ArrayList<>();
 
-    private @Nullable Runnable wakeup;
     private boolean closed;
     private long nextId;
     private long offered;
     private long droppedByOverflow;
-    private long committed;
-    private long deadLettered;
 
     /**
-     * @param capacity the maximum number of pending commands; offers beyond it shed the newest.
+     * @param capacity      the maximum number of pending commands; offers beyond it shed the newest.
+     * @param tagName       the tag this backlog feeds — the key every answer is addressed to.
+     * @param wrapperSender the wrapper mailbox every answer is told to.
      */
-    public InMemorySouthboundWriteBacklog(final int capacity) {
+    public InMemorySouthboundWriteBacklog(
+            final int capacity,
+            final @NotNull String tagName,
+            final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender) {
         this.capacity = capacity;
-        this.pending = new ArrayDeque<>();
-        this.committedCommands = new ArrayList<>();
-        this.deadLetters = new ArrayList<>();
+        this.tagName = tagName;
+        this.wrapperSender = wrapperSender;
     }
 
     /**
-     * Offer a new command (the "an MQTT write arrived" trigger). Enqueued if there is room, else shed. Nudges the
-     * delivering queue via its wakeup, invoked outside this object's monitor so the queue can read the head back
-     * without deadlock.
+     * Offer a new command — the "an MQTT write arrived" trigger for a store the broker does not feed. Enqueued if
+     * there is room, else shed. Hints the delivery side outside this object's monitor, exactly as the broker's
+     * publish-available callback does for the durable store.
      *
      * @param value the value to write.
      */
     public void offer(final @NotNull DataPoint value) {
-        final Runnable nudge;
         synchronized (this) {
             if (closed) {
                 // A dropped channel must not be resurrected by a late offer — nothing to deliver from here.
@@ -93,61 +89,56 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
                 return;
             }
             pending.addLast(new SouthboundCommand(Long.toString(nextId++), value));
-            nudge = wakeup;
         }
-        if (nudge != null) {
-            nudge.run();
-        }
+        wrapperSender.tell(new SouthboundArrival(tagName));
     }
 
     @Override
-    public synchronized @Nullable SouthboundCommand head() {
-        return pending.peekFirst();
+    public void requestRead(final long readToken) {
+        final SouthboundCommand head;
+        synchronized (this) {
+            head = closed ? null : pending.peekFirst();
+        }
+        wrapperSender.tell(new SouthboundRead(tagName, readToken, head, null, null));
     }
 
     @Override
-    public synchronized void removeHead(final @NotNull String id) {
+    public void requestSize(final long readToken) {
+        final int size;
+        synchronized (this) {
+            size = closed ? 0 : pending.size();
+        }
+        wrapperSender.tell(new SouthboundSize(tagName, readToken, size, null));
+    }
+
+    @Override
+    public synchronized void delete(final @NotNull String commandId) {
         if (closed) {
             return; // a settle racing close(): the channel was dropped, nothing to dispose
         }
-        // requireHead proved the deque non-empty, so pollFirst cannot return null.
-        requireHead(id);
-        committedCommands.add(requireNonNull(pending.pollFirst()));
-        committed++;
-    }
-
-    @Override
-    public synchronized void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
-        if (closed) {
-            return; // a settle racing close(): the channel was dropped, nothing to dispose
+        final SouthboundCommand head = pending.peekFirst();
+        if (head == null || !commandId.equals(head.id())) {
+            // The delivery side only ever deletes the command it currently holds as head, so reaching this is a
+            // caller bug, not a store failure — the one throw the contract permits, and one worth keeping loud.
+            throw new IllegalStateException("delete of a command that is not the head: " + commandId);
         }
-        requireHead(id);
-        deadLetters.add(new DeadLetter(requireNonNull(pending.pollFirst()), reason));
-        deadLettered++;
+        deletedCommands.add(requireNonNull(pending.pollFirst()));
     }
 
     @Override
-    public synchronized void onAvailable(final @NotNull Runnable wakeup) {
-        this.wakeup = requireNonNull(wakeup);
+    public void releaseMarkers() {
+        // Nothing to release: this store hands out no broker-side leases.
     }
 
     @Override
     public synchronized void close() {
-        // Release the pending commands so a stale readiness signal (a dropped/replaced channel whose old aspect
-        // still fires tagWritable) cannot resume this backlog and deliver a command that was meant to be discarded.
-        // head() then returns null and offer()/dispose become no-ops. The committed/dead-letter records stay for
-        // test observability. A durable backlog leaves its storage untouched; this one is not durable, so dropping
-        // the pending contents is correct — they die with the object regardless.
+        // Release the pending commands so a stale readiness signal (a dropped or replaced channel whose old aspect
+        // still reports itself writable) cannot deliver a command that was meant to be discarded. Reads then answer
+        // empty and offer/delete become no-ops. The deletion record stays for test observability. A durable store
+        // leaves its storage untouched; this one is not durable, so dropping the pending contents is correct — they
+        // die with the object regardless.
         closed = true;
         pending.clear();
-        wakeup = null;
-    }
-
-    private void requireHead(final @NotNull String id) {
-        final SouthboundCommand head = pending.peekFirst();
-        if (head == null || !id.equals(head.id())) {
-            throw new IllegalStateException("dispose of a command that is not the head: " + id);
-        }
     }
 
     public synchronized int pendingSize() {
@@ -162,26 +153,18 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
         return droppedByOverflow;
     }
 
-    public synchronized long committed() {
-        return committed;
-    }
-
-    public synchronized long deadLettered() {
-        return deadLettered;
+    /**
+     * @return the commands deleted — committed or dead-lettered — in deletion order. Which of the two a deletion
+     *         was is the delivery channel's business, and its counters report it; the store only removes.
+     */
+    public synchronized @NotNull List<SouthboundCommand> deletedCommands() {
+        return List.copyOf(deletedCommands);
     }
 
     /**
-     * @return the commands committed (delivered and acknowledged), in commit order — used to verify exactly which
-     *         commands were executed.
+     * @return whether this backlog has been closed — a dropped or replaced channel.
      */
-    public synchronized @NotNull List<SouthboundCommand> committedCommands() {
-        return List.copyOf(committedCommands);
-    }
-
-    /**
-     * @return the dead-lettered commands with the reason each was refused, in dead-letter order.
-     */
-    public synchronized @NotNull List<DeadLetter> deadLetters() {
-        return List.copyOf(deadLetters);
+    public synchronized boolean isClosed() {
+        return closed;
     }
 }

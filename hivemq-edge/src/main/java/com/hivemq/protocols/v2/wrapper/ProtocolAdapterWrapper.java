@@ -91,7 +91,11 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 case ProtocolAdapterWrapperWriteRequest write ->
                     // A southbound write: route it to the node's write aspect. It changes no adapter
                     // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
-                    context.routeWriteRequestToTags(write.node(), write.value(), write.completion());
+                    context.routeWriteRequestToTags(write);
+                case ProtocolAdapterWrapperSouthboundMessage southbound ->
+                    // The delivery side's own traffic: a settlement or writability report from a write aspect, a
+                    // store answer, an arrival hint. None of it touches the adapter machine.
+                    context.routeSouthboundMessage(southbound);
                 case ProtocolAdapterWrapperBrowseRequest browse ->
                     // A REST browse request: bridge it to the protocol adapter. It changes no adapter
                     // goal or machine state — it issues one browse() when CONNECTED and stashes the future.

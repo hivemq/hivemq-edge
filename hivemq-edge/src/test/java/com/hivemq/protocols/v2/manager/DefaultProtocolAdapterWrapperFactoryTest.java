@@ -271,6 +271,35 @@ class DefaultProtocolAdapterWrapperFactoryTest {
     }
 
     @Test
+    void constructionThatFailsAfterRegisteringMetrics_deregistersThem_soTheAdapterIdStaysCreatable() {
+        // The metrics object registers GAUGES, and a duplicate gauge registration throws. Leaking them on a failed
+        // build therefore does not merely waste memory: every later attempt at the same adapter id dies at the
+        // registration with "A metric named ... already exists", reporting that instead of the real fault, for the
+        // life of the process. The id would be permanently uncreatable.
+        //
+        // The failure has to land AFTER the metrics are registered, which is why it is injected at the wrapper's own
+        // dispatcher attach rather than in the adapter's constructor.
+        final MetricRegistry registry = new MetricRegistry();
+        final ThrowingOnWrapperAttachDispatcher throwing = new ThrowingOnWrapperAttachDispatcher();
+        final DefaultProtocolAdapterWrapperFactory failing = new DefaultProtocolAdapterWrapperFactory(
+                clock, throwing, registry, new TestDataPointFactory(), new ObjectMapper(), 100);
+
+        assertThatThrownBy(() ->
+                        failing.create(adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("attach refused");
+
+        assertThat(registry.getNames()).noneMatch(name -> name.startsWith(ProtocolAdapterMetrics.ADAPTER_PREFIX));
+
+        // And the proof that matters: the same id can be built again without tripping over its own residue — the
+        // second attempt must fail for its own reason, not with "A metric named ... already exists".
+        assertThatThrownBy(() ->
+                        failing.create(adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("attach refused");
+    }
+
+    @Test
     void constructionThatFailsAfterOpeningABinding_releasesItBeforeRethrowing() {
         final CountingDispatcher counting = new CountingDispatcher();
         final DefaultProtocolAdapterWrapperFactory factoryOnCounting = new DefaultProtocolAdapterWrapperFactory(
@@ -546,6 +575,17 @@ class DefaultProtocolAdapterWrapperFactoryTest {
      * A {@link MessageDispatcher} double that counts the bindings it hands out and the ones later closed, so a test can
      * assert every binding an adapter opened is released on teardown and a failed construction leaves none behind.
      */
+    /** Refuses every binding — the test adapter opens none, so the first attach is the wrapper's, well after the
+     * metrics are registered. */
+    private static final class ThrowingOnWrapperAttachDispatcher implements MessageDispatcher {
+
+        @Override
+        public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
+                final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
+            throw new IllegalStateException("attach refused");
+        }
+    }
+
     private static final class CountingDispatcher implements MessageDispatcher {
 
         private int attaches;

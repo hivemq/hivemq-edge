@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.tag;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -28,6 +29,9 @@ import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.TagWritability;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.WriteSettled;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -52,14 +56,14 @@ import org.slf4j.LoggerFactory;
  * and the {@code DEACTIVATED} ↔ operating coupling to the adapter's connection are applied directly.</li>
  * </ul>
  * <b>One write is in flight at a time, and the aspect never queues</b> — it advertises, in effect, an in-flight
- * window of exactly one write. Each write carries a {@link SouthboundWriteCompletion}; the aspect requests it,
- * remembers that completion as the in-flight one, and settles it exactly once when the device acknowledges
- * ({@link SouthboundWriteOutcome#SUCCEEDED}/{@code FAILED}) or the write is abandoned
- * ({@link SouthboundWriteOutcome#ABORTED} on deactivation or a lost connection). A write arriving while one is in
- * flight is <b>not queued</b>: it is rejected immediately ({@link SouthboundWriteOutcome#REJECTED_BUSY}, counted
- * as a window violation); a write arriving while the aspect cannot write at all settles
+ * window of exactly one write. Each write carries a delivery token; the aspect requests the write, remembers that
+ * token as the in-flight one, and reports the outcome exactly once — as a {@link WriteSettled} message back to its
+ * own mailbox — when the device acknowledges ({@link SouthboundWriteOutcome#SUCCEEDED}/{@code FAILED}) or the write
+ * is abandoned ({@link SouthboundWriteOutcome#ABORTED} on deactivation or a lost connection). A write arriving
+ * while one is in flight is <b>not queued</b>: it is reported {@link SouthboundWriteOutcome#REJECTED_BUSY} at once
+ * and counted as a window violation; a write arriving while the aspect cannot write at all is reported
  * {@link SouthboundWriteOutcome#ABORTED} so its sender keeps the command queued for redelivery. Back-pressure
- * therefore lives in the queue in front of the aspect
+ * therefore lives in the channel in front of the aspect
  * ({@link com.hivemq.protocols.v2.southbound.SouthboundWriteQueue}, which holds the next write until the current
  * one settles) and the durable backlog behind it — not in the adapter.
  */
@@ -91,7 +95,8 @@ public final class TagAspectWrite implements TagAspectVerifying {
     private final @NotNull BatchCollector batches;
     private final @NotNull ProtocolAdapterMetrics metrics;
     private final @NotNull SharedNodeVerification sharedNodeVerification;
-    private final @NotNull TagWriteReadinessListener readinessListener;
+    private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> selfSender;
+    private final long writeResultTimeoutMillis;
     private final @NotNull Backoff verificationRetryBackoff;
 
     private final @NotNull FSM<TagAspectState, TagAspectEvent, TagAspectWrite> machine;
@@ -103,8 +108,17 @@ public final class TagAspectWrite implements TagAspectVerifying {
     private long lastTransitionAtMillis;
     private @Nullable TimerHandle activeTimer;
 
-    /** The completion of the write currently in flight, settled exactly once when it reaches a terminal outcome. */
-    private @Nullable SouthboundWriteCompletion inFlightCompletion;
+    /**
+     * The delivery token of the write currently in flight, reported exactly once when it reaches a terminal
+     * outcome. {@code null} means no write is in flight.
+     */
+    private @Nullable Long inFlightDeliveryToken;
+
+    /**
+     * The batch collector's write-dispatch count when the in-flight write was posted. While it is unchanged the
+     * write is still sitting in the batch, so any result arriving cannot be its own — see {@link #acceptWriteResult}.
+     */
+    private long writeDispatchesAtRequest;
 
     /**
      * @param adapterId              the owning adapter's id.
@@ -115,7 +129,10 @@ public final class TagAspectWrite implements TagAspectVerifying {
      * @param batches                the actor's batch collector — where write requests are posted.
      * @param metrics                the per-adapter metrics (per-tag failure counters).
      * @param sharedNodeVerification the shared verification authority for re-verifications.
-     * @param readinessListener      notified when this aspect crosses its writability boundary.
+     * @param selfSender             the wrapper's own mailbox — where this aspect reports settlements and
+     *                               writability changes, so the delivery side never needs a callback into it.
+     * @param writeResultTimeoutMillis the deadline for a requested write's result — the adapter's command timeout,
+     *                                 the same one the read aspect arms on a poll (EDG-824 #15).
      * @param retryPolicy            the backoff policy for verification retries.
      */
     public TagAspectWrite(
@@ -127,7 +144,8 @@ public final class TagAspectWrite implements TagAspectVerifying {
             final @NotNull BatchCollector batches,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
-            final @NotNull TagWriteReadinessListener readinessListener,
+            final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> selfSender,
+            final long writeResultTimeoutMillis,
             final @NotNull RetryPolicy retryPolicy) {
         this.adapterId = adapterId;
         this.node = node;
@@ -137,7 +155,8 @@ public final class TagAspectWrite implements TagAspectVerifying {
         this.batches = batches;
         this.metrics = metrics;
         this.sharedNodeVerification = sharedNodeVerification;
-        this.readinessListener = readinessListener;
+        this.selfSender = selfSender;
+        this.writeResultTimeoutMillis = writeResultTimeoutMillis;
         this.verificationRetryBackoff = new Backoff(retryPolicy);
         this.machine = new FSM<>(TagAspectWriteState.DEACTIVATED, TagAspectWriteTransitions.table(), this);
     }
@@ -270,11 +289,11 @@ public final class TagAspectWrite implements TagAspectVerifying {
      * {@link SouthboundWriteOutcome#ABORTED} while the aspect cannot write at all — so the sender keeps the
      * command queued for redelivery.
      *
-     * @param value      the reused v1 value to write.
-     * @param completion the one-shot back-pressure signal for this write.
+     * @param value         the reused v1 value to write.
+     * @param deliveryToken the delivering channel's correlation, echoed in the settlement report.
      */
-    public void onWriteRequested(final @NotNull DataPoint value, final @NotNull SouthboundWriteCompletion completion) {
-        dispatch(new TagAspectEvent.WriteRequested(value, completion));
+    public void onWriteRequested(final @NotNull DataPoint value, final long deliveryToken) {
+        dispatch(new TagAspectEvent.WriteRequested(value, deliveryToken));
     }
 
     /**
@@ -284,6 +303,9 @@ public final class TagAspectWrite implements TagAspectVerifying {
      * @param reason  the failure reason, or {@code null} on success.
      */
     public void onWriteResult(final boolean success, final @Nullable String reason) {
+        if (!acceptWriteResult()) {
+            return;
+        }
         if (success) {
             dispatch(new TagAspectEvent.WriteSucceeded());
         } else {
@@ -295,6 +317,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
 
     @Override
     public @NotNull TagAspectState enterVerified() {
+        cancelActiveTimer(); // clear the verify-result deadline; nothing is armed in the resting write state
         verificationRetryBackoff.reset();
         // The healthy resting goal state: ready to accept southbound writes. No kickoff work — unlike the read
         // aspect there is no poll to schedule or subscription to request.
@@ -304,6 +327,27 @@ public final class TagAspectWrite implements TagAspectVerifying {
     @Override
     public void requestVerification() {
         sharedNodeVerification.requestVerification(node);
+        armVerifyResultDeadline();
+    }
+
+    /**
+     * Arm the verify-result deadline, the write-path twin of the read aspect's. Without it an adapter that accepts
+     * a re-verification and never reports an outcome parks this aspect in {@code WAITING_FOR_VERIFICATION} forever
+     * — no timer armed, no backoff consulted, no writability crossing left to emit — while the adapter's own
+     * connection stays up and no watchdog runs.
+     * <p>
+     * That is not a hypothetical here: the write-result deadline's recovery path re-verifies, and the adapter it
+     * re-verifies against is by definition one that has just failed to answer. Without this deadline the recovery
+     * from a mute adapter is itself a permanent wedge, with the command still sitting in the store — the exact
+     * failure the write-result deadline exists to prevent, moved one step down the road.
+     */
+    private void armVerifyResultDeadline() {
+        scheduleTimer(writeResultTimeoutMillis, () -> {
+            activeTimer = null;
+            sharedNodeVerification.abandonVerification(node);
+            dispatch(new TagAspectEvent.VerifyTransientlyFailed(
+                    "no verify result within " + writeResultTimeoutMillis + " ms"));
+        });
     }
 
     @Override
@@ -327,24 +371,100 @@ public final class TagAspectWrite implements TagAspectVerifying {
      * Begin the single in-flight write: post it to the batch collector and remember its completion so the
      * device's acknowledgment can settle it.
      *
-     * @param event the write request event carrying the value and its completion.
+     * @param event the write request event carrying the value and its delivery token.
      */
     void beginWrite(final @NotNull TagAspectEvent.WriteRequested event) {
-        // Defensive: the single-in-flight invariant means no completion should linger when a new write begins. If one
-        // somehow does, abort it rather than leak it (a leaked completion would strand a back-pressuring producer).
-        if (inFlightCompletion != null) {
+        // Defensive: the single-in-flight invariant means no token should linger when a new write begins. If one
+        // somehow does, abort it rather than leave its channel waiting on a report that never comes.
+        if (inFlightDeliveryToken != null) {
             settleInFlight(SouthboundWriteOutcome.ABORTED, "superseded by a new write");
         }
-        // Remember the completion BEFORE posting the request. A completion this aspect never took ownership of can
-        // never be settled by any later path — not the acknowledgment, not deactivation, not a lost connection — so
-        // the sender's delivery slot would stay occupied for good and the tag would silently stop accepting writes.
-        inFlightCompletion = event.completion();
+        // Take ownership of the token BEFORE posting the request. A write this aspect never recorded could not be
+        // reported by any later path — not the acknowledgment, not deactivation, not a lost connection — so the
+        // channel's delivery slot would stay occupied for good and the tag would silently stop accepting writes.
+        inFlightDeliveryToken = event.deliveryToken();
         try {
             requestWrite(event.value());
         } catch (final RuntimeException postFailure) {
             settleInFlight(SouthboundWriteOutcome.ABORTED, "the write could not be posted to the adapter");
             throw postFailure;
         }
+        // The batch this write joins has not been handed to the adapter yet; the next tick does that. Remembering
+        // the dispatch count now is what lets onWriteResult tell this write's acknowledgment from a duplicate of
+        // the PREVIOUS one — see acceptWriteResult.
+        writeDispatchesAtRequest = batches.writeDispatches();
+        armWriteResultDeadline();
+    }
+
+    /**
+     * Arm the write-result deadline on the aspect's single timer slot. Without it a write the adapter accepts but
+     * never acknowledges parks the aspect in {@code WAITING_FOR_WRITE_RESULT} forever: that state
+     * {@link TagAspectState#isOperating() is operating}, so no writability crossing is emitted, the tag snapshot
+     * stays green, and the delivering channel's slot never frees — every later poll, arrival hint and window
+     * reopen is a no-op and the command is stranded with no logged reason. The adapter's own connection stays up,
+     * so no watchdog covers it. This is the write-path analogue of the read aspect's poll-result deadline
+     * (EDG-824 #15) and reuses the same adapter command timeout.
+     * <p>
+     * On expiry the write is settled {@link SouthboundWriteOutcome#ABORTED} — <b>kept</b>, never dead-lettered: a
+     * missing acknowledgment says nothing about whether the device executed the command, and at-least-once means
+     * resolving that ambiguity in favour of redelivery. The aspect then re-verifies, which crosses out of
+     * operating (closing the delivery window) and back in on success (reopening it), so the very same command is
+     * redelivered rather than silently lost.
+     */
+    private void armWriteResultDeadline() {
+        scheduleTimer(writeResultTimeoutMillis, () -> {
+            activeTimer = null;
+            if (inFlightDeliveryToken == null) {
+                return; // already settled — a result landed in the same tick the deadline came due
+            }
+            if (batches.writeDispatches() == writeDispatchesAtRequest) {
+                // The write is still sitting in the batch: the tick runs `timers.fireDue` BEFORE
+                // `batches.dispatch`, so a deadline armed when the write was posted can come due before the adapter
+                // has ever seen it. Aborting here would blame the adapter for the framework's own latency — and at a
+                // command timeout shorter than the tick it would do so every time, redelivering and rewriting the
+                // same command forever without ever committing it. Restart the clock from the dispatch instead.
+                armWriteResultDeadline();
+                return;
+            }
+            final String reason = "no write result within " + writeResultTimeoutMillis + " ms";
+            // Explicitly at WARN, not left to recordFailure's escalating severity: the first occurrence of this is
+            // an adapter breaking its acknowledgment contract, and recordFailure logs a first failure at DEBUG.
+            // The command survives, but it is being re-executed on the device on every recovery cycle.
+            log.warn(
+                    "Write aspect of tag '{}' on adapter '{}' abandoned a write: {}. The command is kept and will "
+                            + "be delivered again once the tag re-verifies.",
+                    tag.name(),
+                    adapterId,
+                    reason);
+            metrics.incrementWriteTimeout(tag.name());
+            recordFailure(reason);
+            settleInFlight(SouthboundWriteOutcome.ABORTED, reason);
+            moveTo(TagAspectWriteState.WAITING_FOR_VERIFICATION);
+            requestVerification();
+        });
+    }
+
+    /**
+     * @return whether a write result arriving now can plausibly belong to the write currently in flight. It cannot
+     *         if that write has not yet left the batch collector: the result must then be a duplicate of an earlier
+     *         one, and acting on it would settle — and so <b>delete from the durable store</b> — a command the
+     *         device has not even been asked to execute yet.
+     *         <p>
+     *         This is a partial guard, and deliberately so. {@code writeResult(node, success, reason)} carries no
+     *         correlation to the write it answers, so a duplicate arriving a tick or more late is indistinguishable
+     *         from a genuine acknowledgment. Closing that remainder needs a correlation id on the SDK's write
+     *         result; this guard closes the immediate window, which is where a double-reporting adapter lands.
+     */
+    private boolean acceptWriteResult() {
+        if (inFlightDeliveryToken == null || batches.writeDispatches() != writeDispatchesAtRequest) {
+            return true;
+        }
+        log.warn(
+                "Write aspect of tag '{}' on adapter '{}' ignored a write result that arrived before its write "
+                        + "reached the adapter — the adapter reported more results than it was given writes",
+                tag.name(),
+                adapterId);
+        return false;
     }
 
     /**
@@ -357,6 +477,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
      */
     @NotNull
     TagAspectState completeInFlightWrite(final boolean success, final @Nullable String reason) {
+        cancelActiveTimer(); // the result arrived — stand the write-result deadline down
         if (!success) {
             recordFailure(reason != null ? reason : "write failed");
         }
@@ -376,22 +497,24 @@ public final class TagAspectWrite implements TagAspectVerifying {
                                 + "flight (the sender must hold the next write until the current one settles)",
                         tag.name(),
                         adapterId);
-                writeRequested
-                        .completion()
-                        .settle(SouthboundWriteOutcome.REJECTED_BUSY, "a write is already in flight");
+                report(
+                        writeRequested.deliveryToken(),
+                        SouthboundWriteOutcome.REJECTED_BUSY,
+                        "a write is already in flight");
                 return;
             }
             // A write arriving while the aspect cannot write (deactivated, waiting for the adapter, verifying, or
-            // permanently failed) is not a window violation: settle it ABORTED so the sender keeps the command
-            // queued for redelivery — never a silent drop, never a leaked completion.
+            // permanently failed) is not a window violation: report it ABORTED so the sender keeps the command
+            // queued for redelivery — never a silent drop, never an unreported write.
             log.debug(
                     "Write aspect of tag '{}' on adapter '{}' aborted a southbound write arriving in {}",
                     tag.name(),
                     adapterId,
                     machine.state());
-            writeRequested
-                    .completion()
-                    .settle(SouthboundWriteOutcome.ABORTED, "the tag cannot write in " + machine.state());
+            report(
+                    writeRequested.deliveryToken(),
+                    SouthboundWriteOutcome.ABORTED,
+                    "the tag cannot write in " + machine.state());
             return;
         }
         log.debug(
@@ -403,17 +526,42 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     /**
-     * Settle the in-flight write's completion exactly once, then clear it. A no-op when nothing is in flight.
+     * Report the in-flight write's terminal outcome exactly once, then forget it. A no-op when nothing is in
+     * flight.
      *
      * @param outcome the terminal outcome to report.
      * @param reason  what made it terminal, or {@code null} — travels into the dead-letter log line.
      */
     private void settleInFlight(final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
-        final SouthboundWriteCompletion completion = inFlightCompletion;
-        if (completion != null) {
-            inFlightCompletion = null;
-            completion.settle(outcome, reason);
+        final Long token = inFlightDeliveryToken;
+        if (token != null) {
+            inFlightDeliveryToken = null;
+            // If the write never left the batch collector, retract it: it has been abandoned, and dispatching it a
+            // moment later would write to the device a value already reported as not written — or, when a reload
+            // re-pointed this tag, write it to a node the configuration no longer maps.
+            if (batches.writeDispatches() == writeDispatchesAtRequest && batches.retractWrite(node)) {
+                log.debug(
+                        "Write aspect of tag '{}' on adapter '{}' retracted a write that had not reached the "
+                                + "adapter yet",
+                        tag.name(),
+                        adapterId);
+            }
+            report(token, outcome, reason);
         }
+    }
+
+    /**
+     * Tell the delivering channel what became of one write. This goes through the wrapper's own mailbox rather than
+     * a direct call: the aspect stays ignorant of the delivery side, and because every southbound message shares
+     * one priority band, a report emitted before a writability change is always seen before it.
+     *
+     * @param deliveryToken the channel's correlation for the write being reported.
+     * @param outcome       the terminal outcome.
+     * @param reason        the device's own words, or {@code null}.
+     */
+    private void report(
+            final long deliveryToken, final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
+        selfSender.tell(new WriteSettled(tag.name(), deliveryToken, outcome, reason));
     }
 
     // ── snapshot accessors (pure reads on the dispatch thread) ───────────────────────────────
@@ -516,16 +664,15 @@ public final class TagAspectWrite implements TagAspectVerifying {
         if (before.isOperating() == after.isOperating()) {
             return;
         }
-        if (after.isOperating()) {
-            readinessListener.tagWritable(tag.name());
-        } else {
-            readinessListener.tagUnwritable(tag.name());
-        }
+        selfSender.tell(new TagWritability(tag.name(), after.isOperating()));
     }
 
     private void scheduleTimer(final long delayMillis, final @NotNull Runnable onFire) {
         cancelActiveTimer();
-        activeTimer = timers.schedule(clock.nowMillis() + delayMillis, onFire);
+        // Saturate: a near-Long.MAX_VALUE configured delay must mean "practically never", not an overflowed
+        // negative deadline that fires immediately (the read aspect saturates the same configured value).
+        final long fireAtMillis = clock.nowMillis() + delayMillis;
+        activeTimer = timers.schedule(fireAtMillis < 0 ? Long.MAX_VALUE : fireAtMillis, onFire);
     }
 
     private void cancelActiveTimer() {

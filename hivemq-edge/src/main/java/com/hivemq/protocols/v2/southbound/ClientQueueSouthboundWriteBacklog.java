@@ -18,80 +18,59 @@ package com.hivemq.protocols.v2.southbound;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.util.FutureUtils;
-import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundArrival;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundRead;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundSize;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The production {@link SouthboundWriteBacklog}: the durable MQTT client queue itself, adapted to the backlog's
- * synchronous head-without-remove contract by <b>prefetching</b>. {@link ClientQueuePersistence} is asynchronous
- * (futures through the single-writer), so this backlog leases the queue's head ahead of time — one
- * {@code readShared(limit 1)} marks it in-flight and caches it — and {@link #head()} serves the cached lease
- * idempotently until a terminal outcome deletes it ({@code removeShared}) and the next prefetch begins. An
- * abandoned command needs no call, exactly as the contract says: the lease simply stays cached, redelivered when
- * the delivering queue resumes.
+ * The production {@link SouthboundWriteBacklog}: the durable MQTT client queue, exposed as intents whose answers
+ * come back as mailbox messages.
  * <p>
- * Durability and at-least-once come from the client queue: a command is {@code removeShared}-deleted only on a
- * terminal outcome, and a crash discards the in-memory lease while the message stays queued — the restarted Edge
- * reads it again (the in-flight marker does not outlive the process; QoS 0 commands are removed on read by the
- * broker and are therefore at-most-once — QoS ≥ 1 is the durability precondition). The contract is strictly
- * at-least-once: a crash between the device acknowledgment and the queue delete replays the command on restart
- * and it executes again — the southbound path is deliberately fire-and-forget and keeps no executed-command
- * record to recognize a replay by.
+ * This class holds <b>no delivery state</b> — no cached head, no in-flight flag, no recovery latches. It is a
+ * translator between two vocabularies: {@link ClientQueuePersistence}'s futures and callbacks on one side, and the
+ * wrapper's mailbox on the other. Every completion it observes does exactly one thing — build a message and
+ * {@code tell} it — so all reasoning about what to do next happens on the dispatch thread, in
+ * {@link SouthboundWriteQueue}, as ordinary single-threaded code.
+ * <p>
+ * "Completion" rather than "the persistence thread" on purpose: the callbacks run on {@code directExecutor()}, and
+ * the in-memory single writer executes an uncontended submission inline, so a read frequently answers on the
+ * <b>dispatch thread</b>, re-entrantly, inside the very call that requested it. That is safe precisely because the
+ * shim does nothing but {@code tell} — an enqueue, never a dispatch — and because the requesting side records its
+ * token before issuing the request. Put any logic in these callbacks and that stops holding.
+ * <p>
+ * A read leases the queue head without removing it ({@code readShared} marks it in-flight); only a terminal outcome
+ * {@code removeShared}-deletes it. That is the at-least-once contract: a crash discards nothing but the lease — the
+ * message stays queued and the restarted Edge reads it again. Note that the marker itself is <b>durable</b>, not
+ * in-memory: the Xodus client queue writes the packet id into the store. What clears it is the successor process's
+ * bootstrap, which resets every shared-queue marker on load; that is the step the at-least-once argument actually
+ * rests on, so a persistence implementation that skipped it would strand every leased head across a restart.
+ * QoS 0 commands are removed on read by broker semantics and are therefore at-most-once; QoS ≥ 1 is the durability
+ * precondition.
+ * <p>
+ * <b>Nothing here needs to be lossless.</b> An earlier design carried a recovery ladder — remembered wakeups,
+ * evidence flags, one-shot latches — because the broker's publish-available callback is edge-triggered: it fires
+ * only on the queue's 0→1 transition, so a missed wakeup stranded a durable command invisibly. Here that callback
+ * is a pure latency hint and the delivery side polls as a backstop, so a lost hint costs at most one poll interval
+ * and a failed submission costs nothing but a retry. That is why this class has no flags and no elaborate
+ * synchronous-throw handling: a throw at submission is reported as a failed read and retried, exactly like a
+ * failed future.
  * <p>
  * An <b>untranslatable</b> publish (the {@link SouthboundPublishTranslator} returns {@code null} or throws) is
- * dead-lettered by the backlog itself — removed and logged, so a malformed command never wedges the tag. A failed
- * {@code readShared} is logged at {@code ERROR} and <b>not</b> retried in place (an immediate retry on the direct
- * executor could spin on a persistent failure).
- * <p>
- * <b>Wakeups are lossless.</b> The publish-available callback fires only on the queue's 0→1 size transition, so a
- * wakeup that arrives while a read is already in flight is the only signal that command will ever send — and the
- * in-flight read may have executed before the command was persisted and come back empty (or failed). Such a
- * wakeup is therefore remembered under the monitor and replayed as one more prefetch when the read completes;
- * dropping it would strand a durable command invisibly until an adapter recreate or an Edge restart.
- * <p>
- * <b>The 0→1 gate needs a safety net beyond wakeups.</b> Three read outcomes leave the queue non-empty with no
- * callback ever due (it never re-empties): a failed read, a read the store completed <i>empty</i> after dropping
- * a payload-broken head, and a read-task failure that left an ownerless in-flight marker hiding the head. Each
- * records evidence and escalates stepwise: an empty read cross-checks the store's {@code size} and, if non-empty,
- * re-reads once immediately (the broken-head case), then sweeps the queue's in-flight markers (the ownerless-lease
- * case). The sweep is re-guarded under the monitor immediately before it issues — skipped if a command was leased
- * meanwhile — so it only ever runs while this backlog holds no head. A blanket sweep is safe against the residual
- * single-writer race because this synthetic shared queue has exactly one consumer (this backlog): a transiently
- * un-marked command can only be re-leased here, where the head-gate holds it, and is {@code removeShared}-deleted
- * on disposal. Beyond the sweep, and for failed reads/size-checks/sweeps, a {@code rearmRequested} flag asks the
- * wrapper's tick (via {@link #rearmIfRequested()}) to retry — rate-bounded by the tick period, never a spin, and
- * costing nothing on a genuinely drained queue; each tick re-runs the ladder from the top so a store that heals
- * recovers on its own. All recovery latches reset when a lease succeeds.
- * <p>
- * Shutdown caveat (accepted): after the persistence shutdown grace period, submitted reads return futures that
- * never complete — a prefetch in that window stays {@code fetching} silently. The process is exiting; durable
- * commands replay on restart.
- * <p>
- * <b>Every persistence call is guarded against a synchronous throw.</b> {@link ClientQueuePersistence} reports
- * failures through its futures, but submitting the work can itself throw (a rejected submission while the
- * single-writer shuts down, say). Each such call here is followed by a step that must not be skipped, and skipping
- * it wedges the tag silently until an adapter recreate: an unguarded {@code readShared} leaves {@code fetching}
- * stuck true so no later prefetch or {@link #rearmIfRequested()} can ever run again; an unguarded
- * {@code removeShared} skips the follow-up prefetch and records no evidence, on a queue whose 0→1 callback can
- * never fire again; an unguarded callback deregistration skips the lease release in {@link #close()}. So each site
- * catches, keeps its follow-up step, and routes the failure into the same tick-paced recovery an asynchronous
- * failure takes. A {@link VirtualMachineError} still propagates — the VM is going down, and a stuck flag is the
- * least of it.
- * <p>
- * Thread-safety: {@link #head()}/{@link #removeHead}/{@link #deadLetterHead} run under the delivering queue's
- * monitor (lock order queue→backlog); the read callback and the publish-available callback run on persistence
- * threads. All state is guarded by this backlog's monitor, and both the registered wakeup and every
- * {@link ClientQueuePersistence} call are made <b>outside</b> it.
+ * <b>reported</b>, not deleted here: the answer names it, and the delivery side dead-letters it beside every other
+ * disposition. Decoding is a pure function and can run wherever the answer is built; deciding a command's fate is
+ * not, and belongs on the one thread that owns that decision.
  */
 public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteBacklog {
 
@@ -99,495 +78,261 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
 
     private static final int READ_LIMIT = 1;
 
+    /** How many times a delete is attempted before the queue entry is declared leaked. */
+    private static final int DELETE_ATTEMPTS = 3;
+
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull String queueId;
     private final @NotNull SouthboundPublishTranslator translator;
     private final @NotNull String adapterId;
     private final @NotNull String tagName;
-
-    private @Nullable Runnable wakeup;
-    private @Nullable SouthboundCommand head;
-    private boolean fetching;
-    private boolean closed;
+    private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender;
 
     /**
-     * Set when a prefetch request arrives while a read is in flight; consumed by that read's completion, which
-     * then issues one more prefetch. This is what makes wakeups lossless: the in-flight read may predate the
-     * arriving command and return empty, and the 0→1-transition callback will never fire for that command again.
-     */
-    private boolean wakeupPending;
-
-    /**
-     * Evidence that the store still holds commands the event-driven path cannot surface (failed read, failed size
-     * check, or an empty read that exhausted the immediate recovery steps); consumed by {@link #rearmIfRequested()}
-     * on the wrapper's tick. Cleared whenever a lease succeeds.
-     */
-    private boolean rearmRequested;
-
-    /** One-shot latch: an empty read with a non-empty store re-reads immediately once. Reset on a lease. */
-    private boolean emptyRecheckDone;
-
-    /** One-shot latch: the in-flight-marker sweep runs once per quiet period. Reset on a lease. */
-    private boolean markerSweepDone;
-
-    /**
-     * Throttles the marker-sweep WARN to once per incident: the sweep itself re-fires each tick (it is the recovery
-     * mechanism for a persistent marker fault), but a permanently-degraded tag would otherwise log a WARN every
-     * tick. Set on the first sweep, reset on a lease.
-     */
-    private boolean sweepWarnLogged;
-
-    /**
-     * Registers on the queue's publish-available callback and prefetches immediately, so commands already queued
-     * (e.g. across a restart) surface without waiting for a new arrival.
+     * Registers the arrival hint on the queue's publish-available callback. No initial read is issued here: the
+     * delivery side polls on the wrapper's own tick, so commands already queued (across a restart, say) surface
+     * there like any other.
      *
      * @param clientQueuePersistence the durable client queue store.
      * @param queueId                the shared-subscription queue id this tag's commands arrive on.
      * @param translator             turns a queued publish into the value to write.
      * @param adapterId              the owning adapter's id, for logging.
-     * @param tagName                the tag this backlog feeds, for logging.
+     * @param tagName                the tag this backlog feeds — the key every answer is addressed to.
+     * @param wrapperSender          the wrapper mailbox every answer is told to.
      */
     public ClientQueueSouthboundWriteBacklog(
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull String queueId,
             final @NotNull SouthboundPublishTranslator translator,
             final @NotNull String adapterId,
-            final @NotNull String tagName) {
+            final @NotNull String tagName,
+            final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender) {
         this.clientQueuePersistence = clientQueuePersistence;
         this.queueId = queueId;
         this.translator = translator;
         this.adapterId = adapterId;
         this.tagName = tagName;
-        clientQueuePersistence.addPublishAvailableCallback(ignored -> prefetch(), queueId);
-        prefetch();
+        this.wrapperSender = wrapperSender;
+        clientQueuePersistence.addPublishAvailableCallback(ignored -> tell(new SouthboundArrival(tagName)), queueId);
     }
 
     @Override
-    public synchronized @Nullable SouthboundCommand head() {
-        return head;
-    }
-
-    @Override
-    public void removeHead(final @NotNull String id) {
-        deleteHead(id, SouthboundWriteOutcome.SUCCEEDED, null);
-    }
-
-    @Override
-    public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
-        log.warn(
-                "Dead-lettering southbound command '{}' for tag '{}' on adapter '{}': {}",
-                id,
-                tagName,
-                adapterId,
-                reason);
-        deleteHead(id, SouthboundWriteOutcome.FAILED, reason);
-    }
-
-    @Override
-    public synchronized void onAvailable(final @NotNull Runnable wakeup) {
-        this.wakeup = wakeup;
-    }
-
-    /**
-     * Deregister from the queue's publish-available callback and drop the cached lease, <b>clearing its in-flight
-     * marker</b>: a leased-but-undisposed head would otherwise stay invisible to a successor backlog in the same
-     * process (an adapter recreate), stranding the command until a full restart. The queue itself is left
-     * untouched — it is durable, and a successor backlog (or a restarted Edge) picks its contents up.
-     */
-    @Override
-    public void close() {
-        final SouthboundCommand leased;
-        synchronized (this) {
-            closed = true;
-            leased = head;
-            head = null;
-        }
+    public void requestRead(final long readToken) {
         try {
-            clientQueuePersistence.removePublishAvailableCallback(queueId);
-        } catch (final VirtualMachineError fatal) {
-            throw fatal;
-        } catch (final Throwable deregistrationFailure) {
-            // Must not skip the lease release below: an unreleased lease is invisible to a successor backlog in
-            // this process and strands the command until a full restart — the very bug this close() exists to fix.
-            log.warn(
-                    "Failed to deregister the publish-available callback of southbound queue '{}' (tag '{}', "
-                            + "adapter '{}') — releasing the lease regardless",
-                    queueId,
-                    tagName,
-                    adapterId,
-                    deregistrationFailure);
-        }
-        if (leased != null) {
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeInFlightMarker(queueId, leased.id()));
-        }
-    }
-
-    private void deleteHead(
-            final @NotNull String id, final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
-        final boolean closedBeforeSettle;
-        synchronized (this) {
-            closedBeforeSettle = closed;
-            if (!closedBeforeSettle) {
-                if (head == null || !id.equals(head.id())) {
-                    throw new IllegalStateException("dispose of a command that is not the head: " + id);
-                }
-                head = null;
-            }
-        }
-        if (closedBeforeSettle) {
-            // The write settled after close() — a recreate or tags-only drop raced the device acknowledgment.
-            // close() already released the lease, so the command stays durably queued and a successor backlog
-            // redelivers it (at-least-once); swallow the disposal rather than blow up the settling thread.
-            log.warn(
-                    "Southbound command '{}' for tag '{}' on adapter '{}' settled {}{} after its backlog closed — "
-                            + "left queued for a successor",
-                    id,
-                    tagName,
-                    adapterId,
-                    outcome,
-                    reason != null ? " (" + reason + ")" : "");
-            return;
-        }
-        try {
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, id));
-        } catch (final VirtualMachineError fatal) {
-            throw fatal;
-        } catch (final Throwable removalFailure) {
-            // The delete was never submitted. The command is still queued, so at-least-once holds — but this
-            // backlog has already dropped its head, and the queue never re-empties, so its 0→1 callback can never
-            // fire again. Record the evidence so the tick re-reads instead of leaving the tag stranded.
-            log.error(
-                    "Failed to submit the delete of southbound command '{}' for tag '{}' on adapter '{}' — will "
-                            + "retry the read on the next tick",
-                    id,
-                    tagName,
-                    adapterId,
-                    removalFailure);
-            synchronized (this) {
-                if (!closed) {
-                    rearmRequested = true;
-                }
-            }
-        }
-        prefetch();
-    }
-
-    /**
-     * Lease the queue's head if nothing is cached and no read is in flight — a no-op otherwise. Safe to call
-     * repeatedly; triggered at construction, by the publish-available callback, and after each deletion.
-     */
-    private void prefetch() {
-        synchronized (this) {
-            if (closed || head != null) {
-                return;
-            }
-            if (fetching) {
-                wakeupPending = true;
-                return;
-            }
-            fetching = true;
-            wakeupPending = false;
-        }
-        try {
-            final ListenableFuture<ImmutableList<PUBLISH>> read = clientQueuePersistence.readShared(
-                    queueId, READ_LIMIT, InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES);
             Futures.addCallback(
-                    read,
+                    clientQueuePersistence.readShared(
+                            queueId, READ_LIMIT, InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES),
                     new FutureCallback<>() {
                         @SuppressWarnings("NullAway") // Guava FutureCallback.onSuccess has @Nullable param
                         @Override
                         public void onSuccess(final ImmutableList<PUBLISH> publishes) {
-                            onRead(publishes);
+                            answerRead(readToken, publishes);
                         }
 
                         @Override
                         public void onFailure(final @NotNull Throwable throwable) {
-                            onReadFailure(throwable);
+                            tell(new SouthboundRead(tagName, readToken, null, null, throwable));
                         }
                     },
                     MoreExecutors.directExecutor());
         } catch (final VirtualMachineError fatal) {
             throw fatal;
         } catch (final Throwable submissionFailure) {
-            // The read never became a future, so no callback will ever reset `fetching` — treat it exactly as a
-            // failed read: clear the flag, record the evidence, and let the tick retry.
-            onReadFailure(submissionFailure);
+            // The read never became a future (a rejected submission while the single-writer shuts down, say).
+            // Reporting it as a failed read is all that is needed: the backstop poll retries.
+            tell(new SouthboundRead(tagName, readToken, null, null, submissionFailure));
         }
     }
 
-    private void onRead(final @Nullable ImmutableList<PUBLISH> publishes) {
-        if (publishes == null || publishes.isEmpty()) {
-            final boolean reread;
-            synchronized (this) {
-                fetching = false;
-                reread = wakeupPending && !closed;
-            }
-            if (reread) {
-                // A command arrived while this read was in flight: the empty result is stale, and the arrival's
-                // wakeup was absorbed by the fetching guard — this re-read is its replay.
-                prefetch();
-            } else {
-                // "Empty" is trusted only after the store confirms it: a payload-broken head or an ownerless
-                // in-flight marker makes a read complete empty while commands still queue behind it.
-                verifyStoreDrained();
-            }
-            return;
-        }
-        final PUBLISH publish = publishes.getFirst(); // READ_LIMIT = 1
-        final boolean closedBeforeRead;
-        synchronized (this) {
-            closedBeforeRead = closed;
-            if (closedBeforeRead) {
-                fetching = false;
-            }
-        }
-        if (closedBeforeRead) {
-            // The read completed after close(): it leased the command broker-side, but nobody owns that lease
-            // anymore — close() could only release the cached head, not a read still in flight. Release the
-            // in-flight marker so a successor backlog can lease the command instead of it stranding.
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeInFlightMarker(queueId, publish.getUniqueId()));
-            return;
-        }
-        final DataPoint value = translate(publish);
-        if (value == null) {
-            // Untranslatable: dead-letter it here and lease the next — a malformed command never wedges the tag.
-            synchronized (this) {
-                fetching = false;
-            }
-            log.warn(
-                    "Southbound publish '{}' on topic '{}' for tag '{}' on adapter '{}' is untranslatable — "
-                            + "dead-lettered",
-                    publish.getUniqueId(),
-                    publish.getTopic(),
-                    tagName,
-                    adapterId);
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, publish.getUniqueId()));
-            prefetch();
-            return;
-        }
-        final Runnable nudge;
-        final boolean closedMeanwhile;
-        synchronized (this) {
-            fetching = false;
-            closedMeanwhile = closed;
-            if (closedMeanwhile) {
-                nudge = null;
-            } else {
-                head = new SouthboundCommand(publish.getUniqueId(), value);
-                // A successful lease proves the store is readable again: re-arm the recovery ladder.
-                rearmRequested = false;
-                emptyRecheckDone = false;
-                markerSweepDone = false;
-                sweepWarnLogged = false;
-                nudge = wakeup;
-            }
-        }
-        if (closedMeanwhile) {
-            // close() landed between the entry check and here — same ownerless lease as above; release it.
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeInFlightMarker(queueId, publish.getUniqueId()));
-            return;
-        }
-        if (nudge != null) {
-            nudge.run();
-        }
-    }
-
-    private void onReadFailure(final @NotNull Throwable throwable) {
-        final boolean reread;
-        synchronized (this) {
-            fetching = false;
-            if (closed) {
-                return;
-            }
-            // No arrival may ever signal again (0→1 only) — ask the tick to retry, rate-bounded.
-            rearmRequested = true;
-            reread = wakeupPending;
-        }
-        // No unconditional in-place retry: an immediate retry on the direct executor could spin on a persistent
-        // failure. A wakeup absorbed while this read was in flight is replayed immediately; otherwise the next
-        // tick re-arms — each attempt consumes its trigger, so a persistently failing store retries once per
-        // arrival or tick, never in a loop.
-        log.error(
-                "Failed to read the southbound queue '{}' for tag '{}' on adapter '{}' — will retry on the next "
-                        + "tick or arrival",
-                queueId,
-                tagName,
-                adapterId,
-                throwable);
-        if (reread) {
-            prefetch();
-        }
-    }
-
-    /**
-     * The tick-driven safety net (reached from the wrapper's tick through the write plane): re-issue one prefetch
-     * if a previous read left evidence of undelivered commands. A no-op in every other state. Any thread.
-     * <p>
-     * Each tick-driven attempt re-runs the ladder from the top: the one-shot recheck/sweep latches are cleared here
-     * so a store that keeps a read empty across ticks (e.g. a persistent re-marking fault) gets a fresh recheck and
-     * a fresh sweep every tick, and recovers on its own once the store heals — otherwise a single burned sweep would
-     * wedge the tag at the tick-paced rung forever, since the latches otherwise reset only on a successful lease.
-     * The tick period is the rate bound, so this is a paced retry, never a spin.
-     */
     @Override
-    public void rearmIfRequested() {
-        synchronized (this) {
-            if (closed || fetching || head != null || !rearmRequested) {
-                return;
-            }
-            rearmRequested = false;
-            emptyRecheckDone = false;
-            markerSweepDone = false;
+    public void requestSize(final long readToken) {
+        try {
+            Futures.addCallback(
+                    clientQueuePersistence.size(queueId, true),
+                    new FutureCallback<>() {
+                        @SuppressWarnings("NullAway") // Guava FutureCallback.onSuccess has @Nullable param
+                        @Override
+                        public void onSuccess(final Integer size) {
+                            tell(new SouthboundSize(tagName, readToken, size == null ? 0 : size, null));
+                        }
+
+                        @Override
+                        public void onFailure(final @NotNull Throwable throwable) {
+                            tell(new SouthboundSize(tagName, readToken, 0, throwable));
+                        }
+                    },
+                    MoreExecutors.directExecutor());
+        } catch (final VirtualMachineError fatal) {
+            throw fatal;
+        } catch (final Throwable submissionFailure) {
+            tell(new SouthboundSize(tagName, readToken, 0, submissionFailure));
         }
-        prefetch();
+    }
+
+    @Override
+    public void delete(final @NotNull String commandId) {
+        delete(commandId, DELETE_ATTEMPTS);
     }
 
     /**
-     * An empty read is trusted only if the store agrees it is drained. On disagreement, escalate stepwise — one
-     * immediate re-read (a payload-broken head was dropped by the store; the next command is leasable), then an
-     * in-flight-marker sweep (an ownerless marker from a read that failed after marking hides the head; the sweep
-     * is re-guarded so it runs only while this backlog holds no head — see {@link #onEmptyReadWithNonEmptyStore} —
-     * and its own wakeup re-enters the normal prefetch path), then tick-paced re-arms. The latches reset when a
-     * lease succeeds.
+     * Delete a command, retrying a bounded number of times.
+     * <p>
+     * The retry is what keeps this from leaking. A delete that fails leaves the command queued <b>with the in-flight
+     * marker this channel's read set still on it</b>, and {@code readShared} skips marked entries — so every later
+     * read returns the command <i>behind</i> it, not this one. The channel's empty-read ladder, which is what
+     * releases an ownerless marker, arms only after three consecutive <b>empty</b> reads, and a tag with steady
+     * traffic never produces one. Without a retry the entry would therefore survive until the process restarts and
+     * its bootstrap sweep clears the marker: a durable leak on exactly the tags that are busiest.
+     * <p>
+     * Bounded rather than indefinite, because a store that refuses every attempt is a broken store and saying so is
+     * more useful than retrying into it forever. Two honest limitations:
+     * <ul>
+     * <li><b>The attempts are not spaced.</b> The callbacks run on {@code directExecutor()}, and an uncontended
+     *     submission to the in-memory single writer completes inline — so all three attempts can execute in one
+     *     stack against identical store state. They recover a transient race, not a persistently failing entry.</li>
+     * <li><b>The consequence of exhausting them is not an inert queue entry.</b> The entry stays marked, so reads
+     *     skip it and the queue appears to drain; three empty reads then arm the depth check, which finds a
+     *     non-empty store and sweeps the markers — after which the command is read again and <b>written to the
+     *     device again</b>, settles, fails to delete again, and the cycle repeats every few seconds. At-least-once
+     *     permits the duplicate execution; what is missing is a signal, so the {@code ERROR} below is the only
+     *     thing an operator has. Ending that loop needs a way to refuse a command whose delete is known to fail,
+     *     which the store cannot decide on its own.</li>
+     * </ul>
+     *
+     * @param commandId     the command to delete.
+     * @param attemptsLeft  how many attempts remain, this one included.
      */
-    private void verifyStoreDrained() {
-        synchronized (this) {
-            if (closed || fetching || head != null) {
-                return;
-            }
-        }
-        Futures.addCallback(
-                clientQueuePersistence.size(queueId, true),
-                new FutureCallback<>() {
-                    @SuppressWarnings("NullAway") // Guava FutureCallback.onSuccess has @Nullable param
-                    @Override
-                    public void onSuccess(final Integer size) {
-                        if (size != null && size > 0) {
-                            onEmptyReadWithNonEmptyStore(size);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(final @NotNull Throwable throwable) {
-                        synchronized (ClientQueueSouthboundWriteBacklog.this) {
-                            if (!closed) {
-                                rearmRequested = true;
-                            }
-                        }
-                    }
-                },
-                MoreExecutors.directExecutor());
-    }
-
-    private void onEmptyReadWithNonEmptyStore(final int size) {
-        final int step;
-        synchronized (this) {
-            if (closed || fetching || head != null) {
-                return; // the evidence is stale — a newer read is running or already leased
-            }
-            if (!emptyRecheckDone) {
-                emptyRecheckDone = true;
-                step = 0;
-            } else if (!markerSweepDone) {
-                markerSweepDone = true;
-                step = 1;
-            } else {
-                rearmRequested = true;
-                step = 2;
-            }
-        }
-        switch (step) {
-            case 0 -> prefetch();
-            case 1 -> {
-                // Re-check under the monitor immediately before the sweep. The step decision above proved
-                // head==null, but released the monitor; a command may have been leased since — a real 0→1 arrival,
-                // the healthy recovery. If so, skip the sweep: there is no ownerless marker to clear, and a blanket
-                // sweep could clear the marker of that freshly-leased LIVE head. (A residual single-writer window
-                // remains — a lease read submitted between this check and the sweep task — but it is harmless: this
-                // synthetic shared queue has exactly one consumer, this backlog, so a transiently un-marked command
-                // can only be re-leased here, where the head-gate already holds it, and terminal disposal
-                // removeShared-deletes it.)
-                final boolean stillOwnerless;
-                final boolean firstWarn;
-                synchronized (this) {
-                    stillOwnerless = !closed && !fetching && head == null;
-                    firstWarn = stillOwnerless && !sweepWarnLogged;
-                    if (stillOwnerless) {
-                        sweepWarnLogged = true;
-                    }
-                }
-                if (!stillOwnerless) {
-                    return; // a lease covered it (or we closed) — no ownerless marker, no sweep needed
-                }
-                // WARN once per incident: the sweep re-fires each tick (it is the recovery mechanism for a
-                // persistent marker fault), but a permanently-degraded tag must not spam a WARN every 50ms tick.
-                if (firstWarn) {
-                    log.warn(
-                            "Southbound queue '{}' for tag '{}' on adapter '{}' reads empty while the store holds {} "
-                                    + "command(s) — releasing possibly stranded in-flight markers",
-                            queueId,
-                            tagName,
-                            adapterId,
-                            size);
-                } else {
-                    log.debug(
-                            "Southbound queue '{}' for tag '{}' on adapter '{}' still reads empty with {} command(s) "
-                                    + "held — re-sweeping stranded in-flight markers",
-                            queueId,
-                            tagName,
-                            adapterId,
-                            size);
-                }
-                // A successful sweep fires the store's publish-available callback, which re-enters prefetch — the
-                // recovery. A FAILED sweep (the store rejected the op) must not lose the evidence: with both ladder
-                // rungs already burned, nothing else would re-arm, and the 0→1 callback can never fire on a
-                // non-empty queue — the tag would strand until recreate/restart. Record the evidence so the next
-                // tick retries, exactly as a failed read or a failed size check does.
-                Futures.addCallback(
-                        clientQueuePersistence.removeAllInFlightMarkers(queueId),
+    private void delete(final @NotNull String commandId, final int attemptsLeft) {
+        submitQuietly(
+                "delete southbound command '" + commandId + "'",
+                () -> Futures.addCallback(
+                        clientQueuePersistence.removeShared(queueId, commandId),
                         new FutureCallback<>() {
                             @Override
                             public void onSuccess(final @Nullable Void ignored) {}
 
                             @Override
                             public void onFailure(final @NotNull Throwable throwable) {
+                                if (attemptsLeft > 1) {
+                                    log.debug(
+                                            "Retrying the delete of southbound command '{}' for tag '{}' on adapter '{}'",
+                                            commandId,
+                                            tagName,
+                                            adapterId,
+                                            throwable);
+                                    delete(commandId, attemptsLeft - 1);
+                                    return;
+                                }
                                 log.error(
-                                        "Failed to release in-flight markers for southbound queue '{}' (tag '{}', "
-                                                + "adapter '{}') — will retry on the next tick",
-                                        queueId,
+                                        "Gave up deleting southbound command '{}' for tag '{}' on adapter '{}' after {} "
+                                                + "attempts. The command WAS executed, but it cannot be removed from "
+                                                + "the queue: expect it to be delivered and executed on the device "
+                                                + "again every few seconds until this Edge restarts. Investigate the "
+                                                + "client-queue persistence for this queue.",
+                                        commandId,
                                         tagName,
                                         adapterId,
+                                        DELETE_ATTEMPTS,
                                         throwable);
-                                synchronized (ClientQueueSouthboundWriteBacklog.this) {
-                                    if (!closed) {
-                                        rearmRequested = true;
-                                    }
-                                }
                             }
                         },
-                        MoreExecutors.directExecutor());
-            }
-            default -> {
-                // Tick-paced from here: rearmRequested is set; each retry re-runs this ladder's evidence check.
-            }
+                        MoreExecutors.directExecutor()));
+    }
+
+    @Override
+    public void releaseMarkers() {
+        submitQuietly(
+                "release the in-flight markers of southbound queue '" + queueId + "'",
+                () -> FutureUtils.addExceptionLogger(clientQueuePersistence.removeAllInFlightMarkers(queueId)));
+    }
+
+    /**
+     * Deregister the arrival hint and release every in-flight marker on this queue. The unconditional sweep is what
+     * makes teardown safe without sharing any state with the dispatch thread: it covers both the head this backlog
+     * had leased and the lease of a read still in flight at close time, either of which would otherwise be
+     * invisible to a successor backlog in the same process (an adapter recreate) and strand its command until a
+     * full restart.
+     * <p>
+     * Sweeping the whole queue cannot disturb a successor that has already leased something: this synthetic shared
+     * queue has exactly one consumer, so a transiently un-marked command can only be re-leased by that consumer,
+     * which holds it behind its own head gate and deletes it on disposal.
+     * <p>
+     * The queue and its contents are deliberately untouched — they are the durability.
+     */
+    @Override
+    public void close() {
+        submitQuietly(
+                "deregister the arrival callback of southbound queue '" + queueId + "'",
+                () -> clientQueuePersistence.removePublishAvailableCallback(queueId));
+        releaseMarkers();
+    }
+
+    /**
+     * Turn the read's result into one answer message. Everything this does is a pure function of the result: decode
+     * the payload, or report that it could not be decoded. It decides nothing — an untranslatable publish is
+     * <b>reported</b>, not deleted here, so that disposing of a command remains the delivery side's job and happens
+     * where every other disposition happens.
+     */
+    private void answerRead(final long readToken, final @Nullable ImmutableList<PUBLISH> publishes) {
+        if (publishes == null || publishes.isEmpty()) {
+            tell(new SouthboundRead(tagName, readToken, null, null, null));
+            return;
         }
+        final PUBLISH publish = publishes.getFirst(); // READ_LIMIT = 1
+        final DataPoint value = translate(publish);
+        if (value == null) {
+            tell(new SouthboundRead(tagName, readToken, null, publish.getUniqueId(), null));
+            return;
+        }
+        tell(new SouthboundRead(tagName, readToken, new SouthboundCommand(publish.getUniqueId(), value), null, null));
     }
 
     private @Nullable DataPoint translate(final @NotNull PUBLISH publish) {
         try {
             return translator.translate(publish);
         } catch (final StackOverflowError failure) {
-            // A pathological payload (e.g. absurd nesting) — attributable to the command, and the stack has
-            // unwound by the time we are here: dead-letter it like any other untranslatable publish.
+            // A pathological payload (absurd nesting, say) — attributable to the command, and the stack has
+            // unwound by the time we are here: treat it as any other untranslatable publish.
             log.debug("Southbound publish translation threw", failure);
             return null;
         } catch (final VirtualMachineError fatal) {
             throw fatal; // OOM and friends are not the command's fault — never swallow those
         } catch (final Throwable failure) {
-            // Not just RuntimeException: an Error or a sneaky-thrown checked exception escaping here would
-            // propagate into the future listener, leave `fetching` stuck true, and wedge the tag silently.
+            // Not just RuntimeException: an Error or a sneak-thrown checked exception escaping into the future
+            // listener would leave this read unanswered, and the tag waiting for an answer that never comes.
             log.debug("Southbound publish translation threw", failure);
             return null;
+        }
+    }
+
+    /**
+     * Run one persistence interaction whose outcome nobody waits for, turning a synchronous throw into a log line.
+     * These are the calls with no answer message to carry a failure, and none of them may throw: two run on the
+     * dispatch thread, where an escaping throwable would fault the whole adapter, and {@link #close()} runs on the
+     * manager's thread mid-teardown, where it would abandon the steps after it.
+     */
+    private void submitQuietly(final @NotNull String what, final @NotNull Runnable interaction) {
+        try {
+            interaction.run();
+        } catch (final VirtualMachineError fatal) {
+            throw fatal;
+        } catch (final Throwable failure) {
+            log.warn("Failed to {} for tag '{}' on adapter '{}'", what, tagName, adapterId, failure);
+        }
+    }
+
+    /** Hand an answer to the dispatch thread. Never throws: a dead mailbox must not break a persistence thread. */
+    private void tell(final @NotNull ProtocolAdapterWrapperMessage message) {
+        try {
+            wrapperSender.tell(message);
+        } catch (final VirtualMachineError fatal) {
+            throw fatal;
+        } catch (final Throwable failure) {
+            log.warn(
+                    "Failed to hand a southbound answer to the wrapper of tag '{}' on adapter '{}'",
+                    tagName,
+                    adapterId,
+                    failure);
         }
     }
 }

@@ -284,11 +284,12 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             southboundIntake = scope.register(new SouthboundMqttIntake(
                     adapterId, southboundBrokerRuntime, dataPointFactory, entity.getSouthboundMappings()));
             southboundWritePlane = scope.register(
-                    new SouthboundWritePlane(adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed));
+                    new SouthboundWritePlane(
+                            adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed, metrics));
         } else {
             southboundIntake = null;
             southboundWritePlane = scope.register(new SouthboundWritePlane(
-                    adapterId, mailbox, entity.getSouthboundWriteBacklogCapacity(), nodes, writeUsed));
+                    adapterId, mailbox, entity.getSouthboundWriteBacklogCapacity(), nodes, writeUsed, metrics));
         }
         final TagAspectRuntimeCoordinator tagPlane = new TagAspectRuntimeCoordinator(
                 adapterId,
@@ -298,8 +299,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 writeUsed,
                 goal,
                 ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
-                retryPolicy,
-                southboundWritePlane);
+                entity.getCommandTimeoutMillis(),
+                retryPolicy);
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,
                 protocolAdapter,
@@ -319,10 +320,11 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 context.timers(),
                 context.batches(),
                 context.metrics(),
-                context.protocolAdapter()::verifyBatch);
-        // The wrapper's tick is the only timing surface in the design: the durable backlogs' recovery
-        // retries ride it instead of owning any scheduler.
-        context.bindSouthboundRearm(southboundWritePlane::rearmBacklogs);
+                context.protocolAdapter()::verifyBatch,
+                mailbox);
+        // The delivery side becomes dispatch-thread state from here: the wrapper routes every southbound
+        // message to it, and its backstop poll rides the wrapper's tick — the only timing surface in v2.
+        context.bindSouthboundPlane(southboundWritePlane);
 
         final AtomicReference<AdapterStatusSnapshot> snapshot = new AtomicReference<>();
         final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(context, snapshot);

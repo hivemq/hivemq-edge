@@ -19,12 +19,12 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * One southbound command at the head of a {@link SouthboundWriteBacklog}: the value to write plus the opaque
- * {@code id} the backlog uses to {@link SouthboundWriteBacklog#removeHead commit} or
- * {@link SouthboundWriteBacklog#deadLetterHead dead-letter} it once its terminal outcome is known. Backed in
- * production by an MQTT client-queue message (the id is its unique message id).
+ * One southbound command leased from a {@link SouthboundWriteBacklog}: the value to write plus the opaque
+ * {@code id} the delivery side hands back to {@link SouthboundWriteBacklog#delete} once the command reaches a
+ * terminal outcome — committed after the device acknowledged it, or dead-lettered after the device refused it.
+ * Backed in production by an MQTT client-queue message (the id is its unique message id).
  *
- * @param id    the backlog's opaque handle for this command (stable until committed/dead-lettered).
+ * @param id    the store's opaque handle for this command (stable until it is deleted).
  * @param value the reused v1 value to write.
  */
 public record SouthboundCommand(@NotNull String id, @NotNull DataPoint value) {}

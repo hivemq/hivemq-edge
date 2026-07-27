@@ -114,7 +114,7 @@ public final class SouthboundMqttIntake implements AutoCloseable {
      *         write-mapped tag has one by construction ({@code write-used} derives from the same mappings).
      */
     public @NotNull SouthboundWriteBacklogFactory backlogFactory() {
-        return (tagName, node) -> {
+        return (tagName, node, wrapperSender) -> {
             final String queueId = queueIdByTag.get(tagName);
             final String commandTopic = topicByTag.get(tagName);
             if (queueId == null || commandTopic == null) {
@@ -124,7 +124,12 @@ public final class SouthboundMqttIntake implements AutoCloseable {
                         + "] is write-mapped but has no southbound" + " queue");
             }
             return new ClientQueueSouthboundWriteBacklog(
-                    brokerRuntime.clientQueuePersistence(), queueId, translator(tagName), adapterId, tagName);
+                    brokerRuntime.clientQueuePersistence(),
+                    queueId,
+                    translator(tagName),
+                    adapterId,
+                    tagName,
+                    wrapperSender);
         };
     }
 

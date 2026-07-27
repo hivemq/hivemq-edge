@@ -40,4 +40,5 @@ public sealed interface ProtocolAdapterWrapperMessage extends MailboxMessage
                 ProtocolAdapterWrapperEvent,
                 ProtocolAdapterWrapperTick,
                 ProtocolAdapterWrapperWriteRequest,
-                ProtocolAdapterWrapperBrowseRequest {}
+                ProtocolAdapterWrapperBrowseRequest,
+                ProtocolAdapterWrapperSouthboundMessage {}

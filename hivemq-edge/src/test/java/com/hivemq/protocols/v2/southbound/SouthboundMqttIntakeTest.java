@@ -56,8 +56,8 @@ class SouthboundMqttIntakeTest {
         assertThat(topicTree.getSharedSubscriber(SHARE, "cmd/ramp")).isNotEmpty();
 
         // Each write-mapped tag's backlog registers on its own mapping's queue id.
-        intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
-        intake.backlogFactory().create("ramp-rate", new TestNode("ramp-rate"));
+        intake.backlogFactory().create("setpoint", new TestNode("setpoint"), new CapturingSender());
+        intake.backlogFactory().create("ramp-rate", new TestNode("ramp-rate"), new CapturingSender());
         assertThat(clientQueue.callbackQueueIds())
                 .containsExactlyInAnyOrder(SHARE + "/cmd/setpoint", SHARE + "/cmd/ramp");
     }
@@ -67,19 +67,23 @@ class SouthboundMqttIntakeTest {
         final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
         clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(1, "{\"value\":42}"));
 
-        final SouthboundWriteBacklog backlog = intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
+        final CapturingSender answers = new CapturingSender();
+        final SouthboundWriteBacklog backlog =
+                intake.backlogFactory().create("setpoint", new TestNode("setpoint"), answers);
 
-        final SouthboundCommand head = backlog.head();
+        backlog.requestRead(1);
+        final SouthboundCommand head = answers.reads().getFirst().command();
         assertThat(head).isNotNull();
         assertThat(head.value().getTagName()).isEqualTo("setpoint");
         assertThat(head.value().getTagValue()).isEqualTo("{\"value\":42}");
-        backlog.removeHead(head.id());
+        backlog.delete(head.id());
 
-        // A payload-less publish is untranslatable: self-dead-lettered, never delivered.
+        // A payload-less publish is untranslatable: reported by name, for the delivery side to dead-letter.
         clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(2, null));
-        clientQueue.firePublishAvailable(SHARE + "/cmd/setpoint");
-        assertThat(backlog.head()).isNull();
-        assertThat(clientQueue.removed).hasSize(2); // the delivered one and the dead-lettered one
+        backlog.requestRead(2);
+        assertThat(answers.reads().get(1).command()).isNull();
+        assertThat(answers.reads().get(1).undeliverableCommandId()).isNotNull();
+        assertThat(clientQueue.removed).hasSize(1); // only the one the delivery side committed
     }
 
     @Test
@@ -87,7 +91,7 @@ class SouthboundMqttIntakeTest {
         final SouthboundMqttIntake intake =
                 newIntake(mapping("cmd/first", "setpoint"), mapping("cmd/second", "setpoint"));
 
-        intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
+        intake.backlogFactory().create("setpoint", new TestNode("setpoint"), new CapturingSender());
 
         assertThat(clientQueue.callbackQueueIds()).containsExactly(SHARE + "/cmd/first");
         assertThat(topicTree.getSharedSubscriber(SHARE, "cmd/second")).isEmpty(); // never subscribed
@@ -97,7 +101,8 @@ class SouthboundMqttIntakeTest {
     void aWriteMappedTagWithNoQueue_failsLoudly() {
         final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
 
-        assertThatThrownBy(() -> intake.backlogFactory().create("unmapped", new TestNode("unmapped")))
+        assertThatThrownBy(() ->
+                        intake.backlogFactory().create("unmapped", new TestNode("unmapped"), new CapturingSender()))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -106,18 +111,22 @@ class SouthboundMqttIntakeTest {
         final SouthboundMqttIntake intake = newIntake(mapping("cmd/setpoint", "setpoint"));
         clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(1, "a"));
         clientQueue.enqueue(SHARE + "/cmd/setpoint", publish(2, "b"));
-        final SouthboundWriteBacklog backlog = intake.backlogFactory().create("setpoint", new TestNode("setpoint"));
+        final CapturingSender answers = new CapturingSender();
+        final SouthboundWriteBacklog backlog =
+                intake.backlogFactory().create("setpoint", new TestNode("setpoint"), answers);
 
-        // Success: committed (deleted) and the next command leases.
-        final SouthboundCommand first = backlog.head();
+        // A commit deletes; so does a dead-letter. The store only removes — which of the two it was is the
+        // delivery channel's business.
+        backlog.requestRead(1);
+        final SouthboundCommand first = answers.reads().getFirst().command();
         assertThat(first).isNotNull();
-        backlog.removeHead(first.id());
+        backlog.delete(first.id());
         assertThat(clientQueue.removed).containsExactly(first.id());
 
-        // Device rejection: dead-lettered (deleted) as well — a rejection never stalls the flow.
-        final SouthboundCommand second = backlog.head();
+        backlog.requestRead(2);
+        final SouthboundCommand second = answers.reads().get(1).command();
         assertThat(second).isNotNull();
-        backlog.deadLetterHead(second.id(), "device rejected the value");
+        backlog.delete(second.id());
         assertThat(clientQueue.removed).containsExactly(first.id(), second.id());
     }
 

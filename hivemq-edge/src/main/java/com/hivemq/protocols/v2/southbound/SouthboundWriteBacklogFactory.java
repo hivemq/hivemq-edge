@@ -15,34 +15,45 @@
  */
 package com.hivemq.protocols.v2.southbound;
 
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Builds the {@link SouthboundWriteBacklog} behind one write-mapped tag's delivery channel — the seam that lets
- * the {@link SouthboundWritePlane} run over the interim in-memory backlog today and the durable
- * {@link ClientQueueSouthboundWriteBacklog client-queue one} once the MQTT intake supplies queue ids. The plane
- * calls it once per channel creation (initial build, and again for channels replaced on a tags-only reload) and
- * closes the backlog when the channel is dropped.
+ * Builds the {@link SouthboundWriteBacklog} behind one write-mapped tag's delivery channel — the seam that lets the
+ * {@link SouthboundWritePlane} run over the durable {@link ClientQueueSouthboundWriteBacklog client-queue store} in
+ * production and the in-memory stand-in where there is no broker runtime. The plane calls it once per channel
+ * creation and closes the store when the channel is dropped. A tags-only reload creates nothing: a surviving tag
+ * keeps its channel and its store, and only follows the tag to a new node.
  */
 @FunctionalInterface
 public interface SouthboundWriteBacklogFactory {
 
     /**
-     * @param tagName the write-mapped tag the backlog will feed.
-     * @param node    the tag's node — the correlation key its commands target.
-     * @return the backlog behind the tag's delivery channel.
+     * @param tagName       the write-mapped tag the store will feed — the key its answers are addressed to, and the
+     *                      key a durable store's queue is derived from.
+     * @param node          the tag's node at creation time. Neither implementation uses it: a store belongs to the
+     *                      tag, not to whatever node the tag currently addresses, which is why a tag re-pointed at a
+     *                      different node keeps the very same queue. Kept so an implementation that genuinely is
+     *                      node-scoped remains expressible.
+     * @param wrapperSender the wrapper mailbox the store tells its answers to; every store is asynchronous, and
+     *                      this is how its answers reach the dispatch thread that owns the delivery state.
+     * @return the store behind the tag's delivery channel.
      */
     @NotNull
-    SouthboundWriteBacklog create(@NotNull String tagName, @NotNull Node node);
+    SouthboundWriteBacklog create(
+            @NotNull String tagName,
+            @NotNull Node node,
+            @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender);
 
     /**
-     * The interim default: a bounded in-memory backlog per tag — not durable; commands die with the process.
+     * The non-durable default: a bounded in-memory store per tag — commands die with the process.
      *
      * @param capacity the per-tag bound; offers beyond it shed the newest.
-     * @return a factory of in-memory backlogs.
+     * @return a factory of in-memory stores.
      */
     static @NotNull SouthboundWriteBacklogFactory inMemory(final int capacity) {
-        return (tagName, node) -> new InMemorySouthboundWriteBacklog(capacity);
+        return (tagName, node, wrapperSender) -> new InMemorySouthboundWriteBacklog(capacity, tagName, wrapperSender);
     }
 }

@@ -16,81 +16,71 @@
 package com.hivemq.protocols.v2.southbound;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * The durable backlog of southbound commands for one tag — the system of record behind a
- * {@link SouthboundWriteQueue}. This is the storage seam over the MQTT client queue (production:
- * {@code ClientQueuePersistence}); the queue in front of the write aspect delivers the head command and tells the
- * backlog what became of it. The backlog holds the burst; the adapter never buffers.
+ * The durable store of southbound commands for one tag — the system of record behind a
+ * {@link SouthboundWriteQueue}. In production this is the broker's MQTT client queue; the delivery channel in
+ * front of the write aspect asks it for the head command and tells it what became of that command.
  * <p>
- * The contract is <b>head-without-remove, then delete only on a terminal outcome</b>:
- * <ul>
- * <li>{@link #head()} returns the next command <b>without removing it</b> — a crash before its outcome is known
- *     replays it on restart (at-least-once);</li>
- * <li>{@link #removeHead} deletes a command the device acknowledged (the commit);</li>
- * <li>{@link #deadLetterHead} deletes an undeliverable command;</li>
- * <li>an <b>abandoned</b> command needs no call at all: it was never removed, so it stays at the head and is
- *     redelivered when delivery resumes.</li>
- * </ul>
- * {@link #onAvailable} registers a wakeup fired when a command arrives, so the delivering queue need not poll
- * (mirrors {@code ClientQueuePersistence.addPublishAvailableCallback}). Implementations must invoke the wakeup
- * <b>without holding their own lock</b>, so the queue can call straight back into {@link #head()} without
- * deadlock.
+ * <b>Every method here records an intent and returns immediately.</b> Nothing returns a result, nothing blocks,
+ * and nothing takes a callback: the answers to {@link #requestRead} and {@link #requestSize} arrive later as
+ * {@code ProtocolAdapterWrapperSouthboundMessage} mailbox messages, on the wrapper's dispatch thread, where all
+ * delivery state lives. That is the whole point of the shape — the store's asynchrony is confined to a shim that
+ * turns a completed future into a message and touches no delivery state, so the delivery logic itself reads as
+ * ordinary single-threaded code.
  * <p>
- * <b>Disposal must not throw in normal operation.</b> {@link #removeHead}/{@link #deadLetterHead} run on the
- * adapter's single dispatch thread, off the delivering queue's monitor; the only expected throw is an
- * {@link IllegalStateException} for a non-head id, which is a programming error. A throw for any other reason
- * (e.g. a persistence op failing synchronously) is a contract violation — the queue defensively releases the
- * delivery slot and advances rather than wedging the tag, but implementations must not rely on that: dispose
- * quietly and surface failures asynchronously (log, retry) instead.
+ * The durability contract is unchanged and is still the one rule everything rests on: <b>a command is deleted only
+ * on a terminal outcome</b>. A read leases the head without removing it, {@link #delete} is called on commit and on
+ * dead-letter, and an <b>abandoned</b> command needs no call at all — it was never removed, so it is still the head
+ * and is read again when delivery resumes.
+ * <p>
+ * Implementations must not throw <b>on a store failure</b>: a store that cannot submit an operation reports it in
+ * the answer message, or logs it where there is no answer, and lets the backstop poll retry. Throwing into the
+ * dispatch thread would fault the whole adapter for a hiccup on one tag. A caller that violates the contract — for
+ * example deleting a command it does not hold as head — may throw, since that is a bug rather than a fault.
  */
 public interface SouthboundWriteBacklog extends AutoCloseable {
 
     /**
-     * @return the head command without removing it, or {@code null} when the backlog is empty. Repeated calls
-     *         return the same command until it is removed or dead-lettered.
-     */
-    @Nullable
-    SouthboundCommand head();
-
-    /**
-     * Delete a command the device acknowledged — the commit that ends its at-least-once journey.
+     * Ask for the head command, leasing it without removing it. Answered with a
+     * {@code SouthboundRead} message carrying this token — a command, an empty result, or a failure.
      *
-     * @param id the {@link SouthboundCommand#id()} of the current head, as returned by {@link #head()}.
+     * @param readToken the caller's correlation for this read; echoed in the answer so a stale one is detectable.
      */
-    void removeHead(final @NotNull String id);
+    void requestRead(long readToken);
 
     /**
-     * Route an undeliverable command aside (the device rejected a well-formed value — redelivering loops forever)
-     * and delete it.
+     * Ask how many commands the queue holds — the cross-check that catches a queue reading empty while it still
+     * holds commands, which is what a head hidden behind an ownerless in-flight marker looks like. Answered with a
+     * {@code SouthboundSize} message carrying this token.
      *
-     * @param id     the {@link SouthboundCommand#id()} of the current head, as returned by {@link #head()}.
-     * @param reason the failure reason, for the dead-letter record.
+     * @param readToken the caller's correlation for this check; echoed in the answer.
      */
-    void deadLetterHead(final @NotNull String id, final @NotNull String reason);
+    void requestSize(long readToken);
 
     /**
-     * Register a wakeup invoked when a command becomes available, so the delivering queue resumes without
-     * busy-polling. Must be invoked outside the backlog's own lock.
+     * Delete a command — the commit that ends its at-least-once journey, or the dead-letter of one the device
+     * refused. Fire-and-forget: a failure is logged, and because the command was not in fact removed, the backstop
+     * poll finds it again and at-least-once still holds.
      *
-     * @param wakeup the callback to run when a command is available.
+     * @param commandId the id of the command to delete, as carried by the leased publish.
      */
-    void onAvailable(final @NotNull Runnable wakeup);
+    void delete(@NotNull String commandId);
 
     /**
-     * Tick-driven maintenance hook: re-issue a read if this backlog recorded evidence of undelivered commands the
-     * event-driven path cannot recover on its own (the broker's publish-available callback fires only on the
-     * queue's 0→1 size transition, so a failed or store-emptied read on a non-empty queue would otherwise strand
-     * it). A cheap no-op unless such evidence exists — an idle drained tag costs a few field reads per tick. Any
-     * thread may call it. Implementations that cannot lose signals ignore it.
+     * Release every in-flight marker on this tag's queue. Used for two things: recovering a head hidden behind an
+     * ownerless marker (a read that failed after marking), and teardown, where it subsumes releasing both the
+     * leased head and the lease of any read still in flight.
      */
-    default void rearmIfRequested() {}
+    void releaseMarkers();
 
     /**
-     * Release whatever the backlog holds onto beyond its stored commands — callbacks, leases. A durable backlog's
-     * <b>storage</b> is deliberately untouched: it outlives the backlog object by design (that is the durability),
-     * and a successor picks its contents up. The in-memory stand-in has nothing to release.
+     * Release whatever this backlog holds beyond the stored commands — its arrival callback, and any lease it is
+     * still holding. A durable backlog's <b>storage</b> is deliberately untouched: it outlives the backlog object
+     * by design (that is the durability), and a successor picks its contents up.
+     * <p>
+     * This is the one method callable from a thread other than the wrapper's dispatch thread — the manager's,
+     * during teardown — so implementations must keep it free of delivery state.
      */
     @Override
     void close();

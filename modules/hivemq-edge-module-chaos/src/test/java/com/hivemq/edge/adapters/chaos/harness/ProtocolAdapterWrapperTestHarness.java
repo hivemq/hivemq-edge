@@ -368,7 +368,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     public @NotNull ProtocolAdapterWrapperTestHarness submitWrite(
             final @NotNull String tagName, final @NotNull DataPoint value) {
         runtime();
-        send(new ProtocolAdapterWrapperWriteRequest(nodeFor(tagName), value));
+        send(new ProtocolAdapterWrapperWriteRequest(nodeFor(tagName), tagName, value));
         return this;
     }
 
@@ -594,7 +594,8 @@ public final class ProtocolAdapterWrapperTestHarness {
                     context.timers(),
                     context.batches(),
                     context.metrics(),
-                    context.protocolAdapter()::verifyBatch);
+                    context.protocolAdapter()::verifyBatch,
+                    mailbox);
             this.wrapper = new ProtocolAdapterWrapper(context, snapshotReference);
             dispatcher.attach(mailbox, wrapper);
             clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis()));

@@ -55,6 +55,8 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
     private final @NotNull AtomicLong tickLagMillis = new AtomicLong();
     private final @NotNull Set<String> tagFailureNames = ConcurrentHashMap.newKeySet();
     private final @NotNull Set<String> tagWriteRejectedNames = ConcurrentHashMap.newKeySet();
+    private final @NotNull Set<String> tagWriteTimeoutNames = ConcurrentHashMap.newKeySet();
+    private final @NotNull Set<String> tagWriteDeadLetteredNames = ConcurrentHashMap.newKeySet();
 
     /**
      * @param metricRegistry the shared registry to register on.
@@ -117,6 +119,40 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
     }
 
     /**
+     * Record one southbound write the adapter accepted but never acknowledged within the command timeout, creating
+     * the counter on first use.
+     * <p>
+     * Distinct from {@link #incrementTagFailure} on purpose. A write that times out is abandoned but <b>kept</b>,
+     * and the tag re-verifies and delivers it again — so an adapter whose device executes writes but whose
+     * acknowledgment path is broken will re-execute the same command indefinitely, at the command-timeout cadence,
+     * while every other signal looks like an ordinary intermittent failure. This counter is the one that says so:
+     * a steadily climbing value on a tag means the device is being rewritten in a loop, not that a write failed.
+     *
+     * @param tagName the tag whose write was abandoned at its result deadline.
+     */
+    public void incrementWriteTimeout(final @NotNull String tagName) {
+        final String writeTimeoutName = name("tag." + tagName + ".writes.timeout");
+        tagWriteTimeoutNames.add(writeTimeoutName);
+        metricRegistry.counter(writeTimeoutName).inc();
+    }
+
+    /**
+     * Record one southbound command dead-lettered for the named tag — deleted from the durable store without ever
+     * being executed, because the device refused it or its payload could not be decoded.
+     * <p>
+     * This is the <b>only permanently destructive</b> southbound outcome, and so the one most worth alerting on. A
+     * command that times out or is aborted is kept and delivered again; a dead-lettered one is gone, and until this
+     * counter existed the sole record of it was a WARN in the log file.
+     *
+     * @param tagName the tag whose command was dead-lettered.
+     */
+    public void incrementWriteDeadLettered(final @NotNull String tagName) {
+        final String deadLetteredName = name("tag." + tagName + ".writes.dead-lettered");
+        tagWriteDeadLetteredNames.add(deadLetteredName);
+        metricRegistry.counter(deadLetteredName).inc();
+    }
+
+    /**
      * Publish the latest tick lag for the gauge to report.
      *
      * @param lagMillis {@code now - tick.nowMillis} measured when the tick was handled, in milliseconds.
@@ -139,6 +175,12 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
         }
         for (final String tagWriteRejectedName : tagWriteRejectedNames) {
             metricRegistry.remove(tagWriteRejectedName);
+        }
+        for (final String tagWriteTimeoutName : tagWriteTimeoutNames) {
+            metricRegistry.remove(tagWriteTimeoutName);
+        }
+        for (final String tagWriteDeadLetteredName : tagWriteDeadLetteredNames) {
+            metricRegistry.remove(tagWriteDeadLetteredName);
         }
     }
 

@@ -15,397 +15,439 @@
  */
 package com.hivemq.protocols.v2.southbound;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
+import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog.DeadLetter;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundRead;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundSize;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
- * The {@link SouthboundWriteQueue} in front of an {@link InMemorySouthboundWriteBacklog}: it paces delivery to the
- * write aspect's advertised in-flight window of one, advances only when the delivered write settles, and deletes a
- * command from the backlog only on a terminal outcome — commit on success, dead-letter on device failure, kept at
- * the head (queue suspended) on abort. The adapter (here a capturing sender the test settles by hand) never sees a
- * second write while one is outstanding.
+ * The {@link SouthboundWriteQueue} — one tag's delivery channel — driven exactly as the wrapper drives it: every
+ * store answer and every settlement arrives as a message pumped through {@link CapturingSender}, never as a direct
+ * call, so what is under test is the shape the product actually has.
+ * <p>
+ * The channel paces the store to the write aspect's window of one, advances only when the delivered write settles,
+ * and deletes a command only on a terminal outcome — commit on success, dead-letter on device failure, kept at the
+ * head (window closed) on abort.
  */
 class SouthboundWriteQueueTest {
 
-    private static final @NotNull Node NODE = new TestNode("setpoint");
+    private static final @NotNull String ADAPTER = "a1";
+    private static final @NotNull String TAG = "setpoint";
+    private static final @NotNull Node NODE = new TestNode(TAG);
+
+    /**
+     * A token source for a channel standing on its own. In production the source is the plane's, shared by every
+     * channel, so that a rebuilt channel can never mint a token one of its predecessors is still waiting on.
+     */
+    private static @NotNull LongSupplier tokens() {
+        final AtomicLong counter = new AtomicLong();
+        return counter::incrementAndGet;
+    }
+
+    /** A metrics sink for a plane standing on its own; the registry is discarded with the test. */
+    private static @NotNull ProtocolAdapterMetrics metrics() {
+        return new ProtocolAdapterMetrics(new MetricRegistry(), "a1", () -> 0);
+    }
+
+    @Test
+    void windowsAreBornClosed_soNothingIsDeliveredBeforeTheTagIsWritable() {
+        final Fixture fixture = new Fixture();
+        fixture.backlog.offer(value(0));
+        fixture.pump();
+
+        assertThat(fixture.queue.suspended()).isTrue();
+        assertThat(fixture.sender.requests).isEmpty();
+        assertThat(fixture.backlog.pendingSize()).isEqualTo(1);
+    }
 
     @Test
     void keepsOneInFlight_committingEachDeliversTheNext_inFifoOrder() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        queue.resume();
+        final Fixture fixture = new Fixture();
+        fixture.queue.openWindow();
+        fixture.backlog.offer(value(0));
+        fixture.backlog.offer(value(1));
+        fixture.backlog.offer(value(2));
+        fixture.pump();
 
-        backlog.offer(value(0));
-        backlog.offer(value(1));
-        backlog.offer(value(2));
+        // Only the first write reached the adapter; all three are still in the store (none committed yet).
+        assertThat(fixture.sender.requests).hasSize(1);
+        assertThat(fixture.queue.inFlight()).isTrue();
+        assertThat(fixture.backlog.pendingSize()).isEqualTo(3);
 
-        // Only the first write reached the adapter; all three are still in the backlog (none committed yet).
-        assertThat(sender.requests).hasSize(1);
-        assertThat(queue.inFlight()).isTrue();
-        assertThat(backlog.pendingSize()).isEqualTo(3);
+        fixture.settleAndPump(SouthboundWriteOutcome.SUCCEEDED);
+        assertThat(fixture.sender.requests).hasSize(2);
+        assertThat(fixture.backlog.pendingSize()).isEqualTo(2);
 
-        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
-        assertThat(backlog.committed()).isEqualTo(1);
-        assertThat(sender.requests).hasSize(2); // the next one delivered
-        assertThat(backlog.pendingSize()).isEqualTo(2);
+        fixture.settleAndPump(SouthboundWriteOutcome.SUCCEEDED);
+        fixture.settleAndPump(SouthboundWriteOutcome.SUCCEEDED);
 
-        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
-        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
-
-        assertThat(queue.inFlight()).isFalse();
-        assertThat(queue.committed()).isEqualTo(3);
-        assertThat(backlog.pendingSize()).isZero();
-        assertThat(queue.windowViolations()).isZero();
-        // Strict FIFO: the commands were committed in exactly the order they were offered.
-        assertThat(backlog.committedCommands())
+        assertThat(fixture.queue.inFlight()).isFalse();
+        assertThat(fixture.queue.committed()).isEqualTo(3);
+        assertThat(fixture.backlog.pendingSize()).isZero();
+        assertThat(fixture.queue.windowViolations()).isZero();
+        // Strict FIFO: the commands were deleted in exactly the order they were offered.
+        assertThat(fixture.backlog.deletedCommands())
                 .extracting(command -> command.value().getTagValue())
                 .containsExactly(0, 1, 2);
     }
 
     @Test
-    void deviceFailure_deadLettersTheCommand_andAdvances() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        queue.resume();
-        backlog.offer(value(0));
-        backlog.offer(value(1));
+    void deviceFailure_deadLettersTheCommand_carriesItsReason_andAdvances() {
+        final Fixture fixture = new Fixture();
+        fixture.queue.openWindow();
+        fixture.backlog.offer(value(0));
+        fixture.backlog.offer(value(1));
+        fixture.pump();
 
-        sender.settleLast(SouthboundWriteOutcome.FAILED);
+        fixture.settleAndPump(SouthboundWriteOutcome.FAILED, "protected register");
 
-        assertThat(queue.deadLettered()).isEqualTo(1);
-        assertThat(backlog.deadLettered()).isEqualTo(1);
-        assertThat(backlog.deadLetters()).hasSize(1);
-        assertThat(sender.requests).hasSize(2); // advanced past the dead-lettered command
-        assertThat(queue.inFlight()).isTrue();
-    }
-
-    @Test
-    void deviceFailure_carriesTheDevicesOwnReasonIntoTheDeadLetterRecord() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        queue.resume();
-        backlog.offer(value(0));
-
-        sender.settleLast(SouthboundWriteOutcome.FAILED, "protected register");
-
+        assertThat(fixture.queue.deadLettered()).isEqualTo(1);
         // The dead-letter record is the operator's only account of a refused command, so the device's own words
-        // must survive the whole way rather than being replaced by the generic fallback.
-        assertThat(backlog.deadLetters()).extracting(DeadLetter::reason).containsExactly("protected register");
+        // must survive rather than being replaced by the generic fallback.
+        assertThat(fixture.queue.lastDeadLetterReason()).isEqualTo("protected register");
+        assertThat(fixture.sender.requests).hasSize(2); // advanced past the dead-lettered command
+        assertThat(fixture.queue.inFlight()).isTrue();
     }
 
     @Test
     void deviceFailureWithNoReason_fallsBackToAGenericDeadLetterReason() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        queue.resume();
-        backlog.offer(value(0));
+        final Fixture fixture = new Fixture();
+        fixture.queue.openWindow();
+        fixture.backlog.offer(value(0));
+        fixture.pump();
 
-        sender.settleLast(SouthboundWriteOutcome.FAILED, null);
+        fixture.settleAndPump(SouthboundWriteOutcome.FAILED, null);
 
-        assertThat(backlog.deadLetters()).extracting(DeadLetter::reason).containsExactly("device rejected the write");
+        assertThat(fixture.queue.lastDeadLetterReason()).isEqualTo("device rejected the write");
     }
 
     @Test
-    void abortedWrite_isKeptAtTheHead_queueSuspends_thenResumeRedeliversTheSameCommand() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        queue.resume();
-        backlog.offer(value(0));
-        backlog.offer(value(1));
-        final DataPoint firstValue = sender.requests.getFirst().value();
+    void abortedWrite_isKeptAtTheHead_windowCloses_thenReopeningRedeliversTheSameCommand() {
+        final Fixture fixture = new Fixture();
+        fixture.queue.openWindow();
+        fixture.backlog.offer(value(0));
+        fixture.backlog.offer(value(1));
+        fixture.pump();
+        final DataPoint firstValue = fixture.sender.requests.getFirst().value();
 
-        // The adapter aborts the in-flight write (connection lost / deactivated).
-        sender.settleLast(SouthboundWriteOutcome.ABORTED);
+        // The adapter abandons the in-flight write (connection lost / deactivated).
+        fixture.settleAndPump(SouthboundWriteOutcome.ABORTED);
 
-        assertThat(queue.keptForRedelivery()).isEqualTo(1);
-        assertThat(backlog.committed()).isZero(); // nothing was delivered — and nothing was removed
-        assertThat(backlog.pendingSize()).isEqualTo(2);
-        assertThat(queue.suspended()).isTrue();
-        assertThat(queue.inFlight()).isFalse();
-        assertThat(sender.requests).hasSize(1); // suspended: not redelivered automatically
+        assertThat(fixture.queue.keptForRedelivery()).isEqualTo(1);
+        assertThat(fixture.queue.committed()).isZero();
+        assertThat(fixture.backlog.pendingSize()).isEqualTo(2); // nothing was deleted
+        assertThat(fixture.queue.suspended()).isTrue();
+        assertThat(fixture.queue.inFlight()).isFalse();
+        assertThat(fixture.sender.requests).hasSize(1); // window closed: not redelivered
 
-        // Resuming (adapter ready again) redelivers the very same command — durability, not loss.
-        queue.resume();
-        assertThat(queue.suspended()).isFalse();
-        assertThat(sender.requests).hasSize(2);
-        assertThat(sender.requests.get(1).value()).isEqualTo(firstValue);
+        // Writable again: the very same command is delivered again — durability, not loss.
+        fixture.queue.openWindow();
+        fixture.pump();
+        assertThat(fixture.sender.requests).hasSize(2);
+        assertThat(fixture.sender.requests.get(1).value()).isEqualTo(firstValue);
     }
 
     @Test
-    void rejectedBusy_isCountedAsAWindowViolation_andSuspends() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        queue.resume();
-        backlog.offer(value(0));
+    void rejectedBusy_keepsTheCommand_leavesTheWindowOpen_andRetriesOnTheNextPoll() {
+        // A busy aspect never crosses its writability boundary, so no TagWritability(true) would ever arrive to
+        // reopen a window closed here — closing it would stop the tag delivering for good. The command is kept and
+        // the backstop poll retries it, which is already rate-bounded to one attempt per POLL_TICKS.
+        final Fixture fixture = new Fixture();
+        fixture.queue.openWindow();
+        fixture.backlog.offer(value(0));
+        fixture.pump();
+        assertThat(fixture.sender.requests).hasSize(1);
 
-        sender.settleLast(SouthboundWriteOutcome.REJECTED_BUSY);
+        fixture.settleAndPump(SouthboundWriteOutcome.REJECTED_BUSY);
 
-        assertThat(queue.windowViolations()).isEqualTo(1);
-        assertThat(backlog.pendingSize()).isEqualTo(1); // kept — never removed
-        assertThat(queue.suspended()).isTrue();
+        assertThat(fixture.queue.windowViolations()).isEqualTo(1);
+        assertThat(fixture.backlog.pendingSize()).isEqualTo(1); // kept — never deleted
+        assertThat(fixture.queue.suspended()).isFalse();
+        assertThat(fixture.sender.requests).hasSize(1); // not redelivered immediately — no tight loop
+
+        for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+            fixture.queue.onTick();
+        }
+        fixture.pump();
+
+        assertThat(fixture.sender.requests).hasSize(2); // the poll retried it
     }
 
     @Test
-    void suspendClosesTheWindow_commandsAccumulate_untilResumeDelivers() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
+    void aDeadLetter_isCountedOnTheAdapterMetrics_notOnlyInTheLog() {
+        // Dead-lettering is the only southbound outcome that destroys a command. Everything else keeps it, so this
+        // is the one an operator has to be able to alert on rather than grep for.
+        final MetricRegistry registry = new MetricRegistry();
         final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-
-        // Close the window before anything arrives (the adapter is known not ready).
-        queue.suspend();
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100, TAG, sender);
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(
+                ADAPTER, TAG, NODE, backlog, sender, tokens(), new ProtocolAdapterMetrics(registry, ADAPTER, () -> 0));
+        queue.openWindow();
         backlog.offer(value(0));
-        backlog.offer(value(1));
+        sender.pump(queue);
 
-        // Nothing is delivered; the backlog absorbs the burst.
+        sender.settleLast(SouthboundWriteOutcome.FAILED, "protected register");
+        sender.pump(queue);
+
+        assertThat(registry.counter(ProtocolAdapterMetrics.ADAPTER_PREFIX + ADAPTER + ".tag." + TAG
+                                + ".writes.dead-lettered")
+                        .getCount())
+                .isEqualTo(1);
+    }
+
+    @Test
+    void aStaleSettle_fromASupersededDelivery_cannotDisposeItsRedelivery() {
+        final Fixture fixture = new Fixture();
+        fixture.queue.openWindow();
+        fixture.backlog.offer(value(0));
+        fixture.pump();
+        final long abandonedToken = fixture.sender.requests.getFirst().deliveryToken();
+
+        // The write is abandoned and the very same command is redelivered under a new token.
+        fixture.settleAndPump(SouthboundWriteOutcome.ABORTED);
+        fixture.queue.openWindow();
+        fixture.pump();
+        assertThat(fixture.sender.requests).hasSize(2);
+
+        // The abandoned attempt's acknowledgment finally lands. Acting on it would commit a command whose live
+        // delivery is still outstanding.
+        fixture.queue.onSettled(abandonedToken, SouthboundWriteOutcome.SUCCEEDED, null);
+
+        assertThat(fixture.queue.committed()).isZero();
+        assertThat(fixture.backlog.pendingSize()).isEqualTo(1);
+        assertThat(fixture.queue.inFlight()).isTrue(); // the live delivery is untouched
+    }
+
+    @Test
+    void theBackstopPollFindsACommand_evenWhenNoArrivalHintEverFires() {
+        // The broker's publish-available callback is edge-triggered and can be missed; correctness rests on the
+        // poll, not on the hint. This store never hints at all.
+        final CapturingSender sender = new CapturingSender();
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        queue.openWindow(); // opening reads once and finds nothing
+        sender.pump(queue);
         assertThat(sender.requests).isEmpty();
-        assertThat(queue.inFlight()).isFalse();
-        assertThat(backlog.pendingSize()).isEqualTo(2);
 
-        // Reopening the window delivers the head.
-        queue.resume();
+        backlog.queued = new SouthboundCommand("1", value(7));
+        for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+            queue.onTick();
+        }
+        sender.pump(queue);
+
         assertThat(sender.requests).hasSize(1);
-        assertThat(queue.inFlight()).isTrue();
+        assertThat(sender.requests.getFirst().value().getTagValue()).isEqualTo(7);
     }
 
     @Test
-    void suspendLeavesTheInFlightWriteUntouched_itsOutcomeStillDisposes() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
+    void repeatedEmptyReadsAgainstANonEmptyStore_sweepTheStrandedMarkers() {
+        // The hidden-head case: a head behind an ownerless in-flight marker makes every read come back empty while
+        // the store still holds it. The depth cross-check is what catches the lie.
         final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        queue.resume();
-        backlog.offer(value(0));
-        backlog.offer(value(1));
-        assertThat(queue.inFlight()).isTrue();
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        backlog.reportedSize = 1; // the store holds a command that reads will never surface
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        queue.openWindow();
 
-        // The window closes while a write is outstanding: the write settles normally and is committed, but the
-        // next command is not delivered until the window reopens.
-        queue.suspend();
-        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
+        for (int round = 0; round < SouthboundWriteQueue.EMPTY_READS_BEFORE_SIZE_CHECK; round++) {
+            sender.pump(queue);
+            for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+                queue.onTick();
+            }
+        }
+        sender.pump(queue);
 
-        assertThat(queue.committed()).isEqualTo(1);
-        assertThat(queue.inFlight()).isFalse();
-        assertThat(sender.requests).hasSize(1);
-
-        queue.resume();
-        assertThat(sender.requests).hasSize(2);
+        assertThat(backlog.markerReleases).isPositive();
     }
 
     @Test
-    void crashReplay_aFreshQueueOverTheSameBacklog_redeliversTheUncommittedHead() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
+    void anUndeliverableCommand_isDeadLetteredHere_andTheChannelAdvances() {
+        // "Executed at least once, OR removed with a logged reason" — this is the second half. The store reports a
+        // publish it could not decode rather than disposing of it; deciding its fate belongs on this side, beside
+        // every other disposition. Leaving it undeleted would wedge the tag behind a command nobody can deliver.
         final CapturingSender sender = new CapturingSender();
-        new SouthboundWriteQueue(sender, NODE, backlog).resume();
-        backlog.offer(value(0));
-        backlog.offer(value(1));
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        backlog.undeliverableId = "bad-1";
+        backlog.queued = new SouthboundCommand("2", value(9)); // the one behind it, which must still get through
 
-        // The first command is in flight but never settles — the process "crashes". Because delivery never
-        // removed it, the backlog still holds both commands.
-        assertThat(sender.requests).hasSize(1);
-        assertThat(backlog.pendingSize()).isEqualTo(2);
+        queue.openWindow();
+        sender.pump(queue);
 
-        // "Restart": a fresh queue over the same (durable) backlog redelivers the very same head command.
-        final CapturingSender senderAfterRestart = new CapturingSender();
-        final SouthboundWriteQueue queueAfterRestart = new SouthboundWriteQueue(senderAfterRestart, NODE, backlog);
-        queueAfterRestart.resume();
-
-        assertThat(senderAfterRestart.requests).hasSize(1);
-        assertThat(senderAfterRestart.requests.getFirst().value())
-                .isEqualTo(sender.requests.getFirst().value());
-
-        // Draining after the restart delivers every command exactly once — at-least-once, nothing lost.
-        senderAfterRestart.settleLast(SouthboundWriteOutcome.SUCCEEDED);
-        senderAfterRestart.settleLast(SouthboundWriteOutcome.SUCCEEDED);
-        assertThat(backlog.pendingSize()).isZero();
-        assertThat(backlog.committedCommands())
-                .extracting(command -> command.value().getTagValue())
-                .containsExactly(0, 1);
-    }
-
-    @Test
-    void aLateSettleOfAnAbandonedAttempt_neverDisposesItsRedelivery() {
-        // QA finding N4: without a per-delivery token, a late duplicate settle of an abandoned attempt carried
-        // the same command as its live redelivery and would commit or dead-letter it mid-flight.
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        backlog.offer(value(0));
-        queue.resume();
-        assertThat(sender.requests).hasSize(1);
-
-        // The adapter goes away mid-write: the attempt is abandoned, the command kept for redelivery.
-        sender.requests.get(0).completion().settle(SouthboundWriteOutcome.ABORTED, "connection lost");
-        assertThat(queue.suspended()).isTrue();
-        queue.resume(); // reconnect — the SAME command is redelivered as a new attempt
-        assertThat(sender.requests).hasSize(2);
-
-        // The abandoned attempt's result arrives late, through the OLD completion: it must be ignored.
-        sender.requests.get(0).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null);
-        assertThat(queue.committed()).isZero();
-        assertThat(queue.inFlight()).isTrue();
-        assertThat(backlog.pendingSize()).isEqualTo(1);
-
-        // Only the live attempt's settle disposes the command.
-        sender.requests.get(1).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null);
-        assertThat(queue.committed()).isEqualTo(1);
-        assertThat(backlog.pendingSize()).isZero();
-    }
-
-    @Test
-    void aDuplicateSettleOfTheSameDelivery_isIgnored_notADoubleDisposal() {
-        // A settle is consumed exactly once; a second call through the same completion must neither throw into
-        // the settling thread nor dispose twice.
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
-        backlog.offer(value(0));
-        queue.resume();
-
-        sender.requests.get(0).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null);
-        assertThat(queue.committed()).isEqualTo(1);
-
-        assertThatCode(() -> sender.requests.get(0).completion().settle(SouthboundWriteOutcome.SUCCEEDED, null))
-                .doesNotThrowAnyException();
-        assertThat(queue.committed()).isEqualTo(1);
-        assertThat(queue.windowViolations()).isZero();
-
-        // The queue is unharmed: the next command flows normally.
-        backlog.offer(value(1));
-        assertThat(sender.requests).hasSize(2);
-        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
-        assertThat(queue.committed()).isEqualTo(2);
-    }
-
-    @Test
-    void terminalDisposal_runsOutsideTheQueueMonitor() {
-        // QA finding N3: disposal reaches broker persistence, which in in-memory persistence mode can execute
-        // work caller-side — it must not run under the queue monitor, or suspend()/resume()/readiness block for
-        // the duration.
-        final AtomicReference<SouthboundWriteQueue> queueRef = new AtomicReference<>();
-        final AtomicBoolean monitorHeldDuringDisposal = new AtomicBoolean();
-        final InMemorySouthboundWriteBacklog delegate = new InMemorySouthboundWriteBacklog(10);
-        final SouthboundWriteBacklog probing = new SouthboundWriteBacklog() {
-            @Override
-            public @Nullable SouthboundCommand head() {
-                return delegate.head();
-            }
-
-            @Override
-            public void removeHead(final @NotNull String id) {
-                recordMonitor();
-                delegate.removeHead(id);
-            }
-
-            @Override
-            public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
-                recordMonitor();
-                delegate.deadLetterHead(id, reason);
-            }
-
-            @Override
-            public void onAvailable(final @NotNull Runnable wakeup) {
-                delegate.onAvailable(wakeup);
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-
-            private void recordMonitor() {
-                final SouthboundWriteQueue queue = queueRef.get();
-                if (queue != null && Thread.holdsLock(queue)) {
-                    monitorHeldDuringDisposal.set(true);
-                }
-            }
-        };
-        final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, probing);
-        queueRef.set(queue);
-        delegate.offer(value(0));
-        delegate.offer(value(1));
-        queue.resume();
-
-        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED); // the commit path
-        sender.settleLast(SouthboundWriteOutcome.FAILED); // the dead-letter path
-
-        assertThat(queue.committed()).isEqualTo(1);
         assertThat(queue.deadLettered()).isEqualTo(1);
-        assertThat(monitorHeldDuringDisposal).isFalse();
+        assertThat(queue.lastDeadLetterReason()).isNotNull();
+        assertThat(backlog.deleted).containsExactly("bad-1");
+        assertThat(sender.requests).hasSize(1); // the channel read on and delivered the next command
+        assertThat(sender.requests.getFirst().value().getTagValue()).isEqualTo(9);
     }
 
     @Test
-    void aBacklogThatThrowsFromDisposal_doesNotWedgeTheTag_itReleasesTheSlotAndAdvances() {
-        // QA round-2 finding: terminal disposal runs off the queue monitor with inFlightId still set; a
-        // synchronous throw from the backlog (contract-forbidden, but previously undefended) skipped the
-        // inFlightId clear, wedging the tag forever — every future deliverNext no-ops on inFlightId != null. The
-        // queue must release the slot and advance even when disposal throws; at-least-once still holds.
-        final AtomicBoolean firstRemoveThrew = new AtomicBoolean();
-        final InMemorySouthboundWriteBacklog delegate = new InMemorySouthboundWriteBacklog(10);
-        final SouthboundWriteBacklog throwing = new SouthboundWriteBacklog() {
-            @Override
-            public @Nullable SouthboundCommand head() {
-                return delegate.head();
-            }
-
-            @Override
-            public void removeHead(final @NotNull String id) {
-                if (firstRemoveThrew.compareAndSet(false, true)) {
-                    throw new RuntimeException("scripted disposal failure");
-                }
-                delegate.removeHead(id);
-            }
-
-            @Override
-            public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {
-                delegate.deadLetterHead(id, reason);
-            }
-
-            @Override
-            public void onAvailable(final @NotNull Runnable wakeup) {
-                delegate.onAvailable(wakeup);
-            }
-
-            @Override
-            public void close() {
-                delegate.close();
-            }
-        };
+    void aDepthCheckThatLandsAfterTheChannelLeasedAHead_doesNotSweep() {
+        // The sweep releases EVERY in-flight marker on this tag's queue — including the one covering the command
+        // this channel is delivering right now. It is sound only while the channel holds nothing, so a depth answer
+        // that lost the race to a read must be ignored rather than acted on. The depth answer is held back here
+        // because the store normally answers it inline, which closes the race and hides the bug.
         final CapturingSender sender = new CapturingSender();
-        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, throwing);
-        delegate.offer(value(0));
-        queue.resume(); // delivers the command
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        backlog.reportedSize = 1; // the store insists it holds a command every read comes back empty on
+        backlog.deferSizeAnswer = true;
+
+        queue.openWindow();
+        for (int round = 0; round < SouthboundWriteQueue.EMPTY_READS_BEFORE_SIZE_CHECK; round++) {
+            sender.pump(queue);
+            for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+                queue.onTick();
+            }
+        }
+        sender.pump(queue);
+        assertThat(backlog.deferredSizeToken).isNotNull(); // the ladder reached the depth check
+
+        // The command surfaces and is leased and delivered before the depth answer lands.
+        backlog.queued = new SouthboundCommand("1", value(4));
+        for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+            queue.onTick();
+        }
+        sender.pump(queue);
+        assertThat(queue.head()).isNotNull();
+
+        backlog.releaseSizeAnswer();
+        sender.pump(queue);
+
+        assertThat(backlog.markerReleases).isZero();
+        assertThat(queue.head()).isNotNull(); // still leased, still deliverable
+    }
+
+    @Test
+    void aFailedRead_isNotFatal_theNextPollRecovers() {
+        final CapturingSender sender = new CapturingSender();
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        backlog.failNextRead = true;
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        queue.openWindow();
+        sender.pump(queue);
+        assertThat(sender.requests).isEmpty();
+
+        backlog.queued = new SouthboundCommand("1", value(3));
+        for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+            queue.onTick();
+        }
+        sender.pump(queue);
+
         assertThat(sender.requests).hasSize(1);
+    }
 
-        // The commit disposal throws — the settle must not propagate it, and the slot must be released so the tag
-        // keeps flowing. The command was never removed, so it is redelivered (at-least-once).
-        assertThatCode(() -> sender.settleLast(SouthboundWriteOutcome.SUCCEEDED))
-                .doesNotThrowAnyException();
-        assertThat(queue.inFlight()).isTrue();
-        assertThat(sender.requests).hasSize(2);
+    // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
 
-        // The redelivery's disposal succeeds; the tag drains cleanly.
-        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED);
-        assertThat(delegate.committed()).isEqualTo(1);
-        assertThat(queue.inFlight()).isFalse();
+    /** A channel over the in-memory store, with the sender that plays the wrapper. */
+    private static final class Fixture {
+        private final CapturingSender sender = new CapturingSender();
+        private final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100, TAG, sender);
+        private final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+
+        private void pump() {
+            sender.pump(queue);
+        }
+
+        private void settleAndPump(final @NotNull SouthboundWriteOutcome outcome) {
+            settleAndPump(outcome, null);
+        }
+
+        private void settleAndPump(final @NotNull SouthboundWriteOutcome outcome, final String reason) {
+            sender.settleLast(outcome, reason);
+            sender.pump(queue);
+        }
+    }
+
+    /**
+     * A store that never hints and answers reads from one slot — for the cases where the arrival notification is
+     * exactly what must not be relied upon.
+     */
+    private static final class SilentBacklog implements SouthboundWriteBacklog {
+
+        private final @NotNull CapturingSender answers;
+        private @Nullable SouthboundCommand queued;
+        private @Nullable String undeliverableId;
+        private final @NotNull List<String> deleted = new ArrayList<>();
+        private int reportedSize;
+        private int markerReleases;
+        private boolean failNextRead;
+        private boolean deferSizeAnswer;
+        private @Nullable Long deferredSizeToken;
+
+        private SilentBacklog(final @NotNull CapturingSender answers) {
+            this.answers = answers;
+        }
+
+        @Override
+        public void requestRead(final long readToken) {
+            if (failNextRead) {
+                failNextRead = false;
+                answers.tell(
+                        new SouthboundRead(TAG, readToken, null, null, new RuntimeException("scripted read failure")));
+                return;
+            }
+            if (undeliverableId != null) {
+                final String id = undeliverableId;
+                undeliverableId = null;
+                answers.tell(new SouthboundRead(TAG, readToken, null, id, null));
+                return;
+            }
+            answers.tell(new SouthboundRead(TAG, readToken, queued, null, null));
+        }
+
+        @Override
+        public void requestSize(final long readToken) {
+            if (deferSizeAnswer) {
+                deferredSizeToken = readToken;
+                return; // held back so a test can decide what the channel is doing when it lands
+            }
+            answers.tell(new SouthboundSize(TAG, readToken, reportedSize, null));
+        }
+
+        /** Release a depth answer held back by {@link #deferSizeAnswer}. */
+        private void releaseSizeAnswer() {
+            answers.tell(new SouthboundSize(TAG, requireNonNull(deferredSizeToken), reportedSize, null));
+            deferredSizeToken = null;
+        }
+
+        @Override
+        public void delete(final @NotNull String commandId) {
+            deleted.add(commandId);
+            if (queued != null && queued.id().equals(commandId)) {
+                queued = null;
+            }
+        }
+
+        @Override
+        public void releaseMarkers() {
+            markerReleases++;
+        }
+
+        @Override
+        public void close() {}
     }
 
     private static @NotNull DataPoint value(final int i) {
-        return new TestDataPoint("setpoint", i);
+        return new TestDataPoint(TAG, i);
     }
 }

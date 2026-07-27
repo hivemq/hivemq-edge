@@ -60,6 +60,39 @@ public final class BatchCollector {
     private final @NotNull Set<Node> verifyBatch = new LinkedHashSet<>();
     private final @NotNull Map<Node, SubscriptionOperation> subscriptionOperations = new LinkedHashMap<>();
 
+    private long writeDispatches;
+
+    /**
+     * @return how many write batches have been handed to the adapter. A write aspect samples this when it posts a
+     *         write and compares it when a result arrives: while the count is unchanged the write is still sitting
+     *         in the batch, so the result cannot be its own and must be a duplicate of an earlier one. The adapter
+     *         SDK's write result carries no correlation of its own, and acting on a misattributed one deletes a
+     *         durable command the device was never asked to execute.
+     */
+    public long writeDispatches() {
+        return writeDispatches;
+    }
+
+    /**
+     * Retract any not-yet-dispatched write for one node — the write was abandoned before the adapter ever saw it.
+     * <p>
+     * A write lives in this batch for up to a tick before {@link #dispatch} hands it over, and plenty can happen in
+     * that window: the tag is deactivated, the connection drops, the write times out, or a reload re-points the tag
+     * at a different node. Every one of those reports the write {@code ABORTED}, so its command is kept and
+     * redelivered — but without this the entry would still be dispatched afterwards, writing to the device a value
+     * that had already been abandoned, and in the reload case writing it to a node the configuration no longer
+     * maps. The device's own acknowledgment then arrives for a write nobody is tracking and is dropped in silence.
+     * <p>
+     * At-least-once permits duplicates, so this is not a correctness fix so much as an honesty one: an abandoned
+     * write should not reach the device, and a retargeted tag should not write to where it used to point.
+     *
+     * @param node the node whose pending write is retracted.
+     * @return whether an entry was actually removed.
+     */
+    public boolean retractWrite(final @NotNull Node node) {
+        return writeBatch.removeIf(entry -> entry.node() == node);
+    }
+
     /**
      * Append a node to the poll batch. Duplicates are kept and polled in order.
      *
@@ -154,6 +187,9 @@ public final class BatchCollector {
                 protocolAdapter.pollBatch(new ArrayList<>(pollBatch));
             }
             if (!writeBatch.isEmpty()) {
+                // Counted BEFORE the call, so a result the adapter reports synchronously from inside writeBatch
+                // still sees the dispatch that carried it. See writeDispatches().
+                writeDispatches++;
                 protocolAdapter.writeBatch(new ArrayList<>(writeBatch));
             }
         } finally {

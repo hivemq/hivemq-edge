@@ -16,145 +16,152 @@
 package com.hivemq.protocols.v2.southbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog.DeadLetter;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundArrival;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundRead;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage.SouthboundSize;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The interim {@link InMemorySouthboundWriteBacklog}: head-without-remove FIFO where only a terminal outcome
- * deletes (commit or dead-letter — an abandoned command simply stays at the head), a bounded backlog that sheds
- * the newest on overflow, and a wakeup fired outside its own lock.
+ * The in-memory stand-in store: a read leases the head <b>without removing it</b> — so an abandoned command is
+ * simply still there to be read again — only {@link InMemorySouthboundWriteBacklog#delete} removes anything, and
+ * overflow sheds the newest offer. Every answer leaves as a mailbox message, never as a return value.
  */
 class InMemorySouthboundWriteBacklogTest {
 
+    private static final @NotNull String TAG = "setpoint";
+
+    private final @NotNull RecordingSender sender = new RecordingSender();
+
     @Test
-    void headReadsWithoutRemoving_andRemoveHeadAdvancesFifo() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
+    void aReadLeasesTheHeadWithoutRemovingIt_andIsIdempotent() {
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10, TAG, sender);
         backlog.offer(value("a"));
         backlog.offer(value("b"));
 
-        final SouthboundCommand first = backlog.head();
-        assertThat(first).isNotNull();
-        assertThat(first.value().getTagValue()).isEqualTo("a");
-        assertThat(backlog.pendingSize()).isEqualTo(2); // still present — not removed by head()
+        backlog.requestRead(1);
+        backlog.requestRead(2);
 
-        // head() is idempotent: until the head is deleted, it is the same command — redelivery for free.
-        final SouthboundCommand again = backlog.head();
-        assertThat(again).isNotNull();
-        assertThat(again.id()).isEqualTo(first.id());
-
-        backlog.removeHead(first.id());
-        assertThat(backlog.pendingSize()).isEqualTo(1);
-        assertThat(backlog.committed()).isEqualTo(1);
-        final SouthboundCommand second = backlog.head();
-        assertThat(second).isNotNull();
-        assertThat(second.value().getTagValue()).isEqualTo("b");
+        // Both reads answered with the same command, and nothing was removed — that is what makes an abandoned
+        // command redeliver for free.
+        assertThat(sender.reads).hasSize(2);
+        assertThat(sender.reads).allSatisfy(read -> assertThat(read.command()).isNotNull());
+        assertThat(sender.reads.getFirst().command().value().getTagValue()).isEqualTo("a");
+        assertThat(sender.reads.get(1).command().value().getTagValue()).isEqualTo("a");
+        assertThat(backlog.pendingSize()).isEqualTo(2);
     }
 
     @Test
-    void deadLetterHeadRemovesAndRecords() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
+    void deleteAdvancesTheHead_inFifoOrder() {
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10, TAG, sender);
         backlog.offer(value("a"));
-        final SouthboundCommand head = backlog.head();
-        assertThat(head).isNotNull();
+        backlog.offer(value("b"));
+        backlog.requestRead(1);
+        final SouthboundCommand first = sender.reads.getFirst().command();
+        assertThat(first).isNotNull();
 
-        backlog.deadLetterHead(head.id(), "device rejected");
+        backlog.delete(first.id());
+        backlog.requestRead(2);
 
-        assertThat(backlog.deadLettered()).isEqualTo(1);
-        assertThat(backlog.deadLetters())
-                .extracting(deadLetter -> deadLetter.command().value().getTagValue(), DeadLetter::reason)
-                .containsExactly(tuple("a", "device rejected"));
-        assertThat(backlog.pendingSize()).isZero();
+        assertThat(backlog.pendingSize()).isEqualTo(1);
+        assertThat(sender.reads.get(1).command().value().getTagValue()).isEqualTo("b");
+        assertThat(backlog.deletedCommands())
+                .extracting(command -> command.value().getTagValue())
+                .containsExactly("a");
+    }
+
+    @Test
+    void deletingSomethingOtherThanTheHeadIsACallerBug_andSaysSo() {
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10, TAG, sender);
+        backlog.offer(value("a"));
+
+        assertThatThrownBy(() -> backlog.delete("not-the-head"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("not the head");
+        assertThat(backlog.pendingSize()).isEqualTo(1); // untouched
     }
 
     @Test
     void overflowShedsTheNewest_andCounts() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(3);
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(3, TAG, sender);
         for (int i = 0; i < 5; i++) {
-            backlog.offer(value(Integer.toString(i)));
+            backlog.offer(value("v" + i));
         }
 
         assertThat(backlog.pendingSize()).isEqualTo(3);
         assertThat(backlog.offered()).isEqualTo(5);
         assertThat(backlog.droppedByOverflow()).isEqualTo(2);
-        // The survivors are the oldest three — the newest were shed.
-        final SouthboundCommand head = backlog.head();
-        assertThat(head).isNotNull();
-        assertThat(head.value().getTagValue()).isEqualTo("0");
+        // The oldest three survived: the bound sheds the newest offer, never the queued work.
+        backlog.requestRead(1);
+        assertThat(sender.reads.getFirst().command().value().getTagValue()).isEqualTo("v0");
     }
 
     @Test
-    void wakeupFiresOnOffer_outsideTheLock() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
-        final AtomicInteger nudges = new AtomicInteger();
-        backlog.onAvailable(() -> {
-            // Re-entering the backlog from the wakeup must not deadlock — the wakeup fires outside the monitor.
-            backlog.head();
-            nudges.incrementAndGet();
-        });
-
+    void everyOfferHintsTheDeliverySide() {
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10, TAG, sender);
         backlog.offer(value("a"));
         backlog.offer(value("b"));
 
-        assertThat(nudges.get()).isEqualTo(2);
+        assertThat(sender.arrivals).hasSize(2);
+        assertThat(sender.arrivals.getFirst().tagName()).isEqualTo(TAG);
     }
 
     @Test
-    void deletingANonHeadCommandIsRejected() {
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
-        backlog.offer(value("a"));
-
-        assertThatThrownBy(() -> backlog.removeHead("not-the-head")).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> backlog.deadLetterHead("not-the-head", "reason"))
-                .isInstanceOf(IllegalStateException.class);
-        assertThat(backlog.pendingSize()).isEqualTo(1); // untouched
-    }
-
-    @Test
-    void close_releasesPendingCommands_soAStaleResumeDeliversNothing() {
-        // QA round-2 finding: close() used to be a no-op, so head() kept handing out commands after the channel
-        // was dropped. A stale tagWritable (a dropped/replaced channel whose old aspect still fires readiness)
-        // could then resume this backlog and deliver a command meant to be discarded. close() must release its
-        // pending contents (it is not durable, so nothing outlives it anyway).
-        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10);
+    void aSizeRequestReportsTheDepth() {
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10, TAG, sender);
         backlog.offer(value("a"));
         backlog.offer(value("b"));
-        assertThat(backlog.pendingSize()).isEqualTo(2);
+
+        backlog.requestSize(7);
+
+        assertThat(sender.sizes).hasSize(1);
+        assertThat(sender.sizes.getFirst().readToken()).isEqualTo(7);
+        assertThat(sender.sizes.getFirst().size()).isEqualTo(2);
+    }
+
+    @Test
+    void closeDropsThePendingCommands_soAStaleWindowCannotDeliverThem() {
+        // A dropped or replaced channel's old aspect can still report itself writable; nothing it says may deliver
+        // a command that was meant to be discarded.
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(10, TAG, sender);
+        backlog.offer(value("a"));
 
         backlog.close();
 
-        assertThat(backlog.head()).isNull(); // a dropped channel hands out nothing
+        assertThat(backlog.isClosed()).isTrue();
         assertThat(backlog.pendingSize()).isZero();
-
-        // A late offer must not resurrect it; a settle racing close() is a quiet no-op, never a throw.
-        backlog.offer(value("c"));
-        assertThat(backlog.head()).isNull();
+        backlog.requestRead(1);
+        assertThat(sender.reads.getFirst().command()).isNull();
+        backlog.offer(value("late"));
         assertThat(backlog.pendingSize()).isZero();
-        assertThatCode(() -> backlog.removeHead("0")).doesNotThrowAnyException();
-        assertThatCode(() -> backlog.deadLetterHead("0", "late")).doesNotThrowAnyException();
     }
 
     private static @NotNull DataPoint value(final @NotNull String v) {
-        return new TestDataPoint("setpoint", v);
+        return new TestDataPoint(TAG, v);
     }
 
-    private record TestDataPoint(
-            @NotNull String tagName, @NotNull Object value) implements DataPoint {
+    /** Sorts the store's answers by kind so each assertion reads for itself. */
+    private static final class RecordingSender
+            implements com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender<ProtocolAdapterWrapperMessage> {
+
+        private final @NotNull List<SouthboundRead> reads = new ArrayList<>();
+        private final @NotNull List<SouthboundSize> sizes = new ArrayList<>();
+        private final @NotNull List<SouthboundArrival> arrivals = new ArrayList<>();
 
         @Override
-        public @NotNull Object getTagValue() {
-            return value;
-        }
-
-        @Override
-        public @NotNull String getTagName() {
-            return tagName;
+        public void tell(final @NotNull ProtocolAdapterWrapperMessage message) {
+            switch (message) {
+                case final SouthboundRead read -> reads.add(read);
+                case final SouthboundSize size -> sizes.add(size);
+                case final SouthboundArrival arrival -> arrivals.add(arrival);
+                default -> throw new IllegalStateException("unexpected message from a store: " + message);
+            }
         }
     }
 }

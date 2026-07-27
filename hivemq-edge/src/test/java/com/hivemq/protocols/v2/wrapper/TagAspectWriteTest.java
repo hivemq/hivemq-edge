@@ -78,6 +78,7 @@ class TagAspectWriteTest {
         final WrapperTestFixture fixture = writeOnlyFixture();
         fixture.activate(ProtocolAdapterDirection.SOUTHBOUND);
         fixture.submitWrite("setpoint", WrapperTestSupport.dataPoint("setpoint", "42"));
+        fixture.advance(100); // the tick hands the write to the adapter — only then can it answer
 
         fixture.output.writeResult(fixture.nodeFor("setpoint"), false, "device rejected the value");
         fixture.drain();
