@@ -161,6 +161,8 @@ class FileProtocolAdapterTest {
         assertThat(output.dataPoints.get(0).node()).isSameAs(goodNode);
         assertThat(output.nodeErrors).hasSize(1);
         assertThat(output.nodeErrors.get(0).node()).isSameAs(missingNode);
+        // Each node's single terminator completes its own poll: a value (a completing dataPoint) for the good node
+        // and a per-node error for the missing one — the template adds no pollComplete.
         assertThat(output.events).containsExactly("dataPoint", "nodeError");
     }
 

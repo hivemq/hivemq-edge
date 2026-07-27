@@ -21,9 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
@@ -38,6 +43,7 @@ import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestDataPointFactory;
@@ -51,6 +57,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,6 +138,35 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         assertThatThrownBy(() -> factory.create(entity, sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
                 .isInstanceOf(ProtocolAdapterConfigException.class)
                 .hasMessageContaining("temperature");
+    }
+
+    @Test
+    void invalidNodeString_surfacesJacksonsParseDetailInTheMessage() {
+        final ProtocolAdapterEntity entity = adapter("a")
+                .tags(tag("temperature").nodeString("}{ not json").build())
+                .build();
+
+        // The outer context alone ("node-string is not a valid …") tells an operator nothing about WHAT is wrong
+        // with the string; the parse detail must ride along in the message, not hide in the exception cause.
+        assertThatThrownBy(() -> factory.translateNodes(entity, sdkFactory))
+                .isInstanceOf(ProtocolAdapterConfigException.class)
+                .hasMessageContaining("node-string is not a valid TestNode")
+                .hasMessageContaining("Unexpected close marker");
+    }
+
+    @Test
+    void aNodeClassRejectingAValue_surfacesItsExactValidationMessageNotJustTheOuterContext() {
+        final ProtocolAdapterEntity entity = adapter("a")
+                .tags(tag("temperature").nodeString("{\"mode\":\"Sideways\"}").build())
+                .build();
+
+        // A node class that validates its own fields (an enum-like value, a strict unknown-field setter) throws with
+        // a precise message; that root cause must survive to the operator-facing error so a value typo is
+        // distinguishable from a key typo.
+        assertThatThrownBy(() -> factory.translateNodes(entity, new RejectingNodeFactory()))
+                .isInstanceOf(ProtocolAdapterConfigException.class)
+                .hasMessageContaining("node-string is not a valid RejectingNode")
+                .hasMessageContaining("unknown mode 'Sideways' (expected one of Steady, Pulse)");
     }
 
     @Test
@@ -401,6 +437,117 @@ class DefaultProtocolAdapterWrapperFactoryTest {
      * A trivial mailbox message the direct adapter double attaches a mailbox for.
      */
     private record DirectMessage() implements MailboxMessage {}
+
+    /**
+     * A node whose creator rejects a value — modeling an adapter's own node validation (the databases adapter's
+     * split-mode rejection is the shipped example) — so a test can prove the validation message survives to the
+     * configuration error instead of being swallowed as an unread exception cause.
+     */
+    private static final class RejectingNode extends Node {
+
+        @JsonCreator
+        private RejectingNode(@JsonProperty("mode") final @Nullable String mode) {
+            throw new IllegalArgumentException("unknown mode '" + mode + "' (expected one of Steady, Pulse)");
+        }
+
+        @Override
+        public @NotNull String nodeId() {
+            return "rejecting";
+        }
+
+        @Override
+        public @NotNull String nodeString() {
+            return "{}";
+        }
+
+        @Override
+        public @NotNull EnumSet<NodeProperty> properties() {
+            return EnumSet.noneOf(NodeProperty.class);
+        }
+    }
+
+    /**
+     * A factory double whose declared node class is the {@link RejectingNode}. Only {@code information().nodeClass()}
+     * and {@code nodeDefinitionSchema()} matter to {@code translateNodes}; adapter creation is never reached.
+     */
+    private static final class RejectingNodeFactory implements ProtocolAdapterFactory {
+
+        @Override
+        public @NotNull ProtocolAdapterInformation information() {
+            return new ProtocolAdapterInformation() {
+                @Override
+                public @NotNull String protocolId() {
+                    return ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID;
+                }
+
+                @Override
+                public @NotNull String displayName() {
+                    return "Rejecting Node Adapter";
+                }
+
+                @Override
+                public @NotNull String description() {
+                    return "A double whose node class rejects its value.";
+                }
+
+                @Override
+                public @NotNull String version() {
+                    return "1";
+                }
+
+                @Override
+                public @NotNull String logoUrl() {
+                    return "";
+                }
+
+                @Override
+                public @NotNull String author() {
+                    return "HiveMQ";
+                }
+
+                @Override
+                public @NotNull ProtocolAdapterCategory category() {
+                    return ProtocolAdapterCategory.SIMULATION;
+                }
+
+                @Override
+                public @NotNull List<ProtocolAdapterTag> tags() {
+                    return List.of();
+                }
+
+                @Override
+                public @NotNull EnumSet<ProtocolAdapterCapability> capabilities() {
+                    return EnumSet.noneOf(ProtocolAdapterCapability.class);
+                }
+
+                @Override
+                public @NotNull Class<? extends Node> nodeClass() {
+                    return RejectingNode.class;
+                }
+
+                @Override
+                public int currentConfigVersion() {
+                    return 2;
+                }
+            };
+        }
+
+        @Override
+        public @NotNull ProtocolAdapter createAdapter(
+                final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
+            throw new UnsupportedOperationException("translateNodes never creates an adapter");
+        }
+
+        @Override
+        public @NotNull Schema adapterConfigSchema() {
+            return ProtocolAdapterManagerTestSupport.scalarSchema();
+        }
+
+        @Override
+        public @NotNull Schema nodeDefinitionSchema() {
+            return ProtocolAdapterManagerTestSupport.scalarSchema();
+        }
+    }
 
     private static final class RecordingHealth implements ProtocolAdapterWrapperEventListener {
 

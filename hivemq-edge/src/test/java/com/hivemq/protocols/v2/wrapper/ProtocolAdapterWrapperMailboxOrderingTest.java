@@ -20,6 +20,7 @@ import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.WAITIN
 import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.WAITING_FOR_DISCONNECTED;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import org.junit.jupiter.api.Test;
 
@@ -58,16 +59,37 @@ class ProtocolAdapterWrapperMailboxOrderingTest {
 
         final Node node = WrapperTestSupport.node("x");
         fixture.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(
-                node, WrapperTestSupport.dataPoint("temperature", "1")));
+                node, WrapperTestSupport.dataPoint("temperature", "1"), true));
         fixture.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(
-                node, WrapperTestSupport.dataPoint("temperature", "2")));
+                node, WrapperTestSupport.dataPoint("temperature", "2"), true));
         fixture.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(
-                node, WrapperTestSupport.dataPoint("temperature", "3")));
+                node, WrapperTestSupport.dataPoint("temperature", "3"), true));
         fixture.tell(new ProtocolAdapterWrapperCommand.StopAdapter());
 
         fixture.deliverOne(); // the highest-priority message must be the CONTROL command
 
         assertThat(fixture.state()).isEqualTo(WAITING_FOR_DISCONNECTED); // the stop command took effect first
         assertThat(fixture.pending()).isEqualTo(3); // the three data points are still queued behind it
+    }
+
+    @Test
+    void aPollFailureRidesTheDataBand_soItNeverOvertakesTheValuesQueuedBeforeIt() {
+        final WrapperTestFixture fixture = WrapperTestFixture.builder().build();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+
+        final Node node = WrapperTestSupport.node("x");
+        // A per-node failure is a poll terminator: it shares the DATA band with the values and the completion, so the
+        // priority ladder keeps it strictly behind any value already queued. In the higher EVENT band it would jump
+        // ahead of a value backlog and end the poll while those values were still queued — discarding them.
+        fixture.tell(new ProtocolAdapterWrapperEvent.DataPointReceived(
+                node, WrapperTestSupport.dataPoint("temperature", "1"), false));
+        fixture.tell(new ProtocolAdapterWrapperEvent.NodeErrorReceived(node, "cursor broke mid-stream", false));
+
+        assertThat(new ProtocolAdapterWrapperEvent.NodeErrorReceived(node, "boom", false).priority())
+                .isEqualTo(MailboxMessagePriority.DATA);
+
+        // The highest-priority queued message is the value, not the failure told after it.
+        assertThat(fixture.mailbox.poll()).isInstanceOf(ProtocolAdapterWrapperEvent.DataPointReceived.class);
+        assertThat(fixture.mailbox.poll()).isInstanceOf(ProtocolAdapterWrapperEvent.NodeErrorReceived.class);
     }
 }

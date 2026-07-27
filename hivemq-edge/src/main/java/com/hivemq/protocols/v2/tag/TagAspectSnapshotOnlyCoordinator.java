@@ -121,9 +121,17 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
 
     @Override
     public @Nullable DataPoint routeDataPoint(
-            final @NotNull Node node, final @NotNull DataPoint value, final @NotNull String adapterId) {
+            final @NotNull Node node,
+            final @NotNull DataPoint value,
+            final @NotNull String adapterId,
+            final boolean completesPoll) {
         // No read aspect yet; the value is absorbed.
         return null;
+    }
+
+    @Override
+    public void routePollComplete(final @NotNull Node node) {
+        // No read aspect yet; the completion is absorbed.
     }
 
     @Override

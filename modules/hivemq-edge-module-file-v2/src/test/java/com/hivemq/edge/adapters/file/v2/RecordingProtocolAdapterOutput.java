@@ -93,6 +93,19 @@ public final class RecordingProtocolAdapterOutput implements ProtocolAdapterOutp
     }
 
     @Override
+    public void dataPoints(final @NotNull Node node, final @NotNull List<DataPoint> values) {
+        for (final DataPoint value : values) {
+            events.add("dataPoints");
+            dataPoints.add(new DataPointRecord(node, value));
+        }
+    }
+
+    @Override
+    public void pollComplete(final @NotNull Node node) {
+        events.add("pollComplete");
+    }
+
+    @Override
     public void nodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {
         events.add("nodeError");
         nodeErrors.add(new NodeErrorRecord(node, reason, spontaneous));
