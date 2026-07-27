@@ -262,6 +262,65 @@ class ClientQueueSouthboundWriteBacklogTest {
     }
 
     @Test
+    void aSynchronousReadSubmissionFailure_doesNotWedgeTheTag_theTickRecovers() {
+        // The persistence reports failures through its futures, but SUBMITTING the read can throw (a rejected
+        // submission while the single-writer shuts down). Unguarded, `fetching` would stay true forever: every
+        // later prefetch short-circuits on it and rearmIfRequested() refuses to run, so the tag would never lease
+        // another command. Construction must survive it too — the constructor prefetches.
+        fake.enqueue(publish(1, "a"));
+        fake.throwOnNextRead = true;
+
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        assertThat(backlog.head()).isNull();
+        assertThat(fake.reads).isEqualTo(1);
+
+        // The evidence was recorded exactly as for a failed future, so the tick recovers the tag.
+        backlog.rearmIfRequested();
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+        assertThat(head.value().getTagValue()).isEqualTo("a");
+    }
+
+    @Test
+    void aSynchronousDeleteFailure_leavesTheCommandQueued_andTheLadderRecoversIt() {
+        // Same hazard on the disposal path: an unsubmitted delete must not skip the follow-up prefetch, or the
+        // backlog is left head-less on a queue that never re-empties — its 0→1 callback can never fire again.
+        fake.enqueue(publish(1, "a"));
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        final SouthboundCommand head = backlog.head();
+        assertThat(head).isNotNull();
+
+        fake.throwOnNextRemove = true;
+        assertThatCode(() -> backlog.removeHead(head.id())).doesNotThrowAnyException();
+
+        // At-least-once holds: the command was never deleted, and the recovery ladder leases it again rather than
+        // leaving the tag stranded.
+        assertThat(fake.pending()).isEqualTo(1);
+        final SouthboundCommand redelivered = backlog.head();
+        assertThat(redelivered).isNotNull();
+        assertThat(redelivered.value().getTagValue()).isEqualTo("a");
+    }
+
+    @Test
+    void aSynchronousCallbackDeregistrationFailure_stillReleasesTheLease() {
+        // close() releases the cached lease so a successor backlog in this process (an adapter recreate) can take
+        // the command over. A throwing deregistration must not skip that release — an unreleased lease strands the
+        // command until a full restart, the very bug close() exists to prevent.
+        fake.enqueue(publish(1, "a"));
+        final ClientQueueSouthboundWriteBacklog first = newBacklog();
+        assertThat(first.head()).isNotNull();
+
+        fake.throwOnCallbackDeregistration = true;
+        assertThatCode(first::close).doesNotThrowAnyException();
+
+        final ClientQueueSouthboundWriteBacklog successor = newBacklog();
+        final SouthboundCommand takenOver = successor.head();
+        assertThat(takenOver).isNotNull();
+        assertThat(takenOver.value().getTagValue()).isEqualTo("a");
+    }
+
+    @Test
     void anEmptyReadWithANonEmptyStore_isRecheckedImmediately_theBrokenHeadCase() {
         // QA finding N1(b): a payload-broken head makes the store complete a read EMPTY after dropping it, with
         // commands still queued behind — the size cross-check catches the lie and one immediate re-read leases.
@@ -535,6 +594,11 @@ class ClientQueueSouthboundWriteBacklogTest {
         private int emptyReads;
         private boolean failSizeChecks;
         private boolean failNextMarkerSweep;
+        /** Models a rejected submission — the call throws instead of returning a future that fails. */
+        private boolean throwOnNextRead;
+
+        private boolean throwOnNextRemove;
+        private boolean throwOnCallbackDeregistration;
         private @Nullable SettableFuture<ImmutableList<PUBLISH>> deferredRead;
         private @Nullable ImmutableList<PUBLISH> deferredResult;
 
@@ -583,6 +647,10 @@ class ClientQueueSouthboundWriteBacklogTest {
         public @NotNull ListenableFuture<ImmutableList<PUBLISH>> readShared(
                 final @NotNull String sharedSubscription, final int messageLimit, final long byteLimit) {
             reads++;
+            if (throwOnNextRead) {
+                throwOnNextRead = false;
+                throw new RuntimeException("scripted synchronous read-submission failure");
+            }
             if (failNextRead) {
                 failNextRead = false;
                 return Futures.immediateFailedFuture(new RuntimeException("scripted read failure"));
@@ -636,6 +704,10 @@ class ClientQueueSouthboundWriteBacklogTest {
         @Override
         public @NotNull ListenableFuture<Void> removeShared(
                 final @NotNull String sharedSubscription, final @NotNull String uniqueId) {
+            if (throwOnNextRemove) {
+                throwOnNextRemove = false;
+                throw new RuntimeException("scripted synchronous delete-submission failure");
+            }
             queue.removeIf(publish -> publish.getUniqueId().equals(uniqueId));
             leased.remove(uniqueId);
             removed.add(uniqueId);
@@ -658,6 +730,10 @@ class ClientQueueSouthboundWriteBacklogTest {
 
         @Override
         public void removePublishAvailableCallback(final @NotNull String queueId) {
+            if (throwOnCallbackDeregistration) {
+                throwOnCallbackDeregistration = false;
+                throw new RuntimeException("scripted synchronous deregistration failure");
+            }
             callbacks.remove(queueId);
         }
     }

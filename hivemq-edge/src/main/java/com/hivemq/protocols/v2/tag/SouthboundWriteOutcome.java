@@ -35,9 +35,15 @@ public enum SouthboundWriteOutcome {
     FAILED,
 
     /**
-     * The write was not attempted because one was already in flight — a violation of the advertised in-flight
-     * window of one, which the single-in-flight invariant refused. A sender that paces deliveries to the window
-     * never triggers this; a non-zero count is an alarm, not a load condition.
+     * The write was not attempted because the runtime refused it — <b>the alarm outcome</b>. Its namesake case is a
+     * write arriving while one is already in flight: a violation of the advertised in-flight window of one, which a
+     * sender pacing deliveries to that window can never trigger. The tag coordinators also settle it for the two
+     * structural refusals — a write for a node no tag runtime owns, or one reaching a plane with no write aspect —
+     * because those mean the delivery side and the tag side disagree about which tags exist, which is the same
+     * class of fault: the runtime contradicting its own invariants, not the device or the network misbehaving.
+     * <p>
+     * The command is kept and delivery suspends, so nothing is lost; but a non-zero count is always a defect to
+     * investigate, never a load condition.
      */
     REJECTED_BUSY,
 

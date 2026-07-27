@@ -22,6 +22,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperWriteRequest;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** A send-only mailbox stand-in that records each write request and lets the test settle it as the adapter would. */
 final class CapturingSender implements MailboxSender<ProtocolAdapterWrapperMessage> {
@@ -34,6 +35,16 @@ final class CapturingSender implements MailboxSender<ProtocolAdapterWrapperMessa
     }
 
     void settleLast(final @NotNull SouthboundWriteOutcome outcome) {
-        requests.getLast().completion().settle(outcome, null);
+        settleLast(outcome, null);
+    }
+
+    /**
+     * Settle the last delivered write as the adapter would, carrying the device's own words.
+     *
+     * @param outcome the outcome to settle with.
+     * @param reason  the device's failure reason, or {@code null} when it supplied none.
+     */
+    void settleLast(final @NotNull SouthboundWriteOutcome outcome, final @Nullable String reason) {
+        requests.getLast().completion().settle(outcome, reason);
     }
 }

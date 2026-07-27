@@ -135,7 +135,19 @@ public final class SouthboundMqttIntake implements AutoCloseable {
     @Override
     public void close() {
         for (final Map.Entry<String, String> entry : topicByTag.entrySet()) {
-            brokerRuntime.topicTree().removeSubscriber(clientId, entry.getValue(), shareName);
+            try {
+                brokerRuntime.topicTree().removeSubscriber(clientId, entry.getValue(), shareName);
+            } catch (final Exception failure) {
+                // Each subscription is unsubscribed independently: one failure must not leave the rest registered,
+                // still feeding queues whose adapter is gone. The container logs this close() as a whole, so the
+                // tag and topic are recorded here to say which subscription actually leaked.
+                log.warn(
+                        "Failed to remove the southbound subscription of tag '{}' (topic '{}') on adapter '{}'",
+                        entry.getKey(),
+                        entry.getValue(),
+                        adapterId,
+                        failure);
+            }
         }
     }
 

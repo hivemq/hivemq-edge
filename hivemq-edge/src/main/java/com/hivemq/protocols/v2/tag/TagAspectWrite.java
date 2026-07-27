@@ -335,8 +335,16 @@ public final class TagAspectWrite implements TagAspectVerifying {
         if (inFlightCompletion != null) {
             settleInFlight(SouthboundWriteOutcome.ABORTED, "superseded by a new write");
         }
-        requestWrite(event.value());
+        // Remember the completion BEFORE posting the request. A completion this aspect never took ownership of can
+        // never be settled by any later path — not the acknowledgment, not deactivation, not a lost connection — so
+        // the sender's delivery slot would stay occupied for good and the tag would silently stop accepting writes.
         inFlightCompletion = event.completion();
+        try {
+            requestWrite(event.value());
+        } catch (final RuntimeException postFailure) {
+            settleInFlight(SouthboundWriteOutcome.ABORTED, "the write could not be posted to the adapter");
+            throw postFailure;
+        }
     }
 
     /**

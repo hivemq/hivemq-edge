@@ -18,8 +18,10 @@ package com.hivemq.protocols.v2.southbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog.DeadLetter;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -66,8 +68,8 @@ class InMemorySouthboundWriteBacklogTest {
 
         assertThat(backlog.deadLettered()).isEqualTo(1);
         assertThat(backlog.deadLetters())
-                .extracting(command -> command.value().getTagValue())
-                .containsExactly("a");
+                .extracting(deadLetter -> deadLetter.command().value().getTagValue(), DeadLetter::reason)
+                .containsExactly(tuple("a", "device rejected"));
         assertThat(backlog.pendingSize()).isZero();
     }
 

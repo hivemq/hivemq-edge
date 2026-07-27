@@ -329,6 +329,10 @@ public class ProtocolAdapterEntity implements EntityValidatable {
         // Two southbound mappings sharing a topic would share one durable command queue between two tags: the
         // second backlog's wakeup replaces the first's in the client-queue callback map, and both would compete
         // for the same commands. One command topic feeds exactly one tag.
+        // Exact filter strings only. Two DIFFERENT filters may still overlap (`plant/a/set` and `plant/+/set`),
+        // and that is left alone deliberately: each gets its own subscription and its own queue, so a publish is
+        // delivered to both tags independently — no shared queue, no competing consumers — and commanding several
+        // tags from one topic is a legitimate thing to want.
         final Set<String> seenSouthboundTopics = new HashSet<>();
         southboundMappings.forEach(mapping -> EntityValidatable.notMatch(
                 validationEvents,

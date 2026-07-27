@@ -77,6 +77,17 @@ import org.slf4j.LoggerFactory;
  * never complete — a prefetch in that window stays {@code fetching} silently. The process is exiting; durable
  * commands replay on restart.
  * <p>
+ * <b>Every persistence call is guarded against a synchronous throw.</b> {@link ClientQueuePersistence} reports
+ * failures through its futures, but submitting the work can itself throw (a rejected submission while the
+ * single-writer shuts down, say). Each such call here is followed by a step that must not be skipped, and skipping
+ * it wedges the tag silently until an adapter recreate: an unguarded {@code readShared} leaves {@code fetching}
+ * stuck true so no later prefetch or {@link #rearmIfRequested()} can ever run again; an unguarded
+ * {@code removeShared} skips the follow-up prefetch and records no evidence, on a queue whose 0→1 callback can
+ * never fire again; an unguarded callback deregistration skips the lease release in {@link #close()}. So each site
+ * catches, keeps its follow-up step, and routes the failure into the same tick-paced recovery an asynchronous
+ * failure takes. A {@link VirtualMachineError} still propagates — the VM is going down, and a stuck flag is the
+ * least of it.
+ * <p>
  * Thread-safety: {@link #head()}/{@link #removeHead}/{@link #deadLetterHead} run under the delivering queue's
  * monitor (lock order queue→backlog); the read callback and the publish-available callback run on persistence
  * threads. All state is guarded by this backlog's monitor, and both the registered wakeup and every
@@ -191,7 +202,21 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             leased = head;
             head = null;
         }
-        clientQueuePersistence.removePublishAvailableCallback(queueId);
+        try {
+            clientQueuePersistence.removePublishAvailableCallback(queueId);
+        } catch (final VirtualMachineError fatal) {
+            throw fatal;
+        } catch (final Throwable deregistrationFailure) {
+            // Must not skip the lease release below: an unreleased lease is invisible to a successor backlog in
+            // this process and strands the command until a full restart — the very bug this close() exists to fix.
+            log.warn(
+                    "Failed to deregister the publish-available callback of southbound queue '{}' (tag '{}', "
+                            + "adapter '{}') — releasing the lease regardless",
+                    queueId,
+                    tagName,
+                    adapterId,
+                    deregistrationFailure);
+        }
         if (leased != null) {
             FutureUtils.addExceptionLogger(clientQueuePersistence.removeInFlightMarker(queueId, leased.id()));
         }
@@ -214,15 +239,36 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             // close() already released the lease, so the command stays durably queued and a successor backlog
             // redelivers it (at-least-once); swallow the disposal rather than blow up the settling thread.
             log.warn(
-                    "Southbound command '{}' for tag '{}' on adapter '{}' settled {} after its backlog closed — "
+                    "Southbound command '{}' for tag '{}' on adapter '{}' settled {}{} after its backlog closed — "
                             + "left queued for a successor",
                     id,
                     tagName,
                     adapterId,
-                    outcome);
+                    outcome,
+                    reason != null ? " (" + reason + ")" : "");
             return;
         }
-        FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, id));
+        try {
+            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, id));
+        } catch (final VirtualMachineError fatal) {
+            throw fatal;
+        } catch (final Throwable removalFailure) {
+            // The delete was never submitted. The command is still queued, so at-least-once holds — but this
+            // backlog has already dropped its head, and the queue never re-empties, so its 0→1 callback can never
+            // fire again. Record the evidence so the tick re-reads instead of leaving the tag stranded.
+            log.error(
+                    "Failed to submit the delete of southbound command '{}' for tag '{}' on adapter '{}' — will "
+                            + "retry the read on the next tick",
+                    id,
+                    tagName,
+                    adapterId,
+                    removalFailure);
+            synchronized (this) {
+                if (!closed) {
+                    rearmRequested = true;
+                }
+            }
+        }
         prefetch();
     }
 
@@ -242,23 +288,31 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
             fetching = true;
             wakeupPending = false;
         }
-        final ListenableFuture<ImmutableList<PUBLISH>> read = clientQueuePersistence.readShared(
-                queueId, READ_LIMIT, InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES);
-        Futures.addCallback(
-                read,
-                new FutureCallback<>() {
-                    @SuppressWarnings("NullAway") // Guava FutureCallback.onSuccess has @Nullable param
-                    @Override
-                    public void onSuccess(final ImmutableList<PUBLISH> publishes) {
-                        onRead(publishes);
-                    }
+        try {
+            final ListenableFuture<ImmutableList<PUBLISH>> read = clientQueuePersistence.readShared(
+                    queueId, READ_LIMIT, InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES);
+            Futures.addCallback(
+                    read,
+                    new FutureCallback<>() {
+                        @SuppressWarnings("NullAway") // Guava FutureCallback.onSuccess has @Nullable param
+                        @Override
+                        public void onSuccess(final ImmutableList<PUBLISH> publishes) {
+                            onRead(publishes);
+                        }
 
-                    @Override
-                    public void onFailure(final @NotNull Throwable throwable) {
-                        onReadFailure(throwable);
-                    }
-                },
-                MoreExecutors.directExecutor());
+                        @Override
+                        public void onFailure(final @NotNull Throwable throwable) {
+                            onReadFailure(throwable);
+                        }
+                    },
+                    MoreExecutors.directExecutor());
+        } catch (final VirtualMachineError fatal) {
+            throw fatal;
+        } catch (final Throwable submissionFailure) {
+            // The read never became a future, so no callback will ever reset `fetching` — treat it exactly as a
+            // failed read: clear the flag, record the evidence, and let the tick retry.
+            onReadFailure(submissionFailure);
+        }
     }
 
     private void onRead(final @Nullable ImmutableList<PUBLISH> publishes) {

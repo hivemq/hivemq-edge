@@ -220,10 +220,25 @@ public final class SouthboundWritePlane implements TagWriteReadinessListener, Au
      * recorded evidence for (see {@link SouthboundWriteBacklog#rearmIfRequested()}). A cheap no-op per channel in
      * the common case; the tick is what rate-bounds the recovery retries, so no scheduler exists anywhere in the
      * southbound path.
+     * <p>
+     * Each channel is guarded independently. This runs on the wrapper's dispatch thread inside the tick, ahead of
+     * the batch dispatch: an escaping throwable would skip the remaining channels' re-arms <b>and</b> that tick's
+     * batch dispatch, and the wrapper's contract guard would fault the whole adapter into {@code ERROR} — far too
+     * much blast radius for a hiccup on one tag's recovery path. One sick backlog only forfeits its own re-arm,
+     * and gets another chance on the next tick.
      */
     public void rearmBacklogs() {
-        for (final TagChannel channel : channels.values()) {
-            channel.backlog().rearmIfRequested();
+        for (final Map.Entry<String, TagChannel> entry : channels.entrySet()) {
+            try {
+                entry.getValue().backlog().rearmIfRequested();
+            } catch (final Exception failure) {
+                log.warn(
+                        "Failed to re-arm the southbound backlog of tag '{}' on adapter '{}' — retrying on the next "
+                                + "tick",
+                        entry.getKey(),
+                        adapterId,
+                        failure);
+            }
         }
     }
 

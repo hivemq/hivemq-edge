@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog.DeadLetter;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -88,6 +89,34 @@ class SouthboundWriteQueueTest {
         assertThat(backlog.deadLetters()).hasSize(1);
         assertThat(sender.requests).hasSize(2); // advanced past the dead-lettered command
         assertThat(queue.inFlight()).isTrue();
+    }
+
+    @Test
+    void deviceFailure_carriesTheDevicesOwnReasonIntoTheDeadLetterRecord() {
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        queue.resume();
+        backlog.offer(value(0));
+
+        sender.settleLast(SouthboundWriteOutcome.FAILED, "protected register");
+
+        // The dead-letter record is the operator's only account of a refused command, so the device's own words
+        // must survive the whole way rather than being replaced by the generic fallback.
+        assertThat(backlog.deadLetters()).extracting(DeadLetter::reason).containsExactly("protected register");
+    }
+
+    @Test
+    void deviceFailureWithNoReason_fallsBackToAGenericDeadLetterReason() {
+        final InMemorySouthboundWriteBacklog backlog = new InMemorySouthboundWriteBacklog(100);
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(sender, NODE, backlog);
+        queue.resume();
+        backlog.offer(value(0));
+
+        sender.settleLast(SouthboundWriteOutcome.FAILED, null);
+
+        assertThat(backlog.deadLetters()).extracting(DeadLetter::reason).containsExactly("device rejected the write");
     }
 
     @Test

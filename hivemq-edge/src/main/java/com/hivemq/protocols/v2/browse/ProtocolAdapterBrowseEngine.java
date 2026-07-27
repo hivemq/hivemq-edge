@@ -28,6 +28,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
@@ -407,10 +408,17 @@ public final class ProtocolAdapterBrowseEngine {
 
     // ── tag-name policy (pure helpers) ──────────────────────────────────────────────────────────────────────
 
-    /** Lower-case, non-alphanumeric → {@code '-'}, collapse and trim dashes. */
+    /**
+     * Lower-case, non-alphanumeric → {@code '-'}, collapse and trim dashes.
+     * <p>
+     * {@code Locale.ROOT}, not the platform default: this generates a tag identifier, and a default-locale
+     * lower-casing would make that identifier depend on where Edge happens to run — under {@code tr_TR}, {@code "I"}
+     * maps to the dotless {@code "ı"}, so a browsed {@code INLET} node would yield {@code ınlet} on one host and
+     * {@code inlet} on another.
+     */
     public static @NotNull String sanitize(final @NotNull String text) {
         final StringBuilder sb = new StringBuilder();
-        for (final char c : text.toLowerCase().toCharArray()) {
+        for (final char c : text.toLowerCase(Locale.ROOT).toCharArray()) {
             sb.append(Character.isLetterOrDigit(c) ? c : '-');
         }
         String out = sb.toString();

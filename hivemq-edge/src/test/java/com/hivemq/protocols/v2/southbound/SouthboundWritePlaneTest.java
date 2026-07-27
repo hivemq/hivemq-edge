@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.southbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
@@ -25,7 +26,9 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -136,38 +139,12 @@ class SouthboundWritePlaneTest {
         assertThat(plane.offer(TAG, value(2))).isFalse();
     }
 
-    // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
-
     @Test
     void rearmBacklogs_reachesEveryChannel() {
         // The tick hook behind QA finding N1: the wrapper's tick → plane → every channel's backlog. The plane
         // must fan the poke out to each write-mapped tag's backlog, and only to those.
-        final java.util.concurrent.atomic.AtomicInteger rearms = new java.util.concurrent.atomic.AtomicInteger();
-        final SouthboundWriteBacklogFactory factory = (tagName, node) -> new SouthboundWriteBacklog() {
-            @Override
-            public @org.jetbrains.annotations.Nullable SouthboundCommand head() {
-                return null;
-            }
-
-            @Override
-            public void removeHead(final @NotNull String id) {}
-
-            @Override
-            public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {}
-
-            @Override
-            public void onAvailable(final @NotNull Runnable wakeup) {}
-
-            @Override
-            public void rearmIfRequested() {
-                rearms.incrementAndGet();
-            }
-
-            @Override
-            public void close() {}
-        };
-        final SouthboundWritePlane plane = new SouthboundWritePlane(
-                "a1", new CapturingSender(), factory, List.of(pair(TAG), pair(OTHER)), Set.of(TAG, OTHER));
+        final AtomicInteger rearms = new AtomicInteger();
+        final SouthboundWritePlane plane = planeOverCountingBacklogs(rearms, null);
 
         plane.rearmBacklogs();
         assertThat(rearms.get()).isEqualTo(2);
@@ -175,6 +152,65 @@ class SouthboundWritePlaneTest {
         plane.close();
         plane.rearmBacklogs(); // no channels, no pokes
         assertThat(rearms.get()).isEqualTo(2);
+    }
+
+    @Test
+    void rearmBacklogs_isGuardedPerChannel_soOneSickBacklogCannotFaultTheAdapter() {
+        // This runs on the wrapper's dispatch thread inside the tick, ahead of the batch dispatch. An escaping
+        // throwable would skip the remaining channels AND that tick's batch dispatch, and the wrapper's contract
+        // guard would fault the whole adapter into ERROR — far too much blast radius for a hiccup on one tag's
+        // recovery path.
+        final AtomicInteger rearms = new AtomicInteger();
+        final SouthboundWritePlane plane = planeOverCountingBacklogs(rearms, TAG);
+
+        assertThatCode(plane::rearmBacklogs).doesNotThrowAnyException();
+
+        // The throwing channel forfeits only its own re-arm; the healthy one still got its poke.
+        assertThat(rearms.get()).isEqualTo(1);
+    }
+
+    // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * A plane over two channels whose backlogs only count their re-arms — except the one named by
+     * {@code throwingTag}, which throws instead.
+     */
+    private static @NotNull SouthboundWritePlane planeOverCountingBacklogs(
+            final @NotNull AtomicInteger rearms, final @Nullable String throwingTag) {
+        final SouthboundWriteBacklogFactory factory =
+                (tagName, node) -> new CountingBacklog(rearms, tagName.equals(throwingTag));
+        return new SouthboundWritePlane(
+                "a1", new CapturingSender(), factory, List.of(pair(TAG), pair(OTHER)), Set.of(TAG, OTHER));
+    }
+
+    /** A backlog that holds nothing and only records (or refuses) its tick re-arms. */
+    private record CountingBacklog(@NotNull AtomicInteger rearms, boolean throwOnRearm)
+            implements SouthboundWriteBacklog {
+
+        @Override
+        public @Nullable SouthboundCommand head() {
+            return null;
+        }
+
+        @Override
+        public void removeHead(final @NotNull String id) {}
+
+        @Override
+        public void deadLetterHead(final @NotNull String id, final @NotNull String reason) {}
+
+        @Override
+        public void onAvailable(final @NotNull Runnable wakeup) {}
+
+        @Override
+        public void rearmIfRequested() {
+            if (throwOnRearm) {
+                throw new IllegalStateException("scripted re-arm failure");
+            }
+            rearms.incrementAndGet();
+        }
+
+        @Override
+        public void close() {}
     }
 
     private static int pending(final @NotNull SouthboundWritePlane.TagChannel channel) {

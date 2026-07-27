@@ -39,10 +39,21 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBacklog {
 
+    /**
+     * One dead-lettered command and why it was undeliverable. The durable backlog writes the reason to the log —
+     * the operator's only record of a refused command — so the stand-in keeps it too, and tests can assert that the
+     * device's own words travelled the whole way rather than being replaced by a generic string.
+     *
+     * @param command the command that was removed.
+     * @param reason  the failure reason as reported by the device (or the intake, for an untranslatable payload).
+     */
+    public record DeadLetter(
+            @NotNull SouthboundCommand command, @NotNull String reason) {}
+
     private final int capacity;
     private final @NotNull Deque<SouthboundCommand> pending;
     private final @NotNull List<SouthboundCommand> committedCommands;
-    private final @NotNull List<SouthboundCommand> deadLetters;
+    private final @NotNull List<DeadLetter> deadLetters;
 
     private @Nullable Runnable wakeup;
     private boolean closed;
@@ -111,7 +122,7 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
             return; // a settle racing close(): the channel was dropped, nothing to dispose
         }
         requireHead(id);
-        deadLetters.add(requireNonNull(pending.pollFirst()));
+        deadLetters.add(new DeadLetter(requireNonNull(pending.pollFirst()), reason));
         deadLettered++;
     }
 
@@ -167,7 +178,10 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
         return List.copyOf(committedCommands);
     }
 
-    public synchronized @NotNull List<SouthboundCommand> deadLetters() {
+    /**
+     * @return the dead-lettered commands with the reason each was refused, in dead-letter order.
+     */
+    public synchronized @NotNull List<DeadLetter> deadLetters() {
         return List.copyOf(deadLetters);
     }
 }
