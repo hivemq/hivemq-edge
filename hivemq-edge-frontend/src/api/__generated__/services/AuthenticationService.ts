@@ -86,7 +86,7 @@ export class AuthenticationService {
      */
     public oidcLogin(): CancelablePromise<OidcLoginRedirect> {
         return this.httpRequest.request({
-            method: 'GET',
+            method: 'POST',
             url: '/api/v1/auth/oidc/login',
             errors: {
                 503: `OIDC is not configured on this instance, or the Identity Provider could not be reached. The \`detail\` field distinguishes the two.`,

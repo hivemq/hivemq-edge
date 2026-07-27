@@ -149,8 +149,12 @@ public class OidcServiceImpl implements OidcService {
         // Return the authorization URL for the SPA to open, rather than redirecting. A start-time failure
         // (config missing, IdP unreachable) is then a normal error response the SPA presents, instead of a
         // popup stranded on this endpoint's response.
-        return Response.ok(
-                        new OidcLoginRedirect().authorizeUrl(authRequest.toURI().toString()))
+        //
+        // no-store: the authorization URL embeds the one-time state, nonce, and PKCE challenge just
+        // allocated in the state store. A cache or proxy that retained and replayed this response would
+        // hand the same one-time values to a later login, whose callback would then fail as invalid-state.
+        return noStore(Response.ok(
+                        new OidcLoginRedirect().authorizeUrl(authRequest.toURI().toString())))
                 .build();
     }
 

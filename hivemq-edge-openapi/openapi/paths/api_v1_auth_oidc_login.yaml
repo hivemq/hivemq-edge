@@ -1,5 +1,5 @@
-get:
-  description: Begin the OIDC authorization-code flow. Mints a fresh state, nonce, and PKCE challenge and returns the Identity Provider authorization URL for the SPA to open. The SPA opens this URL in the login popup, rather than this endpoint redirecting, so that a start-time failure is a normal error response the SPA can present instead of a stranded popup.
+post:
+  description: Begin the OIDC authorization-code flow. Mints a fresh state, nonce, and PKCE challenge and returns the Identity Provider authorization URL for the SPA to open. This is a POST because each call allocates one-time server-side login state; it is not a safe, repeatable retrieval. The SPA opens the returned URL in the login popup, rather than this endpoint redirecting, so that a start-time failure is a normal error response the SPA can present instead of a stranded popup.
   operationId: oidc-login
   x-roles-allowed:
     - NO_AUTH_REQUIRED

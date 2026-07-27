@@ -204,7 +204,7 @@ export const API_ROUTES = {
     /**
      * @see {@link AuthenticationService.oidcLogin}
      */
-    oidcLogin: route<OidcLoginRedirect>('GET', '/api/v1/auth/oidc/login'),
+    oidcLogin: route<OidcLoginRedirect>('POST', '/api/v1/auth/oidc/login'),
 
     /**
      * @see {@link AuthenticationService.oidcCallback}
@@ -239,7 +239,7 @@ export const API_ROUTES = {
     /**
      * @see {@link AuthenticationEndpointService.oidcLogin}
      */
-    oidcLogin: route<OidcLoginRedirect>('GET', '/api/v1/auth/oidc/login'),
+    oidcLogin: route<OidcLoginRedirect>('POST', '/api/v1/auth/oidc/login'),
 
     /**
      * @see {@link AuthenticationEndpointService.oidcCallback}
