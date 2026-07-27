@@ -22,10 +22,11 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailureImpl;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +43,7 @@ public class ProtocolAdapterSchemaManager {
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator;
     private @Nullable JsonNode schemaNode;
-    private @Nullable JsonSchema schema;
+    private @Nullable Schema schema;
 
     public ProtocolAdapterSchemaManager(
             final @NotNull ObjectMapper objectMapper,
@@ -59,10 +60,11 @@ public class ProtocolAdapterSchemaManager {
         return schemaNode;
     }
 
-    public synchronized @NotNull JsonSchema generateSchema() {
+    public synchronized @NotNull Schema generateSchema() {
         if (schema == null) {
-            final JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
-            schema = factory.getSchema(generateSchemaNode());
+            // the validator parses with Jackson 3, so the Jackson 2 tree is handed over as JSON text
+            schema = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12)
+                    .getSchema(generateSchemaNode().toString(), InputFormat.JSON);
             schema.initializeValidators();
         }
         return schema;
@@ -76,15 +78,13 @@ public class ProtocolAdapterSchemaManager {
         } else {
             node = objectMapper.valueToTree(o);
         }
-        return generateSchema().validate(node).stream()
+        return generateSchema().validate(node.toString(), InputFormat.JSON).stream()
                 .map(ProtocolAdapterSchemaManager::convertMessage)
                 .collect(Collectors.toList());
     }
 
-    static ProtocolAdapterValidationFailure convertMessage(final @NotNull ValidationMessage validationMessage) {
+    static ProtocolAdapterValidationFailure convertMessage(final @NotNull Error error) {
         return new ProtocolAdapterValidationFailureImpl(
-                validationMessage.getMessage(),
-                validationMessage.getEvaluationPath().toString(),
-                validationMessage.getClass());
+                error.getMessage(), error.getEvaluationPath().toString(), error.getClass());
     }
 }
