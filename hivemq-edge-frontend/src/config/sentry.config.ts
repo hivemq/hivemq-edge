@@ -13,7 +13,7 @@ if (import.meta.env.MODE !== 'development')
       Sentry.browserProfilingIntegration(),
       Sentry.replayIntegration(),
       // https://docs.sentry.io/platforms/javascript/guides/react/configuration/integrations/react-router/
-      Sentry.reactRouterV7BrowserTracingIntegration({
+      Sentry.reactRouterV6BrowserTracingIntegration({
         useEffect,
         useLocation,
         useNavigationType,
