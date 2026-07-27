@@ -84,6 +84,22 @@ final class RecordingOutput implements ProtocolAdapterOutput {
     }
 
     @Override
+    public void dataPoints(final @NotNull Node node, final @NotNull List<DataPoint> values) {
+        // the multi-value poll boundary (EDG-812): a batch of values for one node in one poll
+        events.add("dataPoints node=" + node.nodeId() + " count=" + values.size());
+        for (final DataPoint value : values) {
+            dataPointNodes.add(node);
+            dataPointValues.add(value.getTagValue());
+        }
+    }
+
+    @Override
+    public void pollComplete(final @NotNull Node node) {
+        // the poll terminator for empty/multi-value polls (EDG-812); single-value polls complete via dataPoint()
+        events.add("pollComplete node=" + node.nodeId());
+    }
+
+    @Override
     public void nodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {
         events.add("nodeError node=" + node.nodeId() + " spontaneous=" + spontaneous);
     }
