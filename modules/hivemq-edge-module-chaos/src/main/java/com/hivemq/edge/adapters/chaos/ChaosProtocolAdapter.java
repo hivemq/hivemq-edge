@@ -268,10 +268,25 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
 
     private void applyPoll(final @NotNull Node node, final @NotNull PollBehavior behavior) {
         switch (behavior) {
+            // A single value carries its own completion: it publishes and ends the poll in one call.
             case final PollBehavior.Value value -> output.dataPoint(node, value.value());
+            case final PollBehavior.Values values -> {
+                // Non-terminating values, then one explicit completion — a multi-value poll.
+                output.dataPoints(node, values.values());
+                output.pollComplete(node);
+            }
+            case final PollBehavior.ValueThenDeferredCompletion split -> {
+                // The split shape: the value publishes now as a non-terminating dataPoints value, so the poll stays
+                // open in WAITING_FOR_POLL_DATAPOINT until the completion's tick comes due.
+                output.dataPoints(node, List.of(split.value()));
+                final int delay = Math.max(1, split.ticks());
+                scheduleAt(currentTick + delay, () -> output.pollComplete(node));
+            }
+            case final PollBehavior.CompletionWithoutValue ignored -> output.pollComplete(node);
             case final PollBehavior.NodeErrorResponse error -> output.nodeError(node, error.reason(), false);
             case final PollBehavior.NoResponse ignored -> {
-                // The poll never returns; the read aspect waits and the next scheduled poll is the retry.
+                // The poll never returns — no value and no completion; the read aspect waits in
+                // WAITING_FOR_POLL_DATAPOINT until a scripted event moves it.
             }
         }
     }
