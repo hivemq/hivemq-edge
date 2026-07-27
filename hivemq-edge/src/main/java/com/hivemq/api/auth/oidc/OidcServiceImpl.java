@@ -183,8 +183,10 @@ public class OidcServiceImpl implements OidcService {
         final OidcStateStore.StateEntry entry = entryOpt.get();
 
         if (error != null) {
-            final String detail = errorDescription != null ? errorDescription : error;
-            log.info("OIDC login returned an error from the Identity Provider: {}", detail);
+            // Log the standardized error code, not the free-text error_description: both are callback query
+            // parameters an unauthenticated caller controls, and the description can carry CR/LF or control
+            // characters that would forge extra log lines. Strip control characters from whatever we log.
+            log.info("OIDC login returned an error from the Identity Provider: {}", sanitizeForLog(error));
             return callbackError(OidcErrorCode.IDP_ERROR, config);
         }
         if (code == null) {
@@ -440,6 +442,20 @@ public class OidcServiceImpl implements OidcService {
         cachedMetadataIssuer = issuer;
         cachedMetadataExpiry = System.currentTimeMillis() + DISCOVERY_TTL_MILLIS;
         return metadata;
+    }
+
+    /**
+     * Strips CR, LF, and other control characters (including terminal escape sequences) from a value before
+     * it is written to a log, so an externally supplied string cannot forge extra log lines or inject
+     * terminal control sequences. Replaces each control character with {@code '_'}.
+     */
+    private static @NotNull String sanitizeForLog(final @NotNull String value) {
+        final StringBuilder sanitized = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            final char c = value.charAt(i);
+            sanitized.append(Character.isISOControl(c) ? '_' : c);
+        }
+        return sanitized.toString();
     }
 
     private static @NotNull Response oidcNotConfigured() {

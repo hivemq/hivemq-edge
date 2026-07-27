@@ -90,20 +90,24 @@ public class OidcStateStore {
      * If the slot being overwritten still holds a live (non-expired) login, a warning is logged: it means
      * the store is churning fast enough to evict an in-flight login before its owner completed the callback,
      * so that user must restart the login. At normal admin-console volume this should never happen; a burst
-     * of it points at a flood of {@code /login} starts.
+     * of it points at {@code /login} being started faster than logins complete — most likely a runaway
+     * client. The warning is emitted after the lock is released, so logging never holds the store's monitor.
      */
-    public synchronized void put(
-            final @NotNull String state, final @NotNull String nonce, final @NotNull String codeVerifier) {
-        final StateEntry overwritten = ring[writeIndex];
-        if (overwritten != null && !overwritten.isExpired(System.currentTimeMillis())) {
+    public void put(final @NotNull String state, final @NotNull String nonce, final @NotNull String codeVerifier) {
+        final boolean evictedLiveLogin;
+        synchronized (this) {
+            final StateEntry overwritten = ring[writeIndex];
+            evictedLiveLogin = overwritten != null && !overwritten.isExpired(System.currentTimeMillis());
+            ring[writeIndex] = new StateEntry(state, nonce, codeVerifier, System.currentTimeMillis() + ttlMillis);
+            writeIndex = (writeIndex + 1) % CAPACITY;
+        }
+        if (evictedLiveLogin) {
             log.warn(
                     "OIDC login-state store overwrote a still-live login before it completed (capacity {}). "
                             + "The affected login must be restarted. If this recurs, the /login endpoint is being "
                             + "started faster than logins complete.",
                     CAPACITY);
         }
-        ring[writeIndex] = new StateEntry(state, nonce, codeVerifier, System.currentTimeMillis() + ttlMillis);
-        writeIndex = (writeIndex + 1) % CAPACITY;
     }
 
     /**
