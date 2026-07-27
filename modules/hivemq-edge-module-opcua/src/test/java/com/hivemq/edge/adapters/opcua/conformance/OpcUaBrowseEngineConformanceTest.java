@@ -213,6 +213,12 @@ class OpcUaBrowseEngineConformanceTest {
         public void dataPoint(final @NotNull Node node, final @NotNull DataPoint value) {}
 
         @Override
+        public void dataPoints(final @NotNull Node node, final @NotNull List<DataPoint> values) {}
+
+        @Override
+        public void pollComplete(final @NotNull Node node) {}
+
+        @Override
         public void nodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {}
 
         @Override
