@@ -55,10 +55,151 @@ class TagAspectReadPolledTest {
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
         assertThat(fixture.commands()).contains("pollBatch");
 
+        // A single value both publishes and ends the poll — the common single-value case.
         fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "21"));
         fixture.drain();
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.northboundDataPoints).hasSize(1);
         assertThat(fixture.tag("temperature").failureCount()).isZero();
+
+        // The cadence continues: the next interval elapses and the next poll is requested.
+        fixture.advance(1000);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+    }
+
+    @Test
+    void aMultiValuePoll_publishesEveryValueThenCompletes() {
+        final WrapperTestFixture fixture = polledFixture();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
+
+        // One poll produces three non-terminating values (a split-lines multi-row read); all three publish
+        // northbound and the poll stays open until the explicit completion.
+        fixture.output.dataPoints(
+                fixture.nodeFor("temperature"),
+                List.of(
+                        WrapperTestSupport.dataPoint("temperature", "1"),
+                        WrapperTestSupport.dataPoint("temperature", "2"),
+                        WrapperTestSupport.dataPoint("temperature", "3")));
+        fixture.drain();
+        assertThat(fixture.northboundDataPoints).hasSize(3);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+
+        fixture.output.pollComplete(fixture.nodeFor("temperature"));
+        fixture.drain();
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.tag("temperature").failureCount()).isZero();
+
+        // The cadence continues: the next interval elapses and the next poll is requested.
+        fixture.advance(1000);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+    }
+
+    @Test
+    void aZeroValuePoll_completesWithoutPublishingAndDoesNotHang() {
+        final WrapperTestFixture fixture = polledFixture();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
+
+        // An empty result set: no value, only the completion — the aspect returns to its interval.
+        fixture.output.pollComplete(fixture.nodeFor("temperature"));
+        fixture.drain();
+
+        assertThat(fixture.northboundDataPoints).isEmpty();
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.tag("temperature").failureCount()).isZero();
+    }
+
+    @Test
+    void aValueArrivingAfterTheCompletion_isAbsorbedAndNotPublished() {
+        final WrapperTestFixture fixture = polledFixture();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
+
+        fixture.output.pollComplete(fixture.nodeFor("temperature"));
+        fixture.drain();
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+
+        // A stale value lands in WAITING_FOR_POLL_INTERVAL: absorbed, never published, no reset.
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "stale"));
+        fixture.drain();
+        assertThat(fixture.northboundDataPoints).isEmpty();
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.defensiveResets()).isZero();
+    }
+
+    @Test
+    void aCompletionToldAfterAValueBacklog_isDeliveredAfterEveryValue() {
+        final WrapperTestFixture fixture = polledFixture();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
+
+        // The non-terminating values and the completion all ride the DATA band; within-band FIFO delivers the
+        // completion strictly after the backlog of values it terminates, so no value is absorbed.
+        fixture.output.dataPoints(
+                fixture.nodeFor("temperature"),
+                List.of(
+                        WrapperTestSupport.dataPoint("temperature", "1"),
+                        WrapperTestSupport.dataPoint("temperature", "2")));
+        fixture.output.pollComplete(fixture.nodeFor("temperature"));
+
+        fixture.deliverOne(); // the first value
+        assertThat(fixture.northboundDataPoints).hasSize(1);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+        fixture.deliverOne(); // the second value — the completion has not overtaken it
+        assertThat(fixture.northboundDataPoints).hasSize(2);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+        fixture.deliverOne(); // the completion, last
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+    }
+
+    @Test
+    void aPollFailureTrailingAValueBacklog_isDeliveredAfterEveryValueSoNoRowIsLost() {
+        final WrapperTestFixture fixture = polledFixture();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
+
+        // A split-lines poll streams two rows, then its cursor throws mid-stream. The values and the failure all ride
+        // the DATA band, so within-band FIFO delivers the failure strictly after the rows it trails — every row
+        // publishes northbound before the failure ends the poll. (Regression guard: with the failure in the higher
+        // EVENT band it overtook the queued rows, parked the tag, and the rows were absorbed as stale and discarded.)
+        fixture.output.dataPoints(
+                fixture.nodeFor("temperature"),
+                List.of(
+                        WrapperTestSupport.dataPoint("temperature", "1"),
+                        WrapperTestSupport.dataPoint("temperature", "2")));
+        fixture.output.nodeError(fixture.nodeFor("temperature"), "cursor broke mid-stream", false);
+
+        fixture.deliverOne(); // the first row
+        assertThat(fixture.northboundDataPoints).hasSize(1);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+        fixture.deliverOne(); // the second row — the failure has not overtaken it
+        assertThat(fixture.northboundDataPoints).hasSize(2);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_DATAPOINT");
+
+        fixture.deliverOne(); // the failure, last: it ends the poll only now that every row is published
+        assertThat(fixture.northboundDataPoints).hasSize(2);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.tag("temperature").failureCount()).isEqualTo(1);
+        assertThat(fixture.tag("temperature").lastFailureReason()).isEqualTo("cursor broke mid-stream");
+        assertThat(fixture.defensiveResets()).isZero();
+    }
+
+    @Test
+    void aCompletionTrailingAPollFailure_isAbsorbedWithoutDisturbingTheCadence() {
+        final WrapperTestFixture fixture = polledFixture();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000); // WAITING_FOR_POLL_DATAPOINT
+
+        // A completion trailing a reported failure: nodeError already ended the poll, so a stray completion lands in
+        // WAITING_FOR_POLL_INTERVAL and is absorbed.
+        fixture.output.nodeError(fixture.nodeFor("temperature"), "read timeout", false);
+        fixture.output.pollComplete(fixture.nodeFor("temperature"));
+        fixture.drain();
+
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.tag("temperature").failureCount()).isEqualTo(1);
+        assertThat(fixture.defensiveResets()).isZero();
     }
 
     @Test
