@@ -56,6 +56,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashSet;
@@ -195,6 +197,9 @@ public class OidcServiceImpl implements OidcService {
             final HTTPRequest tokenHttpRequest = tokenRequest.toHTTPRequest();
             tokenHttpRequest.setConnectTimeout(config.getConnectionTimeoutMillis());
             tokenHttpRequest.setReadTimeout(config.getConnectionTimeoutMillis());
+            // Do not follow redirects: the token endpoint is the validated one from discovery and answers
+            // directly, so a redirect would only send the code and PKCE verifier to another host.
+            tokenHttpRequest.setFollowRedirects(false);
             // Use the configured truststore for the token TLS connection, if any; otherwise the JVM default.
             final SSLSocketFactory idpSslSocketFactory = config.getIdpSslSocketFactory();
             if (idpSslSocketFactory != null) {
@@ -276,14 +281,25 @@ public class OidcServiceImpl implements OidcService {
 
     /**
      * The resource retriever used for the GET-style IdP fetches (discovery and JWKS): connect/read
-     * timeouts and a response-body size cap, all from the Nimbus library. Redirects are disabled — an
-     * IdP endpoint answers directly, and following a redirect would reopen an unbounded fetch. When a
-     * truststore is configured its {@link SSLSocketFactory} is used; otherwise the JVM default CAs apply.
+     * timeouts and a response-body size cap, all from the Nimbus library. When a truststore is configured
+     * its {@link SSLSocketFactory} is used; otherwise the JVM default CAs apply.
+     * <p>
+     * Redirects are disabled: the discovery and JWKS URLs are derived from the validated issuer and answer
+     * directly, so following a redirect would only widen the set of hosts Edge contacts (an SSRF surface)
+     * and let a chain multiply the per-call timeout. {@link DefaultResourceRetriever} has no redirect
+     * setting, so {@link #openConnection} is overridden to turn instance-following off on the connection.
      */
-    private static @NotNull DefaultResourceRetriever resourceRetriever(final @NotNull OidcConfiguration config) {
+    static @NotNull DefaultResourceRetriever resourceRetriever(final @NotNull OidcConfiguration config) {
         final int timeout = config.getConnectionTimeoutMillis();
         return new DefaultResourceRetriever(
-                timeout, timeout, JWKS_SIZE_LIMIT_BYTES, false, config.getIdpSslSocketFactory());
+                timeout, timeout, JWKS_SIZE_LIMIT_BYTES, false, config.getIdpSslSocketFactory()) {
+            @Override
+            protected @NotNull HttpURLConnection openConnection(final @NotNull URL url) throws IOException {
+                final HttpURLConnection connection = super.openConnection(url);
+                connection.setInstanceFollowRedirects(false);
+                return connection;
+            }
+        };
     }
 
     /**
