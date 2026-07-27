@@ -196,8 +196,5 @@ export const routes = createBrowserRouter(
   ],
   {
     basename: getBasename(),
-    future: {
-      v7_relativeSplatPath: true,
-    },
   }
 )
