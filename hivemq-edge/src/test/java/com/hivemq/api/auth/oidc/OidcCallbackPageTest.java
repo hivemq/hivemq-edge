@@ -61,6 +61,18 @@ class OidcCallbackPageTest {
     }
 
     @Test
+    void origin_lowercasesTheSchemeAndHost() {
+        // A browser lowercases scheme and host when it computes a window's origin, and postMessage compares
+        // the target origin against that canonical string exactly. A redirect URI with an uppercase scheme
+        // or host (which URI preserves verbatim) must still yield the lowercase origin, or the login result
+        // is silently dropped.
+        assertThat(OidcCallbackPage.success("j", URI.create("HTTPS://Edge.Example.COM/cb")))
+                .contains("\"https://edge.example.com\"")
+                .doesNotContain("HTTPS://")
+                .doesNotContain("Edge.Example.COM");
+    }
+
+    @Test
     void origin_dropsThePathAndQuery() {
         assertThat(OidcCallbackPage.success("j", URI.create("https://edge.example.com/api/v1/auth/oidc/callback")))
                 .contains("\"https://edge.example.com\"")

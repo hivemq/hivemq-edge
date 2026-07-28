@@ -372,6 +372,29 @@ class OidcConfigurationTest {
     }
 
     @Test
+    void fromEntity_truststoreWithPasswordButNoPath_throwsAConfigurationError() {
+        // A <truststore> with a password but no path can only be an omitted/mistyped path. Reject it rather
+        // than silently validating the IdP against the JVM default CAs, which would broaden the trust anchors
+        // the operator meant to pin.
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "truststore", truststore(null, "secret", null));
+
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("truststore-path");
+    }
+
+    @Test
+    void fromEntity_emptyTruststoreElement_usesJvmDefault() {
+        // A completely empty <truststore/> carries no intent to pin, so it falls back to the JVM default CAs.
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "truststore", truststore(null, null, null));
+
+        assertThat(OidcConfiguration.fromEntity(entity).getIdpSslSocketFactory())
+                .isNull();
+    }
+
+    @Test
     void fromEntity_noConnectionTimeout_usesTheDefault() {
         final OidcConfiguration config =
                 OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));

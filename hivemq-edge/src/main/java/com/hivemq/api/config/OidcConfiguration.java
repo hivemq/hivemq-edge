@@ -227,17 +227,33 @@ public class OidcConfiguration {
 
     /**
      * Builds the {@link SSLSocketFactory} used for the IdP TLS connection from the configured truststore,
-     * mirroring the LDAP truststore behavior. Returns {@code null} when no truststore (or no path) is
-     * configured, so the caller falls back to the JVM default CA certificates. A missing file or wrong
-     * password is a configuration error surfaced at startup, not a silent fallback.
+     * mirroring the LDAP truststore behavior. Returns {@code null} when no {@code <truststore>} is
+     * configured at all, so the caller falls back to the JVM default CA certificates. A missing file or
+     * wrong password is a configuration error surfaced at startup, not a silent fallback.
+     * <p>
+     * A {@code <truststore>} element that is present but carries a password or type without a usable path
+     * is rejected rather than silently downgraded to the JVM default CAs: it can only be an omitted or
+     * mistyped path, and treating it as "no truststore" would quietly discard the operator's intent to pin
+     * IdP trust to a specific CA — broadening the trust anchors of the discovery/token/JWKS connection.
      */
     private static @Nullable SSLSocketFactory buildSslSocketFactory(final @Nullable OidcTruststoreEntity truststore) {
-        if (truststore == null
-                || truststore.getTruststorePath() == null
-                || truststore.getTruststorePath().isBlank()) {
+        if (truststore == null) {
             return null;
         }
-        final String path = truststore.getTruststorePath().trim();
+        final String configuredPath = truststore.getTruststorePath();
+        if (configuredPath == null || configuredPath.isBlank()) {
+            // A present <truststore> with a password or type but no path is a misconfiguration, not "no
+            // truststore" — fail at startup instead of silently validating against the default CA set.
+            final boolean hasPassword = truststore.getTruststorePassword() != null;
+            final boolean hasType = truststore.getTruststoreType() != null
+                    && !truststore.getTruststoreType().isBlank();
+            Preconditions.checkArgument(
+                    !hasPassword && !hasType,
+                    "OIDC truststore is configured without a truststore-path; add the path or remove the "
+                            + "truststore element to use the JVM default CA certificates");
+            return null;
+        }
+        final String path = configuredPath.trim();
         final String type = truststore.getTruststoreType() != null
                         && !truststore.getTruststoreType().isBlank()
                 ? truststore.getTruststoreType().trim()

@@ -99,12 +99,19 @@ final class OidcCallbackPage {
      * The {@code postMessage} target origin, derived from the configured redirect URI. The port is
      * omitted when it is the scheme default, because {@code https://host:443} and {@code https://host}
      * are the same origin and {@code postMessage} compares origins as canonical strings.
+     * <p>
+     * The scheme and host are lowercased: a browser always ASCII-lowercases them when it computes a
+     * window's origin, and {@code postMessage} compares the target origin against that canonical string
+     * exactly. A redirect URI configured with an uppercase scheme or host (e.g. {@code HTTPS://Host}) —
+     * which the URI parser preserves verbatim — would otherwise produce a target origin that never
+     * matches the opener, silently dropping the login result.
      */
     private static @NotNull String originOf(final @NotNull URI uri) {
-        final String scheme = uri.getScheme();
+        final String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
+        final String host = uri.getHost().toLowerCase(Locale.ROOT);
         final int port = uri.getPort();
         final StringBuilder sb = new StringBuilder();
-        sb.append(scheme).append("://").append(uri.getHost());
+        sb.append(scheme).append("://").append(host);
         if (port != -1 && !(("https".equals(scheme) && port == 443) || ("http".equals(scheme) && port == 80))) {
             sb.append(':').append(port);
         }
