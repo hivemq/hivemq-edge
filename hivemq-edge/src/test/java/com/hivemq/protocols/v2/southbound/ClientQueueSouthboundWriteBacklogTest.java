@@ -127,11 +127,11 @@ class ClientQueueSouthboundWriteBacklogTest {
     }
 
     @Test
-    void aQos0CommandIsRefused_neverDelivered() {
-        // QoS >= 1 is the durability precondition of the whole southbound contract, and a subscription's QoS does
-        // not upgrade an incoming publish — so a QoS 0 command reaches the queue, is handed out and removed by one
-        // read, and can vanish with no trace. Executing it would promise at-least-once for something the store can
-        // lose. It is refused at the first point the original publish QoS is visible, so no device write happens.
+    void aQos0CommandIsDeliveredBestEffort_notRefused() {
+        // Product choice: a command Edge can execute should be executed. What the publisher gave up by choosing
+        // QoS 0 cannot be recovered here — the broker hands the publish out and REMOVES it in this very read, so
+        // there is no in-flight marker and nothing to redeliver — but that is a durability loss, not a reason to
+        // refuse the command. The warning on each one is the operator's notice.
         final PUBLISH atMostOnce = qos0Publish(1, "a");
         fake.enqueue(atMostOnce);
         final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
@@ -139,28 +139,28 @@ class ClientQueueSouthboundWriteBacklogTest {
         backlog.requestRead(1);
 
         final SouthboundRead answer = sender.reads.getFirst();
-        assertThat(answer.command()).isNull(); // nothing is ever delivered to the aspect
+        assertThat(answer.command()).isNotNull();
+        assertThat(answer.command().value().getTagValue()).isEqualTo("a");
+        assertThat(answer.undeliverableCommandId()).isNull(); // not dead-lettered any more
         assertThat(answer.failure()).isNull();
-        assertThat(answer.undeliverableCommandId()).isEqualTo(atMostOnce.getUniqueId());
-        assertThat(answer.undeliverableReason()).contains("QoS 0");
     }
 
     @Test
     void aQos0CommandDoesNotBlockTheQos1CommandBehindIt() {
-        fake.enqueue(qos0Publish(1, "dropped"));
-        fake.enqueue(publish(2, "delivered"));
+        fake.enqueue(qos0Publish(1, "besteffort"));
+        fake.enqueue(publish(2, "durable"));
         final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
 
-        // The delivery side dead-letters the refused command — a delete it issues like any other — and reads on.
         backlog.requestRead(1);
-        final SouthboundRead refused = sender.reads.getFirst();
-        assertThat(refused.undeliverableCommandId()).isNotNull();
-        backlog.delete(refused.undeliverableCommandId());
+        final SouthboundCommand first = sender.reads.getFirst().command();
+        assertThat(first).isNotNull();
+        assertThat(first.value().getTagValue()).isEqualTo("besteffort");
+        backlog.delete(first.id()); // a no-op for QoS 0: the read already removed it
         backlog.requestRead(2);
 
         final SouthboundRead next = sender.reads.get(1);
         assertThat(next.command()).isNotNull();
-        assertThat(next.command().value().getTagValue()).isEqualTo("delivered");
+        assertThat(next.command().value().getTagValue()).isEqualTo("durable");
     }
 
     @Test

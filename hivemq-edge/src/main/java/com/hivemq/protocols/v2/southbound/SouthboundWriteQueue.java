@@ -398,6 +398,12 @@ public final class SouthboundWriteQueue {
             return;
         }
         head = command;
+        log.info(
+                "Southbound command '{}' picked up for tag '{}' on adapter '{}' — leased from the queue, awaiting a "
+                        + "delivery slot",
+                command.id(),
+                tagName,
+                adapterId);
         deliverOrRead();
     }
 
@@ -459,6 +465,14 @@ public final class SouthboundWriteQueue {
                 // Never removed, so still the store's head — redelivered when the tag is writable again.
                 keptForRedelivery++;
                 windowOpen = false;
+                log.info(
+                        "Southbound command '{}' for tag '{}' on adapter '{}' was abandoned before the device "
+                                + "answered ({}) — the command is KEPT and will be delivered again once the tag is "
+                                + "writable",
+                        settled.id(),
+                        tagName,
+                        adapterId,
+                        reason != null ? reason : "no reason given");
                 return;
             }
             case REJECTED_BUSY -> {
@@ -483,7 +497,16 @@ public final class SouthboundWriteQueue {
                         windowViolations);
                 return;
             }
-            case SUCCEEDED -> committed++;
+            case SUCCEEDED -> {
+                committed++;
+                log.info(
+                        "Southbound command '{}' EXECUTED on the device for tag '{}' on adapter '{}' — committed and "
+                                + "removed from the queue ({} committed on this tag so far)",
+                        settled.id(),
+                        tagName,
+                        adapterId,
+                        committed);
+            }
             case FAILED -> {
                 deadLettered++;
                 metrics.incrementWriteDeadLettered(tagName);
@@ -531,6 +554,14 @@ public final class SouthboundWriteQueue {
         }
         deliveries++;
         inFlightDeliveryToken = tokens.getAsLong();
+        log.info(
+                "Southbound command '{}' handed to the device for tag '{}' on adapter '{}' (attempt {}, delivery "
+                        + "token {}) — no further command for this tag is sent until this one settles",
+                head.id(),
+                tagName,
+                adapterId,
+                deliveries,
+                inFlightDeliveryToken);
         wrapperSender.tell(new ProtocolAdapterWrapperWriteRequest(node, tagName, head.value(), inFlightDeliveryToken));
     }
 

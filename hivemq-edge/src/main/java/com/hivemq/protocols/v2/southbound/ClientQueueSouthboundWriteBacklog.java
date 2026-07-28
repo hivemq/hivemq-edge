@@ -392,25 +392,25 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
         }
         final PUBLISH publish = publishes.getFirst(); // READ_LIMIT = 1
         if (publish.getQoS() == QoS.AT_MOST_ONCE) {
-            // QoS >= 1 is the durability precondition of the whole southbound contract, and it is the PUBLISHER's to
-            // meet: the intake subscribes at QoS 2, but a subscription's QoS only caps a delivery, it never upgrades
-            // an incoming publish. A QoS 0 command is stored in the queue's at-most-once side, is handed out and
-            // REMOVED by this very read (no in-flight marker, nothing to redeliver), and is discarded outright
-            // whenever the queue is cleared. Executing it would mean promising at-least-once for a command the store
-            // can lose without a trace — and losing it silently is exactly what §4 forbids.
+            // Delivered, but explicitly outside the durability guarantee — a deliberate product choice: a command
+            // Edge can execute probably should be executed, and refusing it helps nobody.
             //
-            // Reported as undeliverable rather than translated: this is the first point in Edge where the original
-            // publish QoS is visible, and refusing it here guarantees no device write. The delete the delivery side
-            // then issues is a harmless no-op — the read already removed it.
-            tell(new SouthboundRead(
-                    tagName,
-                    readToken,
-                    null,
+            // What the publisher gave up by choosing QoS 0 is real and cannot be recovered here. The broker stores
+            // such a publish on the queue's at-most-once side, hands it out and REMOVES it in this very read — no
+            // in-flight marker, nothing left to redeliver. So if the adapter is not ready, or the write is
+            // abandoned, or Edge stops before it lands, the command is simply gone: the delivery side is holding
+            // the only copy, in memory. Every other command in this path survives all three.
+            //
+            // Hence the warning on each one. It is the operator's only notice that this particular command carries
+            // none of the guarantees the rest of the path advertises.
+            log.warn(
+                    "Southbound command '{}' for tag '{}' on adapter '{}' was published at QoS 0: delivering it "
+                            + "best-effort, but it is NOT durable — it is already gone from the queue, so it will "
+                            + "not survive an adapter outage or an Edge restart. Publish at QoS 1 or 2 for the "
+                            + "at-least-once guarantee.",
                     publish.getUniqueId(),
-                    "the command was published at QoS 0, which cannot be delivered durably — publish commands at "
-                            + "QoS 1 or 2",
-                    null));
-            return;
+                    tagName,
+                    adapterId);
         }
         final DataPoint value = translate(publish);
         if (value == null) {
