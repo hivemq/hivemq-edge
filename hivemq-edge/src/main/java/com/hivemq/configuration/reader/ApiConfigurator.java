@@ -23,8 +23,10 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.config.ApiListener;
+import com.hivemq.api.config.AuthMode;
 import com.hivemq.api.config.HttpListener;
 import com.hivemq.api.config.HttpsListener;
+import com.hivemq.api.config.OidcConfiguration;
 import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.AdminApiEntity;
@@ -35,12 +37,15 @@ import com.hivemq.configuration.entity.api.HttpListenerEntity;
 import com.hivemq.configuration.entity.api.HttpsListenerEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.entity.api.UserEntity;
+import com.hivemq.configuration.entity.api.UsernameAuthenticationEntity;
+import com.hivemq.configuration.entity.api.oidc.OidcAuthenticationEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -71,6 +76,20 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 Set.copyOf(userEntity.getRoles()));
     }
 
+    private static boolean isBlank(final @Nullable String value) {
+        return value == null || value.isBlank();
+    }
+
+    /**
+     * Resolves whether local username/password authentication is active. An absent
+     * {@code <username-authentication>} defaults to enabled, preserving the behavior of a
+     * configuration that predates the element. When present, {@code <enabled>} is required (XSD).
+     */
+    private static boolean resolveUsernameAuthEnabled(final @NotNull AdminApiEntity entity) {
+        final UsernameAuthenticationEntity usernameAuth = entity.getUsernameAuthentication();
+        return usernameAuth == null || usernameAuth.isEnabled();
+    }
+
     // -- Converts XML entity types to bean types
 
     @Override
@@ -88,20 +107,49 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         apiCfgService.setEnabled(entity.isEnabled());
         apiCfgService.setEnforceApiAuth(entity.isEnforceApiAuth());
 
-        // Users
-        if (entity.getLdap() != null) {
-            apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
-        } else {
-            final List<UserEntity> users = entity.getUsers();
-            if (!users.isEmpty()) {
-                log.warn(
-                        "The <users> element in the <api> configuration is deprecated and will be removed in future versions. "
-                                + "Please use the <username-roles-source> element instead.");
-                apiCfgService.setUserList(
-                        users.stream().map(ApiConfigurator::fromModel).toList());
+        // Each authentication mechanism carries its own <enabled> flag. Local username/password defaults
+        // to enabled when its stanza is absent; OIDC is off when its stanza is absent.
+        final OidcAuthenticationEntity oidcEntity = entity.getOidc();
+        final boolean usernameAuthEnabled = resolveUsernameAuthEnabled(entity);
+        final boolean oidcEnabled = oidcEntity != null && oidcEntity.isEnabled();
+
+        // Presence rule: an <oidc-authentication> stanza (enabled or not) forces the operator to state
+        // <username-authentication> explicitly, so local login is never left on implicitly alongside OIDC.
+        if (oidcEntity != null && entity.getUsernameAuthentication() == null) {
+            log.error("An <oidc-authentication> stanza is configured but <username-authentication> is absent. "
+                    + "Add <username-authentication><enabled>true|false</enabled></username-authentication> to state "
+                    + "explicitly whether local login is available.");
+            throw new UnrecoverableException(false);
+        }
+
+        final EnumSet<AuthMode> authModes = EnumSet.noneOf(AuthMode.class);
+        if (usernameAuthEnabled) {
+            authModes.add(AuthMode.USERNAME_PASSWORD);
+        }
+        if (oidcEnabled) {
+            authModes.add(AuthMode.OPEN_ID);
+        }
+        apiCfgService.setAuthModes(authModes);
+
+        // Local users / LDAP — only wired when username/password authentication is enabled.
+        if (usernameAuthEnabled) {
+            if (entity.getLdap() != null) {
+                apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
             } else {
-                apiCfgService.setUserList(DEFAULT_USERS);
+                final List<UserEntity> users = entity.getUsers();
+                if (!users.isEmpty()) {
+                    log.warn(
+                            "The <users> element in the <api> configuration is deprecated and will be removed in future versions. "
+                                    + "Please use the <username-roles-source> element instead.");
+                    apiCfgService.setUserList(
+                            users.stream().map(ApiConfigurator::fromModel).toList());
+                } else {
+                    apiCfgService.setUserList(DEFAULT_USERS);
+                }
             }
+        } else {
+            // Local login disabled: no local users, no default admin. The endpoint is closed.
+            apiCfgService.setUserList(List.of());
         }
 
         // JWT
@@ -113,6 +161,25 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 .withExpiryTimeMinutes(jwsEntity.getExpiryTimeMinutes())
                 .withTokenEarlyEpochThresholdMinutes(jwsEntity.getTokenEarlyEpochThresholdMinutes())
                 .build());
+
+        // OIDC (only wired when its stanza is enabled).
+        if (oidcEnabled) {
+            // oidcEnabled implies oidcEntity != null; the local makes that visible to null analysis.
+            final OidcAuthenticationEntity enabledOidc = Objects.requireNonNull(oidcEntity);
+            if (isBlank(enabledOidc.getIssuerUri())
+                    || isBlank(enabledOidc.getClientId())
+                    || isBlank(enabledOidc.getRedirectUri())) {
+                log.error("OIDC authentication is configured but incomplete: <issuer-uri>, <client-id> and "
+                        + "<redirect-uri> are all required.");
+                throw new UnrecoverableException(false);
+            }
+            try {
+                apiCfgService.setOidcConfiguration(OidcConfiguration.fromEntity(enabledOidc));
+            } catch (final IllegalArgumentException e) {
+                log.error("Invalid OIDC configuration: {}", e.getMessage());
+                throw new UnrecoverableException(false);
+            }
+        }
 
         if (entity.getListeners().isEmpty()) {
             // set default listener

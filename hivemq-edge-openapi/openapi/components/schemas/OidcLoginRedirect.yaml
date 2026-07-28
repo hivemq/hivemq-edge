@@ -1,0 +1,8 @@
+type: object
+description: The Identity Provider authorization URL the SPA should open to begin the OIDC login.
+properties:
+  authorizeUrl:
+    type: string
+    description: The absolute Identity Provider authorization endpoint URL, with the freshly minted state, nonce, and PKCE challenge. The SPA opens this in the login popup.
+required:
+  - authorizeUrl

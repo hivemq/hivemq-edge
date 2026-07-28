@@ -7,6 +7,7 @@ import logoLight from '@/assets/edge/01-hivemq-industrial-edge.svg'
 import logoDark from '@/assets/edge/02-hivemq-industrial-edge-neg.svg'
 import bgImage from '@/assets/app/background-sidepanel.svg'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
+import { useGetAuthMode } from '@/api/hooks/useFrontendServices/useGetAuthMode.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PreLoginNoticeForm from '@/modules/Login/components/PreLoginNoticeForm.tsx'
@@ -14,11 +15,19 @@ import EdgeAside from '@/modules/Login/components/EdgeAside.tsx'
 import Login from '@/modules/Login/components/Login.tsx'
 
 const LoginPage: FC = () => {
-  const { data, isLoading, error } = useGetConfiguration()
+  const { data, isLoading: isConfigLoading, error: configError } = useGetConfiguration()
+  const { data: authMode, isLoading: isAuthModeLoading, error: authModeError } = useGetAuthMode()
   const { t } = useTranslation()
   const { colorMode } = useColorMode()
   const bgColour = useColorModeValue('brand.500', 'brand.700')
   const [acceptNotice, setAcceptNotice] = useState<boolean | null>(null)
+
+  // Both the configuration and the authentication mode must be known before a login can be shown: the
+  // mode decides which mechanisms exist, so we wait for it rather than assuming a default. Frontend and
+  // backend ship together, so a failed /auth/mode call is a broken deployment, not an older server —
+  // surface it as an error instead of silently claiming local login (which the backend may reject).
+  const isLoading = isConfigLoading || isAuthModeLoading
+  const error = configError ?? authModeError
 
   const showNotice = useMemo(() => {
     if (isLoading) return undefined
@@ -27,6 +36,10 @@ const LoginPage: FC = () => {
     if (data.preLoginNotice?.enabled && !acceptNotice) return data.preLoginNotice
     return undefined
   }, [acceptNotice, data, isLoading])
+
+  const modes = authMode?.modes ?? []
+  const ssoEnabled = modes.includes('OPEN_ID')
+  const localEnabled = modes.includes('USERNAME_PASSWORD')
 
   return (
     <main>
@@ -66,7 +79,14 @@ const LoginPage: FC = () => {
                 }}
               />
             )}
-            {!showNotice && data && <Login first={data?.firstUseInformation} preLoadError={error} />}
+            {!showNotice && data && authMode && (
+              <Login
+                first={data?.firstUseInformation}
+                preLoadError={error}
+                ssoEnabled={ssoEnabled}
+                localEnabled={localEnabled}
+              />
+            )}
           </div>
           <Box flex={1} />
         </Flex>

@@ -1213,6 +1213,76 @@
                     </xs:all>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="oidc-authentication" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="enabled" type="xs:boolean"/>
+                        <xs:element name="issuer-uri" type="xs:string" minOccurs="0"/>
+                        <xs:element name="client-id" type="xs:string" minOccurs="0"/>
+                        <xs:element name="client-secret" type="nonEmptyString" minOccurs="0"/>
+                        <xs:element name="redirect-uri" type="xs:string" minOccurs="0"/>
+                        <xs:element name="role-claim-name" type="xs:string" minOccurs="0" default="roles"/>
+                        <xs:element name="extra-scopes" type="xs:string" minOccurs="0"/>
+                        <xs:element name="role-mappings" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="role-mapping" minOccurs="1" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                            <xs:all>
+                                                <xs:element name="idp-role" type="xs:string"/>
+                                                <xs:element name="edge-role" type="xs:string"/>
+                                            </xs:all>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="id-token-signing-algorithms" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="id-token-signing-algorithm"
+                                                type="nonEmptyString"
+                                                minOccurs="1"
+                                                maxOccurs="unbounded"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="truststore" minOccurs="0">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="truststore-path" type="nonEmptyString" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to the truststore holding the CA that signs the Identity Provider certificate. If not specified, the system default CA certificates are used.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-password" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Password for the truststore.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-type" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Type of truststore (e.g., JKS, PKCS12).</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="connection-timeout" type="xs:positiveInteger" minOccurs="0" default="5000">
+                            <xs:annotation>
+                                <xs:documentation>Timeout in milliseconds for each connection to the Identity Provider (discovery, token exchange, and signing keys). The default of 5000 assumes a good connection; raise it for an Identity Provider behind a slow or distant network path.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="username-authentication" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="enabled" type="xs:boolean"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="enforce-api-auth" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:all>
     </xs:complexType>

@@ -1,0 +1,12 @@
+type: object
+properties:
+  modes:
+    type: array
+    description: The authentication mechanisms the gateway accepts. Drives which login options the UI presents.
+    items:
+      type: string
+      enum:
+        - USERNAME_PASSWORD
+        - OPEN_ID
+required:
+  - modes

@@ -1,0 +1,16 @@
+get:
+  description: Report which authentication mechanisms the gateway accepts, so the UI can present the matching login. Both local username/password and OIDC single sign-on may be returned when both are enabled.
+  operationId: auth-mode
+  x-roles-allowed:
+    - NO_AUTH_REQUIRED
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AuthMode.yaml
+      description: The enabled authentication mechanisms.
+  summary: Report the enabled authentication mechanisms.
+  tags:
+    - Authentication
+    - Authentication Endpoint

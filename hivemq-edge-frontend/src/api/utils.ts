@@ -19,6 +19,7 @@ export const QUERY_KEYS = {
   CLIENTS: 'broker-clients',
   UNIFIED_NAMESPACE: 'unified.namespace',
   FRONTEND_CONFIGURATION: 'frontend.configuration',
+  AUTHENTICATION_MODE: 'authentication.mode',
   FRONTEND_NOTIFICATION: 'frontend.notification',
   FRONTEND_CAPABILITIES: 'frontend.capabilities',
   LISTENERS: 'gateway.listeners',

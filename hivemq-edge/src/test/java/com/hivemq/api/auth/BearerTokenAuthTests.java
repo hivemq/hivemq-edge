@@ -30,8 +30,10 @@ import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
+import com.hivemq.api.auth.oidc.OidcService;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
+import com.hivemq.api.config.AuthMode;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.model.ApiBearerToken;
@@ -91,10 +93,15 @@ public class BearerTokenAuthTests {
         // authenticationHandlers.add(new BasicAuthenticationHandler(usernamePasswordProvider));
         final var apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
+        when(apiConfigurationService.getAuthModes()).thenReturn(Set.of(AuthMode.USERNAME_PASSWORD));
         final var apiAuthenticationFeature =
                 new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService);
         final var authenticationResource = new AuthenticationResourceImpl(
-                usernamePasswordProvider, jwtAuthenticationProvider, jwtAuthenticationProvider);
+                usernamePasswordProvider,
+                jwtAuthenticationProvider,
+                jwtAuthenticationProvider,
+                mock(OidcService.class),
+                apiConfigurationService);
 
         final var resourceConfig = new ResourceConfig();
         resourceConfig.register(apiAuthenticationFeature);

@@ -30,6 +30,7 @@ import type {
   Adapter,
   AdaptersList,
   ApiBearerToken,
+  AuthMode,
   BehaviorPolicy,
   BehaviorPolicyList,
   Blob,
@@ -61,6 +62,7 @@ import type {
   NorthboundMappingList,
   NorthboundMappingOwnerList,
   NotificationList,
+  OidcLoginRedirect,
   PayloadSampleList,
   PolicySchema,
   ProtocolAdaptersList,
@@ -193,6 +195,21 @@ export const API_ROUTES = {
      * @see {@link AuthenticationService.validateToken}
      */
     validateToken: route<unknown>('POST', '/api/v1/auth/validate-token'),
+
+    /**
+     * @see {@link AuthenticationService.authMode}
+     */
+    authMode: route<AuthMode>('GET', '/api/v1/auth/mode'),
+
+    /**
+     * @see {@link AuthenticationService.oidcLogin}
+     */
+    oidcLogin: route<OidcLoginRedirect>('POST', '/api/v1/auth/oidc/login'),
+
+    /**
+     * @see {@link AuthenticationService.oidcCallback}
+     */
+    oidcCallback: route<string>('GET', '/api/v1/auth/oidc/callback'),
   },
 
   /**
@@ -213,6 +230,21 @@ export const API_ROUTES = {
      * @see {@link AuthenticationEndpointService.validateToken}
      */
     validateToken: route<unknown>('POST', '/api/v1/auth/validate-token'),
+
+    /**
+     * @see {@link AuthenticationEndpointService.authMode}
+     */
+    authMode: route<AuthMode>('GET', '/api/v1/auth/mode'),
+
+    /**
+     * @see {@link AuthenticationEndpointService.oidcLogin}
+     */
+    oidcLogin: route<OidcLoginRedirect>('POST', '/api/v1/auth/oidc/login'),
+
+    /**
+     * @see {@link AuthenticationEndpointService.oidcCallback}
+     */
+    oidcCallback: route<string>('GET', '/api/v1/auth/oidc/callback'),
   },
 
   /**

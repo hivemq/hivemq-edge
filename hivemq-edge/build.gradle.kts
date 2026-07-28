@@ -219,6 +219,9 @@ dependencies {
     // JWT
     implementation(libs.jose4j)
 
+    // OIDC (OpenID Connect authentication — discovery, code exchange, ID token validation)
+    implementation(libs.nimbus.oauth2.oidc.sdk)
+
     // LDAP
     implementation(libs.unboundid.ldap.sdk)
 
