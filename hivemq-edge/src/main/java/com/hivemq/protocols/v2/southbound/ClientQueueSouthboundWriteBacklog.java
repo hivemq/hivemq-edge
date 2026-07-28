@@ -208,11 +208,11 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
      *     stack against identical store state. They recover a transient race, not a persistently failing entry.</li>
      * <li><b>The consequence of exhausting them is not an inert queue entry.</b> The entry stays marked, so reads
      *     skip it and the queue appears to drain; three empty reads then arm the depth check, which finds a
-     *     non-empty store and sweeps the markers — after which the command is read again and <b>written to the
-     *     device again</b>, settles, fails to delete again, and the cycle repeats every few seconds. At-least-once
-     *     permits the duplicate execution; what is missing is a signal, so the {@code ERROR} below is the only
-     *     thing an operator has. Ending that loop needs a way to refuse a command whose delete is known to fail,
-     *     which the store cannot decide on its own.</li>
+     *     non-empty store and sweeps the markers — after which the command surfaces again, and again on every later
+     *     sweep, until this Edge restarts. What that <b>no longer</b> means is a second execution: the delivery
+     *     side remembers the ids it has disposed of and refuses to deliver one twice, counting every sighting on
+     *     {@code redeliveriesRefused}. So the device is safe and the loop is observable; what leaks is the queue
+     *     entry itself, which only the store can fix.</li>
      * </ul>
      *
      * @param commandId     the command to delete.
@@ -242,9 +242,11 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                                 log.error(
                                         "Gave up deleting southbound command '{}' for tag '{}' on adapter '{}' after {} "
                                                 + "attempts. The command WAS executed, but it cannot be removed from "
-                                                + "the queue: expect it to be delivered and executed on the device "
-                                                + "again every few seconds until this Edge restarts. Investigate the "
-                                                + "client-queue persistence for this queue.",
+                                                + "the queue, so it will keep resurfacing until this Edge restarts. "
+                                                + "The delivery side refuses to execute it a second time (see "
+                                                + "redeliveriesRefused), so the device is safe; what leaks is the "
+                                                + "queue entry. Investigate the client-queue persistence for this "
+                                                + "queue.",
                                         commandId,
                                         tagName,
                                         adapterId,
