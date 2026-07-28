@@ -84,6 +84,9 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
     /** How many times a delete is attempted before the queue entry is declared leaked. */
     private static final int DELETE_ATTEMPTS = 3;
 
+    /** How many times a discard is attempted before the commands it was meant to destroy are declared live. */
+    private static final int DISCARD_ATTEMPTS = 3;
+
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull String queueId;
     private final @NotNull SouthboundPublishTranslator translator;
@@ -291,9 +294,61 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                             }
                         },
                         MoreExecutors.directExecutor()));
+        discardAll(DISCARD_ATTEMPTS);
+    }
+
+    /**
+     * Destroy the queue's contents, retrying a bounded number of times.
+     * <p>
+     * The retry is not housekeeping — it defends a <b>safety</b> guarantee. By the time this runs the delivery side
+     * has already dropped its head and re-pointed at the new node, and the rebuilt aspect will reopen the window as
+     * soon as it verifies. If the clear silently fails, the very next read returns a command authored for the
+     * <i>previous</i> node and executes it on the new one: exactly the outcome the ruling on this case exists to
+     * prevent, reached again with nothing but a log line to show for it. A destroyed-commands guarantee that
+     * degrades quietly into writing to the wrong device is worse than no guarantee, because nobody looks.
+     * <p>
+     * Bounded for the same reason {@link #delete} is: a store that refuses every attempt is broken, and saying so is
+     * more useful than retrying into it forever. The attempts share {@code delete}'s honest limitation — they are
+     * not spaced, so they recover a transient race rather than a persistently failing store.
+     *
+     * @param attemptsLeft how many attempts remain, this one included.
+     */
+    private void discardAll(final int attemptsLeft) {
         submitQuietly(
                 "discard the contents of southbound queue '" + queueId + "'",
-                () -> FutureUtils.addExceptionLogger(clientQueuePersistence.clear(queueId, true)));
+                () -> Futures.addCallback(
+                        clientQueuePersistence.clear(queueId, true),
+                        new FutureCallback<>() {
+                            @Override
+                            public void onSuccess(final @Nullable Void ignored) {}
+
+                            @Override
+                            public void onFailure(final @NotNull Throwable throwable) {
+                                if (attemptsLeft > 1) {
+                                    log.debug(
+                                            "Retrying the discard of southbound queue '{}' for tag '{}' on adapter "
+                                                    + "'{}'",
+                                            queueId,
+                                            tagName,
+                                            adapterId,
+                                            throwable);
+                                    discardAll(attemptsLeft - 1);
+                                    return;
+                                }
+                                log.error(
+                                        "Failed to discard the queued southbound commands of tag '{}' on adapter '{}' "
+                                                + "after {} attempts. The tag now addresses a DIFFERENT node, and "
+                                                + "those commands were authored for the previous one — they are still "
+                                                + "queued and WILL be executed on the new node. Quiesce the command "
+                                                + "topic and clear this queue by hand, and investigate the "
+                                                + "client-queue persistence.",
+                                        tagName,
+                                        adapterId,
+                                        DISCARD_ATTEMPTS,
+                                        throwable);
+                            }
+                        },
+                        MoreExecutors.directExecutor()));
     }
 
     @Override

@@ -361,12 +361,13 @@ class SouthboundWriteQueueTest {
         // of delete attempts leaves behind. The entry then reappears on every marker sweep. Executing it again would
         // write a stale command to a physical device every few seconds, indefinitely; at-least-once permits a
         // duplicate, not a runaway.
+        final MetricRegistry registry = new MetricRegistry();
         final CapturingSender sender = new CapturingSender();
         final SilentBacklog backlog = new SilentBacklog(sender);
         backlog.refuseDeletes = true;
         backlog.queued = new SouthboundCommand("stuck-1", value(5));
-        final SouthboundWriteQueue queue =
-                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        final SouthboundWriteQueue queue = new SouthboundWriteQueue(
+                ADAPTER, TAG, NODE, backlog, sender, tokens(), new ProtocolAdapterMetrics(registry, ADAPTER, () -> 0));
         queue.openWindow();
         sender.pump(queue);
 
@@ -386,6 +387,13 @@ class SouthboundWriteQueueTest {
 
         assertThat(sender.requests).hasSize(1); // still one: no second execution, ever
         assertThat(queue.redeliveriesRefused()).isEqualTo(4);
+        // The counter must reach the metric registry, not just an accessor: with the device safe and the adapter
+        // connected, nothing else in the system looks unhealthy — this is the only signal that the queue is leaking,
+        // and an operator can only alert on what is registered.
+        assertThat(registry.counter(ProtocolAdapterMetrics.ADAPTER_PREFIX + ADAPTER + ".tag." + TAG
+                                + ".writes.redeliveries-refused")
+                        .getCount())
+                .isEqualTo(4);
         assertThat(queue.head()).isNull();
         // One delete for the commit, then one retry per sighting — so the channel heals itself if the store does.
         assertThat(backlog.deleted).containsExactly("stuck-1", "stuck-1", "stuck-1", "stuck-1", "stuck-1");

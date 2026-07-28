@@ -57,6 +57,7 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
     private final @NotNull Set<String> tagWriteRejectedNames = ConcurrentHashMap.newKeySet();
     private final @NotNull Set<String> tagWriteTimeoutNames = ConcurrentHashMap.newKeySet();
     private final @NotNull Set<String> tagWriteDeadLetteredNames = ConcurrentHashMap.newKeySet();
+    private final @NotNull Set<String> tagRedeliveryRefusedNames = ConcurrentHashMap.newKeySet();
 
     /**
      * @param metricRegistry the shared registry to register on.
@@ -153,6 +154,25 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
     }
 
     /**
+     * Record one southbound command the store handed back <b>after</b> this adapter had already disposed of it, and
+     * which was therefore refused rather than executed a second time.
+     * <p>
+     * This is the observable face of a queue entry the client-queue persistence cannot delete. The entry stays
+     * marked, reads skip it, the depth cross-check sweeps the markers, and it surfaces again — on every later sweep,
+     * for as long as the store stays broken. The device is safe (the delivery side refuses it), so nothing else in
+     * the system looks unhealthy: the adapter is connected, commands flow, no write fails. <b>Only this counter says
+     * the queue is leaking.</b> Like {@code writes.rejected} it must read zero; any non-zero value is a persistence
+     * fault to investigate, not load.
+     *
+     * @param tagName the tag whose disposed command resurfaced.
+     */
+    public void incrementRedeliveryRefused(final @NotNull String tagName) {
+        final String redeliveryRefusedName = name("tag." + tagName + ".writes.redeliveries-refused");
+        tagRedeliveryRefusedNames.add(redeliveryRefusedName);
+        metricRegistry.counter(redeliveryRefusedName).inc();
+    }
+
+    /**
      * Publish the latest tick lag for the gauge to report.
      *
      * @param lagMillis {@code now - tick.nowMillis} measured when the tick was handled, in milliseconds.
@@ -181,6 +201,9 @@ public final class ProtocolAdapterMetrics implements AutoCloseable {
         }
         for (final String tagWriteDeadLetteredName : tagWriteDeadLetteredNames) {
             metricRegistry.remove(tagWriteDeadLetteredName);
+        }
+        for (final String tagRedeliveryRefusedName : tagRedeliveryRefusedNames) {
+            metricRegistry.remove(tagRedeliveryRefusedName);
         }
     }
 

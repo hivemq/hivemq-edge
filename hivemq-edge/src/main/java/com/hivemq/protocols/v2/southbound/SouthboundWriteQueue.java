@@ -374,6 +374,7 @@ public final class SouthboundWriteQueue {
             // recursion on the dispatch thread. Waiting for the next poll costs one interval on a queue that is
             // already broken, and cannot spin whatever the store does.
             redeliveriesRefused++;
+            metrics.incrementRedeliveryRefused(tagName);
             if (command.id().equals(lastRefusedCommandId)) {
                 // The same entry surfacing again on a later sweep. One loud line per stuck command is the signal;
                 // repeating it every poll interval for as long as the store stays broken would bury everything else.

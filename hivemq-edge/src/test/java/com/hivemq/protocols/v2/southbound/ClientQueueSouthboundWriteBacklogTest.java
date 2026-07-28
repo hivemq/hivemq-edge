@@ -295,6 +295,48 @@ class ClientQueueSouthboundWriteBacklogTest {
         };
     }
 
+    @Test
+    void discardAll_destroysTheQueuedCommands() {
+        fake.enqueue(publish(1, "a"));
+        fake.enqueue(publish(2, "b"));
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        backlog.discardAll();
+
+        assertThat(fake.pending()).isZero();
+    }
+
+    @Test
+    void aFailedDiscardIsRetried_soARePointedTagDoesNotSilentlyInheritTheOldNodesCommands() {
+        // The safety case. By the time discardAll runs, the delivery side has already dropped its head and
+        // re-pointed at the new node, and the rebuilt aspect reopens the window as soon as it verifies. A clear that
+        // fails silently means the very next read returns a command authored for the PREVIOUS node and executes it
+        // on the new one — the exact outcome the ruling on this case exists to prevent, reached again with nothing
+        // but a log line. So a transient failure is retried rather than shrugged off.
+        fake.enqueue(publish(1, "a"));
+        fake.failClears = 2; // the first two attempts fail, the third succeeds
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        backlog.discardAll();
+
+        assertThat(fake.clearAttempts).isEqualTo(3);
+        assertThat(fake.pending()).isZero(); // the commands really are gone
+    }
+
+    @Test
+    void aDiscardThatNeverSucceeds_isBoundedAndNeverThrows() {
+        // A store that refuses every attempt is broken; saying so is more useful than retrying into it forever, and
+        // this runs on the dispatch thread where a throw would fault the whole adapter.
+        fake.enqueue(publish(1, "a"));
+        fake.failClears = Integer.MAX_VALUE;
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        assertThatCode(backlog::discardAll).doesNotThrowAnyException();
+
+        assertThat(fake.clearAttempts).isEqualTo(3); // bounded
+        assertThat(fake.pending()).isEqualTo(1); // and honest: the command is still there, which the ERROR says
+    }
+
     private static @NotNull PUBLISH publish(final long publishId, final @NotNull String payload) {
         return new PUBLISHFactory.Mqtt3Builder()
                 .withQoS(QoS.AT_LEAST_ONCE)
@@ -351,6 +393,8 @@ class ClientQueueSouthboundWriteBacklogTest {
         private boolean throwOnNextRead;
         private boolean throwOnNextRemove;
         private boolean throwOnCallbackDeregistration;
+        private int failClears;
+        private int clearAttempts;
 
         private void enqueue(final @NotNull PUBLISH publish) {
             queue.addLast(publish);
@@ -406,6 +450,18 @@ class ClientQueueSouthboundWriteBacklogTest {
 
         @Override
         public @NotNull ListenableFuture<Void> removeAllInFlightMarkers(final @NotNull String sharedSubscription) {
+            leased.clear();
+            return Futures.immediateFuture(null);
+        }
+
+        @Override
+        public @NotNull ListenableFuture<Void> clear(final @NotNull String queueId, final boolean shared) {
+            clearAttempts++;
+            if (failClears > 0) {
+                failClears--;
+                return Futures.immediateFailedFuture(new IllegalStateException("scripted clear failure"));
+            }
+            queue.clear();
             leased.clear();
             return Futures.immediateFuture(null);
         }
