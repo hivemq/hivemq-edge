@@ -30,6 +30,7 @@ import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.edge.adapters.chaos.ChaosNode;
@@ -342,7 +343,12 @@ public final class ProtocolAdapterWrapperTestHarness {
             final @NotNull Set<String> readUsed, final @NotNull Set<String> writeUsed) {
         final ActorRuntime rt = runtime();
         send(new ProtocolAdapterWrapperCommand.UpdateTagSet(
-                nodes, Map.copyOf(rt.activation), Set.copyOf(readUsed), Set.copyOf(writeUsed), pollIntervalMillis));
+                nodes,
+                Map.copyOf(rt.activation),
+                Set.copyOf(readUsed),
+                Set.copyOf(writeUsed),
+                Set.of(),
+                pollIntervalMillis));
         return this;
     }
 
@@ -682,9 +688,10 @@ public final class ProtocolAdapterWrapperTestHarness {
         }
 
         @Override
-        public void writeResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+        public void writeResult(
+                final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
             events.add("writeResult");
-            delegate.writeResult(node, success, reason);
+            delegate.writeResult(node, WriteEntry.UNCORRELATED, success, reason);
         }
 
         @Override

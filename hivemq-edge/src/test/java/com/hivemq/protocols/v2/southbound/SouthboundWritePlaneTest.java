@@ -111,7 +111,7 @@ class SouthboundWritePlaneTest {
     }
 
     @Test
-    void updateTagSet_dropsGoneChannels_keepsSurvivingChannels_andRetargetsAChangedNode() {
+    void updateTagSet_dropsGoneChannels_andKeepsASurvivingChannelWhoseNodeIsUnchanged() {
         final CapturingSender sender = new CapturingSender();
         final NodeTagPair survivor = pair(TAG);
         final SouthboundWritePlane plane = new SouthboundWritePlane(
@@ -126,7 +126,7 @@ class SouthboundWritePlaneTest {
         sender.pump(plane);
 
         // Reload: OTHER is no longer write-mapped, TAG survives with the same node, "fresh" appears.
-        plane.updateTagSet(List.of(survivor, pair("fresh")), Set.of(TAG, "fresh"));
+        plane.updateTagSet(List.of(survivor, pair("fresh")), Set.of(TAG, "fresh"), Set.of());
 
         assertThat(plane.writeMappedTagNames()).containsExactlyInAnyOrder(TAG, "fresh");
         assertThat(plane.channel(OTHER)).isNull(); // dropped, its pending command with it
@@ -142,12 +142,11 @@ class SouthboundWritePlaneTest {
         assertThat(fresh).isNotNull();
         assertThat(fresh.queue().suspended()).isTrue();
 
-        // A node change retargets the channel rather than rebuilding it: the queued command survives and is
-        // delivered to the node the tag now addresses. Rebuilding instead would have thrown the command away here
-        // and — on the durable store, whose queue is keyed by the mapping topic and not by the node — read the very
-        // same command straight back and delivered it to the new node regardless.
-        final NodeTagPair movedTag = NodeTagPair.create(new TestNode("moved"), TAG, schema(), true, false);
-        plane.updateTagSet(List.of(movedTag), Set.of(TAG));
+        // A reload that does NOT change the node keeps the channel and its queued command: rebuilding instead would
+        // have thrown the command away here and — on the durable store, whose queue is keyed by the mapping topic
+        // and not by the node — read the very same command straight back and delivered it anyway.
+        final NodeTagPair sameTag = NodeTagPair.create(new TestNode(TAG), TAG, schema(), true, false);
+        plane.updateTagSet(List.of(sameTag), Set.of(TAG), Set.of());
         final SouthboundWritePlane.TagChannel retargeted = plane.channel(TAG);
         assertThat(retargeted).isNotNull();
         assertThat(retargeted).isSameAs(survived);
@@ -158,7 +157,8 @@ class SouthboundWritePlaneTest {
         plane.onMessage(new TagWritability(TAG, true));
         sender.pump(plane);
         assertThat(sender.requests).hasSize(1);
-        assertThat(sender.requests.getFirst().node().nodeId()).isEqualTo("moved");
+        // The command that rode out the reload is delivered to the node the tag still addresses.
+        assertThat(sender.requests.getFirst().node().nodeId()).isEqualTo(TAG);
     }
 
     @Test
@@ -235,6 +235,41 @@ class SouthboundWritePlaneTest {
                 "a1", sender, factory, List.of(pair(TAG), pair(OTHER)), Set.of(TAG, OTHER), metrics());
     }
 
+    @Test
+    void aTagRePointedAtANewNode_hasItsQueuedCommandsDestroyed_notDeliveredToTheNewNode() {
+        // B2. The tag's durable queue is keyed by the mapping topic, never by the node, so a re-pointed tag reads
+        // back exactly the commands that were authored for its previous target. Delivering a setpoint to a device
+        // the operator never addressed is the dangerous outcome — worse than losing it — so they are destroyed.
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWritePlane plane =
+                new SouthboundWritePlane("a1", sender, 10, List.of(pair(TAG)), Set.of(TAG), metrics());
+        plane.offer(TAG, value(1));
+        plane.offer(TAG, value(2));
+        sender.pump(plane);
+
+        final SouthboundWritePlane.TagChannel before = plane.channel(TAG);
+        assertThat(before).isNotNull();
+        assertThat(pending(before)).isEqualTo(2);
+
+        final NodeTagPair movedTag = NodeTagPair.create(new TestNode("moved"), TAG, schema(), true, false);
+        plane.updateTagSet(List.of(movedTag), Set.of(TAG), Set.of(TAG));
+
+        // Same channel — the store, the callback registration and the tokens all survive — but empty, and closed
+        // until the rebuilt aspect verifies against the node it now addresses.
+        final SouthboundWritePlane.TagChannel after = plane.channel(TAG);
+        assertThat(after).isNotNull();
+        assertThat(after).isSameAs(before);
+        assertThat(pending(after)).isZero();
+        assertThat(after.queue().head()).isNull();
+        assertThat(after.queue().suspended()).isTrue();
+
+        // Reopening the window must not resurrect anything: the queue is genuinely empty, so no write is issued.
+        sender.requests.clear();
+        plane.onMessage(new TagWritability(TAG, true));
+        sender.pump(plane);
+        assertThat(sender.requests).isEmpty();
+    }
+
     /** A store that never answers and only records the reads asked of it — or refuses them, once armed. */
     private static final class CountingStore implements SouthboundWriteBacklog {
 
@@ -243,6 +278,7 @@ class SouthboundWritePlaneTest {
         private final @NotNull String tagName;
         private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> sender;
         private boolean sick;
+        private int discards;
 
         private CountingStore(
                 final @NotNull AtomicInteger reads,
@@ -278,6 +314,11 @@ class SouthboundWritePlaneTest {
 
         @Override
         public void releaseMarkers() {}
+
+        @Override
+        public void discardAll() {
+            discards++;
+        }
 
         @Override
         public void close() {}

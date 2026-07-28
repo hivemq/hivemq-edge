@@ -323,7 +323,8 @@ public final class ProtocolAdapterWrapperContext {
                 // order — what used to be a cross-thread ordering contract between the manager and the wrapper is
                 // now plain statement order.
                 if (southboundPlane != null) {
-                    southboundPlane.updateTagSet(update.nodes(), update.writeUsedTagNames());
+                    southboundPlane.updateTagSet(
+                            update.nodes(), update.writeUsedTagNames(), update.reTargetedTagNames());
                 }
                 tagPlane.updateTagSet(
                         update.nodes(),
@@ -671,8 +672,9 @@ public final class ProtocolAdapterWrapperContext {
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
      */
-    public void routeWriteResultToTags(final @NotNull Node node, final boolean success, final @Nullable String reason) {
-        tagPlane.routeWriteResult(node, success, reason);
+    public void routeWriteResultToTags(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
+        tagPlane.routeWriteResult(node, attemptId, success, reason);
     }
 
     /**

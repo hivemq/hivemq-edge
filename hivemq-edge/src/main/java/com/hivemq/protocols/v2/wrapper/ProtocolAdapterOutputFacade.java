@@ -105,8 +105,9 @@ public final class ProtocolAdapterOutputFacade implements ProtocolAdapterOutput 
     }
 
     @Override
-    public void writeResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
-        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.WriteResultReceived(node, success, reason));
+    public void writeResult(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
+        wrapperMailbox.tell(new ProtocolAdapterWrapperEvent.WriteResultReceived(node, attemptId, success, reason));
     }
 
     @Override

@@ -112,6 +112,11 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
     }
 
     @Override
+    public synchronized void discardAll() {
+        pending.clear();
+    }
+
+    @Override
     public synchronized void delete(final @NotNull String commandId) {
         if (closed) {
             return; // a settle racing close(): the channel was dropped, nothing to dispose

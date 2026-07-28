@@ -112,7 +112,8 @@ public final class RecordingProtocolAdapterOutput implements ProtocolAdapterOutp
     }
 
     @Override
-    public void writeResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+    public void writeResult(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
         events.add("writeResult");
         writeResults.add(new WriteResultRecord(node, success, reason));
     }

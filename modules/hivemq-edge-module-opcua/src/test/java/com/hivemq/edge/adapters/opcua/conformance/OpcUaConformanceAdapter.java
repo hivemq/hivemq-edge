@@ -29,6 +29,7 @@ import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -248,7 +249,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     }
 
     @Override
-    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value, final long attemptId) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
             final List<StatusCode> statusCodes = requireNonNull(client)
@@ -261,7 +262,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
             output.writeResult(
                     node, bad.isEmpty(), bad.map(StatusCode::toString).orElse(null));
         } catch (final @NotNull Exception failure) {
-            output.writeResult(node, false, String.valueOf(failure.getMessage()));
+            output.writeResult(node, WriteEntry.UNCORRELATED, false, String.valueOf(failure.getMessage()));
         }
     }
 

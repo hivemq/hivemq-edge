@@ -18,6 +18,7 @@ package com.hivemq.protocols.v2.wrapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.verify;
 
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.FakeClock;
@@ -40,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 /**
  * The write aspect's ownership of the write in flight, driven directly rather than through the wrapper so the batch
@@ -127,6 +130,54 @@ class TagAspectWriteCompletionOwnershipTest {
     }
 
     @Test
+    void aLateDuplicateResult_isDroppedByItsAttemptId_soTheFollowingWriteIsNotCommittedUnwritten() {
+        // B4, the case the dispatch-count guard below cannot see. writeResult identifies its write by node, and this
+        // aspect serves at most one write per node, so a result reported twice for the same node looks exactly like
+        // the acknowledgment of the write that followed. Crediting it would settle that write SUCCEEDED — deleting a
+        // durable command the device was never asked to execute, and counting it committed. A lost command recorded
+        // as delivered is worse than a duplicated one, which at-least-once already tolerates.
+        final RecordingSender sender = new RecordingSender();
+        final BatchCollector batches = new BatchCollector();
+        final TagAspectWrite aspect = restingWriteAspect(batches, sender);
+
+        aspect.onWriteRequested(WrapperTestSupport.dataPoint(TAG, "1"), 1L);
+        final long firstAttempt = dispatchedAttemptId(batches);
+        aspect.onWriteResult(firstAttempt, true, null);
+        assertThat(sender.settlements).singleElement().satisfies(settled -> {
+            assertThat(settled.deliveryToken()).isEqualTo(1L);
+            assertThat(settled.outcome()).isEqualTo(SouthboundWriteOutcome.SUCCEEDED);
+        });
+
+        // The next command is delivered, reaches the adapter, and is genuinely in flight.
+        sender.settlements.clear();
+        aspect.onWriteRequested(WrapperTestSupport.dataPoint(TAG, "2"), 2L);
+        final long secondAttempt = dispatchedAttemptId(batches);
+        assertThat(secondAttempt).isNotEqualTo(firstAttempt);
+
+        // Now the adapter re-reports the FIRST write. It names an attempt this aspect is no longer serving.
+        aspect.onWriteResult(firstAttempt, true, null);
+
+        assertThat(sender.settlements).isEmpty(); // the second write is untouched — nothing was committed unwritten
+        assertThat(aspect.stateName()).isEqualTo("WAITING_FOR_WRITE_RESULT");
+
+        // The second write's own acknowledgment still settles it.
+        aspect.onWriteResult(secondAttempt, true, null);
+        assertThat(sender.settlements).singleElement().satisfies(settled -> {
+            assertThat(settled.deliveryToken()).isEqualTo(2L);
+            assertThat(settled.outcome()).isEqualTo(SouthboundWriteOutcome.SUCCEEDED);
+        });
+    }
+
+    /** Dispatch the pending batch and return the attempt id the framework stamped on the single write in it. */
+    private static long dispatchedAttemptId(final @NotNull BatchCollector batches) {
+        final ProtocolAdapter adapter = mock(ProtocolAdapter.class);
+        final ArgumentCaptor<List<WriteEntry>> captor = ArgumentCaptor.captor();
+        batches.dispatch(adapter);
+        verify(adapter, atLeastOnce()).writeBatch(captor.capture());
+        return captor.getValue().getLast().attemptId();
+    }
+
+    @Test
     void aWriteResultArrivingBeforeTheWriteReachedTheAdapter_isIgnored_soNoCommandIsCommittedUnwritten() {
         // A duplicate acknowledgment of an EARLIER write would otherwise settle whatever token is current, and the
         // channel would delete a durable command the device has not even been asked to execute. Until the batch is
@@ -136,14 +187,14 @@ class TagAspectWriteCompletionOwnershipTest {
         final TagAspectWrite aspect = restingWriteAspect(batches, sender);
         aspect.onWriteRequested(WrapperTestSupport.dataPoint(TAG, "1"), 1L);
 
-        aspect.onWriteResult(true, null);
+        aspect.onWriteResult(WriteEntry.UNCORRELATED, true, null);
 
         assertThat(sender.settlements).isEmpty();
         assertThat(aspect.stateName()).isEqualTo("WAITING_FOR_WRITE_RESULT");
 
         // Once the batch has actually gone to the adapter, the very same result is accepted.
         batches.dispatch(mock(ProtocolAdapter.class));
-        aspect.onWriteResult(true, null);
+        aspect.onWriteResult(WriteEntry.UNCORRELATED, true, null);
 
         assertThat(sender.settlements).singleElement().satisfies(settled -> {
             assertThat(settled.deliveryToken()).isEqualTo(1L);

@@ -78,6 +78,7 @@ public sealed interface ProtocolAdapterWrapperCommand extends ProtocolAdapterWra
             @NotNull Map<String, TagAspectActivationPreference> activation,
             @NotNull Set<String> readUsedTagNames,
             @NotNull Set<String> writeUsedTagNames,
+            @NotNull Set<String> reTargetedTagNames,
             long pollIntervalMillis)
             implements ProtocolAdapterWrapperCommand {}
 

@@ -581,6 +581,108 @@ class ProtocolAdapterManagerTest {
         assertThat(handleRegistry.find("a")).isNotNull();
     }
 
+    // ── B2: a re-pointed write-mapped tag must not inherit the previous node's commands ─────────────────────────
+
+    @Test
+    void aTagsOnlyReloadThatRePointsAWriteMappedTag_carriesTheTagInTheUpdateCommand() {
+        send(new ConfigurationChanged(List.of(writeAdapter("a", "{\"identifier\":\"nodeA\"}"))));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of(writeAdapter("a", "{\"identifier\":\"nodeB\"}"))));
+
+        // Detected from the node-string, which is the only comparison that works: Node has no equality contract,
+        // and is deserialized afresh on every reload, so an object comparison is always unequal.
+        final ProtocolAdapterWrapperCommand.UpdateTagSet update = wrapperFactory.commands("a").stream()
+                .filter(ProtocolAdapterWrapperCommand.UpdateTagSet.class::isInstance)
+                .map(ProtocolAdapterWrapperCommand.UpdateTagSet.class::cast)
+                .reduce((first, second) -> second)
+                .orElseThrow();
+        assertThat(update.reTargetedTagNames()).containsExactly("setpoint");
+    }
+
+    @Test
+    void aTagsOnlyReloadThatLeavesTheNodeAlone_carriesNoRetargetedTag() {
+        send(new ConfigurationChanged(List.of(writeAdapter("a", "{\"identifier\":\"nodeA\"}"))));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        // A tags-only reload that changes something else about the tag set entirely.
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .southboundMapping("plant/a/setpoint/set", "setpoint")
+                .tags(
+                        tag("setpoint").nodeString("{\"identifier\":\"nodeA\"}").build(),
+                        tag("other").build())
+                .build())));
+
+        final ProtocolAdapterWrapperCommand.UpdateTagSet update = wrapperFactory.commands("a").stream()
+                .filter(ProtocolAdapterWrapperCommand.UpdateTagSet.class::isInstance)
+                .map(ProtocolAdapterWrapperCommand.UpdateTagSet.class::cast)
+                .reduce((first, second) -> second)
+                .orElseThrow();
+        assertThat(update.reTargetedTagNames()).isEmpty();
+    }
+
+    @Test
+    void aFullRecreateThatRePointsAWriteMappedTag_discardsThatTagsQueue() {
+        // The second door. A node change alone is tags-only; bundled with a connection-critical field it becomes a
+        // recreate, which never reaches applyTagsOnly — the successor's intake derives the same queue id and would
+        // read the predecessor's commands straight back.
+        send(new ConfigurationChanged(List.of(writeAdapter("a", "{\"identifier\":\"nodeA\"}"))));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .southboundMapping("plant/a/setpoint/set", "setpoint")
+                .tags(tag("setpoint").nodeString("{\"identifier\":\"nodeB\"}").build())
+                .adapterConfiguration(Map.of("changed", true)) // connection-critical → FULL_RECREATE
+                .build())));
+        fireWrapperStopped("a");
+
+        assertThat(wrapperFactory.discardedSouthboundQueueTags()).containsExactly("a/setpoint");
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+    }
+
+    @Test
+    void aFullRecreateThatLeavesTheNodeAndTopicAlone_keepsTheQueue() {
+        send(new ConfigurationChanged(List.of(writeAdapter("a", "{\"identifier\":\"nodeA\"}"))));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .southboundMapping("plant/a/setpoint/set", "setpoint")
+                .tags(tag("setpoint").nodeString("{\"identifier\":\"nodeA\"}").build())
+                .adapterConfiguration(Map.of("changed", true))
+                .build())));
+        fireWrapperStopped("a");
+
+        // The queue IS the handoff across a recreate; destroying it here would lose exactly the commands the
+        // successor exists to deliver.
+        assertThat(wrapperFactory.discardedSouthboundQueueTags()).isEmpty();
+        assertThat(wrapperFactory.discardedSouthboundQueueAdapterIds()).isEmpty();
+    }
+
+    @Test
+    void aFullRecreateThatMovesAMappingTopic_discardsTheOldTopicsQueue() {
+        // Not a node change, but the same class of orphan: the old topic's queue keeps its commands, has no
+        // subscriber, and is exempt from orphan cleanup — so it would sit in the store for good and resurrect if
+        // that topic were ever configured again.
+        send(new ConfigurationChanged(List.of(writeAdapter("a", "{\"identifier\":\"nodeA\"}"))));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .southboundMapping("plant/a/setpoint/MOVED", "setpoint")
+                .tags(tag("setpoint").nodeString("{\"identifier\":\"nodeA\"}").build())
+                .build())));
+        fireWrapperStopped("a");
+
+        assertThat(wrapperFactory.discardedSouthboundQueueTags()).containsExactly("a/setpoint");
+    }
+
+    private static @NotNull ProtocolAdapterEntity writeAdapter(
+            final @NotNull String adapterId, final @NotNull String nodeString) {
+        return adapter(adapterId)
+                .southboundMapping("plant/a/setpoint/set", "setpoint")
+                .tags(tag("setpoint").nodeString(nodeString).build())
+                .build();
+    }
+
     private void send(final @NotNull ProtocolAdapterManagerMessage message) {
         mailbox.tell(message);
         dispatcher.drainAll();

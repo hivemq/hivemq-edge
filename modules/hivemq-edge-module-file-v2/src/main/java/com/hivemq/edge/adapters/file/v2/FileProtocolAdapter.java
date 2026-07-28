@@ -160,9 +160,9 @@ public final class FileProtocolAdapter extends AbstractProtocolAdapter {
     }
 
     @Override
-    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value, final long attemptId) {
         // The File adapter does not advertise the WRITE capability, so the framework never calls this; report a failed
         // write defensively should it ever be invoked.
-        output.writeResult(node, false, "the file adapter does not support writing");
+        output.writeResult(node, attemptId, false, "the file adapter does not support writing");
     }
 }

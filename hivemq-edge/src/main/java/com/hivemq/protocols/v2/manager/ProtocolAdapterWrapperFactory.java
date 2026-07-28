@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -78,4 +79,17 @@ public interface ProtocolAdapterWrapperFactory {
      * @param entity the configuration of the adapter being discarded.
      */
     default void discardSouthboundQueues(final @NotNull ProtocolAdapterEntity entity) {}
+
+    /**
+     * Destroy only the named tags' southbound queues, leaving the adapter's others intact — the recreate counterpart
+     * of {@link #discardSouthboundQueues(ProtocolAdapterEntity)}. A recreate keeps the adapter alive, so its queues
+     * must survive in general; what must not survive is a queue whose tag now addresses a different node, or whose
+     * mapping topic moved or vanished.
+     *
+     * @param entity   the configuration the <b>outgoing</b> instance was running, since that is where the existing
+     *                 queue ids come from.
+     * @param tagNames the tags whose queues to destroy.
+     */
+    default void discardSouthboundQueues(
+            final @NotNull ProtocolAdapterEntity entity, final @NotNull Set<String> tagNames) {}
 }

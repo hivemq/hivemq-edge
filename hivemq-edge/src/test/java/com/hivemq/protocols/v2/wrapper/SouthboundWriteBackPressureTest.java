@@ -18,6 +18,7 @@ package com.hivemq.protocols.v2.wrapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import com.hivemq.protocols.v2.southbound.SouthboundWriteQueue;
@@ -206,7 +207,7 @@ class SouthboundWriteBackPressureTest {
          */
         private void acknowledge(final boolean success, final @Nullable String reason) {
             fixture.advance(100);
-            fixture.output.writeResult(fixture.nodeFor(TAG), success, reason);
+            fixture.output.writeResult(fixture.nodeFor(TAG), WriteEntry.UNCORRELATED, success, reason);
             fixture.drain();
         }
     }

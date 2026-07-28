@@ -222,7 +222,8 @@ class OpcUaBrowseEngineConformanceTest {
         public void nodeError(final @NotNull Node node, final @NotNull String reason, final boolean spontaneous) {}
 
         @Override
-        public void writeResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {}
+        public void writeResult(
+                final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {}
 
         @Override
         public void browsePage(

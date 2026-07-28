@@ -115,6 +115,18 @@ public final class TagAspectWrite implements TagAspectVerifying {
     private @Nullable Long inFlightDeliveryToken;
 
     /**
+     * The correlation id stamped on the in-flight write, echoed back by the adapter's acknowledgment.
+     * <p>
+     * This is what makes a <b>late</b> duplicate result harmless. {@code writeResult} identifies its write by node,
+     * and this aspect serves at most one write per node at a time, so without the id a result reported twice is
+     * indistinguishable from the acknowledgment of the write that followed — and acting on it settles, and so
+     * <b>deletes from the durable store</b>, a command the device was never asked to execute, while counting it
+     * committed. A lost command recorded as delivered is worse than a duplicated one, which is what at-least-once
+     * already tolerates.
+     */
+    private long inFlightAttemptId;
+
+    /**
      * The batch collector's write-dispatch count when the in-flight write was posted. While it is unchanged the
      * write is still sitting in the batch, so any result arriving cannot be its own — see {@link #acceptWriteResult}.
      */
@@ -302,8 +314,8 @@ public final class TagAspectWrite implements TagAspectVerifying {
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
      */
-    public void onWriteResult(final boolean success, final @Nullable String reason) {
-        if (!acceptWriteResult()) {
+    public void onWriteResult(final long attemptId, final boolean success, final @Nullable String reason) {
+        if (!acceptWriteResult(attemptId)) {
             return;
         }
         if (success) {
@@ -364,7 +376,7 @@ public final class TagAspectWrite implements TagAspectVerifying {
     }
 
     void requestWrite(final @NotNull DataPoint value) {
-        batches.write(new WriteEntry(node, value));
+        batches.write(new WriteEntry(node, value, inFlightAttemptId));
     }
 
     /**
@@ -383,6 +395,8 @@ public final class TagAspectWrite implements TagAspectVerifying {
         // reported by any later path — not the acknowledgment, not deactivation, not a lost connection — so the
         // channel's delivery slot would stay occupied for good and the tag would silently stop accepting writes.
         inFlightDeliveryToken = event.deliveryToken();
+        // Minted before the entry is built, so the id travels with the write and comes back on its acknowledgment.
+        inFlightAttemptId = batches.nextWriteAttemptId();
         try {
             requestWrite(event.value());
         } catch (final RuntimeException postFailure) {
@@ -450,12 +464,26 @@ public final class TagAspectWrite implements TagAspectVerifying {
      *         one, and acting on it would settle — and so <b>delete from the durable store</b> — a command the
      *         device has not even been asked to execute yet.
      *         <p>
-     *         This is a partial guard, and deliberately so. {@code writeResult(node, success, reason)} carries no
-     *         correlation to the write it answers, so a duplicate arriving a tick or more late is indistinguishable
-     *         from a genuine acknowledgment. Closing that remainder needs a correlation id on the SDK's write
-     *         result; this guard closes the immediate window, which is where a double-reporting adapter lands.
+     *         This dispatch-count test is the <b>fallback</b>, kept for results that carry no correlation id
+     *         ({@link WriteEntry#UNCORRELATED} — a test rig, or an adapter written against the older contract). It
+     *         closes only the immediate window. A result that does carry an id is checked against the in-flight
+     *         attempt first, which closes the late duplicate the dispatch count cannot see.
      */
-    private boolean acceptWriteResult() {
+    private boolean acceptWriteResult(final long attemptId) {
+        // The correlation the SDK now carries. An adapter that echoes the entry's attempt id makes a stale result
+        // self-identifying, whenever it arrives: it names a write this aspect is no longer serving, so it is simply
+        // dropped instead of being credited to whatever is in flight now. Results with UNCORRELATED fall through to
+        // the older heuristic below — that is what a rig or an adapter predating this contract sends.
+        if (attemptId != WriteEntry.UNCORRELATED && attemptId != inFlightAttemptId) {
+            log.warn(
+                    "Write aspect of tag '{}' on adapter '{}' ignored a write result for attempt {} while serving "
+                            + "attempt {} — the adapter acknowledged a write that is no longer in flight",
+                    tag.name(),
+                    adapterId,
+                    attemptId,
+                    inFlightAttemptId);
+            return false;
+        }
         if (inFlightDeliveryToken == null || batches.writeDispatches() != writeDispatchesAtRequest) {
             return true;
         }

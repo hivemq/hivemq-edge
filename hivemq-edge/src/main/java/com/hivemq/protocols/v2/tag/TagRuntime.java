@@ -283,8 +283,8 @@ public final class TagRuntime {
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
      */
-    public void onWriteResult(final boolean success, final @Nullable String reason) {
-        writeAspect.onWriteResult(success, reason);
+    public void onWriteResult(final long attemptId, final boolean success, final @Nullable String reason) {
+        writeAspect.onWriteResult(attemptId, success, reason);
     }
 
     // ── snapshot ────────────────────────────────────────────────────────────────────────────

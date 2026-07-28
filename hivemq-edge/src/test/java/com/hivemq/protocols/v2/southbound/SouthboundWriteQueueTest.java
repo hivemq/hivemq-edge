@@ -355,6 +355,103 @@ class SouthboundWriteQueueTest {
         assertThat(sender.requests).hasSize(1);
     }
 
+    @Test
+    void aCommandWhoseDeleteNeverTakes_isNeverExecutedTwice() {
+        // The store accepts the delete and keeps the entry anyway — what a client-queue persistence that has run out
+        // of delete attempts leaves behind. The entry then reappears on every marker sweep. Executing it again would
+        // write a stale command to a physical device every few seconds, indefinitely; at-least-once permits a
+        // duplicate, not a runaway.
+        final CapturingSender sender = new CapturingSender();
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        backlog.refuseDeletes = true;
+        backlog.queued = new SouthboundCommand("stuck-1", value(5));
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        queue.openWindow();
+        sender.pump(queue);
+
+        assertThat(sender.requests).hasSize(1); // delivered once, as it should be
+
+        // Committing deletes it, the store keeps it, and the read the commit issues finds it straight back.
+        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED, null);
+        sender.pump(queue);
+        assertThat(queue.committed()).isEqualTo(1);
+        assertThat(queue.redeliveriesRefused()).isEqualTo(1);
+
+        // Every later poll finds the very same entry still there, and refuses it again.
+        for (int poll = 0; poll < 3; poll++) {
+            pollOnce(queue);
+            sender.pump(queue);
+        }
+
+        assertThat(sender.requests).hasSize(1); // still one: no second execution, ever
+        assertThat(queue.redeliveriesRefused()).isEqualTo(4);
+        assertThat(queue.head()).isNull();
+        // One delete for the commit, then one retry per sighting — so the channel heals itself if the store does.
+        assertThat(backlog.deleted).containsExactly("stuck-1", "stuck-1", "stuck-1", "stuck-1", "stuck-1");
+    }
+
+    @Test
+    void refusingADisposedCommandNeverSpins_evenIfTheStoreKeepsHandingItBack() {
+        // A read leases what it returns, so a healthy store re-marks the entry and the next read moves past it. This
+        // pins the behaviour against a store that does NOT: refusing must not read on, or the refusal path would
+        // recurse without bound on the dispatch thread. Exactly one refusal per poll, whatever the store does.
+        final CapturingSender sender = new CapturingSender();
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        backlog.refuseDeletes = true;
+        backlog.queued = new SouthboundCommand("stuck-1", value(1));
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        queue.openWindow();
+        sender.pump(queue);
+        sender.settleLast(SouthboundWriteOutcome.SUCCEEDED, null);
+        sender.pump(queue);
+
+        final long afterCommit = queue.redeliveriesRefused();
+        pollOnce(queue);
+        sender.pump(queue);
+
+        assertThat(queue.redeliveriesRefused()).isEqualTo(afterCommit + 1);
+    }
+
+    @Test
+    void theDisposedMemoryIsBounded_soAnOldCommitCannotBlockALegitimateCommand() {
+        // The memory that refuses a disposed command must not grow without bound on the dispatch thread. Bounding it
+        // is only safe because the case it guards is one stuck entry surfacing among empty reads — so pin the bound
+        // itself, and that a command far enough back is treated as new again.
+        final CapturingSender sender = new CapturingSender();
+        final SilentBacklog backlog = new SilentBacklog(sender);
+        final SouthboundWriteQueue queue =
+                new SouthboundWriteQueue(ADAPTER, TAG, NODE, backlog, sender, tokens(), metrics());
+        queue.openWindow();
+        sender.pump(queue);
+
+        for (int i = 0; i <= SouthboundWriteQueue.DISPOSED_IDS_REMEMBERED; i++) {
+            backlog.queued = new SouthboundCommand("c-" + i, value(i));
+            pollOnce(queue);
+            sender.pump(queue);
+            sender.settleLast(SouthboundWriteOutcome.SUCCEEDED, null);
+            sender.pump(queue);
+        }
+        assertThat(queue.committed()).isEqualTo(SouthboundWriteQueue.DISPOSED_IDS_REMEMBERED + 1L);
+        assertThat(queue.redeliveriesRefused()).isZero();
+
+        // "c-0" has been evicted by the newer disposals, so it reads as an ordinary command again.
+        backlog.queued = new SouthboundCommand("c-0", value(0));
+        pollOnce(queue);
+        sender.pump(queue);
+
+        assertThat(queue.redeliveriesRefused()).isZero();
+        assertThat(queue.head()).isNotNull();
+    }
+
+    /** Advance the channel by one backstop-poll interval. */
+    private static void pollOnce(final @NotNull SouthboundWriteQueue queue) {
+        for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+            queue.onTick();
+        }
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
 
     /** A channel over the in-memory store, with the sender that plays the wrapper. */
@@ -392,6 +489,9 @@ class SouthboundWriteQueueTest {
         private int markerReleases;
         private boolean failNextRead;
         private boolean deferSizeAnswer;
+        /** Models a store whose removeShared never takes: the entry stays queued and keeps coming back. */
+        private boolean refuseDeletes;
+
         private @Nullable Long deferredSizeToken;
 
         private SilentBacklog(final @NotNull CapturingSender answers) {
@@ -433,9 +533,14 @@ class SouthboundWriteQueueTest {
         @Override
         public void delete(final @NotNull String commandId) {
             deleted.add(commandId);
-            if (queued != null && queued.id().equals(commandId)) {
+            if (!refuseDeletes && queued != null && queued.id().equals(commandId)) {
                 queued = null;
             }
+        }
+
+        @Override
+        public void discardAll() {
+            queued = null;
         }
 
         @Override

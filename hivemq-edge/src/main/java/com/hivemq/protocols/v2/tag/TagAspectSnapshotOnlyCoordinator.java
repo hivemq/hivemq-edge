@@ -145,7 +145,8 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     }
 
     @Override
-    public void routeWriteResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+    public void routeWriteResult(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
         // No write aspect; the acknowledgment is absorbed.
     }
 

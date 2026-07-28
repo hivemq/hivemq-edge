@@ -146,7 +146,8 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
             // The device's own record of what reached it — for exactly-once / at-least-once assertions.
             ChaosControl.recordWrite(adapterId, entry);
             script.writeOutcomeFor(entry.node())
-                    .ifPresent(outcome -> output.writeResult(entry.node(), outcome.success(), outcome.reason()));
+                    .ifPresent(outcome ->
+                            output.writeResult(entry.node(), entry.attemptId(), outcome.success(), outcome.reason()));
         }
     }
 

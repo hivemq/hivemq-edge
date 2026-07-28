@@ -18,6 +18,7 @@ package com.hivemq.protocols.v2.wrapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.southbound.InMemorySouthboundWriteBacklog;
@@ -171,7 +172,7 @@ class SouthboundWriteReadinessWiringTest {
         private void ackInFlight() {
             fixture.advance(100);
             final Node node = fixture.nodeFor(TAG);
-            fixture.output.writeResult(node, true, null);
+            fixture.output.writeResult(node, WriteEntry.UNCORRELATED, true, null);
             fixture.drain();
         }
     }

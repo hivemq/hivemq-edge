@@ -75,6 +75,22 @@ public interface SouthboundWriteBacklog extends AutoCloseable {
     void releaseMarkers();
 
     /**
+     * Destroy every command this tag's queue holds — the <b>only</b> operation here that discards commands wholesale,
+     * and the one exception to "deleted only on a terminal outcome".
+     * <p>
+     * It exists for exactly one situation: the tag has been <b>re-pointed at a different node</b>. Everything queued
+     * was authored against the old target, and the queue is keyed by the mapping <i>topic</i>, never by the node — so
+     * without this the successor reads the very same commands back and executes them on a device the operator never
+     * addressed. In industrial control that is the dangerous failure, worse than losing the commands, which is why
+     * the ruling is to destroy them and say so rather than deliver them onward.
+     * <p>
+     * Fire-and-forget like everything else here; a failure is logged. The caller is responsible for the observable
+     * record (the dead-letter count and the warning), because only it knows which tag and which node change caused
+     * this.
+     */
+    void discardAll();
+
+    /**
      * Release whatever this backlog holds beyond the stored commands — its arrival callback, and any lease it is
      * still holding. A durable backlog's <b>storage</b> is deliberately untouched: it outlives the backlog object
      * by design (that is the durability), and a successor picks its contents up.

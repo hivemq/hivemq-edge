@@ -355,6 +355,25 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     }
 
     @Override
+    public void discardSouthboundQueues(
+            final @NotNull ProtocolAdapterEntity entity, final @NotNull Set<String> tagNames) {
+        if (southboundBrokerRuntime == null || tagNames.isEmpty()) {
+            return;
+        }
+        log.info(
+                "Discarding the southbound command queues of tag(s) {} on recreated v2 adapter '{}': the tag now "
+                        + "addresses a different node, or its mapping topic moved, so commands queued under the "
+                        + "previous configuration must not be executed against the new one.",
+                tagNames,
+                entity.getAdapterId());
+        for (final SouthboundMappingEntity mapping : entity.getSouthboundMappings()) {
+            if (tagNames.contains(mapping.getTagName())) {
+                clearQueue(entity.getAdapterId(), mapping.getTopic());
+            }
+        }
+    }
+
+    @Override
     public void discardSouthboundQueues(final @NotNull ProtocolAdapterEntity entity) {
         if (southboundBrokerRuntime == null || entity.getSouthboundMappings().isEmpty()) {
             return;
@@ -367,15 +386,21 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         for (final SouthboundMappingEntity mapping : entity.getSouthboundMappings()) {
             // Rebuilt from the configuration rather than read off the intake: an adapter that failed to construct one
             // (or that has been ERROR ever since) still owns whatever its predecessor queued under the same id.
-            final String queueId = SouthboundMqttIntake.queueId(adapterId, mapping.getTopic());
-            try {
-                FutureUtils.addExceptionLogger(
-                        southboundBrokerRuntime.clientQueuePersistence().clear(queueId, true));
-            } catch (final Exception failure) {
-                // Best effort, and never fatal: this runs on the manager's dispatch thread mid-teardown, where a
-                // throw would abandon the steps after it. A queue that survives is a leak, not a correctness fault.
-                log.warn("Failed to discard the southbound queue '{}' of adapter '{}'", queueId, adapterId, failure);
-            }
+            clearQueue(adapterId, mapping.getTopic());
+        }
+    }
+
+    /** Destroy one mapping's durable queue. Best effort: this runs on the manager's dispatch thread mid-teardown. */
+    private void clearQueue(final @NotNull String adapterId, final @NotNull String topic) {
+        final String queueId = SouthboundMqttIntake.queueId(adapterId, topic);
+        try {
+            FutureUtils.addExceptionLogger(Objects.requireNonNull(southboundBrokerRuntime)
+                    .clientQueuePersistence()
+                    .clear(queueId, true));
+        } catch (final Exception failure) {
+            // Never fatal: a throw here would abandon the teardown steps after it, and a queue that survives is a
+            // leak rather than a correctness fault.
+            log.warn("Failed to discard the southbound queue '{}' of adapter '{}'", queueId, adapterId, failure);
         }
     }
 

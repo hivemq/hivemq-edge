@@ -256,6 +256,45 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
     }
 
     @Override
+    public void discardAll() {
+        // Reported here rather than by the caller because only the store knows how many commands were actually
+        // destroyed: clear() returns no count, and the delivery side knows about at most the one command it holds
+        // as head. The size read is best-effort and purely for this line — nothing waits on it, and a failure to
+        // obtain it must not stop the clear, which is the part that matters.
+        submitQuietly(
+                "read the depth of southbound queue '" + queueId + "' before discarding it",
+                () -> Futures.addCallback(
+                        clientQueuePersistence.size(queueId, true),
+                        new FutureCallback<>() {
+                            @Override
+                            public void onSuccess(final @Nullable Integer size) {
+                                log.warn(
+                                        "Destroying {} queued southbound command(s) for tag '{}' on adapter '{}': the "
+                                                + "tag now addresses a different node, and commands authored for the "
+                                                + "previous one must not be executed on it.",
+                                        size == null ? 0 : size,
+                                        tagName,
+                                        adapterId);
+                            }
+
+                            @Override
+                            public void onFailure(final @NotNull Throwable throwable) {
+                                log.warn(
+                                        "Destroying the queued southbound commands for tag '{}' on adapter '{}' (the "
+                                                + "tag now addresses a different node); the queue depth could not be "
+                                                + "read, so the count is unknown",
+                                        tagName,
+                                        adapterId,
+                                        throwable);
+                            }
+                        },
+                        MoreExecutors.directExecutor()));
+        submitQuietly(
+                "discard the contents of southbound queue '" + queueId + "'",
+                () -> FutureUtils.addExceptionLogger(clientQueuePersistence.clear(queueId, true)));
+    }
+
+    @Override
     public void releaseMarkers() {
         submitQuietly(
                 "release the in-flight markers of southbound queue '" + queueId + "'",

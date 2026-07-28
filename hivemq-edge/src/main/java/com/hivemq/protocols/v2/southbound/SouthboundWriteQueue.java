@@ -21,6 +21,8 @@ import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperWriteRequest;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.function.LongSupplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,6 +79,18 @@ public final class SouthboundWriteQueue {
     /** Consecutive empty reads after which the channel stops believing the store and checks its depth. */
     static final int EMPTY_READS_BEFORE_SIZE_CHECK = 3;
 
+    /**
+     * How many disposed command ids this channel remembers, so a command it has already committed or dead-lettered
+     * can never be executed on the device a second time (see {@link #disposedIds}).
+     * <p>
+     * Small on purpose. The case this exists for is a <b>single</b> entry the store refuses to delete, and it only
+     * becomes visible again after a marker sweep — which arms only after {@link #EMPTY_READS_BEFORE_SIZE_CHECK}
+     * consecutive <b>empty</b> reads, i.e. when that entry is essentially the only thing left. A handful of slots
+     * covers a few interleaved failures; remembering more would be a growing set on the dispatch thread guarding
+     * against nothing.
+     */
+    static final int DISPOSED_IDS_REMEMBERED = 16;
+
     private final @NotNull String adapterId;
     private final @NotNull String tagName;
     private final @NotNull SouthboundWriteBacklog backlog;
@@ -130,12 +144,39 @@ public final class SouthboundWriteQueue {
     private int ticksSincePoll;
     private int consecutiveEmptyReads;
 
+    /**
+     * The ids this channel has already disposed of — committed or dead-lettered — in insertion order, bounded to
+     * {@link #DISPOSED_IDS_REMEMBERED}.
+     * <p>
+     * <b>A command this channel has disposed of must never reach the device again.</b> Disposal deletes it from the
+     * store, so it should never come back; if it does, the delete did not take. That is a real path: a delete has a
+     * bounded number of attempts, and exhausting them leaves the entry queued <i>with this channel's in-flight
+     * marker still on it</i>. Reads then skip it, the queue looks empty, three empty reads arm the depth check, the
+     * depth check sweeps the markers — and the entry becomes visible again. Without this memory the channel would
+     * read it, deliver it, and <b>write it to the device again</b>; it would settle, fail to delete again, and the
+     * cycle would repeat every few seconds until Edge restarts. At-least-once permits a duplicate execution; it does
+     * not permit an unbounded loop of them against a physical device.
+     * <p>
+     * This is deliberately <i>not</i> the fix originally proposed for that finding — holding the head until the
+     * delete confirms. That needs the store to answer deletes (a seventh message and a new channel state), and it
+     * stalls the whole tag on a broken store rather than only the entry that cannot be removed. This achieves the
+     * property that mattered — no second execution — while the tag keeps delivering everything behind the entry.
+     * <p>
+     * The memory is per-channel and in-process: after a restart the entry is visible again with nobody remembering
+     * it, so it is executed once more. That is an ordinary at-least-once duplicate, not a loop.
+     */
+    private final @NotNull LinkedHashSet<String> disposedIds = new LinkedHashSet<>();
+
+    /** The id of the last refusal, so a single stuck entry is reported loudly once rather than on every poll. */
+    private @Nullable String lastRefusedCommandId;
+
     // Observable through the accessors below — see the note on `head`.
     private volatile long deliveries;
     private volatile long committed;
     private volatile long deadLettered;
     private volatile long keptForRedelivery;
     private volatile long windowViolations;
+    private volatile long redeliveriesRefused;
     private volatile @Nullable String lastDeadLetterReason;
 
     /**
@@ -179,6 +220,52 @@ public final class SouthboundWriteQueue {
      * @param newNode the node this tag now addresses.
      */
     public void retarget(final @NotNull Node newNode) {
+        node = newNode;
+    }
+
+    /**
+     * Re-point this channel at a <b>different</b> node, destroying everything queued for the previous one.
+     * <p>
+     * This is the resolution of the question v2 got wrong and v3 initially only made honest: a tags-only reload can
+     * move a tag from one node to another, and the tag's durable queue is keyed by its mapping <b>topic</b>, never by
+     * the node — so a plain {@link #retarget} hands commands an operator authored for the old target straight to the
+     * new one. Delivering a setpoint to a device nobody addressed is worse than losing it, so the commands are
+     * destroyed and the destruction is recorded.
+     * <p>
+     * Every piece of correlation is dropped along with them, because each one could otherwise resurrect a destroyed
+     * command against the new node: an outstanding read would answer with a command that no longer exists, and a
+     * settle for the pre-change delivery would dispose a head that is already gone. Clearing the tokens turns both
+     * into ordinary stale answers, which this class already ignores by design.
+     * <p>
+     * The window is left <b>closed</b>, exactly as a freshly created channel is: the rebuilt write aspect reopens it
+     * when it has verified against the new node.
+     *
+     * @param newNode the node this tag now addresses.
+     */
+    @SuppressWarnings("NonAtomicVolatileUpdate") // sole writer is the dispatch thread — see onReadAnswer
+    public void discardAndRetarget(final @NotNull Node newNode) {
+        if (head != null) {
+            // The one destroyed command this channel can account for precisely. The rest are counted only in the
+            // store's own log line: clear() reports no count, and asking for one first would race the discard.
+            deadLettered++;
+            metrics.incrementWriteDeadLettered(tagName);
+            lastDeadLetterReason = "the tag was re-pointed at a different node";
+            log.warn(
+                    "Dead-lettering southbound command '{}' for tag '{}' on adapter '{}': {}",
+                    head.id(),
+                    tagName,
+                    adapterId,
+                    lastDeadLetterReason);
+        }
+        head = null;
+        pendingReadToken = null;
+        pendingSizeToken = null;
+        inFlightDeliveryToken = null;
+        consecutiveEmptyReads = 0;
+        disposedIds.clear(); // the ids they guarded are gone with the queue
+        lastRefusedCommandId = null;
+        windowOpen = false;
+        backlog.discardAll();
         node = newNode;
     }
 
@@ -253,6 +340,7 @@ public final class SouthboundWriteQueue {
                     adapterId,
                     lastDeadLetterReason);
             consecutiveEmptyReads = 0;
+            rememberDisposed(undeliverableCommandId);
             backlog.delete(undeliverableCommandId);
             deliverOrRead();
             return;
@@ -275,6 +363,39 @@ public final class SouthboundWriteQueue {
             return;
         }
         consecutiveEmptyReads = 0;
+        if (disposedIds.contains(command.id())) {
+            // Already committed or dead-lettered, so its delete did not take. Never deliver it: the device would
+            // execute a command this channel has already reported as disposed, and would keep doing so on every
+            // marker sweep. Retry the delete — if the store has recovered, that clears the entry for good.
+            //
+            // And then STOP, rather than reading on. A read leases what it returns, so a healthy store re-marks this
+            // entry and the next read would find whatever is behind it; but a store that returns the same entry
+            // again — which is exactly the malfunction being handled here — would turn "read on" into an unbounded
+            // recursion on the dispatch thread. Waiting for the next poll costs one interval on a queue that is
+            // already broken, and cannot spin whatever the store does.
+            redeliveriesRefused++;
+            if (command.id().equals(lastRefusedCommandId)) {
+                // The same entry surfacing again on a later sweep. One loud line per stuck command is the signal;
+                // repeating it every poll interval for as long as the store stays broken would bury everything else.
+                log.debug(
+                        "Southbound command '{}' for tag '{}' on adapter '{}' surfaced again; still refusing it",
+                        command.id(),
+                        tagName,
+                        adapterId);
+            } else {
+                lastRefusedCommandId = command.id();
+                log.error(
+                        "Southbound command '{}' for tag '{}' on adapter '{}' came back after this channel disposed "
+                                + "of it — its delete did not take. Refusing to execute it a second time and retrying "
+                                + "the delete. The entry is leaking in the client-queue persistence for this queue; "
+                                + "redeliveriesRefused counts every further sighting.",
+                        command.id(),
+                        tagName,
+                        adapterId);
+            }
+            backlog.delete(command.id());
+            return;
+        }
         head = command;
         deliverOrRead();
     }
@@ -375,8 +496,19 @@ public final class SouthboundWriteQueue {
             }
         }
         head = null;
+        rememberDisposed(settled.id());
         backlog.delete(settled.id());
         deliverOrRead();
+    }
+
+    /** Record a disposed id, evicting the oldest past {@link #DISPOSED_IDS_REMEMBERED}. Dispatch thread only. */
+    private void rememberDisposed(final @NotNull String commandId) {
+        disposedIds.add(commandId);
+        if (disposedIds.size() > DISPOSED_IDS_REMEMBERED) {
+            final Iterator<String> oldest = disposedIds.iterator();
+            oldest.next();
+            oldest.remove();
+        }
     }
 
     /**
@@ -463,5 +595,14 @@ public final class SouthboundWriteQueue {
      */
     public long windowViolations() {
         return windowViolations;
+    }
+
+    /**
+     * @return the number of times a command this channel had already disposed of came back from the store and was
+     *         refused rather than executed again. Non-zero means the client-queue persistence is failing to delete
+     *         entries for this queue — see {@code disposedIds}. Must stay zero.
+     */
+    public long redeliveriesRefused() {
+        return redeliveriesRefused;
     }
 }

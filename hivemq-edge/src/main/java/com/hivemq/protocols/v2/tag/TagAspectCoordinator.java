@@ -134,7 +134,7 @@ public interface TagAspectCoordinator {
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
      */
-    void routeWriteResult(@NotNull Node node, boolean success, @Nullable String reason);
+    void routeWriteResult(@NotNull Node node, long attemptId, boolean success, @Nullable String reason);
 
     /**
      * Apply changed activation flags atomically — the activation-only transition. Recomputes aspect

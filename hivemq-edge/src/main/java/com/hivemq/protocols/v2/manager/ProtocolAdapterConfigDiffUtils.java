@@ -22,8 +22,10 @@ import com.hivemq.protocols.v2.config.RetryPolicyEntity;
 import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -71,6 +73,50 @@ public final class ProtocolAdapterConfigDiffUtils {
             return ProtocolAdapterConfigStateTransition.ACTIVATION_ONLY;
         }
         return ProtocolAdapterConfigStateTransition.NO_CHANGE;
+    }
+
+    /**
+     * The write-mapped tags whose <b>configured node changed</b> between two configurations of the same adapter.
+     * <p>
+     * Compared on the {@code node-string} — the raw configuration text — and deliberately not on deserialized
+     * {@link com.hivemq.adapter.sdk.api.v2.node.Node} objects. {@code Node} is an SDK type with no equality contract:
+     * no implementation overrides {@code equals}, and it is deserialized afresh on every reload, so an object
+     * comparison is <b>always</b> unequal. That is precisely the defect the v2 delivery side shipped — it believed it
+     * was detecting node changes and was in fact firing on every reload. Requiring {@code equals} on {@code Node}
+     * would push a contract onto every adapter author; the configuration string is what was actually authored, it is
+     * already the field {@link #classify} uses to decide a tag set differs at all, and it costs the SDK nothing.
+     * <p>
+     * Only tags that are write-mapped in <b>both</b> configurations are returned: a tag that gains or loses its
+     * southbound mapping has its channel created or dropped outright, which already disposes of its queue.
+     *
+     * @param running the configuration currently applied to the running adapter.
+     * @param updated the freshly-loaded configuration.
+     * @return the names of write-mapped tags now addressing a different node; empty when none do.
+     */
+    public static @NotNull Set<String> reTargetedWriteMappedTags(
+            final @NotNull ProtocolAdapterEntity running, final @NotNull ProtocolAdapterEntity updated) {
+        final Set<String> writeMappedBefore = running.getWriteUsedTagNames();
+        final Set<String> writeMappedAfter = updated.getWriteUsedTagNames();
+        final Map<String, String> nodeStringBefore = nodeStringsByTag(running);
+        final Set<String> reTargeted = new LinkedHashSet<>();
+        for (final TagEntity tag : updated.getTags()) {
+            if (!writeMappedBefore.contains(tag.getName()) || !writeMappedAfter.contains(tag.getName())) {
+                continue;
+            }
+            final String before = nodeStringBefore.get(tag.getName());
+            if (before != null && !before.equals(tag.getNodeString())) {
+                reTargeted.add(tag.getName());
+            }
+        }
+        return reTargeted;
+    }
+
+    private static @NotNull Map<String, String> nodeStringsByTag(final @NotNull ProtocolAdapterEntity entity) {
+        final Map<String, String> byName = new LinkedHashMap<>();
+        for (final TagEntity tag : entity.getTags()) {
+            byName.put(tag.getName(), tag.getNodeString());
+        }
+        return byName;
     }
 
     /**

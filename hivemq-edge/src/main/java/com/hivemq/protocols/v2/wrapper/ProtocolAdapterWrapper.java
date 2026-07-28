@@ -187,7 +187,7 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
             case ProtocolAdapterWrapperEvent.NodeErrorReceived nodeError ->
                 context.routeNodeErrorToTags(nodeError.node(), nodeError.reason(), nodeError.spontaneous());
             case ProtocolAdapterWrapperEvent.WriteResultReceived write ->
-                context.routeWriteResultToTags(write.node(), write.success(), write.reason());
+                context.routeWriteResultToTags(write.node(), write.attemptId(), write.success(), write.reason());
             case ProtocolAdapterWrapperEvent.PollTimerFired ignored -> {
                 // Unused: aspects schedule and fire their own timers on the actor's single timer queue.
             }

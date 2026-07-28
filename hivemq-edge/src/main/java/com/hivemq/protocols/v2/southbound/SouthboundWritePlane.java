@@ -229,8 +229,13 @@ public final class SouthboundWritePlane implements AutoCloseable {
      *
      * @param nodes             the new node/tag pairs.
      * @param writeUsedTagNames the new write-mapped tag names.
+     * @param reTargetedTagNames the tags whose configured node changed in this reload — their queued commands were
+     *                           authored for the previous node and are destroyed rather than delivered onward.
      */
-    public void updateTagSet(final @NotNull List<NodeTagPair> nodes, final @NotNull Set<String> writeUsedTagNames) {
+    public void updateTagSet(
+            final @NotNull List<NodeTagPair> nodes,
+            final @NotNull Set<String> writeUsedTagNames,
+            final @NotNull Set<String> reTargetedTagNames) {
         for (final Map.Entry<String, TagChannel> entry : channels.entrySet()) {
             if (!writeUsedTagNames.contains(entry.getKey())) {
                 final TagChannel dropped = channels.remove(entry.getKey());
@@ -254,9 +259,18 @@ public final class SouthboundWritePlane implements AutoCloseable {
                 // because Node correlates by identity and is deserialized afresh each time) bought nothing: the
                 // durable queue is keyed by the mapping topic, so the successor read back exactly the commands the
                 // rebuild claimed to discard — after redelivering the leased head, i.e. writing to the device twice.
-                existing.queue().retarget(pair.node());
-                // The window closes until the rebuilt aspect re-verifies and reports itself writable again.
-                existing.queue().closeWindow();
+                //
+                // The one case where keeping the queue is WRONG is a genuine node change: those commands were
+                // authored for a different target, and executing them on the new one is the dangerous outcome. The
+                // caller detects that from the configuration (the node-string), not from the Node objects, which is
+                // exactly the comparison the old code could not make.
+                if (reTargetedTagNames.contains(tagName)) {
+                    existing.queue().discardAndRetarget(pair.node());
+                } else {
+                    existing.queue().retarget(pair.node());
+                    // The window closes until the rebuilt aspect re-verifies and reports itself writable again.
+                    existing.queue().closeWindow();
+                }
             }
         }
     }

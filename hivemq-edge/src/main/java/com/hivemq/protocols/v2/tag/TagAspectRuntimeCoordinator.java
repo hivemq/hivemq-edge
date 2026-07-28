@@ -262,10 +262,11 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     @Override
-    public void routeWriteResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+    public void routeWriteResult(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {
-            tagRuntime.onWriteResult(success, reason);
+            tagRuntime.onWriteResult(attemptId, success, reason);
         }
     }
 
