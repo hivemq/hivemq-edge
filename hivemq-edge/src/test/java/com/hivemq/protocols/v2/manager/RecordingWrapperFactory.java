@@ -52,6 +52,7 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     private final @NotNull List<String> translateNodesAdapterIds = new ArrayList<>();
     // adapterIds whose container was torn down — the observable half of a completed stop-and-discard.
     private final @NotNull List<String> closedAdapterIds = new ArrayList<>();
+    private final @NotNull List<String> discardedSouthboundQueueAdapterIds = new ArrayList<>();
     // adapterId → an error create() throws for it, to model a mispackaged adapter jar (EDG-824 #4/R1, #4/R2).
     private final @NotNull Map<String, Throwable> createFailures = new HashMap<>();
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
@@ -95,6 +96,11 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
         return List.of();
     }
 
+    @Override
+    public void discardSouthboundQueues(final @NotNull ProtocolAdapterEntity entity) {
+        discardedSouthboundQueueAdapterIds.add(entity.getAdapterId());
+    }
+
     // ── test helpers ────────────────────────────────────────────────────────────────────────────────────────────
 
     @NotNull
@@ -110,6 +116,8 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     @NotNull
     List<String> closedAdapterIds() {
         return closedAdapterIds;
+    List<String> discardedSouthboundQueueAdapterIds() {
+        return discardedSouthboundQueueAdapterIds;
     }
 
     @NotNull

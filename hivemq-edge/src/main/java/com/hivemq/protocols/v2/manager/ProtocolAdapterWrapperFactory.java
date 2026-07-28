@@ -64,4 +64,18 @@ public interface ProtocolAdapterWrapperFactory {
      */
     @NotNull
     List<NodeTagPair> translateNodes(@NotNull ProtocolAdapterEntity entity, @NotNull ProtocolAdapterFactory factory);
+
+    /**
+     * Destroy the durable southbound command queues of an adapter that is going away for good — the counterpart of
+     * the cleanup exemption those queues carry ({@code SouthboundMqttIntake.INTERNAL_SHARE_PREFIX}). Because the
+     * broker's orphan cleanup can no longer reclaim them, something has to, and only the manager knows the
+     * difference between an adapter mid-recreate and one that has been removed.
+     * <p>
+     * Called <b>after</b> the adapter's resources are closed and <b>only</b> when no successor will be built.
+     * Derived from the configuration alone (adapter id + mapping topics), so it works for an adapter that never
+     * successfully constructed an intake. A queue that does not exist is a no-op; implementations must not throw.
+     *
+     * @param entity the configuration of the adapter being discarded.
+     */
+    default void discardSouthboundQueues(final @NotNull ProtocolAdapterEntity entity) {}
 }

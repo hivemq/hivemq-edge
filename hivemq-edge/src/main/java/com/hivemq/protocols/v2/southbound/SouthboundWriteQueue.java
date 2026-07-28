@@ -221,7 +221,8 @@ public final class SouthboundWriteQueue {
      *
      * @param readToken              the token of the read being answered; a stale one is ignored.
      * @param command                the leased head, or {@code null}.
-     * @param undeliverableCommandId the id of a leased publish the store could not decode, or {@code null}.
+     * @param undeliverableCommandId the id of a leased publish that cannot be delivered, or {@code null}.
+     * @param undeliverableReason    why it cannot be delivered; only meaningful with an id.
      * @param failure                why the read failed, or {@code null}.
      */
     // The counters below are volatile for cross-thread visibility only; the dispatch thread is their sole writer, so
@@ -231,17 +232,20 @@ public final class SouthboundWriteQueue {
             final long readToken,
             final @Nullable SouthboundCommand command,
             final @Nullable String undeliverableCommandId,
+            final @Nullable String undeliverableReason,
             final @Nullable Throwable failure) {
         if (pendingReadToken == null || pendingReadToken != readToken) {
             return; // a stale answer, from a read this channel has already given up on
         }
         pendingReadToken = null;
         if (undeliverableCommandId != null) {
-            // A malformed command is dead-lettered exactly like one the device refused: deleted so it can never
-            // wedge the tag, with the log line as the only record.
+            // An undeliverable command is dead-lettered exactly like one the device refused: deleted so it can never
+            // wedge the tag, with the log line as the only record — which is why the store's own reason is carried
+            // through rather than restated here.
             deadLettered++;
             metrics.incrementWriteDeadLettered(tagName);
-            lastDeadLetterReason = "the command could not be decoded";
+            lastDeadLetterReason =
+                    undeliverableReason != null ? undeliverableReason : "the command could not be delivered";
             log.warn(
                     "Dead-lettering southbound command '{}' for tag '{}' on adapter '{}': {}",
                     undeliverableCommandId,

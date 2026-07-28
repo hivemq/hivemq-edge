@@ -50,14 +50,28 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Closing removes the subscriptions; the queues and their contents are deliberately left in place — they are the
  * durability. Southbound-mapping <b>changes</b> recreate the adapter (they classify as connection-critical), so
- * this intake never needs to mutate in place.
+ * this intake never needs to mutate in place. Because a closed intake therefore leaves a subscriber-less queue
+ * behind on every recreate, those queues are exempt from the broker's orphan cleanup (see
+ * {@link #INTERNAL_SHARE_PREFIX}) and are reclaimed explicitly instead.
  */
 public final class SouthboundMqttIntake implements AutoCloseable {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SouthboundMqttIntake.class);
 
-    /** The v1 writing service's naming family, kept so operators recognize the queues. */
-    private static final @NotNull String SHARE_PREFIX = "adapter-forwarder#";
+    /**
+     * The share-name prefix of every queue this intake feeds — the v1 writing service's naming family
+     * ({@code adapter-forwarder#}, kept so operators recognize the queues) plus the {@code -v2-} infix that keeps a
+     * v1 adapter of the same id from colliding.
+     * <p>
+     * <b>It is also a protection marker.</b> These are not ordinary shared subscriptions: their consumer is an
+     * adapter that can legitimately be absent for a stretch — the whole span of a recreate, from
+     * {@link #close() closing} the predecessor's subscriptions to the successor registering its own. The broker's
+     * orphan cleanup ({@code ClientQueuePersistenceImpl.cleanUp}) reads "no shared subscriber" as "nobody will ever
+     * consume this" and clears the queue, which for these queues means destroying durable commands mid-handoff.
+     * Cleanup therefore skips this prefix, and reclamation is explicit instead — the manager discards an adapter's
+     * queues when the adapter is removed for good.
+     */
+    public static final @NotNull String INTERNAL_SHARE_PREFIX = "adapter-forwarder#adapter-writer-v2-";
 
     private final @NotNull String adapterId;
     private final @NotNull SouthboundBrokerRuntime brokerRuntime;
@@ -84,29 +98,59 @@ public final class SouthboundMqttIntake implements AutoCloseable {
         this.brokerRuntime = brokerRuntime;
         this.dataPointFactory = dataPointFactory;
         final LocalTopicTree topicTree = brokerRuntime.topicTree();
-        this.shareName = SHARE_PREFIX + "adapter-writer-v2-" + adapterId;
+        this.shareName = shareName(adapterId);
         this.clientId = shareName + "#";
-        for (final SouthboundMappingEntity mapping : mappings) {
-            final String tagName = mapping.getTagName();
-            if (queueIdByTag.containsKey(tagName)) {
-                log.warn(
-                        "Tag '{}' on adapter '{}' is referenced by more than one southbound mapping; only the first "
-                                + "(topic '{}') delivers — the mapping on topic '{}' is ignored",
-                        tagName,
-                        adapterId,
-                        topicByTag.get(tagName),
-                        mapping.getTopic());
-                continue;
+        try {
+            for (final SouthboundMappingEntity mapping : mappings) {
+                final String tagName = mapping.getTagName();
+                if (queueIdByTag.containsKey(tagName)) {
+                    log.warn(
+                            "Tag '{}' on adapter '{}' is referenced by more than one southbound mapping; only the first "
+                                    + "(topic '{}') delivers — the mapping on topic '{}' is ignored",
+                            tagName,
+                            adapterId,
+                            topicByTag.get(tagName),
+                            mapping.getTopic());
+                    continue;
+                }
+                final String topic = mapping.getTopic();
+                topicTree.addTopic(
+                        clientId,
+                        new Topic(topic, QoS.EXACTLY_ONCE, false, true),
+                        SubscriptionFlag.getDefaultFlags(true, true, false),
+                        shareName);
+                queueIdByTag.put(tagName, queueId(adapterId, topic));
+                topicByTag.put(tagName, topic);
             }
-            final String topic = mapping.getTopic();
-            topicTree.addTopic(
-                    clientId,
-                    new Topic(topic, QoS.EXACTLY_ONCE, false, true),
-                    SubscriptionFlag.getDefaultFlags(true, true, false),
-                    shareName);
-            queueIdByTag.put(tagName, shareName + "/" + topic);
-            topicByTag.put(tagName, topic);
+        } catch (final Throwable failure) {
+            // A throw partway through the loop leaves the earlier subscriptions registered on a half-built object the
+            // constructor never returns — so nobody holds a reference to close() it, and the factory's own cleanup
+            // (closeQuietly on a still-null field) is a no-op. Those subscriptions would then feed durable queues for
+            // an adapter that does not exist, for the life of the process. Undo them here: only this constructor can.
+            removeSubscriptions();
+            throw failure;
         }
+    }
+
+    /**
+     * @param adapterId the owning adapter's id.
+     * @return the share name every one of that adapter's southbound queues lives under.
+     */
+    public static @NotNull String shareName(final @NotNull String adapterId) {
+        return INTERNAL_SHARE_PREFIX + adapterId;
+    }
+
+    /**
+     * The queue id of one southbound mapping — derived from the adapter id and the mapping <b>topic</b> alone, never
+     * from the node the tag addresses. That is why a retargeted tag keeps the same queue, and why the id can be
+     * rebuilt from configuration without the intake that created it.
+     *
+     * @param adapterId the owning adapter's id.
+     * @param topic     the mapping's command topic.
+     * @return the shared-subscription queue id commands on that topic are queued under.
+     */
+    public static @NotNull String queueId(final @NotNull String adapterId, final @NotNull String topic) {
+        return shareName(adapterId) + "/" + topic;
     }
 
     /**
@@ -139,6 +183,14 @@ public final class SouthboundMqttIntake implements AutoCloseable {
      */
     @Override
     public void close() {
+        removeSubscriptions();
+    }
+
+    /**
+     * Unsubscribe every topic registered so far. Shared by {@link #close()} and the constructor's unwind, so a
+     * partially-built intake leaves exactly as little behind as a closed one.
+     */
+    private void removeSubscriptions() {
         for (final Map.Entry<String, String> entry : topicByTag.entrySet()) {
             try {
                 brokerRuntime.topicTree().removeSubscriber(clientId, entry.getValue(), shareName);

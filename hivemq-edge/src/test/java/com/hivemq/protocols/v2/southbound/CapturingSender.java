@@ -75,7 +75,12 @@ final class CapturingSender implements MailboxSender<ProtocolAdapterWrapperMessa
             delivered++;
             switch (message) {
                 case final SouthboundRead read ->
-                    queue.onReadAnswer(read.readToken(), read.command(), read.undeliverableCommandId(), read.failure());
+                    queue.onReadAnswer(
+                            read.readToken(),
+                            read.command(),
+                            read.undeliverableCommandId(),
+                            read.undeliverableReason(),
+                            read.failure());
                 case final SouthboundSize size -> queue.onSizeAnswer(size.readToken(), size.size(), size.failure());
                 case final ProtocolAdapterWrapperSouthboundMessage.SouthboundArrival ignored -> queue.onArrival();
                 case final ProtocolAdapterWrapperSouthboundMessage.WriteSettled settled ->

@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.util.FutureUtils;
@@ -56,8 +57,9 @@ import org.slf4j.LoggerFactory;
  * in-memory: the Xodus client queue writes the packet id into the store. What clears it is the successor process's
  * bootstrap, which resets every shared-queue marker on load; that is the step the at-least-once argument actually
  * rests on, so a persistence implementation that skipped it would strand every leased head across a restart.
- * QoS 0 commands are removed on read by broker semantics and are therefore at-most-once; QoS ≥ 1 is the durability
- * precondition.
+ * QoS ≥ 1 is the durability precondition, and it is <b>enforced</b>: a QoS 0 command is at-most-once by broker
+ * semantics — this read hands it out and removes it in one step, leaving nothing to redeliver — so it is refused
+ * here and dead-lettered rather than executed under a guarantee that does not hold for it.
  * <p>
  * <b>Nothing here needs to be lossless.</b> An earlier design carried a recovery ladder — remembered wakeups,
  * evidence flags, one-shot latches — because the broker's publish-available callback is edge-triggered: it fires
@@ -67,10 +69,11 @@ import org.slf4j.LoggerFactory;
  * synchronous-throw handling: a throw at submission is reported as a failed read and retried, exactly like a
  * failed future.
  * <p>
- * An <b>untranslatable</b> publish (the {@link SouthboundPublishTranslator} returns {@code null} or throws) is
- * <b>reported</b>, not deleted here: the answer names it, and the delivery side dead-letters it beside every other
- * disposition. Decoding is a pure function and can run wherever the answer is built; deciding a command's fate is
- * not, and belongs on the one thread that owns that decision.
+ * An <b>undeliverable</b> publish — untranslatable (the {@link SouthboundPublishTranslator} returns {@code null} or
+ * throws), or published at QoS 0 — is <b>reported with its reason</b>, not deleted here: the answer names it, and
+ * the delivery side dead-letters it beside every other disposition. Recognizing one is a pure function and can run
+ * wherever the answer is built; deciding a command's fate is not, and belongs on the one thread that owns that
+ * decision.
  */
 public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteBacklog {
 
@@ -144,7 +147,7 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
 
                         @Override
                         public void onFailure(final @NotNull Throwable throwable) {
-                            tell(new SouthboundRead(tagName, readToken, null, null, throwable));
+                            tell(new SouthboundRead(tagName, readToken, null, null, null, throwable));
                         }
                     },
                     MoreExecutors.directExecutor());
@@ -153,7 +156,7 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
         } catch (final Throwable submissionFailure) {
             // The read never became a future (a rejected submission while the single-writer shuts down, say).
             // Reporting it as a failed read is all that is needed: the backstop poll retries.
-            tell(new SouthboundRead(tagName, readToken, null, null, submissionFailure));
+            tell(new SouthboundRead(tagName, readToken, null, null, null, submissionFailure));
         }
     }
 
@@ -288,16 +291,39 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
      */
     private void answerRead(final long readToken, final @Nullable ImmutableList<PUBLISH> publishes) {
         if (publishes == null || publishes.isEmpty()) {
-            tell(new SouthboundRead(tagName, readToken, null, null, null));
+            tell(new SouthboundRead(tagName, readToken, null, null, null, null));
             return;
         }
         final PUBLISH publish = publishes.getFirst(); // READ_LIMIT = 1
-        final DataPoint value = translate(publish);
-        if (value == null) {
-            tell(new SouthboundRead(tagName, readToken, null, publish.getUniqueId(), null));
+        if (publish.getQoS() == QoS.AT_MOST_ONCE) {
+            // QoS >= 1 is the durability precondition of the whole southbound contract, and it is the PUBLISHER's to
+            // meet: the intake subscribes at QoS 2, but a subscription's QoS only caps a delivery, it never upgrades
+            // an incoming publish. A QoS 0 command is stored in the queue's at-most-once side, is handed out and
+            // REMOVED by this very read (no in-flight marker, nothing to redeliver), and is discarded outright
+            // whenever the queue is cleared. Executing it would mean promising at-least-once for a command the store
+            // can lose without a trace — and losing it silently is exactly what §4 forbids.
+            //
+            // Reported as undeliverable rather than translated: this is the first point in Edge where the original
+            // publish QoS is visible, and refusing it here guarantees no device write. The delete the delivery side
+            // then issues is a harmless no-op — the read already removed it.
+            tell(new SouthboundRead(
+                    tagName,
+                    readToken,
+                    null,
+                    publish.getUniqueId(),
+                    "the command was published at QoS 0, which cannot be delivered durably — publish commands at "
+                            + "QoS 1 or 2",
+                    null));
             return;
         }
-        tell(new SouthboundRead(tagName, readToken, new SouthboundCommand(publish.getUniqueId(), value), null, null));
+        final DataPoint value = translate(publish);
+        if (value == null) {
+            tell(new SouthboundRead(
+                    tagName, readToken, null, publish.getUniqueId(), "the command could not be decoded", null));
+            return;
+        }
+        tell(new SouthboundRead(
+                tagName, readToken, new SouthboundCommand(publish.getUniqueId(), value), null, null, null));
     }
 
     private @Nullable DataPoint translate(final @NotNull PUBLISH publish) {

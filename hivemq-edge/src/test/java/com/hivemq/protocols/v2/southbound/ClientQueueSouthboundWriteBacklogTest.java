@@ -121,8 +121,46 @@ class ClientQueueSouthboundWriteBacklogTest {
         assertThat(answer.command()).isNull();
         assertThat(answer.failure()).isNull();
         assertThat(answer.undeliverableCommandId()).isEqualTo(untranslatable.getUniqueId());
+        assertThat(answer.undeliverableReason()).isEqualTo("the command could not be decoded");
         assertThat(fake.removed).isEmpty();
         assertThat(fake.pending()).isEqualTo(1);
+    }
+
+    @Test
+    void aQos0CommandIsRefused_neverDelivered() {
+        // QoS >= 1 is the durability precondition of the whole southbound contract, and a subscription's QoS does
+        // not upgrade an incoming publish — so a QoS 0 command reaches the queue, is handed out and removed by one
+        // read, and can vanish with no trace. Executing it would promise at-least-once for something the store can
+        // lose. It is refused at the first point the original publish QoS is visible, so no device write happens.
+        final PUBLISH atMostOnce = qos0Publish(1, "a");
+        fake.enqueue(atMostOnce);
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        backlog.requestRead(1);
+
+        final SouthboundRead answer = sender.reads.getFirst();
+        assertThat(answer.command()).isNull(); // nothing is ever delivered to the aspect
+        assertThat(answer.failure()).isNull();
+        assertThat(answer.undeliverableCommandId()).isEqualTo(atMostOnce.getUniqueId());
+        assertThat(answer.undeliverableReason()).contains("QoS 0");
+    }
+
+    @Test
+    void aQos0CommandDoesNotBlockTheQos1CommandBehindIt() {
+        fake.enqueue(qos0Publish(1, "dropped"));
+        fake.enqueue(publish(2, "delivered"));
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+
+        // The delivery side dead-letters the refused command — a delete it issues like any other — and reads on.
+        backlog.requestRead(1);
+        final SouthboundRead refused = sender.reads.getFirst();
+        assertThat(refused.undeliverableCommandId()).isNotNull();
+        backlog.delete(refused.undeliverableCommandId());
+        backlog.requestRead(2);
+
+        final SouthboundRead next = sender.reads.get(1);
+        assertThat(next.command()).isNotNull();
+        assertThat(next.command().value().getTagValue()).isEqualTo("delivered");
     }
 
     @Test
@@ -261,6 +299,17 @@ class ClientQueueSouthboundWriteBacklogTest {
         return new PUBLISHFactory.Mqtt3Builder()
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withTopic("cmd/setpoint")
+                .withPublishId(publishId)
+                .withHivemqId("hivemqId")
+                .withPayload(payload.getBytes(UTF_8))
+                .build();
+    }
+
+    private static @NotNull PUBLISH qos0Publish(final long publishId, final @NotNull String payload) {
+        return new PUBLISHFactory.Mqtt3Builder()
+                .withQoS(QoS.AT_MOST_ONCE)
+                .withOnwardQos(QoS.AT_MOST_ONCE)
                 .withTopic("cmd/setpoint")
                 .withPublishId(publishId)
                 .withHivemqId("hivemqId")

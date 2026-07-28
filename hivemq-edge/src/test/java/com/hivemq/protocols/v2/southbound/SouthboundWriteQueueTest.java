@@ -402,17 +402,17 @@ class SouthboundWriteQueueTest {
         public void requestRead(final long readToken) {
             if (failNextRead) {
                 failNextRead = false;
-                answers.tell(
-                        new SouthboundRead(TAG, readToken, null, null, new RuntimeException("scripted read failure")));
+                answers.tell(new SouthboundRead(
+                        TAG, readToken, null, null, null, new RuntimeException("scripted read failure")));
                 return;
             }
             if (undeliverableId != null) {
                 final String id = undeliverableId;
                 undeliverableId = null;
-                answers.tell(new SouthboundRead(TAG, readToken, null, id, null));
+                answers.tell(new SouthboundRead(TAG, readToken, null, id, "the command could not be decoded", null));
                 return;
             }
-            answers.tell(new SouthboundRead(TAG, readToken, queued, null, null));
+            answers.tell(new SouthboundRead(TAG, readToken, queued, null, null, null));
         }
 
         @Override

@@ -267,7 +267,7 @@ class SouthboundWritePlaneTest {
             reads.incrementAndGet();
             // Answer empty: an unanswered read would leave the channel's read slot occupied, and no later poll
             // would ever issue another — which is precisely the wedge this design exists to make impossible.
-            sender.tell(new SouthboundRead(tagName, readToken, null, null, null));
+            sender.tell(new SouthboundRead(tagName, readToken, null, null, null, null));
         }
 
         @Override

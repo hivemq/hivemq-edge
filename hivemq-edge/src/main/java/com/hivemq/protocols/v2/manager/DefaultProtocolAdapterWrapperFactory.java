@@ -35,8 +35,10 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
+import com.hivemq.persistence.util.FutureUtils;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
@@ -350,6 +352,31 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 northboundConsumers,
                 southboundIntake,
                 entity));
+    }
+
+    @Override
+    public void discardSouthboundQueues(final @NotNull ProtocolAdapterEntity entity) {
+        if (southboundBrokerRuntime == null || entity.getSouthboundMappings().isEmpty()) {
+            return;
+        }
+        final String adapterId = entity.getAdapterId();
+        log.info(
+                "Discarding the southbound command queues of removed v2 adapter '{}': any command still queued for it "
+                        + "is destroyed here, because nothing will consume it again.",
+                adapterId);
+        for (final SouthboundMappingEntity mapping : entity.getSouthboundMappings()) {
+            // Rebuilt from the configuration rather than read off the intake: an adapter that failed to construct one
+            // (or that has been ERROR ever since) still owns whatever its predecessor queued under the same id.
+            final String queueId = SouthboundMqttIntake.queueId(adapterId, mapping.getTopic());
+            try {
+                FutureUtils.addExceptionLogger(
+                        southboundBrokerRuntime.clientQueuePersistence().clear(queueId, true));
+            } catch (final Exception failure) {
+                // Best effort, and never fatal: this runs on the manager's dispatch thread mid-teardown, where a
+                // throw would abandon the steps after it. A queue that survives is a leak, not a correctness fault.
+                log.warn("Failed to discard the southbound queue '{}' of adapter '{}'", queueId, adapterId, failure);
+            }
+        }
     }
 
     /** Builds the empty registry; the caller registers it with the scope and only then wires its mappings. */

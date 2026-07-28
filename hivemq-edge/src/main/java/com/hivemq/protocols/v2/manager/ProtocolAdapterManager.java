@@ -412,15 +412,15 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             // No wrapper to wind down, or it is already at rest — tear down now.
             handleRegistry.unregister(adapterId);
             adapter.close();
-            if (recreateAs != null) {
-                if (pendingRemovalMap.containsKey(adapterId)) {
-                    // A previous instance of this id is still stopping (its metrics and resources are live):
-                    // fold the recreate into the pending removal instead of building a colliding instance now.
-                    final PendingRemoval pending = pendingRemovalMap.get(adapterId);
-                    pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), recreateAs));
-                } else {
-                    createAdapter(recreateAs);
-                }
+            if (recreateAs == null) {
+                discardSouthboundQueues(adapter);
+            } else if (pendingRemovalMap.containsKey(adapterId)) {
+                // A previous instance of this id is still stopping (its metrics and resources are live):
+                // fold the recreate into the pending removal instead of building a colliding instance now.
+                final PendingRemoval pending = pendingRemovalMap.get(adapterId);
+                pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), recreateAs));
+            } else {
+                createAdapter(recreateAs);
             }
             return;
         }
@@ -509,6 +509,39 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                                     + exception.getMessage());
                 }
             }
+            return;
+        }
+        // Neither recreated nor rejected: the adapter is gone from the configuration. Nothing will ever consume its
+        // southbound queues again, and the broker's orphan cleanup no longer reclaims them, so do it here.
+        discardSouthboundQueues(pending.stopping());
+    }
+
+    /**
+     * Destroy the southbound command queues of an adapter that has been removed for good.
+     * <p>
+     * These queues are exempt from the broker's subscriber-absence cleanup, because that cleanup cannot tell a
+     * recreate's handoff window from a genuine orphan and would erase pending commands mid-handoff. The manager can
+     * tell the difference, so it owns the reclamation — and must, or a removed adapter's commands would sit in the
+     * store forever and be delivered to the device if an adapter with the same id and topic were ever configured
+     * again.
+     */
+    private void discardSouthboundQueues(final @NotNull ProtocolAdapterContainer discarded) {
+        final String adapterId = discarded.handle().adapterId();
+        final PendingRemoval pending = pendingRemovalMap.get(adapterId);
+        if (containerMap.containsKey(adapterId) || (pending != null && pending.recreateAs() != null)) {
+            // A backstop, not a live path: no route reaches this today. An id re-added while its previous instance is
+            // still stopping folds into that pending removal as a recreate target rather than becoming a second live
+            // instance, so both callers below have already excluded a successor. It is kept because the operation it
+            // guards is the only irreversible one on this page — queue ids are derived from the adapter id and the
+            // mapping topic, so a successor's queues are the SAME queues, and getting this wrong destroys the very
+            // commands the successor exists to deliver.
+            return;
+        }
+        try {
+            wrapperFactory.discardSouthboundQueues(discarded.appliedEntity());
+        } catch (final Exception failure) {
+            // A leaked queue is a leak, not a fault: never let it break the manager's dispatch thread.
+            log.warn("Failed to discard the southbound queues of removed v2 adapter '{}'", adapterId, failure);
         }
     }
 

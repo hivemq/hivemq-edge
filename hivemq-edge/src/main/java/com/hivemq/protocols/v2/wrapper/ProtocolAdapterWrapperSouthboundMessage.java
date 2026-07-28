@@ -80,7 +80,11 @@ public sealed interface ProtocolAdapterWrapperSouthboundMessage extends Protocol
      * @param tagName                the tag the read was issued for.
      * @param readToken              the token of the read being answered; a stale answer is ignored.
      * @param command                the leased command, or {@code null}.
-     * @param undeliverableCommandId the id of a leased publish that could not be translated, or {@code null}.
+     * @param undeliverableCommandId the id of a leased publish that cannot be delivered, or {@code null}.
+     * @param undeliverableReason    why it cannot be delivered — the operator's only record of a destroyed command,
+     *                               so it names the actual cause (an undecodable payload and a QoS 0 publish are
+     *                               different faults with different fixes). {@code null} unless
+     *                               {@code undeliverableCommandId} is set.
      * @param failure                why the read failed, or {@code null} when it did not.
      */
     record SouthboundRead(
@@ -88,6 +92,7 @@ public sealed interface ProtocolAdapterWrapperSouthboundMessage extends Protocol
             long readToken,
             @Nullable SouthboundCommand command,
             @Nullable String undeliverableCommandId,
+            @Nullable String undeliverableReason,
             @Nullable Throwable failure)
             implements ProtocolAdapterWrapperSouthboundMessage {}
 

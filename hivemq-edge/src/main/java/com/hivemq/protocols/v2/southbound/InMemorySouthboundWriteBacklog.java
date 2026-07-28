@@ -99,7 +99,7 @@ public final class InMemorySouthboundWriteBacklog implements SouthboundWriteBack
         synchronized (this) {
             head = closed ? null : pending.peekFirst();
         }
-        wrapperSender.tell(new SouthboundRead(tagName, readToken, head, null, null));
+        wrapperSender.tell(new SouthboundRead(tagName, readToken, head, null, null, null));
     }
 
     @Override

@@ -19,11 +19,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
+import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import java.util.List;
@@ -141,7 +144,49 @@ class SouthboundMqttIntakeTest {
         assertThat(clientQueue.pending(SHARE + "/cmd/setpoint")).isEqualTo(1); // durable contents untouched
     }
 
+    @Test
+    void aConstructorFailingPartway_leavesNoSubscriptionBehind() {
+        final ThrowingTopicTree throwingTree = new ThrowingTopicTree(2);
+        final SouthboundBrokerRuntime runtime = new SouthboundBrokerRuntime(throwingTree, new RecordingClientQueue());
+
+        assertThatThrownBy(() -> new SouthboundMqttIntake(
+                        ADAPTER_ID,
+                        runtime,
+                        dataPointFactory(),
+                        List.of(mapping("cmd/first", "setpoint"), mapping("cmd/second", "ramp-rate"))))
+                .isInstanceOf(IllegalStateException.class);
+
+        // The subscription registered before the failure must not survive it. The constructor never returns, so no
+        // reference to the half-built intake exists anywhere — nothing else could ever close it, and the leaked
+        // subscription would keep feeding a durable queue for an adapter that does not exist.
+        assertThat(throwingTree.getSharedSubscriber(SHARE, "cmd/first")).isEmpty();
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+    /** A real topic tree that refuses the n-th {@code addTopic}, to fail a construction partway through. */
+    private static final class ThrowingTopicTree extends LocalTopicTree {
+
+        private final int failOnAdd;
+        private int adds;
+
+        private ThrowingTopicTree(final int failOnAdd) {
+            super(new MetricsHolder(new MetricRegistry()));
+            this.failOnAdd = failOnAdd;
+        }
+
+        @Override
+        public boolean addTopic(
+                final @NotNull String subscriber,
+                final @NotNull Topic topic,
+                final byte flags,
+                final @Nullable String sharedName) {
+            if (++adds == failOnAdd) {
+                throw new IllegalStateException("scripted topic-tree failure");
+            }
+            return super.addTopic(subscriber, topic, flags, sharedName);
+        }
+    }
 
     private @NotNull SouthboundMqttIntake newIntake(final @NotNull SouthboundMappingEntity... mappings) {
         return new SouthboundMqttIntake(ADAPTER_ID, broker.runtime(), dataPointFactory(), List.of(mappings));

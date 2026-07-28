@@ -178,7 +178,11 @@ public final class SouthboundWritePlane implements AutoCloseable {
                 if (channel != null) {
                     channel.queue()
                             .onReadAnswer(
-                                    read.readToken(), read.command(), read.undeliverableCommandId(), read.failure());
+                                    read.readToken(),
+                                    read.command(),
+                                    read.undeliverableCommandId(),
+                                    read.undeliverableReason(),
+                                    read.failure());
                 }
             }
             case final SouthboundSize size -> {

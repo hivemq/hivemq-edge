@@ -523,6 +523,64 @@ class ProtocolAdapterManagerTest {
         assertThat(snapshot.lastErrorReason()).contains("NoClassDefFoundError");
     }
 
+    // Southbound command queues are exempt from the broker's subscriber-absence cleanup — that cleanup cannot tell a
+    // recreate's handoff window from a genuine orphan, and clearing there erases durable commands. The manager is the
+    // only thing that CAN tell the difference, so reclaiming those queues is its job, on exactly one of the two paths.
+    @Test
+    void aRemovedAdapterHasItsSouthboundQueuesDiscarded() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of()));
+        assertThat(wrapperFactory.discardedSouthboundQueueAdapterIds()).isEmpty(); // not yet — it is still stopping
+
+        fireWrapperStopped("a");
+
+        assertThat(wrapperFactory.discardedSouthboundQueueAdapterIds()).containsExactly("a");
+    }
+
+    @Test
+    void aRemovedAdapterThatWasAlreadyStopped_hasItsSouthboundQueuesDiscarded() {
+        send(new ConfigurationChanged(List.of(adapter("a").build()))); // snapshot starts STOPPED
+
+        send(new ConfigurationChanged(List.of()));
+
+        assertThat(wrapperFactory.discardedSouthboundQueueAdapterIds()).containsExactly("a");
+    }
+
+    @Test
+    void aRecreatedAdapterKeepsItsSouthboundQueues() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        // A connection-critical change: stop now, recreate on the stop ack. The queues are the handoff — discarding
+        // them here would destroy exactly the commands the successor exists to deliver.
+        send(new ConfigurationChanged(List.of(
+                adapter("a").adapterConfiguration(Map.of("changed", true)).build())));
+        fireWrapperStopped("a");
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(wrapperFactory.discardedSouthboundQueueAdapterIds()).isEmpty();
+    }
+
+    @Test
+    void anAdapterRemovedAndReAddedWhileStopping_keepsItsSouthboundQueues() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        // Removed, then re-added before the first instance finishes stopping. The re-add folds into the pending
+        // removal as a recreate target rather than becoming a second live instance — which is what keeps the queues
+        // safe here: both instances address the SAME queues (queue ids derive from the adapter id and the mapping
+        // topic), so a discard on the late stop ack would destroy the commands the new instance is there to deliver.
+        send(new ConfigurationChanged(List.of()));
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        fireWrapperStopped("a");
+
+        assertThat(wrapperFactory.discardedSouthboundQueueAdapterIds()).isEmpty();
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
     private void send(final @NotNull ProtocolAdapterManagerMessage message) {
         mailbox.tell(message);
         dispatcher.drainAll();
