@@ -171,8 +171,8 @@ class ClientQueueSouthboundWriteBacklogTest {
         // read. The sweep is the only way back.
         final PUBLISH stranded = publish(1, "a");
         fake.enqueue(stranded);
-        fake.strandLease(stranded);
         final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        fake.strandLease(stranded); // after construction — construction itself sweeps
         backlog.requestRead(1);
         assertThat(sender.reads.getFirst().command()).isNull(); // hidden
 
@@ -180,6 +180,24 @@ class ClientQueueSouthboundWriteBacklogTest {
         backlog.requestRead(2);
 
         assertThat(sender.reads.get(1).command()).isNotNull();
+    }
+
+    @Test
+    void constructionSweepsTheMarkers_soASuccessorInheritsACleanQueue() {
+        // A marker is what makes a command invisible: reads skip marked entries. Markers are cleared when a command
+        // is deleted, or by close()'s sweep — neither of which covers one applied AFTER that sweep, which is what a
+        // read still in flight at teardown does. The delivery side cannot recover it either: its own reads skip the
+        // entry, and its depth cross-check only arms after three consecutive EMPTY reads, which a queue holding
+        // other commands never produces. Sweeping at construction makes the successor's starting state clean
+        // however its predecessor ended.
+        final PUBLISH orphaned = publish(1, "a");
+        fake.enqueue(orphaned);
+        fake.strandLease(orphaned); // a marker left behind by whatever ran before us
+
+        final ClientQueueSouthboundWriteBacklog backlog = newBacklog();
+        backlog.requestRead(1);
+
+        assertThat(sender.reads.getFirst().command()).isNotNull();
     }
 
     @Test

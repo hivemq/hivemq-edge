@@ -114,6 +114,19 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
         this.tagName = tagName;
         this.wrapperSender = wrapperSender;
         clientQueuePersistence.addPublishAvailableCallback(ignored -> tell(new SouthboundArrival(tagName)), queueId);
+        // Start from a queue with no in-flight markers on it. A marker is what makes a command invisible — reads
+        // skip marked entries — and it is removed either when the command is deleted or by the sweep in close().
+        // Neither covers a marker applied AFTER that sweep: a read submitted before teardown can reach the store's
+        // single writer behind it, mark its entry, and answer into a mailbox nobody drains. Nothing owns that
+        // marker afterwards, and the delivery side cannot find it to release it — its own reads skip it, and its
+        // depth cross-check only arms after three consecutive EMPTY reads, which a queue with other commands in it
+        // never produces. The command would stay invisible until this Edge restarts.
+        //
+        // Sweeping here closes that regardless of how the predecessor ended: whoever comes next starts clean. It is
+        // safe for the same reason close()'s sweep is — this synthetic shared queue has exactly one consumer, and
+        // the previous one is fully closed before a successor is built. It also nudges the broker to re-announce
+        // what the queue holds, so a recreated adapter picks up immediately rather than on its first backstop poll.
+        releaseMarkers();
     }
 
     @Override
