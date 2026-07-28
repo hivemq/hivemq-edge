@@ -16,6 +16,6 @@ export const useGetAllBehaviorPolicies = ({ fields, policyIds, clientIds }: GetA
   return usePaginatedList<BehaviorPolicy>(
     [DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES, fields, policyIds, clientIds],
     (cursor) =>
-      appClient.dataHubBehaviorPolicies.getAllBehaviorPolicies(fields, policyIds, clientIds, undefined, cursor)
+      appClient.dataHubBehaviorPolicies.getAllBehaviorPolicies(fields, policyIds, clientIds, 500, cursor)
   )
 }

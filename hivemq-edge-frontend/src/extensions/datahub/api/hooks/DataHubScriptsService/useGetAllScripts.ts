@@ -14,6 +14,6 @@ export const useGetAllScripts = ({ fields, functionTypes, scriptIds }: GetAllScr
   // The listing is cursor-paginated; fetch every page so items beyond the first page
   // (default size 50) are not hidden from the UI. See EDG-844.
   return usePaginatedList<Script>([DATAHUB_QUERY_KEYS.SCRIPTS, fields, functionTypes, scriptIds], (cursor) =>
-    appClient.dataHubScripts.getAllScripts(fields, functionTypes, scriptIds, undefined, cursor)
+    appClient.dataHubScripts.getAllScripts(fields, functionTypes, scriptIds, 500, cursor)
   )
 }

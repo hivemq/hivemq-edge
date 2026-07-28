@@ -8,6 +8,6 @@ export const useGetAllSchemas = () => {
   // The listing is cursor-paginated; fetch every page so items beyond the first page
   // (default size 50) are not hidden from the UI. See EDG-844.
   return usePaginatedList<PolicySchema>([DATAHUB_QUERY_KEYS.SCHEMAS], (cursor) =>
-    appClient.dataHubSchemas.getAllSchemas(undefined, undefined, undefined, undefined, cursor)
+    appClient.dataHubSchemas.getAllSchemas(undefined, undefined, undefined, 500, cursor)
   )
 }

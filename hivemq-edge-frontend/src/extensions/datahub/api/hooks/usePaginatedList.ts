@@ -43,19 +43,19 @@ export const extractCursor = (next: string | undefined): string | undefined => {
  * @param fetchPage Fetches one page for the given cursor (`undefined` = first page).
  */
 export const usePaginatedList = <T>(queryKey: QueryKey, fetchPage: (cursor?: string) => Promise<PaginatedList<T>>) => {
-  const query = useInfiniteQuery<PaginatedList<T>, ApiError, { items: Array<T> }>({
+  const query = useInfiniteQuery<PaginatedList<T>, ApiError, { items: Array<T> }, QueryKey, string | undefined>({
     queryKey,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => fetchPage(pageParam as string | undefined),
+    initialPageParam: undefined,
+    queryFn: ({ pageParam }) => fetchPage(pageParam),
     getNextPageParam: (lastPage) => extractCursor(lastPage._links?.next),
     // Flatten every fetched page back into the single `{ items }` shape callers expect.
     select: (data) => ({ items: data.pages.flatMap((page) => page.items ?? []) }),
   })
 
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query
+  const { hasNextPage, isFetchingNextPage, fetchNextPage, isError } = query
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+    if (hasNextPage && !isFetchingNextPage && !isError) void fetchNextPage()
+  }, [hasNextPage, isFetchingNextPage, isError, fetchNextPage])
 
   return query
 }

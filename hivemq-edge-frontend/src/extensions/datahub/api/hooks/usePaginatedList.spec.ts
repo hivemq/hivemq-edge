@@ -54,7 +54,9 @@ describe('usePaginatedList', () => {
     )
 
     // All pages fetched: hook stops paging once `_links.next` is absent.
-    await waitFor(() => expect(result.current.hasNextPage).toBeFalsy())
+    await waitFor(() =>
+      expect(result.current.data?.items.map((s) => s.id)).toStrictEqual(['page1-a', 'page1-b', 'page2-a'])
+    )
     await waitFor(() => expect(result.current.isFetching).toBeFalsy())
 
     expect(result.current.data?.items.map((s) => s.id)).toStrictEqual(['page1-a', 'page1-b', 'page2-a'])
