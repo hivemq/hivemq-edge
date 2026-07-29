@@ -24,6 +24,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -43,14 +44,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
     public static final @NotNull String TEST_UUID = "b12776f9-bf9f-460a-9984-89c5ac1ea724";
-    public static final byte @NotNull [] TEST_BYTES = {1, 2, 3, 4, 5};
+    private static final byte @NotNull [] TEST_BYTES = {1, 2, 3, 4, 5};
 
     private static @NotNull Stream<Arguments> provideBaseTypes() {
         return Stream.of(
                 Arguments.of("Boolean", NodeIds.Boolean, true, "true"),
                 Arguments.of("Byte", NodeIds.Byte, 0, "0"),
                 Arguments.of("Byte", NodeIds.Byte, 255, "255"),
-                Arguments.of("ByteString", NodeIds.ByteString, new ByteString(TEST_BYTES), new String(TEST_BYTES)),
+                Arguments.of(
+                        "ByteString",
+                        NodeIds.ByteString,
+                        new ByteString(TEST_BYTES),
+                        new String(TEST_BYTES, StandardCharsets.UTF_8)),
                 Arguments.of(
                         "DateTime",
                         NodeIds.DateTime,

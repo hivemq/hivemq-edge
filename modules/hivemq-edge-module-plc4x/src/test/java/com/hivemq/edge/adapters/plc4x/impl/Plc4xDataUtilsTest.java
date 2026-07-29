@@ -53,8 +53,8 @@ public class Plc4xDataUtilsTest {
 
     @Test
     public void whenConvertBool_thenReturnBool() {
-        assertEquals(Boolean.FALSE, convertObject(new PlcBOOL(false)));
-        assertEquals(Boolean.TRUE, convertObject(new PlcBOOL(true)));
+        assertEquals(false, convertObject(new PlcBOOL(false)));
+        assertEquals(true, convertObject(new PlcBOOL(true)));
     }
 
     @Test

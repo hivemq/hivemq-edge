@@ -19,7 +19,7 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
-public class DataPointImpl implements DataPoint {
+public final class DataPointImpl implements DataPoint {
     private final @NotNull Object tagValue;
     private final @NotNull String tagName;
     private final boolean treatAsJson;
@@ -54,6 +54,7 @@ public class DataPointImpl implements DataPoint {
         return tagName;
     }
 
+    @Override
     public @NotNull String getAdapterId() {
         return adapterId;
     }
@@ -65,8 +66,7 @@ public class DataPointImpl implements DataPoint {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final DataPointImpl dataPoint = (DataPointImpl) o;
+        if (!(o instanceof final DataPointImpl dataPoint)) return false;
         return treatAsJson == dataPoint.treatAsJson
                 && Objects.equals(getTagValue(), dataPoint.getTagValue())
                 && Objects.equals(getTagName(), dataPoint.getTagName())

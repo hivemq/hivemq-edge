@@ -31,11 +31,11 @@ import org.jetbrains.annotations.NotNull;
 
 public class DataPointWithMetadata implements DataPoint {
     private final @NotNull ObjectNode jsonNode;
-    private final @NotNull String adapterID;
+    private final @NotNull String adapterId;
 
-    public DataPointWithMetadata(final @NotNull ObjectNode jsonNode, final @NotNull String adapterID) {
+    public DataPointWithMetadata(final @NotNull ObjectNode jsonNode, final @NotNull String adapterId) {
         this.jsonNode = jsonNode;
-        this.adapterID = adapterID;
+        this.adapterId = adapterId;
     }
 
     public static <R> @NotNull DataPointBuilder<R> builder(
@@ -47,7 +47,7 @@ public class DataPointWithMetadata implements DataPoint {
 
     @Override
     public @NotNull String getAdapterId() {
-        return adapterID;
+        return adapterId;
     }
 
     @Override

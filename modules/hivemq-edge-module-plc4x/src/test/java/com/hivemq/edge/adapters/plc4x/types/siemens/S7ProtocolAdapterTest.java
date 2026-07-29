@@ -19,14 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -115,13 +112,6 @@ public class S7ProtocolAdapterTest {
         @Override
         public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
             return super.createTagAddressForSubscription(tag);
-        }
-    }
-
-    private static class S7TestSub extends Plc4xToMqttMapping {
-
-        public S7TestSub() {
-            super("mqttTopic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, "tag", List.of());
         }
     }
 }

@@ -38,6 +38,8 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
+    // hivemq-edge config entities are JAXB annotated; javac needs the annotation types to read their class files
+    testCompileOnly(libs.jaxb4.bind)
     testImplementation(libs.apache.commons.io)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")

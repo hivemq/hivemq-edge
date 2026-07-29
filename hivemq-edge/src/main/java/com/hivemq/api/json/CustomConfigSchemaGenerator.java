@@ -31,8 +31,8 @@ import com.github.victools.jsonschema.generator.SchemaGeneratorConfigBuilder;
 import com.github.victools.jsonschema.generator.SchemaGeneratorConfigPart;
 import com.github.victools.jsonschema.generator.SchemaVersion;
 import com.github.victools.jsonschema.generator.TypeScope;
-import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
+import com.github.victools.jsonschema.module.jackson.JacksonSchemaModule;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.annotations.MutuallyExclusiveFields;
 import java.math.BigDecimal;
@@ -60,7 +60,7 @@ public class CustomConfigSchemaGenerator {
     public @NotNull JsonNode generateJsonSchema(final @NotNull Class clazz) {
         SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
                         SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
-                .with(new JacksonModule(
+                .with(new JacksonSchemaModule(
                         JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
                         JacksonOption.INCLUDE_ONLY_JSONPROPERTY_ANNOTATED_METHODS,
                         JacksonOption.RESPECT_JSONPROPERTY_ORDER))
