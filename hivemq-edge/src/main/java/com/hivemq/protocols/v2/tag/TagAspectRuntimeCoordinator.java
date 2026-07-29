@@ -213,12 +213,12 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
                 // northbound and recorded as a per-tag failure. Feeding it into NodeFailed instead would
                 // misread a data-quality problem as a transport failure and churn re-subscriptions or
                 // re-verifications forever on a perfectly healthy device.
-                if (tagRuntime.onValue(value)) {
+                if (tagRuntime.onValue(value, completesPoll)) {
                     tagRuntime.recordReadConformanceFailure("declared-schema violation: " + violation);
                 }
                 return null;
             }
-            if (tagRuntime.onValue(value)) {
+            if (tagRuntime.onValue(value, completesPoll)) {
                 return DataPointStamping.stamp(value, tagRuntime.pair().tag(), adapterId);
             }
         }
