@@ -105,7 +105,10 @@ final class RecordingOutput implements ProtocolAdapterOutput {
     }
 
     @Override
-    public void writeResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+    public void writeResult(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
+        // The attempt id correlates a result with the write the framework stamped it on; this adapter does not
+        // multiplex writes, so the recorded event stays keyed by node alone.
         events.add("writeResult node=" + node.nodeId() + " success=" + success);
     }
 
