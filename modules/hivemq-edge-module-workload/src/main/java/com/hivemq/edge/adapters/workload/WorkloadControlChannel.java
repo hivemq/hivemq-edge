@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.workload;
 
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
@@ -587,7 +588,8 @@ public final class WorkloadControlChannel {
             case "writeresult" -> {
                 final Resolved r = resolveNode(a[2]);
                 journal("EMIT writeresult node=" + a[2] + " ok=" + a[3] + " resolved=" + r.resolved());
-                output.writeResult(r.node(), Boolean.parseBoolean(a[3]), null);
+                // Injected from the control channel, not answering a tracked write: deliberately uncorrelated.
+                output.writeResult(r.node(), WriteEntry.UNCORRELATED, Boolean.parseBoolean(a[3]), null);
             }
             default -> {
                 log.warn("WL_CTL unknown emit id={}: {}", adapterId, String.join(" ", a));

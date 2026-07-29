@@ -332,7 +332,6 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                         ProtocolAdapterConfigDiffUtils.reTargetedWriteMappedTags(running, updated),
                         ProtocolAdapterConfigSupport.pollIntervalMillisOf(updated)));
         existing.updateNorthboundMappings(updated.getNorthboundMappings());
-        existing.updateSouthboundMappings(updated.getSouthboundMappings(), nodes);
         if (ProtocolAdapterConfigDiffUtils.adapterDirectionChanged(running, updated)) {
             // The tag-set update does not carry the adapter direction goal; re-assert the config-declared goal when
             // it changed too. Still never reconnects.

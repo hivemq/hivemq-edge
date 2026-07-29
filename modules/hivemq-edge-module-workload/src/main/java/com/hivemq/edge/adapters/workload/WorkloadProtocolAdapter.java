@@ -309,7 +309,8 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
             output.verifyResult(new WorkloadNode("ghost"), new VerifyOutcome.Success()); // verifyResult, no verifyBatch
             output.dataPoint(
                     new WorkloadNode("ghost"), new WorkloadDataPoint("ghost", 42)); // dataPoint for an unknown node
-            output.writeResult(new WorkloadNode("ghost"), true, null); // writeResult, no write pending
+            // A deliberately spurious result: there is no write pending, so it carries no correlation.
+            output.writeResult(new WorkloadNode("ghost"), WriteEntry.UNCORRELATED, true, null);
             return;
         }
         switch (scenario.connect()) {
@@ -618,9 +619,12 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
                     switch (fault.write()) {
                         case "fail" ->
                             () -> output.writeResult(
-                                    entry.node(), false, reason(fault, "workload: write failed (scenario)"));
+                                    entry.node(),
+                                    entry.attemptId(),
+                                    false,
+                                    reason(fault, "workload: write failed (scenario)"));
                         case "no-response" -> null; // emit nothing — leave the write aspect awaiting a result
-                        default -> () -> output.writeResult(entry.node(), true, null);
+                        default -> () -> output.writeResult(entry.node(), entry.attemptId(), true, null);
                     };
             if (emission != null) {
                 // per-node gate: "hold write <node>" must match, like every other node-scoped op — the op-only
