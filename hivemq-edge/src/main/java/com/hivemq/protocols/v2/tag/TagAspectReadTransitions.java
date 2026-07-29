@@ -73,11 +73,12 @@ public final class TagAspectReadTransitions {
                     aspect.requestPoll();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT;
                 })
-                // A completing value — a single dataPoint — publishes and ends the poll: schedule the next poll.
+                // A completing value — a single dataPoint — publishes and ends the poll successfully: clear the
+                // stalled-poll escalation and schedule the next poll (EDG-824 #15).
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.ValueReceived.class)
                 .when(completesPoll)
                 .then((current, event, aspect) -> {
-                    aspect.scheduleNextPoll();
+                    aspect.onPollSucceeded();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
                 })
                 // A non-terminating value — a dataPoints value — publishes and keeps collecting; a poll may produce

@@ -337,7 +337,9 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
         assertThat(harness.readState("temperature")).isEqualTo("SUBSCRIBED");
         assertThat(count(harness, "verifyBatch")).isEqualTo(1);
 
-        harness.advance(1); // the spontaneous loss power-cycles the aspect through verification
+        harness.advance(1); // the spontaneous loss arrives in the DATA band, below TICK: it is processed after this
+        // tick's batch dispatch, so the power cycle's batched REMOVESUB + re-verify ride the next tick's dispatch
+        harness.advance(1);
         assertThat(count(harness, "verifyBatch")).isEqualTo(2); // re-verified (contrast with S10)
     }
 
