@@ -57,9 +57,12 @@ import org.slf4j.LoggerFactory;
  * in-memory: the Xodus client queue writes the packet id into the store. What clears it is the successor process's
  * bootstrap, which resets every shared-queue marker on load; that is the step the at-least-once argument actually
  * rests on, so a persistence implementation that skipped it would strand every leased head across a restart.
- * QoS ≥ 1 is the durability precondition, and it is <b>enforced</b>: a QoS 0 command is at-most-once by broker
- * semantics — this read hands it out and removes it in one step, leaving nothing to redeliver — so it is refused
- * here and dead-lettered rather than executed under a guarantee that does not hold for it.
+ * QoS ≥ 1 is the durability precondition, and QoS 0 is the documented exception: such a command is at-most-once by
+ * broker semantics — this read hands it out and <b>removes</b> it in one step, leaving nothing to redeliver — so it
+ * is delivered <b>best-effort</b>, outside every guarantee this class otherwise provides, rather than refused. A
+ * command Edge can execute probably should be executed; but the delivery side is then holding the only copy, in
+ * memory, so each one is logged at WARN as the operator's only notice that it will not survive an unready adapter,
+ * an abandoned write, or a restart.
  * <p>
  * <b>Nothing here needs to be lossless.</b> An earlier design carried a recovery ladder — remembered wakeups,
  * evidence flags, one-shot latches — because the broker's publish-available callback is edge-triggered: it fires
@@ -69,8 +72,8 @@ import org.slf4j.LoggerFactory;
  * synchronous-throw handling: a throw at submission is reported as a failed read and retried, exactly like a
  * failed future.
  * <p>
- * An <b>undeliverable</b> publish — untranslatable (the {@link SouthboundPublishTranslator} returns {@code null} or
- * throws), or published at QoS 0 — is <b>reported with its reason</b>, not deleted here: the answer names it, and
+ * An <b>undeliverable</b> publish — untranslatable, meaning the {@link SouthboundPublishTranslator} returned
+ * {@code null} or threw — is <b>reported with its reason</b>, not deleted here: the answer names it, and
  * the delivery side dead-letters it beside every other disposition. Recognizing one is a pure function and can run
  * wherever the answer is built; deciding a command's fate is not, and belongs on the one thread that owns that
  * decision.
