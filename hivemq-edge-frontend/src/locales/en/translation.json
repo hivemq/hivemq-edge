@@ -748,7 +748,12 @@
           "close": "Close"
         },
         "label": "Current schema",
-        "helper": "This schema will be a valid source for data transformation"
+        "helper": "This schema will be a valid source for data transformation",
+        "labelRead": "Read schema",
+        "labelWrite": "Write schema",
+        "helperRead": "The data published for this tag. A valid source for data transformation.",
+        "helperWrite": "The shape of a write to this tag. Whether an individual field can be written is shown per field.",
+        "identical": "Reading and writing this tag use the same schema."
       }
     },
     "errors": {

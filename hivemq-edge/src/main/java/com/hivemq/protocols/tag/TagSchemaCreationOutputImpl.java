@@ -56,6 +56,20 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     /**
+     * The composed schema as a future, in the read (northbound) direction.
+     *
+     * @deprecated retained for source compatibility with callers outside this repository (e.g. the commercial
+     *     bidirectional adapter and the integration tests in hivemq-edge-test). Use
+     *     {@link #getSchema(Direction)} instead, which makes the direction explicit. Note this returns the READ
+     *     schema, which is what this method always produced.
+     */
+    @Deprecated(forRemoval = true)
+    public @NotNull CompletableFuture<ObjectNode> getFuture() {
+        return future.thenApply(
+                tagSchemas -> SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(readSchema(tagSchemas)));
+    }
+
+    /**
      * Resolves the produced schema, selects the schema for the requested direction, and renders it as a
      * JSON Schema document.
      * <p>

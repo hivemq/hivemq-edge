@@ -35,7 +35,9 @@ const MappingEditor: FC<MappingEditorProps> = ({
   ...props
 }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading, isError, error, isSuccess } = useGetSchema(adapterId, topic)
+  // The properties listed here are the destination of a southbound mapping, i.e. what the user may write to.
+  // The WRITE schema contains only those, so the list no longer has to mark most entries as read-only.
+  const { data, isLoading, isError, error, isSuccess } = useGetSchema(adapterId, topic, 'WRITE')
 
   const properties = useMemo(() => {
     const allProperties = data ? getPropertyListFrom(data) : []

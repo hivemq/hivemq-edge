@@ -658,12 +658,14 @@ export class ProtocolAdaptersService {
      * Get a json schema that explains the json schema that represents the tag with the provided name."
      * @param adapterId The id of the adapter for which the Json Schema should be retrieved.
      * @param tagName The tag name (urlencoded) for which the Json Schema should be retrieved.
+     * @param direction The direction of the schema to retrieve. WRITE returns the southbound schema describing only what can be written to the tag (read-only fields omitted). When omitted, the northbound schema describing the full data shape published for the tag is returned.
      * @returns JsonNode Success
      * @throws ApiError
      */
     public getSchema(
         adapterId: string,
         tagName: string,
+        direction?: 'READ' | 'WRITE',
     ): CancelablePromise<JsonNode> {
         return this.httpRequest.request({
             method: 'GET',
@@ -671,6 +673,9 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterId': adapterId,
                 'tagName': tagName,
+            },
+            query: {
+                'direction': direction,
             },
             errors: {
                 404: `Adapter not found`,

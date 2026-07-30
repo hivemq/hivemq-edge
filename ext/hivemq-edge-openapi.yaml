@@ -4646,7 +4646,7 @@ paths:
           schema:
             type: string
             format: urlencoded
-        - description: The direction of the schema to retrieve. READ (default) returns the northbound schema describing the full data shape published for the tag; WRITE returns the southbound schema describing only what can be written to the tag (read-only fields omitted).
+        - description: The direction of the schema to retrieve. WRITE returns the southbound schema describing only what can be written to the tag (read-only fields omitted). When omitted, the northbound schema describing the full data shape published for the tag is returned.
           in: query
           name: direction
           required: false
@@ -4655,7 +4655,6 @@ paths:
             enum:
               - READ
               - WRITE
-            default: READ
       responses:
         '200':
           content:

@@ -1,5 +1,6 @@
 import type { JSONSchema7 } from 'json-schema'
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Box,
@@ -29,14 +30,23 @@ interface TagSchemaPanelProps {
 }
 
 export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
-  const { data, isLoading, isError } = useGetSchema(adapterId, tag.name)
+  // This panel is pure inspection, so it shows both directions. They are usually the same for a plain value
+  // tag; they differ when a tag's write shape is not a projection of its read shape (e.g. a condition tag).
+  const { data: readSchema, isLoading: isLoadingRead, isError: isErrorRead } = useGetSchema(adapterId, tag.name)
+  const { data: writeSchema, isLoading: isLoadingWrite } = useGetSchema(adapterId, tag.name, 'WRITE')
   const { t } = useTranslation()
 
+  const isLoading = isLoadingRead || isLoadingWrite
+  const areIdentical = useMemo(
+    () => Boolean(readSchema && writeSchema && JSON.stringify(readSchema) === JSON.stringify(writeSchema)),
+    [readSchema, writeSchema]
+  )
+
   const handleSchemaDownload = () => {
-    if (!data) return
+    if (!readSchema) return
 
     // TODO[NVL] This should be transformed into an async method (react-query type) with error management and testing
-    downloadJSON<JSONSchema7>(data.title || 'topic-untitled', data)
+    downloadJSON<JSONSchema7>(readSchema.title || 'topic-untitled', readSchema)
   }
 
   return (
@@ -50,18 +60,32 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
       <CardBody>
         {isLoading && <LoaderSpinner />}
 
-        {isError && <ErrorMessage message={t('device.errors.noSchemaLoaded')} />}
-        {data && (
-          <FormControl isInvalid={isError} data-testid="tag-schema-panel" id="tag-schema-panel">
-            <FormLabel>{t('device.drawer.schema.label')}</FormLabel>
-            <Box borderWidth={1} p={2}>
-              <JsonSchemaBrowser schema={data} hasExamples />
+        {isErrorRead && <ErrorMessage message={t('device.errors.noSchemaLoaded')} />}
+        {!isLoading && readSchema && (
+          <FormControl isInvalid={isErrorRead} data-testid="tag-schema-panel" id="tag-schema-panel">
+            <FormLabel>
+              {areIdentical ? t('device.drawer.schema.label') : t('device.drawer.schema.labelRead')}
+            </FormLabel>
+            <Box borderWidth={1} p={2} data-testid="tag-schema-read">
+              <JsonSchemaBrowser schema={readSchema} hasExamples />
             </Box>
-            <FormHelperText>{t('device.drawer.schema.helper')}</FormHelperText>
+            <FormHelperText>
+              {areIdentical ? t('device.drawer.schema.identical') : t('device.drawer.schema.helperRead')}
+            </FormHelperText>
+          </FormControl>
+        )}
+
+        {!isLoading && !areIdentical && writeSchema && (
+          <FormControl mt={4} data-testid="tag-schema-panel-write" id="tag-schema-panel-write">
+            <FormLabel>{t('device.drawer.schema.labelWrite')}</FormLabel>
+            <Box borderWidth={1} p={2} data-testid="tag-schema-write">
+              <JsonSchemaBrowser schema={writeSchema} hasExamples />
+            </Box>
+            <FormHelperText>{t('device.drawer.schema.helperWrite')}</FormHelperText>
           </FormControl>
         )}
       </CardBody>
-      {data && (
+      {readSchema && (
         <CardFooter>
           <ButtonGroup>
             <Button data-testid="tag-schema-download" onClick={handleSchemaDownload}>

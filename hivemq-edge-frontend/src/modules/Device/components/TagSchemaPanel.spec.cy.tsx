@@ -22,12 +22,46 @@ describe('TagSchemaPanel', () => {
       cy.get('label').should('have.text', 'Current schema')
       cy.get('h3').should('have.text', 'test')
       cy.get('[role="list"] li').should('length', 8)
-      cy.get('#tag-schema-panel-helptext').should(
-        'have.text',
-        'This schema will be a valid source for data transformation'
-      )
+      cy.get('#tag-schema-panel-helptext').should('have.text', 'Reading and writing this tag use the same schema.')
     })
     cy.getByTestId('tag-schema-download').should('have.text', 'Download the schema').should('not.be.disabled')
+  })
+
+  it('should show a single schema when reading and writing are identical', () => {
+    cy.mountWithProviders(<TagSchemaPanel adapterId="test" tag={mocTag} />)
+
+    // Both directions return the same mock, so only the read panel is rendered.
+    cy.getByTestId('tag-schema-read').should('be.visible')
+    cy.getByTestId('tag-schema-panel-write').should('not.exist')
+    cy.getByTestId('tag-schema-panel').find('label').should('have.text', 'Current schema')
+  })
+
+  it('should show both schemas when reading and writing differ', () => {
+    // A tag whose write shape is not a projection of its read shape, e.g. an OPC-UA condition tag.
+    // The read request carries no `direction` (it is the default), so only WRITE needs its own intercept;
+    // reads fall through to the wildcard registered in beforeEach.
+    cy.intercept(
+      { method: 'GET', pathname: '**/protocol-adapters/schema/**', query: { direction: 'WRITE' } },
+      GENERATE_DATA_MODELS(true, 'writeModel')
+    )
+
+    cy.mountWithProviders(<TagSchemaPanel adapterId="test" tag={mocTag} />)
+
+    cy.getByTestId('tag-schema-panel').within(() => {
+      cy.get('label').should('have.text', 'Read schema')
+      cy.get('#tag-schema-panel-helptext').should(
+        'have.text',
+        'The data published for this tag. A valid source for data transformation.'
+      )
+    })
+
+    cy.getByTestId('tag-schema-panel-write').within(() => {
+      cy.get('label').should('have.text', 'Write schema')
+      cy.get('#tag-schema-panel-write-helptext').should(
+        'have.text',
+        'The shape of a write to this tag. Whether an individual field can be written is shown per field.'
+      )
+    })
   })
 
   it('should be accessible', () => {
