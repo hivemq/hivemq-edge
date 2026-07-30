@@ -23,29 +23,25 @@ import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 
 class TagSchemaCreationOutputImplSchemaBuilderTest {
 
     @Test
-    void test_tagSchemaBuilder_build_completesTheFuture()
-            throws ExecutionException, InterruptedException, TimeoutException {
+    void test_tagSchemaBuilder_build_completesTheFuture() throws ExecutionException, InterruptedException {
         final var output = new TagSchemaCreationOutputImpl();
 
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
                 new SchemaBuilder().scalar(ScalarType.LONG).title("RPM").build(), null, null));
 
-        final JsonNode result = output.getFuture().get(1, TimeUnit.SECONDS);
+        final JsonNode result = output.getSchema(TagSchemaCreationOutputImpl.Direction.READ);
         assertThat(result).isNotNull();
         assertThat(result.get("properties").get("value").get("type").asText()).isEqualTo("integer");
         assertThat(result.get("properties").get("value").get("title").asText()).isEqualTo("RPM");
     }
 
     @Test
-    void test_tagSchemaBuilder_object_completesWithJsonSchema()
-            throws ExecutionException, InterruptedException, TimeoutException {
+    void test_tagSchemaBuilder_object_completesWithJsonSchema() throws ExecutionException, InterruptedException {
         final var output = new TagSchemaCreationOutputImpl();
 
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
@@ -64,7 +60,7 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
                 null,
                 null));
 
-        final JsonNode result = output.getFuture().get(1, TimeUnit.SECONDS);
+        final JsonNode result = output.getSchema(TagSchemaCreationOutputImpl.Direction.READ);
         System.out.println(result);
         assertThat(result.get("type").asText()).isEqualTo("object");
         assertThat(result.get("properties").get("value").get("properties").has("temperature"))
@@ -73,6 +69,104 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
                 .isTrue();
         assertThat(result.get("properties").get("value").get("required").get(0).asText())
                 .isEqualTo("temperature");
+    }
+
+    @Test
+    void test_writeSchema_dropsTheNonWritableEnvelope() throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                new SchemaBuilder().scalar(ScalarType.LONG).title("RPM").build(),
+                new SchemaBuilder()
+                        .startObject()
+                        .property("unit")
+                        .scalar(ScalarType.STRING)
+                        .endObject()
+                        .build(),
+                null));
+
+        final JsonNode result = output.getSchema(TagSchemaCreationOutputImpl.Direction.WRITE);
+
+        // Only the value survives; tagName / timestamp / metadata can never be written.
+        final JsonNode properties = result.get("properties");
+        assertThat(properties.has("value")).isTrue();
+        assertThat(properties.has("tagName")).isFalse();
+        assertThat(properties.has("timestamp")).isFalse();
+        assertThat(properties.has("metadata")).isFalse();
+        assertThat(properties.get("value").get("type").asText()).isEqualTo("integer");
+    }
+
+    @Test
+    void test_readSchema_keepsTheEnvelope() throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                new SchemaBuilder().scalar(ScalarType.LONG).build(),
+                new SchemaBuilder()
+                        .startObject()
+                        .property("unit")
+                        .scalar(ScalarType.STRING)
+                        .endObject()
+                        .build(),
+                null));
+
+        final JsonNode properties =
+                output.getSchema(TagSchemaCreationOutputImpl.Direction.READ).get("properties");
+
+        // The read direction observes the full data shape — the counterpart to the write test above.
+        assertThat(properties.has("value")).isTrue();
+        assertThat(properties.has("tagName")).isTrue();
+        assertThat(properties.has("timestamp")).isTrue();
+        assertThat(properties.has("metadata")).isTrue();
+    }
+
+    @Test
+    void test_writeSchema_explicitWriteSchemaIsUsedInsteadOfTheValue() throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+
+        // A tag whose write shape is not a projection of its read shape — e.g. an OPC-UA condition tag, whose
+        // northbound shape is the alarm event but whose write target is {eventId, method, comment}.
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                new SchemaBuilder()
+                        .startObject()
+                        .property("active")
+                        .scalar(ScalarType.BOOLEAN)
+                        .property("severity")
+                        .scalar(ScalarType.LONG)
+                        .endObject()
+                        .build(),
+                null,
+                null,
+                new SchemaBuilder()
+                        .startObject()
+                        .property("eventId")
+                        .required()
+                        .scalar(ScalarType.STRING)
+                        .property("method")
+                        .required()
+                        .scalar(ScalarType.LONG)
+                        .property("comment")
+                        .scalar(ScalarType.STRING)
+                        .endObject()
+                        .build()));
+
+        final JsonNode writeValue = output.getSchema(TagSchemaCreationOutputImpl.Direction.WRITE)
+                .get("properties")
+                .get("value");
+
+        assertThat(writeValue.get("properties").has("eventId")).isTrue();
+        assertThat(writeValue.get("properties").has("method")).isTrue();
+        assertThat(writeValue.get("properties").has("comment")).isTrue();
+        // The read-side value shape must not leak into the write direction.
+        assertThat(writeValue.get("properties").has("active")).isFalse();
+        assertThat(writeValue.get("properties").has("severity")).isFalse();
+
+        // ...while the read direction still shows the alarm-event shape.
+        final JsonNode readValue = output.getSchema(TagSchemaCreationOutputImpl.Direction.READ)
+                .get("properties")
+                .get("value");
+        assertThat(readValue.get("properties").has("active")).isTrue();
+        assertThat(readValue.get("properties").has("eventId")).isFalse();
     }
 
     @Test
@@ -86,14 +180,13 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
     }
 
     @Test
-    void test_tagSchemaBuilder_statusRemainsSuccess()
-            throws ExecutionException, InterruptedException, TimeoutException {
+    void test_tagSchemaBuilder_statusRemainsSuccess() throws ExecutionException, InterruptedException {
         final var output = new TagSchemaCreationOutputImpl();
 
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
                 new SchemaBuilder().scalar(ScalarType.BOOLEAN).build(), null, null));
 
-        output.getFuture().get(1, TimeUnit.SECONDS);
+        output.getSchema(TagSchemaCreationOutputImpl.Direction.READ);
         assertThat(output.getStatus()).isEqualTo(TagSchemaCreationOutputImpl.Status.SUCCESS);
     }
 }

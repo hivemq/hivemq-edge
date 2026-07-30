@@ -451,7 +451,8 @@ class SimulationProtocolAdapterTest {
         final TagSchemaCreationOutputImpl output = new TagSchemaCreationOutputImpl();
         simulationProtocolAdapter.createTagSchema(new TagSchemaCreationInputImpl("does-not-exist"), output);
 
-        assertThatThrownBy(() -> output.getFuture().get()).isInstanceOf(ExecutionException.class);
+        assertThatThrownBy(() -> output.getSchema(TagSchemaCreationOutputImpl.Direction.READ))
+                .isInstanceOf(ExecutionException.class);
         assertThat(output.getStatus()).isEqualTo(TagSchemaCreationOutputImpl.Status.UNSPECIFIED_FAILURE);
         assertThat(output.getMessage()).contains("does-not-exist");
     }
@@ -517,7 +518,7 @@ class SimulationProtocolAdapterTest {
     private @NotNull ObjectNode resolveSchema(final @NotNull String tagName) throws Exception {
         final TagSchemaCreationOutputImpl output = new TagSchemaCreationOutputImpl();
         simulationProtocolAdapter.createTagSchema(new TagSchemaCreationInputImpl(tagName), output);
-        return output.getFuture().get();
+        return output.getSchema(TagSchemaCreationOutputImpl.Direction.READ);
     }
 
     private static void assertValueScalarType(final @NotNull ObjectNode schema, final @NotNull String scalarType) {

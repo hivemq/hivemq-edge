@@ -707,8 +707,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getSchema(final @NotNull String adapterId, final @NotNull String tagName) {
+    public @NotNull Response getSchema(
+            final @NotNull String adapterId, final @NotNull String tagName, final @Nullable String direction) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
+
+        // READ (northbound) is the default; WRITE (southbound) returns only the writable fields.
+        final TagSchemaCreationOutputImpl.Direction schemaDirection = "WRITE".equalsIgnoreCase(direction)
+                ? TagSchemaCreationOutputImpl.Direction.WRITE
+                : TagSchemaCreationOutputImpl.Direction.READ;
 
         final Optional<ProtocolAdapterWrapper> maybeWrapper =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -724,7 +730,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
 
         try {
-            return Response.ok(tagSchemaCreationOutput.getFuture().get()).build(); // JSON schema root node
+            return Response.ok(tagSchemaCreationOutput.getSchema(schemaDirection))
+                    .build(); // JSON schema root
         } catch (final @NotNull InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Creation of json schema for writing to PLCs were interrupted.");
