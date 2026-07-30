@@ -242,6 +242,15 @@ public final class TagRuntime {
     }
 
     /**
+     * A reading of this tag was accepted AND passed the declared schema, so it goes northbound — the only event that
+     * satisfies the read aspect's staleness deadline (EDG-824 #15, Sam round 2 finding 5). Deliberately not called
+     * for a schema-refused value: that proves the transport is alive, but the consumer still received nothing.
+     */
+    public void recordReadValuePublished() {
+        readAspect.onValuePublished();
+    }
+
+    /**
      * Route a per-node failure to the read aspect.
      *
      * @param reason      a human-readable description.

@@ -219,6 +219,9 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
                 return null;
             }
             if (tagRuntime.onValue(value, completesPoll)) {
+                // The reading is going northbound: this — and only this — clears the read aspect's staleness
+                // deadline (EDG-824 #15). A refused value took the branch above and deliberately does not.
+                tagRuntime.recordReadValuePublished();
                 return DataPointStamping.stamp(value, tagRuntime.pair().tag(), adapterId);
             }
         }

@@ -71,6 +71,23 @@ public final class TagAspectRead implements TagAspectVerifying {
     private static final int POLL_FAILURE_ESCALATION_THRESHOLD = 3;
 
     /**
+     * How long a <b>polled</b> aspect may go without a single published reading before it is declared stale
+     * (EDG-824 #15, Sam round 2 finding 5).
+     * <p>
+     * The escalation above answers "is the device still there?" and clears on a successful re-verification. That is
+     * the wrong question for an operator: a device that answers cheap verification forever while every poll stalls
+     * passes it every round, so the tag returned to a producing-looking {@code NORTHBOUND_ONLY} within a second of
+     * each escalation and spent essentially all of its observable life reading healthy — having never published a
+     * value. This deadline asks the question that matters instead — <i>has a reading actually arrived?</i> — and
+     * only a published reading answers it.
+     * <p>
+     * Deliberately much longer than one escalation round (~45 s on defaults) so it is a verdict, not a retry: the
+     * escalation stays the fast "re-verify and try again", this is the slow "this tag is not readable". Hardcoded for
+     * now; a per-adapter configuration knob is the natural follow-up.
+     */
+    private static final long STALE_AFTER_NO_VALUE_MILLIS = 5 * 60 * 1000L;
+
+    /**
      * The two read-aspect variants — which transition table and operating cycle the aspect runs.
      */
     private enum Variant {
@@ -117,6 +134,19 @@ public final class TagAspectRead implements TagAspectVerifying {
     private @Nullable String lastFailureReason;
     private long lastTransitionAtMillis;
     private @Nullable TimerHandle activeTimer;
+
+    /**
+     * When the staleness deadline started counting: the clock time of the last published reading, or of the moment
+     * the aspect began operating if it has not published one yet. {@code -1} means the deadline is not running —
+     * the aspect is deactivated or the adapter is down, and a tag cannot be blamed for producing nothing then.
+     * <p>
+     * Crucially this is NOT reset by a successful verification: that is exactly what let a verify-answering,
+     * poll-stalling device look healthy forever.
+     */
+    private long producingSinceMillis = -1;
+
+    /** Whether the aspect has passed {@link #STALE_AFTER_NO_VALUE_MILLIS} without publishing a reading. */
+    private boolean stale;
 
     /**
      * @param adapterId               the owning adapter's id.
@@ -215,6 +245,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             batches.removeSubscription(node);
         }
         cancelActiveTimer();
+        suspendStaleness();
         moveTo(deactivated);
     }
 
@@ -254,6 +285,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             verificationRetryBackoff.reset();
             subscriptionRetryBackoff.reset();
             consecutivePollFailures = 0;
+            suspendStaleness();
             moveTo(waitingForAdapterReady);
         }
     }
@@ -270,6 +302,7 @@ public final class TagAspectRead implements TagAspectVerifying {
         failureCount = 0;
         lastFailureReason = null;
         verificationRetryBackoff.reset();
+        suspendStaleness(); // an explicit operator retry starts the tag's whole record over, staleness included
         if (adapterPhase == AdapterPhase.READY) {
             moveTo(waitingForVerification);
             requestVerification();
@@ -353,9 +386,65 @@ public final class TagAspectRead implements TagAspectVerifying {
         if (variant == Variant.SUBSCRIBED) {
             batches.addSubscription(node);
         } else {
+            // Start the staleness deadline the first time this aspect begins operating, and — deliberately — do NOT
+            // restart it on a later re-verification. A device that answers verification but stalls every poll passes
+            // through here once per escalation round; restarting the deadline here would reset it every ~45 s and it
+            // could never trip, which is the whole failure mode (finding 5).
+            if (producingSinceMillis < 0) {
+                producingSinceMillis = clock.nowMillis();
+            }
             scheduleNextPoll();
         }
         return verifiedEntry;
+    }
+
+    /**
+     * A reading of this tag was accepted and published northbound. This is the only thing that satisfies the
+     * staleness deadline — not a verification, and not a value the declared schema refused (that one is proof the
+     * transport is alive, but the consumer still received nothing).
+     */
+    public void onValuePublished() {
+        producingSinceMillis = clock.nowMillis();
+        if (stale) {
+            stale = false;
+            log.info(
+                    "Tag '{}' on adapter '{}' is readable again: a reading was published after the stale period",
+                    tag.name(),
+                    adapterId);
+        }
+    }
+
+    /**
+     * Stop the staleness deadline: the aspect is deactivated or its adapter is down, and producing nothing is the
+     * correct behaviour. It restarts from zero when the aspect next begins operating, so a long outage does not make
+     * every tag report stale the instant the adapter reconnects.
+     */
+    private void suspendStaleness() {
+        producingSinceMillis = -1;
+        stale = false;
+    }
+
+    /**
+     * Trip the staleness verdict once the deadline has passed with nothing published. Evaluated on every poll
+     * failure — the cadence guarantees one within {@code pollInterval + commandTimeout} of the deadline — so no
+     * second timer is added to the aspect's single timer slot.
+     */
+    private void evaluateStaleness() {
+        if (stale || producingSinceMillis < 0) {
+            return;
+        }
+        final long withoutValueMillis = clock.nowMillis() - producingSinceMillis;
+        if (withoutValueMillis < STALE_AFTER_NO_VALUE_MILLIS) {
+            return;
+        }
+        stale = true;
+        log.error(
+                "Tag '{}' on adapter '{}' has published no reading for {} ms: the tag is not readable. "
+                        + "The device is answering verification but not delivering poll results; last failure: {}",
+                tag.name(),
+                adapterId,
+                withoutValueMillis,
+                lastFailureReason);
     }
 
     void requestPoll() {
@@ -443,6 +532,9 @@ public final class TagAspectRead implements TagAspectVerifying {
     @NotNull
     TagAspectState onPollFailure(final @NotNull String reason) {
         recordFailure(reason);
+        // The slow verdict, layered on the fast retry below: this one survives the re-verification the escalation
+        // triggers, so it is what a device that verifies-but-never-answers eventually trips (finding 5).
+        evaluateStaleness();
         consecutivePollFailures++;
         if (consecutivePollFailures >= POLL_FAILURE_ESCALATION_THRESHOLD) {
             consecutivePollFailures = 0;
@@ -512,10 +604,21 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * @return whether the aspect is operating at its goal (producing values), per {@link TagAspectState#isOperating()}.
+     * @return whether the aspect is operating at its goal (producing values), per {@link TagAspectState#isOperating()}
+     *         — and, for a polled aspect, actually producing them: a tag that has published nothing for
+     *         {@link #STALE_AFTER_NO_VALUE_MILLIS} is not operating however healthy its state machine looks, so the
+     *         coarse {@code TagStatus} folds to {@code ERROR} until a reading arrives (finding 5). No new status
+     *         value, and therefore no API change.
      */
     public boolean operating() {
-        return machine.state().isOperating();
+        return machine.state().isOperating() && !stale;
+    }
+
+    /**
+     * @return whether the aspect has gone {@link #STALE_AFTER_NO_VALUE_MILLIS} without publishing a reading.
+     */
+    public boolean stale() {
+        return stale;
     }
 
     /**
