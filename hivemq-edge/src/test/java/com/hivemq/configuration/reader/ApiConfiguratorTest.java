@@ -48,6 +48,16 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
         return "<username-authentication><enabled>" + enabled + "</enabled></username-authentication>";
     }
 
+    private static @NotNull String users(final @NotNull String @NotNull ... usernames) {
+        final StringBuilder sb = new StringBuilder("<users>");
+        for (final String username : usernames) {
+            sb.append("<user><username>")
+                    .append(username)
+                    .append("</username><password>pw</password><roles><role>admin</role></roles></user>");
+        }
+        return sb.append("</users>").toString();
+    }
+
     private static @NotNull String oidc(final boolean enabled) {
         return "<oidc-authentication><enabled>" + enabled + "</enabled>" + OIDC_FIELDS + "</oidc-authentication>";
     }
@@ -65,10 +75,41 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
 
     @Test
     public void usernameAuthEnabledExplicitly_activatesLocal() throws Exception {
-        writeConfig(usernameAuth(true));
+        writeConfig(usernameAuth(true) + users("alice"));
         reader.applyConfig();
 
         assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
+    }
+
+    @Test
+    public void noAuthConfig_yieldsTheBuiltInAdminAccount() throws Exception {
+        // The fully-implicit case (no <username-authentication>, no <users>, no <ldap>, no <oidc>) is the
+        // first-boot convenience: the built-in admin account is the only login. This is the ONLY branch in
+        // which it survives (see EDG-849).
+        writeConfig("");
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getUserList())
+                .singleElement()
+                .satisfies(user -> assertThat(user.getUserName()).isEqualTo("admin"));
+    }
+
+    @Test
+    public void usernameAuthEnabledExplicitlyWithNoSource_isRejected() throws Exception {
+        // Local login turned on explicitly but no <users> and no <ldap>: rather than silently injecting the
+        // built-in admin account (which would expose default credentials, EDG-849), reject the config.
+        writeConfig(usernameAuth(true));
+
+        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+    }
+
+    @Test
+    public void emptyUsersElement_isRejectedByTheSchema() throws Exception {
+        // A present <users> must contain at least one <user>; the empty form is no longer accepted, so the
+        // "present-but-empty means nobody can log in" ambiguity cannot arise.
+        writeConfig(usernameAuth(true) + "<users></users>");
+
+        assertThrows(Exception.class, () -> reader.applyConfig());
     }
 
     @Test
@@ -85,7 +126,7 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
 
     @Test
     public void oidcEnabledWithUsernameAuthPresent_activatesBoth() throws Exception {
-        writeConfig(usernameAuth(true) + oidc(true));
+        writeConfig(usernameAuth(true) + users("alice") + oidc(true));
         reader.applyConfig();
 
         assertThat(apiConfigurationService.getAuthModes())
@@ -106,7 +147,7 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void oidcStanzaDisabled_leavesOidcInactive() throws Exception {
         // A present-but-disabled stanza can be pre-staged; it does not activate OIDC.
-        writeConfig(usernameAuth(true) + oidc(false));
+        writeConfig(usernameAuth(true) + users("alice") + oidc(false));
         reader.applyConfig();
 
         assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
@@ -141,7 +182,8 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
 
     @Test
     public void oidcWithoutEnabled_isRejectedByTheSchema() throws Exception {
-        writeConfig(usernameAuth(true) + "<oidc-authentication>" + OIDC_FIELDS + "</oidc-authentication>");
+        writeConfig(
+                usernameAuth(true) + users("alice") + "<oidc-authentication>" + OIDC_FIELDS + "</oidc-authentication>");
 
         assertThrows(Exception.class, () -> reader.applyConfig());
     }

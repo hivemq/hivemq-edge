@@ -1038,7 +1038,7 @@
             <xs:element name="users" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:choice minOccurs="0" maxOccurs="unbounded">
+                        <xs:choice minOccurs="1" maxOccurs="unbounded">
                             <xs:element name="user" minOccurs="0">
                                 <xs:complexType>
                                     <xs:all>
