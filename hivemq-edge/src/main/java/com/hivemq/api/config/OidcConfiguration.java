@@ -24,10 +24,8 @@ import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -300,7 +298,7 @@ public class OidcConfiguration {
         }
         // Not https: only allowed for a loopback host, and only when the insecure-local flag is set.
         Preconditions.checkArgument(
-                allowInsecureLoopbackIssuer && isLoopbackHost(uri.getHost()),
+                allowInsecureLoopbackIssuer && isLiteralLoopbackHost(uri.getHost()),
                 "OIDC issuer-uri '%s' must use https; the issuer is the root of trust for discovery and "
                         + "signing keys and must not be fetched over plain http",
                 value);
@@ -323,18 +321,38 @@ public class OidcConfiguration {
         return "true".equalsIgnoreCase(value);
     }
 
-    private static boolean isLoopbackHost(final @Nullable String host) {
+    /**
+     * Whether {@code host} is a <em>literal</em> loopback identifier — {@code localhost}, an IPv4 address in
+     * {@code 127.0.0.0/8}, or the IPv6 loopback {@code ::1}. The comparison is purely textual: the host is
+     * never resolved through DNS.
+     * <p>
+     * This is deliberate. Resolving the host to decide whether it is loopback trusts a DNS answer, and a DNS
+     * answer can be attacker-controlled: a public name such as {@code 127.0.0.1.nip.io} resolves to a
+     * loopback address, and a low-TTL name can resolve to loopback for this check and to another address when
+     * the endpoint is actually fetched (DNS rebinding). Comparing the literal host removes DNS from the
+     * security decision entirely — a literal IP has no lookup to poison, and {@code localhost} is resolved by
+     * the host's own configuration, not by an external answer.
+     */
+    static boolean isLiteralLoopbackHost(final @Nullable String host) {
         if (host == null) {
             return false;
         }
-        if ("localhost".equalsIgnoreCase(host)) {
+        // URI.getHost() returns an IPv6 literal wrapped in brackets, e.g. "[::1]"; compare the inner address.
+        final String bare = host.startsWith("[") && host.endsWith("]") ? host.substring(1, host.length() - 1) : host;
+        if ("localhost".equalsIgnoreCase(bare) || "::1".equals(bare)) {
             return true;
         }
-        try {
-            return InetAddress.getByName(host).isLoopbackAddress();
-        } catch (final UnknownHostException e) {
-            return false;
+        // Any address in 127.0.0.0/8 is loopback. Match the literal dotted-quad form without resolving.
+        return bare.matches("127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}") && isValidIpv4(bare);
+    }
+
+    private static boolean isValidIpv4(final @NotNull String address) {
+        for (final String octet : address.split("\\.")) {
+            if (Integer.parseInt(octet) > 255) {
+                return false;
+            }
         }
+        return true;
     }
 
     /**
@@ -404,7 +422,7 @@ public class OidcConfiguration {
         Preconditions.checkArgument(
                 "http".equalsIgnoreCase(endpoint.getScheme())
                         && allowInsecureLoopback
-                        && isLoopbackHost(endpoint.getHost()),
+                        && isLiteralLoopbackHost(endpoint.getHost()),
                 "OIDC discovery %s '%s' must use https",
                 name,
                 endpoint);
@@ -417,22 +435,28 @@ public class OidcConfiguration {
     }
 
     /**
-     * Parses the {@code redirect-uri}, the browser-facing callback the Identity Provider redirects to.
+     * Parses the {@code redirect-uri}, the browser-facing callback the Identity Provider redirects the
+     * browser back to. This is the leg that carries the authorization code (in the callback query) and, once
+     * Edge has processed it, the minted Edge JWT (in the callback page) back to the browser — so over plain
+     * {@code http} a network attacker on the browser↔Edge path can intercept both.
      * <p>
-     * Plain {@code http} is permitted, because the redirect is reached by the browser and a deployment
-     * may legitimately terminate TLS at a reverse proxy; a non-HTTPS redirect is logged as a warning. A
-     * fragment is rejected — the callback carries its result in the query, not the fragment.
+     * It is therefore required to be {@code https}, mirroring the treatment of the {@code issuer-uri}. The
+     * single exception is a literal loopback host ({@code localhost}, {@code 127.0.0.0/8}, {@code ::1}),
+     * which never leaves the machine and is needed for local development and testing. A deployment that
+     * terminates TLS at a reverse proxy must configure the public {@code https} address the browser actually
+     * uses — which is also the value the Identity Provider requires to match — not Edge's internal http
+     * address. A fragment is rejected — the callback carries its result in the query, not the fragment.
      */
     private static @NotNull URI parseRedirectUri(final @NotNull String value) {
         final URI uri = parseAbsoluteHttpUri(value, "redirect-uri");
         Preconditions.checkArgument(
                 uri.getFragment() == null, "OIDC redirect-uri '%s' must not contain a fragment", value);
-        if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            log.warn(
-                    "OIDC redirect-uri '{}' does not use HTTPS. This is only appropriate for local testing or "
-                            + "when TLS is terminated by a reverse proxy.",
-                    value);
-        }
+        Preconditions.checkArgument(
+                "https".equalsIgnoreCase(uri.getScheme()) || isLiteralLoopbackHost(uri.getHost()),
+                "OIDC redirect-uri '%s' must use https; it carries the authorization code and the Edge token "
+                        + "back to the browser and must not travel over plain http. A loopback host is the only "
+                        + "http exception; behind a TLS-terminating proxy, configure the public https address.",
+                value);
         return uri;
     }
 

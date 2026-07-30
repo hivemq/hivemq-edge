@@ -269,12 +269,46 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_plainHttpRedirectIsAccepted() {
-        // The redirect is browser-facing; http stays legitimate (local QA, TLS terminated at a proxy).
+    void fromEntity_httpLoopbackRedirect_isAccepted() {
+        // The redirect carries the auth code and the Edge token back to the browser, so it must be https --
+        // except for a literal loopback host, which never leaves the machine (local dev/test).
         final OidcConfiguration config = OidcConfiguration.fromEntity(
                 entity("https://idp.example.com", "client", null, "http://localhost:8080/cb", "roles", null));
 
         assertThat(config.getRedirectUri()).isEqualTo(URI.create("http://localhost:8080/cb"));
+    }
+
+    @Test
+    void fromEntity_httpLoopbackIpRedirect_isAccepted() {
+        // 127.0.0.0/8 is loopback and is matched literally (no DNS), so 127.0.0.2 is accepted too.
+        final OidcConfiguration config = OidcConfiguration.fromEntity(
+                entity("https://idp.example.com", "client", null, "http://127.0.0.2:8080/cb", "roles", null));
+
+        assertThat(config.getRedirectUri()).isEqualTo(URI.create("http://127.0.0.2:8080/cb"));
+    }
+
+    @Test
+    void fromEntity_httpNonLoopbackRedirect_isRejected() {
+        // A plain-http redirect on a public host exposes the auth code and the Edge token on the wire.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity(
+                        "https://idp.example.com",
+                        "client",
+                        null,
+                        "http://edge.public.example.com/api/v1/auth/oidc/callback",
+                        "roles",
+                        null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
+    }
+
+    @Test
+    void fromEntity_httpRedirectOnPublicNameResolvingToLoopback_isRejected() {
+        // A public hostname such as 127.0.0.1.nip.io resolves to a loopback address, but the loopback check
+        // is literal (no DNS), so it is treated as a public host and rejected -- closing the DNS-based bypass.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity(
+                        "https://idp.example.com", "client", null, "http://127.0.0.1.nip.io:8080/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
     }
 
     @Test
@@ -501,6 +535,25 @@ class OidcConfigurationTest {
                         + "\"response_types_supported\":[\"code\"]}",
                 issuer, authEndpoint, tokenEndpoint, jwksUri);
         return OIDCProviderMetadata.parse(json);
+    }
+
+    @Test
+    void isLiteralLoopbackHost_matchesLiteralLoopbackFormsOnly() {
+        // Literal loopback: accepted.
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("localhost")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("LOCALHOST")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.1")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.2")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.255.255.255")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("::1")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("[::1]")).isTrue();
+
+        // Not literal loopback: rejected. The nip.io name resolves to 127.0.0.1 but is never resolved here.
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.1.nip.io")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("edge.example.com")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("128.0.0.1")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.256")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost(null)).isFalse();
     }
 
     // -- helpers: OidcAuthenticationEntity fields are populated by JAXB, so set them reflectively for tests.
