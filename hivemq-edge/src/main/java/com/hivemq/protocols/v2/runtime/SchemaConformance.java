@@ -15,6 +15,8 @@
  */
 package com.hivemq.protocols.v2.runtime;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BinaryNode;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import java.math.BigInteger;
@@ -27,6 +29,12 @@ import org.jetbrains.annotations.Nullable;
  * <i>declared</i> and <i>enforced</i> are the one schema. Scalar type and the SDK's range contract (inclusive
  * {@code minimum}, exclusive {@code maximum}) are enforced for scalar schemas; structured and unconstrained schemas
  * pass through — projection-only, as before.
+ * <p>
+ * A value is checked <b>independently of the carrier the adapter's {@code DataPoint} happens to use</b>: the SDK
+ * offers two, and both are production paths. {@code DataPointFactory} yields the raw Java value, while the
+ * {@code DataPointBuilder} path (OPC-UA, EtherIP CIP/ODVA) yields a {@code DataPointWithMetadata} whose
+ * {@code getTagValue()} returns a Jackson {@link JsonNode}. Scalar JSON carriers are therefore unwrapped to their
+ * logical Java value before the type and range are judged — see {@link #logicalValueOf}.
  */
 public final class SchemaConformance {
 
@@ -52,23 +60,63 @@ public final class SchemaConformance {
             // enforced, type included.
             return null;
         }
-        if (value == null) {
+        // The declared type describes the VALUE, not the carrier it arrived in: unwrap a Jackson scalar node to the
+        // Java value it stands for before judging either type or range.
+        final Object logical = logicalValueOf(value);
+        if (logical == null) {
             // The SDK declares tag values non-null; a sloppy adapter must not take the whole wrapper down.
             return "the adapter reported a null value";
         }
         return switch (scalar.type()) {
-            case BOOLEAN -> value instanceof Boolean ? null : wrongType(value, scalar);
-            case STRING -> value instanceof CharSequence ? null : wrongType(value, scalar);
-            case BINARY -> value instanceof byte[] ? null : wrongType(value, scalar);
-            case LONG -> integralViolation(value, scalar, false);
-            case ULONG -> integralViolation(value, scalar, true);
+            case BOOLEAN -> logical instanceof Boolean ? null : wrongType(logical, scalar);
+            case STRING -> logical instanceof CharSequence ? null : wrongType(logical, scalar);
+            case BINARY -> logical instanceof byte[] ? null : wrongType(logical, scalar);
+            case LONG -> integralViolation(logical, scalar, false);
+            case ULONG -> integralViolation(logical, scalar, true);
             case DOUBLE ->
-                value instanceof final Number number
+                logical instanceof final Number number
                         ? rangeViolation(number.doubleValue(), scalar)
-                        : wrongType(value, scalar);
+                        : wrongType(logical, scalar);
             // Temporal types have protocol-specific carriers; no conformance rule is enforced for them here.
             case INSTANT, LOCAL_DATE, LOCAL_TIME, LOCAL_DATE_TIME, DURATION -> null;
         };
+    }
+
+    /**
+     * Unwrap a Jackson scalar carrier to the Java value it represents; any other object is returned unchanged.
+     * <p>
+     * Numeric nodes go through {@link JsonNode#numberValue()}, which <b>preserves the integral/floating
+     * distinction</b> — {@code ShortNode}/{@code IntNode}/{@code LongNode}/{@code BigIntegerNode} become
+     * {@code Short}/{@code Integer}/{@code Long}/{@code BigInteger} and
+     * {@code FloatNode}/{@code DoubleNode}/{@code DecimalNode} become {@code Float}/{@code Double}/
+     * {@code BigDecimal} — so a fractional value still fails a {@code LONG} declaration exactly as the raw Java
+     * carrier does, and the exact-{@link BigInteger} integral comparison keeps operating on integral carriers.
+     * <p>
+     * A JSON {@code null} (or a missing node) is the same statement as a null value. Object and array nodes are
+     * deliberately NOT unwrapped: against a range-constrained scalar declaration they are a genuine type violation,
+     * and reporting the node type is the honest diagnostic.
+     */
+    private static @Nullable Object logicalValueOf(final @Nullable Object value) {
+        if (!(value instanceof final JsonNode node)) {
+            return value;
+        }
+        if (node.isNull() || node.isMissingNode()) {
+            return null;
+        }
+        if (node.isNumber()) {
+            return node.numberValue();
+        }
+        if (node.isBoolean()) {
+            return node.booleanValue();
+        }
+        if (node.isTextual()) {
+            return node.textValue();
+        }
+        if (node instanceof final BinaryNode binary) {
+            // BinaryNode narrows binaryValue() to an unchecked override; JsonNode's declares IOException.
+            return binary.binaryValue();
+        }
+        return node;
     }
 
     private static @Nullable String integralViolation(

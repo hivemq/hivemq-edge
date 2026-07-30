@@ -18,6 +18,7 @@ package com.hivemq.protocols.v2.wrapper;
 import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.CONNECTED;
 import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,10 @@ import org.junit.jupiter.api.Test;
  * The green-while-dead guard (EDG-824 #7): a contract-violating adapter that throws from a
  * synchronous adapter-facing call no longer kills the dispatch loop with a frozen GREEN snapshot — the wrapper
  * counts a defensive reset, enters {@code ERROR} with the throw as the reason, and keeps processing messages.
+ * <p>
+ * The guard has one exception, and it is the boundary's other half: a <b>fatal JVM condition</b> is not an adapter
+ * fault and must propagate rather than be demoted to "this adapter is in ERROR" (Sam, round 2 — the wide catch has
+ * to obey {@code AdapterFaults}' own stated policy).
  */
 class GreenWhileDeadGuardTest {
 
@@ -64,5 +69,22 @@ class GreenWhileDeadGuardTest {
         fixture.send(new ProtocolAdapterWrapperCommand.DeactivateDirection(ProtocolAdapterDirection.NORTHBOUND));
         assertThat(fixture.pending()).isZero();
         assertThat(fixture.snapshot()).isNotNull();
+    }
+
+    @Test
+    void adapterRaisingAFatalJvmCondition_propagatesInsteadOfBecomingAnAdapterError() {
+        final WrapperTestFixture fixture = connectedFixture();
+        assertThat(fixture.state()).isEqualTo(CONNECTED);
+        fixture.adapter.pollFatalThrow = true;
+
+        // The wide catch must NOT contain this: an OutOfMemoryError reported as "adapter X is in ERROR" hides a
+        // process-level failure and keeps the loop dispatching on a JVM that cannot honour the work.
+        assertThatThrownBy(() -> fixture.advance(1000))
+                .isInstanceOf(InternalError.class)
+                .hasMessageContaining("simulated fatal JVM condition");
+
+        // No demotion happened on the way out: no ERROR reason was invented and no defensive reset was counted.
+        assertThat(fixture.state()).isEqualTo(CONNECTED);
+        assertThat(fixture.defensiveResets()).isZero();
     }
 }

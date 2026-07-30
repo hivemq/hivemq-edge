@@ -121,6 +121,45 @@ class TypedSchemaEnforcementTest {
         assertThat(fixture.tag("temperature").failureCount()).isZero();
     }
 
+    // Sam round 2 (High): the northbound route must judge the VALUE, not the carrier. The SDK's DataPointBuilder
+    // path — the one OPC-UA and EtherIP CIP/ODVA use — produces a DataPointWithMetadata whose getTagValue() returns
+    // a Jackson node, so before the fix a conforming DoubleNode(21.5) was dropped as "wrong type" and counted
+    // against the tag. These two cases run the whole wrapper route on the production carrier.
+    @Test
+    void conformingValueOnTheProductionJsonCarrier_flowsAndCountsNoFailure() {
+        final NodeTagPair pair = WrapperTestSupport.typedPair("temperature", DOUBLE_0_TO_100);
+        final WrapperTestFixture fixture = rangedFixture(pair);
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000);
+
+        fixture.output.dataPoint(pair.node(), WrapperTestSupport.builtDataPoint("temperature", b -> b.value(21.5)));
+        fixture.drain();
+
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.tag("temperature").failureCount()).isZero();
+        assertThat(fixture.northboundDataPoints).hasSize(1);
+    }
+
+    @Test
+    void outOfRangeValueOnTheProductionJsonCarrier_isStillRefusedAndSurfaced() {
+        final NodeTagPair pair = WrapperTestSupport.typedPair("temperature", DOUBLE_0_TO_100);
+        final WrapperTestFixture fixture = rangedFixture(pair);
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        fixture.advance(1000);
+
+        fixture.output.dataPoint(pair.node(), WrapperTestSupport.builtDataPoint("temperature", b -> b.value(250.0)));
+        fixture.drain();
+
+        assertThat(fixture.state()).isEqualTo(CONNECTED);
+        assertThat(fixture.northboundDataPoints).isEmpty();
+        assertThat(fixture.tag("temperature").failureCount()).isEqualTo(1);
+        // refused for the RIGHT reason: pre-fix this value was also refused, but as a DoubleNode type error rather
+        // than as an out-of-range value — a correct verdict reached by a broken route
+        assertThat(fixture.tag("temperature").lastFailureReason())
+                .contains("declared-schema violation")
+                .contains("exclusive");
+    }
+
     @Test
     void unconstrainedSchema_keepsExtremeValuesFlowingByteIdentically() {
         // The verified-robust guarantee is preserved: with no declared constraints, NaN/Infinity/extremes flow.

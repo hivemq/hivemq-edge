@@ -140,9 +140,20 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     /** When set, {@link #pollBatch(List)} throws — the contract-violating adapter case (EDG-824 #7). */
     boolean pollThrow;
 
+    /**
+     * When set, {@link #pollBatch(List)} raises a fatal JVM condition. {@link InternalError} is a
+     * {@link VirtualMachineError} that can be constructed and thrown without endangering the build JVM — unlike a
+     * real {@code OutOfMemoryError}, which would need a forked process to provoke. The containment boundaries must
+     * treat it exactly as they would an out-of-memory: rethrow, never scope it to the adapter.
+     */
+    boolean pollFatalThrow;
+
     @Override
     public void pollBatch(final @NotNull List<Node> nodes) {
         commands.add("pollBatch");
+        if (pollFatalThrow) {
+            throw new InternalError("simulated fatal JVM condition from pollBatch");
+        }
         if (pollThrow) {
             throw new IllegalStateException("misbehaving adapter: pollBatch blew up");
         }

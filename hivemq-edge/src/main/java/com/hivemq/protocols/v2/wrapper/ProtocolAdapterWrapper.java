@@ -20,6 +20,7 @@ import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.WAITIN
 
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import com.hivemq.protocols.v2.fsm.FSM;
+import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
@@ -101,9 +102,17 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
             // wrapper enters ERROR and keeps processing messages. Throwable, not RuntimeException: a mispackaged
             // adapter jar throws LinkageErrors, the very case this guard exists for. The handler itself is guarded
             // too: if the error path also throws (a half-mutated tag plane), the machine still lands in ERROR.
+            //
+            // A fatal JVM condition is NOT scoped to the adapter: demoting an OutOfMemoryError to "this adapter is
+            // in ERROR" reports a process-level failure as a local one and keeps the loop running on a JVM that
+            // cannot honour it (Sam, round 2 — the guard must obey AdapterFaults' own stated policy).
+            AdapterFaults.rethrowIfFatal(exception);
             try {
                 machine.transitionTo(context.adapterThrowStep(machine.state(), exception));
             } catch (final Throwable secondary) {
+                // Same rule on the error path: enterError() already rethrows a fatal error out of the adapter's
+                // stop(), and swallowing it here would undo exactly that.
+                AdapterFaults.rethrowIfFatal(secondary);
                 log.error("The error path of a v2 adapter wrapper failed too; forcing ERROR", secondary);
                 machine.transitionTo(ProtocolAdapterWrapperState.ERROR);
             }
@@ -188,6 +197,8 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
             snapshot.set(context.buildSnapshot(machine.state()));
         } catch (final Throwable exception) {
             // Never leave a stale healthy-looking snapshot published: a failing snapshot build is itself an ERROR.
+            // A fatal JVM condition still propagates — a fallback snapshot is not a recovery from one.
+            AdapterFaults.rethrowIfFatal(exception);
             log.error("Failed to build the status snapshot of a v2 adapter; publishing a fallback ERROR", exception);
             snapshot.set(context.fallbackErrorSnapshot("status snapshot failed: " + exception.getMessage()));
         }

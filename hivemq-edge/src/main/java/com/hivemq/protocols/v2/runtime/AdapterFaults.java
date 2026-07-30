@@ -24,6 +24,15 @@ import org.jetbrains.annotations.NotNull;
  * catch must still let a <b>fatal JVM condition</b> propagate: swallowing an {@link OutOfMemoryError} or
  * {@link StackOverflowError} and pretending the pass continued would hide a process-level failure the JVM cannot
  * recover from at the adapter granularity.
+ * <p>
+ * {@link #rethrowIfFatal} is therefore the <b>first statement of every {@code catch (Throwable)} on an
+ * adapter-facing path</b> — including secondary/error-path catches, the snapshot fallback, and the dispatcher's loop
+ * backstop. A boundary that skips it silently overrides this policy for everything downstream of it.
+ * <p>
+ * <b>{@code ThreadDeath} policy (decided, not overlooked):</b> it is contained like any other throwable, because on
+ * the Java 21 baseline nothing can raise it — {@code Thread.stop()} has thrown
+ * {@link UnsupportedOperationException} unconditionally since JDK 20 and {@code ThreadDeath} is deprecated for
+ * removal. A branch for it would encode a failure mode the platform no longer has.
  */
 public final class AdapterFaults {
 

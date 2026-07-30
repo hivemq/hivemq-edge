@@ -17,9 +17,12 @@ package com.hivemq.protocols.v2.runtime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.hivemq.adapter.sdk.api.schema.AnySchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -155,5 +158,70 @@ class SchemaConformanceTest {
                 .isNull();
         assertThat(SchemaConformance.violationOf(BigInteger.TWO.pow(64), unconstrained(ScalarType.ULONG)))
                 .isNull();
+    }
+
+    // ── Jackson carriers (Sam, round 2, High) ───────────────────────────────────────────────────────────────────
+    // The declared type describes the VALUE, never the carrier it arrived in — and the SDK has two production
+    // carriers. DataPointFactory hands over the raw Java value, while the DataPointBuilder path (OPC-UA, EtherIP
+    // CIP/ODVA) hands over a DataPointWithMetadata whose getTagValue() returns a Jackson node. Judging the carrier
+    // meant a DOUBLE[0,100) tag refused a conforming DoubleNode(21.5) as "wrong type": real telemetry dropped
+    // before MQTT and counted against the tag as a schema failure.
+
+    @Test
+    void jacksonScalarCarriers_areJudgedByTheValueTheyCarry() {
+        final JsonNodeFactory json = JsonNodeFactory.instance;
+        assertThat(SchemaConformance.violationOf(json.numberNode(21.5), doubleRange(0, 100)))
+                .isNull(); // Sam's exact reproducer
+        assertThat(SchemaConformance.violationOf(json.numberNode(0), doubleRange(0, 100)))
+                .isNull();
+        assertThat(SchemaConformance.violationOf(json.numberNode(new BigDecimal("21.5")), doubleRange(0, 100)))
+                .isNull();
+        assertThat(SchemaConformance.violationOf(json.numberNode(42L), longRange(0, 100)))
+                .isNull();
+        assertThat(SchemaConformance.violationOf(json.numberNode(42), longRange(0, 100)))
+                .isNull();
+        assertThat(SchemaConformance.violationOf(json.numberNode(BigInteger.valueOf(42)), longRange(0, 100)))
+                .isNull();
+        // a TextNode reaches the STRING branch; a range on a STRING is unusual config, but it is what makes any
+        // branch other than the numeric ones reachable at all (enforcement runs only on a declared range)
+        assertThat(SchemaConformance.violationOf(
+                        json.textNode("text"),
+                        new ScalarSchema(ScalarType.STRING, 0, 100, null, null, false, true, false)))
+                .isNull();
+    }
+
+    @Test
+    void jacksonNumericCarriers_keepTheIntegralDistinctionAndTheExactComparison() {
+        final JsonNodeFactory json = JsonNodeFactory.instance;
+        // numberValue() preserves the carrier's kind, so a fractional value is still the wrong type for a LONG
+        assertThat(SchemaConformance.violationOf(json.numberNode(1.5), longRange(0, 100)))
+                .contains("does not conform to the declared scalar type LONG");
+        // and the exact BigInteger comparison still governs through a BigIntegerNode
+        final BigInteger twoPow63 = BigInteger.ONE.shiftLeft(63); // a valid ULONG, above Long.MAX_VALUE
+        assertThat(SchemaConformance.violationOf(
+                        json.numberNode(twoPow63), ulongRange(BigInteger.ZERO, twoPow63.add(BigInteger.ONE))))
+                .isNull();
+        assertThat(SchemaConformance.violationOf(json.numberNode(twoPow63), ulongRange(BigInteger.ZERO, twoPow63)))
+                .contains("exclusive");
+        assertThat(SchemaConformance.violationOf(json.numberNode(BigInteger.TWO.pow(70)), longRange(0, 100)))
+                .contains("not representable");
+    }
+
+    @Test
+    void jacksonCarriers_stillViolateWhenTheCarriedValueDoes() {
+        final JsonNodeFactory json = JsonNodeFactory.instance;
+        assertThat(SchemaConformance.violationOf(json.numberNode(250.0), doubleRange(0, 100)))
+                .contains("exclusive");
+        assertThat(SchemaConformance.violationOf(json.textNode("garbage"), doubleRange(0, 100)))
+                .contains("does not conform to the declared scalar type DOUBLE");
+        // a JSON null carrier makes the same statement as a null value
+        assertThat(SchemaConformance.violationOf(json.nullNode(), doubleRange(0, 100)))
+                .contains("null");
+        assertThat(SchemaConformance.violationOf(MissingNode.getInstance(), doubleRange(0, 100)))
+                .contains("null");
+        // structured carriers are deliberately NOT unwrapped: against a scalar declaration they are a real type
+        // violation, and naming the node type is the honest diagnostic
+        assertThat(SchemaConformance.violationOf(json.objectNode().put("value", 21.5), doubleRange(0, 100)))
+                .contains("ObjectNode does not conform");
     }
 }

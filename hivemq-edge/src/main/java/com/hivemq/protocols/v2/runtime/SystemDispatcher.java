@@ -96,6 +96,12 @@ public final class SystemDispatcher implements MessageDispatcher {
                         // a dead loop leaves a mailbox that accepts tells nobody processes and a stale snapshot
                         // that reads healthy forever (EDG-824 #7). Handlers guard their own state; this is the
                         // backstop.
+                        //
+                        // Except for a fatal JVM condition, which the handler boundary deliberately rethrows: this
+                        // backstop must not re-swallow it and keep dispatching on a JVM that cannot honour the work
+                        // (Sam, round 2). The loop ends and the thread terminates with the error, which is what
+                        // "not recoverable at adapter granularity" means.
+                        AdapterFaults.rethrowIfFatal(exception);
                         log.error(
                                 "Actor handler threw while processing a message; the dispatch loop continues",
                                 exception);
