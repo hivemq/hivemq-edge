@@ -16,7 +16,6 @@
 package com.hivemq.protocols.v2.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import jakarta.xml.bind.ValidationEvent;
@@ -263,32 +262,12 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + ")");
 
         retryPolicy.validate(validationEvents);
-        tags.forEach(tag -> tag.validate(validationEvents));
-        // The access model is enforced at runtime (EDG-824 #14): an activated aspect with no permitted capability
-        // silently never operates. That must be a deliberate choice, so surface the contradiction as a warning. An
-        // omitted <access> element is unrestricted (all flags YES, via TagEntity's initializer) and so never trips
-        // this warning; only an explicit <access> element — whose omitted child attributes default to NO — can.
+        // Both passes are per-tag; the second needs this adapter's id for its messages, which the tag has no way to
+        // know (the EntityValidatable contract fixes validate's signature), so it is a separate call rather than
+        // part of validate().
         tags.forEach(tag -> {
-            final AccessFlagsEntity access = tag.getAccess();
-            final boolean readPermitted = access.getReadable() == AccessTriState.YES
-                    && ((tag.isPollable() && access.getPollable() == AccessTriState.YES)
-                            || (tag.isSubscribable() && access.getSubscribable() == AccessTriState.YES));
-            if (tag.isReadActivated() && !readPermitted) {
-                validationEvents.add(new ValidationEventImpl(
-                        ValidationEvent.WARNING,
-                        "adapter [" + adapterId + "] tag [" + tag.getName()
-                                + "] is read-activated but its <access> flags permit no read transport;"
-                                + " the tag will never be read",
-                        null));
-            }
-            if (tag.isWriteActivated() && access.getWritable() != AccessTriState.YES) {
-                validationEvents.add(new ValidationEventImpl(
-                        ValidationEvent.WARNING,
-                        "adapter [" + adapterId + "] tag [" + tag.getName()
-                                + "] is write-activated but its <access> flags do not permit writing;"
-                                + " the tag will never be written",
-                        null));
-            }
+            tag.validate(validationEvents);
+            tag.validateAccessContradictions(validationEvents, adapterId);
         });
         getDuplicatedTagNameSet()
                 .forEach(duplicate -> validationEvents.add(new ValidationEventImpl(
