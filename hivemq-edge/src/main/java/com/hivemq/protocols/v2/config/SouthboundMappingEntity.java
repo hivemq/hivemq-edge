@@ -72,13 +72,22 @@ public class SouthboundMappingEntity implements EntityValidatable {
                     validationEvents,
                     () -> Topics.isValidToSubscribe(topic),
                     () -> "southbound-mapping topic [" + topic + "] is not a valid topic filter to subscribe to");
-            // '$share/…' is a legitimate client-side shared-subscription filter; only the broker-owned '$'
-            // namespace itself (e.g. $SYS) is off limits — including when smuggled INSIDE a shared filter
-            // ($share/group/$SYS/# effectively subscribes to $SYS).
+            // A shared-subscription filter is refused outright (EDG-824 #11, Sam round 2 finding 7). The share name
+            // of a v2 southbound subscription is Edge's, not the operator's: the runtime derives it from the adapter
+            // id and it is load-bearing beyond routing — it doubles as the marker that stops the broker's orphan
+            // cleanup from discarding a durable command queue while its consumer is detached. An operator-supplied
+            // group has nowhere to go. Accepting one used to be silently destructive rather than merely useless:
+            // the literal '$share/<group>/<filter>' text was passed through as the subscription filter, so it
+            // matched only a topic of that literal name, the adapter came up GREEN, and every write vanished.
             EntityValidatable.notMatch(
                     validationEvents,
-                    () -> !Topics.isDollarTopic(topic)
-                            || (topic.startsWith("$share/") && !sharedFilterTargetsDollarNamespace(topic)),
+                    () -> !topic.startsWith("$share/") && !topic.equals("$share"),
+                    () -> "southbound-mapping topic [" + topic
+                            + "] is a shared-subscription filter; Edge owns the share name of a southbound "
+                            + "subscription, so map the plain topic filter instead");
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> !Topics.isDollarTopic(topic),
                     () -> "southbound-mapping topic [" + topic
                             + "] is in the reserved '$' namespace, which is owned by the broker");
             EntityValidatable.notMatch(
@@ -89,15 +98,6 @@ public class SouthboundMappingEntity implements EntityValidatable {
                             + NorthboundMappingEntity.MAX_TOPIC_LENGTH_BYTES + " bytes");
         }
         EntityValidatable.notEmpty(validationEvents, tagName, "southbound-mapping tag-name");
-    }
-
-    /**
-     * @return whether a {@code $share/<group>/<filter>} topic's inner filter itself starts with {@code $} —
-     *         a shared subscription into the broker-owned namespace.
-     */
-    private static boolean sharedFilterTargetsDollarNamespace(final @NotNull String topic) {
-        final int groupEnd = topic.indexOf('/', "$share/".length());
-        return groupEnd >= 0 && topic.startsWith("$", groupEnd + 1);
     }
 
     @Override

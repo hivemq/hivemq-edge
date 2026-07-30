@@ -145,6 +145,27 @@ class ProtocolAdapterEntityTest {
                 .anyMatch(message -> message.contains("reserved '$' namespace"));
     }
 
+    // EDG-824 #11 (Sam round 2, finding 7): the share name of a v2 southbound subscription belongs to Edge — the
+    // runtime derives it from the adapter id and uses it as the marker that keeps the durable command queue alive
+    // while its consumer is detached. An operator-supplied group has nowhere to go, and accepting one was silently
+    // destructive: the literal '$share/...' text became the subscription filter, so it matched only a topic of that
+    // literal name while the adapter reported GREEN. Refusing the configuration is the honest failure.
+    @Test
+    void southboundMappingWithASharedSubscriptionFilter_isRejectedWithTheShareNameReason() {
+        assertThat(southboundTopicMessages("$share/group/plant/+/setpoint"))
+                .anyMatch(message -> message.contains("Edge owns the share name"));
+        assertThat(southboundTopicMessages("$share/group/plant/setpoint"))
+                .anyMatch(message -> message.contains("shared-subscription filter"));
+        // the degenerate forms are refused too, rather than falling through to a confusing '$' namespace message
+        assertThat(southboundTopicMessages("$share")).anyMatch(message -> message.contains("shared-subscription"));
+        assertThat(southboundTopicMessages("$share/")).anyMatch(message -> message.contains("shared-subscription"));
+        // a shared filter smuggling the broker namespace inside it is refused for the share reason as well
+        assertThat(southboundTopicMessages("$share/group/$SYS/#"))
+                .anyMatch(message -> message.contains("shared-subscription"));
+        // the plain filter an operator should have written instead is accepted
+        assertThat(southboundTopicMessages("plant/+/setpoint")).isEmpty();
+    }
+
     // EDG-824 #11: two tags on one topic is legal but never silent — a WARNING event carries the collision.
     @Test
     void collidingNorthboundTopics_raiseAWarningNotAnError() {
