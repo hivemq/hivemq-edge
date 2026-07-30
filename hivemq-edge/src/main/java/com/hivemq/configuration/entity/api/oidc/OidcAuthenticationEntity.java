@@ -47,7 +47,10 @@ import org.jetbrains.annotations.Nullable;
  *     <client-secret>secret</client-secret>
  *     <redirect-uri>https://edge.example.com/api/v1/auth/oidc/callback</redirect-uri>
  *     <role-claim-name>roles</role-claim-name>
- *     <extra-scopes>email profile</extra-scopes>
+ *     <extra-scopes>
+ *         <extra-scope>email</extra-scope>
+ *         <extra-scope>profile</extra-scope>
+ *     </extra-scopes>
  *     <role-mappings>
  *         <mapping>
  *             <idp-role>hivemq-admin</idp-role>
@@ -84,8 +87,9 @@ public class OidcAuthenticationEntity {
     @XmlElement(name = "role-claim-name", defaultValue = "roles")
     private @NotNull String roleClaimName = "roles";
 
-    @XmlElement(name = "extra-scopes")
-    private @Nullable String extraScopes = null;
+    @XmlElementWrapper(name = "extra-scopes", required = false)
+    @XmlElement(name = "extra-scope")
+    private @Nullable List<String> extraScopes = null;
 
     @XmlElementWrapper(name = "role-mappings", required = false)
     @XmlElement(name = "role-mapping")
@@ -98,7 +102,7 @@ public class OidcAuthenticationEntity {
     @XmlElement(name = "truststore")
     private @Nullable OidcTruststoreEntity truststore = null;
 
-    @XmlElement(name = "connection-timeout", defaultValue = "5000")
+    @XmlElement(name = "connection-timeout-millis", defaultValue = "5000")
     private int connectionTimeoutMillis = 5000;
 
     public boolean isEnabled() {
@@ -125,7 +129,7 @@ public class OidcAuthenticationEntity {
         return roleClaimName;
     }
 
-    public @Nullable String getExtraScopes() {
+    public @Nullable List<String> getExtraScopes() {
         return extraScopes;
     }
 

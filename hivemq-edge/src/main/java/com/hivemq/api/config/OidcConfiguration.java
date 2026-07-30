@@ -74,6 +74,10 @@ public class OidcConfiguration {
 
     public static final int DEFAULT_CONNECTION_TIMEOUT_MILLIS = 5000;
 
+    // Below this, a connection timeout is almost certainly a milliseconds/seconds mix-up that would make
+    // every IdP call time out. Kept in sync with the XSD minInclusive on connection-timeout-millis.
+    public static final int MIN_CONNECTION_TIMEOUT_MILLIS = 100;
+
     public OidcConfiguration(
             final @NotNull URI issuerUri,
             final @NotNull String clientId,
@@ -160,7 +164,9 @@ public class OidcConfiguration {
                 roleClaimName != null && !roleClaimName.isBlank(), "OIDC role-claim-name must not be blank");
         warnOnSurroundingWhitespace("role-claim-name", roleClaimName);
 
-        final List<String> scopes = parseScopes(entity.getExtraScopes());
+        // Extra scopes are a list of <extra-scope> elements; an absent <extra-scopes> yields no extra scopes.
+        final List<String> configuredScopes = entity.getExtraScopes();
+        final List<String> scopes = configuredScopes == null ? List.of() : List.copyOf(configuredScopes);
 
         // Role mappings are required: only an explicitly mapped IdP role produces an Edge role, and an
         // unmapped value grants nothing. The <role-mappings> element must be present with at least one
@@ -201,12 +207,15 @@ public class OidcConfiguration {
         // certificate is validated against the JVM default CA certificates.
         final SSLSocketFactory idpSslSocketFactory = buildSslSocketFactory(entity.getTruststore());
 
-        // Connect/read timeout for the IdP calls. The XSD (positiveInteger, default 5000) guarantees a
-        // positive value; this check guards a config path that bypasses schema validation.
+        // Connect/read timeout for the IdP calls. The XSD enforces a minimum of 100ms (default 5000); this
+        // re-checks it so a programmatic entity that bypasses schema validation cannot set an unusable value.
+        // A sub-100ms timeout is almost always a milliseconds/seconds mix-up (e.g. "1" meaning one second)
+        // that would make every IdP call time out and silently break SSO.
         final int connectionTimeoutMillis = entity.getConnectionTimeoutMillis();
         Preconditions.checkArgument(
-                connectionTimeoutMillis > 0,
-                "OIDC connection-timeout must be a positive number of milliseconds, but was %s",
+                connectionTimeoutMillis >= MIN_CONNECTION_TIMEOUT_MILLIS,
+                "OIDC connection-timeout-millis must be at least %s milliseconds, but was %s",
+                MIN_CONNECTION_TIMEOUT_MILLIS,
                 connectionTimeoutMillis);
 
         return new OidcConfiguration(
@@ -385,14 +394,58 @@ public class OidcConfiguration {
             final @NotNull URI expectedIssuer, final @NotNull OIDCProviderMetadata metadata) {
         final boolean allowInsecureLoopback = isInsecureLocalIdpAllowed();
         final Issuer discoveredIssuer = metadata.getIssuer();
-        Preconditions.checkArgument(
-                discoveredIssuer != null && expectedIssuer.toString().equals(discoveredIssuer.getValue()),
-                "OIDC discovery issuer '%s' does not match the configured issuer '%s'",
-                discoveredIssuer,
-                expectedIssuer);
+        checkIssuerMatch(expectedIssuer, discoveredIssuer);
         requireHttpsEndpoint("authorization_endpoint", metadata.getAuthorizationEndpointURI(), allowInsecureLoopback);
         requireHttpsEndpoint("token_endpoint", metadata.getTokenEndpointURI(), allowInsecureLoopback);
         requireHttpsEndpoint("jwks_uri", metadata.getJWKSetURI(), allowInsecureLoopback);
+    }
+
+    /**
+     * Requires the discovery {@code issuer} to equal the configured {@code issuer-uri} <em>exactly</em>. Per
+     * the OpenID Connect Discovery specification the issuer is an exact identifier — a trailing slash, a
+     * different case, or surrounding whitespace all denote a different issuer — so the comparison is and must
+     * remain character-for-character; the exact match is the security decision and is never relaxed.
+     * <p>
+     * When the exact match fails, a second, lenient comparison (case-insensitive, trailing-slash- and
+     * whitespace-insensitive) is used <em>only to choose the error message</em>, never to accept the value:
+     * if the two differ only in those cosmetic ways, the operator almost certainly copied a nearly-right
+     * issuer (a browser address bar adds a trailing slash), so the message points at that exact difference
+     * and quotes the value the Identity Provider reports, to be copied verbatim. A genuine mismatch (wrong
+     * host or realm) gets the plain "does not match" message. Either way the login is refused.
+     */
+    private static void checkIssuerMatch(final @NotNull URI expectedIssuer, final @Nullable Issuer discoveredIssuer) {
+        final String expected = expectedIssuer.toString();
+        final String discovered = discoveredIssuer == null ? null : discoveredIssuer.getValue();
+        if (expected.equals(discovered)) {
+            return;
+        }
+        Preconditions.checkArgument(
+                discovered != null && lenientlyEqualIssuer(expected, discovered),
+                "OIDC discovery issuer '%s' does not match the configured issuer-uri '%s'",
+                discovered,
+                expected);
+        // Exact match failed but a lenient match succeeded: a cosmetic-only difference, so guide the fix.
+        throw new IllegalArgumentException(String.format(
+                "OIDC issuer-uri '%s' does not exactly match the issuer the Identity Provider reports, '%s'; "
+                        + "they differ only by a trailing slash, letter case, or surrounding whitespace. The "
+                        + "issuer must match exactly — set issuer-uri to '%s'.",
+                expected, discovered, discovered));
+    }
+
+    /**
+     * Whether two issuer strings are equal once a trailing slash, letter case, and surrounding whitespace are
+     * ignored. Used <em>only</em> to classify an exact-match failure for a better error message — never to
+     * accept a non-exact issuer.
+     */
+    private static boolean lenientlyEqualIssuer(final @NotNull String a, final @NotNull String b) {
+        return normalizeIssuerForDiagnosis(a).equals(normalizeIssuerForDiagnosis(b));
+    }
+
+    private static @NotNull String normalizeIssuerForDiagnosis(final @NotNull String issuer) {
+        final String trimmed = issuer.strip();
+        final String withoutTrailingSlash =
+                trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+        return withoutTrailingSlash.toLowerCase(java.util.Locale.ROOT);
     }
 
     /**
@@ -512,13 +565,6 @@ public class OidcConfiguration {
                     element,
                     value);
         }
-    }
-
-    private static @NotNull List<String> parseScopes(final @Nullable String extraScopes) {
-        if (extraScopes == null || extraScopes.isBlank()) {
-            return List.of();
-        }
-        return List.of(extraScopes.trim().split("\\s+"));
     }
 
     public @NotNull URI getIssuerUri() {

@@ -45,7 +45,7 @@ class OidcConfigurationTest {
                 "the-secret",
                 "https://edge.example.com/api/v1/auth/oidc/callback",
                 "roles",
-                "email profile",
+                List.of("email", "profile"),
                 new OidcRoleMappingEntity("hivemq-admin", "admin"));
 
         final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
@@ -55,6 +55,7 @@ class OidcConfigurationTest {
         assertThat(config.getClientSecret()).isEqualTo("the-secret");
         assertThat(config.getRedirectUri()).isEqualTo(URI.create("https://edge.example.com/api/v1/auth/oidc/callback"));
         assertThat(config.getRoleClaimName()).isEqualTo("roles");
+        assertThat(config.getExtraScopes()).containsExactly("email", "profile");
         // No <id-token-signing-algorithms> configured → the full asymmetric allow-list.
         assertThat(config.getIdTokenSigningAlgorithms()).isEqualTo(OidcSigningAlgorithms.DEFAULT);
     }
@@ -80,17 +81,18 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_parsesWhitespaceSeparatedScopes() {
+    void fromEntity_extraScopes_arePassedThrough() {
+        // Each scope is its own <extra-scope> element; the list is taken verbatim, with no delimiter parsing.
         final OidcConfiguration config = OidcConfiguration.fromEntity(
-                entity("https://idp", "client", null, "https://edge/cb", "roles", "  email   profile  "));
+                entity("https://idp", "client", null, "https://edge/cb", "roles", List.of("email", "profile")));
 
         assertThat(config.getExtraScopes()).containsExactly("email", "profile");
     }
 
     @Test
-    void fromEntity_blankScopes_yieldsEmptyList() {
+    void fromEntity_absentExtraScopes_yieldsEmptyList() {
         final OidcConfiguration config =
-                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", "   "));
+                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));
 
         assertThat(config.getExtraScopes()).isEmpty();
     }
@@ -450,14 +452,25 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_nonPositiveConnectionTimeout_throws() {
-        // The XSD guards this (positiveInteger); the check defends a config path that bypasses the schema.
+    void fromEntity_belowMinimumConnectionTimeout_throws() {
+        // A sub-100ms timeout (e.g. "1" meaning one second) would make every IdP call time out; it is
+        // rejected. The XSD guards this too; the check defends a config path that bypasses the schema.
         final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
-        set(entity, "connectionTimeoutMillis", 0);
+        set(entity, "connectionTimeoutMillis", 50);
 
         assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("connection-timeout");
+                .hasMessageContaining("connection-timeout-millis");
+    }
+
+    @Test
+    void fromEntity_minimumConnectionTimeout_isAccepted() {
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "connectionTimeoutMillis", OidcConfiguration.MIN_CONNECTION_TIMEOUT_MILLIS);
+
+        final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
+
+        assertThat(config.getConnectionTimeoutMillis()).isEqualTo(OidcConfiguration.MIN_CONNECTION_TIMEOUT_MILLIS);
     }
 
     private static @org.jetbrains.annotations.NotNull OidcTruststoreEntity truststore(
@@ -504,7 +517,40 @@ class OidcConfigurationTest {
                                 "https://idp.example.com/token",
                                 "https://idp.example.com/certs")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("does not match the configured issuer");
+                .hasMessageContaining("does not match the configured issuer-uri")
+                // A genuine host/realm mismatch gets the plain message, not the cosmetic-difference guidance.
+                .hasMessageNotContaining("trailing slash");
+    }
+
+    @Test
+    void validateDiscoveryMetadata_trailingSlashIssuer_throwsWithAGuidingMessage() throws Exception {
+        // The configured issuer differs from the discovery issuer only by a trailing slash (a browser
+        // address bar adds one). It is still refused -- the issuer match is exact -- but the message names
+        // the cosmetic difference and quotes the value to copy, rather than the opaque "does not match".
+        assertThatThrownBy(() -> OidcConfiguration.validateDiscoveryMetadata(
+                        URI.create("https://idp.example.com/realms/edge/"),
+                        metadata(
+                                "https://idp.example.com/realms/edge",
+                                "https://idp.example.com/auth",
+                                "https://idp.example.com/token",
+                                "https://idp.example.com/certs")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("trailing slash")
+                .hasMessageContaining("set issuer-uri to 'https://idp.example.com/realms/edge'");
+    }
+
+    @Test
+    void validateDiscoveryMetadata_caseDifferentIssuer_throwsWithAGuidingMessage() throws Exception {
+        // A case-only difference is likewise cosmetic: refused, but with the guiding message.
+        assertThatThrownBy(() -> OidcConfiguration.validateDiscoveryMetadata(
+                        URI.create("https://IDP.example.com/realms/edge"),
+                        metadata(
+                                "https://idp.example.com/realms/edge",
+                                "https://idp.example.com/auth",
+                                "https://idp.example.com/token",
+                                "https://idp.example.com/certs")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("letter case");
     }
 
     @Test
@@ -564,7 +610,7 @@ class OidcConfigurationTest {
             final String clientSecret,
             final String redirect,
             final String roleClaim,
-            final String extraScopes,
+            final List<String> extraScopes,
             final OidcRoleMappingEntity... mappings) {
         final OidcAuthenticationEntity entity = new OidcAuthenticationEntity();
         set(entity, "enabled", true);
