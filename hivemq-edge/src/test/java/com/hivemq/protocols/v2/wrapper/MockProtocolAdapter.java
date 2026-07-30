@@ -54,6 +54,16 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     final @NotNull List<String> commands = new ArrayList<>();
     final @NotNull Deque<Reply> connectReplies = new ArrayDeque<>();
 
+    /**
+     * Node ids carried by every subscription command, in order. The bare command names cannot express a per-NODE
+     * claim, and EDG-824 #18 is exactly that — "the commands for s3 were never issued anywhere" — so a reload that
+     * silently drops a tag from the shadow set is invisible without these.
+     */
+    final @NotNull List<String> verifiedNodes = new ArrayList<>();
+
+    final @NotNull List<String> subscriptionAdds = new ArrayList<>();
+    final @NotNull List<String> subscriptionRemovals = new ArrayList<>();
+
     @NotNull
     Reply startReply = Reply.ACK;
 
@@ -129,6 +139,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void verifyBatch(final @NotNull List<Node> nodes) {
         commands.add("verifyBatch");
+        for (final Node node : nodes) {
+            verifiedNodes.add(node.nodeId());
+        }
         if (verifyDrop) {
             return;
         }
@@ -162,11 +175,17 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void addSubscriptionBatch(final @NotNull List<Node> nodes) {
         commands.add("addSubscriptionBatch");
+        for (final Node node : nodes) {
+            subscriptionAdds.add(node.nodeId());
+        }
     }
 
     @Override
     public void removeSubscriptionBatch(final @NotNull List<Node> nodes) {
         commands.add("removeSubscriptionBatch");
+        for (final Node node : nodes) {
+            subscriptionRemovals.add(node.nodeId());
+        }
     }
 
     @Override
