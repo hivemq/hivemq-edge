@@ -41,6 +41,7 @@ import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
+import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
@@ -55,7 +56,9 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperTick;
 import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,6 +67,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one configuration
@@ -83,8 +88,16 @@ import org.jetbrains.annotations.Nullable;
  * {@link DataPointFactory}, the JSON {@link ObjectMapper}, and the tick period) are injected, so the same factory
  * serves production (a {@code SystemClock} / {@code SystemDispatcher}) and tests (a {@code FakeClock} /
  * {@code ManualDispatcher}).
+ * <p>
+ * Construction is <b>all-or-nothing</b>. Every resource that outlives the call — registered metrics, northbound
+ * consumers, the dispatch binding, the tick schedule, the adapter's own dispatch bindings, the southbound writers —
+ * is handed to a {@link ConstructionScope} the moment it exists. A failure at any later step releases them in reverse
+ * order and rethrows, so a half-built adapter leaves nothing behind; on success the scope hands ownership to the
+ * {@link ProtocolAdapterContainer} and keeps nothing, so nothing is closed twice.
  */
 public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapterWrapperFactory {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(DefaultProtocolAdapterWrapperFactory.class);
 
     private final @NotNull Clock clock;
     private final @NotNull MessageDispatcher dispatcher;
@@ -154,6 +167,32 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull ProtocolAdapterFactory factory,
             final @NotNull ProtocolAdapterWrapperEventListener healthListener) {
         final String adapterId = entity.getAdapterId();
+        final ConstructionScope scope = new ConstructionScope(adapterId);
+        try {
+            return build(entity, factory, healthListener, scope);
+        } catch (final Throwable failure) {
+            // A fatal JVM condition is never scoped to one adapter, and releasing resources on a dying JVM is not
+            // worth delaying it — propagate before containing anything (EDG-824 #12).
+            AdapterFaults.rethrowIfFatal(failure);
+            // Throwable, not RuntimeException: a mispackaged or version-skewed adapter jar throws a LinkageError from
+            // its constructor, and that half-built adapter's metrics, consumers, dispatch threads and tick must still
+            // be released. Without this the adapter id stays permanently uncreatable — a leaked gauge makes the next
+            // attempt's registration throw (Sam round 2, finding 2).
+            scope.closeAll();
+            throw failure;
+        }
+    }
+
+    /**
+     * The construction proper. Every resource is registered with {@code scope} as it is acquired, so the caller's
+     * single catch can unwind all of them; the scope is committed only once the container owns them.
+     */
+    private @NotNull ProtocolAdapterContainer build(
+            final @NotNull ProtocolAdapterEntity entity,
+            final @NotNull ProtocolAdapterFactory factory,
+            final @NotNull ProtocolAdapterWrapperEventListener healthListener,
+            final @NotNull ConstructionScope scope) {
+        final String adapterId = entity.getAdapterId();
 
         final Mailbox<ProtocolAdapterWrapperMessage> mailbox = new DefaultMailbox<>();
         final ProtocolAdapterOutput output = new ProtocolAdapterOutputFacade(mailbox);
@@ -163,24 +202,20 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 dataPointFactory.createJsonDataPoint(adapterId, entity.getAdapterConfiguration());
         // Hand the adapter a dispatcher that records every binding it opens through the framework, so the framework
         // owns each dispatch thread for the adapter's whole lifetime — whether the adapter attaches its mailbox in its
-        // constructor or later, and whether or not it is itself AutoCloseable. A construction that fails after a
-        // binding was opened releases it here; a successful build hands the recorder to the container so teardown
-        // releases every binding then.
-        final RecordingDispatcher recordingDispatcher = new RecordingDispatcher(dispatcher);
+        // constructor or later, and whether or not it is itself AutoCloseable. Registered BEFORE the adapter is
+        // constructed: a constructor that opens a binding and then throws has it released by the scope.
+        final RecordingDispatcher recordingDispatcher = scope.register(new RecordingDispatcher(dispatcher));
         final ProtocolAdapterService services = new WrapperServices(dataPointFactory, recordingDispatcher);
         final ProtocolAdapterInput input = new WrapperInput(adapterId, adapterConfig, nodes, services);
-        final ProtocolAdapter protocolAdapter;
-        try {
-            protocolAdapter = factory.createAdapter(input, output);
-        } catch (final RuntimeException failure) {
-            // Release every dispatch binding the half-built adapter opened before rethrowing, so a failed
-            // construction leaks no dispatch thread.
-            recordingDispatcher.close();
-            throw failure;
-        }
+        final ProtocolAdapter protocolAdapter = factory.createAdapter(input, output);
+        // The adapter exists, so its own teardown joins the scope ahead of the recorder — reverse order releases the
+        // adapter's non-dispatch resources first and its bindings second, exactly as container teardown does.
+        scope.register(adapterSelfClose(protocolAdapter));
 
-        final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
-        final NorthboundTagConsumerRegistry northboundConsumers = createNorthboundConsumers(adapterId, factory, entity);
+        final ProtocolAdapterMetrics metrics =
+                scope.register(new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size));
+        final NorthboundTagConsumerRegistry northboundConsumers =
+                scope.registerOptional(createNorthboundConsumers(adapterId, factory, entity));
         final Consumer<DataPoint> northboundDataPointSink;
         if (northboundConsumers == null) {
             northboundDataPointSink = ignored -> {};
@@ -227,9 +262,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
 
         final AtomicReference<AdapterStatusSnapshot> snapshot = new AtomicReference<>();
         final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(context, snapshot);
-        final MessageDispatcherHandle dispatcherHandle = dispatcher.attach(mailbox, wrapper);
-        final AutoCloseable tickHandle =
-                clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis()));
+        final MessageDispatcherHandle dispatcherHandle = scope.register(dispatcher.attach(mailbox, wrapper));
+        final AutoCloseable tickHandle = scope.register(
+                clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis())));
         // The container owns the teardown of everything the adapter attached through the framework dispatcher, so its
         // dispatch threads are released when the adapter is discarded, exactly as the wrapper's binding is. The
         // adapter's own close() (if it is AutoCloseable) runs first to release any non-dispatch resources; the
@@ -239,9 +274,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
         final SouthboundWriterRegistry southboundWriters =
-                createSouthboundWriters(adapterId, factory, entity, mailbox, nodes);
+                scope.registerOptional(createSouthboundWriters(adapterId, factory, entity, mailbox, nodes));
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
-        return new ProtocolAdapterContainer(
+        return scope.commit(new ProtocolAdapterContainer(
                 handle,
                 dispatcherHandle,
                 adapterDispatcherHandle,
@@ -249,7 +284,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 metrics,
                 northboundConsumers,
                 southboundWriters,
-                entity);
+                entity));
     }
 
     private @Nullable NorthboundTagConsumerRegistry createNorthboundConsumers(
@@ -355,15 +390,88 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      */
     private static @NotNull AutoCloseable adapterTeardown(
             final @NotNull ProtocolAdapter protocolAdapter, final @NotNull RecordingDispatcher recordingDispatcher) {
+        final AutoCloseable selfClose = adapterSelfClose(protocolAdapter);
         return () -> {
             try {
-                if (protocolAdapter instanceof AutoCloseable closeable) {
-                    closeable.close();
-                }
+                selfClose.close();
             } finally {
                 recordingDispatcher.close();
             }
         };
+    }
+
+    /**
+     * The adapter's own teardown alone: its {@link AutoCloseable#close()} if it is one, otherwise nothing. Used both
+     * inside {@link #adapterTeardown} and on its own by the {@link ConstructionScope}, where the recording dispatcher
+     * is already registered separately and must not be closed twice in the same unwind.
+     */
+    private static @NotNull AutoCloseable adapterSelfClose(final @NotNull ProtocolAdapter protocolAdapter) {
+        return () -> {
+            if (protocolAdapter instanceof AutoCloseable closeable) {
+                closeable.close();
+            }
+        };
+    }
+
+    /**
+     * The ownership scope of one adapter construction (EDG-824 finding 2, Sam round 2).
+     * <p>
+     * Building an adapter acquires resources that outlive the call — gauges on the shared {@link MetricRegistry},
+     * consumers on the shared {@link TagManager}, a dispatch thread, a tick schedule, southbound subscriptions — one
+     * step at a time. Before this scope existed only the adapter constructor's failure was handled, so a throw at any
+     * later step returned no container and left every earlier resource with no owner. The leaked metrics were the
+     * worst of them: a stale gauge makes the next registration for that id throw, which renders the adapter id
+     * <b>permanently uncreatable</b> until restart.
+     * <p>
+     * Each resource is registered the instant it exists. {@link #closeAll} releases them in reverse acquisition order,
+     * best effort — one failing close must not mask the construction failure being propagated, nor skip the
+     * resources acquired before it. {@link #commit} transfers ownership to the container and empties the scope, so a
+     * committed resource is never closed twice.
+     * <p>
+     * Not thread-safe, and does not need to be: one scope belongs to one {@code create} call on the manager thread.
+     */
+    private static final class ConstructionScope {
+
+        private final @NotNull String adapterId;
+        private final @NotNull Deque<AutoCloseable> acquired = new ArrayDeque<>();
+
+        private ConstructionScope(final @NotNull String adapterId) {
+            this.adapterId = adapterId;
+        }
+
+        private <T extends AutoCloseable> @NotNull T register(final @NotNull T resource) {
+            acquired.push(resource);
+            return resource;
+        }
+
+        /** Registers an optional collaborator — {@code null} when the edition or test rig does not wire it. */
+        private <T extends AutoCloseable> @Nullable T registerOptional(final @Nullable T resource) {
+            if (resource != null) {
+                acquired.push(resource);
+            }
+            return resource;
+        }
+
+        private <T> @NotNull T commit(final @NotNull T container) {
+            acquired.clear();
+            return container;
+        }
+
+        private void closeAll() {
+            while (!acquired.isEmpty()) {
+                final AutoCloseable resource = acquired.pop();
+                try {
+                    resource.close();
+                } catch (final Throwable closeFailure) {
+                    AdapterFaults.rethrowIfFatal(closeFailure);
+                    log.warn(
+                            "Failed to release a {} while unwinding the failed construction of v2 adapter '{}'",
+                            resource.getClass().getSimpleName(),
+                            adapterId,
+                            closeFailure);
+                }
+            }
+        }
     }
 
     /**
