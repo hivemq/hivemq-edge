@@ -158,7 +158,9 @@ paths:
       description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: refresh-token
       x-roles-allowed:
-        - NO_AUTH_REQUIRED
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
