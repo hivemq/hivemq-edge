@@ -96,7 +96,7 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_roleMappingKeysAreStoredVerbatim() {
+    void fromEntity_roleMappingKeysAreStoredLiterally() {
         // Keys are matched literally (no case-folding), so they are stored exactly as configured.
         final OidcAuthenticationEntity entity = entity(
                 "https://idp",
@@ -116,12 +116,15 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_noRoleMappings_isVerbatimMode() {
-        // No <role-mappings> element → null mappings, signalling verbatim mode.
-        final OidcConfiguration config =
-                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));
+    void fromEntity_noRoleMappings_isRejected() {
+        // Role mappings are required: an absent (or empty) <role-mappings> is rejected rather than granting
+        // Edge roles by IdP group name (there is no verbatim mode).
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "roleMappings", List.of());
 
-        assertThat(config.getRoleMappings()).isNull();
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("role-mappings");
     }
 
     @Test
@@ -518,7 +521,12 @@ class OidcConfigurationTest {
         set(entity, "redirectUri", redirect);
         set(entity, "roleClaimName", roleClaim);
         set(entity, "extraScopes", extraScopes);
-        set(entity, "roleMappings", List.of(mappings));
+        // Role mappings are required, so default to a valid mapping when a test does not care about them.
+        // A test that is about the mappings passes its own; a test of the "no mappings" error clears the
+        // field after construction.
+        final List<OidcRoleMappingEntity> roleMappings =
+                mappings.length == 0 ? List.of(new OidcRoleMappingEntity("idp-admins", "admin")) : List.of(mappings);
+        set(entity, "roleMappings", roleMappings);
         return entity;
     }
 

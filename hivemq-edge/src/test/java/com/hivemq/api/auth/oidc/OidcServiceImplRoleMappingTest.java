@@ -22,39 +22,10 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link OidcServiceImpl#resolveEdgeRoles}: the two role-mapping modes and their literal
- * matching.
+ * Unit tests for {@link OidcServiceImpl#resolveEdgeRoles}: role mapping and its literal matching. Only an
+ * explicitly mapped IdP role produces an Edge role; there is no verbatim mode.
  */
 class OidcServiceImplRoleMappingTest {
-
-    // -- Verbatim mode (no mappings): claim values are Edge roles directly.
-
-    @Test
-    void verbatim_keepsEdgeRolesFromTheClaim() {
-        assertThat(OidcServiceImpl.resolveEdgeRoles(List.of("admin", "user"), null))
-                .containsExactlyInAnyOrder("admin", "user");
-    }
-
-    @Test
-    void verbatim_isCaseInsensitiveForTheKnownEdgeRoles() {
-        // The three Edge role names are a fixed set and authorization compares them case-insensitively.
-        assertThat(OidcServiceImpl.resolveEdgeRoles(List.of("ADMIN", "Super"), null))
-                .containsExactlyInAnyOrder("ADMIN", "Super");
-    }
-
-    @Test
-    void verbatim_dropsClaimValuesThatAreNotEdgeRoles() {
-        assertThat(OidcServiceImpl.resolveEdgeRoles(List.of("admin", "some-idp-group"), null))
-                .containsExactly("admin");
-    }
-
-    @Test
-    void verbatim_dropsAnEdgeRoleWithSurroundingWhitespace() {
-        // Matching is literal: " admin " is not "admin". It is dropped (with a warning), not trimmed.
-        assertThat(OidcServiceImpl.resolveEdgeRoles(List.of(" admin "), null)).isEmpty();
-    }
-
-    // -- Strict mode (mappings present): only mapped IdP roles produce an Edge role.
 
     @Test
     void strict_mapsAConfiguredIdpRole() {

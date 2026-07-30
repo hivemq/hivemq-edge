@@ -1223,7 +1223,7 @@
                         <xs:element name="redirect-uri" type="xs:string" minOccurs="0"/>
                         <xs:element name="role-claim-name" type="xs:string" minOccurs="0" default="roles"/>
                         <xs:element name="extra-scopes" type="xs:string" minOccurs="0"/>
-                        <xs:element name="role-mappings" minOccurs="0">
+                        <xs:element name="role-mappings" minOccurs="1">
                             <xs:complexType>
                                 <xs:sequence>
                                     <xs:element name="role-mapping" minOccurs="1" maxOccurs="unbounded">

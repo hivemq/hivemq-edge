@@ -16,7 +16,6 @@
 package com.hivemq.api.auth.oidc;
 
 import com.hivemq.api.auth.ApiPrincipal;
-import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.config.OidcConfiguration;
@@ -348,28 +347,17 @@ public class OidcServiceImpl implements OidcService {
     }
 
     /**
-     * Resolves the Edge roles for the given IdP role claim values under the two mapping modes. Package
-     * private for direct testing.
+     * Resolves the Edge roles for the given IdP role claim values. An IdP role produces an Edge role only
+     * when the operator has mapped it explicitly; an unmapped value grants nothing. Package private for
+     * direct testing.
      */
     static @NotNull Set<String> resolveEdgeRoles(
-            final @NotNull List<String> idpRoles, final @Nullable Map<String, String> mappings) {
+            final @NotNull List<String> idpRoles, final @NotNull Map<String, String> mappings) {
         final Set<String> edgeRoles = new HashSet<>();
         for (final String idpRole : idpRoles) {
-            if (mappings == null) {
-                mapVerbatim(idpRole, edgeRoles);
-            } else {
-                mapStrict(idpRole, mappings, edgeRoles);
-            }
+            mapStrict(idpRole, mappings, edgeRoles);
         }
         return edgeRoles;
-    }
-
-    private static void mapVerbatim(final @NotNull String idpRole, final @NotNull Set<String> edgeRoles) {
-        if (isEdgeRole(idpRole)) {
-            edgeRoles.add(idpRole);
-        } else if (isEdgeRole(idpRole.strip())) {
-            log.warn("OIDC role '{}' looks like an Edge role but has surrounding whitespace; it was ignored.", idpRole);
-        }
     }
 
     private static void mapStrict(
@@ -393,12 +381,6 @@ public class OidcServiceImpl implements OidcService {
                 return;
             }
         }
-    }
-
-    private static boolean isEdgeRole(final @NotNull String role) {
-        return role.equalsIgnoreCase(ApiRoles.ADMIN)
-                || role.equalsIgnoreCase(ApiRoles.SUPER)
-                || role.equalsIgnoreCase(ApiRoles.USER);
     }
 
     private static @NotNull List<String> extractRoleClaim(
