@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>{@code CONTROL} — externally-driven intent: a freshly-loaded configuration, REST direction activation, REST
  * tag retry, and a REST browse request;</li>
  * <li>{@code EVENT} — wrapper health notifications a managed wrapper tells back ({@code started} / {@code stopped} /
- * {@code error});</li>
+ * {@code error} / {@code stop failed});</li>
  * <li>{@code TICK} — periodic housekeeping (the health summary).</li>
  * </ul>
  * Sealed because all permitted subtypes live in this package; the generic {@link MailboxMessage} marker is the
@@ -157,6 +157,18 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
      * @param reason    a human-readable description of why.
      */
     record WrapperError(@NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
+
+    /**
+     * A managed wrapper was commanded to stop and could not be — it has settled in {@code ERROR} and will issue no
+     * further stop (EDG-824 #19). For a stop-and-discard or a full recreate this replaces the
+     * {@link WrapperStopped} that is never coming, so the teardown completes and the replacement configuration is
+     * applied instead of waiting forever. The {@code EVENT} band.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of why the stop did not complete.
+     */
+    record WrapperStopFailed(
+            @NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
 
     /**
      * Periodic housekeeping: the manager folds the registry's snapshots into a health summary it

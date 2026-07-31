@@ -717,6 +717,7 @@ public final class ProtocolAdapterWrapperTestHarness {
         private final @NotNull List<String> started = new ArrayList<>();
         private final @NotNull List<String> stopped = new ArrayList<>();
         private final @NotNull List<String> errorReasons = new ArrayList<>();
+        private final @NotNull List<String> stopFailures = new ArrayList<>();
 
         @Override
         public void wrapperStarted(final @NotNull String adapterId) {
@@ -731,6 +732,11 @@ public final class ProtocolAdapterWrapperTestHarness {
         @Override
         public void wrapperError(final @NotNull String adapterId, final @NotNull String reason) {
             errorReasons.add(reason);
+        }
+
+        @Override
+        public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+            stopFailures.add(reason);
         }
     }
 }

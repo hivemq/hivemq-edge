@@ -42,6 +42,9 @@ public interface ProtocolAdapterWrapperEventListener {
 
         @Override
         public void wrapperError(final @NotNull String adapterId, final @NotNull String reason) {}
+
+        @Override
+        public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {}
     };
 
     /**
@@ -65,4 +68,19 @@ public interface ProtocolAdapterWrapperEventListener {
      * @param reason    a human-readable description of why.
      */
     void wrapperError(@NotNull String adapterId, @NotNull String reason);
+
+    /**
+     * The adapter was commanded to stop and could not be: its goal-driven {@code stop()} was spent without ever
+     * reaching {@code STOPPED}, so the machine has settled in {@code ERROR} and will issue no further stop
+     * (EDG-824 #19). Fired <b>once</b> per adapter life, and always after {@link #wrapperError} for the same
+     * incident.
+     * <p>
+     * It is the counterpart of {@link #wrapperStopped} for a supervisor that is waiting on a stop it will never
+     * get — without it a stop-and-discard or full recreate waits forever, holding the adapter's resources and
+     * silently never applying the configuration that replaces it.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of why the stop did not complete.
+     */
+    void wrapperStopFailed(@NotNull String adapterId, @NotNull String reason);
 }

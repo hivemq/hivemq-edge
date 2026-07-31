@@ -772,6 +772,7 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         private final @NotNull List<String> started = new ArrayList<>();
         private final @NotNull List<String> stopped = new ArrayList<>();
         private final @NotNull List<String> errored = new ArrayList<>();
+        private final @NotNull List<String> stopFailed = new ArrayList<>();
 
         @Override
         public void wrapperStarted(final @NotNull String adapterId) {
@@ -786,6 +787,11 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         @Override
         public void wrapperError(final @NotNull String adapterId, final @NotNull String reason) {
             errored.add(adapterId);
+        }
+
+        @Override
+        public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+            stopFailed.add(adapterId);
         }
     }
 }

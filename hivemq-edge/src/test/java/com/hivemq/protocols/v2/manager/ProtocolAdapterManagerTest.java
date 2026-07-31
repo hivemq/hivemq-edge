@@ -202,6 +202,54 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
+    void configurationRemove_completesTheTeardownWhenTheWrapperCannotBeStopped() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of()));
+        assertThat(handleRegistry.find("a")).isNull();
+
+        // The stopped() ack is never coming: without the stop-failure signal the pending removal would hold the
+        // adapter's resources for the lifetime of the JVM (EDG-824 #19).
+        fireWrapperStopFailed("a", "watchdog timeout while in WAITING_FOR_STOPPED");
+
+        assertThat(wrapperFactory.closedAdapterIds()).contains("a");
+        assertThat(handleRegistry.find("a")).isNull();
+    }
+
+    @Test
+    void reloadFullRecreate_recreatesEvenWhenTheOldWrapperCannotBeStopped() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "a")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "b")).build())));
+        assertThat(handleRegistry.find("a")).isNull();
+
+        // The replacement configuration must still be applied: an adapter that will not stop cannot be allowed to
+        // veto its own reconfiguration.
+        fireWrapperStopFailed("a", "watchdog timeout while in WAITING_FOR_STOPPED");
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void wrapperStopFailed_withNoPendingRemoval_leavesTheAdapterManagedForManualRecovery() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        final int createdBefore = wrapperFactory.createdAdapterIds().size();
+
+        // Both directions deactivated on an adapter that cannot stop: nothing is being discarded, so the adapter
+        // stays registered and visible in ERROR rather than being torn down behind the operator's back.
+        fireWrapperStopFailed("a", "watchdog timeout while in WAITING_FOR_STOPPED");
+
+        assertThat(wrapperFactory.createdAdapterIds()).hasSize(createdBefore);
+        assertThat(handleRegistry.find("a")).isNotNull();
+        assertThat(wrapperFactory.closedAdapterIds()).doesNotContain("a");
+    }
+
+    @Test
     void recovery_deactivateThenActivate_areForwardedAsLiveGoalCommands() {
         send(new ConfigurationChanged(List.of(adapter("a").build())));
 
@@ -448,6 +496,11 @@ class ProtocolAdapterManagerTest {
 
     private void fireWrapperStopped(final @NotNull String adapterId) {
         wrapperFactory.healthListener().wrapperStopped(adapterId);
+        dispatcher.drainAll();
+    }
+
+    private void fireWrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+        wrapperFactory.healthListener().wrapperStopFailed(adapterId, reason);
         dispatcher.drainAll();
     }
 

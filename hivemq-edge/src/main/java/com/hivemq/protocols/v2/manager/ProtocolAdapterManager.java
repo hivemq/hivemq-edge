@@ -30,6 +30,7 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ProtocolAda
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.RetryTag;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperError;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStarted;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopFailed;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopped;
 import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Clock;
@@ -151,6 +152,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             case WrapperStarted started -> onWrapperStarted(started.adapterId());
             case WrapperStopped stopped -> onWrapperStopped(stopped.adapterId());
             case WrapperError error -> onWrapperError(error.adapterId(), error.reason());
+            case WrapperStopFailed stopFailed -> onWrapperStopFailed(stopFailed.adapterId(), stopFailed.reason());
             case ProtocolAdapterManagerTick tick -> publishHealthSummary(tick.nowMillis());
         }
     }
@@ -439,6 +441,36 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             // registered, its snapshot now showing STOPPED.
             return;
         }
+        completePendingRemoval(adapterId, pending);
+    }
+
+    /**
+     * The wrapper cannot be stopped: it spent its goal-driven {@code stop()} without ever reaching
+     * {@code STOPPED} and has settled in {@code ERROR} (EDG-824 #19). A discard or recreate waiting on that stop
+     * would otherwise wait forever — holding the adapter's tick, dispatcher binding and metrics, and silently never
+     * applying the configuration meant to replace it. Complete the teardown on the failure instead.
+     * <p>
+     * Closing an adapter that never confirmed its stop is the same best-effort teardown as everywhere else
+     * ({@code ProtocolAdapterContainer.close} guards each step): the alternative is a permanent leak plus a
+     * configuration change that never lands.
+     */
+    private void onWrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+        final PendingRemoval pending = pendingRemovalMap.remove(adapterId);
+        if (pending == null) {
+            // Not on its way out — the goal simply became "stopped" (for example both directions were deactivated).
+            // The adapter stays managed and registered, its snapshot showing ERROR, for manual recovery.
+            log.warn("v2 adapter '{}' could not be stopped: {}", adapterId, reason);
+            return;
+        }
+        log.warn("v2 adapter '{}' never completed its stop ({}); tearing it down anyway", adapterId, reason);
+        completePendingRemoval(adapterId, pending);
+    }
+
+    /**
+     * Finish a stop-and-discard: release the stopped instance's resources, then either surface a rejection that
+     * arrived while it was stopping or recreate it from the pending configuration.
+     */
+    private void completePendingRemoval(final @NotNull String adapterId, final @NotNull PendingRemoval pending) {
         pending.stopping().close();
         final RejectedAdapterEntity deferredRejection = deferredRejections.remove(adapterId);
         if (deferredRejection != null && !containerMap.containsKey(adapterId)) {

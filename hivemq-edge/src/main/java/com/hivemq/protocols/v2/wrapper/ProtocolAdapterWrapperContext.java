@@ -106,6 +106,24 @@ public final class ProtocolAdapterWrapperContext {
     private long lastTransitionAtMillis;
     private @Nullable String lastErrorReason;
 
+    /**
+     * How far the goal-driven {@code stop()} out of {@code ERROR} has got in this adapter life — the bound that
+     * makes {@code ERROR} terminal for an adapter that will not stop (EDG-824 #19).
+     * <p>
+     * Without it, {@code ERROR} and {@code WAITING_FOR_STOPPED} form a closed cycle whenever the goal is "stopped"
+     * and the adapter never completes its stop: the watchdog resets to {@code ERROR}, {@link #stepTowardGoal()}
+     * re-commands the stop, and the machine leaves {@code ERROR} before a snapshot is ever published — so the REST
+     * status reads {@code YELLOW_STOPPING} forever while an ERROR line is logged every watchdog period. The same
+     * cycle runs with no delay at all when the adapter answers its {@code stop()} with {@code error(ADAPTER)} or
+     * throws from it, because neither path waits for the watchdog.
+     * <p>
+     * One attempt is the whole policy: {@link #enterError} already issues its own best-effort {@code stop()}, so an
+     * adapter that ignored both has answered the question. Reset only when a life actually ends or begins
+     * ({@link #stoppedStep()} / {@link #startStep()}) — never on a goal change, or a deactivate/activate/deactivate
+     * cycle would re-open the loop.
+     */
+    private @NotNull GoalStopAttempt goalStopAttempt = GoalStopAttempt.NOT_ISSUED;
+
     private @Nullable TimerHandle watchdog;
     private @Nullable TimerHandle backoffTimer;
     private final @NotNull ProtocolAdapterBrowseEngine browseEngine = new ProtocolAdapterBrowseEngine();
@@ -249,7 +267,11 @@ public final class ProtocolAdapterWrapperContext {
                 }
             }
             case ERROR -> {
-                if (!goal.wantConnected()) {
+                // At most one goal-driven stop per life: an adapter that does not answer it leaves the machine in
+                // ERROR for good, rather than cycling back into WAITING_FOR_STOPPED forever (EDG-824 #19). Marked
+                // before the command is issued, because stop() itself may throw.
+                if (!goal.wantConnected() && goalStopAttempt == GoalStopAttempt.NOT_ISSUED) {
+                    goalStopAttempt = GoalStopAttempt.ISSUED;
                     machine().transitionTo(stopFromErrorStep());
                 }
             }
@@ -268,6 +290,7 @@ public final class ProtocolAdapterWrapperContext {
      * @param command the command to apply.
      */
     public void applyCommand(final @NotNull ProtocolAdapterWrapperCommand command) {
+        boolean stopCommanded = false;
         switch (command) {
             case ProtocolAdapterWrapperCommand.ActivateDirection activate -> {
                 goal = goal.withActivated(activate.direction());
@@ -276,10 +299,12 @@ public final class ProtocolAdapterWrapperContext {
             case ProtocolAdapterWrapperCommand.DeactivateDirection deactivate -> {
                 goal = goal.withDeactivated(deactivate.direction());
                 tagPlane.applyActivation(goal, activation);
+                stopCommanded = !goal.wantConnected();
             }
             case ProtocolAdapterWrapperCommand.StopAdapter ignored -> {
                 goal = ProtocolAdapterGoalState.stopped();
                 tagPlane.applyActivation(goal, activation);
+                stopCommanded = true;
             }
             case ProtocolAdapterWrapperCommand.UpdateTagSet update -> {
                 activation = Map.copyOf(update.activation());
@@ -294,8 +319,22 @@ public final class ProtocolAdapterWrapperContext {
                 goal = apply.adapterDirections();
                 activation = Map.copyOf(apply.tagActivation());
                 tagPlane.applyActivation(goal, activation);
+                stopCommanded = !goal.wantConnected();
             }
             case ProtocolAdapterWrapperCommand.RetryTag retry -> tagPlane.retryTag(retry.tagName());
+        }
+        if (stopCommanded && machine().state() == ERROR && goalStopAttempt != GoalStopAttempt.NOT_ISSUED) {
+            // Asked to stop an adapter settled in ERROR that has already spent its one attempt: the
+            // {@link #stepTowardGoal} below will issue nothing, so answer the supervisor now rather than leave it
+            // waiting on a stopped() that is never coming. A discard or recreate commanded after the machine
+            // settled arrives exactly here (EDG-824 #19).
+            //
+            // The test is "spent", not "FAILED": the attempt stays ISSUED when the machine settles while the goal
+            // wants the adapter connected (a direction was re-activated mid-stop), and a discard commanded after
+            // that would otherwise hang exactly as before. In ERROR with NOT_ISSUED there is still an attempt to
+            // make, and while a stop is genuinely in flight the state is WAITING_FOR_STOPPED, not ERROR.
+            healthListener.wrapperStopFailed(
+                    adapterId, Objects.requireNonNullElse(lastErrorReason, "the adapter did not complete its stop"));
         }
     }
 
@@ -306,6 +345,7 @@ public final class ProtocolAdapterWrapperContext {
     @NotNull
     ProtocolAdapterWrapperState startStep() {
         clearTimers();
+        goalStopAttempt = GoalStopAttempt.NOT_ISSUED; // a new life: the previous life's stop budget does not carry over
         protocolAdapter.start();
         armWatchdog();
         return WAITING_FOR_STARTED;
@@ -419,6 +459,7 @@ public final class ProtocolAdapterWrapperContext {
     ProtocolAdapterWrapperState stoppedStep() {
         clearTimers();
         clearVerification();
+        goalStopAttempt = GoalStopAttempt.NOT_ISSUED; // the stop was honored: a later ERROR gets its own attempt
         lastErrorReason = null;
         tagPlane.onAdapterUnavailable();
         healthListener.wrapperStopped(adapterId);
@@ -510,6 +551,14 @@ public final class ProtocolAdapterWrapperContext {
         tagPlane.onAdapterUnavailable();
         failPendingBrowse();
         healthListener.wrapperError(adapterId, reason);
+        if (goalStopAttempt == GoalStopAttempt.ISSUED && !goal.wantConnected()) {
+            // The goal-driven stop was spent and the machine is back in ERROR: this adapter will not be stopped, and
+            // no further stop will be issued. Tell the supervisor once — it may be holding a discard or a recreate
+            // that is waiting for a stopped() that is never coming (EDG-824 #19).
+            goalStopAttempt = GoalStopAttempt.FAILED;
+            log.warn("Adapter '{}' did not complete its stop; it will not be commanded again: {}", adapterId, reason);
+            healthListener.wrapperStopFailed(adapterId, reason);
+        }
         return ERROR;
     }
 
@@ -880,6 +929,19 @@ public final class ProtocolAdapterWrapperContext {
      */
     public @NotNull ProtocolAdapter protocolAdapter() {
         return protocolAdapter;
+    }
+
+    /**
+     * The lifecycle of the one goal-driven {@code stop()} the machine issues out of {@code ERROR} per adapter life
+     * (EDG-824 #19).
+     */
+    private enum GoalStopAttempt {
+        /** No stop has been commanded from {@code ERROR} yet; the next goal step may issue one. */
+        NOT_ISSUED,
+        /** The stop was commanded; whether the adapter honors it is still open. */
+        ISSUED,
+        /** The stop was commanded and the machine landed back in {@code ERROR}: the supervisor has been told. */
+        FAILED
     }
 
     /**

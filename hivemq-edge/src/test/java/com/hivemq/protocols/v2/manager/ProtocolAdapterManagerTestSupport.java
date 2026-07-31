@@ -337,13 +337,25 @@ public final class ProtocolAdapterManagerTestSupport {
         private final @NotNull ProtocolAdapterOutput output;
         private final @NotNull DataPointFactory dataPointFactory;
 
+        /** When set, {@code stop()} never acknowledges — the adapter of EDG-824 #19. */
+        private final boolean suppressStopAck;
+
         TestProtocolAdapter(
                 final @NotNull String adapterId,
                 final @NotNull ProtocolAdapterOutput output,
                 final @NotNull DataPointFactory dataPointFactory) {
+            this(adapterId, output, dataPointFactory, false);
+        }
+
+        TestProtocolAdapter(
+                final @NotNull String adapterId,
+                final @NotNull ProtocolAdapterOutput output,
+                final @NotNull DataPointFactory dataPointFactory,
+                final boolean suppressStopAck) {
             this.adapterId = adapterId;
             this.output = output;
             this.dataPointFactory = dataPointFactory;
+            this.suppressStopAck = suppressStopAck;
         }
 
         @Override
@@ -358,6 +370,9 @@ public final class ProtocolAdapterManagerTestSupport {
 
         @Override
         public void stop() {
+            if (suppressStopAck) {
+                return; // leaves the wrapper waiting for a stopped() that never comes
+            }
             output.stopped();
         }
 
@@ -489,14 +504,21 @@ public final class ProtocolAdapterManagerTestSupport {
     static final class TestProtocolAdapterFactory implements ProtocolAdapterFactory {
 
         private final @NotNull ProtocolAdapterInformation information;
+        private final boolean suppressStopAck;
 
         TestProtocolAdapterFactory(final @NotNull String protocolId) {
+            this(protocolId, false);
+        }
+
+        TestProtocolAdapterFactory(final @NotNull String protocolId, final boolean suppressStopAck) {
             this.information = new TestProtocolAdapterInformation(protocolId);
+            this.suppressStopAck = suppressStopAck;
         }
 
         TestProtocolAdapterFactory(
                 final @NotNull String protocolId, final @NotNull EnumSet<ProtocolAdapterCapability> capabilities) {
             this.information = new TestProtocolAdapterInformation(protocolId, capabilities);
+            this.suppressStopAck = false;
         }
 
         @Override
@@ -508,7 +530,7 @@ public final class ProtocolAdapterManagerTestSupport {
         public @NotNull ProtocolAdapter createAdapter(
                 final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
             return new TestProtocolAdapter(
-                    input.adapterId(), output, input.services().dataPointFactory());
+                    input.adapterId(), output, input.services().dataPointFactory(), suppressStopAck);
         }
 
         @Override

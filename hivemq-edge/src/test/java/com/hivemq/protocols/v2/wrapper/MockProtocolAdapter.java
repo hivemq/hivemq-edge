@@ -84,6 +84,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     /** When set, {@link #browseCancel(int)} does real synchronous work that throws — the raw-adapter case EDG-785. */
     boolean browseCancelThrows;
 
+    /** When set, {@link #stop()} throws instead of answering — the third shape of a stop that never lands (#19). */
+    boolean stopThrows;
+
     MockProtocolAdapter(final @NotNull String adapterId, final @NotNull ProtocolAdapterOutput output) {
         this.adapterId = adapterId;
         this.output = output;
@@ -107,6 +110,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void stop() {
         commands.add("stop");
+        if (stopThrows) {
+            throw new IllegalStateException("simulated adapter fault in stop()");
+        }
         switch (stopReply) {
             case ACK -> output.stopped();
             case FAIL_ADAPTER -> output.error(ErrorScope.ADAPTER, "stop failed");

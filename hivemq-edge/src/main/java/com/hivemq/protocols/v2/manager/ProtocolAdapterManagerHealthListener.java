@@ -54,4 +54,9 @@ public final class ProtocolAdapterManagerHealthListener implements ProtocolAdapt
     public void wrapperError(final @NotNull String adapterId, final @NotNull String reason) {
         managerSender.tell(new ProtocolAdapterManagerMessage.WrapperError(adapterId, reason));
     }
+
+    @Override
+    public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+        managerSender.tell(new ProtocolAdapterManagerMessage.WrapperStopFailed(adapterId, reason));
+    }
 }
