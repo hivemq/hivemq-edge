@@ -1232,7 +1232,7 @@
                                 </xs:sequence>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="role-mappings" minOccurs="1">
+                        <xs:element name="role-mappings" minOccurs="0">
                             <xs:complexType>
                                 <xs:sequence>
                                     <xs:element name="role-mapping" minOccurs="1" maxOccurs="unbounded">

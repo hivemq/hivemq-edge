@@ -154,6 +154,49 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
         assertThat(apiConfigurationService.getOidcConfiguration()).isNull();
     }
 
+    @Test
+    public void disabledOidcStanzaWithoutRoleMappings_isAccepted() throws Exception {
+        // <role-mappings> is only required for an *enabled* OIDC (enforced in code, gated on <enabled>). A
+        // disabled stanza is never read into an OidcConfiguration, so it must validate without it -- otherwise
+        // pre-staging or temporarily disabling OIDC would be impossible. The XSD makes <role-mappings> optional
+        // (minOccurs=0); the code re-check applies it only when enabled.
+        writeConfig(usernameAuth(true)
+                + users("alice")
+                + "<oidc-authentication><enabled>false</enabled></oidc-authentication>");
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
+        assertThat(apiConfigurationService.getOidcConfiguration()).isNull();
+    }
+
+    @Test
+    public void enabledOidcWithoutRoleMappings_isRejected() throws Exception {
+        // An *enabled* OIDC must still declare role mappings; the requirement now lives in the code path
+        // (OidcConfiguration.fromEntity), not the schema.
+        writeConfig(usernameAuth(false)
+                + "<oidc-authentication><enabled>true</enabled>"
+                + "<issuer-uri>https://idp.example.com</issuer-uri>"
+                + "<client-id>edge</client-id>"
+                + "<redirect-uri>https://edge.example.com/api/v1/auth/oidc/callback</redirect-uri>"
+                + "</oidc-authentication>");
+
+        assertThrows(Exception.class, () -> reader.applyConfig());
+    }
+
+    @Test
+    public void oidcWithEmptyRoleMappingsElement_isRejectedByTheSchema() throws Exception {
+        // <role-mappings> is optional, but a *present* one must still hold at least one <role-mapping>.
+        writeConfig(usernameAuth(false)
+                + "<oidc-authentication><enabled>true</enabled>"
+                + "<issuer-uri>https://idp.example.com</issuer-uri>"
+                + "<client-id>edge</client-id>"
+                + "<redirect-uri>https://edge.example.com/api/v1/auth/oidc/callback</redirect-uri>"
+                + "<role-mappings></role-mappings>"
+                + "</oidc-authentication>");
+
+        assertThrows(Exception.class, () -> reader.applyConfig());
+    }
+
     // -- Presence rule: an OIDC stanza requires an explicit <username-authentication>.
 
     @Test
