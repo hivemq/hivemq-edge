@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { FC, ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { UseDisclosureProps } from '@chakra-ui/react'
 import {
@@ -22,7 +22,7 @@ interface DeviceTagDrawerProps<T> {
   context: ManagerContextType<T>
   // TODO[NVL] Make the component generic and pass the type
   onSubmit?: (data: unknown) => void
-  trigger: (disclosureProps: UseDisclosureProps) => JSX.Element
+  trigger: (disclosureProps: UseDisclosureProps) => ReactElement
   header: string
   submitLabel?: string
 }

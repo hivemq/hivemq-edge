@@ -9,7 +9,7 @@ describe('ActivationPanel', () => {
   })
 
   it('should handle errors', () => {
-    cy.intercept('/api/v1/frontend/capabilities', { statusCode: 404 }).as('capabilities')
+    cy.intercept('/api/v1/frontend/capabilities', { delay: 100, statusCode: 404 }).as('capabilities')
 
     cy.mountWithProviders(<ActivationPanel />)
     cy.getByTestId('loading-spinner').should('be.visible')
@@ -63,9 +63,9 @@ describe('ActivationPanel', () => {
 
   it('should handle activation', () => {
     cy.intercept<ProtocolAdapter>('POST', '/api/v1/management/pulse/activation-token', { statusCode: 202 })
-    cy.intercept('/api/v1/frontend/capabilities', {
-      items: [MOCK_CAPABILITY_PERSISTENCE],
-    }).as('capabilities')
+    cy.intercept('/api/v1/frontend/capabilities', { body: { items: [MOCK_CAPABILITY_PERSISTENCE] }, delay: 100 }).as(
+      'capabilities'
+    )
 
     cy.mountWithProviders(<ActivationPanel />)
     cy_formShouldRenderProperly(
@@ -90,9 +90,9 @@ describe('ActivationPanel', () => {
   })
 
   it('should handle deactivation', () => {
-    cy.intercept('/api/v1/frontend/capabilities', {
-      items: [MOCK_CAPABILITY_PULSE_ASSETS],
-    }).as('capabilities')
+    cy.intercept('/api/v1/frontend/capabilities', { body: { items: [MOCK_CAPABILITY_PULSE_ASSETS] }, delay: 100 }).as(
+      'capabilities'
+    )
 
     cy.mountWithProviders(<ActivationPanel />)
     cy_formShouldRenderProperly(

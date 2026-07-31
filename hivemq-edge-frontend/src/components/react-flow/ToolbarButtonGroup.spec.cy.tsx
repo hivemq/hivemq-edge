@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { Icon } from '@chakra-ui/react'
 import { LuAlbum, LuBaby } from 'react-icons/lu'
@@ -17,7 +18,7 @@ describe('ToolbarButtonGroup', () => {
         <IconButton icon={<Icon as={LuBaby} />} aria-label="second button" onClick={cy.stub().as('button2')} />
       </ToolbarButtonGroup>,
       {
-        wrapper: ({ children }: { children: JSX.Element }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
+        wrapper: ({ children }: { children: ReactElement }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
       }
     )
 
@@ -33,7 +34,7 @@ describe('ToolbarButtonGroup', () => {
         <IconButton icon={<Icon as={LuBaby} />} aria-label="second button" onClick={cy.stub().as('button2')} />
       </ToolbarButtonGroup>,
       {
-        wrapper: ({ children }: { children: JSX.Element }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
+        wrapper: ({ children }: { children: ReactElement }) => <ReactFlowProvider>{children}</ReactFlowProvider>,
       }
     )
 

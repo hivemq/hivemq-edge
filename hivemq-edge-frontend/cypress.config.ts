@@ -2,7 +2,7 @@ import { defineConfig } from 'cypress'
 import installLogsPrinter from 'cypress-terminal-report/src/installLogsPrinter.js'
 import { plugin as cypressGrepPlugin } from '@cypress/grep/plugin'
 
-import codeCoverage from '@cypress/code-coverage/task.js'
+import codeCoverage from '@cypress/code-coverage/task'
 
 export default defineConfig({
   env: {

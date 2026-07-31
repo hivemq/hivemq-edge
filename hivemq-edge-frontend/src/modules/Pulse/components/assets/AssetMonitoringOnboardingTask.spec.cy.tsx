@@ -10,7 +10,7 @@ describe('AssetMonitoringOnboardingTask', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getAssets')
+    cy.intercept('/api/v1/management/pulse/managed-assets', { body: MOCK_PULSE_ASSET_LIST, delay: 100 }).as('getAssets')
     cy.mountWithProviders(<AssetMonitoringOnboardingTask />)
 
     cy.getByTestId('loading-spinner').should('be.visible')
@@ -42,7 +42,8 @@ describe('AssetMonitoringOnboardingTask', () => {
 
   it('should render all streaming properly', () => {
     cy.intercept('/api/v1/management/pulse/managed-assets', {
-      items: [MOCK_PULSE_ASSET_MAPPED],
+      body: { items: [MOCK_PULSE_ASSET_MAPPED] },
+      delay: 100,
     }).as('getAssets')
     cy.mountWithProviders(<AssetMonitoringOnboardingTask />)
 
@@ -73,7 +74,7 @@ describe('AssetMonitoringOnboardingTask', () => {
   })
 
   it('should navigate properly', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getAssets')
+    cy.intercept('/api/v1/management/pulse/managed-assets', { body: MOCK_PULSE_ASSET_LIST, delay: 100 }).as('getAssets')
     cy.mountWithProviders(<AssetMonitoringOnboardingTask />, { wrapper: WrapperTestRoute })
 
     cy.wait('@getAssets')

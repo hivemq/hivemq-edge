@@ -6,7 +6,7 @@ import SourcesCell from '@/modules/Pulse/components/assets/SourcesCell.tsx'
 
 describe('SourcesCell', () => {
   it('should render errors with 4xx', () => {
-    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { statusCode: 404 }).as('getCombiner')
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { delay: 100, statusCode: 404 }).as('getCombiner')
     cy.mountWithProviders(<SourcesCell mappingId="wrong-combiner" />)
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.wait('@getCombiner')
@@ -16,7 +16,10 @@ describe('SourcesCell', () => {
   })
 
   it('should render errors with wrong combiner', () => {
-    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] }).as('getCombiner')
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', {
+      body: { items: [MOCK_COMBINER_ASSET] },
+      delay: 100,
+    }).as('getCombiner')
     cy.mountWithProviders(<SourcesCell mappingId="wrong-combiner" />)
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.wait('@getCombiner')
@@ -26,7 +29,10 @@ describe('SourcesCell', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [MOCK_COMBINER_ASSET] }).as('getCombiner')
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', {
+      body: { items: [MOCK_COMBINER_ASSET] },
+      delay: 100,
+    }).as('getCombiner')
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
     cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
 
@@ -55,7 +61,9 @@ describe('SourcesCell', () => {
 
     const mockAdapters: Adapter[] = testCases.map((e) => ({ ...mockAdapter, id: `my-adapter${e + 1}` }))
 
-    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { items: [mockCombiner] }).as('getCombiner')
+    cy.intercept('GET', '/api/v1/management/pulse/asset-mappers', { body: { items: [mockCombiner] }, delay: 100 }).as(
+      'getCombiner'
+    )
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
     cy.intercept('api/v1/management/protocol-adapters/adapters', { items: mockAdapters })
 

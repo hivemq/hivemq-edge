@@ -520,7 +520,9 @@ describe('getSourceFromSchema', () => {
 
     const result = getSourceFromSchema(invalidProtobufSchema)
 
-    expect(result).toContain('// Error decoding PROTOBUF schema: invalid encoding')
+    // Only assert on the prefix we produce; the trailing text is protobufjs' own wording and it
+    // changed between major versions ('invalid encoding' -> 'index out of range: ...').
+    expect(result).toContain('// Error decoding PROTOBUF schema:')
   })
 
   it('should default to JSON when schema type is unknown', () => {

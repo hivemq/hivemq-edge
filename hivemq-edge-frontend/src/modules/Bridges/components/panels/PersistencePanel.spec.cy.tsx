@@ -41,7 +41,8 @@ describe('PersistencePanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
 
-    cy.get('#field-\\:r1\\:-helptext')
+    // Chakra derives the id from `useId()`, whose format is a React implementation detail
+    cy.get('[id$="-helptext"]')
       .should('be.visible')
       .should('contain.text', 'Select to store MQTT Traffic greater than QoS 0 on disk.')
     cy.get('label').should('contain.text', 'MQTT Persistence')

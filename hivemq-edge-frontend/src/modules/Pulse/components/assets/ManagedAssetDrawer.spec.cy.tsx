@@ -48,7 +48,8 @@ describe('ManagedAssetDrawer', () => {
       routerProps: { initialEntries: [`/pulse-assets/${assetId}`] },
     })
 
-    cy.getByTestId('test-pathname').should('have.text', `/pulse-assets/${assetId}`)
+    // No assertion on the starting route: routerProps.initialEntries already guarantees it, and the
+    // redirect away from the unknown asset can land before the assertion runs.
     cy.wait('@getStatus')
     cy.getByTestId('test-pathname').should('have.text', '/pulse-assets')
     cy.get("[role='status'] > [data-status='error']").within(() => {
