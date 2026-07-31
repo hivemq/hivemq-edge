@@ -104,20 +104,22 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void emptyUsersElement_isRejectedByTheSchema() throws Exception {
-        // A present <users> must contain at least one <user>; the empty form is no longer accepted, so the
-        // "present-but-empty means nobody can log in" ambiguity cannot arise. Local auth is DISABLED here so
-        // the code path (which would itself reject a no-source config) is skipped entirely -- the only thing
-        // that can fail this config is the schema rejecting the empty <users>. This is what proves the XSD
-        // guard is live: with <user minOccurs="0"> it was not (the empty form validated, EDG-849 #2 hole).
+    public void emptyUsersElement_isAccepted() throws Exception {
+        // An empty <users> is a legitimate configuration -- it is not schema-rejected. Whether a user source
+        // is required depends on context (<enabled> and <ldap>), which the schema cannot express, so the rule
+        // lives in code, not in <user> occurrence. Here local auth is disabled, so an empty <users> is simply
+        // unused and the config is accepted with no auth modes. (The config-file round-trip also emits an empty
+        // <users> whenever the user list is empty, so rejecting it in the schema would break config sync.)
         writeConfig(usernameAuth(false) + "<users></users>");
+        reader.applyConfig();
 
-        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+        assertThat(apiConfigurationService.getAuthModes()).isEmpty();
+        assertThat(apiConfigurationService.getUserList()).isEmpty();
     }
 
     @Test
-    public void nonEmptyUsersElement_isAcceptedByTheSchema() throws Exception {
-        // The counterpart: a <users> with at least one <user> validates and is read as the user source.
+    public void nonEmptyUsersElement_isAccepted() throws Exception {
+        // A <users> with at least one <user> validates and is read as the user source.
         writeConfig(usernameAuth(true) + users("alice"));
         reader.applyConfig();
 

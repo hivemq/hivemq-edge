@@ -136,8 +136,11 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
             if (entity.getLdap() != null) {
                 apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
             } else {
-                // The schema requires a present <users> element to contain at least one <user>, so an empty
-                // list here means <users> is absent — there is no configured source.
+                // An empty list means no usable local user source: <users> was either absent or present but
+                // empty (JAXB collapses both to an empty list). Either way there is nothing to authenticate
+                // against, so the branches below fall through to the first-boot default or the no-source error
+                // exactly as an absent <users> would. An empty <users> is a legitimate state -- it is not
+                // enforced away in the schema, because whether it is acceptable depends on <enabled> and <ldap>.
                 final List<UserEntity> users = entity.getUsers();
                 if (!users.isEmpty()) {
                     log.warn(
