@@ -199,8 +199,10 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void oidcWithEmptyRoleMappingsElement_isRejectedByTheSchema() throws Exception {
-        // <role-mappings> is optional, but a *present* one must still hold at least one <role-mapping>.
+    public void enabledOidcWithEmptyRoleMappings_isRejectedByTheCode() throws Exception {
+        // An enabled OIDC must declare at least one role mapping. This is enforced in
+        // OidcConfiguration.fromEntity, not the schema: the schema allows a present-but-empty <role-mappings>
+        // (so a disabled, mapping-less stanza can be written back), and the code rejects it when OIDC is on.
         writeConfig(usernameAuth(false)
                 + "<oidc-authentication><enabled>true</enabled>"
                 + "<issuer-uri>https://idp.example.com</issuer-uri>"

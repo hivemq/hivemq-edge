@@ -65,4 +65,27 @@ class ConfigFileReaderWriterTest {
         // This will break as soon as the xsd is fixed
         assertThat(configEntity).isFalse();
     }
+
+    @Test
+    public void disabledOidcStanza_roundTripsWithoutSyncFailure() throws Exception {
+        // A pre-staged, disabled <oidc-authentication> (no <role-mappings>) must be readable AND writable:
+        // the config-file sync re-marshals the whole config on every change, so if this cannot be written back
+        // the change is lost on restart. The entity must not emit an empty <role-mappings></role-mappings>
+        // (which the schema rejects); it must omit the element entirely when there are no mappings.
+        final var systemInformation = mock(SystemInformation.class);
+        when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
+        final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
+        final var configFile = new File(getClass()
+                .getClassLoader()
+                .getResource("configs/testing/oidc_disabled_no_role_mappings.xml")
+                .toURI());
+
+        assertThat(reader.loadConfigFromXML(configFile)).isTrue();
+
+        // Re-marshal (this is what config sync does). The marshaller validates against the schema, so an empty
+        // <role-mappings/> would throw here. It must succeed and omit the element.
+        final var writer = new java.io.StringWriter();
+        reader.writeConfigToXML(writer);
+        assertThat(writer.toString()).doesNotContain("<role-mappings");
+    }
 }
