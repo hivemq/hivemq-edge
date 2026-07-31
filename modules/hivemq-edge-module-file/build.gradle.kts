@@ -41,6 +41,8 @@ dependencies {
     testImplementation(libs.assertj)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation("com.hivemq:hivemq-edge")
+    // hivemq-edge config entities are JAXB annotated; javac needs the annotation types to read their class files
+    testCompileOnly(libs.jaxb4.bind)
 }
 
 tasks.test {

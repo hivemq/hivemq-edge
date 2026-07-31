@@ -69,7 +69,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("DUPLICATE_NODE"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.DUPLICATE_NODE);
     }
 
     @Test
@@ -137,7 +137,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_TAG_NAME"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_TAG_NAME);
     }
 
     @Test
@@ -211,7 +211,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_QOS"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_QOS);
     }
 
     @Test
@@ -252,7 +252,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_TOPIC"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_TOPIC);
     }
 
     @Test
@@ -295,7 +295,8 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors)
-                .noneMatch(e -> e.code().equals("INVALID_TOPIC") && e.column().equals("southbound_topic"));
+                .noneMatch(
+                        e -> e.code() == ValidationError.Code.INVALID_TOPIC && "southbound_topic".equals(e.column()));
     }
 
     // --- Expiry validation ---
@@ -310,7 +311,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_EXPIRY"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_EXPIRY);
     }
 
     @Test
@@ -351,7 +352,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_FIELD_MAPPING"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_FIELD_MAPPING);
     }
 
     @Test
@@ -453,7 +454,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_NODE_ID"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_NODE_ID);
     }
 
     // --- Multiple errors collected ---
@@ -765,7 +766,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_SAFE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("TAG_CONFLICT"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.TAG_CONFLICT);
     }
 
     @Test
@@ -822,8 +823,8 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         // No row-level validation errors for rows without tags
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_TAG_NAME"));
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_NODE_ID"));
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_TAG_NAME);
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_NODE_ID);
     }
 
     // --- Expiry upper bound (MQTT uint32 max) ---

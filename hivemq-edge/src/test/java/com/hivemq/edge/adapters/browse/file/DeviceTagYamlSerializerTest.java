@@ -219,7 +219,7 @@ class DeviceTagYamlSerializerTest {
 
         for (int t = 0; t < threadCount; t++) {
             final int threadIdx = t;
-            executor.submit(() -> {
+            var unused = executor.submit(() -> {
                 try {
                     startLatch.await();
                     final List<DeviceTagRow> rows = new ArrayList<>();
