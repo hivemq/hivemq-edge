@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -45,5 +46,54 @@ class OidcServiceImplRoleMappingTest {
         // Case differs: no match, so the role is dropped (a warning is logged for the near miss).
         assertThat(OidcServiceImpl.resolveEdgeRoles(List.of("HiveMQ-Admins"), Map.of("hivemq-admins", "admin")))
                 .isEmpty();
+    }
+
+    /**
+     * {@link OidcServiceImpl#isSupportedRoleClaimShape}: a role claim yields role names only when it is a
+     * string or an array of strings. A nested object (e.g. Keycloak's realm_access) is unsupported and, when
+     * present, is an unambiguous role-claim-name misconfiguration — distinct from an absent or empty claim.
+     */
+    @Nested
+    class RoleClaimShape {
+
+        @Test
+        void aStringIsSupported() {
+            assertThat(OidcServiceImpl.isSupportedRoleClaimShape("admin")).isTrue();
+        }
+
+        @Test
+        void anArrayOfStringsIsSupported() {
+            assertThat(OidcServiceImpl.isSupportedRoleClaimShape(List.of("admin", "user")))
+                    .isTrue();
+        }
+
+        @Test
+        void anEmptyArrayIsSupported() {
+            // An empty array is a role-less user, not a wrong shape.
+            assertThat(OidcServiceImpl.isSupportedRoleClaimShape(List.of())).isTrue();
+        }
+
+        @Test
+        void aNestedObjectIsNotSupported() {
+            // Keycloak's realm_access is {"roles": [...]} -- a container, not the role list itself.
+            assertThat(OidcServiceImpl.isSupportedRoleClaimShape(Map.of("roles", List.of("admin"))))
+                    .isFalse();
+        }
+
+        @Test
+        void anArrayContainingANonStringIsNotSupported() {
+            assertThat(OidcServiceImpl.isSupportedRoleClaimShape(List.of("admin", 42)))
+                    .isFalse();
+        }
+
+        @Test
+        void aNumberIsNotSupported() {
+            assertThat(OidcServiceImpl.isSupportedRoleClaimShape(42)).isFalse();
+        }
+
+        @Test
+        void nullIsNotSupported() {
+            assertThat(OidcServiceImpl.isSupportedRoleClaimShape(null)).isFalse();
+        }
     }
 }

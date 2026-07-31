@@ -400,10 +400,26 @@ public class OidcServiceImpl implements OidcService {
                         idpRoles);
             }
         } else if (claims.toJSONObject().containsKey(claimName)) {
-            log.warn(
-                    "OIDC login denied: the role claim '{}' is present in the ID token but empty; the user has "
-                            + "no roles.",
-                    claimName);
+            final Object rawClaim = claims.toJSONObject().get(claimName);
+            if (isSupportedRoleClaimShape(rawClaim)) {
+                // Present and of a supported shape (string or array) but yielding no role names: genuinely empty.
+                log.warn(
+                        "OIDC login denied: the role claim '{}' is present in the ID token but empty; the user has "
+                                + "no roles.",
+                        claimName);
+            } else {
+                // Present but neither a string nor an array of strings -- e.g. a nested object such as Keycloak's
+                // realm_access. Unlike an absent claim, this is unambiguous: a role-less user never produces this
+                // shape, so it is a role-claim-name misconfiguration pointing at a container rather than the list
+                // of role names inside it. The value's type is named; its contents are not logged.
+                log.warn(
+                        "OIDC login denied: the role claim '{}' is present in the ID token but is a {}, not a string "
+                                + "or an array of role names. Set role-claim-name to the claim that holds the role "
+                                + "names directly (for example, a nested object like Keycloak's realm_access is a "
+                                + "container -- point role-claim-name at the list inside it).",
+                        claimName,
+                        rawClaim == null ? "null value" : rawClaim.getClass().getSimpleName());
+            }
         } else {
             log.warn(
                     "OIDC login denied: the configured role-claim-name '{}' is not present in the ID token. The "
@@ -413,6 +429,21 @@ public class OidcServiceImpl implements OidcService {
                     claimName,
                     claims.toJSONObject().keySet());
         }
+    }
+
+    /**
+     * Whether a raw ID-token claim value is a shape from which role names can be read: a string, or an array
+     * whose entries are strings. A nested object (e.g. Keycloak's {@code realm_access}) or any other shape is
+     * unsupported — the operator has pointed {@code role-claim-name} at a container rather than the role list.
+     */
+    static boolean isSupportedRoleClaimShape(final @Nullable Object rawClaim) {
+        if (rawClaim instanceof String) {
+            return true;
+        }
+        if (rawClaim instanceof final List<?> list) {
+            return list.stream().allMatch(entry -> entry instanceof String);
+        }
+        return false;
     }
 
     /**
