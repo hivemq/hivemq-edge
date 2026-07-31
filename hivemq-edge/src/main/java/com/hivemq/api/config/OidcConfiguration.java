@@ -169,8 +169,9 @@ public class OidcConfiguration {
         final List<String> scopes = configuredScopes == null ? List.of() : List.copyOf(configuredScopes);
 
         // Role mappings are required: only an explicitly mapped IdP role produces an Edge role, and an
-        // unmapped value grants nothing. The <role-mappings> element must be present with at least one
-        // <role-mapping> (enforced by the XSD; re-checked here so a programmatic entity cannot bypass it).
+        // unmapped value grants nothing. An enabled OIDC must declare at least one <role-mapping>, and this
+        // check is the ONLY enforcement of that: the schema deliberately allows an absent or present-but-empty
+        // <role-mappings> so a disabled, mapping-less stanza can still be written back (EDG-849).
         // Keys are stored and matched literally — no trimming or case-folding — so a stray space or wrong
         // case is an honest mismatch the operator can see in the logs, not a silent, surprising match.
         final List<OidcRoleMappingEntity> mappingEntities = entity.getRoleMappings();

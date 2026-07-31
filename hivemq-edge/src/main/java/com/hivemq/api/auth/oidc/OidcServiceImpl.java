@@ -357,14 +357,15 @@ public class OidcServiceImpl implements OidcService {
      * <ul>
      *   <li><b>claim present, some roles mapped</b> — the login succeeds. A warning is emitted <em>only when
      *       some IdP roles were dropped</em> (unmapped), which may be a missing {@code <role-mapping>};</li>
-     *   <li><b>claim present, non-empty, none mapped</b> — denied; the IdP roles are listed so the operator
-     *       can see they are all unmapped;</li>
+     *   <li><b>claim present, non-empty, none mapped</b> — denied; the number of values and the claim name are
+     *       logged, so the operator can see they are all unmapped;</li>
      *   <li><b>claim present but empty</b> — denied; the user genuinely carries no roles;</li>
      *   <li><b>claim absent</b> — denied; the configured {@code role-claim-name} is not in the token, which is
      *       likely (but not certainly) a misconfiguration, since some IdPs omit an empty claim entirely.</li>
      * </ul>
-     * IdP <em>role</em> values are logged (they are the names the operator maps, not personal data); other
-     * claim <em>names</em> are logged in the absent case to help spot the right claim, never their values.
+     * Logging invariant: a WARN carries counts, config-supplied strings (the claim name, a mapping key) and
+     * claim <em>names</em> — never claim <em>values</em>, which are token content and may be user identifiers
+     * when {@code role-claim-name} is misconfigured. Values are available at DEBUG.
      */
     private static void logRoleMappingOutcome(
             final @NotNull IDTokenClaimsSet claims,
