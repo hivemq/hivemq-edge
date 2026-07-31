@@ -104,17 +104,33 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void emptyUsersElement_isAccepted() throws Exception {
+    public void emptyUsersElement_withLocalAuthOff_isAcceptedAndUnused() throws Exception {
         // An empty <users> is a legitimate configuration -- it is not schema-rejected. Whether a user source
         // is required depends on context (<enabled> and <ldap>), which the schema cannot express, so the rule
-        // lives in code, not in <user> occurrence. Here local auth is disabled, so an empty <users> is simply
-        // unused and the config is accepted with no auth modes. (The config-file round-trip also emits an empty
-        // <users> whenever the user list is empty, so rejecting it in the schema would break config sync.)
+        // lives in code, not in <user> occurrence. With local auth DISABLED the <users> element is never read
+        // (the local branch is skipped), so the config is accepted with no auth modes and no users. (The
+        // config-file round-trip also emits an empty <users> whenever the user list is empty, so rejecting it
+        // in the schema would break config sync.)
         writeConfig(usernameAuth(false) + "<users></users>");
         reader.applyConfig();
 
         assertThat(apiConfigurationService.getAuthModes()).isEmpty();
         assertThat(apiConfigurationService.getUserList()).isEmpty();
+    }
+
+    @Test
+    public void emptyUsersElement_withNothingElse_yieldsTheBuiltInAdminAccount() throws Exception {
+        // Pins the accepted first-boot behaviour for the present-but-empty form: <users></users> with no
+        // <username-authentication>, no <ldap>, no <oidc> reaches the fully-implicit branch and installs the
+        // built-in admin -- identical to an absent <users> (JAXB collapses absent and present-empty to an
+        // empty list). This is a deliberate decision (EDG-849): the schema does not, and cannot, forbid an
+        // empty <users> here, so this behaviour is documented rather than left to be rediscovered.
+        writeConfig("<users></users>");
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getUserList())
+                .singleElement()
+                .satisfies(user -> assertThat(user.getUserName()).isEqualTo("admin"));
     }
 
     @Test
