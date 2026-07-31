@@ -1038,24 +1038,22 @@
             <xs:element name="users" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:choice minOccurs="1" maxOccurs="unbounded">
-                            <xs:element name="user" minOccurs="0">
-                                <xs:complexType>
-                                    <xs:all>
-                                        <xs:element name="username" type="xs:string"/>
-                                        <xs:element name="password" type="xs:string"/>
-                                        <xs:element name="roles">
-                                            <xs:complexType>
-                                                <xs:choice minOccurs="0" maxOccurs="unbounded">
-                                                    <xs:element name="role" minOccurs="0" maxOccurs="unbounded"
-                                                                type="xs:string"/>
-                                                </xs:choice>
-                                            </xs:complexType>
-                                        </xs:element>
-                                    </xs:all>
-                                </xs:complexType>
-                            </xs:element>
-                        </xs:choice>
+                        <xs:element name="user" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="username" type="xs:string"/>
+                                    <xs:element name="password" type="xs:string"/>
+                                    <xs:element name="roles">
+                                        <xs:complexType>
+                                            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                                                <xs:element name="role" minOccurs="0" maxOccurs="unbounded"
+                                                            type="xs:string"/>
+                                            </xs:choice>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>

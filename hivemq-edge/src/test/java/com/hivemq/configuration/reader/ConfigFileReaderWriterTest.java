@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.hivemq.configuration.info.SystemInformation;
 import java.io.File;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class ConfigFileReaderWriterTest {
@@ -64,6 +65,37 @@ class ConfigFileReaderWriterTest {
         final var configEntity = reader.loadConfigFromXML(configFile);
         // This will break as soon as the xsd is fixed
         assertThat(configEntity).isFalse();
+    }
+
+    private void assertRoundTrips(final @NotNull String resource, final @NotNull String... mustContain)
+            throws Exception {
+        final var systemInformation = mock(SystemInformation.class);
+        when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
+        final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
+        final var configFile = new File(getClass()
+                .getClassLoader()
+                .getResource("configs/testing/" + resource)
+                .toURI());
+
+        // Read through Edge's real reader (validates against config.xsd)...
+        assertThat(reader.loadConfigFromXML(configFile)).as("read %s", resource).isTrue();
+        // ...then marshal back through the real writer (the marshaller validates against config.xsd too).
+        final var writer = new java.io.StringWriter();
+        reader.writeConfigToXML(writer);
+        final var xml = writer.toString();
+        for (final String needle : mustContain) {
+            assertThat(xml).as("re-marshalled %s contains %s", resource, needle).contains(needle);
+        }
+    }
+
+    @Test
+    public void users_allShapes_readAndWriteBackAcrossTheSchema() throws Exception {
+        // The <users> element was cleaned from a single-branch <xs:choice> to a plain repeated <user>. These
+        // exercise the full read+write round trip through the real reader/writer (both validate against
+        // config.xsd) for every shape, to prove the cleaned schema is equivalent -- empty, one, and many.
+        assertRoundTrips("users_empty_localauth_off.xml"); // empty <users>, allowed, writes back
+        assertRoundTrips("users_one_with_roles.xml", "<username>alice</username>", "<role>admin</role>");
+        assertRoundTrips("users_multiple.xml", "<username>alice</username>", "<username>bob</username>");
     }
 
     @Test
