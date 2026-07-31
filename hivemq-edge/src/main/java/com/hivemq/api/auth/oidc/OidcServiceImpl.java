@@ -236,8 +236,8 @@ public class OidcServiceImpl implements OidcService {
             // mapRoles logs the specific reason (claim absent / empty / no mapping matched) for the operator.
             final Set<String> edgeRoles = mapRoles(config, claims);
             if (edgeRoles.isEmpty()) {
-                log.warn(
-                        "OIDC login for subject '{}' produced no Edge roles; denying (see the reason above).", subject);
+                // No subject in the message: the token 'sub' is a user identifier (token content, not config).
+                log.warn("OIDC login produced no Edge roles; denying (see the reason above).");
                 return callbackError(OidcErrorCode.NO_ROLES, config);
             }
             final String edgeJwt = tokenGenerator.generateToken(new ApiPrincipal(subject, edgeRoles));
@@ -393,12 +393,17 @@ public class OidcServiceImpl implements OidcService {
                             unmatched);
                 }
             } else {
+                // WARN carries only the count and the (config-supplied) claim name -- never the claim values,
+                // which are token content: a misconfigured role-claim-name pointing at e.g. 'email' would
+                // otherwise write user identifiers to the log on every denied login. The values are available
+                // at DEBUG for troubleshooting.
                 log.warn(
-                        "OIDC login denied: none of the {} IdP role(s) under claim '{}' matched a "
-                                + "<role-mapping>: {}",
+                        "OIDC login denied: none of the {} value(s) under claim '{}' matched a <role-mapping>.",
                         idpRoles.size(),
-                        claimName,
-                        idpRoles);
+                        claimName);
+                if (log.isDebugEnabled()) {
+                    log.debug("OIDC unmatched values under claim '{}': {}", claimName, idpRoles);
+                }
             }
         } else if (claims.toJSONObject().containsKey(claimName)) {
             final Object rawClaim = claims.toJSONObject().get(claimName);
@@ -474,10 +479,11 @@ public class OidcServiceImpl implements OidcService {
         final String lenient = idpRole.strip().toLowerCase(Locale.ROOT);
         for (final String key : mappings.keySet()) {
             if (key.strip().toLowerCase(Locale.ROOT).equals(lenient)) {
+                // Name the (config-supplied) mapping key, not the IdP role value from the token, which is
+                // token content. The near-match is what points the operator at the likely case/whitespace typo.
                 log.warn(
-                        "OIDC role '{}' did not match mapping key '{}' exactly (they differ only by case or "
-                                + "whitespace); the role was ignored. This may be a configuration typo.",
-                        idpRole,
+                        "OIDC: an IdP role differed from mapping key '{}' only by case or whitespace and was "
+                                + "ignored. This may be a configuration typo in <role-mappings>.",
                         key);
                 return;
             }
