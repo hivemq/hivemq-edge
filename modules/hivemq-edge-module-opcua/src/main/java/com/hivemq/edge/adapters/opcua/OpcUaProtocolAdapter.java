@@ -42,9 +42,12 @@ import com.hivemq.edge.adapters.opcua.browse.OpcUaNodeBrowser;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
+import com.hivemq.edge.adapters.opcua.condition.ConditionUpdate;
+import com.hivemq.edge.adapters.opcua.condition.ConditionUpdateWriter;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
@@ -671,6 +674,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
                             final NodeId nodeId =
                                     NodeId.parse(opcuaTag.getDefinition().getNode());
+
+                            // A condition is moved by calling a method on it, not by assigning to it: the
+                            // server owns the state machine. Everything else is an ordinary value write.
+                            if (opcuaTag.getDefinition().getType() == OpcuaTagType.CONDITION) {
+                                writeConditionUpdate(client, nodeId, opcUAWritePayload, tagName, output);
+                                return;
+                            }
+
                             final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
                             @SuppressWarnings("unused")
@@ -694,6 +705,45 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     });
                         },
                         () -> output.fail("Discovery failed: Client not connected or not initialized"));
+    }
+
+    /**
+     * Requests a state transition on a condition, as asked for by a southbound message.
+     * <p>
+     * A malformed command fails the write rather than being interpreted generously: the {@code eventId}
+     * identifies one specific transition, so guessing at a command risks acknowledging something other than
+     * what was intended.
+     */
+    private void writeConditionUpdate(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull OpcUaPayload payload,
+            final @NotNull String tagName,
+            final @NotNull WritingOutput output) {
+
+        final ConditionUpdate update;
+        try {
+            update = ConditionUpdate.fromJson(payload.value());
+        } catch (final IllegalArgumentException e) {
+            log.error("Rejected condition update for tag '{}': {}", tagName, e.getMessage());
+            output.fail("Rejected condition update for tag '" + tagName + "': " + e.getMessage());
+            return;
+        }
+
+        @SuppressWarnings("unused")
+        final var unused = ConditionUpdateWriter.requestTransition(client, conditionNodeId, update)
+                .whenComplete((statusCode, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Exception while updating condition tag '{}'", tagName, throwable);
+                        output.fail(throwable, null);
+                    } else if (statusCode.isBad()) {
+                        log.error("Failed to {} condition tag '{}': {}", update.method(), tagName, statusCode);
+                        output.fail("Failed to " + update.method() + " condition tag '" + tagName + "': " + statusCode);
+                    } else {
+                        log.debug("Successfully requested {} on condition tag '{}'", update.method(), tagName);
+                        output.finish();
+                    }
+                });
     }
 
     @Override

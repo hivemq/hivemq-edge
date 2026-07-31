@@ -1,0 +1,261 @@
+/*
+ * Copyright 2023-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.adapters.opcua.condition;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.writing.WritingContext;
+import com.hivemq.adapter.sdk.api.writing.WritingInput;
+import com.hivemq.adapter.sdk.api.writing.WritingOutput;
+import com.hivemq.edge.adapters.opcua.FakeEventService;
+import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
+import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import util.EmbeddedOpcUaServerExtension;
+import util.TestNamespace;
+
+/**
+ * Writes to a condition tag against an embedded OPC UA server and checks what the server was asked to do.
+ * <p>
+ * The risk on this path is that acknowledging is a <em>method call</em>, not a write: the arguments, their
+ * order and the method node id are all decided locally and only validated by the server. A unit test over the
+ * command parser cannot establish that a server accepts the call, so the round trip is exercised here.
+ */
+public class OpcUaConditionUpdateIT {
+
+    private static final long CONDITION_NODE_ID = 9200L;
+
+    @RegisterExtension
+    public final @NotNull EmbeddedOpcUaServerExtension opcUaServerExtension = new EmbeddedOpcUaServerExtension();
+
+    private final @NotNull ObjectMapper mapper = new ObjectMapper();
+
+    private @Nullable OpcUaProtocolAdapter adapter;
+    private @NotNull ProtocolAdapterState protocolAdapterState;
+    private @NotNull FakeEventService eventService;
+
+    @BeforeEach
+    void setUp() {
+        protocolAdapterState = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        eventService = new FakeEventService();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (adapter != null) {
+            adapter.destroy();
+        }
+    }
+
+    @Test
+    @Timeout(120)
+    void whenAConditionIsAcknowledged_thenTheServerIsAskedToAcknowledgeThatTransition() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("AckableAlarm", CONDITION_NODE_ID);
+
+        startAdapterWith(conditionNodeId);
+
+        // The eventId is echoed back exactly as it was published north — base64 of the bytes the server
+        // minted. Acknowledging is against a transition, so this token is what makes the request meaningful.
+        final String eventId = Base64.getEncoder().encodeToString("transition-42".getBytes());
+
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"eventId": "%s", "method": 0, "comment": "Checked - reducing setpoint"}
+                """.formatted(eventId));
+
+        verify(output, timeout(10_000)).finish();
+
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCalls();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).methodName())
+                .as("method 0 must dispatch to Acknowledge")
+                .isEqualTo("Acknowledge");
+        assertThat(new String(calls.get(0).eventId().bytesOrEmpty()))
+                .as("the server must receive the transition token it issued, not the base64 text of it")
+                .isEqualTo("transition-42");
+        assertThat(calls.get(0).comment()).isEqualTo("Checked - reducing setpoint");
+    }
+
+    @Test
+    @Timeout(120)
+    void whenAConditionIsConfirmed_thenTheServerIsAskedToConfirm() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("ConfirmableAlarm", CONDITION_NODE_ID + 1);
+
+        startAdapterWith(conditionNodeId);
+
+        final String eventId = Base64.getEncoder().encodeToString("transition-7".getBytes());
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"eventId": "%s", "method": 1, "comment": ""}
+                """.formatted(eventId));
+
+        verify(output, timeout(10_000)).finish();
+
+        // Same action, different parameter: the point of the unified command is that only `method` changes.
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCalls();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).methodName()).isEqualTo("Confirm");
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheMethodIsNamed_thenItIsAcceptedToo() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("NamedMethodAlarm", CONDITION_NODE_ID + 2);
+
+        startAdapterWith(conditionNodeId);
+
+        final String eventId = Base64.getEncoder().encodeToString("transition-9".getBytes());
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"eventId": "%s", "method": "ACKNOWLEDGE", "comment": "by name"}
+                """.formatted(eventId));
+
+        verify(output, timeout(10_000)).finish();
+        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+                .singleElement()
+                .satisfies(call -> assertThat(call.methodName()).isEqualTo("Acknowledge"));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheCommandIsMalformed_thenTheWriteFailsAndNothingIsCalled() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("StrictAlarm", CONDITION_NODE_ID + 3);
+
+        startAdapterWith(conditionNodeId);
+
+        // No eventId: there is no way to know which transition this refers to, and guessing at one risks
+        // acknowledging something the operator did not intend.
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": 0, "comment": "no event id"}
+                """);
+
+        verify(output, timeout(10_000)).fail(org.mockito.ArgumentMatchers.anyString());
+
+        // Checked after the failure is observed: the point is not merely that the write failed, but that the
+        // command was rejected locally and never became a call on the server.
+        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+                .as("a command that cannot be understood must not reach the server")
+                .isEmpty();
+    }
+
+    private @NotNull WritingOutput writeToCondition(final @NotNull String conditionNodeId, final @NotNull String json)
+            throws Exception {
+        final JsonNode value = mapper.readTree(json);
+
+        final WritingContext writingContext = mock(WritingContext.class);
+        when(writingContext.getTagName()).thenReturn("alarm-tag");
+
+        final WritingInput writingInput = mock(WritingInput.class);
+        when(writingInput.getWritingContext()).thenReturn(writingContext);
+        when(writingInput.getWritingPayload()).thenReturn(new OpcUaPayload(value));
+
+        final WritingOutput output = mock(WritingOutput.class);
+        requireAdapter().write(writingInput, output);
+        return output;
+    }
+
+    private @NotNull OpcUaProtocolAdapter requireAdapter() {
+        final OpcUaProtocolAdapter started = adapter;
+        if (started == null) {
+            throw new IllegalStateException("the adapter has not been started");
+        }
+        return started;
+    }
+
+    private void startAdapterWith(final @NotNull String conditionNodeId) {
+        final OpcuaTag tag =
+                new OpcuaTag("alarm-tag", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagType.CONDITION));
+
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
+
+        @SuppressWarnings("unchecked")
+        final ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
+        when(input.getAdapterId()).thenReturn("test-adapter-id");
+        when(input.getProtocolAdapterState()).thenReturn(protocolAdapterState);
+        when(input.getConfig()).thenReturn(config);
+        final List<Tag> genericTags = new ArrayList<>(List.of(tag));
+        when(input.getTags()).thenReturn(genericTags);
+        when(input.adapterFactories()).thenReturn(mock(AdapterFactories.class));
+        when(input.getProtocolAdapterMetricsHelper()).thenReturn(mock(ProtocolAdapterMetricsService.class));
+
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(eventService);
+        when(input.moduleServices()).thenReturn(moduleServices);
+
+        adapter = new OpcUaProtocolAdapter(adapterInformation, input);
+
+        final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
+        when(startInput.moduleServices()).thenReturn(moduleServices);
+
+        // OPC UA shares one client between directions: the Northbound start is what actually connects, and
+        // the Southbound start is a no-op that assumes it. Writing therefore needs the Northbound start.
+        adapter.start(
+                ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+    }
+}

@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -32,8 +33,11 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.EventItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
+import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.model.objects.AlarmConditionTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
@@ -43,10 +47,14 @@ import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DiagnosticInfo;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -264,6 +272,110 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         getNodeManager().addNode(node);
         requireNonNull(testFolder).addOrganizes(node);
         return nodeId.toParseableString();
+    }
+
+    /**
+     * One invocation of a condition method, as the server saw it.
+     *
+     * @param methodName   which method was called — Acknowledge or Confirm.
+     * @param eventId      the transition the caller is responding to.
+     * @param comment      the free text that came with it.
+     */
+    public record MethodCall(
+            @NotNull String methodName,
+            @NotNull ByteString eventId,
+            @NotNull String comment) {}
+
+    private final @NotNull List<MethodCall> methodCalls = new CopyOnWriteArrayList<>();
+
+    /**
+     * Every condition method invoked on this namespace so far, in order.
+     */
+    public @NotNull List<MethodCall> methodCalls() {
+        return List.copyOf(methodCalls);
+    }
+
+    /**
+     * Adds a condition that can be acknowledged and confirmed.
+     * <p>
+     * Beyond being an event source, the node carries the two standard {@code AcknowledgeableConditionType}
+     * methods, each with a handler that records the arguments. Recording rather than modelling is deliberate:
+     * what a southbound test needs to establish is that Edge invoked the right method on the right condition
+     * with the {@code EventId} it was given, and a real state machine here would obscure that.
+     *
+     * @param name       the browse name of the condition object.
+     * @param nodeIdPart the identifier part of its node id.
+     * @return the node id, in the parseable form a tag definition uses.
+     */
+    public @NotNull String addAcknowledgeableConditionNode(final @NotNull String name, final long nodeIdPart) {
+        final String conditionNodeId = addConditionNode(name, nodeIdPart);
+        final NodeId nodeId = NodeId.parse(conditionNodeId);
+
+        addConditionMethod(nodeId, NodeIds.AcknowledgeableConditionType_Acknowledge, "Acknowledge", nodeIdPart + 1000);
+        addConditionMethod(nodeId, NodeIds.AcknowledgeableConditionType_Confirm, "Confirm", nodeIdPart + 2000);
+
+        return conditionNodeId;
+    }
+
+    /**
+     * Exposes one condition method on the node.
+     * <p>
+     * The method is reachable under two node ids. A client calls the standard type-level id
+     * ({@code AcknowledgeableConditionType_Acknowledge}), which is what makes those methods callable without
+     * browsing; the instance also needs its own method node so the address space is well formed.
+     */
+    private void addConditionMethod(
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull NodeId standardMethodNodeId,
+            final @NotNull String methodName,
+            final long instanceNodeIdPart) {
+
+        final MethodInvocationHandler handler = (context, request) -> {
+            final Variant[] arguments = request.getInputArguments();
+            final ByteString eventId =
+                    arguments != null && arguments.length > 0 && arguments[0].getValue() instanceof final ByteString bs
+                            ? bs
+                            : ByteString.NULL_VALUE;
+            final String comment = arguments != null
+                            && arguments.length > 1
+                            && arguments[1].getValue() instanceof final LocalizedText lt
+                    ? String.valueOf(lt.getText())
+                    : "";
+            methodCalls.add(new MethodCall(methodName, eventId, comment));
+            return new CallMethodResult(StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]);
+        };
+
+        final UaMethodNode instanceMethod = UaMethodNode.builder(getNodeContext())
+                .setNodeId(newNodeId(instanceNodeIdPart))
+                .setBrowseName(newQualifiedName(methodName))
+                .setDisplayName(LocalizedText.english(methodName))
+                .setExecutable(true)
+                .setUserExecutable(true)
+                .build();
+        instanceMethod.setInvocationHandler(handler);
+        getNodeManager().addNode(instanceMethod);
+
+        final UaNode condition = getNodeManager().get(conditionNodeId);
+        if (condition != null) {
+            condition.addReference(new Reference(
+                    conditionNodeId,
+                    NodeIds.HasComponent,
+                    instanceMethod.getNodeId().expanded(),
+                    true));
+        }
+
+        // The standard type-level method node: this is the id a client actually calls.
+        if (getNodeManager().get(standardMethodNodeId) == null) {
+            final UaMethodNode standardMethod = UaMethodNode.builder(getNodeContext())
+                    .setNodeId(standardMethodNodeId)
+                    .setBrowseName(new QualifiedName(0, methodName))
+                    .setDisplayName(LocalizedText.english(methodName))
+                    .setExecutable(true)
+                    .setUserExecutable(true)
+                    .build();
+            standardMethod.setInvocationHandler(handler);
+            getNodeManager().addNode(standardMethod);
+        }
     }
 
     /**
