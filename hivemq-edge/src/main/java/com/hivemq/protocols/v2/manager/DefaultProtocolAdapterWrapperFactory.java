@@ -214,8 +214,14 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
 
         final ProtocolAdapterMetrics metrics =
                 scope.register(new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size));
+        // Registered EMPTY, then wired: the registry's own consumers are acquired one at a time, and a failure on any
+        // of them must leave the ones already added to the tag manager owned by the scope. A registry that built them
+        // in its constructor was never returned when it threw, so nothing could remove them (Sam round 3, finding 4).
         final NorthboundTagConsumerRegistry northboundConsumers =
-                scope.registerOptional(createNorthboundConsumers(adapterId, factory, entity));
+                scope.registerOptional(createNorthboundConsumers(adapterId, factory));
+        if (northboundConsumers != null) {
+            northboundConsumers.updateMappings(entity.getNorthboundMappings());
+        }
         final Consumer<DataPoint> northboundDataPointSink;
         if (northboundConsumers == null) {
             northboundDataPointSink = ignored -> {};
@@ -273,8 +279,13 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // still released.
         final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
+        // Same shape as the northbound registry above: the scope owns it before its first subscription exists, so a
+        // start that throws after the contexts were adopted is still stopped on the way out.
         final SouthboundWriterRegistry southboundWriters =
-                scope.registerOptional(createSouthboundWriters(adapterId, factory, entity, mailbox, nodes));
+                scope.registerOptional(createSouthboundWriters(adapterId, factory, mailbox, nodes));
+        if (southboundWriters != null) {
+            southboundWriters.updateMappings(entity.getSouthboundMappings(), nodes);
+        }
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
         return scope.commit(new ProtocolAdapterContainer(
                 handle,
@@ -287,10 +298,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 entity));
     }
 
+    /** Builds the empty registry; the caller registers it with the scope and only then wires its mappings. */
     private @Nullable NorthboundTagConsumerRegistry createNorthboundConsumers(
-            final @NotNull String adapterId,
-            final @NotNull ProtocolAdapterFactory factory,
-            final @NotNull ProtocolAdapterEntity entity) {
+            final @NotNull String adapterId, final @NotNull ProtocolAdapterFactory factory) {
         if (tagManager == null || northboundConsumerFactory == null) {
             return null;
         }
@@ -299,14 +309,13 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 factory.information(),
                 tagManager,
                 northboundConsumerFactory,
-                new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
-                entity.getNorthboundMappings());
+                new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry));
     }
 
+    /** Builds the empty registry; the caller registers it with the scope and only then starts its writing. */
     private @Nullable SouthboundWriterRegistry createSouthboundWriters(
             final @NotNull String adapterId,
             final @NotNull ProtocolAdapterFactory factory,
-            final @NotNull ProtocolAdapterEntity entity,
             final @NotNull Mailbox<ProtocolAdapterWrapperMessage> mailbox,
             final @NotNull List<NodeTagPair> nodes) {
         if (writingService == null) {
@@ -319,8 +328,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
                 mailbox,
                 dataPointFactory,
-                nodes,
-                entity.getSouthboundMappings());
+                nodes);
     }
 
     @Override

@@ -32,6 +32,12 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The v2 config currently carries only a tag/topic pair, so the legacy {@link NorthboundMapping} is built with the
  * same defaults the legacy mapping model uses: QoS 2, timestamp included, tag names and metadata omitted.
+ * <p>
+ * <b>Construction acquires nothing.</b> A registry starts empty and its owner calls {@link #updateMappings} to wire
+ * it — deliberately, so the owner can take responsibility for closing it <i>before</i> the first consumer exists.
+ * Building the consumers in the constructor put them beyond the reach of any rollback: a failure on the second
+ * mapping left the first one live in the {@link TagManager} while the half-built registry was never returned to
+ * anyone who could close it (Sam round 3, finding 4).
  */
 public final class NorthboundTagConsumerRegistry implements AutoCloseable {
 
@@ -50,24 +56,30 @@ public final class NorthboundTagConsumerRegistry implements AutoCloseable {
             final @NotNull com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation information,
             final @NotNull TagManager tagManager,
             final @NotNull NorthboundConsumerFactory consumerFactory,
-            final @NotNull InternalProtocolAdapterMetricsService metricsService,
-            final @NotNull List<NorthboundMappingEntity> mappings) {
+            final @NotNull InternalProtocolAdapterMetricsService metricsService) {
         this.adapterId = adapterId;
         this.protocolId = information.protocolId();
         this.publishIdentity = new ProtocolAdapterPublishIdentity(adapterId, information);
         this.tagManager = tagManager;
         this.consumerFactory = consumerFactory;
         this.metricsService = metricsService;
-        updateMappings(mappings);
     }
 
+    /**
+     * Replace the active consumers with the ones the given mappings call for. A failure part-way through leaves the
+     * consumers built so far registered here, so {@link #close()} still removes every one of them.
+     *
+     * @param mappings the adapter's current northbound mappings.
+     */
     public void updateMappings(final @NotNull List<NorthboundMappingEntity> mappings) {
         removeConsumers();
         for (final NorthboundMappingEntity mapping : mappings) {
             final NorthboundTagConsumer consumer = consumerFactory.build(
                     adapterId, publishIdentity, protocolId, toNorthboundMapping(mapping), metricsService);
-            tagManager.addConsumer(consumer);
+            // Recorded before it is handed to the tag manager: a throw from addConsumer must not leave a consumer
+            // this registry cannot remove. removeConsumer on a never-added consumer is a no-op.
             consumers.add(consumer);
+            tagManager.addConsumer(consumer);
         }
     }
 

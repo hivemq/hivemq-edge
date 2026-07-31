@@ -152,15 +152,19 @@ class SouthboundWriteWiringTest {
     private static @NotNull SouthboundWriterRegistry registry(
             final @NotNull InternalProtocolAdapterWritingService writingService,
             final @NotNull List<SouthboundMappingEntity> mappings) {
-        return new SouthboundWriterRegistry(
+        final List<NodeTagPair> nodes = List.of(pair(new TestNode("setpoint")));
+        final SouthboundWriterRegistry registry = new SouthboundWriterRegistry(
                 ADAPTER_ID,
                 new ProtocolAdapterManagerTestSupport.TestProtocolAdapterInformation("test"),
                 writingService,
                 metricsService(),
                 new RecordingSender(),
                 new TestDataPointFactory(),
-                List.of(pair(new TestNode("setpoint"))),
-                mappings);
+                nodes);
+        // The owner wires the registry after taking responsibility for closing it — the production factory does the
+        // same through its construction scope (Sam round 3, finding 4).
+        registry.updateMappings(mappings, nodes);
+        return registry;
     }
 
     private static @NotNull ProtocolAdapterPublishIdentity identity() {

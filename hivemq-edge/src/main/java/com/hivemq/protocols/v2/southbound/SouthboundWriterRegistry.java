@@ -45,6 +45,12 @@ import org.slf4j.LoggerFactory;
  * The v2 config carries only the {@code topic}/{@code tag-name} pair, so the legacy {@link SouthboundMapping} is
  * built with the default field mapping and a permissive schema — the tag's declared schema governs the value at the
  * adapter boundary, not here.
+ * <p>
+ * <b>Construction starts nothing.</b> A registry is built with its bridge only; its owner calls
+ * {@link #updateMappings} to start the writing — deliberately, so the owner can take responsibility for closing it
+ * <i>before</i> any subscription exists. Starting inside the constructor put the adopted writing contexts beyond the
+ * reach of any rollback: a throwing start left them adopted while the half-built registry was never returned to
+ * anyone who could stop them (Sam round 3, finding 4).
  */
 public final class SouthboundWriterRegistry implements AutoCloseable {
 
@@ -68,7 +74,6 @@ public final class SouthboundWriterRegistry implements AutoCloseable {
      * @param wrapperSender    the owning wrapper's mailbox sender.
      * @param dataPointFactory the reused v1 factory write values are carried with.
      * @param nodes            the adapter's configured node/tag pairs.
-     * @param mappings         the adapter's southbound mappings.
      */
     public SouthboundWriterRegistry(
             final @NotNull String adapterId,
@@ -77,8 +82,7 @@ public final class SouthboundWriterRegistry implements AutoCloseable {
             final @NotNull ProtocolAdapterMetricsService metricsService,
             final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender,
             final @NotNull DataPointFactory dataPointFactory,
-            final @NotNull List<NodeTagPair> nodes,
-            final @NotNull List<SouthboundMappingEntity> mappings) {
+            final @NotNull List<NodeTagPair> nodes) {
         this.adapterId = adapterId;
         this.writingService = writingService;
         this.metricsService = metricsService;
@@ -87,7 +91,6 @@ public final class SouthboundWriterRegistry implements AutoCloseable {
                 wrapperSender,
                 dataPointFactory,
                 byTagName(nodes));
-        updateMappings(mappings, nodes);
     }
 
     /**

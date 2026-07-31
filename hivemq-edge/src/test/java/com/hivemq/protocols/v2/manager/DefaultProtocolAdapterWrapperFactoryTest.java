@@ -19,6 +19,11 @@ import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.
 import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.tag;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -48,8 +53,11 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.InternalWritingContext;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestDataPointFactory;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory;
@@ -348,6 +356,7 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         final CountingDispatcher counting = new CountingDispatcher();
         final MetricRegistry registry = new MetricRegistry();
         final ScriptedClock scriptedClock = new ScriptedClock(clock, 0);
+        final FailingWritingService writingService = new FailingWritingService();
         final DefaultProtocolAdapterWrapperFactory factoryWithFailingWriters = new DefaultProtocolAdapterWrapperFactory(
                 scriptedClock,
                 counting,
@@ -357,7 +366,7 @@ class DefaultProtocolAdapterWrapperFactoryTest {
                 100,
                 null,
                 null,
-                new FailingWritingService());
+                writingService);
 
         // The southbound registry is the LAST thing built, so its failure is the one with the most to unwind.
         assertThatThrownBy(() -> factoryWithFailingWriters.create(
@@ -372,6 +381,53 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         assertThat(metricsFor(registry, "a")).isZero();
         assertThat(counting.liveBindings()).isZero();
         assertThat(scriptedClock.liveTicks()).isZero();
+        // The registry had already adopted its writing contexts when the start threw. Unless the scope owns the
+        // registry BEFORE it is initialized, nothing can undo that — the object that holds the contexts is never
+        // returned to anyone (Sam round 3, finding 4).
+        assertThat(writingService.stops())
+                .as("the partially-started southbound wiring is stopped")
+                .isEqualTo(1);
+    }
+
+    @Test
+    void aFailureBuildingTheSecondNorthboundConsumer_removesTheFirstOneAlreadyAdded() {
+        final MetricRegistry registry = new MetricRegistry();
+        final TagManager tagManager = spy(new TagManager());
+        final NorthboundTagConsumer firstConsumer = mock(NorthboundTagConsumer.class);
+        when(firstConsumer.getTagName()).thenReturn("temperature");
+        final NorthboundConsumerFactory consumerFactory = mock(NorthboundConsumerFactory.class);
+        when(consumerFactory.build(any(), any(), any(), any(), any()))
+                .thenReturn(firstConsumer)
+                .thenThrow(new IllegalStateException("consumer build failed"));
+
+        final DefaultProtocolAdapterWrapperFactory factoryWithFailingConsumers =
+                new DefaultProtocolAdapterWrapperFactory(
+                        clock,
+                        dispatcher,
+                        registry,
+                        new TestDataPointFactory(),
+                        new ObjectMapper(),
+                        100,
+                        tagManager,
+                        consumerFactory,
+                        null);
+
+        // Two mappings: the first consumer is built and added to the tag manager, the second throws. The registry
+        // object is never returned, so before the fix nothing owned the live first consumer — it kept receiving
+        // every value fed for its tag, for an adapter that does not exist.
+        assertThatThrownBy(() -> factoryWithFailingConsumers.create(
+                        adapter("a")
+                                .northboundMapping("temperature", "plant/a/temperature")
+                                .northboundMapping("pressure", "plant/a/pressure")
+                                .build(),
+                        sdkFactory,
+                        ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("consumer build failed");
+
+        verify(tagManager).addConsumer(firstConsumer);
+        verify(tagManager).removeConsumer(firstConsumer);
+        assertThat(metricsFor(registry, "a")).isZero();
     }
 
     @Test
@@ -449,8 +505,18 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         }
     }
 
-    /** A writing service that refuses to start — models the southbound wiring failing at the last step. */
+    /**
+     * A writing service that refuses to start — models the southbound wiring failing at the last step. It counts the
+     * stops it is asked for: a start that threw <b>after</b> the registry adopted its contexts must still be undone,
+     * and only the construction scope can do that (Sam round 3, finding 4).
+     */
     private static final class FailingWritingService implements InternalProtocolAdapterWritingService {
+
+        private int stops;
+
+        private int stops() {
+            return stops;
+        }
 
         @Override
         public boolean writingEnabled() {
@@ -468,7 +534,9 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         @Override
         public void stopWriting(
                 final @NotNull WritingProtocolAdapter writingProtocolAdapter,
-                final @NotNull List<InternalWritingContext> writingContexts) {}
+                final @NotNull List<InternalWritingContext> writingContexts) {
+            stops++;
+        }
 
         @Override
         public void addWritingChangedCallback(final @NotNull WritingChangedCallback callback) {}
