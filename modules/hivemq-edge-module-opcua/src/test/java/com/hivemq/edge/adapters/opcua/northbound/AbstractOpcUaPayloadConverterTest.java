@@ -76,7 +76,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
         final var tagManager = mock(TagManager.class);
         doAnswer(invocation -> {
                     final List<DataPoint> dataPointList = invocation.getArgument(0, List.class);
-                    final var dataPoint = (DataPointWithMetadata) (dataPointList.get(0));
+                    final var dataPoint = (DataPointWithMetadata) dataPointList.get(0);
                     receivedDataPoints.put(dataPoint.getTagName(), dataPoint);
                     return null;
                 })

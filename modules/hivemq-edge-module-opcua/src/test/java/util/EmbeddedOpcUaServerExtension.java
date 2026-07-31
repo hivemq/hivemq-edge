@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -108,8 +109,8 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
                 new X500Name(
                         "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
                 BigInteger.valueOf(123456789),
-                new Date(System.currentTimeMillis() - 10000),
-                new Date(System.currentTimeMillis() + 10000),
+                Date.from(Instant.now().minusSeconds(10)),
+                Date.from(Instant.now().plusSeconds(10)),
                 new X500Name(
                         "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
                 keyPair.getPublic());

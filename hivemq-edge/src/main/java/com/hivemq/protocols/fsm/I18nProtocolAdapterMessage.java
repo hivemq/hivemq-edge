@@ -17,6 +17,7 @@ package com.hivemq.protocols.fsm;
 
 import com.hivemq.common.i18n.I18nError;
 import com.hivemq.common.i18n.I18nErrorTemplate;
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,7 +41,7 @@ public enum I18nProtocolAdapterMessage implements I18nError {
     private final @NotNull String key;
 
     I18nProtocolAdapterMessage() {
-        key = name().toLowerCase().replace("_", ".");
+        key = name().toLowerCase(Locale.ROOT).replace("_", ".");
     }
 
     @Override

@@ -455,7 +455,9 @@ public class OpcUaNodeBrowser {
 
         @Override
         public long estimateSize() {
-            return variables.size() - globalOffset + (currentBatch != null ? currentBatch.size() - batchIndex : 0);
+            return (long) variables.size()
+                    - globalOffset
+                    + (currentBatch != null ? currentBatch.size() - batchIndex : 0);
         }
 
         @Override
@@ -558,7 +560,7 @@ public class OpcUaNodeBrowser {
         if (stripped.isEmpty()) {
             return "";
         }
-        final String[] segments = stripped.split("/");
+        final String[] segments = stripped.split("/", -1);
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < segments.length; i++) {
             if (i > 0) {
@@ -591,7 +593,7 @@ public class OpcUaNodeBrowser {
         if (stripped.isEmpty()) {
             return "";
         }
-        final String[] segments = stripped.split("/");
+        final String[] segments = stripped.split("/", -1);
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < segments.length; i++) {
             if (i > 0) {

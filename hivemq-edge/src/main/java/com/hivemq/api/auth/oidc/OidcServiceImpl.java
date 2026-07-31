@@ -294,7 +294,8 @@ public class OidcServiceImpl implements OidcService {
      * Redirects are disabled: the discovery and JWKS URLs are derived from the validated issuer and answer
      * directly, so following a redirect would only widen the set of hosts Edge contacts (an SSRF surface)
      * and let a chain multiply the per-call timeout. {@link DefaultResourceRetriever} has no redirect
-     * setting, so {@link #openConnection} is overridden to turn instance-following off on the connection.
+     * setting, so {@link DefaultResourceRetriever#openConnection(URL)} is overridden to turn instance-following
+     * off on the connection.
      */
     static @NotNull DefaultResourceRetriever resourceRetriever(final @NotNull OidcConfiguration config) {
         final int timeout = config.getConnectionTimeoutMillis();
