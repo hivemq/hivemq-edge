@@ -16,22 +16,31 @@
 package util;
 
 import static java.util.Objects.requireNonNull;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 import static util.EmbeddedOpcUaServerExtension.NS_URI;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.server.ManagedNamespaceWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.items.DataItem;
+import org.eclipse.milo.opcua.sdk.server.items.EventItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
+import org.eclipse.milo.opcua.sdk.server.model.objects.AlarmConditionTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -203,5 +212,97 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             final long nodeIdPart,
             final int dimension) {
         return addTestArrayNode(name, typeId, valueCallback, newNodeId(nodeIdPart), dimension);
+    }
+
+    // ── Conditions ──────────────────────────────────────────────────────────────────────────────────────
+    //
+    // A condition is an object that emits events when its state changes. Making one subscribable takes two
+    // separate things, and having only the first is the silent failure mode:
+    //
+    //  1. The EventNotifier attribute must have the SubscribeToEvents bit. This is what lets a client create
+    //     an event-mode MonitoredItem on the node.
+    //  2. The namespace owning the node must register those items with the server's EventNotifier, by
+    //     implementing onEventItemsCreated/Deleted (see below). This is what decides whether a fired event
+    //     is delivered at all.
+    //
+    // With only (1) the subscription is accepted with status Good and then never receives anything: the
+    // items are created and immediately forgotten. Nothing reports an error, which makes a namespace missing
+    // (2) look like a broken client.
+
+    @Override
+    public void onEventItemsCreated(final @NotNull List<EventItem> eventItems) {
+        // An EventItem is itself an EventListener. Milo does no source-node filtering when an event is
+        // fired — it notifies every registered listener and lets each one apply its own WhereClause — so
+        // registering here is exactly what makes events reach a client subscribed to a node of ours.
+        eventItems.forEach(item -> getServer().getEventNotifier().register(item));
+    }
+
+    @Override
+    public void onEventItemsDeleted(final @NotNull List<EventItem> eventItems) {
+        eventItems.forEach(item -> getServer().getEventNotifier().unregister(item));
+    }
+
+    /**
+     * Adds an object that can emit condition events.
+     *
+     * @param name       the browse name of the condition object.
+     * @param nodeIdPart the identifier part of its node id.
+     * @return the node id, in the parseable form a tag definition uses.
+     */
+    public @NotNull String addConditionNode(final @NotNull String name, final long nodeIdPart) {
+        final NodeId nodeId = newNodeId(nodeIdPart);
+        final UaObjectNode node = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(nodeId)
+                .setBrowseName(newQualifiedName(name))
+                .setDisplayName(LocalizedText.english(name))
+                .setTypeDefinition(NodeIds.BaseObjectType)
+                .build();
+
+        // SubscribeToEvents — without this the node is not a valid event source.
+        node.setEventNotifier(ubyte(1));
+
+        getNodeManager().addNode(node);
+        requireNonNull(testFolder).addOrganizes(node);
+        return nodeId.toParseableString();
+    }
+
+    /**
+     * Fires one alarm event from the given condition node, as a server would when the condition changes
+     * state. The fields set here are the ones a client selects for a condition tag.
+     *
+     * @param conditionNodeId the node the event originates from.
+     * @param message         the alarm message.
+     * @param severity        the alarm severity (1-1000).
+     * @param active          whether the alarm is active after this transition.
+     * @return the {@code EventId} of the fired event — the token identifying this transition.
+     */
+    public @NotNull ByteString fireAlarm(
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull String message,
+            final int severity,
+            final boolean active) {
+        try {
+            final AlarmConditionTypeNode event = (AlarmConditionTypeNode)
+                    getServer().getEventFactory().createEvent(newNodeId(UUID.randomUUID()), NodeIds.AlarmConditionType);
+
+            final ByteString eventId =
+                    new ByteString(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
+            event.setEventId(eventId);
+            event.setEventType(NodeIds.AlarmConditionType);
+            event.setSourceNode(conditionNodeId);
+            event.setSourceName(conditionNodeId.toParseableString());
+            event.setTime(DateTime.now());
+            event.setReceiveTime(DateTime.now());
+            event.setMessage(LocalizedText.english(message));
+            event.setSeverity(ushort(severity));
+            event.setRetain(active);
+            event.setActiveState(LocalizedText.english(active ? "Active" : "Inactive"));
+            event.setAckedState(LocalizedText.english("Unacknowledged"));
+
+            getServer().getEventNotifier().fire(event);
+            return eventId;
+        } catch (final UaException e) {
+            throw new IllegalStateException("Could not create the alarm event", e);
+        }
     }
 }

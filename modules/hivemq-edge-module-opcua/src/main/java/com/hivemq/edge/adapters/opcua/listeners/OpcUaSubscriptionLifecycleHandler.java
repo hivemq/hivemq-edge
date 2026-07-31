@@ -24,8 +24,10 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.Constants;
+import com.hivemq.edge.adapters.opcua.condition.ConditionEventFilters;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +49,7 @@ import org.eclipse.milo.opcua.stack.core.UaSerializationException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -268,8 +271,15 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // add new monitored items
         if (!monitoredItemsToAdd.isEmpty()) {
             monitoredItemsToAdd.forEach(opcuaTag -> {
-                final String nodeId = opcuaTag.getDefinition().getNode();
-                final var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
+                final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
+                // A condition is observed through its transitions, so it needs an event item carrying an
+                // event filter; an ordinary value is observed directly through its Value attribute.
+                final var monitoredItem =
+                        switch (opcuaTag.getDefinition().getType()) {
+                            case CONDITION, EVENT_SUBSCRIPTION ->
+                                OpcUaMonitoredItem.newEventItem(nodeId, ConditionEventFilters.forCondition(nodeId));
+                            case VALUE -> OpcUaMonitoredItem.newDataItem(nodeId);
+                        };
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
                 monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
                 subscription.addMonitoredItem(monitoredItem);
@@ -426,6 +436,57 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                 log.warn(
                         "Adapter '{}': could not decode OPC UA value for tag '{}', dropping the current samples and resetting the dynamic type registry",
+                        adapterId,
+                        tn,
+                        e);
+                resetDynamicTypeRegistry();
+                return;
+            } catch (final Throwable e) {
+                protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
+                throw new RuntimeException(e);
+            }
+        }
+        dataPointsPublisher.publish();
+    }
+
+    /**
+     * Receives condition transitions.
+     * <p>
+     * The counterpart to {@link #onDataReceived}: same subscription, same parallel lists, but each item
+     * carries an event's selected fields rather than a single value. An event is a transition report — the
+     * server fires one when a condition's state changes — so unlike a value there is nothing to sample and
+     * nothing to deduplicate; every notification is published.
+     */
+    @Override
+    public void onEventReceived(
+            final @NotNull OpcUaSubscription subscription,
+            final @NotNull List<OpcUaMonitoredItem> items,
+            final @NotNull List<Variant[]> events) {
+        lastKeepAliveTimestamp = System.currentTimeMillis();
+        final var dataPointsPublisher = tagStreamingService.dataPointsPublisher();
+        for (int i = 0; i < items.size(); i++) {
+            final var tag = Objects.requireNonNull(
+                    nodeIdToTag.get(items.get(i).getReadValueId().getNodeId()));
+            final String tn = tag.getName();
+            if (null == tagToFirstSeen.putIfAbsent(tag, true)) {
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withSeverity(Event.SEVERITY.INFO)
+                        .withMessage(String.format("Adapter '%s' received the first event for tag '%s'", adapterId, tn))
+                        .fire();
+            }
+            try {
+                protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
+
+                final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
+                OpcUaEventToJsonConverter.convertPayload(
+                        client.getDynamicEncodingContext(), events.get(i), dataPointBuilder);
+            } catch (final @NotNull UaSerializationException e) {
+                // Same failure mode as the value path: a structure nested in an event field cannot be
+                // decoded because the dynamic codec registry is incomplete. Drop this batch and reset.
+                protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
+                log.warn(
+                        "Adapter '{}': could not decode OPC UA event for tag '{}', dropping the current events and resetting the dynamic type registry",
                         adapterId,
                         tn,
                         e);

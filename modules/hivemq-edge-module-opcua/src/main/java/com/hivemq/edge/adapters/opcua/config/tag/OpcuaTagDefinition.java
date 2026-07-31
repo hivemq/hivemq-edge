@@ -31,13 +31,33 @@ public class OpcuaTagDefinition implements TagDefinition {
             required = true)
     private final @NotNull String node;
 
+    @JsonProperty(value = "type")
+    @ModuleConfigField(
+            title = "Node type",
+            description = "what the node is: an ordinary VALUE (default), a CONDITION (a single alarm), "
+                    + "or an EVENT_SUBSCRIPTION (a query against a notifier, delivering events from many conditions)",
+            defaultValue = "VALUE")
+    private final @NotNull OpcuaTagType type;
+
     @JsonCreator
-    public OpcuaTagDefinition(@JsonProperty(value = "node", required = true) final @NotNull String node) {
+    public OpcuaTagDefinition(
+            @JsonProperty(value = "node", required = true) final @NotNull String node,
+            @JsonProperty(value = "type") final @Nullable OpcuaTagType type) {
         this.node = node;
+        // Absent in every tag written before the type existed, and the overwhelmingly common case since.
+        this.type = type == null ? OpcuaTagType.VALUE : type;
+    }
+
+    public OpcuaTagDefinition(final @NotNull String node) {
+        this(node, OpcuaTagType.VALUE);
     }
 
     public @NotNull String getNode() {
         return node;
+    }
+
+    public @NotNull OpcuaTagType getType() {
+        return type;
     }
 
     @Override
@@ -48,16 +68,16 @@ public class OpcuaTagDefinition implements TagDefinition {
         if (!(o instanceof OpcuaTagDefinition that)) {
             return false;
         }
-        return node.equals(that.node);
+        return node.equals(that.node) && type == that.type;
     }
 
     @Override
     public int hashCode() {
-        return node.hashCode();
+        return 31 * node.hashCode() + type.hashCode();
     }
 
     @Override
     public @NotNull String toString() {
-        return "OpcuaTagDefinition{" + "node='" + node + '\'' + '}';
+        return "OpcuaTagDefinition{" + "node='" + node + '\'' + ", type=" + type + '}';
     }
 }

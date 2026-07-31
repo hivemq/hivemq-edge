@@ -205,7 +205,11 @@ public class OpcUaToJsonConverter {
         }
     }
 
-    private static void addValueToObject(
+    /**
+     * Adds one OPC-UA value under {@code key}, mapping any builtin, array or structure to the builder. Shared
+     * with the event path, which maps each selected event field the same way.
+     */
+    static void addValueToObject(
             final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
             final @NotNull String key,
             final @Nullable Object value,
