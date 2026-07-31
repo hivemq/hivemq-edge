@@ -51,4 +51,16 @@ public final class AdapterFaults {
             throw fatal;
         }
     }
+
+    /**
+     * Whether {@code throwable} is a fatal JVM condition — the same test {@link #rethrowIfFatal} applies, exposed for
+     * the one boundary that must <b>act</b> before it rethrows: the actor's own dispatch loop is about to end, so its
+     * published status has to be corrected while the thread still exists to correct it (Sam round 3, finding 2).
+     *
+     * @param throwable the throwable a {@code catch (Throwable)} at the adapter boundary observed.
+     * @return {@code true} when it must never be scoped to a single adapter.
+     */
+    public static boolean isFatal(final @NotNull Throwable throwable) {
+        return throwable instanceof VirtualMachineError;
+    }
 }

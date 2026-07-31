@@ -45,6 +45,9 @@ public interface ProtocolAdapterWrapperEventListener {
 
         @Override
         public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {}
+
+        @Override
+        public void wrapperDied(final @NotNull String adapterId, final @NotNull String reason) {}
     };
 
     /**
@@ -83,4 +86,18 @@ public interface ProtocolAdapterWrapperEventListener {
      * @param reason    a human-readable description of why the stop did not complete.
      */
     void wrapperStopFailed(@NotNull String adapterId, @NotNull String reason);
+
+    /**
+     * The adapter's actor is gone: a fatal JVM condition ended its dispatch loop, so no message told to it will ever
+     * be processed again (Sam round 3, finding 2). The wrapper has already replaced its published status with a
+     * terminal one; this is the supervisor's chance to release what the dead actor can no longer use — above all the
+     * periodic tick, which would otherwise keep filling a mailbox nobody drains.
+     * <p>
+     * Told from the dying thread, immediately before the fatal is rethrown. Unlike every other callback here it is
+     * <b>not</b> a state transition: the machine never left the state it was in.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of what ended the dispatch loop.
+     */
+    void wrapperDied(@NotNull String adapterId, @NotNull String reason);
 }

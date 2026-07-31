@@ -28,6 +28,7 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.Configurati
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.DeactivateAdapter;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ProtocolAdapterManagerTick;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.RetryTag;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperDied;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperError;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStarted;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopFailed;
@@ -153,6 +154,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             case WrapperStopped stopped -> onWrapperStopped(stopped.adapterId());
             case WrapperError error -> onWrapperError(error.adapterId(), error.reason());
             case WrapperStopFailed stopFailed -> onWrapperStopFailed(stopFailed.adapterId(), stopFailed.reason());
+            case WrapperDied died -> onWrapperDied(died.adapterId(), died.reason());
             case ProtocolAdapterManagerTick tick -> publishHealthSummary(tick.nowMillis());
         }
     }
@@ -506,6 +508,45 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 }
             }
         }
+    }
+
+    /**
+     * The adapter's actor is gone: a fatal JVM condition ended its dispatch loop and no message told to it will ever
+     * be processed again (Sam round 3, finding 2). Edge itself carries on — one adapter's implementation failing is
+     * not a reason to take a broker down — so the manager releases what the dead actor can no longer use and keeps
+     * the adapter visible in {@code ERROR} with the status its own dying thread published.
+     * <p>
+     * Releasing matters as much as reporting: the periodic tick runs on the clock's scheduler, not on the actor, so
+     * without this it would keep telling a mailbox nobody drains for the lifetime of the process. Its northbound
+     * consumers and southbound writers go too — a dead actor cannot serve a write, and accepting one would be the
+     * green-while-dead problem wearing a different hat.
+     * <p>
+     * What is left behind is the {@code unknown} representation every un-runnable adapter uses: the ERROR handle,
+     * the applied configuration, and no runtime. A later configuration change recreates it.
+     */
+    private void onWrapperDied(final @NotNull String adapterId, final @NotNull String reason) {
+        final ProtocolAdapterContainer dead = containerMap.remove(adapterId);
+        if (dead == null || !dead.isReal()) {
+            // Already discarded, or never running: nothing to release. The handle (if any) keeps its last status.
+            log.error("v2 adapter '{}' died and was already discarded: {}", adapterId, reason);
+            return;
+        }
+        log.error(
+                "v2 adapter '{}' died: {}. Releasing its resources; the adapter stays visible in ERROR",
+                adapterId,
+                reason);
+        // The dying thread published a terminal snapshot into this reference — keep reading from it, but never tell
+        // its mailbox again: nothing drains it, so a forwarded command would only accumulate.
+        final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(
+                adapterId, NO_OP_WRAPPER_SENDER, dead.handle().snapshot());
+        try {
+            dead.close();
+        } catch (final @NotNull Throwable exception) {
+            AdapterFaults.rethrowIfFatal(exception);
+            log.warn("Failed to fully release the resources of dead v2 adapter '{}'", adapterId, exception);
+        }
+        containerMap.put(adapterId, ProtocolAdapterContainer.unknown(handle, dead.appliedEntity()));
+        handleRegistry.register(handle);
     }
 
     private void onWrapperError(final @NotNull String adapterId, final @NotNull String reason) {

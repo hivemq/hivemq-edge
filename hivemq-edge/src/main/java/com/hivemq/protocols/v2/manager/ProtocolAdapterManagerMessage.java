@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>{@code CONTROL} — externally-driven intent: a freshly-loaded configuration, REST direction activation, REST
  * tag retry, and a REST browse request;</li>
  * <li>{@code EVENT} — wrapper health notifications a managed wrapper tells back ({@code started} / {@code stopped} /
- * {@code error} / {@code stop failed});</li>
+ * {@code error} / {@code stop failed} / {@code died});</li>
  * <li>{@code TICK} — periodic housekeeping (the health summary).</li>
  * </ul>
  * Sealed because all permitted subtypes live in this package; the generic {@link MailboxMessage} marker is the
@@ -169,6 +169,16 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
      */
     record WrapperStopFailed(
             @NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
+
+    /**
+     * A managed wrapper's actor is gone — a fatal JVM condition ended its dispatch loop, so nothing told to it will
+     * ever be processed again (Sam round 3, finding 2). The manager releases the dead actor's resources and keeps the
+     * adapter visible in {@code ERROR}; Edge itself carries on. The {@code EVENT} band.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of what ended the dispatch loop.
+     */
+    record WrapperDied(@NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
 
     /**
      * Periodic housekeeping: the manager folds the registry's snapshots into a health summary it

@@ -97,6 +97,13 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                     context.handleBrowseRequest(browse.filter(), browse.completion());
             }
         } catch (final Throwable exception) {
+            if (AdapterFaults.isFatal(exception)) {
+                // This dispatch loop is about to end and nothing will ever publish for this adapter again, so the
+                // last act of the dying thread is to tell the truth. The machine state is left untouched — a fatal
+                // JVM condition is not an adapter error and must not be demoted to one — but the published status
+                // stops advertising a healthy adapter that nobody is running (Sam round 3, finding 2).
+                publishDeadSnapshot(exception);
+            }
             // The green-while-dead guard (EDG-824 #7): a contract-violating adapter throwing from a synchronous
             // adapter-facing call must not kill the dispatch loop and freeze the last (GREEN) snapshot — the
             // wrapper enters ERROR and keeps processing messages. Throwable, not RuntimeException: a mispackaged
@@ -189,6 +196,28 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 // The browse events (BrowsePageReceived / AttributesResolved / BrowseFailed) are handled
                 // ahead of this switch and routed to the browse engine, never the adapter machine.
             }
+        }
+    }
+
+    /**
+     * The dying thread's last act: replace the published status with a terminal one and tell the supervisor, so a
+     * REST reader and a health check see an adapter that is gone rather than the last healthy snapshot frozen in
+     * place. Everything here is best effort and nothing may mask the fatal being propagated — under an
+     * {@code OutOfMemoryError} even building the replacement snapshot can fail, and a failure to say so must not
+     * become a second, more confusing error.
+     */
+    private void publishDeadSnapshot(final @NotNull Throwable fatal) {
+        final String reason = "the adapter's dispatch loop was ended by "
+                + fatal.getClass().getSimpleName() + ": " + fatal.getMessage();
+        try {
+            snapshot.set(context.fallbackErrorSnapshot(reason));
+        } catch (final Throwable ignored) {
+            // Nothing further can be done for the snapshot; the notification below is still worth attempting.
+        }
+        try {
+            context.notifyDied(reason);
+        } catch (final Throwable ignored) {
+            // The supervisor could not be told. The fatal itself still propagates, and the JVM's own handler logs it.
         }
     }
 

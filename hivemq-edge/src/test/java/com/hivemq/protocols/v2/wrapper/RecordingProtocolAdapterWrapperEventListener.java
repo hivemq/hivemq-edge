@@ -29,6 +29,7 @@ final class RecordingProtocolAdapterWrapperEventListener implements ProtocolAdap
     final @NotNull List<String> stopped = new ArrayList<>();
     final @NotNull List<String> errorReasons = new ArrayList<>();
     final @NotNull List<String> stopFailures = new ArrayList<>();
+    final @NotNull List<String> died = new ArrayList<>();
 
     @Override
     public void wrapperStarted(final @NotNull String adapterId) {
@@ -48,5 +49,10 @@ final class RecordingProtocolAdapterWrapperEventListener implements ProtocolAdap
     @Override
     public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
         stopFailures.add(reason);
+    }
+
+    @Override
+    public void wrapperDied(final @NotNull String adapterId, final @NotNull String reason) {
+        died.add(reason);
     }
 }

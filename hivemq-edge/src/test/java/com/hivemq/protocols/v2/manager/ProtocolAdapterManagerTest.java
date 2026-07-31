@@ -250,6 +250,40 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
+    void wrapperDied_releasesTheDeadActorsResources_butKeepsItVisibleInError() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        final int commandsBeforeDeath = wrapperFactory.commands("a").size();
+
+        fireWrapperDied("a", "the adapter's dispatch loop was ended by InternalError: simulated");
+
+        // Released: above all the periodic tick, which runs on the clock's scheduler and would otherwise keep
+        // telling a mailbox nobody drains for the lifetime of the process.
+        assertThat(wrapperFactory.closedAdapterIds()).contains("a");
+        // Still visible: Edge carries on and reports the failure rather than hiding the adapter.
+        assertThat(handleRegistry.find("a")).isNotNull();
+        // And nothing is told to the dead mailbox any more — a forwarded command would only accumulate there.
+        send(new DeactivateAdapter("a", ProtocolAdapterDirection.NORTHBOUND));
+        assertThat(wrapperFactory.commands("a")).hasSize(commandsBeforeDeath);
+    }
+
+    @Test
+    void anAdapterThatDied_isRecreatedByAConfigurationChange() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "a")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        fireWrapperDied("a", "the adapter's dispatch loop was ended by InternalError: simulated");
+
+        // The recovery path for a dead actor is the same one every un-runnable adapter has: change its
+        // configuration. Nothing recreates it behind the operator's back.
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "b")).build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
     void recovery_deactivateThenActivate_areForwardedAsLiveGoalCommands() {
         send(new ConfigurationChanged(List.of(adapter("a").build())));
 
@@ -496,6 +530,11 @@ class ProtocolAdapterManagerTest {
 
     private void fireWrapperStopped(final @NotNull String adapterId) {
         wrapperFactory.healthListener().wrapperStopped(adapterId);
+        dispatcher.drainAll();
+    }
+
+    private void fireWrapperDied(final @NotNull String adapterId, final @NotNull String reason) {
+        wrapperFactory.healthListener().wrapperDied(adapterId, reason);
         dispatcher.drainAll();
     }
 
