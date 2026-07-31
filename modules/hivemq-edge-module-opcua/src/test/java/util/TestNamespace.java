@@ -258,12 +258,21 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * @return the node id, in the parseable form a tag definition uses.
      */
     public @NotNull String addConditionNode(final @NotNull String name, final long nodeIdPart) {
+        return addConditionNode(name, nodeIdPart, NodeIds.AlarmConditionType);
+    }
+
+    /**
+     * Adds a condition of a specific type, so a test can exercise the type verification — including a
+     * deliberate mismatch.
+     */
+    public @NotNull String addConditionNode(
+            final @NotNull String name, final long nodeIdPart, final @NotNull NodeId typeDefinition) {
         final NodeId nodeId = newNodeId(nodeIdPart);
         final UaObjectNode node = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
                 .setNodeId(nodeId)
                 .setBrowseName(newQualifiedName(name))
                 .setDisplayName(LocalizedText.english(name))
-                .setTypeDefinition(NodeIds.BaseObjectType)
+                .setTypeDefinition(typeDefinition)
                 .build();
 
         // SubscribeToEvents — without this the node is not a valid event source.

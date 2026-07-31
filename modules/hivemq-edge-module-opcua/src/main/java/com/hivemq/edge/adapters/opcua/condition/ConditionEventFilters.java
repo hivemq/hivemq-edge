@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.condition;
 
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
@@ -64,8 +65,9 @@ public final class ConditionEventFilters {
      * @return an event filter selecting {@link ConditionFields#SELECTED} in that order, accepting only events
      *         sourced from {@code conditionNodeId}.
      */
-    public static @NotNull EventFilter forCondition(final @NotNull NodeId conditionNodeId) {
-        return new EventFilter(selectClauses(), sourceNodeIs(conditionNodeId));
+    public static @NotNull EventFilter forCondition(
+            final @NotNull NodeId conditionNodeId, final @NotNull OpcuaConditionType conditionType) {
+        return new EventFilter(selectClauses(conditionType), sourceNodeIs(conditionNodeId));
     }
 
     /**
@@ -87,8 +89,9 @@ public final class ConditionEventFilters {
         });
     }
 
-    private static @NotNull SimpleAttributeOperand @NotNull [] selectClauses() {
-        return ConditionFields.SELECTED.stream()
+    private static @NotNull SimpleAttributeOperand @NotNull [] selectClauses(
+            final @NotNull OpcuaConditionType conditionType) {
+        return conditionType.allFields().stream()
                 .map(ConditionEventFilters::selectField)
                 .toArray(SimpleAttributeOperand[]::new);
     }

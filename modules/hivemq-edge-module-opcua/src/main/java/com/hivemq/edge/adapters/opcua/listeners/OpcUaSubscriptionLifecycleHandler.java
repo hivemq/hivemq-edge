@@ -25,8 +25,10 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.condition.ConditionEventFilters;
+import com.hivemq.edge.adapters.opcua.condition.ConditionTypeVerifier;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import java.util.ArrayList;
@@ -64,6 +66,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             TimeUnit.MILLISECONDS.toNanos(TYPE_REGISTRY_RESET_THROTTLE_MS);
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaSubscriptionLifecycleHandler.class);
     private static final int MAX_MONITORED_ITEM_COUNT = 5;
+
+    // Verification is one browse against an already-connected session. The bound only exists so a server that
+    // never answers cannot stall adapter start indefinitely.
+    private static final long CONDITION_TYPE_VERIFICATION_TIMEOUT_MS = 10_000L;
 
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
@@ -270,14 +276,27 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
         // add new monitored items
         if (!monitoredItemsToAdd.isEmpty()) {
-            monitoredItemsToAdd.forEach(opcuaTag -> {
+            // A condition tag whose declared type does not match the device is dropped here rather than
+            // subscribed: its select clause would ask for fields the device has not got. The check is per tag,
+            // so one mistyped tag cannot stop the others -- or the adapter -- from starting.
+            final List<OpcuaTag> verifiedTags = new ArrayList<>();
+            for (final OpcuaTag opcuaTag : monitoredItemsToAdd) {
+                if (isSubscribable(opcuaTag)) {
+                    verifiedTags.add(opcuaTag);
+                }
+            }
+
+            verifiedTags.forEach(opcuaTag -> {
                 final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
                 // A condition is observed through its transitions, so it needs an event item carrying an
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
                         switch (opcuaTag.getDefinition().getType()) {
                             case CONDITION, EVENT_SUBSCRIPTION ->
-                                OpcUaMonitoredItem.newEventItem(nodeId, ConditionEventFilters.forCondition(nodeId));
+                                OpcUaMonitoredItem.newEventItem(
+                                        nodeId,
+                                        ConditionEventFilters.forCondition(
+                                                nodeId, opcuaTag.getDefinition().getConditionType()));
                             case VALUE -> OpcUaMonitoredItem.newDataItem(nodeId);
                         };
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
@@ -286,7 +305,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             });
             log.debug(
                     "Added monitored items: {}",
-                    monitoredItemsToAdd.stream()
+                    verifiedTags.stream()
                             .map(item -> item.getDefinition().getNode())
                             .toList());
         }
@@ -480,7 +499,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
                 final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
                 OpcUaEventToJsonConverter.convertPayload(
-                        client.getDynamicEncodingContext(), events.get(i), dataPointBuilder);
+                        client.getDynamicEncodingContext(),
+                        tag.getDefinition().getConditionType(),
+                        events.get(i),
+                        dataPointBuilder);
             } catch (final @NotNull UaSerializationException e) {
                 // Same failure mode as the value path: a structure nested in an event field cannot be
                 // decoded because the dynamic codec registry is incomplete. Drop this batch and reset.
@@ -505,6 +527,54 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * they are rebuilt from the server on next use. Throttled because each rebuild browses the
      * server's full DataType hierarchy.
      */
+    /**
+     * Whether a tag may be subscribed: true for anything that is not a condition, and for a condition whose
+     * declared type the device satisfies.
+     * <p>
+     * Deliberately total — every failure, including a timeout or an interrupt, answers false rather than
+     * throwing. This runs inside adapter start, where an escaping exception would abort the whole sequence.
+     */
+    private boolean isSubscribable(final @NotNull OpcuaTag opcuaTag) {
+        if (opcuaTag.getDefinition().getType() != OpcuaTagType.CONDITION) {
+            return true;
+        }
+        final String tagName = opcuaTag.getName();
+        try {
+            final ConditionTypeVerifier.Result result = ConditionTypeVerifier.verify(
+                            client,
+                            NodeId.parse(opcuaTag.getDefinition().getNode()),
+                            opcuaTag.getDefinition().getConditionType(),
+                            tagName)
+                    .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+            if (result instanceof final ConditionTypeVerifier.Result.Rejected rejected) {
+                reportUnsubscribableTag(tagName, rejected.reason());
+                return false;
+            }
+            return true;
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            reportUnsubscribableTag(tagName, "verification was interrupted");
+            return false;
+        } catch (final Exception e) {
+            reportUnsubscribableTag(tagName, "verification failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Tells the operator which tag was dropped and why, in the log and as an adapter event. A tag that
+     * silently never produces data is far harder to diagnose than one that says why.
+     */
+    private void reportUnsubscribableTag(final @NotNull String tagName, final @NotNull String reason) {
+        log.warn("Adapter '{}': not subscribing tag '{}' — {}", adapterId, tagName, reason);
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withSeverity(Event.SEVERITY.WARN)
+                .withMessage(String.format("Adapter '%s' did not subscribe tag '%s': %s", adapterId, tagName, reason))
+                .fire();
+    }
+
     private void resetDynamicTypeRegistry() {
         final long now = System.nanoTime();
         final long last = lastTypeRegistryResetNanos.get();

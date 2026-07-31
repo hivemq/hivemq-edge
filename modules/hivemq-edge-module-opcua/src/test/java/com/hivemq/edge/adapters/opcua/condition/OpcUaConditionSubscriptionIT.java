@@ -35,12 +35,14 @@ import com.hivemq.edge.adapters.opcua.FakeEventService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -112,7 +114,7 @@ public class OpcUaConditionSubscriptionIT {
         final JsonNode value = tagStreamingService.published().get(0);
 
         // EventId identifies the transition, and is what a downstream system echoes back to acknowledge.
-        assertThat(value.get(ConditionFields.EVENT_ID).isNull())
+        assertThat(value.get("EventId").isNull())
                 .as("EventId must be present: without it an alarm cannot be acknowledged")
                 .isFalse();
         assertThat(value.get("Message").toString()).contains("Temperature exceeded 90C");
@@ -145,7 +147,7 @@ public class OpcUaConditionSubscriptionIT {
 
         // The published shape is fixed: every selected field appears, so a consumer can rely on the keys
         // being there even when the server has nothing to say for one of them.
-        assertThat(ConditionFields.SELECTED).allSatisfy(field -> assertThat(value.has(field))
+        assertThat(OpcuaConditionType.ALARM_CONDITION.allFields()).allSatisfy(field -> assertThat(value.has(field))
                 .as("selected field '%s' must be present in the published payload", field)
                 .isTrue());
     }
@@ -191,7 +193,85 @@ public class OpcUaConditionSubscriptionIT {
                         .isEqualTo(CONDITION_NODE_ID + 2));
     }
 
-    private void startAdapterWith(final @NotNull OpcuaTag tag) {
+    @Test
+    @Timeout(120)
+    void whenTheDeclaredTypeIsRicher_thenItsExtraFieldsArePublished() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addConditionNode("LevelAlarm", CONDITION_NODE_ID + 10, NodeIds.ExclusiveLevelAlarmType);
+
+        startAdapterWith(new OpcuaTag(
+                "level-alarm",
+                "",
+                new OpcuaTagDefinition(
+                        conditionNodeId, OpcuaTagType.CONDITION, OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(conditionNodeId), "high", 800, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        // The point of declaring the type: a level alarm's limits are selected and published. A fixed field
+        // list would drop them silently, which for a level alarm loses the interesting part.
+        final JsonNode value = tagStreamingService.published().get(0);
+        assertThat(value.has("HighLimit"))
+                .as("a level alarm must publish its limits")
+                .isTrue();
+        assertThat(value.has("LowLowLimit")).isTrue();
+        assertThat(value.has("EventId")).isTrue();
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheDeclaredTypeDoesNotMatchTheDevice_thenOnlyThatTagIsDropped() throws Exception {
+        // Declared as a level alarm, but the device offers only a plain alarm -- the tag promises limits the
+        // device has not got.
+        final String mismatched = opcUaServerExtension
+                .getTestNamespace()
+                .addConditionNode("PlainAlarm", CONDITION_NODE_ID + 11, NodeIds.AlarmConditionType);
+        final String sound =
+                opcUaServerExtension.getTestNamespace().addConditionNode("SoundAlarm", CONDITION_NODE_ID + 12);
+
+        startAdapterWith(
+                new OpcuaTag(
+                        "mismatched-alarm",
+                        "",
+                        new OpcuaTagDefinition(
+                                mismatched, OpcuaTagType.CONDITION, OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM)),
+                new OpcuaTag("sound-alarm", "", new OpcuaTagDefinition(sound, OpcuaTagType.CONDITION)));
+
+        // The adapter still connects: one mistyped tag must not stop it, nor the tags beside it.
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(sound), "still working", 600, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        // Fire the mismatched one too, and give it every chance to arrive.
+        opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(mismatched), "should not arrive", 900, true);
+        Thread.sleep(2000);
+
+        assertThat(tagStreamingService.published())
+                .as("the mismatched tag must not be subscribed")
+                .allSatisfy(published -> assertThat(
+                                published.get("SourceNode").get("id").asLong())
+                        .isEqualTo(CONDITION_NODE_ID + 12));
+
+        // And the operator is told which tag was dropped and why.
+        assertThat(eventService.readEvents(null, null).stream()
+                        .map(event -> String.valueOf(event.getMessage()))
+                        .filter(message -> message.contains("mismatched-alarm"))
+                        .toList())
+                .as("a dropped tag must be reported as an adapter event")
+                .isNotEmpty();
+    }
+
+    private void startAdapterWith(final @NotNull OpcuaTag... tags) {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -209,7 +289,7 @@ public class OpcUaConditionSubscriptionIT {
         when(input.getAdapterId()).thenReturn("test-adapter-id");
         when(input.getProtocolAdapterState()).thenReturn(protocolAdapterState);
         when(input.getConfig()).thenReturn(config);
-        final List<Tag> genericTags = new ArrayList<>(List.of(tag));
+        final List<Tag> genericTags = new ArrayList<>(List.of(tags));
         when(input.getTags()).thenReturn(genericTags);
         when(input.adapterFactories()).thenReturn(mock(AdapterFactories.class));
         // Subscription callbacks count metrics; without this every delivered event dies in an NPE.

@@ -39,17 +39,34 @@ public class OpcuaTagDefinition implements TagDefinition {
             defaultValue = "VALUE")
     private final @NotNull OpcuaTagType type;
 
+    @JsonProperty(value = "conditionType")
+    @ModuleConfigField(
+            title = "Condition type",
+            description = "for a CONDITION tag, which OPC UA condition type the node is (e.g. AlarmConditionType, "
+                    + "ExclusiveLevelAlarmType). This decides the fields the tag publishes, and is verified "
+                    + "against the device when the tag is subscribed. Declaring a supertype is allowed.",
+            defaultValue = "AlarmConditionType")
+    private final @NotNull OpcuaConditionType conditionType;
+
     @JsonCreator
     public OpcuaTagDefinition(
             @JsonProperty(value = "node", required = true) final @NotNull String node,
-            @JsonProperty(value = "type") final @Nullable OpcuaTagType type) {
+            @JsonProperty(value = "type") final @Nullable OpcuaTagType type,
+            @JsonProperty(value = "conditionType") final @Nullable OpcuaConditionType conditionType) {
         this.node = node;
         // Absent in every tag written before the type existed, and the overwhelmingly common case since.
         this.type = type == null ? OpcuaTagType.VALUE : type;
+        // The most general type that still carries the acknowledge/confirm machinery, so a tag that does not
+        // name a type publishes the standard alarm fields rather than nothing.
+        this.conditionType = conditionType == null ? OpcuaConditionType.ALARM_CONDITION : conditionType;
+    }
+
+    public OpcuaTagDefinition(final @NotNull String node, final @Nullable OpcuaTagType type) {
+        this(node, type, null);
     }
 
     public OpcuaTagDefinition(final @NotNull String node) {
-        this(node, OpcuaTagType.VALUE);
+        this(node, OpcuaTagType.VALUE, null);
     }
 
     public @NotNull String getNode() {
@@ -60,6 +77,10 @@ public class OpcuaTagDefinition implements TagDefinition {
         return type;
     }
 
+    public @NotNull OpcuaConditionType getConditionType() {
+        return conditionType;
+    }
+
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) {
@@ -68,16 +89,16 @@ public class OpcuaTagDefinition implements TagDefinition {
         if (!(o instanceof OpcuaTagDefinition that)) {
             return false;
         }
-        return node.equals(that.node) && type == that.type;
+        return node.equals(that.node) && type == that.type && conditionType == that.conditionType;
     }
 
     @Override
     public int hashCode() {
-        return 31 * node.hashCode() + type.hashCode();
+        return 31 * (31 * node.hashCode() + type.hashCode()) + conditionType.hashCode();
     }
 
     @Override
     public @NotNull String toString() {
-        return "OpcuaTagDefinition{" + "node='" + node + '\'' + ", type=" + type + '}';
+        return "OpcuaTagDefinition{node='" + node + "', type=" + type + ", conditionType=" + conditionType + "}";
     }
 }
