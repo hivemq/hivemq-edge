@@ -52,14 +52,14 @@ import org.jetbrains.annotations.Nullable;
  *         <extra-scope>profile</extra-scope>
  *     </extra-scopes>
  *     <role-mappings>
- *         <mapping>
+ *         <role-mapping>
  *             <idp-role>hivemq-admin</idp-role>
  *             <edge-role>admin</edge-role>
- *         </mapping>
- *         <mapping>
+ *         </role-mapping>
+ *         <role-mapping>
  *             <idp-role>hivemq-user</idp-role>
  *             <edge-role>user</edge-role>
- *         </mapping>
+ *         </role-mapping>
  *     </role-mappings>
  * </oidc-authentication>
  * }</pre>

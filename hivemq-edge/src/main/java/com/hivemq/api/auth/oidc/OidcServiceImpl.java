@@ -331,14 +331,10 @@ public class OidcServiceImpl implements OidcService {
     /**
      * Maps the IdP role claim (string or string-array) onto Edge roles.
      * <p>
-     * Two modes, selected by whether {@code <role-mappings>} is configured:
-     * <ul>
-     *   <li><b>Verbatim</b> (no mappings): each claim value that is an Edge role ({@code admin} /
-     *       {@code super} / {@code user}) is used directly; others are dropped. The operator's omission of
-     *       a mapping is an explicit statement that the IdP already uses Edge role names.</li>
-     *   <li><b>Strict</b> (mappings present): a claim value must be a mapping key to produce its mapped
-     *       Edge role; an unmapped value is dropped, so no unrelated IdP role ever grants access.</li>
-     * </ul>
+     * Mapping is always strict: {@code <role-mappings>} is required, and a claim value produces an Edge role
+     * only when it is an explicitly configured mapping key. An unmapped value is dropped, so no unrelated IdP
+     * role ever grants access (there is no verbatim mode in which IdP role names are used directly).
+     * <p>
      * Matching is literal — no trimming or case-folding — so a mismatch is honest and visible. When a
      * literal miss would have matched leniently (ignoring case/whitespace), a warning is logged to point
      * at the likely typo, but the role is still dropped.
@@ -381,9 +377,13 @@ public class OidcServiceImpl implements OidcService {
                     .filter(role -> !mappings.containsKey(role))
                     .toList();
             if (!edgeRoles.isEmpty()) {
-                // Login succeeds. Warn only when some roles were dropped -- a possible missing <role-mapping>.
-                if (!unmatched.isEmpty()) {
-                    log.warn(
+                // Login succeeds. Unmatched IdP roles are the norm, not a problem: a real IdP token carries
+                // standard roles the operator never maps (Keycloak sends offline_access, uma_authorization and
+                // default-roles-<realm> alongside the mapped group), so every successful login has some. Log at
+                // DEBUG so it is available when troubleshooting without desensitising operators to the WARN-level
+                // denial diagnostics below, which are the ones that matter.
+                if (!unmatched.isEmpty() && log.isDebugEnabled()) {
+                    log.debug(
                             "OIDC login authenticated with {} Edge role(s); {} IdP role(s) under claim '{}' did "
                                     + "not match any <role-mapping> and were ignored: {}",
                             edgeRoles.size(),
