@@ -106,10 +106,23 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void emptyUsersElement_isRejectedByTheSchema() throws Exception {
         // A present <users> must contain at least one <user>; the empty form is no longer accepted, so the
-        // "present-but-empty means nobody can log in" ambiguity cannot arise.
-        writeConfig(usernameAuth(true) + "<users></users>");
+        // "present-but-empty means nobody can log in" ambiguity cannot arise. Local auth is DISABLED here so
+        // the code path (which would itself reject a no-source config) is skipped entirely -- the only thing
+        // that can fail this config is the schema rejecting the empty <users>. This is what proves the XSD
+        // guard is live: with <user minOccurs="0"> it was not (the empty form validated, EDG-849 #2 hole).
+        writeConfig(usernameAuth(false) + "<users></users>");
 
-        assertThrows(Exception.class, () -> reader.applyConfig());
+        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+    }
+
+    @Test
+    public void nonEmptyUsersElement_isAcceptedByTheSchema() throws Exception {
+        // The counterpart: a <users> with at least one <user> validates and is read as the user source.
+        writeConfig(usernameAuth(true) + users("alice"));
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
+        assertThat(apiConfigurationService.getUserList()).isNotEmpty();
     }
 
     @Test

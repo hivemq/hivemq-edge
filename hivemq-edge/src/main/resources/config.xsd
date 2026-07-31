@@ -1039,7 +1039,7 @@
                 <xs:complexType>
                     <xs:sequence>
                         <xs:choice minOccurs="1" maxOccurs="unbounded">
-                            <xs:element name="user" minOccurs="0">
+                            <xs:element name="user" minOccurs="1">
                                 <xs:complexType>
                                     <xs:all>
                                         <xs:element name="username" type="xs:string"/>
