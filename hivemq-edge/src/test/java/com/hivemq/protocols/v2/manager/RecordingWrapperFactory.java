@@ -27,6 +27,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     // adapterIds whose container was torn down — the observable half of a completed stop-and-discard.
     private final @NotNull List<String> closedAdapterIds = new ArrayList<>();
     // adapterId → an error create() throws for it, to model a mispackaged adapter jar (EDG-824 #4/R1, #4/R2).
-    private final @NotNull Map<String, Throwable> createFailures = new java.util.HashMap<>();
+    private final @NotNull Map<String, Throwable> createFailures = new HashMap<>();
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
 
     void throwOnCreate(final @NotNull String adapterId, final @NotNull Throwable error) {

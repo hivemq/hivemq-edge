@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -159,7 +160,7 @@ class SharedNodeVerificationTest {
         coordinator.requestVerification(kept);
         coordinator.requestVerification(removed);
 
-        coordinator.retainOnly(java.util.Set.of(kept)); // a tags-only reconfigure removed 'drop' (F-ORPHAN)
+        coordinator.retainOnly(Set.of(kept)); // a tags-only reconfigure removed 'drop' (F-ORPHAN)
 
         assertThat(coordinator.needsVerify(removed)).isTrue(); // pruned — no longer holds the gate
         assertThat(coordinator.needsVerify(kept)).isFalse(); // survivor keeps its outstanding verify

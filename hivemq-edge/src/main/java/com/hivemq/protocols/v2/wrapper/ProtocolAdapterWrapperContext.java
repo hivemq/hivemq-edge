@@ -526,7 +526,7 @@ public final class ProtocolAdapterWrapperContext {
                 ERROR,
                 goal.northboundActivated(),
                 goal.southboundActivated(),
-                java.util.List.of(),
+                List.of(),
                 clock.nowMillis(),
                 reason);
     }

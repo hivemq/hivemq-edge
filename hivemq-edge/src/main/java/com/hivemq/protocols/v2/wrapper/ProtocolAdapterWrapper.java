@@ -24,6 +24,8 @@ import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The Protocol Adapter Wrapper — a {@link MessageHandler} that owns the adapter machine and <b>all</b> policy
@@ -46,6 +48,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdapterWrapperMessage> {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
+
     private final @NotNull ProtocolAdapterWrapperContext context;
     private final @NotNull AtomicReference<AdapterStatusSnapshot> snapshot;
     private final @NotNull FSM<ProtocolAdapterWrapperState, ProtocolAdapterWrapperEvent, ProtocolAdapterWrapperContext>
@@ -56,9 +60,6 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
      * @param snapshot the reference the wrapper publishes its status into — created by the manager's handle in
      *                 production, by the test fixture in unit tests.
      */
-    private static final @NotNull org.slf4j.Logger log =
-            org.slf4j.LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
-
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapterWrapperContext context,
             final @NotNull AtomicReference<AdapterStatusSnapshot> snapshot) {

@@ -17,6 +17,7 @@ package com.hivemq.protocols.v2.southbound;
 
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
@@ -77,7 +78,7 @@ public final class SouthboundWriterRegistry implements AutoCloseable {
      */
     public SouthboundWriterRegistry(
             final @NotNull String adapterId,
-            final @NotNull com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation information,
+            final @NotNull ProtocolAdapterInformation information,
             final @NotNull InternalProtocolAdapterWritingService writingService,
             final @NotNull ProtocolAdapterMetricsService metricsService,
             final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> wrapperSender,

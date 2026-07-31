@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.northbound;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.metrics.InternalProtocolAdapterMetricsService;
 import com.hivemq.mqtt.message.QoS;
@@ -53,7 +54,7 @@ public final class NorthboundTagConsumerRegistry implements AutoCloseable {
 
     public NorthboundTagConsumerRegistry(
             final @NotNull String adapterId,
-            final @NotNull com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation information,
+            final @NotNull ProtocolAdapterInformation information,
             final @NotNull TagManager tagManager,
             final @NotNull NorthboundConsumerFactory consumerFactory,
             final @NotNull InternalProtocolAdapterMetricsService metricsService) {

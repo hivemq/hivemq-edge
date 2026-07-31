@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.AccessFlagsEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -54,10 +55,10 @@ class AccessFlagsEnforcementTest {
     private static final @NotNull AccessFlagsEntity ALL_YES = new AccessFlagsEntity(YES, YES, YES, YES);
 
     private static @NotNull AccessFlagsEntity access(
-            final @NotNull com.hivemq.adapter.sdk.api.v2.node.AccessTriState readable,
-            final @NotNull com.hivemq.adapter.sdk.api.v2.node.AccessTriState writable,
-            final @NotNull com.hivemq.adapter.sdk.api.v2.node.AccessTriState pollable,
-            final @NotNull com.hivemq.adapter.sdk.api.v2.node.AccessTriState subscribable) {
+            final @NotNull AccessTriState readable,
+            final @NotNull AccessTriState writable,
+            final @NotNull AccessTriState pollable,
+            final @NotNull AccessTriState subscribable) {
         return new AccessFlagsEntity(readable, writable, pollable, subscribable);
     }
 
