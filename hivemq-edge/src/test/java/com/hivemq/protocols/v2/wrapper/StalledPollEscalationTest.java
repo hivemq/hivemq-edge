@@ -17,6 +17,8 @@ package com.hivemq.protocols.v2.wrapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
+import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.protocols.v2.view.TagStatus;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -260,6 +262,114 @@ class StalledPollEscalationTest {
         // adapter came back, so a long outage does not make every tag report stale the instant it reconnects.
         assertThat(fixture.clock.nowMillis()).isGreaterThan(STALE_AFTER);
         assertThat(readsStale(fixture)).isFalse();
+    }
+
+    // ── polls that succeed and still publish nothing (Sam, round 3 finding 3) ───────────────────────────────────
+    //
+    // The deadline used to be evaluated only where a poll FAILED. A cooperative adapter that answers every poll on
+    // time, but whose values the declared schema refuses — or that completes its poll with no values at all — never
+    // took that path, so the tag published nothing indefinitely while reading NORTHBOUND_ONLY. The transport being
+    // alive is not the question the deadline asks; whether a reading arrived is.
+
+    private static final @NotNull ScalarSchema DOUBLE_0_TO_100 =
+            new ScalarSchema(ScalarType.DOUBLE, 0, 100, null, null, false, true, false);
+
+    private static @NotNull WrapperTestFixture typedStallFixture() {
+        final WrapperTestFixture fixture = WrapperTestFixture.builder()
+                .runningCoordinator()
+                .nodes(List.of(WrapperTestSupport.typedPair("temperature", DOUBLE_0_TO_100)))
+                .pollIntervalMillis(POLL_INTERVAL)
+                .pollResultTimeoutMillis(POLL_RESULT_TIMEOUT)
+                .build();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        return fixture;
+    }
+
+    /** One cycle answered on time with a value the declared schema refuses: proof of life, nothing published. */
+    private static void refusedOnce(final @NotNull WrapperTestFixture fixture) {
+        fixture.advance(POLL_INTERVAL); // → WAITING_FOR_POLL_DATAPOINT
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", 250.0));
+        fixture.drain();
+    }
+
+    /** One cycle the adapter completes on time with no values at all: a successful poll, and still no reading. */
+    private static void emptyOnce(final @NotNull WrapperTestFixture fixture) {
+        fixture.advance(POLL_INTERVAL); // → WAITING_FOR_POLL_DATAPOINT
+        fixture.output.pollComplete(fixture.nodeFor("temperature"));
+        fixture.drain();
+    }
+
+    @Test
+    void onTimeValuesTheSchemaRefuses_pastTheDeadline_declareTheTagNotReadable() {
+        final WrapperTestFixture fixture = typedStallFixture();
+
+        for (int cycle = 0; cycle < 320; cycle++) {
+            refusedOnce(fixture);
+        }
+
+        assertThat(fixture.clock.nowMillis()).isGreaterThan(STALE_AFTER);
+        assertThat(fixture.tag("temperature").failureCount()).isGreaterThan(300);
+        assertThat(fixture.tag("temperature").lastFailureReason()).contains("declared-schema violation");
+        assertThat(readsStale(fixture))
+                .as("nothing was ever published, so the tag is not readable")
+                .isTrue();
+        assertThat(fixture.tagStatus("temperature")).isEqualTo(TagStatus.ERROR);
+    }
+
+    @Test
+    void onTimePollsThatCompleteWithNoValue_pastTheDeadline_declareTheTagNotReadable() {
+        final WrapperTestFixture fixture = stallFixture();
+
+        for (int cycle = 0; cycle < 320; cycle++) {
+            emptyOnce(fixture);
+        }
+
+        // No failure is recorded anywhere — every poll succeeded. Only the no-value deadline can catch this one.
+        assertThat(fixture.clock.nowMillis()).isGreaterThan(STALE_AFTER);
+        assertThat(fixture.tag("temperature").failureCount()).isZero();
+        assertThat(readsStale(fixture)).as("no reading has ever arrived").isTrue();
+        assertThat(fixture.tagStatus("temperature")).isEqualTo(TagStatus.ERROR);
+    }
+
+    @Test
+    void aRefusedOnlyTag_recoversWhenAConformingValueIsFinallyPublished() {
+        final WrapperTestFixture fixture = typedStallFixture();
+        for (int cycle = 0; cycle < 320; cycle++) {
+            refusedOnce(fixture);
+        }
+        assertThat(readsStale(fixture)).isTrue();
+
+        // The device is recalibrated and its readings now conform: one published value restores the honest status.
+        fixture.advance(POLL_INTERVAL);
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", 21.5));
+        fixture.drain();
+
+        assertThat(readsStale(fixture)).isFalse();
+        assertThat(fixture.tagStatus("temperature")).isEqualTo(TagStatus.NORTHBOUND_ONLY);
+    }
+
+    @Test
+    void aHealthyTagWhosePollIntervalExceedsTheDeadline_isNeverStale() {
+        // The deadline is five minutes OR one whole poll cycle, whichever is longer. A device polled every six
+        // minutes cannot publish within five however healthy it is; judging it on the shorter figure would declare
+        // it unreadable during every single in-flight poll.
+        final WrapperTestFixture fixture = WrapperTestFixture.builder()
+                .runningCoordinator()
+                .nodes(List.of(WrapperTestSupport.pair("temperature")))
+                .pollIntervalMillis(6 * 60 * 1_000L) // a device polled every six minutes: slow, not broken
+                .pollResultTimeoutMillis(POLL_RESULT_TIMEOUT)
+                .build();
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+
+        for (int cycle = 0; cycle < 4; cycle++) {
+            fixture.advance(6 * 60 * 1_000L);
+            assertThat(fixture.tag("temperature").readAspectOperating())
+                    .as("healthy between the request and the answer")
+                    .isTrue();
+            fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "21"));
+            fixture.drain();
+            assertThat(readsStale(fixture)).isFalse();
+        }
     }
 
     @Test

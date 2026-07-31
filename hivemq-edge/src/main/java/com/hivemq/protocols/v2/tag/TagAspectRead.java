@@ -425,16 +425,30 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * Trip the staleness verdict once the deadline has passed with nothing published. Evaluated on every poll
-     * failure — the cadence guarantees one within {@code pollInterval + commandTimeout} of the deadline — so no
-     * second timer is added to the aspect's single timer slot.
+     * Trip the staleness verdict once the deadline has passed with nothing published. Evaluated at the top of every
+     * poll request and on every poll failure — between them the cadence guarantees one evaluation within
+     * {@code pollInterval + commandTimeout} of the deadline whatever the device does, so no second timer is added to
+     * the aspect's single timer slot.
+     * <p>
+     * Both call sites are needed: the request covers the cycles that <i>succeed</i> and still publish nothing (a
+     * refused value, or a completion with no values), the failure covers a stall that escalates into re-verification
+     * and may not reach another request for a while.
      */
+    /**
+     * The deadline this aspect is actually judged against: five minutes, or one whole poll cycle when the configured
+     * cadence is slower than that. A device polled every ten minutes cannot publish within five however healthy it
+     * is, and judging it on the shorter figure would declare it unreadable during every single in-flight poll.
+     */
+    private long staleAfterMillis() {
+        return Math.max(STALE_AFTER_NO_VALUE_MILLIS, pollIntervalMillis + pollResultTimeoutMillis);
+    }
+
     private void evaluateStaleness() {
         if (stale || producingSinceMillis < 0) {
             return;
         }
         final long withoutValueMillis = clock.nowMillis() - producingSinceMillis;
-        if (withoutValueMillis < STALE_AFTER_NO_VALUE_MILLIS) {
+        if (withoutValueMillis < staleAfterMillis()) {
             return;
         }
         stale = true;
@@ -448,6 +462,13 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     void requestPoll() {
+        // The deadline is evaluated here, at the top of each cycle, and not when a poll completes: the coordinator
+        // records a published reading AFTER the completing value has already driven the machine, so evaluating at
+        // completion would judge a cycle before its own publish was counted and trip a perfectly healthy tag one
+        // interval in every five minutes. By the next request the previous cycle's outcome is settled, whatever it
+        // was — a published reading, a value the schema refused, or a completion carrying no values at all
+        // (Sam, round 3 finding 3).
+        evaluateStaleness();
         batches.poll(node);
         // A poll that never answers must not read healthy forever (EDG-824 #15): arm the result deadline on the
         // aspect's single timer slot — a received value or failure replaces it with the next-poll timer.
