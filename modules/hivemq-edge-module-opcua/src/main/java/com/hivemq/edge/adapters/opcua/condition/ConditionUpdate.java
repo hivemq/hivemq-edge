@@ -25,44 +25,98 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A request to move a condition's state machine — what a southbound write to a condition tag means.
  * <p>
- * Edge exposes <em>one</em> action here, {@code update_state}, with {@code method} selecting the transition,
- * rather than mirroring the OPC UA server's separate {@code Acknowledge} / {@code Confirm} / {@code AddComment}
- * methods. Those all share the same shape — {@code (EventId, Comment)} invoked on a condition node — so
- * folding them into one parameterised action loses nothing and keeps Edge a conduit rather than a
- * re-implementation of an OPC UA server.
+ * Edge exposes <em>one</em> action here, {@code update_state}, with {@code method} selecting which of the
+ * condition's methods to invoke, rather than one tag or schema per OPC UA method. Every method the condition
+ * offers is available: Edge does not decide which of the server's own operations an operator may call.
  * <p>
- * Edge may request transitions on the <em>observer</em> dimension only (acknowledge, confirm). The active
- * dimension belongs to the process and is never driven from here.
+ * The methods do <em>not</em> share a signature — three take {@code (EventId, Comment)}, ten take no arguments
+ * at all, and {@code TimedShelve} takes a duration. That is why every field but {@code method} is optional:
+ * which of them apply, and which are required, follows from the method. The check is made here rather than
+ * left to the server, so a command that cannot be carried out is rejected before it becomes a call.
+ * <p>
+ * {@code GetGroupMemberships} is deliberately absent: it returns data instead of requesting a transition, so a
+ * southbound write is the wrong shape for it.
  *
- * @param eventId identifies the <em>transition</em> being responded to, as taken from the northbound message.
- *                Not the condition and not a state: the server mints a fresh one per event, so a late
- *                acknowledgement cannot be applied to a newer transition.
- * @param method  which transition to request.
- * @param comment free text recorded by the server alongside the transition; may be empty.
+ * @param method   which method to invoke. The only always-required field.
+ * @param eventId  identifies the <em>transition</em> being responded to, as taken from the northbound message.
+ *                 Not the condition and not a state: the server mints a fresh one per event, so a late
+ *                 acknowledgement cannot be applied to a newer transition. Null for methods that act on the
+ *                 condition as a whole.
+ * @param comment  free text recorded by the server alongside the transition; may be empty.
+ * @param duration the shelving time in milliseconds; null for every method except {@code TimedShelve}.
  */
 public record ConditionUpdate(
-        @NotNull ByteString eventId,
         @NotNull Method method,
-        @NotNull String comment) {
+        @Nullable ByteString eventId,
+        @NotNull String comment,
+        @Nullable Double duration) {
 
     public static final @NotNull String FIELD_EVENT_ID = "eventId";
     public static final @NotNull String FIELD_METHOD = "method";
     public static final @NotNull String FIELD_COMMENT = "comment";
+    public static final @NotNull String FIELD_DURATION = "duration";
 
     /**
      * The transitions Edge can request. The wire form is the integer {@code method} field; the name is
      * accepted too, since a hand-written command is easier to read as {@code "ACKNOWLEDGE"} than as {@code 0}.
      */
     public enum Method {
-        ACKNOWLEDGE(0, "Acknowledge"),
-        CONFIRM(1, "Confirm");
+
+        // --- (EventId, Comment): act on one specific transition -------------------------------------------
+        ACKNOWLEDGE(0, "Acknowledge", Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        CONFIRM(1, "Confirm", Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        ADD_COMMENT(2, "AddComment", Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+
+        // --- no arguments: act on the condition as a whole ------------------------------------------------
+        ENABLE(10, "Enable", Arguments.NONE, Location.CONDITION),
+        DISABLE(11, "Disable", Arguments.NONE, Location.CONDITION),
+        SILENCE(12, "Silence", Arguments.NONE, Location.CONDITION),
+        SUPPRESS(13, "Suppress", Arguments.NONE, Location.CONDITION),
+        UNSUPPRESS(14, "Unsuppress", Arguments.NONE, Location.CONDITION),
+        REMOVE_FROM_SERVICE(15, "RemoveFromService", Arguments.NONE, Location.CONDITION),
+        PLACE_IN_SERVICE(16, "PlaceInService", Arguments.NONE, Location.CONDITION),
+        RESET(17, "Reset", Arguments.NONE, Location.CONDITION),
+
+        // --- shelving: on the condition's ShelvingState object, not on the condition ----------------------
+        UNSHELVE(20, "Unshelve", Arguments.NONE, Location.SHELVING_STATE),
+        ONE_SHOT_SHELVE(21, "OneShotShelve", Arguments.NONE, Location.SHELVING_STATE),
+        TIMED_SHELVE(22, "TimedShelve", Arguments.DURATION, Location.SHELVING_STATE);
+
+        /**
+         * What the method takes. Ten of the fourteen take nothing at all, which is why the command's fields
+         * are optional rather than the command being split into several shapes.
+         */
+        public enum Arguments {
+            /** {@code (EventId, Comment)} — the method acts on the transition named by the event id. */
+            EVENT_AND_COMMENT,
+            /** No input arguments; the method acts on the condition as a whole. */
+            NONE,
+            /** {@code (ShelvingTime)} — a duration in milliseconds. */
+            DURATION
+        }
+
+        /** Where the method node hangs, which decides how it is resolved on the instance. */
+        public enum Location {
+            /** A direct component of the condition instance. */
+            CONDITION,
+            /** A component of the condition's {@code ShelvingState} object, one level deeper. */
+            SHELVING_STATE
+        }
 
         private final int wireValue;
         private final @NotNull String browseName;
+        private final @NotNull Arguments arguments;
+        private final @NotNull Location location;
 
-        Method(final int wireValue, final @NotNull String browseName) {
+        Method(
+                final int wireValue,
+                final @NotNull String browseName,
+                final @NotNull Arguments arguments,
+                final @NotNull Location location) {
             this.wireValue = wireValue;
             this.browseName = browseName;
+            this.arguments = arguments;
+            this.location = location;
         }
 
         public int wireValue() {
@@ -70,13 +124,20 @@ public record ConditionUpdate(
         }
 
         /**
-         * The browse name of the OPC UA method this transition dispatches to, fixed by the specification for
-         * {@code AcknowledgeableConditionType}. The method is looked up by this name on the condition
-         * instance: a method must be a component of the object it is called on, so the type-level node id is
-         * not itself callable.
+         * The browse name of the OPC UA method, fixed by the specification. The method is looked up by this
+         * name on the instance: a method must be a component of the object it is called on, so the type-level
+         * node id is not itself callable.
          */
         public @NotNull String browseName() {
             return browseName;
+        }
+
+        public @NotNull Arguments arguments() {
+            return arguments;
+        }
+
+        public @NotNull Location location() {
+            return location;
         }
 
         public static @NotNull Method fromWireValue(final int wireValue) {
@@ -125,22 +186,13 @@ public record ConditionUpdate(
      */
     public static @NotNull ConditionUpdate fromJson(final @Nullable JsonNode payload) {
         if (payload == null || !payload.isObject()) {
-            throw new IllegalArgumentException("A condition update must be an object with '" + FIELD_EVENT_ID
-                    + "' and '"
-                    + FIELD_METHOD
-                    + "' fields");
+            throw new IllegalArgumentException(
+                    "A condition update must be an object with at least a '" + FIELD_METHOD + "' field");
         }
 
-        final JsonNode eventIdNode = payload.get(FIELD_EVENT_ID);
-        if (eventIdNode == null
-                || !eventIdNode.isTextual()
-                || eventIdNode.asText().isEmpty()) {
-            throw new IllegalArgumentException("A condition update needs a non-empty '" + FIELD_EVENT_ID
-                    + "', taken from the northbound message it responds to");
-        }
-
+        // `method` is the only field that is always required: it determines which of the others apply.
         final JsonNode methodNode = payload.get(FIELD_METHOD);
-        if (methodNode == null) {
+        if (methodNode == null || methodNode.isNull()) {
             throw new IllegalArgumentException("A condition update needs a '" + FIELD_METHOD + "' field");
         }
         final Method method =
@@ -149,7 +201,45 @@ public record ConditionUpdate(
         final JsonNode commentNode = payload.get(FIELD_COMMENT);
         final String comment = commentNode == null || commentNode.isNull() ? "" : commentNode.asText();
 
-        return new ConditionUpdate(decodeEventId(eventIdNode.asText()), method, comment);
+        final ByteString eventId = readEventId(payload, method);
+        final Double duration = readDuration(payload, method);
+
+        return new ConditionUpdate(method, eventId, comment, duration);
+    }
+
+    /**
+     * Reads {@code eventId}, required exactly for the methods that act on a single transition.
+     * <p>
+     * For the other methods it is not merely optional but meaningless — {@code Suppress} applies to the
+     * condition, not to one of its transitions — so a value supplied there is ignored rather than passed on.
+     */
+    private static @Nullable ByteString readEventId(final @NotNull JsonNode payload, final @NotNull Method method) {
+        if (method.arguments() != Method.Arguments.EVENT_AND_COMMENT) {
+            return null;
+        }
+        final JsonNode eventIdNode = payload.get(FIELD_EVENT_ID);
+        if (eventIdNode == null
+                || !eventIdNode.isTextual()
+                || eventIdNode.asText().isEmpty()) {
+            throw new IllegalArgumentException("'" + method.name() + "' needs a non-empty '" + FIELD_EVENT_ID
+                    + "', taken from the northbound message it responds to");
+        }
+        return decodeEventId(eventIdNode.asText());
+    }
+
+    /**
+     * Reads {@code duration}, required exactly for {@code TimedShelve} and meaningless elsewhere.
+     */
+    private static @Nullable Double readDuration(final @NotNull JsonNode payload, final @NotNull Method method) {
+        if (method.arguments() != Method.Arguments.DURATION) {
+            return null;
+        }
+        final JsonNode durationNode = payload.get(FIELD_DURATION);
+        if (durationNode == null || !durationNode.isNumber()) {
+            throw new IllegalArgumentException(
+                    "'" + method.name() + "' needs a numeric '" + FIELD_DURATION + "' in milliseconds");
+        }
+        return durationNode.asDouble();
     }
 
     /**

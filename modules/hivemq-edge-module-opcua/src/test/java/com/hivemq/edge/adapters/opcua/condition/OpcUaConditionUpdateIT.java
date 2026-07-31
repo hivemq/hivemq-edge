@@ -190,6 +190,70 @@ public class OpcUaConditionUpdateIT {
                 .isEmpty();
     }
 
+    @Test
+    @Timeout(120)
+    void whenAMethodTakesNoArguments_thenNoEventIdIsNeeded() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("SuppressibleAlarm", CONDITION_NODE_ID + 4);
+
+        startAdapterWith(conditionNodeId);
+
+        // Ten of the fourteen methods act on the condition as a whole rather than on one transition, so
+        // requiring an eventId here would make them impossible to call.
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "SUPPRESS"}
+                """);
+
+        verify(output, timeout(10_000)).finish();
+        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+                .singleElement()
+                .satisfies(call -> assertThat(call.methodName()).isEqualTo("Suppress"));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheConditionIsTimedShelved_thenTheDurationReachesTheShelvingState() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("ShelvableAlarm", CONDITION_NODE_ID + 5);
+
+        startAdapterWith(conditionNodeId);
+
+        // TimedShelve is the one method taking a duration, and it lives on the condition's ShelvingState
+        // object rather than on the condition -- so this exercises the descent as well as the argument.
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "TIMED_SHELVE", "duration": 5000}
+                """);
+
+        verify(output, timeout(10_000)).finish();
+        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+                .singleElement()
+                .satisfies(call -> {
+                    assertThat(call.methodName()).isEqualTo("TimedShelve");
+                    assertThat(call.duration()).isEqualTo(5000.0);
+                });
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTimedShelveHasNoDuration_thenTheWriteFailsAndNothingIsCalled() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("StrictShelveAlarm", CONDITION_NODE_ID + 6);
+
+        startAdapterWith(conditionNodeId);
+
+        // Which fields are required follows from the method, so this is the same class of rejection as a
+        // missing eventId on an acknowledge -- checked per method, not per field.
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "TIMED_SHELVE"}
+                """);
+
+        verify(output, timeout(10_000)).fail(org.mockito.ArgumentMatchers.anyString());
+        assertThat(opcUaServerExtension.getTestNamespace().methodCalls()).isEmpty();
+    }
+
     private @NotNull WritingOutput writeToCondition(final @NotNull String conditionNodeId, final @NotNull String json)
             throws Exception {
         final JsonNode value = mapper.readTree(json);

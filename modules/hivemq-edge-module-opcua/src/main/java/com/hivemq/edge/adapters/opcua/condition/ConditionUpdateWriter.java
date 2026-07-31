@@ -50,6 +50,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ConditionUpdateWriter {
 
+    /** The browse name of the alarm's shelving state machine, fixed by the specification. */
+    private static final @NotNull String SHELVING_STATE = "ShelvingState";
+
     private ConditionUpdateWriter() {}
 
     /**
@@ -66,18 +69,54 @@ public final class ConditionUpdateWriter {
             final @NotNull NodeId conditionNodeId,
             final @NotNull ConditionUpdate update) {
 
-        // Acknowledge and Confirm share one signature: (EventId, Comment). That uniformity is what lets Edge
-        // present a single parameterised action instead of one entry point per method.
-        final Variant[] arguments =
-                new Variant[] {Variant.of(update.eventId()), Variant.of(LocalizedText.english(update.comment()))};
+        final Variant[] arguments = argumentsFor(update);
 
-        return resolveMethodOn(client, conditionNodeId, update.method()).thenCompose(methodNodeId -> {
-            if (methodNodeId == null) {
-                return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_MethodInvalid));
+        // Shelving methods hang off the condition's ShelvingState object rather than the condition itself, so
+        // the object a call is made on is not always the condition.
+        return resolveTargetObject(client, conditionNodeId, update.method()).thenCompose(objectNodeId -> {
+            if (objectNodeId == null) {
+                return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_NodeIdUnknown));
             }
-            final CallMethodRequest request = new CallMethodRequest(conditionNodeId, methodNodeId, arguments);
-            return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
+            return resolveMethodOn(client, objectNodeId, update.method()).thenCompose(methodNodeId -> {
+                if (methodNodeId == null) {
+                    return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_MethodInvalid));
+                }
+                final CallMethodRequest request = new CallMethodRequest(objectNodeId, methodNodeId, arguments);
+                return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
+            });
         });
+    }
+
+    /**
+     * Builds the input arguments, in the order the specification defines them.
+     * <p>
+     * Ten of the fourteen methods take none at all, so an empty array is the normal case rather than a
+     * degenerate one. The command's optional fields exist for the minority that do take arguments.
+     */
+    private static @NotNull Variant[] argumentsFor(final @NotNull ConditionUpdate update) {
+        return switch (update.method().arguments()) {
+            case EVENT_AND_COMMENT ->
+                new Variant[] {Variant.of(update.eventId()), Variant.of(LocalizedText.english(update.comment()))};
+            case DURATION -> new Variant[] {Variant.of(update.duration())};
+            case NONE -> new Variant[0];
+        };
+    }
+
+    /**
+     * Finds the object the method is invoked on — the condition itself, or its {@code ShelvingState}.
+     *
+     * @return the object node, or {@code null} when the condition has no {@code ShelvingState} (it is not an
+     *         alarm, or the server does not expose shelving).
+     */
+    private static @NotNull CompletableFuture<NodeId> resolveTargetObject(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull ConditionUpdate.Method method) {
+
+        if (method.location() == ConditionUpdate.Method.Location.CONDITION) {
+            return CompletableFuture.completedFuture(conditionNodeId);
+        }
+        return browseComponent(client, conditionNodeId, NodeClass.Object, SHELVING_STATE);
     }
 
     /**
@@ -92,15 +131,31 @@ public final class ConditionUpdateWriter {
      */
     private static @NotNull CompletableFuture<NodeId> resolveMethodOn(
             final @NotNull OpcUaClient client,
-            final @NotNull NodeId conditionNodeId,
+            final @NotNull NodeId objectNodeId,
             final @NotNull ConditionUpdate.Method method) {
+        return browseComponent(client, objectNodeId, NodeClass.Method, method.browseName());
+    }
+
+    /**
+     * Finds a component of a node by browse name.
+     * <p>
+     * Used for both lookups this class needs — the method on an object, and the {@code ShelvingState} object
+     * on a condition — because they are the same operation over a different node class.
+     *
+     * @return the matching node, or {@code null} when the node has no such component.
+     */
+    private static @NotNull CompletableFuture<NodeId> browseComponent(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId parentNodeId,
+            final @NotNull NodeClass nodeClass,
+            final @NotNull String browseName) {
 
         final BrowseDescription browse = new BrowseDescription(
-                conditionNodeId,
+                parentNodeId,
                 BrowseDirection.Forward,
                 NodeIds.HasComponent,
                 true,
-                uint(NodeClass.Method.getValue()),
+                uint(nodeClass.getValue()),
                 uint(BrowseResultMask.All.getValue()));
 
         return client.browseAsync(browse).thenApply(result -> {
@@ -109,8 +164,8 @@ public final class ConditionUpdateWriter {
                 return null;
             }
             for (final ReferenceDescription reference : references) {
-                final QualifiedName browseName = reference.getBrowseName();
-                if (browseName != null && method.browseName().equals(browseName.getName())) {
+                final QualifiedName referenceBrowseName = reference.getBrowseName();
+                if (referenceBrowseName != null && browseName.equals(referenceBrowseName.getName())) {
                     return reference
                             .getNodeId()
                             .toNodeId(client.getNamespaceTable())

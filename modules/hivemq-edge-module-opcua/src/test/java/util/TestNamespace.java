@@ -284,7 +284,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
     public record MethodCall(
             @NotNull String methodName,
             @NotNull ByteString eventId,
-            @NotNull String comment) {}
+            @NotNull String comment,
+            @Nullable Double duration) {}
 
     private final @NotNull List<MethodCall> methodCalls = new CopyOnWriteArrayList<>();
 
@@ -311,8 +312,44 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         final String conditionNodeId = addConditionNode(name, nodeIdPart);
         final NodeId nodeId = NodeId.parse(conditionNodeId);
 
-        addConditionMethod(nodeId, NodeIds.AcknowledgeableConditionType_Acknowledge, "Acknowledge", nodeIdPart + 1000);
-        addConditionMethod(nodeId, NodeIds.AcknowledgeableConditionType_Confirm, "Confirm", nodeIdPart + 2000);
+        // Every method a condition exposes, so a test can exercise the whole southbound surface. The offsets
+        // only have to be distinct; they carry no meaning.
+        long offset = 1000;
+        for (final String methodName : List.of(
+                "Acknowledge",
+                "Confirm",
+                "AddComment",
+                "Enable",
+                "Disable",
+                "Silence",
+                "Suppress",
+                "Unsuppress",
+                "RemoveFromService",
+                "PlaceInService",
+                "Reset")) {
+            addConditionMethod(nodeId, methodName, nodeIdPart + offset);
+            offset += 1000;
+        }
+
+        // Shelving lives on a nested ShelvingState object rather than on the condition, so a test that only
+        // hung these off the condition would not exercise the descent the adapter has to make.
+        final NodeId shelvingStateId = newNodeId(nodeIdPart + 500);
+        final UaObjectNode shelvingState = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(shelvingStateId)
+                .setBrowseName(new QualifiedName(0, "ShelvingState"))
+                .setDisplayName(LocalizedText.english("ShelvingState"))
+                .setTypeDefinition(NodeIds.ShelvedStateMachineType)
+                .build();
+        getNodeManager().addNode(shelvingState);
+        final UaNode conditionNode = getNodeManager().get(nodeId);
+        if (conditionNode != null) {
+            conditionNode.addReference(new Reference(
+                    nodeId, NodeIds.HasComponent, shelvingState.getNodeId().expanded(), true));
+        }
+        for (final String methodName : List.of("Unshelve", "OneShotShelve", "TimedShelve")) {
+            addConditionMethod(shelvingStateId, methodName, nodeIdPart + offset);
+            offset += 1000;
+        }
 
         return conditionNodeId;
     }
@@ -324,58 +361,59 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * ({@code AcknowledgeableConditionType_Acknowledge}), which is what makes those methods callable without
      * browsing; the instance also needs its own method node so the address space is well formed.
      */
+    /**
+     * Exposes one method on a node, with a handler that records the call.
+     * <p>
+     * Only the instance's own method node is created: a call names the object and a method that is a component
+     * of it, so the type-level node id from the spec is not itself callable.
+     */
     private void addConditionMethod(
-            final @NotNull NodeId conditionNodeId,
-            final @NotNull NodeId standardMethodNodeId,
-            final @NotNull String methodName,
-            final long instanceNodeIdPart) {
+            final @NotNull NodeId parentNodeId, final @NotNull String methodName, final long instanceNodeIdPart) {
 
         final MethodInvocationHandler handler = (context, request) -> {
             final Variant[] arguments = request.getInputArguments();
-            final ByteString eventId =
-                    arguments != null && arguments.length > 0 && arguments[0].getValue() instanceof final ByteString bs
-                            ? bs
-                            : ByteString.NULL_VALUE;
-            final String comment = arguments != null
-                            && arguments.length > 1
-                            && arguments[1].getValue() instanceof final LocalizedText lt
-                    ? String.valueOf(lt.getText())
-                    : "";
-            methodCalls.add(new MethodCall(methodName, eventId, comment));
+            methodCalls.add(new MethodCall(
+                    methodName, argumentAt(arguments, 0), commentAt(arguments, 1), durationAt(arguments, 0)));
             return new CallMethodResult(StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]);
         };
 
-        final UaMethodNode instanceMethod = UaMethodNode.builder(getNodeContext())
+        final UaMethodNode method = UaMethodNode.builder(getNodeContext())
                 .setNodeId(newNodeId(instanceNodeIdPart))
-                .setBrowseName(newQualifiedName(methodName))
+                .setBrowseName(new QualifiedName(0, methodName))
                 .setDisplayName(LocalizedText.english(methodName))
                 .setExecutable(true)
                 .setUserExecutable(true)
                 .build();
-        instanceMethod.setInvocationHandler(handler);
-        getNodeManager().addNode(instanceMethod);
+        method.setInvocationHandler(handler);
+        getNodeManager().addNode(method);
 
-        final UaNode condition = getNodeManager().get(conditionNodeId);
-        if (condition != null) {
-            condition.addReference(new Reference(
-                    conditionNodeId,
-                    NodeIds.HasComponent,
-                    instanceMethod.getNodeId().expanded(),
-                    true));
+        final UaNode parent = getNodeManager().get(parentNodeId);
+        if (parent != null) {
+            parent.addReference(new Reference(
+                    parentNodeId, NodeIds.HasComponent, method.getNodeId().expanded(), true));
         }
+    }
 
-        // The standard type-level method node: this is the id a client actually calls.
-        if (getNodeManager().get(standardMethodNodeId) == null) {
-            final UaMethodNode standardMethod = UaMethodNode.builder(getNodeContext())
-                    .setNodeId(standardMethodNodeId)
-                    .setBrowseName(new QualifiedName(0, methodName))
-                    .setDisplayName(LocalizedText.english(methodName))
-                    .setExecutable(true)
-                    .setUserExecutable(true)
-                    .build();
-            standardMethod.setInvocationHandler(handler);
-            getNodeManager().addNode(standardMethod);
-        }
+    private static @NotNull ByteString argumentAt(final @Nullable Variant[] arguments, final int index) {
+        return arguments != null
+                        && arguments.length > index
+                        && arguments[index].getValue() instanceof final ByteString bs
+                ? bs
+                : ByteString.NULL_VALUE;
+    }
+
+    private static @NotNull String commentAt(final @Nullable Variant[] arguments, final int index) {
+        return arguments != null
+                        && arguments.length > index
+                        && arguments[index].getValue() instanceof final LocalizedText lt
+                ? String.valueOf(lt.getText())
+                : "";
+    }
+
+    private static @Nullable Double durationAt(final @Nullable Variant[] arguments, final int index) {
+        return arguments != null && arguments.length > index && arguments[index].getValue() instanceof final Double d
+                ? d
+                : null;
     }
 
     /**
