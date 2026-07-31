@@ -42,6 +42,7 @@ import com.hivemq.edge.adapters.opcua.browse.OpcUaNodeBrowser;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
+import com.hivemq.edge.adapters.opcua.condition.ConditionSchemas;
 import com.hivemq.edge.adapters.opcua.condition.ConditionUpdate;
 import com.hivemq.edge.adapters.opcua.condition.ConditionUpdateWriter;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
@@ -759,6 +760,22 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (tag == null) {
             log.error("Cannot create schema for non-existent tag '{}'", tagName);
             output.tagNotFound("Tag '" + tagName + "' not found.");
+            return;
+        }
+
+        // A condition's shape follows from its declared type, not from the device: both schemas are known
+        // before a connection exists, so this answers without one. It is also the case where read and write
+        // genuinely differ — a transition report northbound, a command to move the state machine southbound.
+        if (tag.getDefinition().getType() == OpcuaTagType.CONDITION) {
+            log.debug(
+                    "Schema for condition tag='{}' derived from declared type '{}'",
+                    tagName,
+                    tag.getDefinition().getConditionType().browseName());
+            output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                    ConditionSchemas.readSchema(tag.getDefinition().getConditionType()),
+                    null,
+                    null,
+                    ConditionSchemas.writeSchema()));
             return;
         }
 
