@@ -23,9 +23,11 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.Constants;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.UaSession;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,8 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull AtomicBoolean seenFirstActivation = new AtomicBoolean(false);
+    private volatile @Nullable Runnable onReconnect;
 
     public OpcUaSessionActivityListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -62,10 +66,30 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
         log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
     }
 
+    /**
+     * Called when a session becomes active again after this listener has already seen one.
+     * <p>
+     * Set by the connection once the subscription handler exists. Only reconnects are reported: the first
+     * activation is the initial connect, where the subscription is created and already refreshes itself.
+     */
+    public void setOnReconnect(final @NotNull Runnable onReconnect) {
+        this.onReconnect = onReconnect;
+    }
+
     @Override
     public void onSessionActive(final @NotNull UaSession session) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
         protocolAdapterState.setConnectionStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
+
+        // A reconnect whose subscription transferred cleanly recreates nothing, so nothing else would ask the
+        // server to re-report its retained conditions. Skipping the first activation avoids refreshing twice
+        // on the initial connect, where creating the subscription already does it.
+        if (!seenFirstActivation.compareAndSet(false, true)) {
+            final Runnable reconnected = onReconnect;
+            if (reconnected != null) {
+                reconnected.run();
+            }
+        }
     }
 }

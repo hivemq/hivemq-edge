@@ -306,6 +306,19 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
     }
 
     /**
+     * The calls a test itself provoked, with {@code ConditionRefresh} filtered out.
+     * <p>
+     * Edge asks for a refresh whenever it establishes a subscription, so that call is present in every test
+     * that subscribes a condition and says nothing about what the test did. A test asserting on a write it
+     * made wants this; a test asserting on the refresh itself wants {@link #methodCalls()}.
+     */
+    public @NotNull List<MethodCall> methodCallsExcludingRefresh() {
+        return methodCalls.stream()
+                .filter(call -> !"ConditionRefresh".equals(call.methodName()))
+                .toList();
+    }
+
+    /**
      * Adds a condition that can be acknowledged and confirmed.
      * <p>
      * Beyond being an event source, the node carries the two standard {@code AcknowledgeableConditionType}
@@ -335,7 +348,10 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                 "Unsuppress",
                 "RemoveFromService",
                 "PlaceInService",
-                "Reset")) {
+                "Reset",
+                // Defined on ConditionType, so a server offers it on its condition instances. Edge calls it
+                // after every (re)connect to recover the current alarm picture.
+                "ConditionRefresh")) {
             addConditionMethod(nodeId, methodName, nodeIdPart + offset);
             offset += 1000;
         }

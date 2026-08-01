@@ -112,7 +112,7 @@ public class OpcUaConditionUpdateIT {
         verify(output, timeout(10_000)).finish();
 
         final List<TestNamespace.MethodCall> calls =
-                opcUaServerExtension.getTestNamespace().methodCalls();
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
         assertThat(calls).hasSize(1);
         assertThat(calls.get(0).methodName())
                 .as("method 0 must dispatch to Acknowledge")
@@ -141,7 +141,7 @@ public class OpcUaConditionUpdateIT {
 
         // Same action, different parameter: the point of the unified command is that only `method` changes.
         final List<TestNamespace.MethodCall> calls =
-                opcUaServerExtension.getTestNamespace().methodCalls();
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
         assertThat(calls).hasSize(1);
         assertThat(calls.get(0).methodName()).isEqualTo("Confirm");
     }
@@ -161,7 +161,7 @@ public class OpcUaConditionUpdateIT {
                 """.formatted(eventId));
 
         verify(output, timeout(10_000)).finish();
-        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+        assertThat(opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh())
                 .singleElement()
                 .satisfies(call -> assertThat(call.methodName()).isEqualTo("Acknowledge"));
     }
@@ -185,7 +185,7 @@ public class OpcUaConditionUpdateIT {
 
         // Checked after the failure is observed: the point is not merely that the write failed, but that the
         // command was rejected locally and never became a call on the server.
-        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+        assertThat(opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh())
                 .as("a command that cannot be understood must not reach the server")
                 .isEmpty();
     }
@@ -206,7 +206,7 @@ public class OpcUaConditionUpdateIT {
                 """);
 
         verify(output, timeout(10_000)).finish();
-        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+        assertThat(opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh())
                 .singleElement()
                 .satisfies(call -> assertThat(call.methodName()).isEqualTo("Suppress"));
     }
@@ -227,7 +227,7 @@ public class OpcUaConditionUpdateIT {
                 """);
 
         verify(output, timeout(10_000)).finish();
-        assertThat(opcUaServerExtension.getTestNamespace().methodCalls())
+        assertThat(opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh())
                 .singleElement()
                 .satisfies(call -> {
                     assertThat(call.methodName()).isEqualTo("TimedShelve");
@@ -251,7 +251,8 @@ public class OpcUaConditionUpdateIT {
                 """);
 
         verify(output, timeout(10_000)).fail(org.mockito.ArgumentMatchers.anyString());
-        assertThat(opcUaServerExtension.getTestNamespace().methodCalls()).isEmpty();
+        assertThat(opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh())
+                .isEmpty();
     }
 
     private @NotNull WritingOutput writeToCondition(final @NotNull String conditionNodeId, final @NotNull String json)

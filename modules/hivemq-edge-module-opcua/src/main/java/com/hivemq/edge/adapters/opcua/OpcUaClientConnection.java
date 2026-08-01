@@ -189,6 +189,10 @@ public class OpcUaClientConnection {
         final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(
                 protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, config);
 
+        // A reconnect that transfers the subscription successfully recreates nothing, so the refresh that
+        // rides on re-establishing monitored items never happens. This is the only signal for that case.
+        activityListener.setOnReconnect(subscriptionLifecycleHandler::onSessionReactivated);
+
         final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
 
         if (subscriptionOptional.isEmpty()) {

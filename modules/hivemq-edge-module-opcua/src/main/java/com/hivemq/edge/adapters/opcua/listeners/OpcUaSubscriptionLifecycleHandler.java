@@ -25,6 +25,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.condition.ConditionEventFilters;
+import com.hivemq.edge.adapters.opcua.condition.ConditionRefresh;
 import com.hivemq.edge.adapters.opcua.condition.ConditionTypeVerifier;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -83,6 +85,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     // Track last keep-alive timestamp for health monitoring
     private volatile long lastKeepAliveTimestamp;
+
+    // The subscription currently in use, so a reconnect that keeps it can still ask for a condition refresh.
+    // Set whenever monitored items are synchronized; replaced when a broken subscription is recreated.
+    private final @NotNull AtomicReference<OpcUaSubscription> currentSubscription = new AtomicReference<>();
 
     // Track last dynamic-type-registry reset so a permanently undecodable type cannot trigger a
     // full DataTypeTree browse per notification (EDG-776). Monotonic clock (nanoTime), seeded one
@@ -313,6 +319,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         try {
             subscription.synchronizeMonitoredItems();
             log.info("All monitored items synchronized successfully");
+            currentSubscription.set(subscription);
+            requestConditionRefresh(subscription);
             return true;
         } catch (final MonitoredItemSynchronizationException e) {
             final List<MonitoredItemServiceOperationResult> allResults = new ArrayList<>();
@@ -527,6 +535,74 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * they are rebuilt from the server on next use. Throttled because each rebuild browses the
      * server's full DataType hierarchy.
      */
+    /**
+     * Re-reports the retained conditions after a session was re-established with its subscription intact.
+     * <p>
+     * This covers the reconnect that {@link #onTransferFailed} does not see. When a client reconnects, it
+     * first tries to transfer the existing subscription to the new session. If that <em>succeeds</em> nothing
+     * is recreated — so no monitored items are synchronized, and the refresh that rides on that would never
+     * happen. That is the common case for a brief network drop, and precisely when the alarm picture is most
+     * likely to have moved unseen.
+     * <p>
+     * The subscription is already live on the new session by the time the session reports itself active, so
+     * the burst has somewhere to go.
+     */
+    public void onSessionReactivated() {
+        final OpcUaSubscription subscription = currentSubscription.get();
+        if (subscription != null) {
+            requestConditionRefresh(subscription);
+        }
+    }
+
+    /**
+     * Asks the server to re-report every retained condition, once the monitored items are in place.
+     * <p>
+     * This is the seam the refresh has to hang on. It runs on both paths that establish monitored items —
+     * the initial subscribe and the recreation after a failed subscription transfer — so a refresh follows
+     * every connect and every reconnect. {@code onSessionActive} would be too early: the session activates
+     * before the items exist, and a refresh burst with nothing subscribed to receive it is wasted.
+     * <p>
+     * Fire and forget, and deliberately never fatal. A server that does not implement
+     * {@code ConditionRefresh}, or refuses it, still delivers live transitions perfectly well — losing the
+     * initial picture is a degradation, not a reason to fail the subscription that was just established.
+     */
+    private void requestConditionRefresh(final @NotNull OpcUaSubscription subscription) {
+        // The method has to be called on an object that offers it, and ConditionRefresh is defined on
+        // ConditionType — so any subscribed condition serves as the entry point. The burst it triggers covers
+        // every retained condition on the subscription, not just this one.
+        final Optional<OpcuaTag> anyCondition = tags.stream()
+                .filter(tag -> tag.getDefinition().getType() == OpcuaTagType.CONDITION)
+                .findFirst();
+        if (anyCondition.isEmpty()) {
+            return;
+        }
+        final NodeId conditionNode =
+                NodeId.parse(anyCondition.get().getDefinition().getNode());
+
+        subscription.getSubscriptionId().ifPresent(subscriptionId -> {
+            @SuppressWarnings("unused")
+            final var unused = ConditionRefresh.request(client, conditionNode, subscriptionId)
+                    .whenComplete((statusCode, throwable) -> {
+                        if (throwable != null) {
+                            log.warn(
+                                    "Adapter '{}': could not refresh conditions, so the current alarm picture may be incomplete until each alarm next changes",
+                                    adapterId,
+                                    throwable);
+                        } else if (statusCode.isBad()) {
+                            log.warn(
+                                    "Adapter '{}': the server refused a condition refresh ({}), so the current alarm picture may be incomplete until each alarm next changes",
+                                    adapterId,
+                                    statusCode);
+                        } else {
+                            log.debug(
+                                    "Adapter '{}': requested a condition refresh on subscription {}",
+                                    adapterId,
+                                    subscriptionId);
+                        }
+                    });
+        });
+    }
+
     /**
      * Whether a tag may be subscribed: true for anything that is not a condition, and for a condition whose
      * declared type the device satisfies.
