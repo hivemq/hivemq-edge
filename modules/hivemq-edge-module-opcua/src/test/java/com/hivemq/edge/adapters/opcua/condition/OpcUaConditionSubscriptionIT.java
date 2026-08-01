@@ -331,6 +331,40 @@ public class OpcUaConditionSubscriptionIT {
                 .isNotEmpty();
     }
 
+    @Test
+    @Timeout(120)
+    void whenTwoConditionsShareANotifier_thenBothPublish() throws Exception {
+        // The ordinary case in a plant: several alarms in one area, so their tags resolve to the same
+        // notifier. Every other test here has one condition, or two where one is rejected before an item is
+        // created, so nothing yet covers two tags that are both accepted and both subscribed.
+        final String first =
+                opcUaServerExtension.getTestNamespace().addConditionNode("FirstAreaAlarm", CONDITION_NODE_ID + 30);
+        final String second =
+                opcUaServerExtension.getTestNamespace().addConditionNode("SecondAreaAlarm", CONDITION_NODE_ID + 31);
+
+        startAdapterWith(
+                new OpcuaTag("first-alarm", "", new OpcuaTagDefinition(first, OpcuaTagType.CONDITION)),
+                new OpcuaTag("second-alarm", "", new OpcuaTagDefinition(second, OpcuaTagType.CONDITION)));
+
+        // The adapter must come up at all: the two tags share a notifier node id, and anything keyed by node
+        // id sees that as a collision.
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        // Both conditions must be subscribed, not just whichever one was processed first.
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(first), "first fired", 700, true);
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(second), "second fired", 800, true);
+
+            final var sources = tagStreamingService.published().stream()
+                    .map(published -> published.get("SourceName").asText())
+                    .toList();
+            assertThat(sources)
+                    .as("both conditions sharing a notifier must publish, not only one of them")
+                    .contains("source-of-" + first, "source-of-" + second);
+        });
+    }
+
     private void startAdapterWith(final @NotNull OpcuaTag... tags) {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),

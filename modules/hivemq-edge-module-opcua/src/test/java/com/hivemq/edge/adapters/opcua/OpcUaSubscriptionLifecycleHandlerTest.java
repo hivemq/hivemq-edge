@@ -39,19 +39,17 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
 import java.util.List;
+import java.util.Optional;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
-import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -602,9 +600,9 @@ class OpcUaSubscriptionLifecycleHandlerTest {
 
     private static @NotNull OpcUaMonitoredItem createMonitoredItem() {
         final OpcUaMonitoredItem monitoredItem = mock(OpcUaMonitoredItem.class);
-        when(monitoredItem.getReadValueId())
-                .thenReturn(new ReadValueId(
-                        NodeId.parse(NODE_ID), AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE));
+        // The tag rides on the item, as it does in production: the handler reads it from here rather than
+        // resolving the item's node id against a map, so the item's ReadValueId is never consulted.
+        when(monitoredItem.getUserObject()).thenReturn(Optional.of(createTestTag()));
         return monitoredItem;
     }
 
