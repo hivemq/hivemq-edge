@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
@@ -28,6 +29,7 @@ import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extension.sdk.api.services.publish.Publish;
 import com.hivemq.mqtt.message.QoS;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -85,6 +87,35 @@ public class PublishBuilderImplTest {
 
         assertThrows(IllegalArgumentException.class, () -> new PublishBuilderImpl(configurationService)
                 .messageExpiryInterval(-1));
+    }
+
+    @Test
+    public void test_message_expiry_not_set_sentinel_is_accepted() {
+        // EDG-811: MESSAGE_EXPIRY_INTERVAL_NOT_SET means "no expiry configured", not a duration. It is
+        // Long.MAX_VALUE, so validating it as a numeric bound rejected it and any copy of a publish without
+        // an expiry failed outright.
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
+        new PublishBuilderImpl(configurationService).messageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
+    }
+
+    @Test
+    public void test_message_expiry_at_or_above_four_byte_range_means_no_expiry() {
+        // Everything at or above 2^32 means "no expiry" and is accepted: the two-billion-wide range between
+        // the four-byte maximum and Long.MAX_VALUE previously either threw here or, on paths that skip
+        // validation, reached the encoder and was truncated to its low 32 bits.
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
+        new PublishBuilderImpl(configurationService).messageExpiryInterval(4_294_967_296L); // 2^32
+        new PublishBuilderImpl(configurationService).messageExpiryInterval(1L << 40);
+        new PublishBuilderImpl(configurationService).messageExpiryInterval(JavaScriptConstants.JS_MAX_SAFE_INTEGER);
+    }
+
+    @Test
+    public void test_message_expiry_real_duration_above_maximum_is_still_rejected() {
+        // Below 2^32 the value is a real duration, so the operator's configured maximum still binds.
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
+        assertThatThrownBy(() ->
+                        new PublishBuilderImpl(configurationService).messageExpiryInterval(4_294_967_295L)) // 2^32-1
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

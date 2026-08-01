@@ -17,6 +17,7 @@ package com.hivemq.extensions.services.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
@@ -42,8 +43,28 @@ public class PluginBuilderUtil {
         return !validateUTF8 || !Utf8Utils.hasControlOrNonCharacter(stringToValidate);
     }
 
+    /**
+     * EDG-811: the message expiry interval has two ranges, and only one of them is a duration.
+     * <ul>
+     *     <li>{@code 0 .. 2^32-1} — a real duration, checked against the configured maximum and written to
+     *     the wire as the four-byte Message Expiry Interval property.</li>
+     *     <li>{@code >= 2^32} — "no expiry". MQTT expresses this by omitting the property, so there is no
+     *     wire value to bound; several such markers exist internally ({@code MAX_EXPIRY_INTERVAL_DEFAULT},
+     *     {@code MESSAGE_EXPIRY_INTERVAL_NOT_SET}, {@code JS_MAX_SAFE_INTEGER}) and all mean the same thing.</li>
+     * </ul>
+     * Validating the second range as if it were a duration is what broke the bidirectional adapter's
+     * dead-letter repost: copying a publish that had no expiry threw, because the "absent" marker is
+     * {@code Long.MAX_VALUE} and therefore far above any configured maximum.
+     * <p>
+     * Note the resulting asymmetry: an operator who configures a one-hour maximum rejects a client asking
+     * for two hours but accepts one asking for no expiry at all. That matches MQTT, where an absent property
+     * is the protocol default and already outlives any configured bound.
+     */
     public static void checkMessageExpiryInterval(
             final long messageExpiryInterval, final long maxMessageExpiryInterval) {
+        if (messageExpiryInterval >= MAX_EXPIRY_INTERVAL_DEFAULT) {
+            return;
+        }
         checkArgument(
                 messageExpiryInterval <= maxMessageExpiryInterval,
                 "Message expiry interval %s not allowed. Maximum = %s",

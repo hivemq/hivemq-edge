@@ -127,10 +127,21 @@ final class Mqtt5MessageEncoderUtil {
         }
     }
 
+    /**
+     * EDG-811: {@code defaultValue} carries two different meanings across the call sites. For
+     * MAXIMUM_PACKET_SIZE it is a genuine default — a legal value the receiver reconstructs from the spec, so
+     * omitting it merely saves bytes. For MESSAGE_EXPIRY_INTERVAL and SESSION_EXPIRY_INTERVAL it is an
+     * out-of-range marker meaning "absent", where omission is the only correct encoding.
+     * <p>
+     * The second case needs the range check as well as the equality: the markers are not the only values above
+     * the four-byte range, and anything else up there used to reach {@code writeInt} and be silently truncated
+     * to its low 32 bits — 2^40 encoding as 0, "expire immediately". Values at or above 2^32 all mean "no
+     * expiry", so the property is dropped rather than corrupted.
+     */
     static void encodeIntProperty(
             final int propertyIdentifier, final long value, final long defaultValue, final @NotNull ByteBuf out) {
 
-        if (value != defaultValue) {
+        if (value != defaultValue && value <= UnsignedDataTypes.UNSIGNED_INT_MAX_VALUE) {
             out.writeByte(propertyIdentifier);
             out.writeInt((int) value);
         }
