@@ -265,8 +265,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // update existing monitored items
         subscription.getMonitoredItems().forEach(monitoredItem -> {
             // TODO: allow to configure these values per TAG!!!!
-            monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
-            monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
+            // The same split as when the item was created: an event item takes the event queue size and keeps
+            // the sampling interval the SDK chose for it, a value item takes the value parameters. Applying
+            // the value settings here would quietly undo that on the next synchronization.
+            final OpcuaTag tag = tagOf(monitoredItem);
+            if (tag != null && tag.getDefinition().getType() != OpcuaTagType.VALUE) {
+                monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().eventQueueSize()));
+            } else {
+                monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
+                monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
+            }
         });
 
         // add new monitored items
@@ -286,18 +294,32 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
                         switch (opcuaTag.getDefinition().getType()) {
-                            case CONDITION, EVENT_SUBSCRIPTION ->
-                                OpcUaMonitoredItem.newEventItem(
-                                        // The item goes on the notifier, not on the condition: a condition is not
-                                        // an event notifier. Which condition the events are about is decided by
-                                        // the filter, not by the node subscribed to.
+                            case CONDITION, EVENT_SUBSCRIPTION -> {
+                                // The item goes on the notifier, not on the condition: a condition is not an
+                                // event notifier. Which condition the events are about is decided by the
+                                // filter, not by the node subscribed to.
+                                final var eventItem = OpcUaMonitoredItem.newEventItem(
                                         Objects.requireNonNull(verified.notifier()),
                                         ConditionEventFilters.forCondition(
                                                 nodeId, opcuaTag.getDefinition().getConditionType()));
-                            case VALUE -> OpcUaMonitoredItem.newDataItem(nodeId);
+                                // Event parameters, not value parameters. queueSize means something different
+                                // here: for an event item 1 asks for the smallest queue the server supports
+                                // (OPC 10000-4 §7.21), where for a value item it means a single entry. And the
+                                // sampling interval is left at the 0.0 the SDK sets for event items -- there is
+                                // nothing to sample, so "as fast as practical" is the honest request.
+                                eventItem.setQueueSize(
+                                        uint(config.getOpcuaToMqttConfig().eventQueueSize()));
+                                yield eventItem;
+                            }
+                            case VALUE -> {
+                                final var dataItem = OpcUaMonitoredItem.newDataItem(nodeId);
+                                dataItem.setQueueSize(
+                                        uint(config.getOpcuaToMqttConfig().serverQueueSize()));
+                                dataItem.setSamplingInterval(
+                                        config.getOpcuaToMqttConfig().publishingInterval());
+                                yield dataItem;
+                            }
                         };
-                monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
-                monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
                 // The tag rides on the item itself, so a notification carries its own identity and nothing has
                 // to be looked up. Several tags can share a node -- and several condition tags one notifier --
                 // so the node id a lookup would key on is not unique enough to identify the tag.
@@ -314,6 +336,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         try {
             subscription.synchronizeMonitoredItems();
             log.info("All monitored items synchronized successfully");
+            reportRevisedEventQueueSizes(subscription);
             currentSubscription.set(subscription);
             requestConditionRefresh(subscription);
             return true;
@@ -613,6 +636,35 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 .filter(OpcuaTag.class::isInstance)
                 .map(OpcuaTag.class::cast)
                 .orElse(null);
+    }
+
+    /**
+     * Says what the server actually granted for each event item's queue, when it granted less than was asked.
+     * <p>
+     * The depth an event item ends up with is the server's decision, not ours — the specification lets it
+     * bound the request either way, and implementations differ in what they consider reasonable. Since a
+     * dropped event is a transition report that is never re-sent, an operator is better served knowing the
+     * queue is shallower than configured than discovering it as missing alarms. Nothing is logged when the
+     * request was met in full, which is the ordinary case.
+     */
+    private void reportRevisedEventQueueSizes(final @NotNull OpcUaSubscription subscription) {
+        final int requested = config.getOpcuaToMqttConfig().eventQueueSize();
+        subscription.getMonitoredItems().forEach(item -> {
+            final OpcuaTag tag = tagOf(item);
+            if (tag == null || tag.getDefinition().getType() == OpcuaTagType.VALUE) {
+                return;
+            }
+            item.getRevisedQueueSize().ifPresent(revised -> {
+                if (revised.longValue() < requested) {
+                    log.warn(
+                            "Adapter '{}': the server granted an event queue of {} for tag '{}', not the {} requested. Transitions arriving faster than the queue can hold are dropped, and an event is never re-sent.",
+                            adapterId,
+                            revised,
+                            tag.getName(),
+                            requested);
+                }
+            });
+        });
     }
 
     /** A tag cleared for subscription, with the notifier its events arrive on if it is a condition. */

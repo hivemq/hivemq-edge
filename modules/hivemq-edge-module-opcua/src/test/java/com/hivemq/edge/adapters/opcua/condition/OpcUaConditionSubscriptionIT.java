@@ -365,6 +365,53 @@ public class OpcUaConditionSubscriptionIT {
         });
     }
 
+    @Test
+    @Timeout(120)
+    void whenAlarmsFireInOneCycle_thenNoTransitionIsDropped() throws Exception {
+        // A value item's queue may be one deep: a lost sample is replaced by the next one. An event is a
+        // transition report -- if the queue drops it, the server never re-sends it and the northbound picture
+        // silently disagrees with the device until that alarm next changes. Conditions are exactly where
+        // bursts are normal: one notifier carries every condition beneath it, and ConditionRefresh asks the
+        // server to re-report every retained condition at once.
+        //
+        // This is the test the earlier isolation test worked around rather than wrote: it fires its foreign
+        // alarm in a publishing cycle of its own precisely because a depth-1 queue would swallow one of two.
+        final String alarm =
+                opcUaServerExtension.getTestNamespace().addConditionNode("BurstAlarm", CONDITION_NODE_ID + 40);
+
+        startAdapterWith(new OpcuaTag("burst-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagType.CONDITION)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        // Warm up: prove the subscription is live before the burst, so a failure below means "dropped", not
+        // "never subscribed".
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "warmup", 500, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        // Fired back to back, so they land in one publishing cycle and must all fit in the queue. Counted by
+        // their distinct messages rather than by clearing what came before, which the capture does not allow.
+        final int burst = 10;
+        for (int i = 0; i < burst; i++) {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "burst-" + i, 600 + i, true);
+        }
+
+        await().untilAsserted(() -> {
+            // Message is a LocalizedText object, not a bare string, so it is read whole rather than by asText.
+            final var burstMessages = tagStreamingService.published().stream()
+                    .map(published -> published.get("Message").toString())
+                    .filter(message -> message.contains("burst-"))
+                    .distinct()
+                    .toList();
+            assertThat(burstMessages)
+                    .as("every transition in a burst must be published: an event dropped from the server "
+                            + "queue is never re-sent")
+                    .hasSize(burst);
+        });
+    }
+
     private void startAdapterWith(final @NotNull OpcuaTag... tags) {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),

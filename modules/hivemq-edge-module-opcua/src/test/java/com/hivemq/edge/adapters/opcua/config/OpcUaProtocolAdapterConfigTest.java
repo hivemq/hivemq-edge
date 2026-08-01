@@ -152,6 +152,10 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
             assertThat(mapping.publishingInterval()).isEqualTo(1000);
             assertThat(mapping.serverQueueSize()).isEqualTo(1);
+            // A config written before event subscriptions existed names no event queue size. It must read
+            // back as the default rather than as zero, which would ask the server for its own default and
+            // make the depth vendor-dependent.
+            assertThat(mapping.eventQueueSize()).isEqualTo(OpcUaToMqttConfig.DEFAULT_EVENT_QUEUE_SIZE);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
