@@ -122,8 +122,10 @@ public class OpcUaConditionSubscriptionIT {
         assertThat(value.get("ActiveState").toString()).contains("Active");
         // A NodeId is emitted as a structure, not as a parseable string, so the identifier is compared
         // field-wise rather than against "ns=1;i=9100".
-        assertThat(value.get("SourceNode").get("id").asLong()).isEqualTo(CONDITION_NODE_ID);
-        assertThat(value.get("SourceName").asText()).isEqualTo(conditionNodeId);
+        // SourceNode is the ConditionSource — the process variable the alarm is about — so it is deliberately
+        // NOT the condition node. Which condition this came from is settled by the filter, not by this field.
+        assertThat(value.get("SourceNode").get("id").asText()).contains("source-of");
+        assertThat(value.get("SourceName").asText()).isEqualTo("source-of-" + conditionNodeId);
     }
 
     @Test
@@ -186,11 +188,12 @@ public class OpcUaConditionSubscriptionIT {
         await().untilAsserted(
                         () -> assertThat(tagStreamingService.published().size()).isGreaterThan(before));
 
+        // Both conditions hang off the same notifier, so the filter is the only thing separating them: every
+        // published event must trace back to the subscribed condition, not merely to some condition.
         assertThat(tagStreamingService.published())
                 .as("only transitions of the subscribed condition may be published")
-                .allSatisfy(published -> assertThat(
-                                published.get("SourceNode").get("id").asLong())
-                        .isEqualTo(CONDITION_NODE_ID + 2));
+                .allSatisfy(published ->
+                        assertThat(published.get("SourceName").asText()).isEqualTo("source-of-" + subscribed));
     }
 
     @Test
@@ -258,9 +261,8 @@ public class OpcUaConditionSubscriptionIT {
 
         assertThat(tagStreamingService.published())
                 .as("the mismatched tag must not be subscribed")
-                .allSatisfy(published -> assertThat(
-                                published.get("SourceNode").get("id").asLong())
-                        .isEqualTo(CONDITION_NODE_ID + 12));
+                .allSatisfy(published ->
+                        assertThat(published.get("SourceName").asText()).isEqualTo("source-of-" + sound));
 
         // And the operator is told which tag was dropped and why.
         assertThat(eventService.readEvents(null, null).stream()
@@ -268,6 +270,64 @@ public class OpcUaConditionSubscriptionIT {
                         .filter(message -> message.contains("mismatched-alarm"))
                         .toList())
                 .as("a dropped tag must be reported as an adapter event")
+                .isNotEmpty();
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheNotifierIsDeclared_thenItIsUsedInsteadOfWalking() throws Exception {
+        final String conditionNodeId =
+                opcUaServerExtension.getTestNamespace().addConditionNode("DeclaredAlarm", CONDITION_NODE_ID + 20);
+        final String notifier =
+                opcUaServerExtension.getTestNamespace().areaNotifier().toParseableString();
+
+        // Naming the notifier is the escape hatch for servers whose references cannot be walked. Here the
+        // walk would also succeed, so this checks the declaration is honoured rather than merely tolerated.
+        startAdapterWith(new OpcuaTag(
+                "declared-notifier-alarm",
+                "",
+                new OpcuaTagDefinition(
+                        conditionNodeId, OpcuaTagType.CONDITION, OpcuaConditionType.ALARM_CONDITION, notifier)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(conditionNodeId), "declared", 700, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        assertThat(tagStreamingService.published().get(0).get("SourceName").asText())
+                .isEqualTo("source-of-" + conditionNodeId);
+    }
+
+    @Test
+    @Timeout(120)
+    void whenNoNotifierCanBeFound_thenTheTagIsInactiveAndTheAdapterStillRuns() throws Exception {
+        // A condition with no path to any notifier: nothing can be subscribed for it. The tag must go quiet
+        // on its own rather than taking the adapter -- or its neighbours -- down with it.
+        final String orphan =
+                opcUaServerExtension.getTestNamespace().addOrphanConditionNode("OrphanAlarm", CONDITION_NODE_ID + 21);
+        final String healthy =
+                opcUaServerExtension.getTestNamespace().addConditionNode("HealthyAlarm", CONDITION_NODE_ID + 22);
+
+        startAdapterWith(
+                new OpcuaTag("orphan-alarm", "", new OpcuaTagDefinition(orphan, OpcuaTagType.CONDITION)),
+                new OpcuaTag("healthy-alarm", "", new OpcuaTagDefinition(healthy, OpcuaTagType.CONDITION)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(healthy), "still working", 600, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        assertThat(eventService.readEvents(null, null).stream()
+                        .map(event -> String.valueOf(event.getMessage()))
+                        .filter(message -> message.contains("orphan-alarm"))
+                        .toList())
+                .as("a tag with no notifier must be reported, not silently idle")
                 .isNotEmpty();
     }
 

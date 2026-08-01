@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -54,38 +55,43 @@ public final class ConditionEventFilters {
     private static final @NotNull NodeId BASE_EVENT_TYPE = NodeId.parse("ns=0;i=2041");
 
     /**
-     * The filter for a condition tag: the standard condition fields, restricted to the condition itself.
+     * The filter for a condition tag: the declared type's fields, narrowed to one condition.
      * <p>
-     * The where clause matters more than it looks. A server does not route a fired event only to the node it
-     * originated from — a monitored item is notified of events and applies its own filter — so without a
-     * where clause a condition tag publishes every event the server emits, including unrelated conditions.
-     * Restricting on {@code SourceNode} is what makes the tag mean "this condition".
+     * The where clause is what makes the tag mean "this condition". The MonitoredItem is placed on a notifier
+     * — a condition is not itself an event notifier — and a notifier carries the traffic of everything
+     * beneath it, so without this predicate a condition tag would publish every alarm in its area.
      *
-     * @param conditionNodeId the condition the tag is subscribed to.
-     * @return an event filter selecting {@link ConditionFields#SELECTED} in that order, accepting only events
-     *         sourced from {@code conditionNodeId}.
+     * @param conditionNodeId the condition the tag names.
+     * @param conditionType   the declared type, whose fields are selected.
      */
     public static @NotNull EventFilter forCondition(
             final @NotNull NodeId conditionNodeId, final @NotNull OpcuaConditionType conditionType) {
-        return new EventFilter(selectClauses(conditionType), sourceNodeIs(conditionNodeId));
+        return new EventFilter(selectClauses(conditionType), conditionIs(conditionNodeId));
     }
 
     /**
-     * A where clause accepting only events whose {@code SourceNode} is the given node.
+     * A where clause accepting only events raised by the given condition.
+     * <p>
+     * The comparison is against {@code ConditionId}, which <em>is</em> the condition node's own NodeId — the
+     * same value the tag was configured with, so what an operator named and what the filter matches are one
+     * thing. It is addressed as the {@code NodeId} attribute of {@code ConditionType} with an empty browse
+     * path: the operand refers to the event's condition node itself rather than to a field inside it.
+     * <p>
+     * Not {@code SourceNode}. That is the <em>ConditionSource</em> — the sensor or machine the alarm is
+     * about, which the specification explicitly allows to be a separate node. Filtering on it works only
+     * against servers that happen to set the two equal, and silently drops every event from those that do
+     * not.
      */
-    private static @NotNull ContentFilter sourceNodeIs(final @NotNull NodeId conditionNodeId) {
-        final ExtensionObject sourceNode = ExtensionObject.encode(
+    private static @NotNull ContentFilter conditionIs(final @NotNull NodeId conditionNodeId) {
+        final ExtensionObject conditionId = ExtensionObject.encode(
                 DefaultEncodingContext.INSTANCE,
                 new SimpleAttributeOperand(
-                        BASE_EVENT_TYPE,
-                        new QualifiedName[] {new QualifiedName(0, "SourceNode")},
-                        AttributeId.Value.uid(),
-                        null));
+                        NodeIds.ConditionType, new QualifiedName[0], AttributeId.NodeId.uid(), null));
         final ExtensionObject literal = ExtensionObject.encode(
                 DefaultEncodingContext.INSTANCE, new LiteralOperand(new Variant(conditionNodeId)));
 
         return new ContentFilter(new ContentFilterElement[] {
-            new ContentFilterElement(FilterOperator.Equals, new ExtensionObject[] {sourceNode, literal})
+            new ContentFilterElement(FilterOperator.Equals, new ExtensionObject[] {conditionId, literal})
         });
     }
 

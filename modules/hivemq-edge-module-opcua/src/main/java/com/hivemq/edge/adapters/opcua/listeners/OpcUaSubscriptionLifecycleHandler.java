@@ -27,6 +27,7 @@ import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.condition.ConditionEventFilters;
 import com.hivemq.edge.adapters.opcua.condition.ConditionRefresh;
 import com.hivemq.edge.adapters.opcua.condition.ConditionTypeVerifier;
+import com.hivemq.edge.adapters.opcua.condition.NotifierResolver;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
@@ -89,6 +90,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     // The subscription currently in use, so a reconnect that keeps it can still ask for a condition refresh.
     // Set whenever monitored items are synchronized; replaced when a broken subscription is recreated.
     private final @NotNull AtomicReference<OpcUaSubscription> currentSubscription = new AtomicReference<>();
+
+    // Which tag each monitored item belongs to. Condition items sit on a notifier that several tags may
+    // share, so the item's node id no longer identifies the tag the way it does for a value item.
+    private final @NotNull Map<OpcUaMonitoredItem, OpcuaTag> itemToTag = new ConcurrentHashMap<>();
+
+    // The notifier resolved for each condition tag, decided once when its item is created.
+    private final @NotNull Map<OpcuaTag, NodeId> tagToNotifier = new ConcurrentHashMap<>();
 
     // Track last dynamic-type-registry reset so a permanently undecodable type cannot trigger a
     // full DataTypeTree browse per notification (EDG-776). Monotonic clock (nanoTime), seeded one
@@ -298,16 +306,24 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
                         switch (opcuaTag.getDefinition().getType()) {
-                            case CONDITION, EVENT_SUBSCRIPTION ->
-                                OpcUaMonitoredItem.newEventItem(
-                                        nodeId,
+                            case CONDITION, EVENT_SUBSCRIPTION -> {
+                                // The item goes on the notifier, not on the condition: a condition is not an
+                                // event notifier. Which condition the events are about is decided by the
+                                // filter, not by the node subscribed to.
+                                final NodeId notifier = notifierFor(opcuaTag);
+                                yield OpcUaMonitoredItem.newEventItem(
+                                        notifier,
                                         ConditionEventFilters.forCondition(
                                                 nodeId, opcuaTag.getDefinition().getConditionType()));
+                            }
                             case VALUE -> OpcUaMonitoredItem.newDataItem(nodeId);
                         };
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
                 monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
                 subscription.addMonitoredItem(monitoredItem);
+                // Several condition tags can share one notifier, so the node id no longer identifies the tag.
+                // Keying by the item itself is what keeps each event attributed to the tag that asked for it.
+                itemToTag.put(monitoredItem, opcuaTag);
             });
             log.debug(
                     "Added monitored items: {}",
@@ -492,8 +508,14 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         lastKeepAliveTimestamp = System.currentTimeMillis();
         final var dataPointsPublisher = tagStreamingService.dataPointsPublisher();
         for (int i = 0; i < items.size(); i++) {
-            final var tag = Objects.requireNonNull(
-                    nodeIdToTag.get(items.get(i).getReadValueId().getNodeId()));
+            // By the item, not by its node id: condition items sit on a notifier that several tags may share,
+            // so the node id identifies where we subscribed rather than which tag asked for it.
+            final var tag = itemToTag.get(items.get(i));
+            if (tag == null) {
+                // An item we no longer track — a leftover from a replaced subscription. Dropping it is right;
+                // publishing it under a guessed tag would be worse.
+                continue;
+            }
             final String tn = tag.getName();
             if (null == tagToFirstSeen.putIfAbsent(tag, true)) {
                 eventService
@@ -604,6 +626,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
+     * The notifier a condition tag's events are received from, decided by {@link #isSubscribable} and stored
+     * so the item can be created against it.
+     */
+    private @NotNull NodeId notifierFor(final @NotNull OpcuaTag opcuaTag) {
+        final NodeId resolved = tagToNotifier.get(opcuaTag);
+        // isSubscribable resolves and stores this before a tag is allowed through, so a missing entry means
+        // a non-condition tag; falling back to the tag's own node keeps that case behaving as before.
+        return resolved != null
+                ? resolved
+                : NodeId.parse(opcuaTag.getDefinition().getNode());
+    }
+
+    /**
      * Whether a tag may be subscribed: true for anything that is not a condition, and for a condition whose
      * declared type the device satisfies.
      * <p>
@@ -627,6 +662,28 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 reportUnsubscribableTag(tagName, rejected.reason());
                 return false;
             }
+
+            // A condition is not an event notifier, so without a notifier there is nowhere to subscribe and
+            // the tag simply cannot be honoured. Same outcome as a type mismatch: this tag alone is dropped.
+            final NotifierResolver.Result notifier = NotifierResolver.resolve(
+                            client,
+                            NodeId.parse(opcuaTag.getDefinition().getNode()),
+                            opcuaTag.getDefinition().getNotifierNode(),
+                            tagName)
+                    .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+            if (notifier instanceof final NotifierResolver.Result.NotFound notFound) {
+                reportUnsubscribableTag(tagName, notFound.reason());
+                return false;
+            }
+            final NotifierResolver.Result.Found found = (NotifierResolver.Result.Found) notifier;
+            tagToNotifier.put(opcuaTag, found.notifier());
+            log.debug(
+                    "Adapter '{}': tag '{}' will receive events from notifier {} ({})",
+                    adapterId,
+                    tagName,
+                    found.notifier(),
+                    found.how());
             return true;
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();

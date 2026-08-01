@@ -275,12 +275,67 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                 .setTypeDefinition(typeDefinition)
                 .build();
 
-        // SubscribeToEvents — without this the node is not a valid event source.
-        node.setEventNotifier(ubyte(1));
+        // Deliberately NOT an event notifier. ConditionType defines no EventNotifier attribute, so a
+        // conformant server does not let a client subscribe to a condition directly. An earlier version of
+        // this harness set the SubscribeToEvents bit here, which made a wrong implementation look correct.
+        getNodeManager().addNode(node);
+        requireNonNull(testFolder).addOrganizes(node);
 
+        // The area notifier is what a client subscribes to; the condition is reachable from it by
+        // HasEventSource, which is the chain the adapter walks to find where to place its MonitoredItem.
+        final NodeId notifier = areaNotifier();
+        node.addReference(new Reference(nodeId, NodeIds.HasEventSource, notifier.expanded(), false));
+        final UaNode notifierNode = getNodeManager().get(notifier);
+        if (notifierNode != null) {
+            notifierNode.addReference(new Reference(notifier, NodeIds.HasEventSource, nodeId.expanded(), true));
+        }
+
+        return nodeId.toParseableString();
+    }
+
+    /**
+     * Adds a condition with no path to any notifier — nothing can be subscribed for it.
+     * <p>
+     * Servers do under-populate the inverse references the walk relies on, which is precisely why the tag
+     * definition has an explicit notifier field. This models that server.
+     */
+    public @NotNull String addOrphanConditionNode(final @NotNull String name, final long nodeIdPart) {
+        final NodeId nodeId = newNodeId(nodeIdPart);
+        final UaObjectNode node = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(nodeId)
+                .setBrowseName(newQualifiedName(name))
+                .setDisplayName(LocalizedText.english(name))
+                .setTypeDefinition(NodeIds.AlarmConditionType)
+                .build();
         getNodeManager().addNode(node);
         requireNonNull(testFolder).addOrganizes(node);
         return nodeId.toParseableString();
+    }
+
+    /**
+     * The area notifier every condition in this namespace hangs off, created on first use.
+     * <p>
+     * Real servers expose areas (a plant, a line, a machine) as notifiers and place conditions beneath them.
+     * Modelling one here is what makes the notifier walk testable at all.
+     */
+    public synchronized @NotNull NodeId areaNotifier() {
+        final NodeId notifierId = newNodeId("AreaNotifier");
+        if (getNodeManager().get(notifierId) == null) {
+            final UaObjectNode notifier = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                    .setNodeId(notifierId)
+                    .setBrowseName(newQualifiedName("AreaNotifier"))
+                    .setDisplayName(LocalizedText.english("AreaNotifier"))
+                    .setTypeDefinition(NodeIds.BaseObjectType)
+                    .build();
+            // SubscribeToEvents: this is the node a client may place an event MonitoredItem on.
+            notifier.setEventNotifier(ubyte(1));
+            getNodeManager().addNode(notifier);
+            requireNonNull(testFolder).addOrganizes(notifier);
+
+            // Server --HasNotifier--> area, so a walk upward from the area reaches the Server object too.
+            notifier.addReference(new Reference(notifierId, NodeIds.HasNotifier, NodeIds.Server.expanded(), false));
+        }
+        return notifierId;
     }
 
     /**
@@ -451,21 +506,34 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * @param active          whether the alarm is active after this transition.
      * @return the {@code EventId} of the fired event — the token identifying this transition.
      */
+    /**
+     * A distinct node standing in for the process variable the condition watches. Derived from the condition
+     * so a test needs no extra setup, and deliberately never equal to it.
+     */
+    private @NotNull NodeId sourceNodeFor(final @NotNull NodeId conditionNodeId) {
+        return newNodeId("source-of-" + conditionNodeId.toParseableString());
+    }
+
     public @NotNull ByteString fireAlarm(
             final @NotNull NodeId conditionNodeId,
             final @NotNull String message,
             final int severity,
             final boolean active) {
         try {
+            // The event node IS the condition instance: its NodeId is the ConditionId a client filters on.
+            // Creating it with a fresh random id — as an earlier version did — leaves the event with no field
+            // that identifies the condition, and makes a correct ConditionId filter match nothing.
             final AlarmConditionTypeNode event = (AlarmConditionTypeNode)
-                    getServer().getEventFactory().createEvent(newNodeId(UUID.randomUUID()), NodeIds.AlarmConditionType);
+                    getServer().getEventFactory().createEvent(conditionNodeId, NodeIds.AlarmConditionType);
 
             final ByteString eventId =
                     new ByteString(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
             event.setEventId(eventId);
             event.setEventType(NodeIds.AlarmConditionType);
-            event.setSourceNode(conditionNodeId);
-            event.setSourceName(conditionNodeId.toParseableString());
+            // SourceNode is the ConditionSource — what the alarm is ABOUT — not the condition itself. Real
+            // devices set a sensor or machine here, so the harness must not conflate the two.
+            event.setSourceNode(sourceNodeFor(conditionNodeId));
+            event.setSourceName("source-of-" + conditionNodeId.toParseableString());
             event.setTime(DateTime.now());
             event.setReceiveTime(DateTime.now());
             event.setMessage(LocalizedText.english(message));

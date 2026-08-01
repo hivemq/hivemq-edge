@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,11 +49,22 @@ public class OpcuaTagDefinition implements TagDefinition {
             defaultValue = "AlarmConditionType")
     private final @NotNull OpcuaConditionType conditionType;
 
+    @JsonProperty(value = "notifierNode")
+    @ModuleConfigField(
+            title = "Notifier node ID",
+            description = "for a CONDITION tag, the node to subscribe to for its events. A condition is not "
+                    + "itself an event notifier, so events are received from a notifier above it. Leave this "
+                    + "empty to have it found by walking the address space from the condition; set it when "
+                    + "the server does not publish the references that walk needs.")
+    private final @Nullable String notifierNode;
+
     @JsonCreator
     public OpcuaTagDefinition(
             @JsonProperty(value = "node", required = true) final @NotNull String node,
             @JsonProperty(value = "type") final @Nullable OpcuaTagType type,
-            @JsonProperty(value = "conditionType") final @Nullable OpcuaConditionType conditionType) {
+            @JsonProperty(value = "conditionType") final @Nullable OpcuaConditionType conditionType,
+            @JsonProperty(value = "notifierNode") final @Nullable String notifierNode) {
+        this.notifierNode = notifierNode == null || notifierNode.isBlank() ? null : notifierNode;
         this.node = node;
         // Absent in every tag written before the type existed, and the overwhelmingly common case since.
         this.type = type == null ? OpcuaTagType.VALUE : type;
@@ -61,12 +73,19 @@ public class OpcuaTagDefinition implements TagDefinition {
         this.conditionType = conditionType == null ? OpcuaConditionType.ALARM_CONDITION : conditionType;
     }
 
+    public OpcuaTagDefinition(
+            final @NotNull String node,
+            final @Nullable OpcuaTagType type,
+            final @Nullable OpcuaConditionType conditionType) {
+        this(node, type, conditionType, null);
+    }
+
     public OpcuaTagDefinition(final @NotNull String node, final @Nullable OpcuaTagType type) {
-        this(node, type, null);
+        this(node, type, null, null);
     }
 
     public OpcuaTagDefinition(final @NotNull String node) {
-        this(node, OpcuaTagType.VALUE, null);
+        this(node, OpcuaTagType.VALUE, null, null);
     }
 
     public @NotNull String getNode() {
@@ -81,6 +100,13 @@ public class OpcuaTagDefinition implements TagDefinition {
         return conditionType;
     }
 
+    /**
+     * The notifier to subscribe to. Null means "find it by walking the address space from the condition".
+     */
+    public @Nullable String getNotifierNode() {
+        return notifierNode;
+    }
+
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) {
@@ -89,16 +115,20 @@ public class OpcuaTagDefinition implements TagDefinition {
         if (!(o instanceof OpcuaTagDefinition that)) {
             return false;
         }
-        return node.equals(that.node) && type == that.type && conditionType == that.conditionType;
+        return node.equals(that.node)
+                && type == that.type
+                && conditionType == that.conditionType
+                && Objects.equals(notifierNode, that.notifierNode);
     }
 
     @Override
     public int hashCode() {
-        return 31 * (31 * node.hashCode() + type.hashCode()) + conditionType.hashCode();
+        return Objects.hash(node, type, conditionType, notifierNode);
     }
 
     @Override
     public @NotNull String toString() {
-        return "OpcuaTagDefinition{node='" + node + "', type=" + type + ", conditionType=" + conditionType + "}";
+        return "OpcuaTagDefinition{node='" + node + "', type=" + type + ", conditionType=" + conditionType
+                + ", notifierNode=" + notifierNode + "}";
     }
 }
