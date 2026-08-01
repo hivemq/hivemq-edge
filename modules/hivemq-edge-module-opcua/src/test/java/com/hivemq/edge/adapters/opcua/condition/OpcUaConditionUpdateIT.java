@@ -192,6 +192,29 @@ public class OpcUaConditionUpdateIT {
 
     @Test
     @Timeout(120)
+    void whenTheEventIdIsNotBase64_thenTheWriteFailsAndNothingIsCalled() throws Exception {
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("PickyAlarm", CONDITION_NODE_ID + 8);
+
+        startAdapterWith(conditionNodeId);
+
+        // An EventId is base64 of the bytes the server issued, and the schema says so. There is deliberately
+        // no fallback that reads an undecodable value as literal text: base64 and arbitrary text cannot be
+        // told apart by inspection, so a guess would silently acknowledge a transition nobody named.
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": 0, "eventId": "not base64!", "comment": "typed by hand"}
+                """);
+
+        verify(output, timeout(10_000)).fail(org.mockito.ArgumentMatchers.anyString());
+
+        assertThat(opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh())
+                .as("an eventId that cannot be decoded must not reach the server")
+                .isEmpty();
+    }
+
+    @Test
+    @Timeout(120)
     void whenAMethodTakesNoArguments_thenNoEventIdIsNeeded() throws Exception {
         final String conditionNodeId = opcUaServerExtension
                 .getTestNamespace()

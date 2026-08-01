@@ -80,6 +80,23 @@ class ConditionSchemasTest {
     }
 
     @Test
+    void theEventIdIsDeclaredAsBase64OnBothSides() {
+        // An EventId is an opaque ByteString rendered as base64. Declaring it a plain string would leave a
+        // consumer to infer the encoding from the shape of the value -- which cannot be done reliably, since
+        // base64 and arbitrary text are indistinguishable by inspection. contentEncoding says it outright,
+        // and it has to say the same thing on both sides or a client cannot echo the value back.
+        final ObjectNode read = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("AlarmConditionType").orElseThrow()));
+        final ObjectNode write = render(ConditionSchemas.writeSchema());
+
+        final ObjectNode northbound = (ObjectNode) read.get("properties").get("EventId");
+        assertThat(northbound.get("contentEncoding").asText()).isEqualTo("base64");
+
+        final ObjectNode southbound = (ObjectNode) write.get("properties").get(ConditionUpdate.FIELD_EVENT_ID);
+        assertThat(southbound.get("contentEncoding").asText()).isEqualTo("base64");
+    }
+
+    @Test
     void theWriteSchemaIsTheCommand() {
         final ObjectNode write = render(ConditionSchemas.writeSchema());
         final ObjectNode properties = (ObjectNode) write.get("properties");

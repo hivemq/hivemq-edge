@@ -96,6 +96,13 @@ public final class ConditionSchemas {
             Set.of("Retain", "SupportsFilteredRetain", "AudibleEnabled", "SuppressedOrShelved", "FirstInGroupFlag");
 
     /**
+     * Fields whose OPC UA type is {@code ByteString} — bytes, not text. They travel as base64, and declaring
+     * them {@code BINARY} is what puts {@code contentEncoding: base64} in the schema so a consumer is told
+     * that rather than left to infer it from the shape of the string.
+     */
+    private static final @NotNull Set<String> BYTE_STRING_FIELDS = Set.of("EventId");
+
+    /**
      * The northbound shape: every field the declared condition type carries.
      * <p>
      * Read-only throughout. A transition report is an observation — writing to it is not "acknowledging", which
@@ -131,9 +138,10 @@ public final class ConditionSchemas {
                 .readable(false)
                 .endProperty()
                 .property(ConditionUpdate.FIELD_EVENT_ID)
-                .scalar(ScalarType.STRING)
-                .description("Base64 EventId from the northbound message being responded to. Required for "
-                        + "ACKNOWLEDGE, CONFIRM and ADD_COMMENT, which act on one specific transition.")
+                .scalar(ScalarType.BINARY)
+                .description("The EventId from the northbound message being responded to, echoed back "
+                        + "unchanged. Required for ACKNOWLEDGE, CONFIRM and ADD_COMMENT, which act on one "
+                        + "specific transition.")
                 .writable()
                 .readable(false)
                 .endProperty()
@@ -223,9 +231,16 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
+        } else if (BYTE_STRING_FIELDS.contains(field)) {
+            object.property(field)
+                    .scalar(ScalarType.BINARY)
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
         } else {
-            // EventId, SourceName, Time, ReceiveTime, ClientUserId, ConditionName and the rest render as
-            // strings; anything unrecognised is left open rather than mistyped.
+            // SourceName, Time, ReceiveTime, ClientUserId, ConditionName and the rest render as strings;
+            // anything unrecognised is left open rather than mistyped.
             object.property(field)
                     .scalar(ScalarType.STRING)
                     .nullable()

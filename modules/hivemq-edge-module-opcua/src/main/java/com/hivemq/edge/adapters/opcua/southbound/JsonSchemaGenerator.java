@@ -542,7 +542,10 @@ public class JsonSchemaGenerator {
             case SByte, Byte, Int16, UInt16, Int32, UInt32, StatusCode, Int64 -> ScalarType.LONG;
             case UInt64 -> ScalarType.ULONG;
             case Float, Double -> ScalarType.DOUBLE;
-            case String, Guid, ByteString, XmlElement, NodeId, ExpandedNodeId, LocalizedText -> ScalarType.STRING;
+            case String, Guid, XmlElement, NodeId, ExpandedNodeId, LocalizedText -> ScalarType.STRING;
+            // Bytes, not text. The wire form is the same base64 string it always was; BINARY is what says so,
+            // adding contentEncoding: base64 to the schema instead of leaving a consumer to infer it.
+            case ByteString -> ScalarType.BINARY;
             case DateTime -> ScalarType.INSTANT;
             case QualifiedName -> throw new IllegalArgumentException("QualifiedName is an object type, not a scalar");
             case ExtensionObject, DataValue, Variant, DiagnosticInfo ->

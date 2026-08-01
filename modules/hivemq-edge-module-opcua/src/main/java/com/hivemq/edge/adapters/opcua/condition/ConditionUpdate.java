@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.opcua.condition;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.jetbrains.annotations.NotNull;
@@ -245,15 +244,19 @@ public record ConditionUpdate(
     /**
      * Turns the textual {@code eventId} back into the bytes the server issued.
      * <p>
-     * The northbound converter renders a {@code ByteString} as base64, so that is what a client echoes back
-     * and what is tried first. A value that is not base64 is taken literally: a server that mints printable
-     * event ids would otherwise be impossible to acknowledge by hand.
+     * Base64, always: an {@code EventId} is an opaque {@code ByteString} the northbound converter renders as
+     * base64, and the schema declares it {@code BINARY} — {@code contentEncoding: base64} — so a client
+     * echoes back exactly what it received. There is deliberately no fallback for a value that fails to
+     * decode. Base64 cannot be told apart from arbitrary text by inspection, so guessing would silently turn
+     * a mistyped id into a different one; rejecting says plainly what went wrong.
      */
     private static @NotNull ByteString decodeEventId(final @NotNull String eventId) {
         try {
             return new ByteString(Base64.getDecoder().decode(eventId));
         } catch (final IllegalArgumentException notBase64) {
-            return new ByteString(eventId.getBytes(StandardCharsets.UTF_8));
+            throw new IllegalArgumentException("'" + FIELD_EVENT_ID
+                    + "' must be the base64 value from the northbound message, echoed back unchanged: "
+                    + notBase64.getMessage());
         }
     }
 }
