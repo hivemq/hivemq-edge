@@ -29,6 +29,7 @@ import com.hivemq.edge.adapters.opcua.condition.ConditionRefresh;
 import com.hivemq.edge.adapters.opcua.condition.ConditionTypeVerifier;
 import com.hivemq.edge.adapters.opcua.condition.NotifierResolver;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,6 +52,7 @@ import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemServiceOpera
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizationException;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaSerializationException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -524,6 +527,14 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             if (tag == null) {
                 continue;
             }
+            // Control events are not transitions and must not be published as one. Four event types reach a
+            // monitored item regardless of its filter -- the three refresh types (OPC 10000-9 §4.5) and the
+            // queue-overflow type (OPC 10000-4 §7.22) -- so the where clause cannot exclude them and this is
+            // the only place they can be dropped. Published as a condition they would carry the tag's field
+            // list with almost every value null, which reads as an alarm whose state is unknown.
+            if (isControlEvent(events.get(i))) {
+                continue;
+            }
             final String tn = tag.getName();
             if (null == tagToFirstSeen.putIfAbsent(tag, true)) {
                 eventService
@@ -600,21 +611,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * initial picture is a degradation, not a reason to fail the subscription that was just established.
      */
     private void requestConditionRefresh(final @NotNull OpcUaSubscription subscription) {
-        // The method has to be called on an object that offers it, and ConditionRefresh is defined on
-        // ConditionType — so any subscribed condition serves as the entry point. The burst it triggers covers
-        // every retained condition on the subscription, not just this one.
-        final Optional<OpcuaTag> anyCondition = tags.stream()
-                .filter(tag -> tag.getDefinition().getKind() == OpcuaTagKind.CONDITION)
-                .findFirst();
-        if (anyCondition.isEmpty()) {
+        // Any event item is worth refreshing, not only a condition tag: an event subscription tag monitors
+        // conditions too, so a query-only adapter needs the refresh just as much. The call itself names no
+        // node of ours -- both the object and the method are fixed by the specification -- so there is no
+        // entry point to find, only a reason to bother asking.
+        final boolean hasEventItems =
+                tags.stream().anyMatch(tag -> tag.getDefinition().getKind() != OpcuaTagKind.VALUE);
+        if (!hasEventItems) {
             return;
         }
-        final NodeId conditionNode =
-                NodeId.parse(anyCondition.get().getDefinition().getNode());
 
         subscription.getSubscriptionId().ifPresent(subscriptionId -> {
             @SuppressWarnings("unused")
-            final var unused = ConditionRefresh.request(client, conditionNode, subscriptionId)
+            final var unused = ConditionRefresh.request(client, subscriptionId)
                     .whenComplete((statusCode, throwable) -> {
                         if (throwable != null) {
                             log.warn(
@@ -654,6 +663,37 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     private static @Nullable NodeId parseOrNull(final @Nullable String nodeId) {
         return nodeId == null ? null : NodeId.parse(nodeId);
+    }
+
+    /**
+     * The event types that reach a monitored item whether or not its filter admits them.
+     * <p>
+     * Three refresh types bracket or request a {@code ConditionRefresh} and are copied to <em>every</em>
+     * notifier item in the subscription (OPC 10000-9 §4.5, §5.5.7); the overflow type is delivered only to
+     * the one item whose queue overflowed (OPC 10000-4 §5.12.1.5, §7.22). Both families bypass the where
+     * clause, which is why they are dropped here rather than filtered at the server.
+     */
+    private static final @NotNull Set<NodeId> CONTROL_EVENT_TYPES = Set.of(
+            NodeIds.RefreshStartEventType,
+            NodeIds.RefreshEndEventType,
+            NodeIds.RefreshRequiredEventType,
+            NodeIds.EventQueueOverflowEventType);
+
+    /**
+     * Whether a notification is one of the control events rather than a transition report.
+     * <p>
+     * {@code EventType} is read positionally: it is part of {@code BASE_EVENT_FIELDS}, which every select
+     * clause begins with, so its index is the same for every tag whatever type it declares.
+     */
+    private static boolean isControlEvent(final @NotNull Variant @NotNull [] eventFields) {
+        final int eventTypeIndex = OpcuaConditionType.BASE_EVENT_FIELDS.indexOf("EventType");
+        if (eventTypeIndex < 0 || eventTypeIndex >= eventFields.length) {
+            return false;
+        }
+        final Variant eventType = eventFields[eventTypeIndex];
+        return eventType != null
+                && eventType.value() instanceof final NodeId typeId
+                && CONTROL_EVENT_TYPES.contains(typeId);
     }
 
     /**

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -236,6 +237,32 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
     // With only (1) the subscription is accepted with status Good and then never receives anything: the
     // items are created and immediately forgotten. Nothing reports an error, which makes a namespace missing
     // (2) look like a broken client.
+
+    private final @NotNull AtomicInteger refreshBracketCount = new AtomicInteger();
+
+    /**
+     * How many {@code RefreshStart}/{@code RefreshEnd} events the server has emitted.
+     * <p>
+     * The visible consequence of a successful {@code ConditionRefresh}. The call itself cannot be observed
+     * here: OPC 10000-9 §5.5.7 fixes its ObjectId as the well-known {@code ConditionType} in namespace 0, so
+     * it is handled by Milo's own namespace and never reaches this one's method handlers.
+     */
+    public int refreshBracketCount() {
+        return refreshBracketCount.get();
+    }
+
+    /**
+     * Counts the refresh bracket at the server, independently of any client subscription — so a test can
+     * assert the refresh happened even though the adapter deliberately drops these events.
+     */
+    public void observeRefreshEvents() {
+        getServer().getEventNotifier().register(event -> {
+            final NodeId eventType = event.getEventType();
+            if (NodeIds.RefreshStartEventType.equals(eventType) || NodeIds.RefreshEndEventType.equals(eventType)) {
+                refreshBracketCount.incrementAndGet();
+            }
+        });
+    }
 
     @Override
     public void onEventItemsCreated(final @NotNull List<EventItem> eventItems) {

@@ -83,6 +83,7 @@ public class OpcUaConditionRefreshIT {
     @Test
     @Timeout(120)
     void whenAConditionTagIsSubscribed_thenTheServerIsAskedToRefresh() throws Exception {
+        opcUaServerExtension.getTestNamespace().observeRefreshEvents();
         final String conditionNodeId = opcUaServerExtension
                 .getTestNamespace()
                 .addAcknowledgeableConditionNode("RefreshableAlarm", CONDITION_NODE_ID);
@@ -90,11 +91,14 @@ public class OpcUaConditionRefreshIT {
         startAdapterWith(
                 new OpcuaTag("refresh-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION)));
 
-        // The refresh follows the monitored items, so it cannot be observed before the subscription is up.
-        await().untilAsserted(() -> assertThat(
-                        opcUaServerExtension.getTestNamespace().methodCalls())
-                .as("the server must be asked to re-report its retained conditions")
-                .anySatisfy(call -> assertThat(call.methodName()).isEqualTo("ConditionRefresh")));
+        // Observed through the server's response, not through our namespace: OPC 10000-9 §5.5.7 fixes the
+        // call's ObjectId as the well-known ConditionType (ns=0;i=2782), so it never reaches the test
+        // namespace's own method handlers. A successful call makes the server emit RefreshStart/RefreshEnd,
+        // which is the visible consequence.
+        await().untilAsserted(
+                        () -> assertThat(opcUaServerExtension.getTestNamespace().refreshBracketCount())
+                                .as("the server must be asked to re-report its retained conditions")
+                                .isPositive());
     }
 
     @Test
