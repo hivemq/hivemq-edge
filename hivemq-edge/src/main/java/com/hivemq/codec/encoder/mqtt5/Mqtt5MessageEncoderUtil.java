@@ -58,8 +58,14 @@ final class Mqtt5MessageEncoderUtil {
         return (value == defaultValue) ? 0 : 3;
     }
 
+    /**
+     * EDG-811: must agree exactly with {@link #encodeIntProperty} on whether the property is emitted. This
+     * declares the property length; that writes the bytes. If they disagree the packet claims more property
+     * bytes than it carries, the receiver reads payload as if it were a property, and the connection dies with
+     * a protocol error — which is what happened when only the encoder learned to skip out-of-range values.
+     */
     static int intPropertyEncodedLength(final long value, final long defaultValue) {
-        return (value == defaultValue) ? 0 : 5;
+        return (value == defaultValue || value > UnsignedDataTypes.UNSIGNED_INT_MAX_VALUE) ? 0 : 5;
     }
 
     static int variableByteIntegerPropertyEncodedLength(final int value) {
@@ -137,6 +143,9 @@ final class Mqtt5MessageEncoderUtil {
      * the four-byte range, and anything else up there used to reach {@code writeInt} and be silently truncated
      * to its low 32 bits — 2^40 encoding as 0, "expire immediately". Values at or above 2^32 all mean "no
      * expiry", so the property is dropped rather than corrupted.
+     * <p>
+     * Keep this condition identical to {@link #intPropertyEncodedLength}. That function declares how many
+     * property bytes the packet claims; this one writes them. Any disagreement produces a malformed packet.
      */
     static void encodeIntProperty(
             final int propertyIdentifier, final long value, final long defaultValue, final @NotNull ByteBuf out) {
