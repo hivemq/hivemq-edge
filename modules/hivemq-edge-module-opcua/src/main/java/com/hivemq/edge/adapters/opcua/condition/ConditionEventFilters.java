@@ -15,7 +15,11 @@
  */
 package com.hivemq.edge.adapters.opcua.condition;
 
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
+
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
+import java.util.ArrayList;
+import java.util.List;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
@@ -26,10 +30,12 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.FilterOperator;
 import org.eclipse.milo.opcua.stack.core.types.structured.ContentFilter;
 import org.eclipse.milo.opcua.stack.core.types.structured.ContentFilterElement;
+import org.eclipse.milo.opcua.stack.core.types.structured.ElementOperand;
 import org.eclipse.milo.opcua.stack.core.types.structured.EventFilter;
 import org.eclipse.milo.opcua.stack.core.types.structured.LiteralOperand;
 import org.eclipse.milo.opcua.stack.core.types.structured.SimpleAttributeOperand;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Builds the {@link EventFilter} attached to an event-mode MonitoredItem.
@@ -39,9 +45,9 @@ import org.jetbrains.annotations.NotNull;
  * The <em>WhereClause</em> decides which events get through at all; it is what confines a condition tag to
  * its own condition.
  * <p>
- * For a condition tag the filter is fixed: select the standard condition fields, and accept only events
- * sourced from the condition itself. When the query tag arrives, this is the builder that becomes configurable — the select clause driven
- * by a projection type and the where clause by a source/condition/type filter.
+ * For a condition tag the filter is fixed: select the declared type's fields, and accept only events from
+ * that one condition. For an event subscription tag it is configurable — the select clause driven by a
+ * projection type, and the where clause by up to three optional predicates.
  */
 public final class ConditionEventFilters {
 
@@ -93,6 +99,117 @@ public final class ConditionEventFilters {
         return new ContentFilter(new ContentFilterElement[] {
             new ContentFilterElement(FilterOperator.Equals, new ExtensionObject[] {conditionId, literal})
         });
+    }
+
+    /**
+     * The filter for an event subscription tag: a query against a notifier.
+     * <p>
+     * Where a condition tag names one condition, this names a notifier and describes which of its traffic to
+     * accept. Three predicates, each optional and independently omittable, combined with {@code And}:
+     * <ul>
+     *   <li>{@code sourceNode} — only events <em>about</em> this process object;</li>
+     *   <li>{@code conditionNode} — only events from this one condition;</li>
+     *   <li>{@code filterType} — only events of this type or a subtype of it.</li>
+     * </ul>
+     * Omitting all three is legitimate and means the firehose: everything the notifier carries.
+     * <p>
+     * The select clause is driven by {@code publishedType}, deliberately independent of the filter. Filtering
+     * narrowly while publishing a broader shape is safe — every selected field exists on everything that
+     * passed — while filtering broadly and publishing a narrower shape is allowed and yields nulls where an
+     * event is not that specific type.
+     *
+     * @param sourceNode    the source to narrow to, or null for all sources.
+     * @param conditionNode the condition to narrow to, or null for all conditions.
+     * @param filterType    the event type to narrow to, or null for all event types.
+     * @param publishedType the type whose fields each event carries.
+     */
+    public static @NotNull EventFilter forQuery(
+            final @Nullable NodeId sourceNode,
+            final @Nullable NodeId conditionNode,
+            final @Nullable OpcuaConditionType filterType,
+            final @NotNull OpcuaConditionType publishedType) {
+
+        final List<ContentFilterElement> predicates = new ArrayList<>();
+        if (sourceNode != null) {
+            predicates.add(equals(fieldOperand(NodeIds.BaseEventType, "SourceNode"), literal(sourceNode)));
+        }
+        if (conditionNode != null) {
+            predicates.add(equals(conditionIdOperand(), literal(conditionNode)));
+        }
+        if (filterType != null) {
+            // OfType takes the type itself as its single operand -- it asks whether the event IS of that type
+            // or a subtype, rather than comparing a field against a value.
+            predicates.add(new ContentFilterElement(
+                    FilterOperator.OfType, new ExtensionObject[] {literal(filterType.nodeId())}));
+        }
+        return new EventFilter(selectClauses(publishedType), combine(predicates));
+    }
+
+    /**
+     * Combines the predicates into one {@code ContentFilter}.
+     * <p>
+     * A {@code ContentFilter} is a <em>flat array</em>, not a tree: a boolean operator does not nest its
+     * operands, it refers to other elements by their index in the same array. So combining predicates means
+     * appending {@code And} elements that point back at the ones already placed, and the array must be built
+     * in dependency order.
+     */
+    private static @NotNull ContentFilter combine(final @NotNull List<ContentFilterElement> predicates) {
+        if (predicates.isEmpty()) {
+            // No narrowing at all: everything the notifier carries. A null where clause is the spec's way of
+            // saying that, and is not the same as an empty element array.
+            return new ContentFilter(null);
+        }
+        if (predicates.size() == 1) {
+            return new ContentFilter(predicates.toArray(new ContentFilterElement[0]));
+        }
+        final List<ContentFilterElement> elements = new ArrayList<>(predicates);
+        // Fold left: And(0,1) lands at index n, then And(n, 2) at n+1, and so on. Each And refers to the
+        // previous result by index, so two predicates produce one And and three produce two.
+        int left = 0;
+        for (int i = 1; i < predicates.size(); i++) {
+            elements.add(new ContentFilterElement(
+                    FilterOperator.And, new ExtensionObject[] {elementOperand(left), elementOperand(i)}));
+            left = elements.size() - 1;
+        }
+        return new ContentFilter(elements.toArray(new ContentFilterElement[0]));
+    }
+
+    private static @NotNull ContentFilterElement equals(
+            final @NotNull ExtensionObject left, final @NotNull ExtensionObject right) {
+        return new ContentFilterElement(FilterOperator.Equals, new ExtensionObject[] {left, right});
+    }
+
+    /** Refers to another element of the same {@code ContentFilter} by its index. */
+    private static @NotNull ExtensionObject elementOperand(final int index) {
+        return ExtensionObject.encode(DefaultEncodingContext.INSTANCE, new ElementOperand(uint(index)));
+    }
+
+    /** Names a field of an event by type and browse path, read as its {@code Value} attribute. */
+    private static @NotNull ExtensionObject fieldOperand(
+            final @NotNull NodeId typeDefinition, final @NotNull String browseName) {
+        return ExtensionObject.encode(
+                DefaultEncodingContext.INSTANCE,
+                new SimpleAttributeOperand(
+                        typeDefinition,
+                        new QualifiedName[] {new QualifiedName(0, browseName)},
+                        AttributeId.Value.uid(),
+                        null));
+    }
+
+    /**
+     * The {@code ConditionId} operand: the condition node's own NodeId, addressed as the {@code NodeId}
+     * attribute of {@code ConditionType} with an empty browse path — the operand refers to the event's
+     * condition node itself rather than to a field inside it.
+     */
+    private static @NotNull ExtensionObject conditionIdOperand() {
+        return ExtensionObject.encode(
+                DefaultEncodingContext.INSTANCE,
+                new SimpleAttributeOperand(
+                        NodeIds.ConditionType, new QualifiedName[0], AttributeId.NodeId.uid(), null));
+    }
+
+    private static @NotNull ExtensionObject literal(final @NotNull NodeId value) {
+        return ExtensionObject.encode(DefaultEncodingContext.INSTANCE, new LiteralOperand(new Variant(value)));
     }
 
     private static @NotNull SimpleAttributeOperand @NotNull [] selectClauses(

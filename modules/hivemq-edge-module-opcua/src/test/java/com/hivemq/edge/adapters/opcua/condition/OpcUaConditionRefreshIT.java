@@ -36,7 +36,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +88,7 @@ public class OpcUaConditionRefreshIT {
                 .addAcknowledgeableConditionNode("RefreshableAlarm", CONDITION_NODE_ID);
 
         startAdapterWith(
-                new OpcuaTag("refresh-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagType.CONDITION)));
+                new OpcuaTag("refresh-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION)));
 
         // The refresh follows the monitored items, so it cannot be observed before the subscription is up.
         await().untilAsserted(() -> assertThat(
@@ -106,7 +106,7 @@ public class OpcUaConditionRefreshIT {
                 .getTestNamespace()
                 .addNode("Counter", org.eclipse.milo.opcua.stack.core.NodeIds.Int32, () -> 42, CONDITION_NODE_ID + 1);
 
-        startAdapterWith(new OpcuaTag("plain-value", "", new OpcuaTagDefinition(valueNodeId, OpcuaTagType.VALUE)));
+        startAdapterWith(new OpcuaTag("plain-value", "", new OpcuaTagDefinition(valueNodeId, OpcuaTagKind.VALUE)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));

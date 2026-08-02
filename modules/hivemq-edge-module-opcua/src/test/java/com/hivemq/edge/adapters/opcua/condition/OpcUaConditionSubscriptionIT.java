@@ -38,7 +38,7 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +97,7 @@ public class OpcUaConditionSubscriptionIT {
         startAdapterWith(new OpcuaTag(
                 "boiler-alarm",
                 "The boiler's high temperature alarm",
-                new OpcuaTagDefinition(conditionNodeId, OpcuaTagType.CONDITION)));
+                new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
@@ -135,7 +135,7 @@ public class OpcUaConditionSubscriptionIT {
                 opcUaServerExtension.getTestNamespace().addConditionNode("FieldShapeAlarm", CONDITION_NODE_ID + 1);
 
         startAdapterWith(
-                new OpcuaTag("shape-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagType.CONDITION)));
+                new OpcuaTag("shape-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
@@ -163,7 +163,7 @@ public class OpcUaConditionSubscriptionIT {
                 opcUaServerExtension.getTestNamespace().addConditionNode("OtherAlarm", CONDITION_NODE_ID + 3);
 
         startAdapterWith(
-                new OpcuaTag("subscribed-alarm", "", new OpcuaTagDefinition(subscribed, OpcuaTagType.CONDITION)));
+                new OpcuaTag("subscribed-alarm", "", new OpcuaTagDefinition(subscribed, OpcuaTagKind.CONDITION)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
@@ -207,7 +207,7 @@ public class OpcUaConditionSubscriptionIT {
                 "level-alarm",
                 "",
                 new OpcuaTagDefinition(
-                        conditionNodeId, OpcuaTagType.CONDITION, OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM)));
+                        conditionNodeId, OpcuaTagKind.CONDITION, OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
@@ -243,8 +243,8 @@ public class OpcUaConditionSubscriptionIT {
                         "mismatched-alarm",
                         "",
                         new OpcuaTagDefinition(
-                                mismatched, OpcuaTagType.CONDITION, OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM)),
-                new OpcuaTag("sound-alarm", "", new OpcuaTagDefinition(sound, OpcuaTagType.CONDITION)));
+                                mismatched, OpcuaTagKind.CONDITION, OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM)),
+                new OpcuaTag("sound-alarm", "", new OpcuaTagDefinition(sound, OpcuaTagKind.CONDITION)));
 
         // The adapter still connects: one mistyped tag must not stop it, nor the tags beside it.
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
@@ -287,7 +287,7 @@ public class OpcUaConditionSubscriptionIT {
                 "declared-notifier-alarm",
                 "",
                 new OpcuaTagDefinition(
-                        conditionNodeId, OpcuaTagType.CONDITION, OpcuaConditionType.ALARM_CONDITION, notifier)));
+                        conditionNodeId, OpcuaTagKind.CONDITION, OpcuaConditionType.ALARM_CONDITION, notifier)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
@@ -312,8 +312,8 @@ public class OpcUaConditionSubscriptionIT {
                 opcUaServerExtension.getTestNamespace().addConditionNode("HealthyAlarm", CONDITION_NODE_ID + 22);
 
         startAdapterWith(
-                new OpcuaTag("orphan-alarm", "", new OpcuaTagDefinition(orphan, OpcuaTagType.CONDITION)),
-                new OpcuaTag("healthy-alarm", "", new OpcuaTagDefinition(healthy, OpcuaTagType.CONDITION)));
+                new OpcuaTag("orphan-alarm", "", new OpcuaTagDefinition(orphan, OpcuaTagKind.CONDITION)),
+                new OpcuaTag("healthy-alarm", "", new OpcuaTagDefinition(healthy, OpcuaTagKind.CONDITION)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
@@ -343,8 +343,8 @@ public class OpcUaConditionSubscriptionIT {
                 opcUaServerExtension.getTestNamespace().addConditionNode("SecondAreaAlarm", CONDITION_NODE_ID + 31);
 
         startAdapterWith(
-                new OpcuaTag("first-alarm", "", new OpcuaTagDefinition(first, OpcuaTagType.CONDITION)),
-                new OpcuaTag("second-alarm", "", new OpcuaTagDefinition(second, OpcuaTagType.CONDITION)));
+                new OpcuaTag("first-alarm", "", new OpcuaTagDefinition(first, OpcuaTagKind.CONDITION)),
+                new OpcuaTag("second-alarm", "", new OpcuaTagDefinition(second, OpcuaTagKind.CONDITION)));
 
         // The adapter must come up at all: the two tags share a notifier node id, and anything keyed by node
         // id sees that as a collision.
@@ -379,7 +379,7 @@ public class OpcUaConditionSubscriptionIT {
         final String alarm =
                 opcUaServerExtension.getTestNamespace().addConditionNode("BurstAlarm", CONDITION_NODE_ID + 40);
 
-        startAdapterWith(new OpcuaTag("burst-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagType.CONDITION)));
+        startAdapterWith(new OpcuaTag("burst-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagKind.CONDITION)));
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));

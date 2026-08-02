@@ -43,7 +43,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.ArrayList;
@@ -304,7 +304,7 @@ public class OpcUaConditionUpdateIT {
 
     private void startAdapterWith(final @NotNull String conditionNodeId) {
         final OpcuaTag tag =
-                new OpcuaTag("alarm-tag", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagType.CONDITION));
+                new OpcuaTag("alarm-tag", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION));
 
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),

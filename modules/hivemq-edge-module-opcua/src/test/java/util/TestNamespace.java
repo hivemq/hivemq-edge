@@ -514,6 +514,16 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         return newNodeId("source-of-" + conditionNodeId.toParseableString());
     }
 
+    /**
+     * The ConditionSource a condition's events name, as a parseable node id.
+     * <p>
+     * A test that filters on {@code SourceNode} needs the node id, not the {@code SourceName} string — the
+     * two differ by the namespace prefix, and a filter given the bare name silently matches nothing.
+     */
+    public @NotNull String sourceNodeIdOf(final @NotNull String conditionNodeId) {
+        return sourceNodeFor(NodeId.parse(conditionNodeId)).toParseableString();
+    }
+
     public @NotNull ByteString fireAlarm(
             final @NotNull NodeId conditionNodeId,
             final @NotNull String message,

@@ -34,49 +34,62 @@ class OpcuaTagDefinitionTest {
     private final @NotNull ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    void whenTypeIsAbsent_thenTheTagIsAValue() throws Exception {
+    void whenKindIsAbsent_thenTheTagIsAValue() throws Exception {
         final OpcuaTagDefinition definition = mapper.readValue("{\"node\":\"ns=1;i=1004\"}", OpcuaTagDefinition.class);
 
-        // Back compatibility: a tag written before the type existed still reads as an ordinary value.
-        assertThat(definition.getType()).isEqualTo(OpcuaTagType.VALUE);
+        // Back compatibility: a tag written before the kind existed still reads as an ordinary value.
+        assertThat(definition.getKind()).isEqualTo(OpcuaTagKind.VALUE);
         assertThat(definition.getNode()).isEqualTo("ns=1;i=1004");
     }
 
     @Test
-    void whenTypeIsExplicitlyNull_thenTheTagIsAValue() throws Exception {
+    void whenKindIsExplicitlyNull_thenTheTagIsAValue() throws Exception {
         final OpcuaTagDefinition definition =
-                mapper.readValue("{\"node\":\"ns=1;i=1004\",\"type\":null}", OpcuaTagDefinition.class);
+                mapper.readValue("{\"node\":\"ns=1;i=1004\",\"kind\":null}", OpcuaTagDefinition.class);
 
-        assertThat(definition.getType()).isEqualTo(OpcuaTagType.VALUE);
+        assertThat(definition.getKind()).isEqualTo(OpcuaTagKind.VALUE);
     }
 
     @Test
-    void whenTypeIsCondition_thenItIsParsed() throws Exception {
+    void whenKindIsCondition_thenItIsParsed() throws Exception {
         final OpcuaTagDefinition definition =
-                mapper.readValue("{\"node\":\"ns=1;i=9100\",\"type\":\"CONDITION\"}", OpcuaTagDefinition.class);
+                mapper.readValue("{\"node\":\"ns=1;i=9100\",\"kind\":\"CONDITION\"}", OpcuaTagDefinition.class);
 
-        assertThat(definition.getType()).isEqualTo(OpcuaTagType.CONDITION);
+        assertThat(definition.getKind()).isEqualTo(OpcuaTagKind.CONDITION);
         assertThat(definition.getNode()).isEqualTo("ns=1;i=9100");
     }
 
     @Test
-    void whenTypeIsEventSubscription_thenItIsParsed() throws Exception {
+    void whenKindIsEventSubscription_thenItIsParsed() throws Exception {
         final OpcuaTagDefinition definition = mapper.readValue(
-                "{\"node\":\"ns=1;i=9100\",\"type\":\"EVENT_SUBSCRIPTION\"}", OpcuaTagDefinition.class);
+                "{\"node\":\"ns=1;i=9100\",\"kind\":\"EVENT_SUBSCRIPTION\"}", OpcuaTagDefinition.class);
 
-        assertThat(definition.getType()).isEqualTo(OpcuaTagType.EVENT_SUBSCRIPTION);
+        assertThat(definition.getKind()).isEqualTo(OpcuaTagKind.EVENT_SUBSCRIPTION);
+    }
+
+    @Test
+    void whenTheNodeTypeIsNamed_thenItDecidesThePublishedShape() throws Exception {
+        // `type` is the node's type -- the input to schema generation -- as distinct from `kind`, which says
+        // how the node is observed. The two were once one field, and confusing them is the mistake this
+        // guards against.
+        final OpcuaTagDefinition definition = mapper.readValue(
+                "{\"node\":\"ns=1;i=9100\",\"kind\":\"CONDITION\",\"type\":\"ExclusiveLevelAlarmType\"}",
+                OpcuaTagDefinition.class);
+
+        assertThat(definition.getKind()).isEqualTo(OpcuaTagKind.CONDITION);
+        assertThat(definition.getType()).isEqualTo(OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM);
     }
 
     @Test
     void whenADefinitionIsWrittenAndReadBack_thenItIsUnchanged() throws Exception {
-        for (final OpcuaTagType type : OpcuaTagType.values()) {
-            final OpcuaTagDefinition original = new OpcuaTagDefinition("ns=1;i=9100", type);
+        for (final OpcuaTagKind kind : OpcuaTagKind.values()) {
+            final OpcuaTagDefinition original = new OpcuaTagDefinition("ns=1;i=9100", kind);
 
             final OpcuaTagDefinition roundTripped =
                     mapper.readValue(mapper.writeValueAsString(original), OpcuaTagDefinition.class);
 
             assertThat(roundTripped)
-                    .as("a definition of type %s must survive a write/read cycle", type)
+                    .as("a definition of kind %s must survive a write/read cycle", kind)
                     .isEqualTo(original);
         }
     }

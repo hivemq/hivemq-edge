@@ -30,7 +30,8 @@ import com.hivemq.edge.adapters.opcua.condition.ConditionTypeVerifier;
 import com.hivemq.edge.adapters.opcua.condition.NotifierResolver;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.EventFilter;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -269,7 +271,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // the sampling interval the SDK chose for it, a value item takes the value parameters. Applying
             // the value settings here would quietly undo that on the next synchronization.
             final OpcuaTag tag = tagOf(monitoredItem);
-            if (tag != null && tag.getDefinition().getType() != OpcuaTagType.VALUE) {
+            if (tag != null && tag.getDefinition().getKind() != OpcuaTagKind.VALUE) {
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().eventQueueSize()));
             } else {
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
@@ -293,15 +295,21 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // A condition is observed through its transitions, so it needs an event item carrying an
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
-                        switch (opcuaTag.getDefinition().getType()) {
+                        switch (opcuaTag.getDefinition().getKind()) {
                             case CONDITION, EVENT_SUBSCRIPTION -> {
-                                // The item goes on the notifier, not on the condition: a condition is not an
-                                // event notifier. Which condition the events are about is decided by the
-                                // filter, not by the node subscribed to.
+                                // Both are event items, but they name different nodes. A condition tag names
+                                // the condition and its events are received from a notifier above it, found
+                                // by resolution. An event subscription tag names the notifier directly: it is
+                                // a query against that notifier, so there is nothing to resolve.
+                                final boolean isQuery =
+                                        opcuaTag.getDefinition().getKind() == OpcuaTagKind.EVENT_SUBSCRIPTION;
                                 final var eventItem = OpcUaMonitoredItem.newEventItem(
-                                        Objects.requireNonNull(verified.notifier()),
-                                        ConditionEventFilters.forCondition(
-                                                nodeId, opcuaTag.getDefinition().getConditionType()));
+                                        isQuery ? nodeId : Objects.requireNonNull(verified.notifier()),
+                                        isQuery
+                                                ? queryFilterFor(opcuaTag)
+                                                : ConditionEventFilters.forCondition(
+                                                        nodeId,
+                                                        opcuaTag.getDefinition().getType()));
                                 // Event parameters, not value parameters. queueSize means something different
                                 // here: for an event item 1 asks for the smallest queue the server supports
                                 // (OPC 10000-4 §7.21), where for a value item it means a single entry. And the
@@ -528,9 +536,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
 
                 final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
+                // conditionType decides the published shape for both tag types, so decoding uses the same
+                // field list the select clause was built from. Event fields arrive positionally against that
+                // list, which is what keeps this correct.
                 OpcUaEventToJsonConverter.convertPayload(
                         client.getDynamicEncodingContext(),
-                        tag.getDefinition().getConditionType(),
+                        tag.getDefinition().getType(),
                         events.get(i),
                         dataPointBuilder);
             } catch (final @NotNull UaSerializationException e) {
@@ -593,7 +604,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // ConditionType — so any subscribed condition serves as the entry point. The burst it triggers covers
         // every retained condition on the subscription, not just this one.
         final Optional<OpcuaTag> anyCondition = tags.stream()
-                .filter(tag -> tag.getDefinition().getType() == OpcuaTagType.CONDITION)
+                .filter(tag -> tag.getDefinition().getKind() == OpcuaTagKind.CONDITION)
                 .findFirst();
         if (anyCondition.isEmpty()) {
             return;
@@ -626,6 +637,26 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
+     * The event filter for an event subscription tag, translated from its definition.
+     * <p>
+     * Each of the three narrowing dimensions is independently optional, so a tag that names none of them is a
+     * legitimate request for everything the notifier carries. {@code conditionType} doubles as the type
+     * filter here: on a query tag it says which events to accept rather than what the node is.
+     */
+    private static @NotNull EventFilter queryFilterFor(final @NotNull OpcuaTag opcuaTag) {
+        final OpcuaTagDefinition definition = opcuaTag.getDefinition();
+        return ConditionEventFilters.forQuery(
+                parseOrNull(definition.getSourceNode()),
+                parseOrNull(definition.getConditionNode()),
+                definition.getFilterType(),
+                definition.getType());
+    }
+
+    private static @Nullable NodeId parseOrNull(final @Nullable String nodeId) {
+        return nodeId == null ? null : NodeId.parse(nodeId);
+    }
+
+    /**
      * The tag a notification belongs to, carried on the monitored item itself.
      * <p>
      * Null only for an item we did not create, or one left over from a subscription that has been replaced.
@@ -651,7 +682,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         final int requested = config.getOpcuaToMqttConfig().eventQueueSize();
         subscription.getMonitoredItems().forEach(item -> {
             final OpcuaTag tag = tagOf(item);
-            if (tag == null || tag.getDefinition().getType() == OpcuaTagType.VALUE) {
+            if (tag == null || tag.getDefinition().getKind() == OpcuaTagKind.VALUE) {
                 return;
             }
             item.getRevisedQueueSize().ifPresent(revised -> {
@@ -679,7 +710,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * throwing. This runs inside adapter start, where an escaping exception would abort the whole sequence.
      */
     private @NotNull Optional<VerifiedTag> verify(final @NotNull OpcuaTag opcuaTag) {
-        if (opcuaTag.getDefinition().getType() != OpcuaTagType.CONDITION) {
+        // Only a condition tag needs either check. A value tag needs neither, and an event subscription tag
+        // names its notifier directly -- there is nothing to resolve, and no single declared type to verify,
+        // since the point of the tag is that many conditions of possibly differing types pass its filter.
+        if (opcuaTag.getDefinition().getKind() != OpcuaTagKind.CONDITION) {
             return Optional.of(new VerifiedTag(opcuaTag, null));
         }
         final String tagName = opcuaTag.getName();
@@ -687,7 +721,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final ConditionTypeVerifier.Result result = ConditionTypeVerifier.verify(
                             client,
                             NodeId.parse(opcuaTag.getDefinition().getNode()),
-                            opcuaTag.getDefinition().getConditionType(),
+                            opcuaTag.getDefinition().getType(),
                             tagName)
                     .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 

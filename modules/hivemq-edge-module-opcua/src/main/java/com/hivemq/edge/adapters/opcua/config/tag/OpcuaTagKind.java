@@ -18,16 +18,24 @@ package com.hivemq.edge.adapters.opcua.config.tag;
 /**
  * What kind of thing an OPC-UA tag points at.
  * <p>
- * The type is stated explicitly rather than inferred from the server: inference is possible in principle
+ * Distinct from the node's <em>type</em>, which names the structure of its northbound output and drives
+ * schema generation. The kind decides how the node is observed at all — a monitored value, a condition's
+ * transitions, or a query over a notifier's traffic — and therefore which schemas apply:
+ * <ul>
+ *   <li>{@link #VALUE} — read and write schemas both derived from the device;</li>
+ *   <li>{@link #CONDITION} — read schema from the type, write schema the fixed transition command;</li>
+ *   <li>{@link #EVENT_SUBSCRIPTION} — read schema from the type, writing forbidden.</li>
+ * </ul>
+ * The kind is stated explicitly rather than inferred from the server: inference is possible in principle
  * (NodeClass, HasTypeDefinition, the EventNotifier attribute) but the EventNotifier bit in particular is
  * unreliable, because servers under-populate it and the Server object is a notifier by convention regardless.
  * So the intent is declared here and then <em>verified</em> against the device when the tag is subscribed.
  */
-public enum OpcuaTagType {
+public enum OpcuaTagKind {
 
     /**
      * An ordinary variable: the tag's node is a Variable whose {@code Value} attribute is monitored.
-     * This is the default, and what every tag was before the type existed.
+     * This is the default, and what every tag was before the kind existed.
      */
     VALUE,
 

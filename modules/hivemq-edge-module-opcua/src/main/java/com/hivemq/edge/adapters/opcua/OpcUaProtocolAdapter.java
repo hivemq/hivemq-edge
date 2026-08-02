@@ -47,8 +47,9 @@ import com.hivemq.edge.adapters.opcua.condition.ConditionUpdate;
 import com.hivemq.edge.adapters.opcua.condition.ConditionUpdateWriter;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagType;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
@@ -656,6 +657,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
+        // Second line of defence. The tag's write schema already describes a shape that accepts nothing, but
+        // a schema is a description and this is the refusal: an event subscription names a notifier, and
+        // writing a value to a notifier is meaningless rather than merely unsupported.
+        if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.EVENT_SUBSCRIPTION) {
+            log.error("Attempted to write to event subscription tag '{}', which is northbound only", tagName);
+            output.fail("Tag '" + tagName + "' is an event subscription and cannot be written: it is a query "
+                    + "against a notifier, not a node. To acknowledge an alarm, write to a CONDITION tag.");
+            return;
+        }
+
         final OpcUaClientConnection conn = opcUaClientConnection.get();
         if (conn == null) {
             output.fail("Discovery failed: ClientConnection not connected or not initialized");
@@ -678,7 +689,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
                             // A condition is moved by calling a method on it, not by assigning to it: the
                             // server owns the state machine. Everything else is an ordinary value write.
-                            if (opcuaTag.getDefinition().getType() == OpcuaTagType.CONDITION) {
+                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.CONDITION) {
                                 writeConditionUpdate(client, nodeId, opcUAWritePayload, tagName, output);
                                 return;
                             }
@@ -763,19 +774,28 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
-        // A condition's shape follows from its declared type, not from the device: both schemas are known
-        // before a connection exists, so this answers without one. It is also the case where read and write
-        // genuinely differ — a transition report northbound, a command to move the state machine southbound.
-        if (tag.getDefinition().getType() == OpcuaTagType.CONDITION) {
+        // An event tag's shape follows from its declared type, not from the device, so both schemas are known
+        // before a connection exists and this answers without one. It is also where read and write genuinely
+        // differ — a transition report northbound, and southbound either a command to move the state machine
+        // or nothing at all.
+        final OpcuaTagKind tagType = tag.getDefinition().getKind();
+        if (tagType == OpcuaTagKind.CONDITION || tagType == OpcuaTagKind.EVENT_SUBSCRIPTION) {
+            final OpcuaConditionType publishedType = tag.getDefinition().getType();
             log.debug(
-                    "Schema for condition tag='{}' derived from declared type '{}'",
+                    "Schema for {} tag='{}' derived from declared type '{}'",
+                    tagType,
                     tagName,
-                    tag.getDefinition().getConditionType().browseName());
+                    publishedType.browseName());
+            // Northbound is the same for both: conditionType names the published shape, whether the tag
+            // observes one condition or queries a notifier. Southbound is where they differ — a condition
+            // takes a transition command, while a query has no node to write to at all.
             output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                    ConditionSchemas.readSchema(tag.getDefinition().getConditionType()),
+                    ConditionSchemas.readSchema(publishedType),
                     null,
                     null,
-                    ConditionSchemas.writeSchema()));
+                    tagType == OpcuaTagKind.CONDITION
+                            ? ConditionSchemas.writeSchema()
+                            : ConditionSchemas.unwritableSchema()));
             return;
         }
 

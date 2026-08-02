@@ -32,22 +32,25 @@ public class OpcuaTagDefinition implements TagDefinition {
             required = true)
     private final @NotNull String node;
 
-    @JsonProperty(value = "type")
+    @JsonProperty(value = "kind")
     @ModuleConfigField(
-            title = "Node type",
+            title = "Node kind",
             description = "what the node is: an ordinary VALUE (default), a CONDITION (a single alarm), "
                     + "or an EVENT_SUBSCRIPTION (a query against a notifier, delivering events from many conditions)",
             defaultValue = "VALUE")
-    private final @NotNull OpcuaTagType type;
+    private final @NotNull OpcuaTagKind kind;
 
-    @JsonProperty(value = "conditionType")
+    @JsonProperty(value = "type")
     @ModuleConfigField(
-            title = "Condition type",
-            description = "for a CONDITION tag, which OPC UA condition type the node is (e.g. AlarmConditionType, "
-                    + "ExclusiveLevelAlarmType). This decides the fields the tag publishes, and is verified "
-                    + "against the device when the tag is subscribed. Declaring a supertype is allowed.",
+            title = "Node type",
+            description = "the type whose structure the tag's northbound output has (e.g. AlarmConditionType, "
+                    + "ExclusiveLevelAlarmType). This is the input to schema generation. For a CONDITION node "
+                    + "it is also verified against the device when the tag is subscribed, and declaring a "
+                    + "supertype of what the device offers is allowed. For an EVENT_SUBSCRIPTION node nothing "
+                    + "is verified — many conditions of differing types may pass the filter — so a field an "
+                    + "event does not carry is published as null.",
             defaultValue = "AlarmConditionType")
-    private final @NotNull OpcuaConditionType conditionType;
+    private final @NotNull OpcuaConditionType type;
 
     @JsonProperty(value = "notifierNode")
     @ModuleConfigField(
@@ -58,46 +61,93 @@ public class OpcuaTagDefinition implements TagDefinition {
                     + "the server does not publish the references that walk needs.")
     private final @Nullable String notifierNode;
 
+    @JsonProperty(value = "sourceNode")
+    @ModuleConfigField(
+            title = "Source node ID",
+            description = "for an EVENT_SUBSCRIPTION tag, deliver only events about this source — the process "
+                    + "object a condition watches, such as a sensor. Leave empty for every source the "
+                    + "notifier covers.")
+    private final @Nullable String sourceNode;
+
+    @JsonProperty(value = "conditionNode")
+    @ModuleConfigField(
+            title = "Condition node ID",
+            description = "for an EVENT_SUBSCRIPTION tag, deliver only events from this one condition. Leave "
+                    + "empty for every condition the notifier covers.")
+    private final @Nullable String conditionNode;
+
+    @JsonProperty(value = "filterType")
+    @ModuleConfigField(
+            title = "Filter type",
+            description = "for an EVENT_SUBSCRIPTION tag, deliver only events of this type or a subtype of "
+                    + "it. Independent of the published shape, which the node's type decides: filtering "
+                    + "narrowly while publishing a broader shape is safe, and filtering broadly while "
+                    + "publishing a narrower shape is allowed and yields nulls. Leave empty for every event "
+                    + "type the notifier carries.")
+    private final @Nullable OpcuaConditionType filterType;
+
     @JsonCreator
     public OpcuaTagDefinition(
             @JsonProperty(value = "node", required = true) final @NotNull String node,
-            @JsonProperty(value = "type") final @Nullable OpcuaTagType type,
-            @JsonProperty(value = "conditionType") final @Nullable OpcuaConditionType conditionType,
-            @JsonProperty(value = "notifierNode") final @Nullable String notifierNode) {
-        this.notifierNode = notifierNode == null || notifierNode.isBlank() ? null : notifierNode;
+            @JsonProperty(value = "kind") final @Nullable OpcuaTagKind kind,
+            @JsonProperty(value = "type") final @Nullable OpcuaConditionType type,
+            @JsonProperty(value = "notifierNode") final @Nullable String notifierNode,
+            @JsonProperty(value = "sourceNode") final @Nullable String sourceNode,
+            @JsonProperty(value = "conditionNode") final @Nullable String conditionNode,
+            @JsonProperty(value = "filterType") final @Nullable OpcuaConditionType filterType) {
+        this.notifierNode = blankToNull(notifierNode);
+        this.sourceNode = blankToNull(sourceNode);
+        this.conditionNode = blankToNull(conditionNode);
+        this.filterType = filterType;
         this.node = node;
-        // Absent in every tag written before the type existed, and the overwhelmingly common case since.
-        this.type = type == null ? OpcuaTagType.VALUE : type;
+        // Absent in every tag written before the kind existed, and the overwhelmingly common case since.
+        this.kind = kind == null ? OpcuaTagKind.VALUE : kind;
         // The most general type that still carries the acknowledge/confirm machinery, so a tag that does not
         // name a type publishes the standard alarm fields rather than nothing.
-        this.conditionType = conditionType == null ? OpcuaConditionType.ALARM_CONDITION : conditionType;
+        this.type = type == null ? OpcuaConditionType.ALARM_CONDITION : type;
+    }
+
+    /** An omitted node id and one typed as whitespace mean the same thing: no narrowing on that dimension. */
+    private static @Nullable String blankToNull(final @Nullable String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     public OpcuaTagDefinition(
             final @NotNull String node,
-            final @Nullable OpcuaTagType type,
-            final @Nullable OpcuaConditionType conditionType) {
-        this(node, type, conditionType, null);
+            final @Nullable OpcuaTagKind kind,
+            final @Nullable OpcuaConditionType type,
+            final @Nullable String notifierNode) {
+        this(node, kind, type, notifierNode, null, null, null);
     }
 
-    public OpcuaTagDefinition(final @NotNull String node, final @Nullable OpcuaTagType type) {
-        this(node, type, null, null);
+    public OpcuaTagDefinition(
+            final @NotNull String node, final @Nullable OpcuaTagKind kind, final @Nullable OpcuaConditionType type) {
+        this(node, kind, type, null);
+    }
+
+    public OpcuaTagDefinition(final @NotNull String node, final @Nullable OpcuaTagKind kind) {
+        this(node, kind, null, null);
     }
 
     public OpcuaTagDefinition(final @NotNull String node) {
-        this(node, OpcuaTagType.VALUE, null, null);
+        this(node, OpcuaTagKind.VALUE, null, null);
     }
 
     public @NotNull String getNode() {
         return node;
     }
 
-    public @NotNull OpcuaTagType getType() {
-        return type;
+    /** What the node is — an ordinary value, a single condition, or a query against a notifier. */
+    public @NotNull OpcuaTagKind getKind() {
+        return kind;
     }
 
-    public @NotNull OpcuaConditionType getConditionType() {
-        return conditionType;
+    /**
+     * The type whose structure the northbound output has — the input to schema generation, and the field
+     * list the select clause and the event decoder both work from.
+     */
+    public @NotNull OpcuaConditionType getType() {
+        return type;
     }
 
     /**
@@ -105,6 +155,26 @@ public class OpcuaTagDefinition implements TagDefinition {
      */
     public @Nullable String getNotifierNode() {
         return notifierNode;
+    }
+
+    /** For an EVENT_SUBSCRIPTION tag: narrow to one source, or null for every source. */
+    public @Nullable String getSourceNode() {
+        return sourceNode;
+    }
+
+    /** For an EVENT_SUBSCRIPTION tag: narrow to one condition, or null for every condition. */
+    public @Nullable String getConditionNode() {
+        return conditionNode;
+    }
+
+    /**
+     * For an EVENT_SUBSCRIPTION tag: deliver only events of this type or a subtype. Null means no type
+     * predicate at all, which is why this is returned exactly as configured rather than defaulted — there is
+     * no sensible default to substitute, and inventing one would also change {@code equals} on a write/read
+     * cycle, breaking a {@link TagDefinition}'s use as a stable key.
+     */
+    public @Nullable OpcuaConditionType getFilterType() {
+        return filterType;
     }
 
     @Override
@@ -116,19 +186,23 @@ public class OpcuaTagDefinition implements TagDefinition {
             return false;
         }
         return node.equals(that.node)
+                && kind == that.kind
                 && type == that.type
-                && conditionType == that.conditionType
-                && Objects.equals(notifierNode, that.notifierNode);
+                && Objects.equals(notifierNode, that.notifierNode)
+                && Objects.equals(sourceNode, that.sourceNode)
+                && Objects.equals(conditionNode, that.conditionNode)
+                && filterType == that.filterType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(node, type, conditionType, notifierNode);
+        return Objects.hash(node, kind, type, notifierNode, sourceNode, conditionNode, filterType);
     }
 
     @Override
     public @NotNull String toString() {
-        return "OpcuaTagDefinition{node='" + node + "', type=" + type + ", conditionType=" + conditionType
-                + ", notifierNode=" + notifierNode + "}";
+        return "OpcuaTagDefinition{node='" + node + "', kind=" + kind + ", type=" + type + ", notifierNode="
+                + notifierNode + ", sourceNode=" + sourceNode + ", conditionNode=" + conditionNode
+                + ", filterType=" + filterType + "}";
     }
 }

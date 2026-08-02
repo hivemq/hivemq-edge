@@ -120,6 +120,25 @@ public final class ConditionSchemas {
     }
 
     /**
+     * The southbound shape for a tag that cannot be written: an object with no writable property.
+     * <p>
+     * Used by the event subscription tag, which is a query against a notifier — there is no node to write to,
+     * and no state machine to transition. Saying so explicitly is better than returning no write schema at
+     * all: an absent schema reads as "not determined yet" and invites a caller to try anyway, while this one
+     * describes a shape that accepts nothing. The write path refuses such a tag regardless; this is the
+     * declaration, not the enforcement.
+     */
+    public static @NotNull Schema unwritableSchema() {
+        // No properties, and additionalProperties false: the object permits nothing at all. A schema with no
+        // properties but additionalProperties left open would accept any object, which is the opposite claim.
+        return new SchemaBuilder()
+                .startObject()
+                .additionalProperties(false)
+                .endObject()
+                .build();
+    }
+
+    /**
      * The southbound shape, identical for every condition: {@code {method, eventId?, comment?, duration?}}.
      * <p>
      * Only {@code method} is required. Which of the others apply follows from it — {@code eventId} for the

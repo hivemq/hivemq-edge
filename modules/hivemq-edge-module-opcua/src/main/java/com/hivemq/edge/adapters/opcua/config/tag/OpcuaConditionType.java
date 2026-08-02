@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -162,6 +164,36 @@ public enum OpcuaConditionType {
     public static final @NotNull List<String> BASE_EVENT_FIELDS =
             List.of("EventId", "EventType", "SourceNode", "SourceName", "Time", "ReceiveTime", "Message", "Severity");
 
+    /**
+     * Each type's NodeId in the standard namespace, used to filter events by type.
+     * <p>
+     * Declared here rather than looked up by name so the compiler checks every entry. Milo's constants live
+     * on a package-private superclass of {@code NodeIds}, which makes them unreadable by reflection.
+     */
+    private static final @NotNull Map<OpcuaConditionType, NodeId> NODE_IDS = Map.ofEntries(
+            Map.entry(CONDITION, NodeIds.ConditionType),
+            Map.entry(ACKNOWLEDGEABLE_CONDITION, NodeIds.AcknowledgeableConditionType),
+            Map.entry(ALARM_CONDITION, NodeIds.AlarmConditionType),
+            Map.entry(DISCRETE_ALARM, NodeIds.DiscreteAlarmType),
+            Map.entry(OFF_NORMAL_ALARM, NodeIds.OffNormalAlarmType),
+            Map.entry(SYSTEM_OFF_NORMAL_ALARM, NodeIds.SystemOffNormalAlarmType),
+            Map.entry(CERTIFICATE_EXPIRATION_ALARM, NodeIds.CertificateExpirationAlarmType),
+            Map.entry(DIALOG_CONDITION, NodeIds.DialogConditionType),
+            Map.entry(DISCREPANCY_ALARM, NodeIds.DiscrepancyAlarmType),
+            Map.entry(LIMIT_ALARM, NodeIds.LimitAlarmType),
+            Map.entry(EXCLUSIVE_LIMIT_ALARM, NodeIds.ExclusiveLimitAlarmType),
+            Map.entry(EXCLUSIVE_DEVIATION_ALARM, NodeIds.ExclusiveDeviationAlarmType),
+            Map.entry(EXCLUSIVE_LEVEL_ALARM, NodeIds.ExclusiveLevelAlarmType),
+            Map.entry(EXCLUSIVE_RATE_OF_CHANGE_ALARM, NodeIds.ExclusiveRateOfChangeAlarmType),
+            Map.entry(INSTRUMENT_DIAGNOSTIC_ALARM, NodeIds.InstrumentDiagnosticAlarmType),
+            Map.entry(NON_EXCLUSIVE_LIMIT_ALARM, NodeIds.NonExclusiveLimitAlarmType),
+            Map.entry(NON_EXCLUSIVE_DEVIATION_ALARM, NodeIds.NonExclusiveDeviationAlarmType),
+            Map.entry(NON_EXCLUSIVE_LEVEL_ALARM, NodeIds.NonExclusiveLevelAlarmType),
+            Map.entry(NON_EXCLUSIVE_RATE_OF_CHANGE_ALARM, NodeIds.NonExclusiveRateOfChangeAlarmType),
+            Map.entry(SYSTEM_DIAGNOSTIC_ALARM, NodeIds.SystemDiagnosticAlarmType),
+            Map.entry(TRIP_ALARM, NodeIds.TripAlarmType),
+            Map.entry(TRUST_LIST_OUT_OF_DATE_ALARM, NodeIds.TrustListOutOfDateAlarmType));
+
     private static final @NotNull Map<String, OpcuaConditionType> BY_BROWSE_NAME = Arrays.stream(values())
             .collect(Collectors.toUnmodifiableMap(OpcuaConditionType::browseName, Function.identity()));
 
@@ -185,6 +217,24 @@ public enum OpcuaConditionType {
     @JsonValue
     public @NotNull String browseName() {
         return browseName;
+    }
+
+    /**
+     * The type's NodeId in the standard namespace, for filtering events by type.
+     * <p>
+     * Named constants rather than reflection over Milo's {@code NodeIds}: those constants are declared on a
+     * package-private superclass, so reading them reflectively raises {@code IllegalAccessException} even
+     * though they are public and inherited. Referring to them directly is both correct and checked by the
+     * compiler, which a name-based lookup would not be.
+     */
+    public @NotNull NodeId nodeId() {
+        final NodeId nodeId = NODE_IDS.get(this);
+        if (nodeId == null) {
+            // Every constant above is present in the map; a miss means one was added without its id, and a
+            // filter built on a missing id would silently match nothing.
+            throw new IllegalStateException("No OPC UA NodeId is known for condition type '" + browseName + "'");
+        }
+        return nodeId;
     }
 
     /** The type this one derives from, or empty for {@code ConditionType}, which is the root here. */
