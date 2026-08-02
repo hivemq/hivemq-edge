@@ -120,6 +120,33 @@ public final class ConditionSchemas {
     }
 
     /**
+     * The southbound shape of a refresh tag: {@code {method}}, and nothing else.
+     * <p>
+     * {@code ConditionRefresh} takes no arguments a user could supply — its only parameter is the
+     * subscription id, which is Edge's to know, not theirs. The field exists so the command names an action
+     * rather than being an empty object, and so a second action (OPC 10000-9 §5.5.8's
+     * {@code ConditionRefresh2}, narrowing to one monitored item) could be added without changing the shape.
+     */
+    public static @NotNull Schema refreshCommandSchema() {
+        return new SchemaBuilder()
+                .startObject()
+                .property(RefreshCommand.FIELD_METHOD)
+                .required()
+                .scalar(ScalarType.STRING)
+                .description("The action to request. Only '" + RefreshCommand.METHOD_REFRESH
+                        + "' is defined: ask the server to re-report every condition it currently retains on "
+                        + "this adapter's subscription.")
+                .writable()
+                .readable(false)
+                .endProperty()
+                .endObject()
+                // As with the condition command: the object itself is written, not read.
+                .writable()
+                .readable(false)
+                .build();
+    }
+
+    /**
      * The southbound shape for a tag that cannot be written: an object with no writable property.
      * <p>
      * Used by the event subscription tag, which is a query against a notifier — there is no node to write to,

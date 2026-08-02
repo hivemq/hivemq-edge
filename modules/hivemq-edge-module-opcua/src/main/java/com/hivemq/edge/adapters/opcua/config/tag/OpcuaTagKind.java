@@ -46,6 +46,20 @@ public enum OpcuaTagKind {
     CONDITION,
 
     /**
+     * The {@code ConditionRefresh} bracket, and the means to ask for a refresh.
+     * <p>
+     * Northbound it delivers {@code RefreshStartEventType}, {@code RefreshEndEventType} and
+     * {@code RefreshRequiredEventType} — the events a server sends to say a refresh has begun, has ended, or
+     * is advisable. Southbound a write requests one.
+     * <p>
+     * Its {@code node} carries no information: the subscription is placed on the Server object and the call
+     * is made on {@code ConditionType}, both well-known. And its filter cannot select these events — they
+     * bypass the where clause by specification — so the item is given a filter admitting nothing, leaving
+     * exactly the events that cannot be withheld.
+     */
+    REFRESH,
+
+    /**
      * A query against a notifier, delivering events from potentially many conditions beneath it.
      * Northbound only — there is no single target to write to.
      */

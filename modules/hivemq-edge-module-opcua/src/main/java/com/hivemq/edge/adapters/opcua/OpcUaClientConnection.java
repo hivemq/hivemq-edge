@@ -44,6 +44,7 @@ import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -279,6 +280,24 @@ public class OpcUaClientConnection {
             return Optional.of(ctx.client());
         }
         return Optional.empty();
+    }
+
+    /**
+     * Asks the server to re-report every condition it currently retains, on demand.
+     * <p>
+     * The same call the adapter makes automatically on connect and reconnect; this is the seam a refresh
+     * tag's southbound write uses. The subscription is the connection's to know, which is why the request
+     * goes through here rather than being assembled by the caller.
+     *
+     * @return the status of the call, or empty when there is no live subscription to refresh.
+     */
+    @NotNull
+    Optional<CompletableFuture<StatusCode>> requestConditionRefresh() {
+        final ConnectionContext ctx = context.get();
+        if (ctx == null) {
+            return Optional.empty();
+        }
+        return ctx.subscriptionHandler().requestConditionRefreshNow();
     }
 
     private static void quietlyDeleteSubscription(

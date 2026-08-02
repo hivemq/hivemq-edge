@@ -25,6 +25,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
@@ -45,6 +46,7 @@ import com.hivemq.edge.adapters.opcua.client.Success;
 import com.hivemq.edge.adapters.opcua.condition.ConditionSchemas;
 import com.hivemq.edge.adapters.opcua.condition.ConditionUpdate;
 import com.hivemq.edge.adapters.opcua.condition.ConditionUpdateWriter;
+import com.hivemq.edge.adapters.opcua.condition.RefreshCommand;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
@@ -215,6 +217,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         stopped = false;
 
         startSchedulers();
+
+        // At most one refresh tag. A second would place a second item on the Server object, and since the
+        // refresh bracket is copied to every notifier item in the subscription, both would publish the same
+        // event -- a duplicate that looks like two refreshes. Rejected at start rather than tolerated,
+        // because the config is almost certainly a mistake and the symptom would be puzzling.
+        final List<String> refreshTagNames = tagList.stream()
+                .filter(tag -> tag.getDefinition().getKind() == OpcuaTagKind.REFRESH)
+                .map(OpcuaTag::getName)
+                .toList();
+        if (refreshTagNames.size() > 1) {
+            final String message = "An OPC UA adapter may have at most one REFRESH tag, but '" + adapterId
+                    + "' has " + refreshTagNames.size() + ": " + String.join(", ", refreshTagNames)
+                    + ". They would each publish the same refresh events.";
+            log.error(message);
+            output.failStart(new IllegalStateException(message), message);
+            return;
+        }
 
         final ParsedConfig newlyParsedConfig;
         final var result = ParsedConfig.fromConfig(config);
@@ -694,6 +713,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 return;
                             }
 
+                            // A refresh tag is written to ask for the current alarm picture. Its node plays
+                            // no part: the call is made on the well-known ConditionType, and the only
+                            // argument is the subscription id, which is ours rather than the caller's.
+                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.REFRESH) {
+                                requestRefresh(opcUAWritePayload, tagName, output);
+                                return;
+                            }
+
                             final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
                             @SuppressWarnings("unused")
@@ -726,6 +753,51 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      * identifies one specific transition, so guessing at a command risks acknowledging something other than
      * what was intended.
      */
+    /**
+     * Handles a southbound write to a refresh tag: validate the command, then ask for a refresh.
+     * <p>
+     * Nothing from the payload reaches the server — the command carries no argument, and the subscription id
+     * is the connection's. The payload exists to name the action, and validating it is what stops a write
+     * meant for a different tag from silently triggering a refresh.
+     */
+    private void requestRefresh(
+            final @NotNull OpcUaPayload payload, final @NotNull String tagName, final @NotNull WritingOutput output) {
+
+        try {
+            RefreshCommand.validate(payload.value());
+        } catch (final IllegalArgumentException e) {
+            log.error("Rejected refresh command for tag '{}': {}", tagName, e.getMessage());
+            output.fail("Rejected refresh command for tag '" + tagName + "': " + e.getMessage());
+            return;
+        }
+
+        final OpcUaClientConnection conn = opcUaClientConnection.get();
+        if (conn == null) {
+            output.fail("Cannot refresh: the OPC UA connection is not established");
+            return;
+        }
+
+        conn.requestConditionRefresh()
+                .ifPresentOrElse(
+                        pending -> {
+                            @SuppressWarnings("unused")
+                            final var unused = pending.whenComplete((statusCode, throwable) -> {
+                                if (throwable != null) {
+                                    log.error("Exception while refreshing conditions for tag '{}'", tagName, throwable);
+                                    output.fail(throwable, null);
+                                } else if (statusCode.isBad()) {
+                                    log.error(
+                                            "Server refused a condition refresh for tag '{}': {}", tagName, statusCode);
+                                    output.fail("The server refused the refresh: " + statusCode);
+                                } else {
+                                    log.debug("Requested a condition refresh via tag '{}'", tagName);
+                                    output.finish();
+                                }
+                            });
+                        },
+                        () -> output.fail("Cannot refresh: no subscription is established yet"));
+    }
+
     private void writeConditionUpdate(
             final @NotNull OpcUaClient client,
             final @NotNull NodeId conditionNodeId,
@@ -778,24 +850,25 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // before a connection exists and this answers without one. It is also where read and write genuinely
         // differ — a transition report northbound, and southbound either a command to move the state machine
         // or nothing at all.
-        final OpcuaTagKind tagType = tag.getDefinition().getKind();
-        if (tagType == OpcuaTagKind.CONDITION || tagType == OpcuaTagKind.EVENT_SUBSCRIPTION) {
+        final OpcuaTagKind tagKind = tag.getDefinition().getKind();
+        if (tagKind != OpcuaTagKind.VALUE) {
             final OpcuaConditionType publishedType = tag.getDefinition().getType();
             log.debug(
                     "Schema for {} tag='{}' derived from declared type '{}'",
-                    tagType,
+                    tagKind,
                     tagName,
                     publishedType.browseName());
-            // Northbound is the same for both: conditionType names the published shape, whether the tag
-            // observes one condition or queries a notifier. Southbound is where they differ — a condition
-            // takes a transition command, while a query has no node to write to at all.
+            // Northbound is the same for all three: type names the published shape, whether the tag observes
+            // one condition, queries a notifier, or carries the refresh bracket. Southbound is where they
+            // differ -- a transition command, a refresh request, or nothing writable at all.
+            final Schema writeSchema =
+                    switch (tagKind) {
+                        case CONDITION -> ConditionSchemas.writeSchema();
+                        case REFRESH -> ConditionSchemas.refreshCommandSchema();
+                        case EVENT_SUBSCRIPTION, VALUE -> ConditionSchemas.unwritableSchema();
+                    };
             output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                    ConditionSchemas.readSchema(publishedType),
-                    null,
-                    null,
-                    tagType == OpcuaTagKind.CONDITION
-                            ? ConditionSchemas.writeSchema()
-                            : ConditionSchemas.unwritableSchema()));
+                    ConditionSchemas.readSchema(publishedType), null, null, writeSchema));
             return;
         }
 

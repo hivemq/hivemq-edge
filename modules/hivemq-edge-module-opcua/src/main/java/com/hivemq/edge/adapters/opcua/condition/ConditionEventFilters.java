@@ -146,6 +146,30 @@ public final class ConditionEventFilters {
     }
 
     /**
+     * The filter for a refresh tag: select the base event fields, and admit nothing.
+     * <p>
+     * The where clause compares two different literals, so no ordinary event can pass it. What arrives
+     * anyway is precisely the set the protocol refuses to withhold — {@code RefreshStartEventType},
+     * {@code RefreshEndEventType} and {@code RefreshRequiredEventType} (OPC 10000-9 §4.5), and
+     * {@code EventQueueOverflowEventType} for this item's own queue (OPC 10000-4 §7.22). Filtering
+     * <em>for</em> them is impossible, so the honest construction is to filter everything else out.
+     * <p>
+     * The select clause is the {@code ConditionType} field set rather than a narrower one: these events
+     * carry only {@code BaseEventType}'s fields, and asking for more costs nothing — an absent field comes
+     * back null. Using a type in the enum keeps one code path for building select clauses.
+     */
+    public static @NotNull EventFilter forRefresh() {
+        final ExtensionObject alwaysFalseLeft =
+                ExtensionObject.encode(DefaultEncodingContext.INSTANCE, new LiteralOperand(new Variant(0)));
+        final ExtensionObject alwaysFalseRight =
+                ExtensionObject.encode(DefaultEncodingContext.INSTANCE, new LiteralOperand(new Variant(1)));
+        final ContentFilter admitsNothing = new ContentFilter(new ContentFilterElement[] {
+            new ContentFilterElement(FilterOperator.Equals, new ExtensionObject[] {alwaysFalseLeft, alwaysFalseRight})
+        });
+        return new EventFilter(selectClauses(OpcuaConditionType.CONDITION), admitsNothing);
+    }
+
+    /**
      * Combines the predicates into one {@code ContentFilter}.
      * <p>
      * A {@code ContentFilter} is a <em>flat array</em>, not a tree: a boolean operator does not nest its

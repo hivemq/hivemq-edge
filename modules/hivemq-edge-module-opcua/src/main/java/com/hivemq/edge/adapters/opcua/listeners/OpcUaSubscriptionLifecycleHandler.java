@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -299,20 +300,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
                         switch (opcuaTag.getDefinition().getKind()) {
-                            case CONDITION, EVENT_SUBSCRIPTION -> {
-                                // Both are event items, but they name different nodes. A condition tag names
-                                // the condition and its events are received from a notifier above it, found
-                                // by resolution. An event subscription tag names the notifier directly: it is
-                                // a query against that notifier, so there is nothing to resolve.
-                                final boolean isQuery =
-                                        opcuaTag.getDefinition().getKind() == OpcuaTagKind.EVENT_SUBSCRIPTION;
+                            case CONDITION, EVENT_SUBSCRIPTION, REFRESH -> {
+                                // All three are event items, but they name different nodes. A condition tag
+                                // names the condition and its events arrive from a notifier above it, found
+                                // by resolution. An event subscription tag names the notifier directly. A
+                                // refresh tag names nothing of its own: it goes on the Server object, the
+                                // root of the notifier hierarchy, because the events it wants are broadcast
+                                // to every notifier item and cannot be selected by any filter.
                                 final var eventItem = OpcUaMonitoredItem.newEventItem(
-                                        isQuery ? nodeId : Objects.requireNonNull(verified.notifier()),
-                                        isQuery
-                                                ? queryFilterFor(opcuaTag)
-                                                : ConditionEventFilters.forCondition(
-                                                        nodeId,
-                                                        opcuaTag.getDefinition().getType()));
+                                        eventItemNodeFor(opcuaTag, nodeId, verified.notifier()),
+                                        eventFilterFor(opcuaTag, nodeId));
                                 // Event parameters, not value parameters. queueSize means something different
                                 // here: for an event item 1 asks for the smallest queue the server supports
                                 // (OPC 10000-4 §7.21), where for a value item it means a single entry. And the
@@ -527,12 +524,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             if (tag == null) {
                 continue;
             }
-            // Control events are not transitions and must not be published as one. Four event types reach a
-            // monitored item regardless of its filter -- the three refresh types (OPC 10000-9 §4.5) and the
-            // queue-overflow type (OPC 10000-4 §7.22) -- so the where clause cannot exclude them and this is
-            // the only place they can be dropped. Published as a condition they would carry the tag's field
-            // list with almost every value null, which reads as an alarm whose state is unknown.
-            if (isControlEvent(events.get(i))) {
+            // Four event types reach a monitored item regardless of its filter -- the three refresh types
+            // (OPC 10000-9 §4.5) and the queue-overflow type (OPC 10000-4 §7.22). The where clause cannot
+            // exclude them, so they are routed here: a refresh tag exists to publish them, and on any other
+            // kind they are dropped. Published as a transition they would carry that tag's field list with
+            // almost every value null, which reads as an alarm whose state is unknown.
+            final boolean isControlEvent = isControlEvent(events.get(i));
+            final boolean isRefreshTag = tag.getDefinition().getKind() == OpcuaTagKind.REFRESH;
+            if (isControlEvent && !isRefreshTag) {
+                continue;
+            }
+            if (!isControlEvent && isRefreshTag) {
+                // Its filter admits nothing, so an ordinary event here would mean the server ignored the
+                // where clause. Dropping rather than publishing keeps the tag's contract exact.
                 continue;
             }
             final String tn = tag.getName();
@@ -643,6 +647,53 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                         }
                     });
         });
+    }
+
+    /**
+     * Requests a refresh right now, for a southbound write to a refresh tag.
+     * <p>
+     * Distinct from {@link #requestConditionRefresh} — that one fires automatically after monitored items are
+     * established and swallows its outcome, because a server refusing it is a degradation rather than a
+     * failure. Here the caller asked, so the outcome is theirs to see.
+     *
+     * @return the status of the call, or empty when no subscription is live to refresh.
+     */
+    public @NotNull Optional<CompletableFuture<StatusCode>> requestConditionRefreshNow() {
+        final OpcUaSubscription subscription = currentSubscription.get();
+        if (subscription == null) {
+            return Optional.empty();
+        }
+        return subscription.getSubscriptionId().map(subscriptionId -> ConditionRefresh.request(client, subscriptionId));
+    }
+
+    /**
+     * The node an event item is placed on, which differs by kind.
+     *
+     * @param nodeId   the tag's own node, already parsed.
+     * @param notifier the notifier resolved for a condition tag, null for the other kinds.
+     */
+    private static @NotNull NodeId eventItemNodeFor(
+            final @NotNull OpcuaTag opcuaTag, final @NotNull NodeId nodeId, final @Nullable NodeId notifier) {
+        return switch (opcuaTag.getDefinition().getKind()) {
+            // A condition is not itself a notifier, so its events come from one above it.
+            case CONDITION -> Objects.requireNonNull(notifier);
+            // The Server object is a notifier by convention and the root of the notifier hierarchy, so an
+            // item there sees the refresh bracket the server broadcasts to every notifier item.
+            case REFRESH -> NodeIds.Server;
+            // A query names its notifier directly; a value item never reaches here.
+            case EVENT_SUBSCRIPTION, VALUE -> nodeId;
+        };
+    }
+
+    /** The event filter for an event item, which differs by kind. */
+    private static @NotNull EventFilter eventFilterFor(final @NotNull OpcuaTag opcuaTag, final @NotNull NodeId nodeId) {
+        return switch (opcuaTag.getDefinition().getKind()) {
+            case EVENT_SUBSCRIPTION -> queryFilterFor(opcuaTag);
+            case REFRESH -> ConditionEventFilters.forRefresh();
+            case CONDITION, VALUE ->
+                ConditionEventFilters.forCondition(
+                        nodeId, opcuaTag.getDefinition().getType());
+        };
     }
 
     /**

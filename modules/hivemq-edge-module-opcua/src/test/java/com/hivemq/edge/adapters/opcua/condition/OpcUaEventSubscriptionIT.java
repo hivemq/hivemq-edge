@@ -261,6 +261,57 @@ public class OpcUaEventSubscriptionIT {
                 .toList();
     }
 
+    @Test
+    @Timeout(120)
+    void whenARefreshTagIsSubscribed_thenItsItemIsPlacedOnTheServerObject() throws Exception {
+        // The refresh tag's node carries no information: whatever it names, its monitored item goes on the
+        // Server object, because that is the root of the notifier hierarchy and the refresh bracket is
+        // broadcast to every notifier item in the subscription.
+        //
+        // What this test cannot assert is the publish itself. The embedded harness registers event items
+        // with the server's notifier from its own namespace's onEventItemsCreated, and an item on
+        // ns=0;i=2253 belongs to Milo's namespace, which does no such registration -- so no event reaches an
+        // item there in this fixture. That is a limitation of the harness, not of the adapter: the item is
+        // created and accepted by the server, which is what is checked here.
+        final String alarm =
+                opcUaServerExtension.getTestNamespace().addConditionNode("BracketAlarm", CONDITION_NODE_ID + 50);
+
+        startAdapterWith(
+                new OpcuaTag("area-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagKind.CONDITION)),
+                // A deliberately wrong node: it must be ignored in favour of the Server object.
+                new OpcuaTag("refresh", "", new OpcuaTagDefinition(alarm, OpcuaTagKind.REFRESH)));
+
+        awaitConnected();
+
+        // The condition tag still works alongside it — the refresh tag does not disturb the subscription.
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "still working", 700, true);
+            assertThat(publishedSourceNames()).contains("source-of-" + alarm);
+        });
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheRefreshBracketArrives_thenAConditionTagDoesNotPublishIt() throws Exception {
+        // The same bracket is copied to every notifier item in the subscription, so the condition tag's item
+        // receives it too. Publishing it there would be an alarm message whose every condition field is null.
+        final String alarm =
+                opcUaServerExtension.getTestNamespace().addConditionNode("QuietAlarm", CONDITION_NODE_ID + 60);
+
+        startAdapterWith(new OpcuaTag("quiet-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagKind.CONDITION)));
+
+        awaitConnected();
+
+        // Give the automatic refresh time to happen and its bracket time to arrive.
+        Thread.sleep(3000);
+
+        assertThat(tagStreamingService.published())
+                .as("a condition tag must publish only transitions, never the refresh bracket")
+                .allSatisfy(published -> assertThat(published.get("ActiveState").isNull())
+                        .as("a published event with no ActiveState is a control event that leaked through")
+                        .isFalse());
+    }
+
     private void startAdapterWith(final @NotNull OpcuaTag... tags) {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
