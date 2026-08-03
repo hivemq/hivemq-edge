@@ -42,10 +42,16 @@ import org.jetbrains.annotations.NotNull;
  * says. They are dropped in the notification handler rather than published, because they are not transitions;
  * surfacing them to a user is a separate tag, not this one.
  * <p>
- * <b>The EventId in a refresh burst cannot be used to acknowledge.</b> Each synthesised event is a new
- * occurrence with a freshly minted {@code EventId}, not a replay of the original, and a synthesised transition
- * is not a real one. Only the {@code EventId} of the most recent genuine transition is valid for an
- * acknowledgement. Edge does not track this — it is a conduit — so a downstream consumer must.
+ * <b>The {@code EventId} in a refresh burst is the original one, and can be used to acknowledge.</b> OPC
+ * 10000-9 §5.5.7 step 2: "the EventId for such a refreshed Notification <em>shall be identical</em> to the one
+ * for the original Notification". So a consumer that learns of an alarm only from a refresh — everything that
+ * went active while Edge was disconnected — holds a token it can acknowledge with. That is the point of the
+ * burst; discarding those ids would leave a latched alarm in a stable state unacknowledgeable indefinitely.
+ * <p>
+ * The <em>other</em> properties are not pinned. The specification allows a server to replay an event verbatim
+ * or to regenerate it, and a regenerated one may carry updated values — its example is a limit changed after
+ * the original event, reported at its new value on refresh even though no transition occurred. So treat the
+ * {@code EventId} as stable and everything else as current rather than historical.
  */
 public final class ConditionRefresh {
 
