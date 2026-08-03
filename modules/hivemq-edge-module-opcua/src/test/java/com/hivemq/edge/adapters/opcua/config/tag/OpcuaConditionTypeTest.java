@@ -74,6 +74,41 @@ class OpcuaConditionTypeTest {
     }
 
     @Test
+    void everyAlarmCarriesItsInputNode() {
+        // Mandatory on AlarmConditionType (OPC 10000-9 Table 40), and the field that answers what the alarm
+        // is watching -- so it is on every alarm we publish, not just some.
+        assertThat(OpcuaConditionType.values())
+                .filteredOn(type -> OpcuaConditionType.fromBrowseName("AlarmConditionType")
+                        .orElseThrow()
+                        .isSatisfiedBy(type))
+                .allSatisfy(type -> assertThat(type.allFields())
+                        .as("%s is an alarm, so it must carry InputNode", type.browseName())
+                        .contains("InputNode"));
+    }
+
+    @Test
+    void nodeReferencingFieldsKeepTheirNodeSuffix() {
+        // These properties hold a NodeId pointing at a variable, never the variable's value. Dropping the
+        // suffix would name a field the specification does not define and promise a number where a reference
+        // is sent -- a mistake invisible until a consumer reads it. OPC 10000-9 Tables 101, 102 and 112.
+        final OpcuaConditionType deviation =
+                OpcuaConditionType.fromBrowseName("ExclusiveDeviationAlarmType").orElseThrow();
+        assertThat(deviation.allFields())
+                .contains("SetpointNode", "BaseSetpointNode")
+                .doesNotContain("Setpoint", "BaseSetpoint");
+
+        final OpcuaConditionType nonExclusive = OpcuaConditionType.fromBrowseName("NonExclusiveDeviationAlarmType")
+                .orElseThrow();
+        assertThat(nonExclusive.allFields())
+                .contains("SetpointNode", "BaseSetpointNode")
+                .doesNotContain("Setpoint", "BaseSetpoint");
+
+        final OpcuaConditionType discrepancy =
+                OpcuaConditionType.fromBrowseName("DiscrepancyAlarmType").orElseThrow();
+        assertThat(discrepancy.allFields()).contains("TargetValueNode").doesNotContain("TargetValue");
+    }
+
+    @Test
     void aSupertypeIsSatisfiedByItsSubtype() {
         final OpcuaConditionType alarm =
                 OpcuaConditionType.fromBrowseName("AlarmConditionType").orElseThrow();

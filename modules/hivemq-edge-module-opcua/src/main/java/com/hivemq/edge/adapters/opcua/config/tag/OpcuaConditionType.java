@@ -76,6 +76,7 @@ public enum OpcuaConditionType {
                     "AudibleEnabled",
                     "EnabledState",
                     "FirstInGroupFlag",
+                    "InputNode",
                     "LatchedState",
                     "MaxTimeShelved",
                     "OffDelay",
@@ -106,9 +107,7 @@ public enum OpcuaConditionType {
                     "Prompt",
                     "ResponseOptionSet")),
     DISCREPANCY_ALARM(
-            "DiscrepancyAlarmType",
-            "AlarmConditionType",
-            List.of("ExpectedTime", "TargetValue", "TargetValueNode", "Tolerance")),
+            "DiscrepancyAlarmType", "AlarmConditionType", List.of("ExpectedTime", "TargetValueNode", "Tolerance")),
     LIMIT_ALARM(
             "LimitAlarmType",
             "AlarmConditionType",
@@ -131,9 +130,7 @@ public enum OpcuaConditionType {
                     "SeverityLowLow")),
     EXCLUSIVE_LIMIT_ALARM("ExclusiveLimitAlarmType", "LimitAlarmType", List.of("ActiveState")),
     EXCLUSIVE_DEVIATION_ALARM(
-            "ExclusiveDeviationAlarmType",
-            "ExclusiveLimitAlarmType",
-            List.of("BaseSetpoint", "BaseSetpointNode", "Setpoint", "SetpointNode")),
+            "ExclusiveDeviationAlarmType", "ExclusiveLimitAlarmType", List.of("BaseSetpointNode", "SetpointNode")),
     EXCLUSIVE_LEVEL_ALARM("ExclusiveLevelAlarmType", "ExclusiveLimitAlarmType", List.of()),
     EXCLUSIVE_RATE_OF_CHANGE_ALARM(
             "ExclusiveRateOfChangeAlarmType", "ExclusiveLimitAlarmType", List.of("EngineeringUnits")),
@@ -145,7 +142,7 @@ public enum OpcuaConditionType {
     NON_EXCLUSIVE_DEVIATION_ALARM(
             "NonExclusiveDeviationAlarmType",
             "NonExclusiveLimitAlarmType",
-            List.of("BaseSetpoint", "BaseSetpointNode", "Setpoint", "SetpointNode")),
+            List.of("BaseSetpointNode", "SetpointNode")),
     NON_EXCLUSIVE_LEVEL_ALARM("NonExclusiveLevelAlarmType", "NonExclusiveLimitAlarmType", List.of()),
     NON_EXCLUSIVE_RATE_OF_CHANGE_ALARM(
             "NonExclusiveRateOfChangeAlarmType", "NonExclusiveLimitAlarmType", List.of("EngineeringUnits")),

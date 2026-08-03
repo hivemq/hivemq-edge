@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
@@ -64,6 +65,44 @@ class ConditionSchemasTest {
         assertThat(plain.get("properties").has("HighLimit"))
                 .as("a plain alarm's schema must not")
                 .isFalse();
+    }
+
+    @Test
+    void nodeReferencingFieldsAreTypedAsNodeIds() {
+        // These carry a NodeId, not the referenced variable's value. Left unclassified they would fall through
+        // to the string default, which describes something the server never sends -- and the schema is the
+        // only place a consumer can learn the difference before writing a rule against the field.
+        final ObjectNode deviation = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("ExclusiveDeviationAlarmType").orElseThrow()));
+
+        for (final String field : java.util.List.of("SetpointNode", "BaseSetpointNode", "InputNode")) {
+            assertThat(describesANodeId(deviation, field))
+                    .as("'%s' must be typed as a node id, not a string", field)
+                    .isTrue();
+        }
+
+        final ObjectNode discrepancy = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("DiscrepancyAlarmType").orElseThrow()));
+        assertThat(describesANodeId(discrepancy, "TargetValueNode"))
+                .as("'TargetValueNode' must be typed as a node id, not a string")
+                .isTrue();
+    }
+
+    /**
+     * Whether the schema types one field as a node id structure. Every event field is nullable, so each
+     * renders as {@code anyOf [shape, null]} and the shape sits one level below the property.
+     */
+    private boolean describesANodeId(final @NotNull ObjectNode schema, final @NotNull String field) {
+        final JsonNode property = schema.get("properties").get(field);
+        if (property == null) {
+            return false;
+        }
+        for (final JsonNode alternative : property.path("anyOf")) {
+            if (alternative.path("properties").has("idType")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Test

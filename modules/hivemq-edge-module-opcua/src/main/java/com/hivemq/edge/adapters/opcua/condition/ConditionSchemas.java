@@ -55,7 +55,14 @@ public final class ConditionSchemas {
             "Quality",
             "LimitState");
 
-    /** Fields whose value is a node id, published as a structure rather than a parseable string. */
+    /**
+     * Fields whose value is a node id, published as a structure rather than a parseable string.
+     * <p>
+     * The {@code ...Node} suffix in the specification's names is the type signature, not decoration: these
+     * properties hold a reference to the variable, never its value. {@code SetpointNode} says where the
+     * setpoint lives; a field named {@code Setpoint} would promise the number itself, which is not what the
+     * server sends.
+     */
     private static final @NotNull Set<String> NODE_ID_FIELDS = Set.of(
             "SourceNode",
             "EventType",
@@ -64,7 +71,10 @@ public final class ConditionSchemas {
             "BranchId",
             "InputNode",
             "NormalState",
-            "ExpectedState");
+            "ExpectedState",
+            "SetpointNode",
+            "BaseSetpointNode",
+            "TargetValueNode");
 
     private static final @NotNull Set<String> NUMERIC_FIELDS = Set.of(
             "Severity",
