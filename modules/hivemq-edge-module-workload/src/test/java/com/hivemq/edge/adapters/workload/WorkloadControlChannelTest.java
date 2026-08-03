@@ -138,6 +138,33 @@ class WorkloadControlChannelTest {
     }
 
     @Test
+    void aRetainedIdentity_replaysTheOriginalInstanceAfterTheIdIsPruned() throws Exception {
+        final Node original = new WorkloadNode("t");
+        knownNodes.put("t", original);
+
+        // snapshot the identity while it is still resolvable, then prune it — the recreate scenario
+        ctl("retain t");
+        await().atMost(Duration.ofSeconds(3))
+                .untilAsserted(() -> assertThat(journal()).contains("RETAIN node=t captured=true"));
+        knownNodes.remove("t");
+
+        ctl("emit datapointretained t 55");
+        await().atMost(Duration.ofSeconds(3))
+                .untilAsserted(() -> assertThat(out.of("dataPoint")).containsExactly("dataPoint node=t"));
+        // the STALE original instance, not a fresh synthetic — this is the whole point of the verb
+        assertThat(out.dataPointNodes.get(0)).isSameAs(original);
+        assertThat(journal()).contains("EMIT datapointretained node=t value=55 retained=true");
+    }
+
+    @Test
+    void aRetainedReplayWithoutAPriorRetain_missesLoudly_andEmitsNothing() throws Exception {
+        ctl("emit datapointretained ghost 1");
+        await().atMost(Duration.ofSeconds(3))
+                .untilAsserted(() -> assertThat(journal()).contains("EMIT datapointretained node=ghost MISS no-retained-identity"));
+        assertThat(out.of("dataPoint")).isEmpty(); // no silent fallback to a synthetic node
+    }
+
+    @Test
     void anUnknownNodeId_fallsBackToAFreshNode_andSaysSo() throws Exception {
         ctl("emit datapoint ghost 1");
         await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> assertThat(out.of("dataPoint"))

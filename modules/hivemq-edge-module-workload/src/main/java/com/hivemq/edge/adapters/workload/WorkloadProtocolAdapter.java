@@ -60,7 +60,7 @@ public final class WorkloadProtocolAdapter implements ProtocolAdapter, AutoClose
      * loaded (defeats the {@code build/hivemq-environment/base} stale-jar cache trap that caused the retracted #8/#9/#10).
      * Emitted at {@link #start()} as {@code WL_BUILD} and journalled as {@code BUILD <token>}.
      */
-    public static final @NotNull String BUILD = "wl-2026-07-24-v2b9";
+    public static final @NotNull String BUILD = "wl-2026-08-03-v2b10";
 
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterOutput output;
