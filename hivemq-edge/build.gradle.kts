@@ -327,7 +327,17 @@ tasks.test {
     }
 
     testLogging {
-        events = setOf(TestLogEvent.STARTED, TestLogEvent.FAILED)
+        // EDG-855: PASSED and SKIPPED matter as much as STARTED and FAILED. Without them a passing test
+        // logs when it began and never when it finished, so per-class durations cannot be derived from the
+        // console log — and this is the composite's largest unit-test project (~500 classes). Every other
+        // test project already logs the full set; this one was the gap.
+        events =
+            setOf(
+                TestLogEvent.STARTED,
+                TestLogEvent.PASSED,
+                TestLogEvent.SKIPPED,
+                TestLogEvent.FAILED
+            )
         exceptionFormat = TestExceptionFormat.FULL
     }
 }
