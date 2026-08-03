@@ -45,9 +45,18 @@ import org.jetbrains.annotations.Nullable;
  * <ol>
  *   <li>the {@code notifierNode} declared on the tag — the escape hatch for servers whose references cannot
  *       be walked;</li>
- *   <li>the first notifier reachable from the condition by {@code HasEventSource} / {@code HasNotifier};</li>
+ *   <li>the first notifier reachable from the condition by {@code HasCondition} to its ConditionSource, then
+ *       {@code HasEventSource} / {@code HasNotifier} upward;</li>
  *   <li>nothing — the tag cannot be subscribed.</li>
  * </ol>
+ * <p>
+ * <b>The walk starts at the ConditionSource, not at the condition.</b> It is the source that hangs in the
+ * notifier hierarchy — OPC 10000-9 §5.12: "Each ConditionSource shall be the target of a HasEventSource
+ * Reference or a sub type of HasEventSource" — while the condition hangs off the <em>source</em> by
+ * {@code HasCondition}. §6.3 spells the traversal out from the client's side: find ConditionSources by
+ * {@code HasEventSource}, then their conditions by {@code HasCondition}. Going up from a condition therefore
+ * means reversing both legs, and browsing {@code HasEventSource} from the condition itself returns nothing on
+ * a server laid out as the specification prescribes.
  * There is deliberately no implicit fallback to the Server object. It is a notifier by convention and would
  * almost always work, which is exactly the problem: it would silently widen a tag from "this condition's
  * area" to "everything this server emits", leaving the filter as the only thing between an operator and the
@@ -97,13 +106,78 @@ public final class NotifierResolver {
             }
         }
 
-        return walkUpwards(client, conditionNode, 0)
+        return walkFromConditionSources(client, conditionNode)
+                .thenCompose(found -> found != null
+                        ? CompletableFuture.completedFuture(found)
+                        // No ConditionSource, or none of them led anywhere. Servers do attach HasEventSource
+                        // to the condition directly, which the specification does not describe but which
+                        // costs one browse to accommodate -- and the alternative is refusing to subscribe.
+                        : walkUpwards(client, conditionNode, 0))
                 .thenApply(found -> found == null
                         ? new Result.NotFound("no notifier could be found by walking up from tag '" + tagName
                                 + "'. Set 'notifierNode' on the tag to name it explicitly")
                         : (Result) new Result.Found(found, "found by walking up from the condition"))
                 .exceptionally(throwable -> new Result.NotFound(
                         "could not look for a notifier for tag '" + tagName + "': " + throwable.getMessage()));
+    }
+
+    /**
+     * Steps from the condition to its ConditionSource(s) by inverse {@code HasCondition}, then walks up from
+     * each until one reaches a notifier.
+     * <p>
+     * Inverse because {@code HasCondition} points from the source <em>to</em> the condition (§5.12, Table 136:
+     * its inverse name is {@code IsConditionOf}). A condition may be referenced by more than one source, so
+     * each is tried in turn rather than only the first.
+     * <p>
+     * The node class mask admits Variables as well as Objects: §6.3's own example hangs conditions off a
+     * Variable, {@code LevelMeasurement}, and §5.12 allows "an Object, Variable or Method Node" as the source
+     * of the reference.
+     */
+    private static @NotNull CompletableFuture<NodeId> walkFromConditionSources(
+            final @NotNull OpcUaClient client, final @NotNull NodeId conditionNode) {
+
+        final BrowseDescription browse = new BrowseDescription(
+                conditionNode,
+                BrowseDirection.Inverse,
+                NodeIds.HasCondition,
+                false, // HasCondition is concrete and has no subtypes to include
+                uint(NodeClass.Object.getValue() | NodeClass.Variable.getValue() | NodeClass.Method.getValue()),
+                uint(BrowseResultMask.All.getValue()));
+
+        return client.browseAsync(browse).thenCompose(result -> {
+            final ReferenceDescription[] references = result.getReferences();
+            if (references == null || references.length == 0) {
+                return CompletableFuture.completedFuture(null);
+            }
+            return firstNotifierAboveAny(client, references, 0);
+        });
+    }
+
+    /** Walks up from each ConditionSource in turn, taking the first notifier any of them reaches. */
+    private static @NotNull CompletableFuture<NodeId> firstNotifierAboveAny(
+            final @NotNull OpcUaClient client,
+            final @NotNull ReferenceDescription @NotNull [] sources,
+            final int index) {
+
+        if (index >= sources.length) {
+            return CompletableFuture.completedFuture(null);
+        }
+        final NodeId source =
+                sources[index].getNodeId().toNodeId(client.getNamespaceTable()).orElse(null);
+        if (source == null) {
+            return firstNotifierAboveAny(client, sources, index + 1);
+        }
+
+        // The source may itself be the notifier: HasNotifier is a subtype of HasEventSource, so a node can be
+        // both a ConditionSource and an event notifier (§6.2). Testing it before walking past it keeps the
+        // result the nearest notifier rather than the next one up.
+        return isNotifier(client, source)
+                .thenCompose(notifier -> notifier
+                        ? CompletableFuture.completedFuture(source)
+                        : walkUpwards(client, source, 0)
+                                .thenCompose(found -> found != null
+                                        ? CompletableFuture.completedFuture(found)
+                                        : firstNotifierAboveAny(client, sources, index + 1)));
     }
 
     /**
@@ -120,12 +194,16 @@ public final class NotifierResolver {
             return CompletableFuture.completedFuture(null);
         }
 
+        // Node class mask 0 means "all classes". A View can be an event notifier just as an Object can (OPC
+        // 10000-3 §7.17: the source of a HasEventSource "shall be an Object or View"), so masking to Objects
+        // would drop a View-organised area before isNotifier() could test it. The EventNotifier read below is
+        // the authoritative test anyway, which makes filtering by class here redundant as well as wrong.
         final BrowseDescription browse = new BrowseDescription(
                 from,
                 BrowseDirection.Inverse,
                 NodeIds.HasEventSource,
                 true, // include HasNotifier, which is a subtype of HasEventSource
-                uint(NodeClass.Object.getValue()),
+                uint(0),
                 uint(BrowseResultMask.All.getValue()));
 
         return client.browseAsync(browse).thenCompose(result -> {

@@ -308,15 +308,46 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         getNodeManager().addNode(node);
         requireNonNull(testFolder).addOrganizes(node);
 
-        // The area notifier is what a client subscribes to; the condition is reachable from it by
-        // HasEventSource, which is the chain the adapter walks to find where to place its MonitoredItem.
+        // Wired the way OPC 10000-9 §6.2/§6.3 prescribes: the area notifier has a ConditionSource beneath it
+        // by HasEventSource, and the condition hangs off that source by HasCondition. The condition itself is
+        // NOT the target of HasEventSource -- an earlier version of this harness attached it there directly,
+        // which made the adapter's walk look correct while it was skipping the source entirely.
+        final NodeId source = conditionSourceFor(name, nodeIdPart);
+        final UaNode sourceNode = getNodeManager().get(source);
+        if (sourceNode != null) {
+            sourceNode.addReference(new Reference(source, NodeIds.HasCondition, nodeId.expanded(), true));
+        }
+        node.addReference(new Reference(nodeId, NodeIds.HasCondition, source.expanded(), false));
+
+        return nodeId.toParseableString();
+    }
+
+    /**
+     * Adds a condition wired the way the specification does <em>not</em> describe: {@code HasEventSource}
+     * straight from the area notifier to the condition, with no ConditionSource in between.
+     * <p>
+     * Servers do this, and it is what an earlier version of this harness modelled exclusively. Kept as a
+     * distinct case so the resolver's fallback has coverage: the conformant path is what
+     * {@link #addConditionNode} now builds, and a fix that only handled that one would silently strand every
+     * device laid out like this.
+     */
+    public @NotNull String addDirectlyAttachedConditionNode(final @NotNull String name, final long nodeIdPart) {
+        final NodeId nodeId = newNodeId(nodeIdPart);
+        final UaObjectNode node = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(nodeId)
+                .setBrowseName(newQualifiedName(name))
+                .setDisplayName(LocalizedText.english(name))
+                .setTypeDefinition(NodeIds.AlarmConditionType)
+                .build();
+        getNodeManager().addNode(node);
+        requireNonNull(testFolder).addOrganizes(node);
+
         final NodeId notifier = areaNotifier();
         node.addReference(new Reference(nodeId, NodeIds.HasEventSource, notifier.expanded(), false));
         final UaNode notifierNode = getNodeManager().get(notifier);
         if (notifierNode != null) {
             notifierNode.addReference(new Reference(notifier, NodeIds.HasEventSource, nodeId.expanded(), true));
         }
-
         return nodeId.toParseableString();
     }
 
@@ -337,6 +368,43 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         getNodeManager().addNode(node);
         requireNonNull(testFolder).addOrganizes(node);
         return nodeId.toParseableString();
+    }
+
+    /**
+     * The ConditionSource a condition hangs off — the node that sits in the notifier hierarchy.
+     * <p>
+     * Modelled as a Variable rather than an Object on purpose: §6.3's own worked example makes
+     * {@code LevelMeasurement}, a Variable, a ConditionSource, and a walk that masks its browse to Objects
+     * would step straight past it. Deliberately not an event notifier either, so the walk has to continue up
+     * to the area rather than stopping here.
+     *
+     * @param name       the condition's name, used to derive the source's.
+     * @param nodeIdPart the condition's identifier part; the source takes a distinct one derived from it.
+     */
+    private synchronized @NotNull NodeId conditionSourceFor(final @NotNull String name, final long nodeIdPart) {
+        final NodeId sourceId = newNodeId(nodeIdPart + 100_000L);
+        if (getNodeManager().get(sourceId) == null) {
+            final UaVariableNode source = new UaVariableNode.UaVariableNodeBuilder(getNodeContext())
+                    .setNodeId(sourceId)
+                    .setBrowseName(newQualifiedName(name + "Source"))
+                    .setDisplayName(LocalizedText.english(name + "Source"))
+                    .setDataType(NodeIds.Double)
+                    .setTypeDefinition(NodeIds.BaseDataVariableType)
+                    .build();
+            source.setValue(new DataValue(new Variant(0.0)));
+            getNodeManager().addNode(source);
+            requireNonNull(testFolder).addOrganizes(source);
+
+            // area --HasEventSource--> source, which is the leg §5.12 requires the ConditionSource to be the
+            // target of. The walk reverses it to get from the source up to the area.
+            final NodeId notifier = areaNotifier();
+            final UaNode notifierNode = getNodeManager().get(notifier);
+            if (notifierNode != null) {
+                notifierNode.addReference(new Reference(notifier, NodeIds.HasEventSource, sourceId.expanded(), true));
+            }
+            source.addReference(new Reference(sourceId, NodeIds.HasEventSource, notifier.expanded(), false));
+        }
+        return sourceId;
     }
 
     /**

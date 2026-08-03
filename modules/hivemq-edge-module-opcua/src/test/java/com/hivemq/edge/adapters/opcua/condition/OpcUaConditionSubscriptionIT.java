@@ -303,6 +303,32 @@ public class OpcUaConditionSubscriptionIT {
 
     @Test
     @Timeout(120)
+    void whenTheConditionHangsOffTheNotifierDirectly_thenTheWalkStillFindsIt() throws Exception {
+        // The layout OPC 10000-9 §6.2/§6.3 does not describe: HasEventSource from the area straight to the
+        // condition, no ConditionSource in between. Servers do it, so the resolver falls back to browsing
+        // HasEventSource from the condition when it has no ConditionSource -- without which the conformant
+        // fix would strand exactly the devices that used to work.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addDirectlyAttachedConditionNode("LegacyAlarm", CONDITION_NODE_ID + 50);
+
+        startAdapterWith(new OpcuaTag(
+                "legacy-layout-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(conditionNodeId), "legacy", 700, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        assertThat(tagStreamingService.published().get(0).get("Message").toString())
+                .contains("legacy");
+    }
+
+    @Test
+    @Timeout(120)
     void whenNoNotifierCanBeFound_thenTheTagIsInactiveAndTheAdapterStillRuns() throws Exception {
         // A condition with no path to any notifier: nothing can be subscribed for it. The tag must go quiet
         // on its own rather than taking the adapter -- or its neighbours -- down with it.
