@@ -530,17 +530,11 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
     }
 
     /**
-     * Exposes one condition method on the node.
-     * <p>
-     * The method is reachable under two node ids. A client calls the standard type-level id
-     * ({@code AcknowledgeableConditionType_Acknowledge}), which is what makes those methods callable without
-     * browsing; the instance also needs its own method node so the address space is well formed.
-     */
-    /**
      * Exposes one method on a node, with a handler that records the call.
      * <p>
-     * Only the instance's own method node is created: a call names the object and a method that is a component
-     * of it, so the type-level node id from the spec is not itself callable.
+     * Only the instance's own method node is created, which is the form every server offers and the one the
+     * adapter prefers. A server that exposes no condition instance at all is modelled separately by
+     * {@link #addConditionNodeWithoutMethods}.
      */
     private void addConditionMethod(
             final @NotNull NodeId parentNodeId, final @NotNull String methodName, final long instanceNodeIdPart) {

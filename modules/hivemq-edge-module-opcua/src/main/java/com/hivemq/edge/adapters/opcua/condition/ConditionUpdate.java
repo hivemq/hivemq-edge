@@ -124,8 +124,9 @@ public record ConditionUpdate(
 
         /**
          * The browse name of the OPC UA method, fixed by the specification. The method is looked up by this
-         * name on the instance: a method must be a component of the object it is called on, so the type-level
-         * node id is not itself callable.
+         * name on the condition instance, which is the form every server accepts — though not the only legal
+         * one: OPC 10000-4 §5.12.2.2 also permits the type's method id, which is what Enable and Disable fall
+         * back to on servers that keep their conditions out of the AddressSpace.
          */
         public @NotNull String browseName() {
             return browseName;
