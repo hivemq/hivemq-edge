@@ -92,6 +92,14 @@ public final class WorkloadControlChannel {
 
     private final @NotNull Map<String, Boolean> held = new ConcurrentHashMap<>(); // key: "op" (all nodes) or "op:node"
     private final @NotNull Map<String, Deque<Runnable>> pending = new ConcurrentHashMap<>(); // key: "op:node"
+
+    /**
+     * Identities captured by the {@code retain <node>} command while they were still resolvable. Lets a test emit a
+     * callback with the ORIGINAL node instance after the tag has been removed/recreated — the stale-identity replay
+     * that a plain {@code emit datapoint} cannot produce, because the live resolver builds a fresh synthetic node
+     * once the id has been pruned.
+     */
+    private final @NotNull Map<String, Node> retained = new ConcurrentHashMap<>();
     private final @NotNull Map<String, Long> blockMs =
             new ConcurrentHashMap<>(); // op -> ms to block the NEXT such command
     private long ctlOffset; // bytes of the .ctl file already consumed (watcher thread only)
@@ -484,6 +492,13 @@ public final class WorkloadControlChannel {
                     }
                 }
                 case "block" -> blockMs.put(a[1], Long.parseLong(a[2])); // block <op> <ms>
+                case "retain" -> { // retain <node> — snapshot the live identity for a later stale replay
+                    final Node live = nodeResolver.apply(a[1]);
+                    if (live != null) {
+                        retained.put(a[1], live);
+                    }
+                    journal("RETAIN node=" + a[1] + " captured=" + (live != null));
+                }
                 case "emit" -> emitInjected(a);
                 default -> log.warn("WL_CTL unknown command id={}: {}", adapterId, line);
             }
@@ -521,6 +536,18 @@ public final class WorkloadControlChannel {
                 final Resolved r = resolveNode(node);
                 journal("EMIT datapoint node=" + node + " value=" + a[3] + " resolved=" + r.resolved());
                 output.dataPoint(r.node(), new WorkloadDataPoint(node, parseValue(a[3])));
+            }
+            case "datapointretained" -> { // emit datapointretained <node> <value> — replay with the RETAINED identity
+                final String node = a[2];
+                final Node stale = retained.get(node);
+                if (stale == null) {
+                    // fail loudly in the journal: without a prior successful retain there is no stale identity to
+                    // replay, and silently falling back to the live resolver would recreate the synthetic-node trap
+                    journal("EMIT datapointretained node=" + node + " MISS no-retained-identity");
+                    return;
+                }
+                journal("EMIT datapointretained node=" + node + " value=" + a[3] + " retained=true");
+                output.dataPoint(stale, new WorkloadDataPoint(node, parseValue(a[3])));
             }
             case "connected" -> {
                 journal("EMIT connected");
