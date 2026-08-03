@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router'
 import { AbsoluteCenter, Box, Flex } from '@chakra-ui/react'
 import { SkipNavContent, SkipNavLink } from '@chakra-ui/skip-nav'
 

@@ -2,7 +2,7 @@ import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 import { mockBridge, mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import BridgeEditorDrawer from '@/modules/Bridges/components/BridgeEditorDrawer.tsx'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router'
 
 const getWrapperWith = (path: string) => {
   const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {

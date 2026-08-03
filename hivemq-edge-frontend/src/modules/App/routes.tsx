@@ -1,5 +1,5 @@
 import { lazy } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router'
 
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 import Dashboard from '@/modules/Dashboard/Dashboard.tsx'

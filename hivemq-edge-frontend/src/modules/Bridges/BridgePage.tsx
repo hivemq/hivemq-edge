@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'

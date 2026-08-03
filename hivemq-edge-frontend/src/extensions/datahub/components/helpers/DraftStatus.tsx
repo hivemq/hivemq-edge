@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Breadcrumb, BreadcrumbItem, ButtonGroup, HStack, Icon, Text, useDisclosure } from '@chakra-ui/react'
 import { LuBookCopy, LuTrash2 } from 'react-icons/lu'
 import { PiPencilSimpleLineFill } from 'react-icons/pi'

@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router'
 import { Badge, Button, List, ListItem, Text } from '@chakra-ui/react'
 import { CheckIcon } from '@chakra-ui/icons'
 

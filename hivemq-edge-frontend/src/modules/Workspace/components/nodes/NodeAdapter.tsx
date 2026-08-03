@@ -3,7 +3,7 @@ import { useMemo, useEffect } from 'react'
 import type { NodeProps } from '@xyflow/react'
 import { Handle, Position, useStore, useReactFlow, useNodeConnections } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Box, HStack, Icon, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'

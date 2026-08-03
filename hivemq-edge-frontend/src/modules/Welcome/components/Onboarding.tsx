@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { BoxProps } from '@chakra-ui/react'
 import {

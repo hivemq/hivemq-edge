@@ -1,7 +1,7 @@
 import type { MouseEventHandler, FC } from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { v4 as uuidv4 } from 'uuid'
 import type { Node, NodeProps, NodeToolbarProps } from '@xyflow/react'
 import { Position, getOutgoers, useStore, useReactFlow } from '@xyflow/react'

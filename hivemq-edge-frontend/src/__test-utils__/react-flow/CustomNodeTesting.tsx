@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import type { Edge, EdgeTypes, Node, NodeTypes } from '@xyflow/react'
 import { ReactFlow } from '@xyflow/react'
 import { Code, VStack } from '@chakra-ui/react'

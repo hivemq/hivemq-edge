@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Button, useDisclosure } from '@chakra-ui/react'
 import { LuFilePlus } from 'react-icons/lu'
 

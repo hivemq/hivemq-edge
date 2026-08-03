@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router'
 import { Box, Skeleton, Text, useDisclosure, useToast } from '@chakra-ui/react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { chakraComponents } from 'chakra-react-select'

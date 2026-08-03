@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import debug from 'debug'
 import { Editor, useMonaco } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
+// Side effect: binds the loader to the installed Monaco instead of the jsdelivr CDN
+import './monaco/setupMonacoLoader.ts'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'

@@ -1,7 +1,7 @@
 import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
 import { useMemo, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import type { NodeProps } from '@xyflow/react'
 import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'

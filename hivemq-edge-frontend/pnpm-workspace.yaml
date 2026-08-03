@@ -26,6 +26,8 @@ overrides:
   dompurify@>=3 <4: ^3.4.1
   markdown-it: ^14.1.1
   postcss@^8: ^8.5.18
+  nanoid@^3: ^5.1.16
+  '@babel/core@^7': ^7.29.7
   yaml@^1: ^2.0.0
   yaml@^2: ^2.8.3
   js-yaml@^3: ^5.2.2

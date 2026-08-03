@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { Button, Card, CardBody, CardFooter, CardHeader, Heading, Text } from '@chakra-ui/react'
 import { GoLinkExternal } from 'react-icons/go'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router'
 import config from '@/config'
 
 const InfoPanel: FC = () => {

@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { RouterProvider } from 'react-router-dom'
+import { RouterProvider } from 'react-router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ChakraProvider } from '@chakra-ui/react'

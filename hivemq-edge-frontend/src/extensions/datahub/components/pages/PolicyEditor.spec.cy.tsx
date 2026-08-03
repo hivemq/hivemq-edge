@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { ReactFlowProvider } from '@xyflow/react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router'
 import { Box } from '@chakra-ui/react'
 
 import PolicyEditor from './PolicyEditor.tsx'

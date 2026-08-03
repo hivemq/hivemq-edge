@@ -13,8 +13,8 @@ const mocks = vi.hoisted(() => {
 
 // Hoisted by Vitest regardless of where it is written; keep it at the top level so the file reads
 // the way it actually executes (nesting it is a warning in Vitest 4 and an error later).
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<object>('react-router-dom')
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<object>('react-router')
   return {
     ...actual,
     useNavigate() {

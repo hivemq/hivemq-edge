@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Box, Button, Card, Flex, Image, Text, useColorMode, VStack } from '@chakra-ui/react'
 import { FiLogOut } from 'react-icons/fi'
 

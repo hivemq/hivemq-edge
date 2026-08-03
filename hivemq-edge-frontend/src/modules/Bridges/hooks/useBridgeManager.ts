@@ -1,7 +1,7 @@
 import type { UseToastOptions } from '@chakra-ui/react'
 import { useToast } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { isRouteErrorResponse } from 'react-router-dom'
+import { isRouteErrorResponse } from 'react-router'
 
 import type { Bridge } from '@/api/__generated__'
 import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.ts'

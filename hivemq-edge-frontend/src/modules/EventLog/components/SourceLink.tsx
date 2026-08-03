@@ -1,5 +1,5 @@
 import type { FC, ReactElement } from 'react'
-import { Link as ReactRouterLink } from 'react-router-dom'
+import { Link as ReactRouterLink } from 'react-router'
 import { Box, Icon, Link as ChakraLink } from '@chakra-ui/react'
 import { PiBridgeThin, PiPlugsConnectedFill, PiUserFill } from 'react-icons/pi'
 import { MdOutlineEventNote } from 'react-icons/md'

@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import type { FC, PropsWithChildren } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router'
 
 import { WrapperTestRoute } from '@/__test-utils__/hooks/WrapperTestRoute.tsx'
 import { MOCK_PULSE_ASSET_LIST } from '@/api/hooks/usePulse/__handlers__'

@@ -1,5 +1,5 @@
 import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate } from 'react-router'
 import type { Node } from '@xyflow/react'
 import { Button } from '@chakra-ui/react'
 

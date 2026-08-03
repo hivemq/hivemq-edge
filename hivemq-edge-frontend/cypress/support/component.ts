@@ -5,7 +5,7 @@ import 'cypress-real-events'
 import '@cypress/code-coverage/support'
 import { type MountOptions, type MountReturn, mount } from 'cypress/react'
 import type { ReactNode } from 'react'
-import type { MemoryRouterProps } from 'react-router-dom'
+import type { MemoryRouterProps } from 'react-router'
 import { register as registerCypressGrep } from '@cypress/grep'
 
 import { mountWithProviders } from './commands/mountWithProviders.tsx'

@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react'
 import { useEffect } from 'react'
-import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router-dom'
+import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router'
 
 /* istanbul ignore next -- @preserve */
 if (import.meta.env.MODE !== 'development')
