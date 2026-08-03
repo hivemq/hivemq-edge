@@ -170,12 +170,20 @@ public final class ConditionEventFilters {
     }
 
     /**
-     * Combines the predicates into one {@code ContentFilter}.
+     * Combines the predicates into one {@code ContentFilter}, rooted at element 0.
      * <p>
      * A {@code ContentFilter} is a <em>flat array</em>, not a tree: a boolean operator does not nest its
-     * operands, it refers to other elements by their index in the same array. So combining predicates means
-     * appending {@code And} elements that point back at the ones already placed, and the array must be built
-     * in dependency order.
+     * operands, it refers to other elements by their index in the same array. Which element is the root is
+     * therefore a matter of position, and the specification fixes it at the front:
+     * <blockquote>
+     * "The filter is evaluated by evaluating the first entry in the element array [...] If an element cannot
+     * be traced back to the starting element it is ignored." — OPC 10000-4 §7.7.1
+     * </blockquote>
+     * So the {@code And} chain occupies indices {@code 0..n-2} and the leaf predicates follow at
+     * {@code n-1..2n-2}. Building it the other way round — leaves first, root appended last — yields an array
+     * a server accepts without complaint and then evaluates as its <em>first</em> predicate alone, silently
+     * ignoring the rest as unreachable. That failure is invisible: no error, and a tag that over-publishes
+     * rather than one that goes quiet.
      */
     private static @NotNull ContentFilter combine(final @NotNull List<ContentFilterElement> predicates) {
         if (predicates.isEmpty()) {
@@ -184,18 +192,24 @@ public final class ConditionEventFilters {
             return new ContentFilter(null);
         }
         if (predicates.size() == 1) {
+            // One predicate is already its own root at index 0, so there is nothing to combine.
             return new ContentFilter(predicates.toArray(new ContentFilterElement[0]));
         }
-        final List<ContentFilterElement> elements = new ArrayList<>(predicates);
-        // Fold left: And(0,1) lands at index n, then And(n, 2) at n+1, and so on. Each And refers to the
-        // previous result by index, so two predicates produce one And and three produce two.
-        int left = 0;
-        for (int i = 1; i < predicates.size(); i++) {
-            elements.add(new ContentFilterElement(
-                    FilterOperator.And, new ExtensionObject[] {elementOperand(left), elementOperand(i)}));
-            left = elements.size() - 1;
+        final int count = predicates.size();
+        final int firstLeaf = count - 1;
+        final ContentFilterElement[] elements = new ContentFilterElement[2 * count - 1];
+
+        // Right-associated fold: And(k) takes leaf k and whatever remains, so And(0) is the root at index 0
+        // and each And points forward at the next. The last one takes the final two leaves directly.
+        for (int k = 0; k < count - 1; k++) {
+            final int right = (k < count - 2) ? k + 1 : firstLeaf + count - 1;
+            elements[k] = new ContentFilterElement(
+                    FilterOperator.And, new ExtensionObject[] {elementOperand(firstLeaf + k), elementOperand(right)});
         }
-        return new ContentFilter(elements.toArray(new ContentFilterElement[0]));
+        for (int i = 0; i < count; i++) {
+            elements[firstLeaf + i] = predicates.get(i);
+        }
+        return new ContentFilter(elements);
     }
 
     private static @NotNull ContentFilterElement equals(
