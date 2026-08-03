@@ -136,6 +136,11 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
             if (entity.getLdap() != null) {
                 apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
             } else {
+                // An empty list means no usable local user source: <users> was either absent or present but
+                // empty (JAXB collapses both to an empty list). Either way there is nothing to authenticate
+                // against, so the branches below fall through to the first-boot default or the no-source error
+                // exactly as an absent <users> would. An empty <users> is a legitimate state -- it is not
+                // enforced away in the schema, because whether it is acceptable depends on <enabled> and <ldap>.
                 final List<UserEntity> users = entity.getUsers();
                 if (!users.isEmpty()) {
                     log.warn(
@@ -143,8 +148,20 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                                     + "Please use the <username-roles-source> element instead.");
                     apiCfgService.setUserList(
                             users.stream().map(ApiConfigurator::fromModel).toList());
-                } else {
+                } else if (entity.getUsernameAuthentication() == null) {
+                    // Nothing was stated: no <username-authentication>, no <ldap>, no <users> (and — by the
+                    // presence rule above — no <oidc-authentication>). This is the first-boot convenience:
+                    // the built-in admin account is the only way in. It survives ONLY in this fully-implicit
+                    // branch.
                     apiCfgService.setUserList(DEFAULT_USERS);
+                } else {
+                    // Local login was turned on explicitly but no source was configured. Rather than silently
+                    // fall back to the built-in admin account (which would expose default credentials — see
+                    // EDG-849), reject the configuration so the operator states a real source.
+                    log.error("<username-authentication> is enabled but no user source is configured. "
+                            + "Add a <users> element with at least one <user>, or an enabled <ldap>, "
+                            + "or set <username-authentication><enabled>false</enabled> to close local login.");
+                    throw new UnrecoverableException(false);
                 }
             }
         } else {

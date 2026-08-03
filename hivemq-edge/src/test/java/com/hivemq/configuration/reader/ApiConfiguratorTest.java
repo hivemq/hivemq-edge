@@ -48,6 +48,16 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
         return "<username-authentication><enabled>" + enabled + "</enabled></username-authentication>";
     }
 
+    private static @NotNull String users(final @NotNull String @NotNull ... usernames) {
+        final StringBuilder sb = new StringBuilder("<users>");
+        for (final String username : usernames) {
+            sb.append("<user><username>")
+                    .append(username)
+                    .append("</username><password>pw</password><roles><role>admin</role></roles></user>");
+        }
+        return sb.append("</users>").toString();
+    }
+
     private static @NotNull String oidc(final boolean enabled) {
         return "<oidc-authentication><enabled>" + enabled + "</enabled>" + OIDC_FIELDS + "</oidc-authentication>";
     }
@@ -65,10 +75,72 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
 
     @Test
     public void usernameAuthEnabledExplicitly_activatesLocal() throws Exception {
-        writeConfig(usernameAuth(true));
+        writeConfig(usernameAuth(true) + users("alice"));
         reader.applyConfig();
 
         assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
+    }
+
+    @Test
+    public void noAuthConfig_yieldsTheBuiltInAdminAccount() throws Exception {
+        // The fully-implicit case (no <username-authentication>, no <users>, no <ldap>, no <oidc>) is the
+        // first-boot convenience: the built-in admin account is the only login. This is the ONLY branch in
+        // which it survives (see EDG-849).
+        writeConfig("");
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getUserList())
+                .singleElement()
+                .satisfies(user -> assertThat(user.getUserName()).isEqualTo("admin"));
+    }
+
+    @Test
+    public void usernameAuthEnabledExplicitlyWithNoSource_isRejected() throws Exception {
+        // Local login turned on explicitly but no <users> and no <ldap>: rather than silently injecting the
+        // built-in admin account (which would expose default credentials, EDG-849), reject the config.
+        writeConfig(usernameAuth(true));
+
+        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+    }
+
+    @Test
+    public void emptyUsersElement_withLocalAuthOff_isAcceptedAndUnused() throws Exception {
+        // An empty <users> is a legitimate configuration -- it is not schema-rejected. Whether a user source
+        // is required depends on context (<enabled> and <ldap>), which the schema cannot express, so the rule
+        // lives in code, not in <user> occurrence. With local auth DISABLED the <users> element is never read
+        // (the local branch is skipped), so the config is accepted with no auth modes and no users. (The
+        // config-file round-trip also emits an empty <users> whenever the user list is empty, so rejecting it
+        // in the schema would break config sync.)
+        writeConfig(usernameAuth(false) + "<users></users>");
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getAuthModes()).isEmpty();
+        assertThat(apiConfigurationService.getUserList()).isEmpty();
+    }
+
+    @Test
+    public void emptyUsersElement_withNothingElse_yieldsTheBuiltInAdminAccount() throws Exception {
+        // Pins the accepted first-boot behaviour for the present-but-empty form: <users></users> with no
+        // <username-authentication>, no <ldap>, no <oidc> reaches the fully-implicit branch and installs the
+        // built-in admin -- identical to an absent <users> (JAXB collapses absent and present-empty to an
+        // empty list). This is a deliberate decision (EDG-849): the schema does not, and cannot, forbid an
+        // empty <users> here, so this behaviour is documented rather than left to be rediscovered.
+        writeConfig("<users></users>");
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getUserList())
+                .singleElement()
+                .satisfies(user -> assertThat(user.getUserName()).isEqualTo("admin"));
+    }
+
+    @Test
+    public void nonEmptyUsersElement_isAccepted() throws Exception {
+        // A <users> with at least one <user> validates and is read as the user source.
+        writeConfig(usernameAuth(true) + users("alice"));
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
+        assertThat(apiConfigurationService.getUserList()).isNotEmpty();
     }
 
     @Test
@@ -85,7 +157,7 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
 
     @Test
     public void oidcEnabledWithUsernameAuthPresent_activatesBoth() throws Exception {
-        writeConfig(usernameAuth(true) + oidc(true));
+        writeConfig(usernameAuth(true) + users("alice") + oidc(true));
         reader.applyConfig();
 
         assertThat(apiConfigurationService.getAuthModes())
@@ -106,11 +178,56 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void oidcStanzaDisabled_leavesOidcInactive() throws Exception {
         // A present-but-disabled stanza can be pre-staged; it does not activate OIDC.
-        writeConfig(usernameAuth(true) + oidc(false));
+        writeConfig(usernameAuth(true) + users("alice") + oidc(false));
         reader.applyConfig();
 
         assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
         assertThat(apiConfigurationService.getOidcConfiguration()).isNull();
+    }
+
+    @Test
+    public void disabledOidcStanzaWithoutRoleMappings_isAccepted() throws Exception {
+        // <role-mappings> is only required for an *enabled* OIDC (enforced in code, gated on <enabled>). A
+        // disabled stanza is never read into an OidcConfiguration, so it must validate without it -- otherwise
+        // pre-staging or temporarily disabling OIDC would be impossible. The XSD makes <role-mappings> optional
+        // (minOccurs=0); the code re-check applies it only when enabled.
+        writeConfig(usernameAuth(true)
+                + users("alice")
+                + "<oidc-authentication><enabled>false</enabled></oidc-authentication>");
+        reader.applyConfig();
+
+        assertThat(apiConfigurationService.getAuthModes()).containsExactly(AuthMode.USERNAME_PASSWORD);
+        assertThat(apiConfigurationService.getOidcConfiguration()).isNull();
+    }
+
+    @Test
+    public void enabledOidcWithoutRoleMappings_isRejected() throws Exception {
+        // An *enabled* OIDC must still declare role mappings; the requirement now lives in the code path
+        // (OidcConfiguration.fromEntity), not the schema.
+        writeConfig(usernameAuth(false)
+                + "<oidc-authentication><enabled>true</enabled>"
+                + "<issuer-uri>https://idp.example.com</issuer-uri>"
+                + "<client-id>edge</client-id>"
+                + "<redirect-uri>https://edge.example.com/api/v1/auth/oidc/callback</redirect-uri>"
+                + "</oidc-authentication>");
+
+        assertThrows(Exception.class, () -> reader.applyConfig());
+    }
+
+    @Test
+    public void enabledOidcWithEmptyRoleMappings_isRejectedByTheCode() throws Exception {
+        // An enabled OIDC must declare at least one role mapping. This is enforced in
+        // OidcConfiguration.fromEntity, not the schema: the schema allows a present-but-empty <role-mappings>
+        // (so a disabled, mapping-less stanza can be written back), and the code rejects it when OIDC is on.
+        writeConfig(usernameAuth(false)
+                + "<oidc-authentication><enabled>true</enabled>"
+                + "<issuer-uri>https://idp.example.com</issuer-uri>"
+                + "<client-id>edge</client-id>"
+                + "<redirect-uri>https://edge.example.com/api/v1/auth/oidc/callback</redirect-uri>"
+                + "<role-mappings></role-mappings>"
+                + "</oidc-authentication>");
+
+        assertThrows(Exception.class, () -> reader.applyConfig());
     }
 
     // -- Presence rule: an OIDC stanza requires an explicit <username-authentication>.
@@ -141,7 +258,8 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
 
     @Test
     public void oidcWithoutEnabled_isRejectedByTheSchema() throws Exception {
-        writeConfig(usernameAuth(true) + "<oidc-authentication>" + OIDC_FIELDS + "</oidc-authentication>");
+        writeConfig(
+                usernameAuth(true) + users("alice") + "<oidc-authentication>" + OIDC_FIELDS + "</oidc-authentication>");
 
         assertThrows(Exception.class, () -> reader.applyConfig());
     }

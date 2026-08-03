@@ -45,7 +45,7 @@ class OidcConfigurationTest {
                 "the-secret",
                 "https://edge.example.com/api/v1/auth/oidc/callback",
                 "roles",
-                "email profile",
+                List.of("email", "profile"),
                 new OidcRoleMappingEntity("hivemq-admin", "admin"));
 
         final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
@@ -55,6 +55,7 @@ class OidcConfigurationTest {
         assertThat(config.getClientSecret()).isEqualTo("the-secret");
         assertThat(config.getRedirectUri()).isEqualTo(URI.create("https://edge.example.com/api/v1/auth/oidc/callback"));
         assertThat(config.getRoleClaimName()).isEqualTo("roles");
+        assertThat(config.getExtraScopes()).containsExactly("email", "profile");
         // No <id-token-signing-algorithms> configured → the full asymmetric allow-list.
         assertThat(config.getIdTokenSigningAlgorithms()).isEqualTo(OidcSigningAlgorithms.DEFAULT);
     }
@@ -80,23 +81,24 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_parsesWhitespaceSeparatedScopes() {
+    void fromEntity_extraScopes_arePassedThrough() {
+        // Each scope is its own <extra-scope> element; the list is taken verbatim, with no delimiter parsing.
         final OidcConfiguration config = OidcConfiguration.fromEntity(
-                entity("https://idp", "client", null, "https://edge/cb", "roles", "  email   profile  "));
+                entity("https://idp", "client", null, "https://edge/cb", "roles", List.of("email", "profile")));
 
         assertThat(config.getExtraScopes()).containsExactly("email", "profile");
     }
 
     @Test
-    void fromEntity_blankScopes_yieldsEmptyList() {
+    void fromEntity_absentExtraScopes_yieldsEmptyList() {
         final OidcConfiguration config =
-                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", "   "));
+                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));
 
         assertThat(config.getExtraScopes()).isEmpty();
     }
 
     @Test
-    void fromEntity_roleMappingKeysAreStoredVerbatim() {
+    void fromEntity_roleMappingKeysAreStoredLiterally() {
         // Keys are matched literally (no case-folding), so they are stored exactly as configured.
         final OidcAuthenticationEntity entity = entity(
                 "https://idp",
@@ -116,12 +118,15 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_noRoleMappings_isVerbatimMode() {
-        // No <role-mappings> element → null mappings, signalling verbatim mode.
-        final OidcConfiguration config =
-                OidcConfiguration.fromEntity(entity("https://idp", "client", null, "https://edge/cb", "roles", null));
+    void fromEntity_noRoleMappings_isRejected() {
+        // Role mappings are required: an absent (or empty) <role-mappings> is rejected rather than granting
+        // Edge roles by IdP group name (there is no verbatim mode).
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "roleMappings", List.of());
 
-        assertThat(config.getRoleMappings()).isNull();
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("role-mappings");
     }
 
     @Test
@@ -266,12 +271,46 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_plainHttpRedirectIsAccepted() {
-        // The redirect is browser-facing; http stays legitimate (local QA, TLS terminated at a proxy).
+    void fromEntity_httpLoopbackRedirect_isAccepted() {
+        // The redirect carries the auth code and the Edge token back to the browser, so it must be https --
+        // except for a literal loopback host, which never leaves the machine (local dev/test).
         final OidcConfiguration config = OidcConfiguration.fromEntity(
                 entity("https://idp.example.com", "client", null, "http://localhost:8080/cb", "roles", null));
 
         assertThat(config.getRedirectUri()).isEqualTo(URI.create("http://localhost:8080/cb"));
+    }
+
+    @Test
+    void fromEntity_httpLoopbackIpRedirect_isAccepted() {
+        // 127.0.0.0/8 is loopback and is matched literally (no DNS), so 127.0.0.2 is accepted too.
+        final OidcConfiguration config = OidcConfiguration.fromEntity(
+                entity("https://idp.example.com", "client", null, "http://127.0.0.2:8080/cb", "roles", null));
+
+        assertThat(config.getRedirectUri()).isEqualTo(URI.create("http://127.0.0.2:8080/cb"));
+    }
+
+    @Test
+    void fromEntity_httpNonLoopbackRedirect_isRejected() {
+        // A plain-http redirect on a public host exposes the auth code and the Edge token on the wire.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity(
+                        "https://idp.example.com",
+                        "client",
+                        null,
+                        "http://edge.public.example.com/api/v1/auth/oidc/callback",
+                        "roles",
+                        null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
+    }
+
+    @Test
+    void fromEntity_httpRedirectOnPublicNameResolvingToLoopback_isRejected() {
+        // A public hostname such as 127.0.0.1.nip.io resolves to a loopback address, but the loopback check
+        // is literal (no DNS), so it is treated as a public host and rejected -- closing the DNS-based bypass.
+        assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity(
+                        "https://idp.example.com", "client", null, "http://127.0.0.1.nip.io:8080/cb", "roles", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("https");
     }
 
     @Test
@@ -413,14 +452,25 @@ class OidcConfigurationTest {
     }
 
     @Test
-    void fromEntity_nonPositiveConnectionTimeout_throws() {
-        // The XSD guards this (positiveInteger); the check defends a config path that bypasses the schema.
+    void fromEntity_belowMinimumConnectionTimeout_throws() {
+        // A sub-100ms timeout (e.g. "1" meaning one second) would make every IdP call time out; it is
+        // rejected. The XSD guards this too; the check defends a config path that bypasses the schema.
         final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
-        set(entity, "connectionTimeoutMillis", 0);
+        set(entity, "connectionTimeoutMillis", 50);
 
         assertThatThrownBy(() -> OidcConfiguration.fromEntity(entity))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("connection-timeout");
+                .hasMessageContaining("connection-timeout-millis");
+    }
+
+    @Test
+    void fromEntity_minimumConnectionTimeout_isAccepted() {
+        final OidcAuthenticationEntity entity = entity("https://idp", "client", null, "https://edge/cb", "roles", null);
+        set(entity, "connectionTimeoutMillis", OidcConfiguration.MIN_CONNECTION_TIMEOUT_MILLIS);
+
+        final OidcConfiguration config = OidcConfiguration.fromEntity(entity);
+
+        assertThat(config.getConnectionTimeoutMillis()).isEqualTo(OidcConfiguration.MIN_CONNECTION_TIMEOUT_MILLIS);
     }
 
     private static @org.jetbrains.annotations.NotNull OidcTruststoreEntity truststore(
@@ -467,7 +517,40 @@ class OidcConfigurationTest {
                                 "https://idp.example.com/token",
                                 "https://idp.example.com/certs")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("does not match the configured issuer");
+                .hasMessageContaining("does not match the configured issuer-uri")
+                // A genuine host/realm mismatch gets the plain message, not the cosmetic-difference guidance.
+                .hasMessageNotContaining("trailing slash");
+    }
+
+    @Test
+    void validateDiscoveryMetadata_trailingSlashIssuer_throwsWithAGuidingMessage() throws Exception {
+        // The configured issuer differs from the discovery issuer only by a trailing slash (a browser
+        // address bar adds one). It is still refused -- the issuer match is exact -- but the message names
+        // the cosmetic difference and quotes the value to copy, rather than the opaque "does not match".
+        assertThatThrownBy(() -> OidcConfiguration.validateDiscoveryMetadata(
+                        URI.create("https://idp.example.com/realms/edge/"),
+                        metadata(
+                                "https://idp.example.com/realms/edge",
+                                "https://idp.example.com/auth",
+                                "https://idp.example.com/token",
+                                "https://idp.example.com/certs")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("trailing slash")
+                .hasMessageContaining("set issuer-uri to 'https://idp.example.com/realms/edge'");
+    }
+
+    @Test
+    void validateDiscoveryMetadata_caseDifferentIssuer_throwsWithAGuidingMessage() throws Exception {
+        // A case-only difference is likewise cosmetic: refused, but with the guiding message.
+        assertThatThrownBy(() -> OidcConfiguration.validateDiscoveryMetadata(
+                        URI.create("https://IDP.example.com/realms/edge"),
+                        metadata(
+                                "https://idp.example.com/realms/edge",
+                                "https://idp.example.com/auth",
+                                "https://idp.example.com/token",
+                                "https://idp.example.com/certs")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("letter case");
     }
 
     @Test
@@ -500,6 +583,25 @@ class OidcConfigurationTest {
         return OIDCProviderMetadata.parse(json);
     }
 
+    @Test
+    void isLiteralLoopbackHost_matchesLiteralLoopbackFormsOnly() {
+        // Literal loopback: accepted.
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("localhost")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("LOCALHOST")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.1")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.2")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.255.255.255")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("::1")).isTrue();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("[::1]")).isTrue();
+
+        // Not literal loopback: rejected. The nip.io name resolves to 127.0.0.1 but is never resolved here.
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.1.nip.io")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("edge.example.com")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("128.0.0.1")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost("127.0.0.256")).isFalse();
+        assertThat(OidcConfiguration.isLiteralLoopbackHost(null)).isFalse();
+    }
+
     // -- helpers: OidcAuthenticationEntity fields are populated by JAXB, so set them reflectively for tests.
 
     private static @org.jetbrains.annotations.NotNull OidcAuthenticationEntity entity(
@@ -508,7 +610,7 @@ class OidcConfigurationTest {
             final String clientSecret,
             final String redirect,
             final String roleClaim,
-            final String extraScopes,
+            final List<String> extraScopes,
             final OidcRoleMappingEntity... mappings) {
         final OidcAuthenticationEntity entity = new OidcAuthenticationEntity();
         set(entity, "enabled", true);
@@ -518,7 +620,12 @@ class OidcConfigurationTest {
         set(entity, "redirectUri", redirect);
         set(entity, "roleClaimName", roleClaim);
         set(entity, "extraScopes", extraScopes);
-        set(entity, "roleMappings", List.of(mappings));
+        // Role mappings are required, so default to a valid mapping when a test does not care about them.
+        // A test that is about the mappings passes its own; a test of the "no mappings" error clears the
+        // field after construction.
+        final List<OidcRoleMappingEntity> roleMappings =
+                mappings.length == 0 ? List.of(new OidcRoleMappingEntity("idp-admins", "admin")) : List.of(mappings);
+        set(entity, "roleMappings", roleMappings);
         return entity;
     }
 

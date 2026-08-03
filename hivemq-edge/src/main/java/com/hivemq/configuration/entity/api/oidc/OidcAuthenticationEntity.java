@@ -20,7 +20,6 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -47,16 +46,19 @@ import org.jetbrains.annotations.Nullable;
  *     <client-secret>secret</client-secret>
  *     <redirect-uri>https://edge.example.com/api/v1/auth/oidc/callback</redirect-uri>
  *     <role-claim-name>roles</role-claim-name>
- *     <extra-scopes>email profile</extra-scopes>
+ *     <extra-scopes>
+ *         <extra-scope>email</extra-scope>
+ *         <extra-scope>profile</extra-scope>
+ *     </extra-scopes>
  *     <role-mappings>
- *         <mapping>
+ *         <role-mapping>
  *             <idp-role>hivemq-admin</idp-role>
  *             <edge-role>admin</edge-role>
- *         </mapping>
- *         <mapping>
+ *         </role-mapping>
+ *         <role-mapping>
  *             <idp-role>hivemq-user</idp-role>
  *             <edge-role>user</edge-role>
- *         </mapping>
+ *         </role-mapping>
  *     </role-mappings>
  * </oidc-authentication>
  * }</pre>
@@ -84,12 +86,19 @@ public class OidcAuthenticationEntity {
     @XmlElement(name = "role-claim-name", defaultValue = "roles")
     private @NotNull String roleClaimName = "roles";
 
-    @XmlElement(name = "extra-scopes")
-    private @Nullable String extraScopes = null;
+    @XmlElementWrapper(name = "extra-scopes", required = false)
+    @XmlElement(name = "extra-scope")
+    private @Nullable List<String> extraScopes = null;
 
+    // Null (not an empty list) when there are no mappings, matching the sibling wrapper-list fields
+    // (extraScopes, idTokenSigningAlgorithms). With @XmlElementWrapper a null list is omitted on marshal
+    // while a non-null empty list would emit an empty <role-mappings></role-mappings> -- which the schema
+    // rejects (a present <role-mappings> must hold >=1 <role-mapping>), breaking config-file write-back for a
+    // disabled, mapping-less stanza. "Enabled OIDC requires >=1 mapping" is enforced in OidcConfiguration.fromEntity,
+    // not the schema.
     @XmlElementWrapper(name = "role-mappings", required = false)
     @XmlElement(name = "role-mapping")
-    private @Nullable List<OidcRoleMappingEntity> roleMappings = new ArrayList<>();
+    private @Nullable List<OidcRoleMappingEntity> roleMappings = null;
 
     @XmlElementWrapper(name = "id-token-signing-algorithms", required = false)
     @XmlElement(name = "id-token-signing-algorithm")
@@ -98,7 +107,7 @@ public class OidcAuthenticationEntity {
     @XmlElement(name = "truststore")
     private @Nullable OidcTruststoreEntity truststore = null;
 
-    @XmlElement(name = "connection-timeout", defaultValue = "5000")
+    @XmlElement(name = "connection-timeout-millis", defaultValue = "5000")
     private int connectionTimeoutMillis = 5000;
 
     public boolean isEnabled() {
@@ -125,7 +134,7 @@ public class OidcAuthenticationEntity {
         return roleClaimName;
     }
 
-    public @Nullable String getExtraScopes() {
+    public @Nullable List<String> getExtraScopes() {
         return extraScopes;
     }
 

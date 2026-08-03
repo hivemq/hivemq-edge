@@ -16,7 +16,6 @@
 package com.hivemq.api.auth.oidc;
 
 import com.hivemq.api.auth.ApiPrincipal;
-import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.config.OidcConfiguration;
@@ -234,9 +233,11 @@ public class OidcServiceImpl implements OidcService {
 
             // 3. Map roles and mint the Edge JWT.
             final String subject = claims.getSubject().getValue();
+            // mapRoles logs the specific reason (claim absent / empty / no mapping matched) for the operator.
             final Set<String> edgeRoles = mapRoles(config, claims);
             if (edgeRoles.isEmpty()) {
-                log.warn("OIDC login for subject '{}' produced no Edge roles after mapping; denying.", subject);
+                // No subject in the message: the token 'sub' is a user identifier (token content, not config).
+                log.warn("OIDC login produced no Edge roles; denying (see the reason above).");
                 return callbackError(OidcErrorCode.NO_ROLES, config);
             }
             final String edgeJwt = tokenGenerator.generateToken(new ApiPrincipal(subject, edgeRoles));
@@ -331,46 +332,139 @@ public class OidcServiceImpl implements OidcService {
     /**
      * Maps the IdP role claim (string or string-array) onto Edge roles.
      * <p>
-     * Two modes, selected by whether {@code <role-mappings>} is configured:
-     * <ul>
-     *   <li><b>Verbatim</b> (no mappings): each claim value that is an Edge role ({@code admin} /
-     *       {@code super} / {@code user}) is used directly; others are dropped. The operator's omission of
-     *       a mapping is an explicit statement that the IdP already uses Edge role names.</li>
-     *   <li><b>Strict</b> (mappings present): a claim value must be a mapping key to produce its mapped
-     *       Edge role; an unmapped value is dropped, so no unrelated IdP role ever grants access.</li>
-     * </ul>
+     * Mapping is always strict: {@code <role-mappings>} is required, and a claim value produces an Edge role
+     * only when it is an explicitly configured mapping key. An unmapped value is dropped, so no unrelated IdP
+     * role ever grants access (there is no verbatim mode in which IdP role names are used directly).
+     * <p>
      * Matching is literal — no trimming or case-folding — so a mismatch is honest and visible. When a
      * literal miss would have matched leniently (ignoring case/whitespace), a warning is logged to point
      * at the likely typo, but the role is still dropped.
      */
     private static @NotNull Set<String> mapRoles(
             final @NotNull OidcConfiguration config, final @NotNull IDTokenClaimsSet claims) {
-        return resolveEdgeRoles(extractRoleClaim(claims, config.getRoleClaimName()), config.getRoleMappings());
-    }
-
-    /**
-     * Resolves the Edge roles for the given IdP role claim values under the two mapping modes. Package
-     * private for direct testing.
-     */
-    static @NotNull Set<String> resolveEdgeRoles(
-            final @NotNull List<String> idpRoles, final @Nullable Map<String, String> mappings) {
-        final Set<String> edgeRoles = new HashSet<>();
-        for (final String idpRole : idpRoles) {
-            if (mappings == null) {
-                mapVerbatim(idpRole, edgeRoles);
-            } else {
-                mapStrict(idpRole, mappings, edgeRoles);
-            }
-        }
+        final String claimName = config.getRoleClaimName();
+        final Map<String, String> mappings = config.getRoleMappings();
+        final List<String> idpRoles = extractRoleClaim(claims, claimName);
+        final Set<String> edgeRoles = resolveEdgeRoles(idpRoles, mappings);
+        logRoleMappingOutcome(claims, claimName, idpRoles, mappings, edgeRoles);
         return edgeRoles;
     }
 
-    private static void mapVerbatim(final @NotNull String idpRole, final @NotNull Set<String> edgeRoles) {
-        if (isEdgeRole(idpRole)) {
-            edgeRoles.add(idpRole);
-        } else if (isEdgeRole(idpRole.strip())) {
-            log.warn("OIDC role '{}' looks like an Edge role but has surrounding whitespace; it was ignored.", idpRole);
+    /**
+     * Emits an operator-facing diagnostic for the role-mapping outcome, so a login that fails (or grants
+     * fewer roles than expected) is not opaque. The four cases are distinguished by what the token actually
+     * carries — the login decision itself is unchanged, only the logging:
+     * <ul>
+     *   <li><b>claim present, some roles mapped</b> — the login succeeds. A warning is emitted <em>only when
+     *       some IdP roles were dropped</em> (unmapped), which may be a missing {@code <role-mapping>};</li>
+     *   <li><b>claim present, non-empty, none mapped</b> — denied; the number of values and the claim name are
+     *       logged, so the operator can see they are all unmapped;</li>
+     *   <li><b>claim present but empty</b> — denied; the user genuinely carries no roles;</li>
+     *   <li><b>claim absent</b> — denied; the configured {@code role-claim-name} is not in the token, which is
+     *       likely (but not certainly) a misconfiguration, since some IdPs omit an empty claim entirely.</li>
+     * </ul>
+     * Logging invariant: a WARN carries counts, config-supplied strings (the claim name, a mapping key) and
+     * claim <em>names</em> — never claim <em>values</em>, which are token content and may be user identifiers
+     * when {@code role-claim-name} is misconfigured. Values are available at DEBUG.
+     */
+    private static void logRoleMappingOutcome(
+            final @NotNull IDTokenClaimsSet claims,
+            final @NotNull String claimName,
+            final @NotNull List<String> idpRoles,
+            final @NotNull Map<String, String> mappings,
+            final @NotNull Set<String> edgeRoles) {
+        if (!idpRoles.isEmpty()) {
+            // An IdP role is "unmatched" when it is not a mapping key (so it produced no Edge role).
+            final List<String> unmatched = idpRoles.stream()
+                    .filter(role -> !mappings.containsKey(role))
+                    .toList();
+            if (!edgeRoles.isEmpty()) {
+                // Login succeeds. Unmatched IdP roles are the norm, not a problem: a real IdP token carries
+                // standard roles the operator never maps (Keycloak sends offline_access, uma_authorization and
+                // default-roles-<realm> alongside the mapped group), so every successful login has some. Log at
+                // DEBUG so it is available when troubleshooting without desensitising operators to the WARN-level
+                // denial diagnostics below, which are the ones that matter.
+                if (!unmatched.isEmpty() && log.isDebugEnabled()) {
+                    log.debug(
+                            "OIDC login authenticated with {} Edge role(s); {} IdP role(s) under claim '{}' did "
+                                    + "not match any <role-mapping> and were ignored: {}",
+                            edgeRoles.size(),
+                            unmatched.size(),
+                            claimName,
+                            unmatched);
+                }
+            } else {
+                // WARN carries only the count and the (config-supplied) claim name -- never the claim values,
+                // which are token content: a misconfigured role-claim-name pointing at e.g. 'email' would
+                // otherwise write user identifiers to the log on every denied login. The values are available
+                // at DEBUG for troubleshooting.
+                log.warn(
+                        "OIDC login denied: none of the {} value(s) under claim '{}' matched a <role-mapping>.",
+                        idpRoles.size(),
+                        claimName);
+                if (log.isDebugEnabled()) {
+                    log.debug("OIDC unmatched values under claim '{}': {}", claimName, idpRoles);
+                }
+            }
+        } else if (claims.toJSONObject().containsKey(claimName)) {
+            final Object rawClaim = claims.toJSONObject().get(claimName);
+            if (isSupportedRoleClaimShape(rawClaim)) {
+                // Present and of a supported shape (string or array) but yielding no role names: genuinely empty.
+                log.warn(
+                        "OIDC login denied: the role claim '{}' is present in the ID token but empty; the user has "
+                                + "no roles.",
+                        claimName);
+            } else {
+                // Present but neither a string nor an array of strings -- e.g. a nested object such as Keycloak's
+                // realm_access. Unlike an absent claim, this is unambiguous: a role-less user never produces this
+                // shape, so it is a role-claim-name misconfiguration pointing at a container rather than the list
+                // of role names inside it. The value's type is named; its contents are not logged.
+                log.warn(
+                        "OIDC login denied: the role claim '{}' is present in the ID token but is a {}, not a string "
+                                + "or an array of role names. Set role-claim-name to the claim that holds the role "
+                                + "names directly (for example, a nested object like Keycloak's realm_access is a "
+                                + "container -- point role-claim-name at the list inside it).",
+                        claimName,
+                        rawClaim == null ? "null value" : rawClaim.getClass().getSimpleName());
+            }
+        } else {
+            log.warn(
+                    "OIDC login denied: the configured role-claim-name '{}' is not present in the ID token. The "
+                            + "token carries these claims: {}. This may be a role-claim-name misconfiguration -- set "
+                            + "it to the claim your Identity Provider emits roles under -- or a user with no roles "
+                            + "on an Identity Provider that omits an empty claim.",
+                    claimName,
+                    claims.toJSONObject().keySet());
         }
+    }
+
+    /**
+     * Whether a raw ID-token claim value is a shape from which role names can be read: a string, or an array
+     * whose entries are strings. A nested object (e.g. Keycloak's {@code realm_access}) or any other shape is
+     * unsupported — the operator has pointed {@code role-claim-name} at a container rather than the role list.
+     */
+    static boolean isSupportedRoleClaimShape(final @Nullable Object rawClaim) {
+        if (rawClaim instanceof String) {
+            return true;
+        }
+        if (rawClaim instanceof final List<?> list) {
+            return list.stream().allMatch(entry -> entry instanceof String);
+        }
+        return false;
+    }
+
+    /**
+     * Resolves the Edge roles for the given IdP role claim values. An IdP role produces an Edge role only
+     * when the operator has mapped it explicitly; an unmapped value grants nothing. Package private for
+     * direct testing.
+     */
+    static @NotNull Set<String> resolveEdgeRoles(
+            final @NotNull List<String> idpRoles, final @NotNull Map<String, String> mappings) {
+        final Set<String> edgeRoles = new HashSet<>();
+        for (final String idpRole : idpRoles) {
+            mapStrict(idpRole, mappings, edgeRoles);
+        }
+        return edgeRoles;
     }
 
     private static void mapStrict(
@@ -386,20 +480,15 @@ public class OidcServiceImpl implements OidcService {
         final String lenient = idpRole.strip().toLowerCase(Locale.ROOT);
         for (final String key : mappings.keySet()) {
             if (key.strip().toLowerCase(Locale.ROOT).equals(lenient)) {
+                // Name the (config-supplied) mapping key, not the IdP role value from the token, which is
+                // token content. The near-match is what points the operator at the likely case/whitespace typo.
                 log.warn(
-                        "OIDC role '{}' did not match mapping key '{}' exactly (they differ only by case or "
-                                + "whitespace); the role was ignored. This may be a configuration typo.",
-                        idpRole,
+                        "OIDC: an IdP role differed from mapping key '{}' only by case or whitespace and was "
+                                + "ignored. This may be a configuration typo in <role-mappings>.",
                         key);
                 return;
             }
         }
-    }
-
-    private static boolean isEdgeRole(final @NotNull String role) {
-        return role.equalsIgnoreCase(ApiRoles.ADMIN)
-                || role.equalsIgnoreCase(ApiRoles.SUPER)
-                || role.equalsIgnoreCase(ApiRoles.USER);
     }
 
     private static @NotNull List<String> extractRoleClaim(

@@ -203,4 +203,49 @@ public class BearerTokenAuthTests {
         final ApiPrincipal user = objectMapper.readValue(response.getResponseBody(), ApiPrincipal.class);
         assertEquals("testuser", user.getName(), "Username should match that supplied at point of auth");
     }
+
+    @Test
+    public void testRefreshTokenWithValidTokenReturnsFreshToken() throws IOException {
+        HttpResponse response;
+
+        // -- authenticate to obtain a valid bearer token
+        response = post("api/v1/auth/authenticate", bodyCredentials("testuser", "test"));
+        assertEquals(200, response.getStatusCode(), "Authenticate should be accepted");
+        final ApiBearerToken token = objectMapper.readValue(response.getResponseBody(), ApiBearerToken.class);
+        assertNotNull(token.getToken(), "Response should contain a bearer token");
+
+        // -- present it as a bearer header to /refresh-token; the auth filter installs the principal the
+        // handler reads. Before EDG-849 #6 the endpoint was annotated NO_AUTH_REQUIRED, so no filter ran,
+        // no principal was installed, and the handler's getAuthenticatedPrincipalFromContext threw 401.
+        final Map<String, String> headers = Map.of(
+                HttpConstants.AUTH_HEADER,
+                HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()),
+                "Content-Type",
+                "application/json",
+                "Accept",
+                "application/json");
+
+        response = post("api/v1/auth/refresh-token", headers, new ByteArrayInputStream(new byte[0]));
+
+        assertEquals(200, response.getStatusCode(), "A valid token must be refreshable");
+        final ApiBearerToken refreshed = objectMapper.readValue(response.getResponseBody(), ApiBearerToken.class);
+        assertNotNull(refreshed.getToken(), "Refresh response should contain a fresh bearer token");
+    }
+
+    @Test
+    public void testRefreshTokenWithoutTokenIsRejected() throws IOException {
+        // -- no Authorization header: the auth filter installs no principal and rejects the request
+        final Map<String, String> headers = Map.of("Content-Type", "application/json", "Accept", "application/json");
+
+        final HttpResponse response = post("api/v1/auth/refresh-token", headers, new ByteArrayInputStream(new byte[0]));
+
+        assertEquals(401, response.getStatusCode(), "Refresh without a token must be refused");
+    }
+
+    protected static HttpResponse post(
+            final @NotNull String path, final @NotNull Map<String, String> headers, final ByteArrayInputStream body)
+            throws IOException {
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        return HttpUrlConnectionClient.post(headers, serverAddress, body, CONNECT_TIMEOUT, READ_TIMEOUT);
+    }
 }

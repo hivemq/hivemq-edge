@@ -24,10 +24,8 @@ import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -51,8 +49,9 @@ import org.slf4j.LoggerFactory;
  * The IdP endpoints (authorization / token / JWKS) are not held here — they are resolved
  * at runtime from {@code issuerUri}'s discovery document.
  * <p>
- * {@code roleMappings} maps an IdP role name onto an Edge role string, or is {@code null} in verbatim
- * mode (no mappings configured). Keys are matched literally — see {@code OidcServiceImpl#resolveEdgeRoles}.
+ * {@code roleMappings} maps an IdP role name onto an Edge role string. It is required and non-empty — only
+ * an explicitly mapped IdP role produces an Edge role. Keys are matched literally — see
+ * {@code OidcServiceImpl#resolveEdgeRoles}.
  */
 public class OidcConfiguration {
 
@@ -64,9 +63,9 @@ public class OidcConfiguration {
     private final @NotNull URI redirectUri;
     private final @NotNull String roleClaimName;
     private final @NotNull List<String> extraScopes;
-    // null => verbatim mode (no <role-mappings>): claim values are used as Edge roles directly.
-    // non-null => strict mode: only mapped IdP roles produce an Edge role. Guaranteed non-empty.
-    private final @Nullable Map<String, String> roleMappings;
+    // IdP-role → Edge-role mappings. Required and non-empty: only an explicitly mapped IdP role produces an
+    // Edge role; an unmapped value grants nothing.
+    private final @NotNull Map<String, String> roleMappings;
     private final @NotNull Set<String> idTokenSigningAlgorithms;
     // null => no <truststore> configured: the IdP TLS certificate is validated against the JVM default CAs.
     private final @Nullable SSLSocketFactory idpSslSocketFactory;
@@ -75,6 +74,10 @@ public class OidcConfiguration {
 
     public static final int DEFAULT_CONNECTION_TIMEOUT_MILLIS = 5000;
 
+    // Below this, a connection timeout is almost certainly a milliseconds/seconds mix-up that would make
+    // every IdP call time out. Kept in sync with the XSD minInclusive on connection-timeout-millis.
+    public static final int MIN_CONNECTION_TIMEOUT_MILLIS = 100;
+
     public OidcConfiguration(
             final @NotNull URI issuerUri,
             final @NotNull String clientId,
@@ -82,7 +85,7 @@ public class OidcConfiguration {
             final @NotNull URI redirectUri,
             final @NotNull String roleClaimName,
             final @NotNull List<String> extraScopes,
-            final @Nullable Map<String, String> roleMappings,
+            final @NotNull Map<String, String> roleMappings,
             final @NotNull Set<String> idTokenSigningAlgorithms) {
         this(
                 issuerUri,
@@ -104,7 +107,7 @@ public class OidcConfiguration {
             final @NotNull URI redirectUri,
             final @NotNull String roleClaimName,
             final @NotNull List<String> extraScopes,
-            final @Nullable Map<String, String> roleMappings,
+            final @NotNull Map<String, String> roleMappings,
             final @NotNull Set<String> idTokenSigningAlgorithms,
             final @Nullable SSLSocketFactory idpSslSocketFactory,
             final int connectionTimeoutMillis) {
@@ -115,7 +118,7 @@ public class OidcConfiguration {
         this.roleClaimName = Preconditions.checkNotNull(roleClaimName);
         this.idTokenSigningAlgorithms = Set.copyOf(idTokenSigningAlgorithms);
         this.extraScopes = List.copyOf(extraScopes);
-        this.roleMappings = roleMappings == null ? null : Map.copyOf(roleMappings);
+        this.roleMappings = Map.copyOf(roleMappings);
         this.idpSslSocketFactory = idpSslSocketFactory;
         this.connectionTimeoutMillis = connectionTimeoutMillis;
     }
@@ -161,36 +164,37 @@ public class OidcConfiguration {
                 roleClaimName != null && !roleClaimName.isBlank(), "OIDC role-claim-name must not be blank");
         warnOnSurroundingWhitespace("role-claim-name", roleClaimName);
 
-        final List<String> scopes = parseScopes(entity.getExtraScopes());
+        // Extra scopes are a list of <extra-scope> elements; an absent <extra-scopes> yields no extra scopes.
+        final List<String> configuredScopes = entity.getExtraScopes();
+        final List<String> scopes = configuredScopes == null ? List.of() : List.copyOf(configuredScopes);
 
-        // Role mappings define two distinct modes. An absent <role-mappings> element is verbatim mode:
-        // the claim values are used as Edge roles directly. A present element (the XSD guarantees it is
-        // non-empty) is strict mode: only mapped IdP roles produce an Edge role. Keys are stored and
-        // matched literally — no trimming or case-folding — so a stray space or wrong case is an honest
-        // mismatch the operator can see in the logs, not a silent, surprising match.
+        // Role mappings are required: only an explicitly mapped IdP role produces an Edge role, and an
+        // unmapped value grants nothing. An enabled OIDC must declare at least one <role-mapping>, and this
+        // check is the ONLY enforcement of that: the schema deliberately allows an absent or present-but-empty
+        // <role-mappings> so a disabled, mapping-less stanza can still be written back (EDG-849).
+        // Keys are stored and matched literally — no trimming or case-folding — so a stray space or wrong
+        // case is an honest mismatch the operator can see in the logs, not a silent, surprising match.
         final List<OidcRoleMappingEntity> mappingEntities = entity.getRoleMappings();
-        final Map<String, String> mappings;
-        if (mappingEntities == null || mappingEntities.isEmpty()) {
-            mappings = null;
-        } else {
-            mappings = new LinkedHashMap<>();
-            for (final OidcRoleMappingEntity mapping : mappingEntities) {
-                final String idpRole = mapping.getIdpRole();
-                final String edgeRole = mapping.getEdgeRole();
-                Preconditions.checkArgument(
-                        idpRole != null && !idpRole.isBlank(), "OIDC role mapping is missing an <idp-role>");
-                Preconditions.checkArgument(
-                        edgeRole != null && !edgeRole.isBlank(), "OIDC role mapping is missing an <edge-role>");
-                Preconditions.checkArgument(
-                        isValidEdgeRole(edgeRole),
-                        "OIDC role mapping has an invalid <edge-role> '%s'; must be one of admin, super, user",
-                        edgeRole);
-                warnOnSurroundingWhitespace("idp-role", idpRole);
-                warnOnSurroundingWhitespace("edge-role", edgeRole);
-                Preconditions.checkArgument(
-                        !mappings.containsKey(idpRole), "OIDC role mapping has a duplicate <idp-role> '%s'", idpRole);
-                mappings.put(idpRole, edgeRole);
-            }
+        Preconditions.checkArgument(
+                mappingEntities != null && !mappingEntities.isEmpty(),
+                "OIDC requires a <role-mappings> element with at least one <role-mapping>");
+        final Map<String, String> mappings = new LinkedHashMap<>();
+        for (final OidcRoleMappingEntity mapping : mappingEntities) {
+            final String idpRole = mapping.getIdpRole();
+            final String edgeRole = mapping.getEdgeRole();
+            Preconditions.checkArgument(
+                    idpRole != null && !idpRole.isBlank(), "OIDC role mapping is missing an <idp-role>");
+            Preconditions.checkArgument(
+                    edgeRole != null && !edgeRole.isBlank(), "OIDC role mapping is missing an <edge-role>");
+            Preconditions.checkArgument(
+                    isValidEdgeRole(edgeRole),
+                    "OIDC role mapping has an invalid <edge-role> '%s'; must be one of admin, super, user",
+                    edgeRole);
+            warnOnSurroundingWhitespace("idp-role", idpRole);
+            warnOnSurroundingWhitespace("edge-role", edgeRole);
+            Preconditions.checkArgument(
+                    !mappings.containsKey(idpRole), "OIDC role mapping has a duplicate <idp-role> '%s'", idpRole);
+            mappings.put(idpRole, edgeRole);
         }
 
         // Accepted ID-token signing algorithms. An absent/empty list defaults to the full asymmetric set;
@@ -204,12 +208,15 @@ public class OidcConfiguration {
         // certificate is validated against the JVM default CA certificates.
         final SSLSocketFactory idpSslSocketFactory = buildSslSocketFactory(entity.getTruststore());
 
-        // Connect/read timeout for the IdP calls. The XSD (positiveInteger, default 5000) guarantees a
-        // positive value; this check guards a config path that bypasses schema validation.
+        // Connect/read timeout for the IdP calls. The XSD enforces a minimum of 100ms (default 5000); this
+        // re-checks it so a programmatic entity that bypasses schema validation cannot set an unusable value.
+        // A sub-100ms timeout is almost always a milliseconds/seconds mix-up (e.g. "1" meaning one second)
+        // that would make every IdP call time out and silently break SSO.
         final int connectionTimeoutMillis = entity.getConnectionTimeoutMillis();
         Preconditions.checkArgument(
-                connectionTimeoutMillis > 0,
-                "OIDC connection-timeout must be a positive number of milliseconds, but was %s",
+                connectionTimeoutMillis >= MIN_CONNECTION_TIMEOUT_MILLIS,
+                "OIDC connection-timeout-millis must be at least %s milliseconds, but was %s",
+                MIN_CONNECTION_TIMEOUT_MILLIS,
                 connectionTimeoutMillis);
 
         return new OidcConfiguration(
@@ -301,7 +308,7 @@ public class OidcConfiguration {
         }
         // Not https: only allowed for a loopback host, and only when the insecure-local flag is set.
         Preconditions.checkArgument(
-                allowInsecureLoopbackIssuer && isLoopbackHost(uri.getHost()),
+                allowInsecureLoopbackIssuer && isLiteralLoopbackHost(uri.getHost()),
                 "OIDC issuer-uri '%s' must use https; the issuer is the root of trust for discovery and "
                         + "signing keys and must not be fetched over plain http",
                 value);
@@ -324,18 +331,38 @@ public class OidcConfiguration {
         return "true".equalsIgnoreCase(value);
     }
 
-    private static boolean isLoopbackHost(final @Nullable String host) {
+    /**
+     * Whether {@code host} is a <em>literal</em> loopback identifier — {@code localhost}, an IPv4 address in
+     * {@code 127.0.0.0/8}, or the IPv6 loopback {@code ::1}. The comparison is purely textual: the host is
+     * never resolved through DNS.
+     * <p>
+     * This is deliberate. Resolving the host to decide whether it is loopback trusts a DNS answer, and a DNS
+     * answer can be attacker-controlled: a public name such as {@code 127.0.0.1.nip.io} resolves to a
+     * loopback address, and a low-TTL name can resolve to loopback for this check and to another address when
+     * the endpoint is actually fetched (DNS rebinding). Comparing the literal host removes DNS from the
+     * security decision entirely — a literal IP has no lookup to poison, and {@code localhost} is resolved by
+     * the host's own configuration, not by an external answer.
+     */
+    static boolean isLiteralLoopbackHost(final @Nullable String host) {
         if (host == null) {
             return false;
         }
-        if ("localhost".equalsIgnoreCase(host)) {
+        // URI.getHost() returns an IPv6 literal wrapped in brackets, e.g. "[::1]"; compare the inner address.
+        final String bare = host.startsWith("[") && host.endsWith("]") ? host.substring(1, host.length() - 1) : host;
+        if ("localhost".equalsIgnoreCase(bare) || "::1".equals(bare)) {
             return true;
         }
-        try {
-            return InetAddress.getByName(host).isLoopbackAddress();
-        } catch (final UnknownHostException e) {
-            return false;
+        // Any address in 127.0.0.0/8 is loopback. Match the literal dotted-quad form without resolving.
+        return bare.matches("127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}") && isValidIpv4(bare);
+    }
+
+    private static boolean isValidIpv4(final @NotNull String address) {
+        for (final String octet : address.split("\\.")) {
+            if (Integer.parseInt(octet) > 255) {
+                return false;
+            }
         }
+        return true;
     }
 
     /**
@@ -368,14 +395,58 @@ public class OidcConfiguration {
             final @NotNull URI expectedIssuer, final @NotNull OIDCProviderMetadata metadata) {
         final boolean allowInsecureLoopback = isInsecureLocalIdpAllowed();
         final Issuer discoveredIssuer = metadata.getIssuer();
-        Preconditions.checkArgument(
-                discoveredIssuer != null && expectedIssuer.toString().equals(discoveredIssuer.getValue()),
-                "OIDC discovery issuer '%s' does not match the configured issuer '%s'",
-                discoveredIssuer,
-                expectedIssuer);
+        checkIssuerMatch(expectedIssuer, discoveredIssuer);
         requireHttpsEndpoint("authorization_endpoint", metadata.getAuthorizationEndpointURI(), allowInsecureLoopback);
         requireHttpsEndpoint("token_endpoint", metadata.getTokenEndpointURI(), allowInsecureLoopback);
         requireHttpsEndpoint("jwks_uri", metadata.getJWKSetURI(), allowInsecureLoopback);
+    }
+
+    /**
+     * Requires the discovery {@code issuer} to equal the configured {@code issuer-uri} <em>exactly</em>. Per
+     * the OpenID Connect Discovery specification the issuer is an exact identifier — a trailing slash, a
+     * different case, or surrounding whitespace all denote a different issuer — so the comparison is and must
+     * remain character-for-character; the exact match is the security decision and is never relaxed.
+     * <p>
+     * When the exact match fails, a second, lenient comparison (case-insensitive, trailing-slash- and
+     * whitespace-insensitive) is used <em>only to choose the error message</em>, never to accept the value:
+     * if the two differ only in those cosmetic ways, the operator almost certainly copied a nearly-right
+     * issuer (a browser address bar adds a trailing slash), so the message points at that exact difference
+     * and quotes the value the Identity Provider reports, to be copied verbatim. A genuine mismatch (wrong
+     * host or realm) gets the plain "does not match" message. Either way the login is refused.
+     */
+    private static void checkIssuerMatch(final @NotNull URI expectedIssuer, final @Nullable Issuer discoveredIssuer) {
+        final String expected = expectedIssuer.toString();
+        final String discovered = discoveredIssuer == null ? null : discoveredIssuer.getValue();
+        if (expected.equals(discovered)) {
+            return;
+        }
+        Preconditions.checkArgument(
+                discovered != null && lenientlyEqualIssuer(expected, discovered),
+                "OIDC discovery issuer '%s' does not match the configured issuer-uri '%s'",
+                discovered,
+                expected);
+        // Exact match failed but a lenient match succeeded: a cosmetic-only difference, so guide the fix.
+        throw new IllegalArgumentException(String.format(
+                "OIDC issuer-uri '%s' does not exactly match the issuer the Identity Provider reports, '%s'; "
+                        + "they differ only by a trailing slash, letter case, or surrounding whitespace. The "
+                        + "issuer must match exactly — set issuer-uri to '%s'.",
+                expected, discovered, discovered));
+    }
+
+    /**
+     * Whether two issuer strings are equal once a trailing slash, letter case, and surrounding whitespace are
+     * ignored. Used <em>only</em> to classify an exact-match failure for a better error message — never to
+     * accept a non-exact issuer.
+     */
+    private static boolean lenientlyEqualIssuer(final @NotNull String a, final @NotNull String b) {
+        return normalizeIssuerForDiagnosis(a).equals(normalizeIssuerForDiagnosis(b));
+    }
+
+    private static @NotNull String normalizeIssuerForDiagnosis(final @NotNull String issuer) {
+        final String trimmed = issuer.strip();
+        final String withoutTrailingSlash =
+                trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+        return withoutTrailingSlash.toLowerCase(java.util.Locale.ROOT);
     }
 
     /**
@@ -405,7 +476,7 @@ public class OidcConfiguration {
         Preconditions.checkArgument(
                 "http".equalsIgnoreCase(endpoint.getScheme())
                         && allowInsecureLoopback
-                        && isLoopbackHost(endpoint.getHost()),
+                        && isLiteralLoopbackHost(endpoint.getHost()),
                 "OIDC discovery %s '%s' must use https",
                 name,
                 endpoint);
@@ -418,22 +489,28 @@ public class OidcConfiguration {
     }
 
     /**
-     * Parses the {@code redirect-uri}, the browser-facing callback the Identity Provider redirects to.
+     * Parses the {@code redirect-uri}, the browser-facing callback the Identity Provider redirects the
+     * browser back to. This is the leg that carries the authorization code (in the callback query) and, once
+     * Edge has processed it, the minted Edge JWT (in the callback page) back to the browser — so over plain
+     * {@code http} a network attacker on the browser↔Edge path can intercept both.
      * <p>
-     * Plain {@code http} is permitted, because the redirect is reached by the browser and a deployment
-     * may legitimately terminate TLS at a reverse proxy; a non-HTTPS redirect is logged as a warning. A
-     * fragment is rejected — the callback carries its result in the query, not the fragment.
+     * It is therefore required to be {@code https}, mirroring the treatment of the {@code issuer-uri}. The
+     * single exception is a literal loopback host ({@code localhost}, {@code 127.0.0.0/8}, {@code ::1}),
+     * which never leaves the machine and is needed for local development and testing. A deployment that
+     * terminates TLS at a reverse proxy must configure the public {@code https} address the browser actually
+     * uses — which is also the value the Identity Provider requires to match — not Edge's internal http
+     * address. A fragment is rejected — the callback carries its result in the query, not the fragment.
      */
     private static @NotNull URI parseRedirectUri(final @NotNull String value) {
         final URI uri = parseAbsoluteHttpUri(value, "redirect-uri");
         Preconditions.checkArgument(
                 uri.getFragment() == null, "OIDC redirect-uri '%s' must not contain a fragment", value);
-        if (!"https".equalsIgnoreCase(uri.getScheme())) {
-            log.warn(
-                    "OIDC redirect-uri '{}' does not use HTTPS. This is only appropriate for local testing or "
-                            + "when TLS is terminated by a reverse proxy.",
-                    value);
-        }
+        Preconditions.checkArgument(
+                "https".equalsIgnoreCase(uri.getScheme()) || isLiteralLoopbackHost(uri.getHost()),
+                "OIDC redirect-uri '%s' must use https; it carries the authorization code and the Edge token "
+                        + "back to the browser and must not travel over plain http. A loopback host is the only "
+                        + "http exception; behind a TLS-terminating proxy, configure the public https address.",
+                value);
         return uri;
     }
 
@@ -491,13 +568,6 @@ public class OidcConfiguration {
         }
     }
 
-    private static @NotNull List<String> parseScopes(final @Nullable String extraScopes) {
-        if (extraScopes == null || extraScopes.isBlank()) {
-            return List.of();
-        }
-        return List.of(extraScopes.trim().split("\\s+"));
-    }
-
     public @NotNull URI getIssuerUri() {
         return issuerUri;
     }
@@ -523,10 +593,10 @@ public class OidcConfiguration {
     }
 
     /**
-     * The IdP-role → Edge-role mappings, or {@code null} in verbatim mode (no {@code <role-mappings>}
-     * configured). When non-null it is non-empty, and keys are matched literally.
+     * The IdP-role → Edge-role mappings. Required and non-empty; keys are matched literally. Only a mapped
+     * IdP role produces an Edge role.
      */
-    public @Nullable Map<String, String> getRoleMappings() {
+    public @NotNull Map<String, String> getRoleMappings() {
         return roleMappings;
     }
 
