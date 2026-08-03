@@ -97,9 +97,12 @@ public final class WorkloadControlChannel {
      * Identities captured by the {@code retain <node>} command while they were still resolvable. Lets a test emit a
      * callback with the ORIGINAL node instance after the tag has been removed/recreated — the stale-identity replay
      * that a plain {@code emit datapoint} cannot produce, because the live resolver builds a fresh synthetic node
-     * once the id has been pruned.
+     * once the id has been pruned. STATIC and adapter-id-keyed on purpose: a recreate constructs a NEW adapter (and
+     * a new control channel), and the whole point of the verb is replaying an OLD instance's identity through the
+     * NEW instance — per-instance state would die exactly when it is needed (proven by the first e2e run's
+     * journaled MISS).
      */
-    private final @NotNull Map<String, Node> retained = new ConcurrentHashMap<>();
+    private static final @NotNull Map<String, Node> RETAINED = new ConcurrentHashMap<>();
     private final @NotNull Map<String, Long> blockMs =
             new ConcurrentHashMap<>(); // op -> ms to block the NEXT such command
     private long ctlOffset; // bytes of the .ctl file already consumed (watcher thread only)
@@ -495,7 +498,7 @@ public final class WorkloadControlChannel {
                 case "retain" -> { // retain <node> — snapshot the live identity for a later stale replay
                     final Node live = nodeResolver.apply(a[1]);
                     if (live != null) {
-                        retained.put(a[1], live);
+                        RETAINED.put(adapterId + "/" + a[1], live);
                     }
                     journal("RETAIN node=" + a[1] + " captured=" + (live != null));
                 }
@@ -539,7 +542,7 @@ public final class WorkloadControlChannel {
             }
             case "datapointretained" -> { // emit datapointretained <node> <value> — replay with the RETAINED identity
                 final String node = a[2];
-                final Node stale = retained.get(node);
+                final Node stale = RETAINED.get(adapterId + "/" + node);
                 if (stale == null) {
                     // fail loudly in the journal: without a prior successful retain there is no stale identity to
                     // replay, and silently falling back to the live resolver would recreate the synthetic-node trap
