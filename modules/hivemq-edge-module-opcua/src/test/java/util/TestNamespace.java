@@ -36,6 +36,7 @@ import org.eclipse.milo.opcua.sdk.server.items.EventItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.model.objects.AlarmConditionTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.objects.BaseEventTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
@@ -611,6 +612,36 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      */
     public @NotNull String sourceNodeIdOf(final @NotNull String conditionNodeId) {
         return sourceNodeFor(NodeId.parse(conditionNodeId)).toParseableString();
+    }
+
+    /**
+     * Fires a {@code RefreshRequiredEventType} — the server telling clients their alarm picture may be stale.
+     * <p>
+     * A real server sends this when it resynchronises with the system beneath it, or after an event queue
+     * overflowed and drained. There is no state to model: the event's whole meaning is the request it makes
+     * of the client, so the harness only has to deliver it and let the adapter's reaction be observed through
+     * {@link #refreshBracketCount()}.
+     * <p>
+     * Fired from the area notifier rather than a condition, which is where it originates — it reports on the
+     * server's own health, not on any one alarm.
+     */
+    public void fireRefreshRequired() {
+        try {
+            final BaseEventTypeNode event =
+                    getServer().getEventFactory().createEvent(areaNotifier(), NodeIds.RefreshRequiredEventType);
+            event.setEventId(new ByteString(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+            event.setEventType(NodeIds.RefreshRequiredEventType);
+            event.setSourceNode(areaNotifier());
+            event.setSourceName("AreaNotifier");
+            event.setTime(DateTime.now());
+            event.setReceiveTime(DateTime.now());
+            event.setMessage(LocalizedText.english("A condition refresh is required"));
+            event.setSeverity(ushort(500));
+
+            getServer().getEventNotifier().fire(event);
+        } catch (final UaException e) {
+            throw new IllegalStateException("Could not create the RefreshRequired event", e);
+        }
     }
 
     public @NotNull ByteString fireAlarm(

@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -60,6 +61,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.structured.EventFilter;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
@@ -96,6 +98,15 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     // The subscription currently in use, so a reconnect that keeps it can still ask for a condition refresh.
     // Set whenever monitored items are synchronized; replaced when a broken subscription is recreated.
     private final @NotNull AtomicReference<OpcUaSubscription> currentSubscription = new AtomicReference<>();
+
+    /**
+     * Whether a refresh requested by the <em>server</em> is still outstanding.
+     * <p>
+     * One {@code RefreshRequired} occurrence is delivered to every notifier item in the subscription, so this
+     * collapses the copies into the single call the specification says they warrant. Only this path is
+     * guarded: the connect-time and reconnect refreshes fire once by construction.
+     */
+    private final @NotNull AtomicBoolean refreshRequiredInFlight = new AtomicBoolean();
 
     // Track last dynamic-type-registry reset so a permanently undecodable type cannot trigger a
     // full DataTypeTree browse per notification (EDG-776). Monotonic clock (nanoTime), seeded one
@@ -531,6 +542,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // almost every value null, which reads as an alarm whose state is unknown.
             final boolean isControlEvent = isControlEvent(events.get(i));
             final boolean isRefreshTag = tag.getDefinition().getKind() == OpcuaTagKind.REFRESH;
+            // RefreshRequired is the one control event that asks for something rather than reporting it, so
+            // it is acted on before the publish decision -- on every kind of tag, including the ones that
+            // drop it. Whether a user chose to see the event is unrelated to whether our alarm picture is
+            // stale.
+            if (isRefreshRequired(events.get(i))) {
+                onRefreshRequired(subscription);
+            }
             if (isControlEvent && !isRefreshTag) {
                 continue;
             }
@@ -578,11 +596,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         dataPointsPublisher.publish();
     }
 
-    /**
-     * Resets the client's cached DataTypeTree, dynamic DataTypeManager and dynamic EncodingContext so
-     * they are rebuilt from the server on next use. Throttled because each rebuild browses the
-     * server's full DataType hierarchy.
-     */
     /**
      * Re-reports the retained conditions after a session was re-established with its subscription intact.
      * <p>
@@ -731,20 +744,82 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             NodeIds.EventQueueOverflowEventType);
 
     /**
+     * Acts on a {@code RefreshRequiredEventType} by asking the server to re-report its retained conditions.
+     * <p>
+     * The server sends this when it cannot guarantee the client is still in sync — its link to the underlying
+     * system reset, an event queue overflowed and drained, a redundant pair failed over. OPC 10000-9 §4.5: "A
+     * Client receiving this special Event should initiate a ConditionRefresh". Nothing else recovers from it:
+     * our own session stays healthy throughout, so no reconnect path fires, and without this the alarm
+     * picture stays stale until every affected condition happens to change state again.
+     * <p>
+     * <b>Coalesced, because one server-side event arrives many times.</b> Like the rest of the refresh family
+     * it bypasses the where clause and is copied to every notifier item in the subscription, so an adapter
+     * with ten condition tags sees ten copies of one occurrence. Refreshing per copy would be wrong twice
+     * over: §4.5 says "ConditionRefresh applies to a Subscription [...] all Event Notifiers are refreshed",
+     * so one call already covers them all, and the second call would collide with the first — the
+     * specification defines {@code Bad_RefreshInProgress} for exactly that. The guard is released when the
+     * call settles rather than when the burst ends, which is the conservative choice: a later
+     * {@code RefreshRequired} is a fresh reason to resynchronise and must not be swallowed.
+     */
+    private void onRefreshRequired(final @NotNull OpcUaSubscription subscription) {
+        if (!refreshRequiredInFlight.compareAndSet(false, true)) {
+            return;
+        }
+        final Optional<UInteger> subscriptionId = subscription.getSubscriptionId();
+        if (subscriptionId.isEmpty()) {
+            refreshRequiredInFlight.set(false);
+            return;
+        }
+        log.info(
+                "Adapter '{}': the server reported that a condition refresh is required, so the current alarm picture is being re-requested",
+                adapterId);
+        @SuppressWarnings("unused")
+        final var unused = ConditionRefresh.request(client, subscriptionId.get())
+                .whenComplete((statusCode, throwable) -> {
+                    refreshRequiredInFlight.set(false);
+                    if (throwable != null) {
+                        log.warn(
+                                "Adapter '{}': the server asked for a condition refresh but the request failed, so the alarm picture may stay incomplete until each alarm next changes",
+                                adapterId,
+                                throwable);
+                    } else if (statusCode.isBad()) {
+                        log.warn(
+                                "Adapter '{}': the server asked for a condition refresh and then refused it ({}), so the alarm picture may stay incomplete until each alarm next changes",
+                                adapterId,
+                                statusCode);
+                    }
+                });
+    }
+
+    /**
+     * Whether a notification is the server asking for a refresh, as opposed to the other control events.
+     * <p>
+     * Separate from {@link #isControlEvent} because the two answer different questions: that one decides
+     * whether to publish, this one decides whether to act.
+     */
+    private static boolean isRefreshRequired(final @NotNull Variant @NotNull [] eventFields) {
+        return NodeIds.RefreshRequiredEventType.equals(eventTypeOf(eventFields));
+    }
+
+    /**
      * Whether a notification is one of the control events rather than a transition report.
      * <p>
      * {@code EventType} is read positionally: it is part of {@code BASE_EVENT_FIELDS}, which every select
      * clause begins with, so its index is the same for every tag whatever type it declares.
      */
     private static boolean isControlEvent(final @NotNull Variant @NotNull [] eventFields) {
+        final NodeId typeId = eventTypeOf(eventFields);
+        return typeId != null && CONTROL_EVENT_TYPES.contains(typeId);
+    }
+
+    /** The notification's {@code EventType}, or null when it is absent or not a node id. */
+    private static @Nullable NodeId eventTypeOf(final @NotNull Variant @NotNull [] eventFields) {
         final int eventTypeIndex = OpcuaConditionType.BASE_EVENT_FIELDS.indexOf("EventType");
         if (eventTypeIndex < 0 || eventTypeIndex >= eventFields.length) {
-            return false;
+            return null;
         }
         final Variant eventType = eventFields[eventTypeIndex];
-        return eventType != null
-                && eventType.value() instanceof final NodeId typeId
-                && CONTROL_EVENT_TYPES.contains(typeId);
+        return eventType != null && eventType.value() instanceof final NodeId typeId ? typeId : null;
     }
 
     /**

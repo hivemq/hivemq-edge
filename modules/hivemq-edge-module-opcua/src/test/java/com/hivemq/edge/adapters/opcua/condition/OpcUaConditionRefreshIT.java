@@ -103,6 +103,46 @@ public class OpcUaConditionRefreshIT {
 
     @Test
     @Timeout(120)
+    void whenTheServerSaysARefreshIsRequired_thenOneIsRequested() throws Exception {
+        // OPC 10000-9 §4.5: "A Client receiving this special Event should initiate a ConditionRefresh". The
+        // server sends it when it can no longer guarantee the client is in sync -- a reset of the system
+        // beneath it, or an event queue that overflowed and drained. Nothing else recovers from that: our
+        // session stays healthy throughout, so no reconnect path fires, and the alarm picture would stay
+        // stale until every affected condition happened to change state again.
+        opcUaServerExtension.getTestNamespace().observeRefreshEvents();
+        // Exists so the area has a condition to re-report; the tag below subscribes to the area, not to it.
+        opcUaServerExtension.getTestNamespace().addAcknowledgeableConditionNode("StaleAlarm", CONDITION_NODE_ID + 5);
+
+        // An EVENT_SUBSCRIPTION tag on the area, unnarrowed. A CONDITION tag would be the more natural
+        // subject, but its where clause pins ConditionId to one alarm and Milo evaluates that clause against
+        // every event -- it does not implement the §4.5 rule that the refresh types bypass filtering, so a
+        // RefreshRequired fired here would never reach the adapter through a condition tag's item. The
+        // adapter's own handling is what is under test, and it is indifferent to which tag the event arrives
+        // on: any notifier item carries it, and the refresh it triggers covers the whole subscription.
+        startAdapterWith(new OpcuaTag(
+                "area-events",
+                "",
+                new OpcuaTagDefinition(
+                        opcUaServerExtension.getTestNamespace().areaNotifier().toParseableString(),
+                        OpcuaTagKind.EVENT_SUBSCRIPTION)));
+
+        // A refresh already fires on connect, so what is asserted is a further one -- measured from whatever
+        // the connect-time refresh left behind rather than from zero.
+        await().untilAsserted(
+                        () -> assertThat(opcUaServerExtension.getTestNamespace().refreshBracketCount())
+                                .isPositive());
+        final int afterConnect = opcUaServerExtension.getTestNamespace().refreshBracketCount();
+
+        opcUaServerExtension.getTestNamespace().fireRefreshRequired();
+
+        await().untilAsserted(
+                        () -> assertThat(opcUaServerExtension.getTestNamespace().refreshBracketCount())
+                                .as("the server asked for a refresh, so the adapter must request one")
+                                .isGreaterThan(afterConnect));
+    }
+
+    @Test
+    @Timeout(120)
     void whenNoTagIsACondition_thenNoRefreshIsRequested() throws Exception {
         // A refresh only makes sense when something is subscribed to receive the burst. Asking anyway would
         // be a pointless round trip against every server Edge talks to.
