@@ -52,8 +52,20 @@ public final class ConditionSchemas {
             "LatchedState",
             "OutOfServiceState",
             "ShelvingState",
-            "Quality",
             "LimitState");
+
+    /**
+     * Fields whose value is a {@code StatusCode}, published as {@code {code, symbol}}.
+     * <p>
+     * {@code Quality} alone, and it is easy to mistake for a localised text: it reads like one, and every
+     * other state-ish field on a condition is one. OPC 10000-9 §5.5.2 Table 8 is explicit —
+     * {@code HasComponent,Variable,Quality,StatusCode,ConditionVariableType,Mandatory} — and being Mandatory
+     * on {@code ConditionType} it rides in every event of all 22 types, so describing it wrongly mistyped a
+     * field in every schema this class produces.
+     * <p>
+     * {@code symbol} is optional: the converter emits it only when the numeric code resolves to a known name.
+     */
+    private static final @NotNull Set<String> STATUS_CODE_FIELDS = Set.of("Quality");
 
     /**
      * Fields whose value is a node id, published as a structure rather than a parseable string.
@@ -265,6 +277,27 @@ public final class ConditionSchemas {
                     .endProperty()
                     .property("namespaceIndex")
                     .any()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        } else if (STATUS_CODE_FIELDS.contains(field)) {
+            object.property(field)
+                    .startObject()
+                    .property("code")
+                    .scalar(ScalarType.LONG)
+                    .description("The numeric status code.")
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("symbol")
+                    .scalar(ScalarType.STRING)
+                    .description("The status code's symbolic name, absent when the code is not a known one.")
+                    .nullable()
                     .readable()
                     .writable(false)
                     .endProperty()

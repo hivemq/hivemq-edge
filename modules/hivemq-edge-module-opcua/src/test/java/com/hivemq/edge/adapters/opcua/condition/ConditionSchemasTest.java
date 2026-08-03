@@ -106,6 +106,54 @@ class ConditionSchemasTest {
     }
 
     @Test
+    void qualityIsTypedAsAStatusCodeNotALocalizedText() {
+        // Quality reads like a state and sits among fields that genuinely are LocalizedText, but OPC 10000-9
+        // §5.5.2 Table 8 types it StatusCode. It is Mandatory on ConditionType, so it rides in every event of
+        // every one of the 22 types -- describing it as {locale, text} mistyped a field present in every
+        // payload Edge publishes, and a schema-validating consumer would see a mismatch on all of them.
+        for (final OpcuaConditionType type : OpcuaConditionType.values()) {
+            final ObjectNode json = render(ConditionSchemas.readSchema(type));
+            final JsonNode quality = json.get("properties").get("Quality");
+            assertThat(quality)
+                    .as("%s must describe Quality", type.browseName())
+                    .isNotNull();
+
+            final JsonNode shape = shapeOf(quality);
+            assertThat(shape.path("properties").has("code"))
+                    .as("%s must type Quality as a status code", type.browseName())
+                    .isTrue();
+            assertThat(shape.path("properties").has("locale"))
+                    .as("%s must not type Quality as a localized text", type.browseName())
+                    .isFalse();
+        }
+    }
+
+    @Test
+    void theQualityShapeMatchesWhatTheConverterEmits() {
+        // The converter renders a StatusCode as {code, symbol}, with symbol present only when the numeric
+        // code resolves to a known name. A schema that promised symbol unconditionally would be wrong for
+        // every vendor-specific code.
+        final ObjectNode json = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("AlarmConditionType").orElseThrow()));
+        final JsonNode shape = shapeOf(json.get("properties").get("Quality"));
+
+        assertThat(shape.path("properties").has("symbol")).isTrue();
+        assertThat(shape.path("required"))
+                .as("neither part of a status code is promised")
+                .isEmpty();
+    }
+
+    /** The non-null alternative of a nullable property, which renders as {@code anyOf [shape, null]}. */
+    private @NotNull JsonNode shapeOf(final @NotNull JsonNode property) {
+        for (final JsonNode alternative : property.path("anyOf")) {
+            if (alternative.has("properties")) {
+                return alternative;
+            }
+        }
+        return property;
+    }
+
+    @Test
     void theReadAndWriteSchemasDiffer() {
         // If these agreed there would be no reason for the tag to carry two, and the southbound editor would
         // show the alarm's fields instead of the command's.
