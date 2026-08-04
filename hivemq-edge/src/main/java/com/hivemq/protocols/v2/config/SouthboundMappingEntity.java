@@ -16,11 +16,13 @@
 package com.hivemq.protocols.v2.config;
 
 import com.hivemq.configuration.entity.EntityValidatable;
+import com.hivemq.util.Topics;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlType;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -63,7 +65,38 @@ public class SouthboundMappingEntity implements EntityValidatable {
 
     @Override
     public void validate(final @NotNull List<ValidationEvent> validationEvents) {
-        EntityValidatable.notEmpty(validationEvents, topic, "southbound-mapping topic");
+        if (EntityValidatable.notEmpty(validationEvents, topic, "southbound-mapping topic")) {
+            // The southbound topic is an MQTT subscription filter: wildcards are legal, but the filter itself must
+            // be subscribable and must stay out of the broker-owned '$' namespace.
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> Topics.isValidToSubscribe(topic),
+                    () -> "southbound-mapping topic [" + topic + "] is not a valid topic filter to subscribe to");
+            // A shared-subscription filter is refused outright (EDG-824 #11, Sam round 2 finding 7). The share name
+            // of a v2 southbound subscription is Edge's, not the operator's: the runtime derives it from the adapter
+            // id and it is load-bearing beyond routing — it doubles as the marker that stops the broker's orphan
+            // cleanup from discarding a durable command queue while its consumer is detached. An operator-supplied
+            // group has nowhere to go. Accepting one used to be silently destructive rather than merely useless:
+            // the literal '$share/<group>/<filter>' text was passed through as the subscription filter, so it
+            // matched only a topic of that literal name, the adapter came up GREEN, and every write vanished.
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> !topic.startsWith("$share/") && !topic.equals("$share"),
+                    () -> "southbound-mapping topic [" + topic
+                            + "] is a shared-subscription filter; Edge owns the share name of a southbound "
+                            + "subscription, so map the plain topic filter instead");
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> !Topics.isDollarTopic(topic),
+                    () -> "southbound-mapping topic [" + topic
+                            + "] is in the reserved '$' namespace, which is owned by the broker");
+            EntityValidatable.notMatch(
+                    validationEvents,
+                    () -> topic.getBytes(StandardCharsets.UTF_8).length
+                            <= NorthboundMappingEntity.MAX_TOPIC_LENGTH_BYTES,
+                    () -> "southbound-mapping topic exceeds the maximum length of "
+                            + NorthboundMappingEntity.MAX_TOPIC_LENGTH_BYTES + " bytes");
+        }
         EntityValidatable.notEmpty(validationEvents, tagName, "southbound-mapping tag-name");
     }
 

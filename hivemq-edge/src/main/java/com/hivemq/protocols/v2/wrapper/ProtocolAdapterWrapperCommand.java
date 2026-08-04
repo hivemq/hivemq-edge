@@ -64,18 +64,21 @@ public sealed interface ProtocolAdapterWrapperCommand extends ProtocolAdapterWra
     /**
      * Replace the tag set in place — the atomic tags-only transition. Never reconnects.
      *
-     * @param nodes             the new node/tag pairs.
-     * @param activation        the per-tag activation preferences from the configuration.
-     * @param readUsedTagNames  the tags consumed by at least one northbound mapping (the {@code readUsed}
-     *                          derivation).
-     * @param writeUsedTagNames the tags produced to by at least one southbound mapping (the {@code writeUsed}
-     *                          derivation).
+     * @param nodes              the new node/tag pairs.
+     * @param activation         the per-tag activation preferences from the configuration.
+     * @param readUsedTagNames   the tags consumed by at least one northbound mapping (the {@code readUsed}
+     *                           derivation).
+     * @param writeUsedTagNames  the tags produced to by at least one southbound mapping (the {@code writeUsed}
+     *                           derivation).
+     * @param pollIntervalMillis the poll cadence derived from the new configuration — carried so an
+     *                           interval-only change actually applies on a tags-only reload (EDG-824 #2).
      */
     record UpdateTagSet(
             @NotNull List<NodeTagPair> nodes,
             @NotNull Map<String, TagAspectActivationPreference> activation,
             @NotNull Set<String> readUsedTagNames,
-            @NotNull Set<String> writeUsedTagNames)
+            @NotNull Set<String> writeUsedTagNames,
+            long pollIntervalMillis)
             implements ProtocolAdapterWrapperCommand {}
 
     /**

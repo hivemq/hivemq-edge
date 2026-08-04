@@ -28,18 +28,18 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A legacy-SDK identity for v2 northbound publishes.
+ * A legacy-SDK identity for v2 northbound publishes and the southbound write bridge.
  * <p>
- * The existing publish service and protocol-adapter interceptors still key their context from the v1
- * {@link ProtocolAdapter} shape. V2 northbound delivery only needs that identity surface — adapter id, protocol id,
+ * The existing publish and writing services and protocol-adapter interceptors still key their context from the v1
+ * {@link ProtocolAdapter} shape. V2 delivery only needs that identity surface — adapter id, protocol id,
  * and display metadata — so this adapter deliberately implements no lifecycle behavior.
  */
-final class ProtocolAdapterPublishIdentity implements ProtocolAdapter {
+public final class ProtocolAdapterPublishIdentity implements ProtocolAdapter {
 
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterInformation information;
 
-    ProtocolAdapterPublishIdentity(
+    public ProtocolAdapterPublishIdentity(
             final @NotNull String adapterId,
             final @NotNull com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation information) {
         this.adapterId = adapterId;

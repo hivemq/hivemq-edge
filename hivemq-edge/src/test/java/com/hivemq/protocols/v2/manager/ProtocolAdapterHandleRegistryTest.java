@@ -24,6 +24,7 @@ import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -89,7 +90,7 @@ class ProtocolAdapterHandleRegistryTest {
         final ProtocolAdapterHandleRegistry handleRegistry = new ProtocolAdapterHandleRegistry();
         final int writers = 8;
         final int perWriter = 50;
-        final List<Thread> threads = new java.util.ArrayList<>(writers);
+        final List<Thread> threads = new ArrayList<>(writers);
         for (int writer = 0; writer < writers; writer++) {
             final int base = writer * perWriter;
             threads.add(new Thread(() -> {

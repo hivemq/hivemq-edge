@@ -55,8 +55,9 @@ public final class TagRuntime {
      * @param batches                the actor's batch collector.
      * @param metrics                the per-adapter metrics.
      * @param sharedNodeVerification the shared verification authority.
-     * @param pollIntervalMillis     the poll cadence for a polled read aspect, in milliseconds.
-     * @param retryPolicy            the backoff policy for verification and subscription retries.
+     * @param pollIntervalMillis      the poll cadence for a polled read aspect, in milliseconds.
+     * @param pollResultTimeoutMillis the deadline for a requested poll's result (EDG-824 #15).
+     * @param retryPolicy             the backoff policy for verification and subscription retries.
      */
     public TagRuntime(
             final @NotNull String adapterId,
@@ -67,6 +68,7 @@ public final class TagRuntime {
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
             final long pollIntervalMillis,
+            final long pollResultTimeoutMillis,
             final @NotNull RetryPolicy retryPolicy) {
         this.pair = pair;
         this.readAspect = new TagAspectRead(
@@ -79,6 +81,7 @@ public final class TagRuntime {
                 metrics,
                 sharedNodeVerification,
                 pollIntervalMillis,
+                pollResultTimeoutMillis,
                 retryPolicy);
         this.writeAspect = new TagAspectWrite(
                 adapterId,
@@ -225,6 +228,26 @@ public final class TagRuntime {
      */
     public void onPollComplete() {
         readAspect.onPollComplete();
+    }
+
+    /**
+     * Record a declared-schema conformance failure on the read aspect: counted and surfaced in the
+     * snapshot, but never fed into the aspect machine — a violating value is a data-quality problem on a live
+     * transport, not a transport failure (EDG-824 #6).
+     *
+     * @param reason a human-readable description of the violation.
+     */
+    public void recordReadConformanceFailure(final @NotNull String reason) {
+        readAspect.recordConformanceFailure(reason);
+    }
+
+    /**
+     * A reading of this tag was accepted AND passed the declared schema, so it goes northbound — the only event that
+     * satisfies the read aspect's staleness deadline (EDG-824 #15, Sam round 2 finding 5). Deliberately not called
+     * for a schema-refused value: that proves the transport is alive, but the consumer still received nothing.
+     */
+    public void recordReadValuePublished() {
+        readAspect.onValuePublished();
     }
 
     /**

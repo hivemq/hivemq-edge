@@ -66,7 +66,9 @@ public enum ProtocolAdapterWrapperState implements FSMState {
     /**
      * The adapter and wrapper are no longer consistent. {@code ERROR} absorbs every protocol-adapter
      * event as a named, logged transition so the defensive reset fires at most once per incident. The only ways
-     * out are a goal change to "stopped" and a manager-driven recreate.
+     * out are a goal change to "stopped" — honored <b>once</b> per adapter life, so an adapter that never completes
+     * its stop stays here instead of cycling back through {@link #WAITING_FOR_STOPPED} forever (EDG-824 #19) — and a
+     * manager-driven recreate.
      */
     ERROR
 }
