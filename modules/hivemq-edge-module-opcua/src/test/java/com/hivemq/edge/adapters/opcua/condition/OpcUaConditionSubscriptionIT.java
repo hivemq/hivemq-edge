@@ -238,6 +238,53 @@ public class OpcUaConditionSubscriptionIT {
 
     @Test
     @Timeout(120)
+    void whenTheDeviceExposesNoTypeDefinition_thenTheTagIsRejectedWithBothReadings() throws Exception {
+        // A server may legitimately keep its condition instances out of the address space (OPC 10000-9 §4.3),
+        // so an empty answer is not proof the tag is wrong. It is not proof the tag is right either, and a
+        // verifier that treats "I could not check" as "it is fine" has stopped verifying -- so the tag is
+        // rejected. What the message must not do is assert the node is not a condition: it names both
+        // readings, so an operator meeting this on a real device can tell us which one it was.
+        final String unexposed = opcUaServerExtension
+                .getTestNamespace()
+                .addConditionNodeWithoutTypeDefinition("UnexposedAlarm", CONDITION_NODE_ID + 60);
+        final String healthy =
+                opcUaServerExtension.getTestNamespace().addConditionNode("HealthyNeighbour", CONDITION_NODE_ID + 61);
+
+        startAdapterWith(
+                new OpcuaTag("unexposed-alarm", "", new OpcuaTagDefinition(unexposed, OpcuaTagKind.CONDITION)),
+                new OpcuaTag("healthy-neighbour", "", new OpcuaTagDefinition(healthy, OpcuaTagKind.CONDITION)));
+
+        // One unverifiable tag must not stop the adapter, nor the tags beside it.
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(healthy), "still working", 600, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(unexposed), "should not arrive", 900, true);
+        Thread.sleep(2000);
+
+        assertThat(tagStreamingService.published())
+                .as("the unverifiable tag must not be subscribed")
+                .allSatisfy(published ->
+                        assertThat(published.get("SourceName").asText()).isEqualTo("source-of-" + healthy));
+
+        final List<String> messages = eventService.readEvents(null, null).stream()
+                .map(event -> String.valueOf(event.getMessage()))
+                .filter(message -> message.contains("unexposed-alarm"))
+                .toList();
+        assertThat(messages)
+                .as("a dropped tag must be reported as an adapter event")
+                .isNotEmpty();
+        assertThat(messages).anySatisfy(message -> assertThat(message)
+                .as("the reason must say the declaration could not be verified, not assert the node is wrong")
+                .contains("could not be verified"));
+    }
+
+    @Test
+    @Timeout(120)
     void whenTheDeclaredTypeDoesNotMatchTheDevice_thenOnlyThatTagIsDropped() throws Exception {
         // Declared as a level alarm, but the device offers only a plain alarm -- the tag promises limits the
         // device has not got.

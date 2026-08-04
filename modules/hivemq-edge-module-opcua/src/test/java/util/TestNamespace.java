@@ -285,6 +285,30 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * @param nodeIdPart the identifier part of its node id.
      * @return the node id, in the parseable form a tag definition uses.
      */
+    /**
+     * Adds a condition whose node carries no {@code HasTypeDefinition} reference.
+     * <p>
+     * Models a server that does not expose its condition instances, which OPC 10000-9 §4.3 permits:
+     * "Instances not exposed in the AddressSpace still have a ConditionId (NodeId)." The declared type
+     * cannot be verified against such a node — which is not the same as the type being wrong, and is why the
+     * rejection message has to name both possibilities.
+     * <p>
+     * The reference is removed after construction rather than omitted: Milo's builder refuses to build an
+     * Object without one and substitutes {@code BaseObjectType}, which would model a <em>wrong</em> type
+     * rather than an absent one — a different case, and one that should be rejected on its own merits.
+     */
+    public @NotNull String addConditionNodeWithoutTypeDefinition(final @NotNull String name, final long nodeIdPart) {
+        final String conditionNodeId = addConditionNode(name, nodeIdPart);
+        final UaNode node = getNodeManager().get(NodeId.parse(conditionNodeId));
+        if (node != null) {
+            node.getReferences().stream()
+                    .filter(reference -> NodeIds.HasTypeDefinition.equals(reference.getReferenceTypeId()))
+                    .toList()
+                    .forEach(node::removeReference);
+        }
+        return conditionNodeId;
+    }
+
     public @NotNull String addConditionNode(final @NotNull String name, final long nodeIdPart) {
         return addConditionNode(name, nodeIdPart, NodeIds.AlarmConditionType);
     }

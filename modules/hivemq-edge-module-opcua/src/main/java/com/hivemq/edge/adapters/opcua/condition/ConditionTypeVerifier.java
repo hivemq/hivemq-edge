@@ -102,10 +102,20 @@ public final class ConditionTypeVerifier {
 
         final Optional<String> deviceTypeName = typeNameOf(references);
         if (deviceTypeName.isEmpty()) {
+            // Rejected, not waved through. The specification does permit a server to keep condition
+            // instances out of the AddressSpace (§4.3), so an empty answer is not proof the tag is wrong --
+            // but it is not proof the tag is right either, and a verifier that treats "I could not check"
+            // as "it is fine" has stopped verifying. Failing here is the safe direction: the operator is
+            // told plainly, and a real device that provokes it is worth investigating rather than guessing
+            // about. The escape hatch is to correct the declaration or name the type the device does expose.
             return new Result.Rejected("tag '" + tagName
                     + "' is declared as a condition of type '"
                     + declaredType.browseName()
-                    + "', but the node has no type definition — it is probably not a condition");
+                    + "', but the device returned no type definition for that node, so the declaration could "
+                    + "not be verified. Either the node is not a condition, or this server does not expose "
+                    + "its condition instances in the address space — which OPC 10000-9 §4.3 permits. If the "
+                    + "node is right and the server is one of those, please report it: the case is known to "
+                    + "be possible but has not been seen on a real device");
         }
 
         final Optional<OpcuaConditionType> deviceType = OpcuaConditionType.fromBrowseName(deviceTypeName.get());
