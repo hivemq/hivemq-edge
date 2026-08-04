@@ -19,6 +19,11 @@ import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.
 import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.tag;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -27,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.schema.Schema;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
@@ -34,6 +40,7 @@ import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
@@ -45,12 +52,20 @@ import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.InternalWritingContext;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestDataPointFactory;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.TestProtocolAdapterInformation;
+import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.FakeClock;
 import com.hivemq.protocols.v2.runtime.ManualDispatcher;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand;
@@ -59,6 +74,8 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -270,6 +287,261 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         assertThat(counting.liveBindings()).isZero();
     }
 
+    // ── EDG-824 finding 2 (Sam round 2): construction is all-or-nothing ─────────────────────────────────────────
+    // Building an adapter acquires resources one step at a time — gauges on the shared MetricRegistry, a dispatch
+    // thread, a tick schedule, southbound subscriptions. Before the construction scope, only the adapter
+    // constructor's failure was handled (and only for RuntimeException), so a throw at any later step returned no
+    // container and left everything earlier with no owner.
+
+    /** Metric names the shared registry still carries for one adapter — zero once its construction has unwound. */
+    private static long metricsFor(final @NotNull MetricRegistry registry, final @NotNull String adapterId) {
+        return registry.getNames().stream()
+                .filter(name -> name.startsWith(ProtocolAdapterMetrics.ADAPTER_PREFIX + adapterId + "."))
+                .count();
+    }
+
+    @Test
+    void anAdapterConstructorRaisingALinkageError_stillReleasesTheBindingItOpened() {
+        final CountingDispatcher counting = new CountingDispatcher();
+        final MetricRegistry registry = new MetricRegistry();
+        final DefaultProtocolAdapterWrapperFactory factoryOnCounting = new DefaultProtocolAdapterWrapperFactory(
+                clock, counting, registry, new TestDataPointFactory(), new ObjectMapper(), 100);
+
+        // A mispackaged or version-skewed adapter jar throws an Error, not a RuntimeException — the exact case the
+        // wide catch exists for, and the one the old RuntimeException-only guard let through.
+        assertThatThrownBy(() -> factoryOnCounting.create(
+                        adapter("a").build(),
+                        new FailingAfterAttachFactory(() -> new LinkageError("mispackaged adapter jar")),
+                        ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(LinkageError.class);
+
+        assertThat(counting.liveBindings()).isZero();
+        assertThat(metricsFor(registry, "a")).isZero();
+    }
+
+    @Test
+    void aFailureAttachingTheWrapper_releasesTheMetricsAlreadyRegistered() {
+        final MetricRegistry registry = new MetricRegistry();
+        final DefaultProtocolAdapterWrapperFactory factoryOnFailingDispatcher =
+                new DefaultProtocolAdapterWrapperFactory(
+                        clock, new FailingDispatcher(), registry, new TestDataPointFactory(), new ObjectMapper(), 100);
+
+        assertThatThrownBy(() -> factoryOnFailingDispatcher.create(
+                        adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("dispatcher attach failed");
+
+        // The metrics were registered two steps earlier; nothing but the scope owned them at the moment of the throw.
+        assertThat(metricsFor(registry, "a")).isZero();
+    }
+
+    @Test
+    void aFailureSchedulingTheTick_releasesTheMetricsAndTheDispatchBinding() {
+        final CountingDispatcher counting = new CountingDispatcher();
+        final MetricRegistry registry = new MetricRegistry();
+        final DefaultProtocolAdapterWrapperFactory factoryOnFailingClock = new DefaultProtocolAdapterWrapperFactory(
+                new ScriptedClock(clock, 1), counting, registry, new TestDataPointFactory(), new ObjectMapper(), 100);
+
+        assertThatThrownBy(() -> factoryOnFailingClock.create(
+                        adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("tick scheduling failed");
+
+        assertThat(metricsFor(registry, "a")).isZero();
+        assertThat(counting.liveBindings()).isZero();
+    }
+
+    @Test
+    void aFailureWiringTheSouthboundWriters_releasesEverythingAcquiredBeforeIt() {
+        final CountingDispatcher counting = new CountingDispatcher();
+        final MetricRegistry registry = new MetricRegistry();
+        final ScriptedClock scriptedClock = new ScriptedClock(clock, 0);
+        final FailingWritingService writingService = new FailingWritingService();
+        final DefaultProtocolAdapterWrapperFactory factoryWithFailingWriters = new DefaultProtocolAdapterWrapperFactory(
+                scriptedClock,
+                counting,
+                registry,
+                new TestDataPointFactory(),
+                new ObjectMapper(),
+                100,
+                null,
+                null,
+                writingService);
+
+        // The southbound registry is the LAST thing built, so its failure is the one with the most to unwind.
+        assertThatThrownBy(() -> factoryWithFailingWriters.create(
+                        adapter("a")
+                                .southboundMapping("plant/a/setpoint", "temperature")
+                                .build(),
+                        sdkFactory,
+                        ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("writing service unavailable");
+
+        assertThat(metricsFor(registry, "a")).isZero();
+        assertThat(counting.liveBindings()).isZero();
+        assertThat(scriptedClock.liveTicks()).isZero();
+        // The registry had already adopted its writing contexts when the start threw. Unless the scope owns the
+        // registry BEFORE it is initialized, nothing can undo that — the object that holds the contexts is never
+        // returned to anyone (Sam round 3, finding 4).
+        assertThat(writingService.stops())
+                .as("the partially-started southbound wiring is stopped")
+                .isEqualTo(1);
+    }
+
+    @Test
+    void aFailureBuildingTheSecondNorthboundConsumer_removesTheFirstOneAlreadyAdded() {
+        final MetricRegistry registry = new MetricRegistry();
+        final TagManager tagManager = spy(new TagManager());
+        final NorthboundTagConsumer firstConsumer = mock(NorthboundTagConsumer.class);
+        when(firstConsumer.getTagName()).thenReturn("temperature");
+        final NorthboundConsumerFactory consumerFactory = mock(NorthboundConsumerFactory.class);
+        when(consumerFactory.build(any(), any(), any(), any(), any()))
+                .thenReturn(firstConsumer)
+                .thenThrow(new IllegalStateException("consumer build failed"));
+
+        final DefaultProtocolAdapterWrapperFactory factoryWithFailingConsumers =
+                new DefaultProtocolAdapterWrapperFactory(
+                        clock,
+                        dispatcher,
+                        registry,
+                        new TestDataPointFactory(),
+                        new ObjectMapper(),
+                        100,
+                        tagManager,
+                        consumerFactory,
+                        null);
+
+        // Two mappings: the first consumer is built and added to the tag manager, the second throws. The registry
+        // object is never returned, so before the fix nothing owned the live first consumer — it kept receiving
+        // every value fed for its tag, for an adapter that does not exist.
+        assertThatThrownBy(() -> factoryWithFailingConsumers.create(
+                        adapter("a")
+                                .northboundMapping("temperature", "plant/a/temperature")
+                                .northboundMapping("pressure", "plant/a/pressure")
+                                .build(),
+                        sdkFactory,
+                        ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("consumer build failed");
+
+        verify(tagManager).addConsumer(firstConsumer);
+        verify(tagManager).removeConsumer(firstConsumer);
+        assertThat(metricsFor(registry, "a")).isZero();
+    }
+
+    @Test
+    void anAdapterIdWhoseConstructionFailedLate_canBeCreatedAgain() {
+        final MetricRegistry registry = new MetricRegistry();
+        // Fails once, then behaves — the shape of a transient wiring failure during a reload or a restart loop.
+        final DefaultProtocolAdapterWrapperFactory factoryOnFlakyClock = new DefaultProtocolAdapterWrapperFactory(
+                new ScriptedClock(clock, 1), dispatcher, registry, new TestDataPointFactory(), new ObjectMapper(), 100);
+
+        assertThatThrownBy(() -> factoryOnFlakyClock.create(
+                        adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class);
+
+        // The decisive assertion: a leaked gauge from the failed attempt makes this registration throw
+        // "A metric named protocol-adapter-v2.adapter.a.mailbox.depth already exists" — the adapter id would be
+        // permanently uncreatable until restart, with no configuration change able to recover it.
+        final ProtocolAdapterContainer managed =
+                factoryOnFlakyClock.create(adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE);
+        assertThat(managed.isReal()).isTrue();
+
+        managed.close();
+        assertThat(metricsFor(registry, "a")).isZero();
+    }
+
+    /** A dispatcher that refuses every attach — models the wrapper binding failing mid-construction. */
+    private static final class FailingDispatcher implements MessageDispatcher {
+
+        @Override
+        public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
+                final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
+            throw new IllegalStateException("dispatcher attach failed");
+        }
+    }
+
+    /**
+     * A {@link Clock} that fails its first {@code n} tick schedules and then delegates, tracking how many tick
+     * handles are still live so a test can prove a failed construction cancelled the one it had scheduled.
+     */
+    private static final class ScriptedClock implements Clock {
+
+        private final @NotNull Clock delegate;
+        private int failuresRemaining;
+        private int scheduled;
+        private int cancelled;
+
+        private ScriptedClock(final @NotNull Clock delegate, final int failuresRemaining) {
+            this.delegate = delegate;
+            this.failuresRemaining = failuresRemaining;
+        }
+
+        @Override
+        public long nowMillis() {
+            return delegate.nowMillis();
+        }
+
+        @Override
+        public <MessageType extends MailboxMessage> @NotNull AutoCloseable scheduleTick(
+                final long periodMillis,
+                final @NotNull MailboxSender<MessageType> target,
+                final @NotNull Supplier<MessageType> tickMessage) {
+            if (failuresRemaining > 0) {
+                failuresRemaining--;
+                throw new IllegalStateException("tick scheduling failed");
+            }
+            final AutoCloseable handle = delegate.scheduleTick(periodMillis, target, tickMessage);
+            scheduled++;
+            return () -> {
+                cancelled++;
+                handle.close();
+            };
+        }
+
+        private int liveTicks() {
+            return scheduled - cancelled;
+        }
+    }
+
+    /**
+     * A writing service that refuses to start — models the southbound wiring failing at the last step. It counts the
+     * stops it is asked for: a start that threw <b>after</b> the registry adopted its contexts must still be undone,
+     * and only the construction scope can do that (Sam round 3, finding 4).
+     */
+    private static final class FailingWritingService implements InternalProtocolAdapterWritingService {
+
+        private int stops;
+
+        private int stops() {
+            return stops;
+        }
+
+        @Override
+        public boolean writingEnabled() {
+            return true;
+        }
+
+        @Override
+        public @NotNull CompletableFuture<Boolean> startWritingAsync(
+                final @NotNull WritingProtocolAdapter writingProtocolAdapter,
+                final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+                final @NotNull List<InternalWritingContext> writingContexts) {
+            throw new IllegalStateException("writing service unavailable");
+        }
+
+        @Override
+        public void stopWriting(
+                final @NotNull WritingProtocolAdapter writingProtocolAdapter,
+                final @NotNull List<InternalWritingContext> writingContexts) {
+            stops++;
+        }
+
+        @Override
+        public void addWritingChangedCallback(final @NotNull WritingChangedCallback callback) {}
+    }
+
     /**
      * A {@link MessageDispatcher} double that counts the bindings it hands out and the ones later closed, so a test can
      * assert every binding an adapter opened is released on teardown and a failed construction leaves none behind.
@@ -342,6 +614,16 @@ class DefaultProtocolAdapterWrapperFactoryTest {
 
         private final @NotNull ProtocolAdapterInformation information =
                 new TestProtocolAdapterInformation(ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID);
+        private final @NotNull Supplier<Throwable> fault;
+
+        private FailingAfterAttachFactory() {
+            this(() -> new IllegalStateException("boom while constructing the adapter"));
+        }
+
+        /** @param fault the throwable the constructor raises — a {@link RuntimeException} or an {@link Error}. */
+        private FailingAfterAttachFactory(final @NotNull Supplier<Throwable> fault) {
+            this.fault = fault;
+        }
 
         @Override
         public @NotNull ProtocolAdapterInformation information() {
@@ -352,7 +634,11 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         public @NotNull ProtocolAdapter createAdapter(
                 final @NotNull ProtocolAdapterInput input, final @NotNull ProtocolAdapterOutput output) {
             input.services().dispatcher().attach(new DefaultMailbox<DirectMessage>(), message -> {});
-            throw new IllegalStateException("boom while constructing the adapter");
+            final Throwable failure = fault.get();
+            if (failure instanceof final Error error) {
+                throw error;
+            }
+            throw (RuntimeException) failure;
         }
 
         @Override
@@ -554,6 +840,8 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         private final @NotNull List<String> started = new ArrayList<>();
         private final @NotNull List<String> stopped = new ArrayList<>();
         private final @NotNull List<String> errored = new ArrayList<>();
+        private final @NotNull List<String> stopFailed = new ArrayList<>();
+        private final @NotNull List<String> died = new ArrayList<>();
 
         @Override
         public void wrapperStarted(final @NotNull String adapterId) {
@@ -568,6 +856,16 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         @Override
         public void wrapperError(final @NotNull String adapterId, final @NotNull String reason) {
             errored.add(adapterId);
+        }
+
+        @Override
+        public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+            stopFailed.add(adapterId);
+        }
+
+        @Override
+        public void wrapperDied(final @NotNull String adapterId, final @NotNull String reason) {
+            died.add(adapterId);
         }
     }
 }

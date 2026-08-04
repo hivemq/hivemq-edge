@@ -63,6 +63,31 @@ public final class TagAspectRead implements TagAspectVerifying {
     private static final int SUSTAINED_FAILURE_THRESHOLD = 5;
 
     /**
+     * Consecutive poll failures (missing results or poll-time node errors) after which the aspect escalates through
+     * re-verification instead of silently riding the cadence (EDG-824 #15): if the device still answers, the tag
+     * resumes; if the adapter is mute, the aspect parks in verification — active-but-not-operating — and the coarse
+     * {@code TagStatus} folds to {@code ERROR} instead of a healthy-looking {@code NORTHBOUND_ONLY}.
+     */
+    private static final int POLL_FAILURE_ESCALATION_THRESHOLD = 3;
+
+    /**
+     * How long a <b>polled</b> aspect may go without a single published reading before it is declared stale
+     * (EDG-824 #15, Sam round 2 finding 5).
+     * <p>
+     * The escalation above answers "is the device still there?" and clears on a successful re-verification. That is
+     * the wrong question for an operator: a device that answers cheap verification forever while every poll stalls
+     * passes it every round, so the tag returned to a producing-looking {@code NORTHBOUND_ONLY} within a second of
+     * each escalation and spent essentially all of its observable life reading healthy — having never published a
+     * value. This deadline asks the question that matters instead — <i>has a reading actually arrived?</i> — and
+     * only a published reading answers it.
+     * <p>
+     * Deliberately much longer than one escalation round (~45 s on defaults) so it is a verdict, not a retry: the
+     * escalation stays the fast "re-verify and try again", this is the slow "this tag is not readable". Hardcoded for
+     * now; a per-adapter configuration knob is the natural follow-up.
+     */
+    private static final long STALE_AFTER_NO_VALUE_MILLIS = 5 * 60 * 1000L;
+
+    /**
      * The two read-aspect variants — which transition table and operating cycle the aspect runs.
      */
     private enum Variant {
@@ -90,6 +115,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     private final @NotNull ProtocolAdapterMetrics metrics;
     private final @NotNull SharedNodeVerification sharedNodeVerification;
     private final long pollIntervalMillis;
+    private final long pollResultTimeoutMillis;
     private final @NotNull Backoff verificationRetryBackoff;
     private final @NotNull Backoff subscriptionRetryBackoff;
 
@@ -103,10 +129,24 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     private @NotNull TagAspectGoal goal = TagAspectGoal.inactive();
     private @NotNull AdapterPhase adapterPhase = AdapterPhase.DISCONNECTED;
+    private int consecutivePollFailures;
     private int failureCount;
     private @Nullable String lastFailureReason;
     private long lastTransitionAtMillis;
     private @Nullable TimerHandle activeTimer;
+
+    /**
+     * When the staleness deadline started counting: the clock time of the last published reading, or of the moment
+     * the aspect began operating if it has not published one yet. {@code -1} means the deadline is not running —
+     * the aspect is deactivated or the adapter is down, and a tag cannot be blamed for producing nothing then.
+     * <p>
+     * Crucially this is NOT reset by a successful verification: that is exactly what let a verify-answering,
+     * poll-stalling device look healthy forever.
+     */
+    private long producingSinceMillis = -1;
+
+    /** Whether the aspect has passed {@link #STALE_AFTER_NO_VALUE_MILLIS} without publishing a reading. */
+    private boolean stale;
 
     /**
      * @param adapterId               the owning adapter's id.
@@ -118,6 +158,8 @@ public final class TagAspectRead implements TagAspectVerifying {
      * @param metrics                 the per-adapter metrics (per-tag failure counters).
      * @param sharedNodeVerification the shared verification authority for re-verifications.
      * @param pollIntervalMillis      the poll cadence for a polled aspect, in milliseconds.
+     * @param pollResultTimeoutMillis the deadline for a requested poll's result — the adapter's command timeout; a
+     *                                poll that never answers is failed instead of waiting forever (EDG-824 #15).
      * @param retryPolicy             the backoff policy for verification and subscription retries.
      */
     public TagAspectRead(
@@ -130,6 +172,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
             final long pollIntervalMillis,
+            final long pollResultTimeoutMillis,
             final @NotNull RetryPolicy retryPolicy) {
         this.adapterId = adapterId;
         this.node = node;
@@ -141,6 +184,7 @@ public final class TagAspectRead implements TagAspectVerifying {
         this.metrics = metrics;
         this.sharedNodeVerification = sharedNodeVerification;
         this.pollIntervalMillis = pollIntervalMillis;
+        this.pollResultTimeoutMillis = pollResultTimeoutMillis;
         this.verificationRetryBackoff = new Backoff(retryPolicy);
         this.subscriptionRetryBackoff = new Backoff(retryPolicy);
         if (variant == Variant.SUBSCRIBED) {
@@ -201,6 +245,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             batches.removeSubscription(node);
         }
         cancelActiveTimer();
+        suspendStaleness();
         moveTo(deactivated);
     }
 
@@ -239,6 +284,8 @@ public final class TagAspectRead implements TagAspectVerifying {
             cancelActiveTimer();
             verificationRetryBackoff.reset();
             subscriptionRetryBackoff.reset();
+            consecutivePollFailures = 0;
+            suspendStaleness();
             moveTo(waitingForAdapterReady);
         }
     }
@@ -255,6 +302,7 @@ public final class TagAspectRead implements TagAspectVerifying {
         failureCount = 0;
         lastFailureReason = null;
         verificationRetryBackoff.reset();
+        suspendStaleness(); // an explicit operator retry starts the tag's whole record over, staleness included
         if (adapterPhase == AdapterPhase.READY) {
             moveTo(waitingForVerification);
             requestVerification();
@@ -318,21 +366,133 @@ public final class TagAspectRead implements TagAspectVerifying {
         dispatch(new TagAspectEvent.NodeFailed(reason, spontaneous));
     }
 
+    /**
+     * Record a declared-schema conformance failure: counted and surfaced, no machine event — the
+     * transport is alive, only the value was refused (EDG-824 #6).
+     *
+     * @param reason a human-readable description of the violation.
+     */
+    public void recordConformanceFailure(final @NotNull String reason) {
+        recordFailure(reason);
+    }
+
     // ── actions the transition table runs (package-private) ─────────────────────────────────────────────────────
 
     @Override
     public @NotNull TagAspectState enterVerified() {
+        cancelActiveTimer(); // clear the verify-result deadline (V-DEADLINE); the poll branch re-arms below
         verificationRetryBackoff.reset();
+        consecutivePollFailures = 0;
         if (variant == Variant.SUBSCRIBED) {
             batches.addSubscription(node);
         } else {
+            // Start the staleness deadline the first time this aspect begins operating, and — deliberately — do NOT
+            // restart it on a later re-verification. A device that answers verification but stalls every poll passes
+            // through here once per escalation round; restarting the deadline here would reset it every ~45 s and it
+            // could never trip, which is the whole failure mode (finding 5).
+            if (producingSinceMillis < 0) {
+                producingSinceMillis = clock.nowMillis();
+            }
             scheduleNextPoll();
         }
         return verifiedEntry;
     }
 
+    /**
+     * A reading of this tag was accepted and published northbound. This is the only thing that satisfies the
+     * staleness deadline — not a verification, and not a value the declared schema refused (that one is proof the
+     * transport is alive, but the consumer still received nothing).
+     */
+    public void onValuePublished() {
+        producingSinceMillis = clock.nowMillis();
+        if (stale) {
+            stale = false;
+            log.info(
+                    "Tag '{}' on adapter '{}' is readable again: a reading was published after the stale period",
+                    tag.name(),
+                    adapterId);
+        }
+    }
+
+    /**
+     * Stop the staleness deadline: the aspect is deactivated or its adapter is down, and producing nothing is the
+     * correct behaviour. It restarts from zero when the aspect next begins operating, so a long outage does not make
+     * every tag report stale the instant the adapter reconnects.
+     */
+    private void suspendStaleness() {
+        producingSinceMillis = -1;
+        stale = false;
+    }
+
+    /**
+     * Trip the staleness verdict once the deadline has passed with nothing published. Evaluated at the top of every
+     * poll request and on every poll failure — between them the cadence guarantees one evaluation within
+     * {@code pollInterval + commandTimeout} of the deadline whatever the device does, so no second timer is added to
+     * the aspect's single timer slot.
+     * <p>
+     * Both call sites are needed: the request covers the cycles that <i>succeed</i> and still publish nothing (a
+     * refused value, or a completion with no values), the failure covers a stall that escalates into re-verification
+     * and may not reach another request for a while.
+     */
+    /**
+     * The deadline this aspect is actually judged against: five minutes, or one whole poll cycle when the configured
+     * cadence is slower than that. A device polled every ten minutes cannot publish within five however healthy it
+     * is, and judging it on the shorter figure would declare it unreadable during every single in-flight poll.
+     */
+    private long staleAfterMillis() {
+        return Math.max(STALE_AFTER_NO_VALUE_MILLIS, pollIntervalMillis + pollResultTimeoutMillis);
+    }
+
+    private void evaluateStaleness() {
+        if (stale || producingSinceMillis < 0) {
+            return;
+        }
+        final long withoutValueMillis = clock.nowMillis() - producingSinceMillis;
+        if (withoutValueMillis < staleAfterMillis()) {
+            return;
+        }
+        stale = true;
+        log.error(
+                "Tag '{}' on adapter '{}' has published no reading for {} ms: the tag is not readable. "
+                        + "The device is answering verification but not delivering poll results; last failure: {}",
+                tag.name(),
+                adapterId,
+                withoutValueMillis,
+                lastFailureReason);
+    }
+
     void requestPoll() {
+        // The deadline is evaluated here, at the top of each cycle, and not when a poll completes: the coordinator
+        // records a published reading AFTER the completing value has already driven the machine, so evaluating at
+        // completion would judge a cycle before its own publish was counted and trip a perfectly healthy tag one
+        // interval in every five minutes. By the next request the previous cycle's outcome is settled, whatever it
+        // was — a published reading, a value the schema refused, or a completion carrying no values at all
+        // (Sam, round 3 finding 3).
+        evaluateStaleness();
         batches.poll(node);
+        // A poll that never answers must not read healthy forever (EDG-824 #15): arm the result deadline on the
+        // aspect's single timer slot — a received value or failure replaces it with the next-poll timer.
+        scheduleTimer(
+                pollResultTimeoutMillis,
+                () -> dispatch(new TagAspectEvent.NodeFailed(
+                        "no poll result within " + pollResultTimeoutMillis + " ms", false)));
+    }
+
+    void onPollSucceeded() {
+        consecutivePollFailures = 0;
+        scheduleNextPoll();
+    }
+
+    /**
+     * A value arrived outside the poll window — the answer to a poll already failed at its result deadline. The
+     * value is discarded (the cadence has moved on) and it is NOT a published reading, so the missed publish already
+     * counted by that poll-result timeout must STAND. A device that answers every poll just after the deadline
+     * produces no data, and clearing the escalation counter here is exactly what let such a tag read healthy forever
+     * while publishing nothing (EDG-824 #15); it must instead escalate like any stalled poll. Only an on-time value
+     * ({@link #onPollSucceeded()}) clears the counter.
+     */
+    void onLateValueDiscarded() {
+        // Intentionally leaves consecutivePollFailures untouched — see the contract above.
     }
 
     void scheduleNextPoll() {
@@ -350,6 +510,23 @@ public final class TagAspectRead implements TagAspectVerifying {
     @Override
     public void requestVerification() {
         sharedNodeVerification.requestVerification(node);
+        armVerifyResultDeadline();
+    }
+
+    /**
+     * Arm the verify-result deadline on the aspect's single timer slot. Without it, an adapter that accepts a
+     * post-connect re-verification but never reports an outcome would park the aspect in WAITING_FOR_VERIFICATION
+     * forever — silent, yet the adapter status stays CONNECTED/green (the connect-gate watchdog covers only the
+     * connect-time gate). On expiry the outstanding verify is abandoned and a transient failure is raised so the
+     * aspect retries on the verification backoff instead of hanging. This is the verify-path analogue of the
+     * poll-result deadline (EDG-824 #15) and reuses the same adapter command timeout (QA finding V-DEADLINE).
+     */
+    private void armVerifyResultDeadline() {
+        scheduleTimer(pollResultTimeoutMillis, () -> {
+            sharedNodeVerification.abandonVerification(node);
+            dispatch(new TagAspectEvent.VerifyTransientlyFailed(
+                    "no verify result within " + pollResultTimeoutMillis + " ms"));
+        });
     }
 
     @Override
@@ -362,12 +539,32 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     @Override
     public void onPermanentVerificationFailure(final @NotNull String reason) {
+        cancelActiveTimer(); // clear the verify-result deadline (V-DEADLINE)
         recordFailure(reason);
     }
 
-    void onPollFailure(final @NotNull String reason) {
+    /**
+     * A poll failed — a poll-time node error or a missing result. The next scheduled poll is the retry; after
+     * {@link #POLL_FAILURE_ESCALATION_THRESHOLD} consecutive failures the aspect escalates through re-verification
+     * instead (EDG-824 #15), so a persistently-stalled poll surfaces at the coarse status level.
+     *
+     * @return the state the transition row moves to.
+     */
+    @NotNull
+    TagAspectState onPollFailure(final @NotNull String reason) {
         recordFailure(reason);
+        // The slow verdict, layered on the fast retry below: this one survives the re-verification the escalation
+        // triggers, so it is what a device that verifies-but-never-answers eventually trips (finding 5).
+        evaluateStaleness();
+        consecutivePollFailures++;
+        if (consecutivePollFailures >= POLL_FAILURE_ESCALATION_THRESHOLD) {
+            consecutivePollFailures = 0;
+            cancelActiveTimer();
+            requestVerification();
+            return waitingForVerification;
+        }
         scheduleNextPoll();
+        return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
     }
 
     void onSubscriptionFailure(final @NotNull String reason) {
@@ -378,8 +575,21 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     void onSpontaneousSubscriptionLoss(final @NotNull String reason) {
+        // The documented power cycle (EDG-824 #16): cancel the subscription FIRST, then re-verify, then re-subscribe
+        // only after the verify succeeds. Without the explicit cancel the old subscription is never released — a
+        // shadow-set-consistency deviation the adapter cannot repair on its own.
+        //
+        // The re-verify is posted through the BatchCollector rather than issued eagerly, so its verifyBatch
+        // dispatches AFTER this tick's removeSubscriptionBatch: the adapter observes remove -> verify -> add, not
+        // verify -> remove -> add. The in-flight registration keeps the dedup and the WAITING_FOR_VERIFICATION
+        // gating; the outcome still flows back through SharedNodeVerification.onVerifyResult -> enterVerified,
+        // which queues the re-subscribe. Costs one tick on this (rare, adapter-driven) path only.
+        batches.removeSubscription(node);
         recordFailure(reason);
-        requestVerification();
+        if (sharedNodeVerification.beginDeferredVerification(node)) {
+            batches.verify(node);
+        }
+        armVerifyResultDeadline(); // unconditional: a de-duplicated aspect still needs its own liveness deadline
     }
 
     void logUnexpectedEvent(final @NotNull TagAspectEvent event) {
@@ -415,10 +625,21 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * @return whether the aspect is operating at its goal (producing values), per {@link TagAspectState#isOperating()}.
+     * @return whether the aspect is operating at its goal (producing values), per {@link TagAspectState#isOperating()}
+     *         — and, for a polled aspect, actually producing them: a tag that has published nothing for
+     *         {@link #STALE_AFTER_NO_VALUE_MILLIS} is not operating however healthy its state machine looks, so the
+     *         coarse {@code TagStatus} folds to {@code ERROR} until a reading arrives (finding 5). No new status
+     *         value, and therefore no API change.
      */
     public boolean operating() {
-        return machine.state().isOperating();
+        return machine.state().isOperating() && !stale;
+    }
+
+    /**
+     * @return whether the aspect has gone {@link #STALE_AFTER_NO_VALUE_MILLIS} without publishing a reading.
+     */
+    public boolean stale() {
+        return stale;
     }
 
     /**
@@ -483,7 +704,15 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     private void scheduleTimer(final long delayMillis, final @NotNull Runnable onFire) {
         cancelActiveTimer();
-        activeTimer = timers.schedule(clock.nowMillis() + delayMillis, onFire);
+        // Saturate: a near-Long.MAX_VALUE delay must mean "practically never", not an overflowed negative
+        // deadline that fires on the very next tick — the slowest configured cadence behaving as the fastest.
+        // PriorityTimerQueue takes an ABSOLUTE fire time and never fires an entry at Long.MAX_VALUE, so
+        // saturating is the honest expression of that intent. The reachable source of such a delay is the
+        // configured poll interval, which TagEntity.MAXIMUM_POLL_INTERVAL_MILLIS now bounds well below overflow;
+        // this stays as defence in depth for any delay that did not come through that validation (review on
+        // #1635).
+        final long fireAtMillis = clock.nowMillis() + delayMillis;
+        activeTimer = timers.schedule(fireAtMillis < 0 ? Long.MAX_VALUE : fireAtMillis, onFire);
     }
 
     private void cancelActiveTimer() {

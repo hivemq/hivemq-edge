@@ -29,7 +29,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -92,6 +95,52 @@ class SystemDispatcherTest {
         }
     }
 
+    // ── the backstop's two halves (EDG-824 #12 / Sam round 2) ───────────────────────────────────────────────────
+    // The loop is the actor's heartbeat, so an ordinary throwable — including the LinkageError a mispackaged adapter
+    // jar raises, the very case the wide catch exists for — must never kill it. A fatal JVM condition is the
+    // opposite: the handler boundary deliberately rethrows it, and this backstop re-swallowing it would keep the
+    // loop dispatching on a JVM that cannot honour the work.
+
+    @Test
+    void anOrdinaryErrorFromTheHandler_isContainedAndTheLoopKeepsBeating() {
+        final SystemDispatcher dispatcher = new SystemDispatcher();
+        final DefaultMailbox<TestMessage> mailbox = new DefaultMailbox<>();
+        final FaultyHandler handler = new FaultyHandler(() -> new LinkageError("mispackaged adapter jar"));
+        try (MessageDispatcherHandle handle = dispatcher.attach(mailbox, handler)) {
+            mailbox.tell(new TestMessage("boom", MailboxMessagePriority.EVENT));
+            mailbox.tell(new TestMessage("after", MailboxMessagePriority.EVENT));
+
+            await().atMost(TIMEOUT).until(() -> handler.count() == 2);
+
+            assertThat(handler.uncaught()).isNull();
+            assertThat(handler.dispatchThread()).isNotNull();
+            assertThat(handler.dispatchThread().isAlive()).isTrue();
+        }
+    }
+
+    @Test
+    void aFatalJvmConditionFromTheHandler_endsTheLoopInsteadOfBeingSwallowed() {
+        final SystemDispatcher dispatcher = new SystemDispatcher();
+        final DefaultMailbox<TestMessage> mailbox = new DefaultMailbox<>();
+        // InternalError is a VirtualMachineError that can be raised without endangering the build JVM, so no forked
+        // process is needed: the boundary's decision is what is under test, not the JVM's reaction to real OOM.
+        final FaultyHandler handler = new FaultyHandler(() -> new InternalError("simulated fatal JVM condition"));
+        try (MessageDispatcherHandle handle = dispatcher.attach(mailbox, handler)) {
+            mailbox.tell(new TestMessage("boom", MailboxMessagePriority.EVENT));
+
+            // the error escapes run() and terminates the dispatch thread, captured by the per-thread handler the
+            // faulty handler installs (so the expected death does not litter the build log's stderr)
+            await().atMost(TIMEOUT).until(() -> handler.uncaught() != null);
+            assertThat(handler.uncaught()).isInstanceOf(InternalError.class);
+            await().atMost(TIMEOUT).until(() -> !handler.dispatchThread().isAlive());
+
+            // and the loop is genuinely gone: a later message is not processed
+            mailbox.tell(new TestMessage("after", MailboxMessagePriority.EVENT));
+            await().pollDelay(QUIET_WINDOW).atMost(TIMEOUT).untilAsserted(() -> assertThat(handler.count())
+                    .isEqualTo(1));
+        }
+    }
+
     private record TestMessage(
             @NotNull String label, @NotNull MailboxMessagePriority band) implements MailboxMessage {
         @Override
@@ -123,6 +172,46 @@ class SystemDispatcherTest {
 
         private @NotNull Set<String> threadNames() {
             return threadNames;
+        }
+    }
+
+    /**
+     * Counts every message and raises the supplied {@link Error} for the one labelled {@code "boom"}. It installs an
+     * uncaught-exception handler on the dispatch thread itself — no global default is touched — so a thread the test
+     * expects to die of a fatal error is observed directly instead of through stderr.
+     */
+    private static final class FaultyHandler implements MessageHandler<TestMessage> {
+
+        private final @NotNull Supplier<Error> fault;
+        private final @NotNull AtomicInteger count = new AtomicInteger();
+        private final @NotNull AtomicReference<Throwable> uncaught = new AtomicReference<>();
+        private volatile @Nullable Thread dispatchThread;
+
+        private FaultyHandler(final @NotNull Supplier<Error> fault) {
+            this.fault = fault;
+        }
+
+        @Override
+        public void receive(final @NotNull TestMessage message) {
+            final Thread current = Thread.currentThread();
+            dispatchThread = current;
+            current.setUncaughtExceptionHandler((thread, throwable) -> uncaught.set(throwable));
+            count.incrementAndGet();
+            if ("boom".equals(message.label())) {
+                throw fault.get();
+            }
+        }
+
+        private int count() {
+            return count.get();
+        }
+
+        private @Nullable Throwable uncaught() {
+            return uncaught.get();
+        }
+
+        private @Nullable Thread dispatchThread() {
+            return dispatchThread;
         }
     }
 }

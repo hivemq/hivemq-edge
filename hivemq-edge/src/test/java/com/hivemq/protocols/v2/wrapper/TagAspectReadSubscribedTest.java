@@ -88,6 +88,31 @@ class TagAspectReadSubscribedTest {
         assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore); // no re-verify on a command loss
     }
 
+    // EDG-824 #16: the documented power cycle is REMOVESUB -> re-VERIFY -> ADDSUB. The cancel is dispatched first,
+    // the re-verification is issued AFTER it (posted through the BatchCollector, never eagerly ahead of the cancel),
+    // and the re-subscribe only follows a successful verify.
+    @Test
+    void spontaneousLoss_powerCyclesRemoveThenVerifyThenAdd() {
+        final WrapperTestFixture fixture = subscribedAndConfirmed();
+        final long removesBefore = count(fixture, "removeSubscriptionBatch");
+
+        fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
+        fixture.drain(); // the cancel and the deferred re-verify are queued
+        fixture.advance(100); // a tick dispatches the cancel, then the re-verify, which succeeds and queues the re-add
+        fixture.advance(100); // the following tick dispatches the re-subscribe
+
+        assertThat(count(fixture, "removeSubscriptionBatch")).isEqualTo(removesBefore + 1);
+        final List<String> commands = fixture.commands();
+        // The adapter observes remove -> verify -> add, in that order.
+        assertThat(commands.lastIndexOf("removeSubscriptionBatch")).isLessThan(commands.lastIndexOf("verifyBatch"));
+        assertThat(commands.lastIndexOf("verifyBatch")).isLessThan(commands.lastIndexOf("addSubscriptionBatch"));
+
+        // The cycle completes: the first pushed value confirms the fresh subscription.
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "23"));
+        fixture.drain();
+        assertThat(fixture.readState("temperature")).isEqualTo("SUBSCRIBED");
+    }
+
     @Test
     void spontaneousLoss_powerCyclesThroughVerification() {
         final WrapperTestFixture fixture = subscribedAndConfirmed();
@@ -98,8 +123,38 @@ class TagAspectReadSubscribedTest {
         fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
         fixture.drain();
 
-        // A spontaneous loss re-verifies — the aspect parks in verification, not subscription retry.
+        // A spontaneous loss parks the aspect in verification (not subscription retry) at once; the re-verification
+        // itself is posted through the BatchCollector, so it is issued on the next tick — after the cancel.
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION");
+        assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore); // deferred, not issued eagerly
+
+        fixture.advance(100); // the tick dispatches the cancel, then the re-verification
         assertThat(count(fixture, "verifyBatch")).isEqualTo(verifyBatchesBefore + 1);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION"); // held by verifyDrop
+    }
+
+    // EDG-824 V-DEADLINE: a re-verification the adapter accepts but never answers must not park the aspect in
+    // WAITING_FOR_VERIFICATION forever (silent, adapter still green). A verify-result deadline (the adapter command
+    // timeout) drops it to the verification retry, and it recovers when the device answers.
+    @Test
+    void spontaneousLoss_whenTheReVerifyIsNeverAnswered_theDeadlineRetriesInsteadOfParkingForever() {
+        final WrapperTestFixture fixture = subscribedAndConfirmed();
+        fixture.adapter.verifyDrop = true; // the adapter accepts verifyBatch but never reports an outcome
+
+        fixture.output.nodeError(fixture.nodeFor("temperature"), "device reset", true);
+        fixture.drain();
+        fixture.advance(100); // the deferred re-verify is issued; its result never comes
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION");
+
+        // Without the deadline this stays WAITING_FOR_VERIFICATION forever; the deadline drops it to the retry.
+        fixture.advance(10_000); // the command-timeout deadline elapses
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION_RETRY");
+
+        // The device answers on the retry: the aspect re-verifies and recovers to a live subscription.
+        fixture.adapter.verifyDrop = false;
+        fixture.advance(30_000); // the verification backoff elapses -> re-verify succeeds -> re-subscribe dispatched
+        fixture.output.dataPoint(fixture.nodeFor("temperature"), WrapperTestSupport.dataPoint("temperature", "24"));
+        fixture.drain();
+        assertThat(fixture.readState("temperature")).isEqualTo("SUBSCRIBED");
     }
 }

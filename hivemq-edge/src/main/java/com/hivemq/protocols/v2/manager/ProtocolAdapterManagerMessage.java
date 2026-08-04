@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.protocols.v2.browse.BrowsedNode;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.RejectedAdapterEntity;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterDirection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>{@code CONTROL} — externally-driven intent: a freshly-loaded configuration, REST direction activation, REST
  * tag retry, and a REST browse request;</li>
  * <li>{@code EVENT} — wrapper health notifications a managed wrapper tells back ({@code started} / {@code stopped} /
- * {@code error});</li>
+ * {@code error} / {@code stop failed} / {@code died});</li>
  * <li>{@code TICK} — periodic housekeeping (the health summary).</li>
  * </ul>
  * Sealed because all permitted subtypes live in this package; the generic {@link MailboxMessage} marker is the
@@ -43,12 +44,21 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
     /**
      * A freshly-loaded {@code <v2>} section from the extractor — the same
      * path at startup and on every reload. The manager diffs it against the running set and applies the gentlest
-     * correct transition per adapter.
+     * correct transition per adapter. Invalid new adapter entries arrive in {@code rejected}, already scoped by the
+     * extractor: the manager surfaces each as an {@code ERROR} adapter with no impact on its siblings or the node.
      *
-     * @param adapters the complete new set of adapter configurations.
+     * @param adapters the complete new set of accepted adapter configurations.
+     * @param rejected the new adapter entries whose configuration failed validation.
      */
-    record ConfigurationChanged(@NotNull List<ProtocolAdapterEntity> adapters)
-            implements ProtocolAdapterManagerMessage {
+    record ConfigurationChanged(
+            @NotNull List<ProtocolAdapterEntity> adapters,
+            @NotNull List<RejectedAdapterEntity> rejected) implements ProtocolAdapterManagerMessage {
+
+        /** Convenience for the common no-rejections case (tests and internal callers). */
+        public ConfigurationChanged(final @NotNull List<ProtocolAdapterEntity> adapters) {
+            this(adapters, List.of());
+        }
+
         @Override
         public @NotNull MailboxMessagePriority priority() {
             return MailboxMessagePriority.CONTROL;
@@ -147,6 +157,28 @@ public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
      * @param reason    a human-readable description of why.
      */
     record WrapperError(@NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
+
+    /**
+     * A managed wrapper was commanded to stop and could not be — it has settled in {@code ERROR} and will issue no
+     * further stop (EDG-824 #19). For a stop-and-discard or a full recreate this replaces the
+     * {@link WrapperStopped} that is never coming, so the teardown completes and the replacement configuration is
+     * applied instead of waiting forever. The {@code EVENT} band.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of why the stop did not complete.
+     */
+    record WrapperStopFailed(
+            @NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
+
+    /**
+     * A managed wrapper's actor is gone — a fatal JVM condition ended its dispatch loop, so nothing told to it will
+     * ever be processed again (Sam round 3, finding 2). The manager releases the dead actor's resources and keeps the
+     * adapter visible in {@code ERROR}; Edge itself carries on. The {@code EVENT} band.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of what ended the dispatch loop.
+     */
+    record WrapperDied(@NotNull String adapterId, @NotNull String reason) implements ProtocolAdapterManagerMessage {}
 
     /**
      * Periodic housekeeping: the manager folds the registry's snapshots into a health summary it
