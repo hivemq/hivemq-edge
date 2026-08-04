@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -30,7 +31,6 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Checks that a condition node really is the type its tag declares.
@@ -86,17 +86,17 @@ public final class ConditionTypeVerifier {
                 uint(NodeClass.ObjectType.getValue()),
                 uint(BrowseResultMask.All.getValue()));
 
-        return client.browseAsync(browse).handle((result, throwable) -> {
+        return Browsing.browseAll(client, browse).handle((references, throwable) -> {
             if (throwable != null) {
                 return new Result.Rejected(
                         "could not read the type of '" + tagName + "' from the device: " + throwable.getMessage());
             }
-            return compare(result.getReferences(), declaredType, tagName);
+            return compare(references, declaredType, tagName);
         });
     }
 
     private static @NotNull Result compare(
-            final @Nullable ReferenceDescription @Nullable [] references,
+            final @NotNull List<ReferenceDescription> references,
             final @NotNull OpcuaConditionType declaredType,
             final @NotNull String tagName) {
 
@@ -131,10 +131,7 @@ public final class ConditionTypeVerifier {
         return new Result.Verified(deviceType.get());
     }
 
-    private static @NotNull Optional<String> typeNameOf(final @Nullable ReferenceDescription @Nullable [] references) {
-        if (references == null) {
-            return Optional.empty();
-        }
+    private static @NotNull Optional<String> typeNameOf(final @NotNull List<ReferenceDescription> references) {
         for (final ReferenceDescription reference : references) {
             final QualifiedName browseName = reference.getBrowseName();
             if (browseName != null && browseName.getName() != null) {

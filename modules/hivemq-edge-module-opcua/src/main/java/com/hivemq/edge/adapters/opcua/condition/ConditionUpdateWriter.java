@@ -317,11 +317,10 @@ public final class ConditionUpdateWriter {
                 uint(nodeClass.getValue()),
                 uint(BrowseResultMask.All.getValue()));
 
-        return client.browseAsync(browse).thenApply(result -> {
-            final ReferenceDescription[] references = result.getReferences();
-            if (references == null) {
-                return null;
-            }
+        // browseAll, not browseAsync: a condition can carry a great many components -- both forms of every
+        // method, the state machines, vendor extensions -- and a server that pages its answer would
+        // otherwise make a present method look absent.
+        return Browsing.browseAll(client, browse).thenApply(references -> {
             for (final ReferenceDescription reference : references) {
                 final QualifiedName referenceBrowseName = reference.getBrowseName();
                 if (referenceBrowseName != null && browseName.equals(referenceBrowseName.getName())) {

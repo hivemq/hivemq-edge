@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
@@ -144,26 +145,23 @@ public final class NotifierResolver {
                 uint(NodeClass.Object.getValue() | NodeClass.Variable.getValue() | NodeClass.Method.getValue()),
                 uint(BrowseResultMask.All.getValue()));
 
-        return client.browseAsync(browse).thenCompose(result -> {
-            final ReferenceDescription[] references = result.getReferences();
-            if (references == null || references.length == 0) {
-                return CompletableFuture.completedFuture(null);
-            }
-            return firstNotifierAboveAny(client, references, 0);
-        });
+        return Browsing.browseAll(client, browse)
+                .thenCompose(references -> references.isEmpty()
+                        ? CompletableFuture.completedFuture(null)
+                        : firstNotifierAboveAny(client, references, 0));
     }
 
     /** Walks up from each ConditionSource in turn, taking the first notifier any of them reaches. */
     private static @NotNull CompletableFuture<NodeId> firstNotifierAboveAny(
-            final @NotNull OpcUaClient client,
-            final @NotNull ReferenceDescription @NotNull [] sources,
-            final int index) {
+            final @NotNull OpcUaClient client, final @NotNull List<ReferenceDescription> sources, final int index) {
 
-        if (index >= sources.length) {
+        if (index >= sources.size()) {
             return CompletableFuture.completedFuture(null);
         }
-        final NodeId source =
-                sources[index].getNodeId().toNodeId(client.getNamespaceTable()).orElse(null);
+        final NodeId source = sources.get(index)
+                .getNodeId()
+                .toNodeId(client.getNamespaceTable())
+                .orElse(null);
         if (source == null) {
             return firstNotifierAboveAny(client, sources, index + 1);
         }
@@ -206,13 +204,10 @@ public final class NotifierResolver {
                 uint(0),
                 uint(BrowseResultMask.All.getValue()));
 
-        return client.browseAsync(browse).thenCompose(result -> {
-            final ReferenceDescription[] references = result.getReferences();
-            if (references == null || references.length == 0) {
-                return CompletableFuture.completedFuture(null);
-            }
-            return firstNotifierAmong(client, references, 0, depth);
-        });
+        return Browsing.browseAll(client, browse)
+                .thenCompose(references -> references.isEmpty()
+                        ? CompletableFuture.completedFuture(null)
+                        : firstNotifierAmong(client, references, 0, depth));
     }
 
     /**
@@ -223,14 +218,15 @@ public final class NotifierResolver {
      */
     private static @NotNull CompletableFuture<NodeId> firstNotifierAmong(
             final @NotNull OpcUaClient client,
-            final @NotNull ReferenceDescription @NotNull [] references,
+            final @NotNull List<ReferenceDescription> references,
             final int index,
             final int depth) {
 
-        if (index >= references.length) {
+        if (index >= references.size()) {
             return CompletableFuture.completedFuture(null);
         }
-        final NodeId candidate = references[index]
+        final NodeId candidate = references
+                .get(index)
                 .getNodeId()
                 .toNodeId(client.getNamespaceTable())
                 .orElse(null);
