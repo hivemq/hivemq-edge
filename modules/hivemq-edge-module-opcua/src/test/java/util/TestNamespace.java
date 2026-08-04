@@ -439,13 +439,17 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      *
      * @param methodName   which method was called — Acknowledge or Confirm.
      * @param eventId      the transition the caller is responding to.
-     * @param comment      the free text that came with it.
+     * @param comment      the free text that came with it, flattened for convenience.
+     * @param rawComment   the comment argument as it arrived. Null when the argument itself was absent;
+     *                     otherwise the {@code LocalizedText}, whose own null-ness carries the §5.7.3
+     *                     leave-alone-versus-erase distinction that {@code comment} loses.
      */
     public record MethodCall(
             @NotNull String methodName,
             @NotNull ByteString eventId,
             @NotNull String comment,
-            @Nullable Double duration) {}
+            @Nullable Double duration,
+            @Nullable LocalizedText rawComment) {}
 
     private final @NotNull List<MethodCall> methodCalls = new CopyOnWriteArrayList<>();
 
@@ -543,7 +547,11 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         final MethodInvocationHandler handler = (context, request) -> {
             final Variant[] arguments = request.getInputArguments();
             methodCalls.add(new MethodCall(
-                    methodName, argumentAt(arguments, 0), commentAt(arguments, 1), durationAt(arguments, 0)));
+                    methodName,
+                    argumentAt(arguments, 0),
+                    commentAt(arguments, 1),
+                    durationAt(arguments, 0),
+                    rawCommentAt(arguments, 1)));
             return new CallMethodResult(StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]);
         };
 
@@ -578,6 +586,21 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                         && arguments[index].getValue() instanceof final LocalizedText lt
                 ? String.valueOf(lt.getText())
                 : "";
+    }
+
+    /**
+     * The comment argument exactly as it arrived, rather than flattened to its text.
+     * <p>
+     * OPC 10000-9 §5.7.3 gives a null {@code LocalizedText} and one with empty text opposite meanings —
+     * leave the existing comment alone versus erase it — and both flatten to the same string. A test that
+     * checks which of the two was sent has to see the structure.
+     */
+    private static @Nullable LocalizedText rawCommentAt(final @Nullable Variant[] arguments, final int index) {
+        return arguments != null
+                        && arguments.length > index
+                        && arguments[index].getValue() instanceof final LocalizedText lt
+                ? lt
+                : null;
     }
 
     private static @Nullable Double durationAt(final @Nullable Variant[] arguments, final int index) {

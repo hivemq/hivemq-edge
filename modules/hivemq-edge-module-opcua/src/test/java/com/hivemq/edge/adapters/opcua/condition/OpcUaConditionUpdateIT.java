@@ -125,6 +125,75 @@ public class OpcUaConditionUpdateIT {
 
     @Test
     @Timeout(120)
+    void whenNoCommentIsGiven_thenTheExistingOneIsLeftAlone() throws Exception {
+        // OPC 10000-9 §5.7.3: "If the comment field is NULL (both locale and text are empty) it will be
+        // ignored and any existing comments will remain unchanged." Since `comment` is optional in the write
+        // schema, an acknowledgement without one is the natural thing to send -- and it must not erase what a
+        // previous operator recorded. Erasure would also be broadcast: §5.5.2 makes any comment change fire a
+        // new event, so every other client would be told the audit trail had gone.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("NoCommentAlarm", CONDITION_NODE_ID + 30);
+
+        startAdapterWith(conditionNodeId);
+
+        final String eventId = Base64.getEncoder().encodeToString("transition-nc".getBytes());
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"eventId": "%s", "method": "ACKNOWLEDGE"}
+                """.formatted(eventId));
+
+        verify(output, timeout(10_000)).finish();
+
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).rawComment())
+                .as("a missing comment must reach the server as a NULL LocalizedText")
+                .isNotNull();
+        assertThat(calls.get(0).rawComment().isNull())
+                .as("both locale and text must be null, which is what the spec calls NULL -- an empty text "
+                        + "with a locale is the *erase* form, and would wipe the existing comment")
+                .isTrue();
+    }
+
+    @Test
+    @Timeout(120)
+    void whenAnEmptyCommentIsGiven_thenTheExistingOneIsErased() throws Exception {
+        // The other half of §5.7.3: "To reset the comment, an empty text with a locale shall be provided."
+        // This is the only way to clear a stale comment, so it is deliberately reachable -- and deliberately
+        // distinct from omitting the field.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("EraseCommentAlarm", CONDITION_NODE_ID + 31);
+
+        startAdapterWith(conditionNodeId);
+
+        final String eventId = Base64.getEncoder().encodeToString("transition-erase".getBytes());
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"eventId": "%s", "method": "ACKNOWLEDGE", "comment": ""}
+                """.formatted(eventId));
+
+        verify(output, timeout(10_000)).finish();
+
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).rawComment()).isNotNull();
+        assertThat(calls.get(0).rawComment().isNull())
+                .as("an explicit empty comment is the erase form, not the leave-alone form")
+                .isFalse();
+        // The locale is what actually carries the distinction on the wire. Milo's binary encoder writes an
+        // empty text as *absent* -- mask bit cleared, nothing serialized -- so it decodes back as null and an
+        // erase is indistinguishable from leave-alone by the text alone. A present locale with no text is
+        // exactly the specification's "empty text with a locale".
+        assertThat(calls.get(0).rawComment().getLocale())
+                .as("the spec's erase form is an empty text WITH a locale, and the locale is the only part "
+                        + "that survives the wire encoding")
+                .isNotNull();
+    }
+
+    @Test
+    @Timeout(120)
     void whenAConditionIsConfirmed_thenTheServerIsAskedToConfirm() throws Exception {
         final String conditionNodeId = opcUaServerExtension
                 .getTestNamespace()

@@ -41,13 +41,15 @@ import org.jetbrains.annotations.Nullable;
  *                 Not the condition and not a state: the server mints a fresh one per event, so a late
  *                 acknowledgement cannot be applied to a newer transition. Null for methods that act on the
  *                 condition as a whole.
- * @param comment  free text recorded by the server alongside the transition; may be empty.
+ * @param comment  free text recorded by the server alongside the transition. <b>Null and empty mean different
+ *                 things</b> — null leaves any existing comment untouched, empty erases it. See
+ *                 {@link #fromJson}.
  * @param duration the shelving time in milliseconds; null for every method except {@code TimedShelve}.
  */
 public record ConditionUpdate(
         @NotNull Method method,
         @Nullable ByteString eventId,
-        @NotNull String comment,
+        @Nullable String comment,
         @Nullable Double duration) {
 
     public static final @NotNull String FIELD_EVENT_ID = "eventId";
@@ -198,8 +200,16 @@ public record ConditionUpdate(
         final Method method =
                 methodNode.isNumber() ? Method.fromWireValue(methodNode.asInt()) : Method.fromName(methodNode.asText());
 
+        // Absent and empty are kept apart, because the specification gives them opposite meanings (§5.7.3:
+        // "If the comment field is NULL [...] any existing comments will remain unchanged. To reset the
+        // comment, an empty text with a locale shall be provided."). JSON already draws that distinction, so
+        // it costs nothing to carry: no key means leave it alone, "" means erase it.
+        //
+        // An explicit `"comment": null` is treated as absent rather than as an erase. It reads as "I am not
+        // saying anything about the comment", and serialisers that emit nulls for unset fields are common
+        // enough that reading it as "erase" would surprise a caller who never thought about the field.
         final JsonNode commentNode = payload.get(FIELD_COMMENT);
-        final String comment = commentNode == null || commentNode.isNull() ? "" : commentNode.asText();
+        final String comment = commentNode == null || commentNode.isNull() ? null : commentNode.asText();
 
         final ByteString eventId = readEventId(payload, method);
         final Double duration = readDuration(payload, method);

@@ -142,11 +142,28 @@ public final class ConditionUpdateWriter {
      */
     private static @NotNull Variant[] argumentsFor(final @NotNull ConditionUpdate update) {
         return switch (update.method().arguments()) {
-            case EVENT_AND_COMMENT ->
-                new Variant[] {Variant.of(update.eventId()), Variant.of(LocalizedText.english(update.comment()))};
+            case EVENT_AND_COMMENT -> new Variant[] {Variant.of(update.eventId()), Variant.of(commentOf(update))};
             case DURATION -> new Variant[] {Variant.of(update.duration())};
             case NONE -> new Variant[0];
         };
+    }
+
+    /**
+     * The comment argument, in the form the specification gives the caller's intent.
+     * <p>
+     * OPC 10000-9 §5.7.3: "If the comment field is NULL (both locale and text are empty) it will be ignored
+     * and any existing comments will remain unchanged. To reset the comment, an empty text with a locale
+     * shall be provided." Three intents, three encodings — and the middle one is easy to send by accident,
+     * because {@code comment} is optional in the write schema.
+     * <p>
+     * {@code LocalizedText.NULL_VALUE} rather than {@code english(null)}: Milo's single-argument constructor
+     * hardcodes the locale to {@code "en"}, and its {@code isNull()} requires <em>both</em> fields to be
+     * null. So an English-locale text of null is not the specification's NULL — it is the reset form with a
+     * different spelling.
+     */
+    private static @NotNull LocalizedText commentOf(final @NotNull ConditionUpdate update) {
+        final String comment = update.comment();
+        return comment == null ? LocalizedText.NULL_VALUE : LocalizedText.english(comment);
     }
 
     /**
