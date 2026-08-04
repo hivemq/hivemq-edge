@@ -603,7 +603,21 @@ public class ProtocolAdapterManager {
     protected @NotNull Optional<ProtocolAdapterWrapper> deleteProtocolAdapterWrapperByAdapterId(
             final @NotNull String adapterId) {
         Preconditions.checkNotNull(adapterId);
-        return Optional.ofNullable(protocolAdapterMap.remove(adapterId));
+        final ProtocolAdapterWrapper removed = protocolAdapterMap.remove(adapterId);
+        if (removed != null && LOGGER.isDebugEnabled()) {
+            // EDG-868: this is the ONLY path that takes an adapter out of the map — stop, restart and the
+            // atomic update all leave the entry in place. When an adapter unexpectedly turns up missing, the
+            // question is always "was it removed, or not yet registered", and this line is what answers it.
+            // Logged with a stack trace because the caller is the interesting part: a config refresh whose
+            // snapshot omitted the adapter looks identical, from the map's point of view, to a deliberate
+            // delete.
+            LOGGER.debug(
+                    "Removing adapter '{}' from the adapter map (remaining: {})",
+                    adapterId,
+                    protocolAdapterMap.keySet(),
+                    new Exception("EDG-868 adapter removal call site"));
+        }
+        return Optional.ofNullable(removed);
     }
 
     protected void deleteProtocolAdapterByAdapterId(final @NotNull String adapterId) {
