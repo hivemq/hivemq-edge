@@ -252,7 +252,7 @@ public final class ConditionEventFilters {
 
     private static @NotNull SimpleAttributeOperand @NotNull [] selectClauses(
             final @NotNull OpcuaConditionType conditionType) {
-        return conditionType.allFields().stream()
+        return conditionType.selectedFields().stream()
                 .map(ConditionEventFilters::selectField)
                 .toArray(SimpleAttributeOperand[]::new);
     }
@@ -260,9 +260,14 @@ public final class ConditionEventFilters {
     /**
      * Selects one field by browse path, reading its {@code Value} attribute. {@code indexRange} is null: the
      * whole value is wanted, not a slice of an array.
+     * <p>
+     * The path has two elements for a two-state field's {@code Id} — OPC 10000-4 §7.22.3 allows a path of any
+     * length, requiring only that each element be an Object or Variable node, and {@code Id} is a Variable.
+     * A field the server does not implement comes back null rather than failing the subscription.
      */
-    private static @NotNull SimpleAttributeOperand selectField(final @NotNull String browseName) {
-        return new SimpleAttributeOperand(
-                BASE_EVENT_TYPE, new QualifiedName[] {new QualifiedName(0, browseName)}, AttributeId.Value.uid(), null);
+    private static @NotNull SimpleAttributeOperand selectField(final @NotNull OpcuaConditionType.SelectedField field) {
+        final QualifiedName[] path =
+                field.path().stream().map(name -> new QualifiedName(0, name)).toArray(QualifiedName[]::new);
+        return new SimpleAttributeOperand(BASE_EVENT_TYPE, path, AttributeId.Value.uid(), null);
     }
 }

@@ -162,6 +162,40 @@ public enum OpcuaConditionType {
             List.of("EventId", "EventType", "SourceNode", "SourceName", "Time", "ReceiveTime", "Message", "Severity");
 
     /**
+     * The fields whose type is {@code TwoStateVariableType}, and which therefore carry a Boolean {@code Id}
+     * beside their display text.
+     * <p>
+     * The {@code Value} of such a field is "a human readable name" (OPC 10000-9 §5.2) — {@code "Enabled"} or
+     * {@code "Disabled"}, in whatever locale the session negotiated. Deciding anything from that means string
+     * matching against text that varies by locale and by vendor. The {@code Id} property is the machine
+     * readable half of the same state, is <b>Mandatory</b> on the type (Table 1), and is reachable only by a
+     * two-element browse path — {@code ['ActiveState', 'Id']} — which is why it needs naming here rather than
+     * falling out of the field list.
+     * <p>
+     * Exactly the thirteen the specification defines. {@code ShelvingState} and {@code LimitState} are
+     * deliberately absent: those are Objects with their own state machines
+     * ({@code ShelvedStateMachineType}, {@code ExclusiveLimitStateMachineType}), not two-state variables, and
+     * asking for an {@code Id} beneath them would select nothing.
+     */
+    public static final @NotNull Set<String> TWO_STATE_FIELDS = Set.of(
+            "AckedState",
+            "ActiveState",
+            "ConfirmedState",
+            "DialogState",
+            "EnabledState",
+            "HighHighState",
+            "HighState",
+            "LatchedState",
+            "LowLowState",
+            "LowState",
+            "OutOfServiceState",
+            "SilenceState",
+            "SuppressedState");
+
+    /** The browse name of the Boolean companion of a {@link #TWO_STATE_FIELDS} field. */
+    public static final @NotNull String STATE_ID = "Id";
+
+    /**
      * Each type's NodeId in the standard namespace, used to filter events by type.
      * <p>
      * Declared here rather than looked up by name so the compiler checks every entry. Milo's constants live
@@ -252,6 +286,42 @@ public enum OpcuaConditionType {
         }
         lineage.forEach(type -> fields.addAll(type.ownFields));
         return List.copyOf(fields);
+    }
+
+    /**
+     * One selected field: the browse path to ask the server for, and the name to publish it under.
+     *
+     * @param path        the browse path, one element for an ordinary field and two for a state's {@code Id}.
+     * @param publishedAs the key in the published JSON. For a two-element path this is the state's own name,
+     *                    because the {@code Id} is folded into the state object rather than published beside
+     *                    it — {@code {"ActiveState": {"text": "Active", "id": true}}}.
+     */
+    public record SelectedField(
+            @NotNull List<String> path, @NotNull String publishedAs) {
+
+        /** Whether this selects the Boolean {@code Id} beneath a two-state field. */
+        public boolean isStateId() {
+            return path.size() == 2;
+        }
+    }
+
+    /**
+     * Every field to select, in the order the select clause and the decoder both walk.
+     * <p>
+     * This is {@link #allFields()} with an extra entry after each two-state field, for that state's
+     * {@code Id}. Both are derived here so the two lists cannot drift: the event decoder matches values to
+     * fields <em>positionally</em> against the select clause, so an entry added to one and not the other
+     * silently shifts every field after it.
+     */
+    public @NotNull List<SelectedField> selectedFields() {
+        final List<SelectedField> selected = new ArrayList<>();
+        for (final String field : allFields()) {
+            selected.add(new SelectedField(List.of(field), field));
+            if (TWO_STATE_FIELDS.contains(field)) {
+                selected.add(new SelectedField(List.of(field, STATE_ID), field));
+            }
+        }
+        return List.copyOf(selected);
     }
 
     /**

@@ -120,6 +120,15 @@ public class OpcUaConditionSubscriptionIT {
         assertThat(value.get("Message").toString()).contains("Temperature exceeded 90C");
         assertThat(value.get("Severity").asInt()).isEqualTo(700);
         assertThat(value.get("ActiveState").toString()).contains("Active");
+        // The Boolean half of the state, beside the display text. Without it a consumer has to string-match
+        // "Active" -- text the server writes in the session's locale and spells to its own taste.
+        assertThat(value.get("ActiveState").get("id").asBoolean())
+                .as("a two-state field must publish its machine-readable Id")
+                .isTrue();
+        assertThat(value.get("AckedState").get("id").asBoolean())
+                .as("the alarm has not been acknowledged, so its Id must be false -- and false is exactly "
+                        + "the value a missing-Id bug would be indistinguishable from if it were absent")
+                .isFalse();
         // A NodeId is emitted as a structure, not as a parseable string, so the identifier is compared
         // field-wise rather than against "ns=1;i=9100".
         // SourceNode is the ConditionSource — the process variable the alarm is about — so it is deliberately

@@ -695,6 +695,18 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             event.setActiveState(LocalizedText.english(active ? "Active" : "Inactive"));
             event.setAckedState(LocalizedText.english("Unacknowledged"));
 
+            // The Boolean half of each two-state field. Mandatory on TwoStateVariableType (OPC 10000-9
+            // Table 1) and reachable only by the two-element browse path ['ActiveState','Id'], so a harness
+            // that set only the display text could not tell a working Id selection from a broken one.
+            final var activeStateNode = event.getActiveStateNode();
+            if (activeStateNode != null) {
+                activeStateNode.setId(active);
+            }
+            final var ackedStateNode = event.getAckedStateNode();
+            if (ackedStateNode != null) {
+                ackedStateNode.setId(false);
+            }
+
             getServer().getEventNotifier().fire(event);
             return eventId;
         } catch (final UaException e) {

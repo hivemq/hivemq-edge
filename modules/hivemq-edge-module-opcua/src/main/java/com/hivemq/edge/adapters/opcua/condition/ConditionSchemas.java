@@ -40,19 +40,11 @@ public final class ConditionSchemas {
     /**
      * Fields whose value is a localised text — published as {@code {locale, text}} rather than a bare string.
      * Listing them keeps the schema honest about a shape a consumer would otherwise have to discover.
+     * <p>
+     * Only {@code Message}. The state fields are localised texts too, but they carry a Boolean {@code Id}
+     * as well and are described by {@link OpcuaConditionType#TWO_STATE_FIELDS} instead.
      */
-    private static final @NotNull Set<String> LOCALIZED_TEXT_FIELDS = Set.of(
-            "Message",
-            "AckedState",
-            "ConfirmedState",
-            "ActiveState",
-            "EnabledState",
-            "SuppressedState",
-            "SilenceState",
-            "LatchedState",
-            "OutOfServiceState",
-            "ShelvingState",
-            "LimitState");
+    private static final @NotNull Set<String> LOCALIZED_TEXT_FIELDS = Set.of("Message");
 
     /**
      * Fields whose value is a {@code StatusCode}, published as {@code {code, symbol}}.
@@ -244,7 +236,37 @@ public final class ConditionSchemas {
     private static void appendField(
             final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
 
-        if (LOCALIZED_TEXT_FIELDS.contains(field)) {
+        if (OpcuaConditionType.TWO_STATE_FIELDS.contains(field)) {
+            // A two-state field carries its Boolean Id alongside the display text. The text is what the
+            // server calls the state in the session's locale; `id` is the same state as a Boolean, and is
+            // what a consumer should branch on -- "Active"/"Aktiv"/"ACTIVE" are all the same true.
+            object.property(field)
+                    .startObject()
+                    .property("locale")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("text")
+                    .scalar(ScalarType.STRING)
+                    .description("The state's name in the session's locale. Wording varies by locale and by "
+                            + "vendor, so prefer 'id' when deciding anything.")
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("id")
+                    .scalar(ScalarType.BOOLEAN)
+                    .description("The state as a Boolean — the machine-readable half of this field. Absent "
+                            + "if the server did not return it, though it is mandatory on the type.")
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        } else if (LOCALIZED_TEXT_FIELDS.contains(field)) {
             object.property(field)
                     .startObject()
                     .property("locale")

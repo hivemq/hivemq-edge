@@ -154,6 +154,40 @@ class ConditionSchemasTest {
     }
 
     @Test
+    void twoStateFieldsCarryTheirBooleanId() {
+        // The state's Value is a human-readable name whose wording depends on the session locale and the
+        // vendor, so it is not something to branch on. The Id is the same state as a Boolean, is Mandatory on
+        // TwoStateVariableType, and reaches us only because the select clause asks for the two-element path.
+        final ObjectNode json = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("AlarmConditionType").orElseThrow()));
+
+        for (final String field : java.util.List.of("ActiveState", "AckedState", "EnabledState")) {
+            final JsonNode shape = shapeOf(json.get("properties").get(field));
+            assertThat(shape.path("properties").has("id"))
+                    .as("'%s' must promise its Boolean id", field)
+                    .isTrue();
+            assertThat(shape.path("properties").has("text"))
+                    .as("'%s' must still promise its display text", field)
+                    .isTrue();
+        }
+    }
+
+    @Test
+    void onlyTwoStateFieldsGetAnId() {
+        // Message is a LocalizedText but not a state, and ShelvingState/LimitState are Objects with their own
+        // state machines rather than two-state variables. An `id` on any of them would be a promise the
+        // server never fills.
+        final ObjectNode json = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("AlarmConditionType").orElseThrow()));
+
+        assertThat(shapeOf(json.get("properties").get("Message"))
+                        .path("properties")
+                        .has("id"))
+                .as("Message is a localized text, not a two-state field")
+                .isFalse();
+    }
+
+    @Test
     void theReadAndWriteSchemasDiffer() {
         // If these agreed there would be no reason for the tag to carry two, and the southbound editor would
         // show the alarm's fields instead of the command's.
