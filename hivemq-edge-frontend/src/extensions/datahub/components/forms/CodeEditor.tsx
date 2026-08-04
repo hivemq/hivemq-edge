@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import debug from 'debug'
 import { Editor, useMonaco } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
+import type { MonacoInstance } from './monaco/types'
 // Side effect: binds the loader to the installed Monaco instead of the jsdelivr CDN
 import './monaco/setupMonacoLoader.ts'
 import type { WidgetProps } from '@rjsf/utils'
@@ -52,13 +53,15 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
    * - Ctrl+H - Find and Replace
    * - Alt+Up/Down - Move line up/down
    */
-  const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
+  const handleEditorMount = (editor: editor.IStandaloneCodeEditor, monacoInstance: MonacoInstance) => {
     editorRef.current = editor
 
-    // Add DataHub custom actions to JavaScript editors
-    if (lng === 'javascript' && monaco) {
+    // Add DataHub custom actions to JavaScript editors. The instance comes from the mount callback
+    // rather than the `useMonaco()` state: that state is set from an effect, so it can still be null
+    // when the editor mounts, and the actions would then silently never be registered.
+    if (lng === 'javascript') {
       try {
-        addDataHubActionsToEditor(editor, monaco)
+        addDataHubActionsToEditor(editor, monacoInstance)
         debugLogger('[javascript] DataHub actions added to editor')
       } catch (error) {
         debugLogger('[javascript] Failed to add DataHub actions:', error)
@@ -207,8 +210,8 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           defaultValue={props.value}
           theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
           onChange={handleEditorChange}
-          onMount={(editor) => {
-            handleEditorMount(editor)
+          onMount={(editor, monacoInstance) => {
+            handleEditorMount(editor, monacoInstance)
             debugLogger(`[${lng}] Monaco Editor mounted successfully`)
           }}
           options={editorOptions}
