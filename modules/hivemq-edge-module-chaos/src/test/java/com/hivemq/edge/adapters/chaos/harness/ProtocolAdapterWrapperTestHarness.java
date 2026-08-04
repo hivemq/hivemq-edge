@@ -95,6 +95,9 @@ public final class ProtocolAdapterWrapperTestHarness {
     private @NotNull RetryPolicy retryPolicy = RetryPolicy.defaults();
     private long watchdogTimeoutMillis = 1000;
     private long pollIntervalMillis = 1000;
+    // Generous default so the poll-result deadline (EDG-824 #15) never interferes with scripted chaos scenarios
+    // that deliberately hold results; stall-focused tests lower it explicitly.
+    private long pollResultTimeoutMillis = 60_000;
     private long tickPeriodMillis = 100;
     private boolean skipVerification;
 
@@ -339,7 +342,7 @@ public final class ProtocolAdapterWrapperTestHarness {
             final @NotNull Set<String> readUsed, final @NotNull Set<String> writeUsed) {
         final ActorRuntime rt = runtime();
         send(new ProtocolAdapterWrapperCommand.UpdateTagSet(
-                nodes, Map.copyOf(rt.activation), Set.copyOf(readUsed), Set.copyOf(writeUsed)));
+                nodes, Map.copyOf(rt.activation), Set.copyOf(readUsed), Set.copyOf(writeUsed), pollIntervalMillis));
         return this;
     }
 
@@ -564,7 +567,15 @@ public final class ProtocolAdapterWrapperTestHarness {
             this.adapter = new ChaosProtocolAdapter(adapterId, output, script);
             final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
             final TagAspectRuntimeCoordinator coordinator = new TagAspectRuntimeCoordinator(
-                    adapterId, nodes, activation, readUsed, writeUsed, goal, pollIntervalMillis, retryPolicy);
+                    adapterId,
+                    nodes,
+                    activation,
+                    readUsed,
+                    writeUsed,
+                    goal,
+                    pollIntervalMillis,
+                    pollResultTimeoutMillis,
+                    retryPolicy);
             final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                     adapterId,
                     adapter,
@@ -706,6 +717,8 @@ public final class ProtocolAdapterWrapperTestHarness {
         private final @NotNull List<String> started = new ArrayList<>();
         private final @NotNull List<String> stopped = new ArrayList<>();
         private final @NotNull List<String> errorReasons = new ArrayList<>();
+        private final @NotNull List<String> stopFailures = new ArrayList<>();
+        private final @NotNull List<String> died = new ArrayList<>();
 
         @Override
         public void wrapperStarted(final @NotNull String adapterId) {
@@ -720,6 +733,16 @@ public final class ProtocolAdapterWrapperTestHarness {
         @Override
         public void wrapperError(final @NotNull String adapterId, final @NotNull String reason) {
             errorReasons.add(reason);
+        }
+
+        @Override
+        public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+            stopFailures.add(reason);
+        }
+
+        @Override
+        public void wrapperDied(final @NotNull String adapterId, final @NotNull String reason) {
+            died.add(reason);
         }
     }
 }

@@ -35,14 +35,17 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
+import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
+import com.hivemq.protocols.v2.southbound.SouthboundWriterRegistry;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
@@ -53,7 +56,9 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperTick;
 import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,6 +67,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one configuration
@@ -81,8 +88,16 @@ import org.jetbrains.annotations.Nullable;
  * {@link DataPointFactory}, the JSON {@link ObjectMapper}, and the tick period) are injected, so the same factory
  * serves production (a {@code SystemClock} / {@code SystemDispatcher}) and tests (a {@code FakeClock} /
  * {@code ManualDispatcher}).
+ * <p>
+ * Construction is <b>all-or-nothing</b>. Every resource that outlives the call — registered metrics, northbound
+ * consumers, the dispatch binding, the tick schedule, the adapter's own dispatch bindings, the southbound writers —
+ * is handed to a {@link ConstructionScope} the moment it exists. A failure at any later step releases them in reverse
+ * order and rethrows, so a half-built adapter leaves nothing behind; on success the scope hands ownership to the
+ * {@link ProtocolAdapterContainer} and keeps nothing, so nothing is closed twice.
  */
 public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapterWrapperFactory {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(DefaultProtocolAdapterWrapperFactory.class);
 
     private final @NotNull Clock clock;
     private final @NotNull MessageDispatcher dispatcher;
@@ -91,6 +106,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     private final @NotNull ObjectMapper objectMapper;
     private final @Nullable TagManager tagManager;
     private final @Nullable NorthboundConsumerFactory northboundConsumerFactory;
+    private final @Nullable InternalProtocolAdapterWritingService writingService;
     private final long tickPeriodMillis;
 
     /**
@@ -108,7 +124,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull ObjectMapper objectMapper,
             final long tickPeriodMillis) {
-        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null);
+        this(clock, dispatcher, metricRegistry, dataPointFactory, objectMapper, tickPeriodMillis, null, null, null);
     }
 
     /**
@@ -121,6 +137,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
      * @param tagManager               the shared tag manager used by MQTT northbound consumers.
      * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
+     * @param writingService           the reused writing service that drives southbound MQTT&rarr;adapter writes
+     *                                 (EDG-824 #3); {@code null} disables southbound wiring (unit-test rigs).
      */
     public DefaultProtocolAdapterWrapperFactory(
             final @NotNull Clock clock,
@@ -130,7 +148,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull ObjectMapper objectMapper,
             final long tickPeriodMillis,
             final @Nullable TagManager tagManager,
-            final @Nullable NorthboundConsumerFactory northboundConsumerFactory) {
+            final @Nullable NorthboundConsumerFactory northboundConsumerFactory,
+            final @Nullable InternalProtocolAdapterWritingService writingService) {
         this.clock = clock;
         this.dispatcher = dispatcher;
         this.metricRegistry = metricRegistry;
@@ -138,6 +157,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         this.objectMapper = objectMapper;
         this.tagManager = tagManager;
         this.northboundConsumerFactory = northboundConsumerFactory;
+        this.writingService = writingService;
         this.tickPeriodMillis = tickPeriodMillis;
     }
 
@@ -146,6 +166,32 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final @NotNull ProtocolAdapterEntity entity,
             final @NotNull ProtocolAdapterFactory factory,
             final @NotNull ProtocolAdapterWrapperEventListener healthListener) {
+        final String adapterId = entity.getAdapterId();
+        final ConstructionScope scope = new ConstructionScope(adapterId);
+        try {
+            return build(entity, factory, healthListener, scope);
+        } catch (final Throwable failure) {
+            // A fatal JVM condition is never scoped to one adapter, and releasing resources on a dying JVM is not
+            // worth delaying it — propagate before containing anything (EDG-824 #12).
+            AdapterFaults.rethrowIfFatal(failure);
+            // Throwable, not RuntimeException: a mispackaged or version-skewed adapter jar throws a LinkageError from
+            // its constructor, and that half-built adapter's metrics, consumers, dispatch threads and tick must still
+            // be released. Without this the adapter id stays permanently uncreatable — a leaked gauge makes the next
+            // attempt's registration throw (Sam round 2, finding 2).
+            scope.closeAll();
+            throw failure;
+        }
+    }
+
+    /**
+     * The construction proper. Every resource is registered with {@code scope} as it is acquired, so the caller's
+     * single catch can unwind all of them; the scope is committed only once the container owns them.
+     */
+    private @NotNull ProtocolAdapterContainer build(
+            final @NotNull ProtocolAdapterEntity entity,
+            final @NotNull ProtocolAdapterFactory factory,
+            final @NotNull ProtocolAdapterWrapperEventListener healthListener,
+            final @NotNull ConstructionScope scope) {
         final String adapterId = entity.getAdapterId();
 
         final Mailbox<ProtocolAdapterWrapperMessage> mailbox = new DefaultMailbox<>();
@@ -156,24 +202,26 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 dataPointFactory.createJsonDataPoint(adapterId, entity.getAdapterConfiguration());
         // Hand the adapter a dispatcher that records every binding it opens through the framework, so the framework
         // owns each dispatch thread for the adapter's whole lifetime — whether the adapter attaches its mailbox in its
-        // constructor or later, and whether or not it is itself AutoCloseable. A construction that fails after a
-        // binding was opened releases it here; a successful build hands the recorder to the container so teardown
-        // releases every binding then.
-        final RecordingDispatcher recordingDispatcher = new RecordingDispatcher(dispatcher);
+        // constructor or later, and whether or not it is itself AutoCloseable. Registered BEFORE the adapter is
+        // constructed: a constructor that opens a binding and then throws has it released by the scope.
+        final RecordingDispatcher recordingDispatcher = scope.register(new RecordingDispatcher(dispatcher));
         final ProtocolAdapterService services = new WrapperServices(dataPointFactory, recordingDispatcher);
         final ProtocolAdapterInput input = new WrapperInput(adapterId, adapterConfig, nodes, services);
-        final ProtocolAdapter protocolAdapter;
-        try {
-            protocolAdapter = factory.createAdapter(input, output);
-        } catch (final RuntimeException failure) {
-            // Release every dispatch binding the half-built adapter opened before rethrowing, so a failed
-            // construction leaks no dispatch thread.
-            recordingDispatcher.close();
-            throw failure;
-        }
+        final ProtocolAdapter protocolAdapter = factory.createAdapter(input, output);
+        // The adapter exists, so its own teardown joins the scope ahead of the recorder — reverse order releases the
+        // adapter's non-dispatch resources first and its bindings second, exactly as container teardown does.
+        scope.register(adapterSelfClose(protocolAdapter));
 
-        final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
-        final NorthboundTagConsumerRegistry northboundConsumers = createNorthboundConsumers(adapterId, factory, entity);
+        final ProtocolAdapterMetrics metrics =
+                scope.register(new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size));
+        // Registered EMPTY, then wired: the registry's own consumers are acquired one at a time, and a failure on any
+        // of them must leave the ones already added to the tag manager owned by the scope. A registry that built them
+        // in its constructor was never returned when it threw, so nothing could remove them (Sam round 3, finding 4).
+        final NorthboundTagConsumerRegistry northboundConsumers =
+                scope.registerOptional(createNorthboundConsumers(adapterId, factory));
+        if (northboundConsumers != null) {
+            northboundConsumers.updateMappings(entity.getNorthboundMappings());
+        }
         final Consumer<DataPoint> northboundDataPointSink;
         if (northboundConsumers == null) {
             northboundDataPointSink = ignored -> {};
@@ -195,6 +243,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 writeUsed,
                 goal,
                 ProtocolAdapterConfigSupport.pollIntervalMillisOf(entity),
+                entity.getCommandTimeoutMillis(),
                 retryPolicy);
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,
@@ -219,9 +268,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
 
         final AtomicReference<AdapterStatusSnapshot> snapshot = new AtomicReference<>();
         final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(context, snapshot);
-        final MessageDispatcherHandle dispatcherHandle = dispatcher.attach(mailbox, wrapper);
-        final AutoCloseable tickHandle =
-                clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis()));
+        final MessageDispatcherHandle dispatcherHandle = scope.register(dispatcher.attach(mailbox, wrapper));
+        final AutoCloseable tickHandle = scope.register(
+                clock.scheduleTick(tickPeriodMillis, mailbox, () -> new ProtocolAdapterWrapperTick(clock.nowMillis())));
         // The container owns the teardown of everything the adapter attached through the framework dispatcher, so its
         // dispatch threads are released when the adapter is discarded, exactly as the wrapper's binding is. The
         // adapter's own close() (if it is AutoCloseable) runs first to release any non-dispatch resources; the
@@ -230,15 +279,28 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // still released.
         final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
+        // Same shape as the northbound registry above: the scope owns it before its first subscription exists, so a
+        // start that throws after the contexts were adopted is still stopped on the way out.
+        final SouthboundWriterRegistry southboundWriters =
+                scope.registerOptional(createSouthboundWriters(adapterId, factory, mailbox, nodes));
+        if (southboundWriters != null) {
+            southboundWriters.updateMappings(entity.getSouthboundMappings(), nodes);
+        }
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
-        return new ProtocolAdapterContainer(
-                handle, dispatcherHandle, adapterDispatcherHandle, tickHandle, metrics, northboundConsumers, entity);
+        return scope.commit(new ProtocolAdapterContainer(
+                handle,
+                dispatcherHandle,
+                adapterDispatcherHandle,
+                tickHandle,
+                metrics,
+                northboundConsumers,
+                southboundWriters,
+                entity));
     }
 
+    /** Builds the empty registry; the caller registers it with the scope and only then wires its mappings. */
     private @Nullable NorthboundTagConsumerRegistry createNorthboundConsumers(
-            final @NotNull String adapterId,
-            final @NotNull ProtocolAdapterFactory factory,
-            final @NotNull ProtocolAdapterEntity entity) {
+            final @NotNull String adapterId, final @NotNull ProtocolAdapterFactory factory) {
         if (tagManager == null || northboundConsumerFactory == null) {
             return null;
         }
@@ -247,8 +309,26 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 factory.information(),
                 tagManager,
                 northboundConsumerFactory,
+                new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry));
+    }
+
+    /** Builds the empty registry; the caller registers it with the scope and only then starts its writing. */
+    private @Nullable SouthboundWriterRegistry createSouthboundWriters(
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterFactory factory,
+            final @NotNull Mailbox<ProtocolAdapterWrapperMessage> mailbox,
+            final @NotNull List<NodeTagPair> nodes) {
+        if (writingService == null) {
+            return null;
+        }
+        return new SouthboundWriterRegistry(
+                adapterId,
+                factory.information(),
+                writingService,
                 new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
-                entity.getNorthboundMappings());
+                mailbox,
+                dataPointFactory,
+                nodes);
     }
 
     @Override
@@ -272,8 +352,15 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                                 + parseFailureDetail(exception),
                         exception);
             }
+            // The access model is enforced here (EDG-824 #14): the pair carries the tag's EFFECTIVE transports —
+            // a transport is usable only when declared on the tag AND permitted by the access flags. The read
+            // variant (polled vs subscribed) is then selected from what is actually permitted.
             nodes.add(NodeTagPair.create(
-                    node, tag.getName(), factory.nodeDefinitionSchema(), tag.isPollable(), tag.isSubscribable()));
+                    node,
+                    tag.getName(),
+                    factory.nodeDefinitionSchema(),
+                    ProtocolAdapterConfigSupport.effectivePollable(tag),
+                    ProtocolAdapterConfigSupport.effectiveSubscribable(tag)));
         }
         return nodes;
     }
@@ -311,15 +398,88 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      */
     private static @NotNull AutoCloseable adapterTeardown(
             final @NotNull ProtocolAdapter protocolAdapter, final @NotNull RecordingDispatcher recordingDispatcher) {
+        final AutoCloseable selfClose = adapterSelfClose(protocolAdapter);
         return () -> {
             try {
-                if (protocolAdapter instanceof AutoCloseable closeable) {
-                    closeable.close();
-                }
+                selfClose.close();
             } finally {
                 recordingDispatcher.close();
             }
         };
+    }
+
+    /**
+     * The adapter's own teardown alone: its {@link AutoCloseable#close()} if it is one, otherwise nothing. Used both
+     * inside {@link #adapterTeardown} and on its own by the {@link ConstructionScope}, where the recording dispatcher
+     * is already registered separately and must not be closed twice in the same unwind.
+     */
+    private static @NotNull AutoCloseable adapterSelfClose(final @NotNull ProtocolAdapter protocolAdapter) {
+        return () -> {
+            if (protocolAdapter instanceof AutoCloseable closeable) {
+                closeable.close();
+            }
+        };
+    }
+
+    /**
+     * The ownership scope of one adapter construction (EDG-824 finding 2, Sam round 2).
+     * <p>
+     * Building an adapter acquires resources that outlive the call — gauges on the shared {@link MetricRegistry},
+     * consumers on the shared {@link TagManager}, a dispatch thread, a tick schedule, southbound subscriptions — one
+     * step at a time. Before this scope existed only the adapter constructor's failure was handled, so a throw at any
+     * later step returned no container and left every earlier resource with no owner. The leaked metrics were the
+     * worst of them: a stale gauge makes the next registration for that id throw, which renders the adapter id
+     * <b>permanently uncreatable</b> until restart.
+     * <p>
+     * Each resource is registered the instant it exists. {@link #closeAll} releases them in reverse acquisition order,
+     * best effort — one failing close must not mask the construction failure being propagated, nor skip the
+     * resources acquired before it. {@link #commit} transfers ownership to the container and empties the scope, so a
+     * committed resource is never closed twice.
+     * <p>
+     * Not thread-safe, and does not need to be: one scope belongs to one {@code create} call on the manager thread.
+     */
+    private static final class ConstructionScope {
+
+        private final @NotNull String adapterId;
+        private final @NotNull Deque<AutoCloseable> acquired = new ArrayDeque<>();
+
+        private ConstructionScope(final @NotNull String adapterId) {
+            this.adapterId = adapterId;
+        }
+
+        private <T extends AutoCloseable> @NotNull T register(final @NotNull T resource) {
+            acquired.push(resource);
+            return resource;
+        }
+
+        /** Registers an optional collaborator — {@code null} when the edition or test rig does not wire it. */
+        private <T extends AutoCloseable> @Nullable T registerOptional(final @Nullable T resource) {
+            if (resource != null) {
+                acquired.push(resource);
+            }
+            return resource;
+        }
+
+        private <T> @NotNull T commit(final @NotNull T container) {
+            acquired.clear();
+            return container;
+        }
+
+        private void closeAll() {
+            while (!acquired.isEmpty()) {
+                final AutoCloseable resource = acquired.pop();
+                try {
+                    resource.close();
+                } catch (final Throwable closeFailure) {
+                    AdapterFaults.rethrowIfFatal(closeFailure);
+                    log.warn(
+                            "Failed to release a {} while unwinding the failed construction of v2 adapter '{}'",
+                            resource.getClass().getSimpleName(),
+                            adapterId,
+                            closeFailure);
+                }
+            }
+        }
     }
 
     /**

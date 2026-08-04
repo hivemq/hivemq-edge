@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.RejectedAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ActivateAdapter;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.BrowseRequested;
@@ -27,9 +28,12 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.Configurati
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.DeactivateAdapter;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ProtocolAdapterManagerTick;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.RetryTag;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperDied;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperError;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStarted;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopFailed;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopped;
+import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.BrowseRejectedException;
@@ -86,6 +90,12 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     /** adapterId &rarr; an adapter told to stop, awaiting its {@code stopped()} before teardown / recreate. */
     private final @NotNull Map<String, PendingRemoval> pendingRemovalMap = new LinkedHashMap<>();
 
+    /**
+     * adapterId &rarr; a rejection that arrived while the id's previous instance was still stopping: the ERROR
+     * handle is registered once the stop completes, so the rejection never becomes silently invisible.
+     */
+    private final @NotNull Map<String, RejectedAdapterEntity> deferredRejections = new LinkedHashMap<>();
+
     private final @NotNull AtomicReference<ProtocolAdapterManagerSnapshot> healthSummary =
             new AtomicReference<>(ProtocolAdapterManagerSnapshot.empty());
 
@@ -128,7 +138,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     @Override
     public void receive(final @NotNull ProtocolAdapterManagerMessage message) {
         switch (message) {
-            case ConfigurationChanged configuration -> reconcile(configuration.adapters());
+            case ConfigurationChanged configuration -> reconcile(configuration.adapters(), configuration.rejected());
             case ActivateAdapter activate ->
                 forwardCommand(
                         activate.adapterId(),
@@ -143,22 +153,33 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             case WrapperStarted started -> onWrapperStarted(started.adapterId());
             case WrapperStopped stopped -> onWrapperStopped(stopped.adapterId());
             case WrapperError error -> onWrapperError(error.adapterId(), error.reason());
+            case WrapperStopFailed stopFailed -> onWrapperStopFailed(stopFailed.adapterId(), stopFailed.reason());
+            case WrapperDied died -> onWrapperDied(died.adapterId(), died.reason());
             case ProtocolAdapterManagerTick tick -> publishHealthSummary(tick.nowMillis());
         }
     }
 
     // ── configuration difference → gentlest transition ────────────────────────────────────────────
 
-    private void reconcile(final @NotNull List<ProtocolAdapterEntity> newConfigs) {
+    private void reconcile(
+            final @NotNull List<ProtocolAdapterEntity> newConfigs,
+            final @NotNull List<RejectedAdapterEntity> rejectedConfigs) {
         final Map<String, ProtocolAdapterEntity> updatedById = new LinkedHashMap<>();
         for (final ProtocolAdapterEntity entity : newConfigs) {
             updatedById.put(entity.getAdapterId(), entity);
         }
+        final Map<String, RejectedAdapterEntity> rejectedById = new LinkedHashMap<>();
+        for (final RejectedAdapterEntity rejectedEntity : rejectedConfigs) {
+            rejectedById.put(rejectedEntity.entity().getAdapterId(), rejectedEntity);
+        }
+        // A deferral is only as current as the latest reload: drop any that this configuration no longer rejects.
+        deferredRejections.keySet().removeIf(adapterId -> !rejectedById.containsKey(adapterId));
 
-        // Removals first: adapters no longer in the configuration are stopped and discarded.
+        // Removals first: adapters no longer in the configuration are stopped and discarded. A rejected id is not a
+        // removal — its ERROR handle is refreshed below.
         final List<String> toRemove = new ArrayList<>();
         for (final String adapterId : containerMap.keySet()) {
-            if (!updatedById.containsKey(adapterId)) {
+            if (!updatedById.containsKey(adapterId) && !rejectedById.containsKey(adapterId)) {
                 toRemove.add(adapterId);
             }
         }
@@ -166,19 +187,72 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             stopAndDiscard(adapterId, null);
         }
 
-        // Adds and updates.
+        // A pending removal whose id vanished from the new configuration must not resurrect on its late stop ack:
+        // clear the stale recreate target.
+        for (final Map.Entry<String, PendingRemoval> pendingEntry : pendingRemovalMap.entrySet()) {
+            final String adapterId = pendingEntry.getKey();
+            if (!updatedById.containsKey(adapterId)
+                    && !rejectedById.containsKey(adapterId)
+                    && pendingEntry.getValue().recreateAs() != null) {
+                pendingEntry.setValue(new PendingRemoval(pendingEntry.getValue().stopping(), null));
+            }
+        }
+
+        // Adds and updates. Each adapter's failure is scoped to itself: a contract-violating adapter type must not
+        // abort the reconciliation of its siblings (EDG-824 #4).
         for (final ProtocolAdapterEntity entity : newConfigs) {
             final String adapterId = entity.getAdapterId();
-            final ProtocolAdapterContainer existing = containerMap.get(adapterId);
-            if (existing != null) {
-                applyDifference(existing, entity);
-            } else if (pendingRemovalMap.containsKey(adapterId)) {
-                // The previous instance is still stopping; recreate with this configuration once it reports stopped.
-                final PendingRemoval pending = pendingRemovalMap.get(adapterId);
-                pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), entity));
-            } else {
-                createAdapter(entity);
+            try {
+                final ProtocolAdapterContainer existing = containerMap.get(adapterId);
+                if (existing != null) {
+                    applyDifference(existing, entity);
+                } else if (pendingRemovalMap.containsKey(adapterId)) {
+                    // The previous instance is still stopping; recreate with this configuration once stopped.
+                    final PendingRemoval pending = pendingRemovalMap.get(adapterId);
+                    pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), entity));
+                } else {
+                    createAdapter(entity);
+                }
+            } catch (final @NotNull Throwable exception) {
+                // Throwable, not RuntimeException (EDG-824 #4/R1): a mispackaged or version-skewed adapter jar throws
+                // a LinkageError from wrapperFactory.create — an Error. Catching only RuntimeException would let it
+                // abort the whole pass, skipping every sibling after it and leaving the thrower with no ERROR handle;
+                // this is the same defensive posture ProtocolAdapterWrapper.receive already takes.
+                AdapterFaults.rethrowIfFatal(exception);
+                log.error("Failed to reconcile v2 adapter '{}'; scoping the failure to it", adapterId, exception);
+                if (!containerMap.containsKey(adapterId) && !pendingRemovalMap.containsKey(adapterId)) {
+                    registerErrorAdapter(
+                            entity,
+                            "reconciliation failed: " + exception.getClass().getSimpleName() + ": "
+                                    + exception.getMessage());
+                }
             }
+        }
+
+        // Invalid new adapters: surfaced as ERROR handles, visible via REST, with no runtime and no node impact.
+        for (final RejectedAdapterEntity rejectedEntity : rejectedConfigs) {
+            final String adapterId = rejectedEntity.entity().getAdapterId();
+            if (pendingRemovalMap.containsKey(adapterId)) {
+                // The previous instance is still stopping — never let containerMap and pendingRemovalMap hold the
+                // same id. The stale recreate target is cleared and the rejection is deferred: its ERROR handle is
+                // registered when the stop completes, so it cannot become silently invisible.
+                final PendingRemoval pending = pendingRemovalMap.get(adapterId);
+                pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), null));
+                deferredRejections.put(adapterId, rejectedEntity);
+                log.warn(
+                        "v2 adapter '{}' was rejected while its previous instance is still stopping; "
+                                + "it will surface as ERROR once the stop completes",
+                        adapterId);
+                continue;
+            }
+            final ProtocolAdapterContainer existing = containerMap.get(adapterId);
+            if (existing != null && existing.isReal()) {
+                // The extractor retains the previous configuration for a known adapter, so a rejected id colliding
+                // with a running adapter is a contract violation; never clobber the running instance.
+                log.error("Ignoring the rejected configuration of v2 adapter '{}': the adapter is running", adapterId);
+                continue;
+            }
+            registerErrorAdapter(rejectedEntity.entity(), rejectedEntity.reason());
         }
     }
 
@@ -188,11 +262,9 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         final ProtocolAdapterEntity running = existing.appliedEntity();
 
         if (!existing.isReal()) {
-            // An unknown / un-instantiable adapter. If its protocol-id changed it may now resolve (or fail
-            // differently), so re-evaluate by discarding and recreating; otherwise just record the new config.
-            if (running.getProtocolId().equals(updated.getProtocolId())) {
-                existing.appliedEntity(updated);
-            } else {
+            // An unknown / un-instantiable / rejected adapter. Any configuration change may now resolve (or fail
+            // differently), so re-evaluate by discarding and recreating; an identical configuration stays as is.
+            if (!running.equals(updated)) {
                 stopAndDiscard(adapterId, updated);
             }
             return;
@@ -222,6 +294,14 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             stopAndDiscard(updated.getAdapterId(), updated);
             return;
         }
+        if (!ProtocolAdapterConfigSupport.missingCapabilities(
+                        updated, factory.get().information().capabilities())
+                .isEmpty()) {
+            // The reload introduced demands the type cannot serve (EDG-824 #17); the recreate path refuses the
+            // configuration and surfaces the ERROR handle with the missing capabilities.
+            stopAndDiscard(updated.getAdapterId(), updated);
+            return;
+        }
         final List<NodeTagPair> nodes;
         try {
             nodes = wrapperFactory.translateNodes(updated, factory.get());
@@ -239,8 +319,10 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                         nodes,
                         ProtocolAdapterConfigSupport.activationOf(updated),
                         updated.getReadUsedTagNames(),
-                        updated.getWriteUsedTagNames()));
+                        updated.getWriteUsedTagNames(),
+                        ProtocolAdapterConfigSupport.pollIntervalMillisOf(updated)));
         existing.updateNorthboundMappings(updated.getNorthboundMappings());
+        existing.updateSouthboundMappings(updated.getSouthboundMappings(), nodes);
         if (ProtocolAdapterConfigDiffUtils.adapterDirectionChanged(running, updated)) {
             // The tag-set update does not carry the adapter direction goal; re-assert the config-declared goal when
             // it changed too. Still never reconnects.
@@ -256,6 +338,17 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         final Optional<ProtocolAdapterFactory> factory = factoryRegistry.findByProtocolId(entity.getProtocolId());
         if (factory.isEmpty()) {
             registerErrorAdapter(entity, "no registered adapter type for protocol-id [" + entity.getProtocolId() + "]");
+            return;
+        }
+        // EDG-824 #17: the type's capability declaration is honest and must be honored. A configuration the type
+        // cannot serve is refused here — the adapter surfaces ERROR instead of starting normally.
+        final List<String> missingCapabilities = ProtocolAdapterConfigSupport.missingCapabilities(
+                entity, factory.get().information().capabilities());
+        if (!missingCapabilities.isEmpty()) {
+            registerErrorAdapter(
+                    entity,
+                    "the configuration requires capabilities the adapter type [" + entity.getProtocolId()
+                            + "] does not declare: " + String.join(", ", missingCapabilities));
             return;
         }
         final ProtocolAdapterContainer adapter;
@@ -318,7 +411,14 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             handleRegistry.unregister(adapterId);
             adapter.close();
             if (recreateAs != null) {
-                createAdapter(recreateAs);
+                if (pendingRemovalMap.containsKey(adapterId)) {
+                    // A previous instance of this id is still stopping (its metrics and resources are live):
+                    // fold the recreate into the pending removal instead of building a colliding instance now.
+                    final PendingRemoval pending = pendingRemovalMap.get(adapterId);
+                    pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), recreateAs));
+                } else {
+                    createAdapter(recreateAs);
+                }
             }
             return;
         }
@@ -343,10 +443,110 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             // registered, its snapshot now showing STOPPED.
             return;
         }
-        pending.stopping().close();
-        if (pending.recreateAs() != null) {
-            createAdapter(pending.recreateAs());
+        completePendingRemoval(adapterId, pending);
+    }
+
+    /**
+     * The wrapper cannot be stopped: it spent its goal-driven {@code stop()} without ever reaching
+     * {@code STOPPED} and has settled in {@code ERROR} (EDG-824 #19). A discard or recreate waiting on that stop
+     * would otherwise wait forever — holding the adapter's tick, dispatcher binding and metrics, and silently never
+     * applying the configuration meant to replace it. Complete the teardown on the failure instead.
+     * <p>
+     * Closing an adapter that never confirmed its stop is the same best-effort teardown as everywhere else
+     * ({@code ProtocolAdapterContainer.close} guards each step): the alternative is a permanent leak plus a
+     * configuration change that never lands.
+     */
+    private void onWrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+        final PendingRemoval pending = pendingRemovalMap.remove(adapterId);
+        if (pending == null) {
+            // Not on its way out — the goal simply became "stopped" (for example both directions were deactivated).
+            // The adapter stays managed and registered, its snapshot showing ERROR, for manual recovery.
+            log.warn("v2 adapter '{}' could not be stopped: {}", adapterId, reason);
+            return;
         }
+        log.warn("v2 adapter '{}' never completed its stop ({}); tearing it down anyway", adapterId, reason);
+        completePendingRemoval(adapterId, pending);
+    }
+
+    /**
+     * Finish a stop-and-discard: release the stopped instance's resources, then either surface a rejection that
+     * arrived while it was stopping or recreate it from the pending configuration.
+     */
+    private void completePendingRemoval(final @NotNull String adapterId, final @NotNull PendingRemoval pending) {
+        pending.stopping().close();
+        final RejectedAdapterEntity deferredRejection = deferredRejections.remove(adapterId);
+        if (deferredRejection != null && !containerMap.containsKey(adapterId)) {
+            // The id was rejected while this instance was stopping: surface the ERROR handle now.
+            registerErrorAdapter(deferredRejection.entity(), deferredRejection.reason());
+            return;
+        }
+        if (pending.recreateAs() != null) {
+            if (containerMap.containsKey(adapterId)) {
+                // Defensive: a live instance already holds the id (an invariant breach elsewhere); creating a
+                // second one would clobber its registration and leak its resources.
+                log.error(
+                        "Not recreating v2 adapter '{}' after its stop: a live instance already holds the id",
+                        adapterId);
+                return;
+            }
+            try {
+                createAdapter(pending.recreateAs());
+            } catch (final @NotNull Throwable exception) {
+                // EDG-824 #4/R2: the recreate runs outside the reconcile loop's guard, so a LinkageError (or any
+                // throwable) from a mispackaged adapter jar would otherwise escape the manager's dispatch thread.
+                // Scope it to this adapter — surface it as an ERROR handle instead of tearing the manager down.
+                AdapterFaults.rethrowIfFatal(exception);
+                log.error(
+                        "Failed to recreate v2 adapter '{}' after its stop; scoping the failure to it",
+                        adapterId,
+                        exception);
+                if (!containerMap.containsKey(adapterId)) {
+                    registerErrorAdapter(
+                            pending.recreateAs(),
+                            "recreation failed: " + exception.getClass().getSimpleName() + ": "
+                                    + exception.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * The adapter's actor is gone: a fatal JVM condition ended its dispatch loop and no message told to it will ever
+     * be processed again (Sam round 3, finding 2). Edge itself carries on — one adapter's implementation failing is
+     * not a reason to take a broker down — so the manager releases what the dead actor can no longer use and keeps
+     * the adapter visible in {@code ERROR} with the status its own dying thread published.
+     * <p>
+     * Releasing matters as much as reporting: the periodic tick runs on the clock's scheduler, not on the actor, so
+     * without this it would keep telling a mailbox nobody drains for the lifetime of the process. Its northbound
+     * consumers and southbound writers go too — a dead actor cannot serve a write, and accepting one would be the
+     * green-while-dead problem wearing a different hat.
+     * <p>
+     * What is left behind is the {@code unknown} representation every un-runnable adapter uses: the ERROR handle,
+     * the applied configuration, and no runtime. A later configuration change recreates it.
+     */
+    private void onWrapperDied(final @NotNull String adapterId, final @NotNull String reason) {
+        final ProtocolAdapterContainer dead = containerMap.remove(adapterId);
+        if (dead == null || !dead.isReal()) {
+            // Already discarded, or never running: nothing to release. The handle (if any) keeps its last status.
+            log.error("v2 adapter '{}' died and was already discarded: {}", adapterId, reason);
+            return;
+        }
+        log.error(
+                "v2 adapter '{}' died: {}. Releasing its resources; the adapter stays visible in ERROR",
+                adapterId,
+                reason);
+        // The dying thread published a terminal snapshot into this reference — keep reading from it, but never tell
+        // its mailbox again: nothing drains it, so a forwarded command would only accumulate.
+        final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(
+                adapterId, NO_OP_WRAPPER_SENDER, dead.handle().snapshot());
+        try {
+            dead.close();
+        } catch (final @NotNull Throwable exception) {
+            AdapterFaults.rethrowIfFatal(exception);
+            log.warn("Failed to fully release the resources of dead v2 adapter '{}'", adapterId, exception);
+        }
+        containerMap.put(adapterId, ProtocolAdapterContainer.unknown(handle, dead.appliedEntity()));
+        handleRegistry.register(handle);
     }
 
     private void onWrapperError(final @NotNull String adapterId, final @NotNull String reason) {

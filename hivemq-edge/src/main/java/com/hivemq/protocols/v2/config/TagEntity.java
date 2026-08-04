@@ -15,12 +15,14 @@
  */
 package com.hivemq.protocols.v2.config;
 
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.configuration.entity.EntityValidatable;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.helpers.ValidationEventImpl;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +45,16 @@ public class TagEntity implements EntityValidatable {
 
     private static final long DEFAULT_POLL_INTERVAL_MILLIS = 5000;
 
+    /**
+     * The largest accepted poll cadence, 7 days. The runtime turns the interval into an absolute deadline
+     * ({@code now + pollIntervalMillis}) on the actor's timer queue, so an unbounded value overflows into a
+     * deadline in the past and the slowest configurable cadence would poll on every tick — the exact opposite of
+     * what was configured. Seven days is orders of magnitude beyond any industrial cadence and keeps the sum far
+     * from overflow for any wall clock. The actor saturates as well
+     * ({@code TagAspectRead#scheduleTimer}), so a value that never passed this validation still cannot wrap.
+     */
+    public static final long MAXIMUM_POLL_INTERVAL_MILLIS = 7L * 24 * 60 * 60 * 1000;
+
     @XmlElement(name = "name", required = true)
     private @NotNull String name = "";
 
@@ -64,8 +76,10 @@ public class TagEntity implements EntityValidatable {
     @XmlElement(name = "poll-interval-millis")
     private long pollIntervalMillis = DEFAULT_POLL_INTERVAL_MILLIS;
 
+    // Omitted <access> = no access declaration = unconstrained. An explicit element (whose per-attribute defaults
+    // are NO) is the declared model and is enforced at runtime (EDG-824 #14).
     @XmlElement(name = "access")
-    private @NotNull AccessFlagsEntity access = new AccessFlagsEntity();
+    private @NotNull AccessFlagsEntity access = AccessFlagsEntity.unrestricted();
 
     // no-arg constructor for JAXB; field initializers carry the defaults
     public TagEntity() {}
@@ -129,6 +143,50 @@ public class TagEntity implements EntityValidatable {
                 validationEvents,
                 () -> pollIntervalMillis > 0,
                 () -> "tag [" + name + "] poll-interval-millis (" + pollIntervalMillis + ") must be positive");
+        EntityValidatable.notMatch(
+                validationEvents,
+                () -> pollIntervalMillis <= MAXIMUM_POLL_INTERVAL_MILLIS,
+                () -> "tag [" + name + "] poll-interval-millis (" + pollIntervalMillis + ") exceeds the maximum of "
+                        + MAXIMUM_POLL_INTERVAL_MILLIS + " ms (7 days)");
+    }
+
+    /**
+     * Warn when this tag's activation contradicts its own {@code <access>} flags (EDG-824 #14): the access model is
+     * enforced at runtime, so an activated aspect with no permitted capability silently never operates. That has to
+     * be a deliberate choice, not a typo, so the contradiction is surfaced rather than left to be discovered as
+     * missing data. An omitted {@code <access>} element is unrestricted (all flags YES) and can never trip this;
+     * only an explicit element — whose omitted child attributes default to NO — can.
+     * <p>
+     * Every rule here reads this tag alone, so it belongs on the tag rather than on the adapter (review suggestion
+     * on #1635). It is kept out of {@link #validate} because the {@code adapterId} is not the tag's to know, and
+     * dropping it would leave warnings that cannot be traced to an adapter once two of them declare the same tag
+     * name — the {@link EntityValidatable} contract fixes {@code validate}'s signature, so it arrives as a
+     * parameter here instead.
+     *
+     * @param validationEvents the collector the owning adapter is validating into.
+     * @param adapterId        the owning adapter's id, for the operator-facing message.
+     */
+    public void validateAccessContradictions(
+            final @NotNull List<ValidationEvent> validationEvents, final @NotNull String adapterId) {
+        final boolean readPermitted = access.getReadable() == AccessTriState.YES
+                && ((pollable && access.getPollable() == AccessTriState.YES)
+                        || (subscribable && access.getSubscribable() == AccessTriState.YES));
+        if (readActivated && !readPermitted) {
+            validationEvents.add(new ValidationEventImpl(
+                    ValidationEvent.WARNING,
+                    "adapter [" + adapterId + "] tag [" + name
+                            + "] is read-activated but its <access> flags permit no read transport;"
+                            + " the tag will never be read",
+                    null));
+        }
+        if (writeActivated && access.getWritable() != AccessTriState.YES) {
+            validationEvents.add(new ValidationEventImpl(
+                    ValidationEvent.WARNING,
+                    "adapter [" + adapterId + "] tag [" + name
+                            + "] is write-activated but its <access> flags do not permit writing;"
+                            + " the tag will never be written",
+                    null));
+        }
     }
 
     @Override

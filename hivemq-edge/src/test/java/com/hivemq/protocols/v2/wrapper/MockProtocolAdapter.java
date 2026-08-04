@@ -54,6 +54,16 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     final @NotNull List<String> commands = new ArrayList<>();
     final @NotNull Deque<Reply> connectReplies = new ArrayDeque<>();
 
+    /**
+     * Node ids carried by every subscription command, in order. The bare command names cannot express a per-NODE
+     * claim, and EDG-824 #18 is exactly that — "the commands for s3 were never issued anywhere" — so a reload that
+     * silently drops a tag from the shadow set is invisible without these.
+     */
+    final @NotNull List<String> verifiedNodes = new ArrayList<>();
+
+    final @NotNull List<String> subscriptionAdds = new ArrayList<>();
+    final @NotNull List<String> subscriptionRemovals = new ArrayList<>();
+
     @NotNull
     Reply startReply = Reply.ACK;
 
@@ -73,6 +83,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
 
     /** When set, {@link #browseCancel(int)} does real synchronous work that throws — the raw-adapter case EDG-785. */
     boolean browseCancelThrows;
+
+    /** When set, {@link #stop()} throws instead of answering — the third shape of a stop that never lands (#19). */
+    boolean stopThrows;
 
     MockProtocolAdapter(final @NotNull String adapterId, final @NotNull ProtocolAdapterOutput output) {
         this.adapterId = adapterId;
@@ -97,6 +110,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void stop() {
         commands.add("stop");
+        if (stopThrows) {
+            throw new IllegalStateException("simulated adapter fault in stop()");
+        }
         switch (stopReply) {
             case ACK -> output.stopped();
             case FAIL_ADAPTER -> output.error(ErrorScope.ADAPTER, "stop failed");
@@ -129,6 +145,9 @@ final class MockProtocolAdapter implements ProtocolAdapter {
     @Override
     public void verifyBatch(final @NotNull List<Node> nodes) {
         commands.add("verifyBatch");
+        for (final Node node : nodes) {
+            verifiedNodes.add(node.nodeId());
+        }
         if (verifyDrop) {
             return;
         }
@@ -137,19 +156,42 @@ final class MockProtocolAdapter implements ProtocolAdapter {
         }
     }
 
+    /** When set, {@link #pollBatch(List)} throws — the contract-violating adapter case (EDG-824 #7). */
+    boolean pollThrow;
+
+    /**
+     * When set, {@link #pollBatch(List)} raises a fatal JVM condition. {@link InternalError} is a
+     * {@link VirtualMachineError} that can be constructed and thrown without endangering the build JVM — unlike a
+     * real {@code OutOfMemoryError}, which would need a forked process to provoke. The containment boundaries must
+     * treat it exactly as they would an out-of-memory: rethrow, never scope it to the adapter.
+     */
+    boolean pollFatalThrow;
+
     @Override
     public void pollBatch(final @NotNull List<Node> nodes) {
         commands.add("pollBatch");
+        if (pollFatalThrow) {
+            throw new InternalError("simulated fatal JVM condition from pollBatch");
+        }
+        if (pollThrow) {
+            throw new IllegalStateException("misbehaving adapter: pollBatch blew up");
+        }
     }
 
     @Override
     public void addSubscriptionBatch(final @NotNull List<Node> nodes) {
         commands.add("addSubscriptionBatch");
+        for (final Node node : nodes) {
+            subscriptionAdds.add(node.nodeId());
+        }
     }
 
     @Override
     public void removeSubscriptionBatch(final @NotNull List<Node> nodes) {
         commands.add("removeSubscriptionBatch");
+        for (final Node node : nodes) {
+            subscriptionRemovals.add(node.nodeId());
+        }
     }
 
     @Override

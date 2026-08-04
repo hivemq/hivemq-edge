@@ -27,6 +27,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,15 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     private final @NotNull List<String> createdAdapterIds = new ArrayList<>();
     private final @NotNull Map<String, Recorded> recordedByAdapterId = new LinkedHashMap<>();
     private final @NotNull List<String> translateNodesAdapterIds = new ArrayList<>();
+    // adapterIds whose container was torn down — the observable half of a completed stop-and-discard.
+    private final @NotNull List<String> closedAdapterIds = new ArrayList<>();
+    // adapterId → an error create() throws for it, to model a mispackaged adapter jar (EDG-824 #4/R1, #4/R2).
+    private final @NotNull Map<String, Throwable> createFailures = new HashMap<>();
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
+
+    void throwOnCreate(final @NotNull String adapterId, final @NotNull Throwable error) {
+        createFailures.put(adapterId, error);
+    }
 
     @Override
     public @NotNull ProtocolAdapterContainer create(
@@ -58,6 +67,13 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
             final @NotNull ProtocolAdapterWrapperEventListener healthListener) {
         this.healthListener = healthListener;
         final String adapterId = entity.getAdapterId();
+        final Throwable failure = createFailures.get(adapterId);
+        if (failure instanceof final Error error) {
+            throw error;
+        }
+        if (failure instanceof final RuntimeException runtime) {
+            throw runtime;
+        }
         createdAdapterIds.add(adapterId);
 
         final List<ProtocolAdapterWrapperMessage> commands = new ArrayList<>();
@@ -68,7 +84,8 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
         final MailboxSender<ProtocolAdapterWrapperMessage> sender = commands::add;
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, sender, snapshot);
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(new MetricRegistry(), adapterId, () -> 0);
-        return new ProtocolAdapterContainer(handle, () -> {}, () -> {}, () -> {}, metrics, entity);
+        return new ProtocolAdapterContainer(
+                handle, () -> {}, () -> {}, () -> closedAdapterIds.add(adapterId), metrics, entity);
     }
 
     @Override
@@ -88,6 +105,11 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     @NotNull
     List<String> translateNodesAdapterIds() {
         return translateNodesAdapterIds;
+    }
+
+    @NotNull
+    List<String> closedAdapterIds() {
+        return closedAdapterIds;
     }
 
     @NotNull

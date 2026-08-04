@@ -20,22 +20,29 @@ import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * The per-tick batch collector. Tag aspects post requests during a tick by appending to one of
- * four pending batches; after the timer drain the tick handler calls {@link #dispatch(ProtocolAdapter)}, which
+ * five pending batches; after the timer drain the tick handler calls {@link #dispatch(ProtocolAdapter)}, which
  * sends each non-empty batch as one command to the adapter in a fixed order and then clears.
  * <p>
  * Poll and write batches are append-only lists — duplicates are kept and the adapter executes them in order.
- * Subscription requests are <b>reconciled per node, last request wins</b>: a node appears in at most one of
- * the add/remove batches per dispatch. {@code addSubscription} then {@code removeSubscription} for one node in
- * the same tick nets to a single remove; {@code removeSubscription} then {@code addSubscription} nets to a
- * single add. Reconciliation is required because the typed batches are dispatched in a fixed cross-type order
- * ({@code removeSubscriptionBatch}, {@code addSubscriptionBatch}, {@code pollBatch}, {@code writeBatch}), which
- * cannot otherwise preserve same-tick interleavings — so the collector guarantees the net effect instead.
+ * Subscription requests are <b>reconciled per node</b>: {@code addSubscription} then {@code removeSubscription} for
+ * one node in the same tick nets to a single remove; {@code removeSubscription} then {@code addSubscription} is a
+ * <b>power cycle</b> and dispatches both — the fixed cross-type dispatch order ({@code removeSubscriptionBatch},
+ * {@code verifyBatch}, {@code addSubscriptionBatch}, {@code pollBatch}, {@code writeBatch}) delivers the remove before
+ * the add, so the cancel-then-resubscribe sequence (EDG-824 #16) survives same-tick reconciliation. Only orderings the
+ * fixed dispatch order cannot express are netted.
+ * <p>
+ * The spontaneous-loss power cycle's re-verification is posted through {@link #verify(Node)} rather than issued
+ * eagerly, so its {@code verifyBatch} dispatches after the same tick's {@code removeSubscriptionBatch} — the adapter
+ * observes {@code cancel → verify → re-subscribe}, never a verify ahead of the cancel (EDG-824 #16). The connect-gate
+ * and retry verifications stay eager and do not pass through here.
  * <p>
  * Owned by one actor and used only on its dispatch thread; it holds no locks.
  */
@@ -43,11 +50,14 @@ public final class BatchCollector {
 
     private enum SubscriptionOperation {
         ADD,
-        REMOVE
+        REMOVE,
+        /** A same-tick cancel-then-resubscribe: the node goes into BOTH batches, remove dispatched first. */
+        REMOVE_THEN_ADD
     }
 
     private final @NotNull List<Node> pollBatch = new ArrayList<>();
     private final @NotNull List<WriteEntry> writeBatch = new ArrayList<>();
+    private final @NotNull Set<Node> verifyBatch = new LinkedHashSet<>();
     private final @NotNull Map<Node, SubscriptionOperation> subscriptionOperations = new LinkedHashMap<>();
 
     /**
@@ -69,18 +79,37 @@ public final class BatchCollector {
     }
 
     /**
-     * Request a subscription for a node. Reconciled per node: this supersedes any earlier add or remove for
-     * the same node in this tick.
+     * Post a node for re-verification, de-duplicated per node. Unlike the eager connect-gate and retry
+     * verifications, a re-verification posted here is dispatched by {@link #dispatch(ProtocolAdapter)} after that
+     * tick's {@code removeSubscriptionBatch}, so the spontaneous-loss power cycle (EDG-824 #16) issues its
+     * {@code verifyBatch} <b>after</b> the cancel — never before it. The caller keeps the in-flight bookkeeping and
+     * gating (see {@code SharedNodeVerification#beginDeferredVerification}); this only orders the issue.
+     *
+     * @param node the node to re-verify.
+     */
+    public void verify(final @NotNull Node node) {
+        verifyBatch.add(node);
+    }
+
+    /**
+     * Request a subscription for a node. Reconciled per node: an add after a pending remove becomes a
+     * power cycle (remove dispatched first, then add); an add after an add stays a single add.
      *
      * @param node the node to subscribe to.
      */
     public void addSubscription(final @NotNull Node node) {
-        subscriptionOperations.put(node, SubscriptionOperation.ADD);
+        subscriptionOperations.merge(
+                node,
+                SubscriptionOperation.ADD,
+                (pending, add) -> pending == SubscriptionOperation.ADD
+                        ? SubscriptionOperation.ADD
+                        : SubscriptionOperation.REMOVE_THEN_ADD);
     }
 
     /**
-     * Request a subscription removal for a node. Reconciled per node: this supersedes any earlier add or
-     * remove for the same node in this tick.
+     * Request a subscription removal for a node. Reconciled per node: a remove supersedes any pending add
+     * (the fixed dispatch order cannot express add-then-remove, so it nets to the remove) and collapses a pending
+     * power cycle back to a plain remove.
      *
      * @param node the node to unsubscribe from.
      */
@@ -89,8 +118,8 @@ public final class BatchCollector {
     }
 
     /**
-     * Send each non-empty batch to the adapter in the fixed order remove, add, poll, write, then clear all
-     * four batches. Empty batches are not sent.
+     * Send each non-empty batch to the adapter in the fixed order remove, verify, add, poll, write, then clear all
+     * five batches. Empty batches are not sent.
      *
      * @param protocolAdapter the adapter to dispatch the batches to.
      */
@@ -98,26 +127,40 @@ public final class BatchCollector {
         final List<Node> toRemove = new ArrayList<>();
         final List<Node> toAdd = new ArrayList<>();
         for (final Map.Entry<Node, SubscriptionOperation> operation : subscriptionOperations.entrySet()) {
-            if (operation.getValue() == SubscriptionOperation.REMOVE) {
-                toRemove.add(operation.getKey());
-            } else {
-                toAdd.add(operation.getKey());
+            switch (operation.getValue()) {
+                case REMOVE -> toRemove.add(operation.getKey());
+                case ADD -> toAdd.add(operation.getKey());
+                case REMOVE_THEN_ADD -> {
+                    toRemove.add(operation.getKey());
+                    toAdd.add(operation.getKey());
+                }
             }
         }
-        if (!toRemove.isEmpty()) {
-            protocolAdapter.removeSubscriptionBatch(toRemove);
+        // Clear in finally: a batch is delivered at most once. If the adapter throws mid-dispatch the remaining
+        // batches are dropped with it — never redelivered on the next tick to an adapter that was just stopped
+        // (that redelivery caused a per-tick stop/error storm; QA round on EDG-824 #7).
+        try {
+            if (!toRemove.isEmpty()) {
+                protocolAdapter.removeSubscriptionBatch(toRemove);
+            }
+            // Between remove and add: a spontaneous-loss re-verify (EDG-824 #16) issues here, after the cancel.
+            if (!verifyBatch.isEmpty()) {
+                protocolAdapter.verifyBatch(new ArrayList<>(verifyBatch));
+            }
+            if (!toAdd.isEmpty()) {
+                protocolAdapter.addSubscriptionBatch(toAdd);
+            }
+            if (!pollBatch.isEmpty()) {
+                protocolAdapter.pollBatch(new ArrayList<>(pollBatch));
+            }
+            if (!writeBatch.isEmpty()) {
+                protocolAdapter.writeBatch(new ArrayList<>(writeBatch));
+            }
+        } finally {
+            subscriptionOperations.clear();
+            verifyBatch.clear();
+            pollBatch.clear();
+            writeBatch.clear();
         }
-        if (!toAdd.isEmpty()) {
-            protocolAdapter.addSubscriptionBatch(toAdd);
-        }
-        if (!pollBatch.isEmpty()) {
-            protocolAdapter.pollBatch(new ArrayList<>(pollBatch));
-        }
-        if (!writeBatch.isEmpty()) {
-            protocolAdapter.writeBatch(new ArrayList<>(writeBatch));
-        }
-        subscriptionOperations.clear();
-        pollBatch.clear();
-        writeBatch.clear();
     }
 }

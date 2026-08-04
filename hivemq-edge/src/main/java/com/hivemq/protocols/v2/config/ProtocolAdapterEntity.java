@@ -29,6 +29,7 @@ import jakarta.xml.bind.helpers.ValidationEventImpl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -138,7 +139,12 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     }
 
     public @NotNull String getAdapterId() {
-        return adapterId;
+        // Honor the @NotNull contract even when JAXB set the field null via xsi:nil (the element sits under an
+        // xs:any skip region, so the schema never nil-checks it). Coalescing to "" keeps the duplicate-id pre-scan
+        // and the per-entry loop NPE-free and routes a nil id through the normal "adapter-id is missing" containment
+        // (dropped per-adapter, siblings survive) instead of NPE-ing out of updateConfig and crash-looping the node
+        // (EDG-824 #4 containment; QA finding F-NULLID).
+        return adapterId == null ? "" : adapterId;
     }
 
     public @NotNull String getProtocolId() {
@@ -256,7 +262,13 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + ")");
 
         retryPolicy.validate(validationEvents);
-        tags.forEach(tag -> tag.validate(validationEvents));
+        // Both passes are per-tag; the second needs this adapter's id for its messages, which the tag has no way to
+        // know (the EntityValidatable contract fixes validate's signature), so it is a separate call rather than
+        // part of validate().
+        tags.forEach(tag -> {
+            tag.validate(validationEvents);
+            tag.validateAccessContradictions(validationEvents, adapterId);
+        });
         getDuplicatedTagNameSet()
                 .forEach(duplicate -> validationEvents.add(new ValidationEventImpl(
                         ValidationEvent.FATAL_ERROR,
@@ -266,6 +278,14 @@ public class ProtocolAdapterEntity implements EntityValidatable {
         final Set<String> declaredTagNames =
                 tags.stream().map(TagEntity::getName).collect(Collectors.toSet());
         northboundMappings.forEach(mapping -> mapping.validate(validationEvents));
+        // Two tags mapped to one topic interleave on that topic with no source identity by default. Legal, but
+        // never silent: surface it as a warning so the collision is a deliberate choice, not an accident.
+        getCollidingNorthboundTopics()
+                .forEach((topic, tagNames) -> validationEvents.add(new ValidationEventImpl(
+                        ValidationEvent.WARNING,
+                        "adapter [" + adapterId + "] maps tags " + tagNames + " to the same topic [" + topic
+                                + "]; their values will interleave without source identity",
+                        null)));
         northboundMappings.forEach(mapping -> EntityValidatable.notMatch(
                 validationEvents,
                 () -> declaredTagNames.contains(mapping.getTagName()),
@@ -283,6 +303,22 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + "] which is not declared in adapter ["
                         + adapterId
                         + "]"));
+    }
+
+    /**
+     * @return topic &rarr; the distinct tag names of the northbound mappings sharing it, for every topic mapped by
+     *         more than one tag, in first-seen order; empty when there are no collisions.
+     */
+    @JsonIgnore
+    public @NotNull Map<String, List<String>> getCollidingNorthboundTopics() {
+        final Map<String, List<String>> tagsByTopic = new LinkedHashMap<>();
+        // Counted per MAPPING, not per distinct tag: two identical mappings (same tag, same topic) are a silent
+        // double-publish of every value and must warn just like two different tags sharing a topic.
+        northboundMappings.forEach(mapping -> tagsByTopic
+                .computeIfAbsent(mapping.getTopic(), topic -> new ArrayList<>())
+                .add(mapping.getTagName()));
+        tagsByTopic.values().removeIf(tagNames -> tagNames.size() < 2);
+        return tagsByTopic;
     }
 
     /**

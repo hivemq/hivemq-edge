@@ -16,13 +16,21 @@
 package com.hivemq.protocols.v2.wrapper;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
+import com.hivemq.datapoint.DataPointListBuilderImpl;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -49,7 +57,52 @@ final class WrapperTestSupport {
     }
 
     static @NotNull DataPoint dataPoint(final @NotNull String tagName, final @NotNull Object value) {
-        return new TestDataPoint(tagName, value);
+        return new TestDataPoint(tagName, value, false);
+    }
+
+    /** A value the adapter flags as its own JSON payload — used to prove the flag cannot bypass schema enforcement
+     * (EDG-824 #10). */
+    static @NotNull DataPoint jsonDataPoint(final @NotNull String tagName, final @NotNull Object value) {
+        return new TestDataPoint(tagName, value, true);
+    }
+
+    /** A polled pair with an explicit declared value schema — for the schema-enforcement tests (EDG-824 #6). */
+    static @NotNull NodeTagPair typedPair(final @NotNull String tagName, final @NotNull Schema schema) {
+        return NodeTagPair.create(new TestNode(tagName), tagName, schema, true, false);
+    }
+
+    /**
+     * A value carried the way the SDK's {@code DataPointBuilder} path carries it: built through the <b>production</b>
+     * {@link DataPointListBuilderImpl}, so the result is a real {@code DataPointWithMetadata} whose
+     * {@code getTagValue()} returns a Jackson node — exactly what OPC-UA and EtherIP CIP/ODVA emit. Distinct from
+     * {@link #dataPoint} and {@link #jsonDataPoint}, which hand over the raw Java value as the
+     * {@code DataPointFactory} path does; a flag on a mock carrier cannot stand in for this one (Sam, round 2).
+     */
+    static @NotNull DataPoint builtDataPoint(
+            final @NotNull String tagName, final @NotNull Consumer<DataPointBuilder<?>> value) {
+        final List<DataPoint> published = new ArrayList<>();
+        final DataPointListBuilder list = new DataPointListBuilderImpl(tagName, builder -> {}, published::addAll);
+        value.accept(list.addDataPoint(new TestTag(tagName)));
+        list.publish();
+        return published.getFirst();
+    }
+
+    record TestTag(@NotNull String name) implements Tag {
+
+        @Override
+        public @NotNull TagDefinition getDefinition() {
+            return new TagDefinition() {};
+        }
+
+        @Override
+        public @NotNull String getName() {
+            return name;
+        }
+
+        @Override
+        public @NotNull String getDescription() {
+            return name;
+        }
     }
 
     static final class TestNode extends Node {
@@ -81,7 +134,7 @@ final class WrapperTestSupport {
         }
     }
 
-    record TestDataPoint(@NotNull String tagName, @NotNull Object value) implements DataPoint {
+    record TestDataPoint(@NotNull String tagName, @NotNull Object value, boolean json) implements DataPoint {
 
         @Override
         public @NotNull Object getTagValue() {
@@ -90,7 +143,7 @@ final class WrapperTestSupport {
 
         @Override
         public boolean treatTagValueAsJson() {
-            return false;
+            return json;
         }
 
         @Override
