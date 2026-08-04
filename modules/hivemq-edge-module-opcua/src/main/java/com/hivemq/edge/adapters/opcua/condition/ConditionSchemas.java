@@ -66,6 +66,10 @@ public final class ConditionSchemas {
      * properties hold a reference to the variable, never its value. {@code SetpointNode} says where the
      * setpoint lives; a field named {@code Setpoint} would promise the number itself, which is not what the
      * server sends.
+     * <p>
+     * The suffix is a good hint but not the rule — the type tables are. {@code BranchId},
+     * {@code ConditionClassId} and {@code TrustListId} are all {@code NodeId} without carrying it, so the
+     * list is maintained from the tables rather than by pattern-matching the names.
      */
     private static final @NotNull Set<String> NODE_ID_FIELDS = Set.of(
             "SourceNode",
@@ -75,10 +79,13 @@ public final class ConditionSchemas {
             "BranchId",
             "InputNode",
             "NormalState",
-            "ExpectedState",
             "SetpointNode",
             "BaseSetpointNode",
-            "TargetValueNode");
+            "TargetValueNode",
+            // OPC 10000-12 §7.8.2.11: the NodeId of the TrustList that is out of date. Mandatory on
+            // TrustListOutOfDateAlarmType, and the one node-id field defined outside Part 9 -- which is why
+            // the Part 9 sweep behind finding 11 did not catch it.
+            "TrustListId");
 
     private static final @NotNull Set<String> NUMERIC_FIELDS = Set.of(
             "Severity",
@@ -338,6 +345,7 @@ public final class ConditionSchemas {
         } else if (BOOLEAN_FIELDS.contains(field)) {
             object.property(field)
                     .scalar(ScalarType.BOOLEAN)
+                    .description(describeBoolean(field))
                     .nullable()
                     .readable()
                     .writable(false)
@@ -359,6 +367,33 @@ public final class ConditionSchemas {
                     .writable(false)
                     .endProperty();
         }
+    }
+
+    /**
+     * What a boolean field means, where the name alone does not say.
+     * <p>
+     * {@code Retain} is the one that matters. It is the specification's terminal signal for a branch — OPC
+     * 10000-9 §5.5.2: "when a Client receives an Event with the Retain flag set to False, the Client should
+     * consider this as a ConditionBranch that is no longer of interest" — and Edge deliberately does not act
+     * on it. That follows from the conduit decision: Edge relays transitions and keeps no alarm list, so
+     * there is nothing here to retire. Retiring the entry is the consumer's job, and a field presented as a
+     * bare nullable boolean beside {@code AudibleEnabled} gives them no way to know that.
+     */
+    private static @NotNull String describeBoolean(final @NotNull String field) {
+        return switch (field) {
+            case "Retain" ->
+                "False means this branch is no longer of interest and a consumer maintaining an alarm list "
+                        + "should retire it (OPC 10000-9 §5.5.2). Edge does not act on it: it relays "
+                        + "transitions and keeps no list of its own.";
+            case "SupportsFilteredRetain" ->
+                "Whether the server supports per-client Retain filtering. It changes what Retain means in "
+                        + "every event from this condition, so read it before relying on Retain.";
+            case "SuppressedOrShelved" ->
+                "True while the alarm is suppressed or shelved, and so not currently of operator interest.";
+            case "AudibleEnabled" -> "Whether the server has an audible sound configured for this alarm.";
+            case "FirstInGroupFlag" -> "True when this alarm was the first in its alarm group to activate.";
+            default -> "";
+        };
     }
 
     private static @NotNull String describeMethods() {

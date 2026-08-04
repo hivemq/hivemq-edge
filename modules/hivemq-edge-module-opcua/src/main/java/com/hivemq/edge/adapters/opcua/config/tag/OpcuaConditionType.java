@@ -40,9 +40,19 @@ import org.jetbrains.annotations.Nullable;
  * its parent does plus its own fields — so the whole table can live here rather than being discovered per
  * device.
  * <p>
- * Declaring a <em>supertype</em> of what the device actually offers is legitimate: every declared field still
- * exists, and the tag simply projects a narrower view. That is why verification checks assignability rather
- * than equality.
+ * Declaring a <em>supertype</em> of what the device actually offers is legitimate, and verification therefore
+ * checks assignability rather than equality. The reason is <b>not</b> that every declared field must exist:
+ * most of them need not. Well over half the roughly fifty non-base fields carry the modelling rule
+ * {@code Optional} — all sixteen of {@code LimitAlarmType}'s (Table 92), all four of
+ * {@code NonExclusiveLimitAlarmType}'s states (Table 97), fourteen of {@code AlarmConditionType}'s seventeen
+ * — so a conformant server may omit them whatever type it claims.
+ * <p>
+ * What makes it safe is the <em>filter</em>, not the type table: OPC 10000-4 §7.22.3 has an unmatched select
+ * clause return null rather than fail the monitored item. So a declared field the device does not implement
+ * arrives as null, exactly like one that is merely not applicable to this transition. The consequence worth
+ * knowing is that those two cases are indistinguishable downstream — a {@code LimitAlarmType} tag against a
+ * server implementing only {@code HighLimit} publishes a shape promising sixteen limits, fifteen of them
+ * permanently null.
  * <p>
  * Generated from the specification's type model; the field lists are the members each type adds, excluding
  * methods and nested objects (a condition's {@code ShelvingState} is an object with its own methods, not an
@@ -148,6 +158,8 @@ public enum OpcuaConditionType {
             "NonExclusiveRateOfChangeAlarmType", "NonExclusiveLimitAlarmType", List.of("EngineeringUnits")),
     SYSTEM_DIAGNOSTIC_ALARM("SystemDiagnosticAlarmType", "OffNormalAlarmType", List.of()),
     TRIP_ALARM("TripAlarmType", "OffNormalAlarmType", List.of()),
+    // The one type defined outside Part 9: OPC 10000-12 §7.8.2.11 (Discovery and Global Services). Checked
+    // there rather than assumed -- subtype of SystemOffNormalAlarmType, with all three fields Mandatory.
     TRUST_LIST_OUT_OF_DATE_ALARM(
             "TrustListOutOfDateAlarmType",
             "SystemOffNormalAlarmType",

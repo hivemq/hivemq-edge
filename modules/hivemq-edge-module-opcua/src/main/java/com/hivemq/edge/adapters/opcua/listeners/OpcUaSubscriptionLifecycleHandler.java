@@ -288,6 +288,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final OpcuaTag tag = tagOf(monitoredItem);
             if (tag != null && tag.getDefinition().getKind() != OpcuaTagKind.VALUE) {
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().eventQueueSize()));
+                // Re-stated on every synchronization, for the same reason it is set at creation: OPC 10000-4
+                // §5.13.1.2 requires a client subscribing for Events to ask for 0, and the field's default
+                // is 1000.0 rather than 0.0.
+                monitoredItem.setSamplingInterval(0.0);
             } else {
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
                 monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
@@ -323,11 +327,17 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                                         eventFilterFor(opcuaTag, nodeId));
                                 // Event parameters, not value parameters. queueSize means something different
                                 // here: for an event item 1 asks for the smallest queue the server supports
-                                // (OPC 10000-4 §7.21), where for a value item it means a single entry. And the
-                                // sampling interval is left at the 0.0 the SDK sets for event items -- there is
-                                // nothing to sample, so "as fast as practical" is the honest request.
+                                // (OPC 10000-4 §7.21), where for a value item it means a single entry.
                                 eventItem.setQueueSize(
                                         uint(config.getOpcuaToMqttConfig().eventQueueSize()));
+                                // Stated rather than inherited. OPC 10000-4 §5.13.1.2 is a client-side
+                                // requirement -- "A Client shall define a sampling interval of 0 if it
+                                // subscribes for Events" -- and there is nothing to sample anyway, since an
+                                // event is delivered when it fires. Milo's newEventItem factory does set
+                                // 0.0 today, but the field's own default is 1000.0, so a refactor that
+                                // built the item another way would violate a SHALL silently. One line
+                                // makes the requirement visible where it applies.
+                                eventItem.setSamplingInterval(0.0);
                                 yield eventItem;
                             }
                             case VALUE -> {

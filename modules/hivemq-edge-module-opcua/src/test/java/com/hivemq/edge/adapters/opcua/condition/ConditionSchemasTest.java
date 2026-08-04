@@ -86,6 +86,15 @@ class ConditionSchemasTest {
         assertThat(describesANodeId(discrepancy, "TargetValueNode"))
                 .as("'TargetValueNode' must be typed as a node id, not a string")
                 .isTrue();
+
+        // Not every node id carries the "Node" suffix. TrustListId is a NodeId per OPC 10000-12 §7.8.2.11,
+        // and it is defined outside Part 9 -- which is why the Part 9 sweep that found the other node-id
+        // fields missed it.
+        final ObjectNode trustList = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("TrustListOutOfDateAlarmType").orElseThrow()));
+        assertThat(describesANodeId(trustList, "TrustListId"))
+                .as("'TrustListId' must be typed as a node id despite the name not saying so")
+                .isTrue();
     }
 
     /**

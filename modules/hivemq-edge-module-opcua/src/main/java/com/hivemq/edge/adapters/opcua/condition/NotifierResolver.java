@@ -58,10 +58,17 @@ import org.jetbrains.annotations.Nullable;
  * {@code HasEventSource}, then their conditions by {@code HasCondition}. Going up from a condition therefore
  * means reversing both legs, and browsing {@code HasEventSource} from the condition itself returns nothing on
  * a server laid out as the specification prescribes.
- * There is deliberately no implicit fallback to the Server object. It is a notifier by convention and would
- * almost always work, which is exactly the problem: it would silently widen a tag from "this condition's
- * area" to "everything this server emits", leaving the filter as the only thing between an operator and the
- * whole plant's alarm traffic.
+ * There is deliberately no implicit fallback to the Server object — and the reason is a scope objection, not
+ * a doubt about whether it would work. It would: OPC 10000-5 §8.3.2 is as strong a guarantee as this area
+ * offers, "The Server Object serves as root notifier, that is, its EventNotifier Attribute shall be set
+ * providing Events. All Events of the Server shall be accessible subscribing to the Events of the Server
+ * Object." That is precisely the problem. Falling back to it would silently widen a tag from "this
+ * condition's area" to "everything this server emits", leaving the filter as the only thing between an
+ * operator and the whole plant's alarm traffic — a decision the tag's author should make explicitly by
+ * naming {@code notifierNode}, not one Edge should make on their behalf when a walk comes up empty.
+ * <p>
+ * A REFRESH tag does subscribe to the Server object, and legitimately so: its purpose is the
+ * subscription-wide refresh bracket, which is server-wide by definition rather than scoped to one area.
  */
 public final class NotifierResolver {
 
