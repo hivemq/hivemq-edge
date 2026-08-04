@@ -263,6 +263,34 @@ class TagAspectReadPolledTest {
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
     }
 
+    /**
+     * Review on #1635: the interval is turned into an absolute deadline, {@code now + pollIntervalMillis}, so an
+     * enormous interval wraps into a deadline in the PAST and the slowest cadence an operator can write would poll
+     * on every tick. {@code TagEntity.MAXIMUM_POLL_INTERVAL_MILLIS} now refuses such a value at config load; this
+     * covers the actor's saturation, which is what stands between a delay that reached the aspect by any other
+     * route and a hot poll loop. The clock is advanced BEFORE activation on purpose: at {@code nowMillis() == 0}
+     * the sum does not overflow and the guard is never exercised.
+     */
+    @Test
+    void anOverflowingPollInterval_neverProducesADeadlineInThePast() {
+        final WrapperTestFixture fixture = WrapperTestFixture.builder()
+                .runningCoordinator()
+                .nodes(List.of(WrapperTestSupport.pair("temperature")))
+                .pollIntervalMillis(Long.MAX_VALUE)
+                .build();
+
+        fixture.advance(1000); // now > 0, so now + Long.MAX_VALUE wraps negative when the interval is armed
+        fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.commands()).doesNotContain("pollBatch");
+
+        // Unsaturated, the wrapped deadline is already due and every tick would request another poll.
+        fixture.advance(60_000);
+        assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
+        assertThat(fixture.commands()).doesNotContain("pollBatch");
+        assertThat(fixture.northboundDataPoints).isEmpty();
+    }
+
     @Test
     void unusedTag_staysDeactivatedEvenWhenActivated() {
         final WrapperTestFixture fixture = WrapperTestFixture.builder()

@@ -704,8 +704,13 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     private void scheduleTimer(final long delayMillis, final @NotNull Runnable onFire) {
         cancelActiveTimer();
-        // Saturate: a near-Long.MAX_VALUE configured delay must mean "practically never", not an overflowed
-        // negative deadline that fires immediately.
+        // Saturate: a near-Long.MAX_VALUE delay must mean "practically never", not an overflowed negative
+        // deadline that fires on the very next tick — the slowest configured cadence behaving as the fastest.
+        // PriorityTimerQueue takes an ABSOLUTE fire time and never fires an entry at Long.MAX_VALUE, so
+        // saturating is the honest expression of that intent. The reachable source of such a delay is the
+        // configured poll interval, which TagEntity.MAXIMUM_POLL_INTERVAL_MILLIS now bounds well below overflow;
+        // this stays as defence in depth for any delay that did not come through that validation (review on
+        // #1635).
         final long fireAtMillis = clock.nowMillis() + delayMillis;
         activeTimer = timers.schedule(fireAtMillis < 0 ? Long.MAX_VALUE : fireAtMillis, onFire);
     }

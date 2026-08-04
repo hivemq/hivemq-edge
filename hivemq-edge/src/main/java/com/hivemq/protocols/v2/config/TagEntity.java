@@ -45,6 +45,16 @@ public class TagEntity implements EntityValidatable {
 
     private static final long DEFAULT_POLL_INTERVAL_MILLIS = 5000;
 
+    /**
+     * The largest accepted poll cadence, 7 days. The runtime turns the interval into an absolute deadline
+     * ({@code now + pollIntervalMillis}) on the actor's timer queue, so an unbounded value overflows into a
+     * deadline in the past and the slowest configurable cadence would poll on every tick — the exact opposite of
+     * what was configured. Seven days is orders of magnitude beyond any industrial cadence and keeps the sum far
+     * from overflow for any wall clock. The actor saturates as well
+     * ({@code TagAspectRead#scheduleTimer}), so a value that never passed this validation still cannot wrap.
+     */
+    public static final long MAXIMUM_POLL_INTERVAL_MILLIS = 7L * 24 * 60 * 60 * 1000;
+
     @XmlElement(name = "name", required = true)
     private @NotNull String name = "";
 
@@ -133,6 +143,11 @@ public class TagEntity implements EntityValidatable {
                 validationEvents,
                 () -> pollIntervalMillis > 0,
                 () -> "tag [" + name + "] poll-interval-millis (" + pollIntervalMillis + ") must be positive");
+        EntityValidatable.notMatch(
+                validationEvents,
+                () -> pollIntervalMillis <= MAXIMUM_POLL_INTERVAL_MILLIS,
+                () -> "tag [" + name + "] poll-interval-millis (" + pollIntervalMillis + ") exceeds the maximum of "
+                        + MAXIMUM_POLL_INTERVAL_MILLIS + " ms (7 days)");
     }
 
     /**

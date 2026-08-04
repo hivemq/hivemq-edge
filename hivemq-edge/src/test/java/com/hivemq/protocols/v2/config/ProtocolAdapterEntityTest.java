@@ -213,6 +213,28 @@ class ProtocolAdapterEntityTest {
         assertThat(validate(withTimeouts(10_001, 10_000))).isEmpty();
     }
 
+    // Review on #1635: the interval becomes an absolute deadline (now + interval) on the actor's timer queue, so an
+    // unbounded value wraps into a deadline in the past and the slowest configurable cadence polls on every tick.
+    // Bounding it here is the fix; the actor's saturation is defence in depth, not the guarantee.
+    @Test
+    void pollIntervalBeyondTheMaximum_isRejected() {
+        assertThat(messages(withPollInterval(Long.MAX_VALUE)))
+                .anyMatch(message -> message.contains("poll-interval-millis") && message.contains("exceeds"));
+        assertThat(messages(withPollInterval(TagEntity.MAXIMUM_POLL_INTERVAL_MILLIS + 1)))
+                .anyMatch(message -> message.contains("poll-interval-millis") && message.contains("exceeds"));
+        // the boundary itself is legal, and no configured cadence within it can overflow a wall clock
+        assertThat(validate(withPollInterval(TagEntity.MAXIMUM_POLL_INTERVAL_MILLIS)))
+                .isEmpty();
+    }
+
+    @Test
+    void nonPositivePollInterval_isRejected() {
+        assertThat(messages(withPollInterval(0)))
+                .anyMatch(message -> message.contains("poll-interval-millis") && message.contains("positive"));
+        assertThat(messages(withPollInterval(-1)))
+                .anyMatch(message -> message.contains("poll-interval-millis") && message.contains("positive"));
+    }
+
     @Test
     void nonPositiveCommandTimeout_isRejected() {
         assertThat(messages(withTimeouts(30_000, 0))).anyMatch(message -> message.contains("command-timeout-millis"));
@@ -396,6 +418,22 @@ class ProtocolAdapterEntityTest {
                 false,
                 5_000,
                 new AccessFlagsEntity(AccessTriState.YES, AccessTriState.YES, AccessTriState.YES, AccessTriState.NO));
+    }
+
+    private static @NotNull ProtocolAdapterEntity withPollInterval(final long pollIntervalMillis) {
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags()
+                .add(new TagEntity(
+                        "temperature",
+                        "{\"id\":\"temperature\"}",
+                        true,
+                        true,
+                        true,
+                        false,
+                        pollIntervalMillis,
+                        new AccessFlagsEntity(
+                                AccessTriState.YES, AccessTriState.YES, AccessTriState.YES, AccessTriState.NO)));
+        return entity;
     }
 
     private static @NotNull List<String> northboundTopicMessages(final @NotNull String topic) {
