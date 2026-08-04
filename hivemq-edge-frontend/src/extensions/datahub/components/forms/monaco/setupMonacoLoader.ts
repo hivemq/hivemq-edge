@@ -1,10 +1,10 @@
 import { loader } from '@monaco-editor/react'
 import * as monaco from 'monaco-editor'
-import editorWorker from 'monaco-editor/editor/editor.worker?worker'
-import jsonWorker from 'monaco-editor/language/json/json.worker?worker'
-import cssWorker from 'monaco-editor/language/css/css.worker?worker'
-import htmlWorker from 'monaco-editor/language/html/html.worker?worker'
-import tsWorker from 'monaco-editor/language/typescript/ts.worker?worker'
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 
 /**
  * `@monaco-editor/react` resolves Monaco from jsdelivr at runtime unless it is told otherwise, which
@@ -12,6 +12,12 @@ import tsWorker from 'monaco-editor/language/typescript/ts.worker?worker'
  * version the CDN defaults to rather than the one pinned in package.json. Point the loader at the
  * installed package and let Vite bundle the web workers, so nothing is fetched from a CDN at build
  * or run time.
+ *
+ * `monaco-editor` is pinned to the 0.55 the CDN used to serve. 0.56 moves the JSON, TypeScript, CSS
+ * and HTML language services behind an LSP client and drops `monaco.languages.json` and
+ * `monaco.languages.typescript` for top-level `monaco.json` / `monaco.typescript` namespaces, which
+ * every language configuration under ./languages, and the specs that assert on them, still use.
+ * Upgrading means porting that layer, not just bumping the version.
  *
  * Import this module for its side effect before any `<Editor>` is rendered.
  */

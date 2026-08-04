@@ -107,7 +107,7 @@
     "immutable-json-patch": "6.0.3",
     "luxon": "3.7.2",
     "mermaid": "11.16.0",
-    "monaco-editor": "^0.56.0",
+    "monaco-editor": "0.55.1",
     "mqtt": "5.15.2",
     "mqtt-match": "3.0.0",
     "nyc": "18.0.0",
