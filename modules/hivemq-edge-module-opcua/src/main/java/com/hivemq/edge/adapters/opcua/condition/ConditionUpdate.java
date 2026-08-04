@@ -64,24 +64,28 @@ public record ConditionUpdate(
     public enum Method {
 
         // --- (EventId, Comment): act on one specific transition -------------------------------------------
-        ACKNOWLEDGE(0, "Acknowledge", Arguments.EVENT_AND_COMMENT, Location.CONDITION),
-        CONFIRM(1, "Confirm", Arguments.EVENT_AND_COMMENT, Location.CONDITION),
-        ADD_COMMENT(2, "AddComment", Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        // These three take a Comment in their base form, so they need no "2" variant.
+        ACKNOWLEDGE(0, "Acknowledge", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        CONFIRM(1, "Confirm", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        ADD_COMMENT(2, "AddComment", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
 
         // --- no arguments: act on the condition as a whole ------------------------------------------------
-        ENABLE(10, "Enable", Arguments.NONE, Location.CONDITION),
-        DISABLE(11, "Disable", Arguments.NONE, Location.CONDITION),
-        SILENCE(12, "Silence", Arguments.NONE, Location.CONDITION),
-        SUPPRESS(13, "Suppress", Arguments.NONE, Location.CONDITION),
-        UNSUPPRESS(14, "Unsuppress", Arguments.NONE, Location.CONDITION),
-        REMOVE_FROM_SERVICE(15, "RemoveFromService", Arguments.NONE, Location.CONDITION),
-        PLACE_IN_SERVICE(16, "PlaceInService", Arguments.NONE, Location.CONDITION),
-        RESET(17, "Reset", Arguments.NONE, Location.CONDITION),
+        // Most have a "2" variant that is the same operation plus an optional Comment. Enable, Disable and
+        // Silence do not: the specification defines no Enable2, Disable2 or Silence2, so a comment sent with
+        // those can never reach any server.
+        ENABLE(10, "Enable", null, Arguments.NONE, Location.CONDITION),
+        DISABLE(11, "Disable", null, Arguments.NONE, Location.CONDITION),
+        SILENCE(12, "Silence", null, Arguments.NONE, Location.CONDITION),
+        SUPPRESS(13, "Suppress", "Suppress2", Arguments.NONE, Location.CONDITION),
+        UNSUPPRESS(14, "Unsuppress", "Unsuppress2", Arguments.NONE, Location.CONDITION),
+        REMOVE_FROM_SERVICE(15, "RemoveFromService", "RemoveFromService2", Arguments.NONE, Location.CONDITION),
+        PLACE_IN_SERVICE(16, "PlaceInService", "PlaceInService2", Arguments.NONE, Location.CONDITION),
+        RESET(17, "Reset", "Reset2", Arguments.NONE, Location.CONDITION),
 
         // --- shelving: on the condition's ShelvingState object, not on the condition ----------------------
-        UNSHELVE(20, "Unshelve", Arguments.NONE, Location.SHELVING_STATE),
-        ONE_SHOT_SHELVE(21, "OneShotShelve", Arguments.NONE, Location.SHELVING_STATE),
-        TIMED_SHELVE(22, "TimedShelve", Arguments.DURATION, Location.SHELVING_STATE);
+        UNSHELVE(20, "Unshelve", "Unshelve2", Arguments.NONE, Location.SHELVING_STATE),
+        ONE_SHOT_SHELVE(21, "OneShotShelve", "OneShotShelve2", Arguments.NONE, Location.SHELVING_STATE),
+        TIMED_SHELVE(22, "TimedShelve", "TimedShelve2", Arguments.DURATION, Location.SHELVING_STATE);
 
         /**
          * What the method takes. Ten of the fourteen take nothing at all, which is why the command's fields
@@ -106,18 +110,42 @@ public record ConditionUpdate(
 
         private final int wireValue;
         private final @NotNull String browseName;
+        private final @Nullable String commentedBrowseName;
         private final @NotNull Arguments arguments;
         private final @NotNull Location location;
 
         Method(
                 final int wireValue,
                 final @NotNull String browseName,
+                final @Nullable String commentedBrowseName,
                 final @NotNull Arguments arguments,
                 final @NotNull Location location) {
             this.wireValue = wireValue;
             this.browseName = browseName;
+            this.commentedBrowseName = commentedBrowseName;
             this.arguments = arguments;
             this.location = location;
+        }
+
+        /**
+         * The browse name of the variant that also takes a {@code Comment}, or null when there is none.
+         * <p>
+         * OPC UA grew these in two passes. The original methods take no arguments at all — {@code Suppress()}
+         * has nowhere to put a note — so the specification later added {@code Suppress2(Comment)}, the same
+         * operation plus the comment. Both are Optional and independent (Table 40 lists them separately), so
+         * a server may expose either or both, and which to call is a per-device question.
+         * <p>
+         * Null for {@code ACKNOWLEDGE}, {@code CONFIRM} and {@code ADD_COMMENT}, which take a comment in
+         * their base form, and for {@code ENABLE}, {@code DISABLE} and {@code SILENCE}, for which the
+         * specification defines no "2" variant at all — a comment sent with those can reach no server.
+         */
+        public @Nullable String commentedBrowseName() {
+            return commentedBrowseName;
+        }
+
+        /** Whether a comment can ever accompany this method, on any server. */
+        public boolean acceptsComment() {
+            return arguments == Arguments.EVENT_AND_COMMENT || commentedBrowseName != null;
         }
 
         public int wireValue() {

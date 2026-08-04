@@ -194,6 +194,82 @@ public class OpcUaConditionUpdateIT {
 
     @Test
     @Timeout(120)
+    void whenAMethodHasACommentedVariant_thenItIsUsedToCarryTheComment() throws Exception {
+        // Suppress() takes no arguments, so a comment sent with it had nowhere to go and was silently
+        // dropped. Suppress2(Comment) is the same operation with somewhere to put it.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("CommentedVariantAlarm", CONDITION_NODE_ID + 40);
+
+        startAdapterWith(conditionNodeId);
+
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "SUPPRESS", "comment": "suppressed during maintenance"}
+                """);
+
+        verify(output, timeout(10_000)).finish();
+
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).methodName())
+                .as("the commented variant must be preferred when the server has it")
+                .isEqualTo("Suppress2");
+        assertThat(calls.get(0).comment()).isEqualTo("suppressed during maintenance");
+    }
+
+    @Test
+    @Timeout(120)
+    void whenNoCommentIsGiven_thenTheBaseVariantIsUsed() throws Exception {
+        // Nothing to carry, so there is no reason to prefer the newer method. Calling the base form keeps
+        // the request identical to what it was before the comment support existed.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("BaseVariantAlarm", CONDITION_NODE_ID + 41);
+
+        startAdapterWith(conditionNodeId);
+
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "SUPPRESS"}
+                """);
+
+        verify(output, timeout(10_000)).finish();
+
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).methodName()).isEqualTo("Suppress");
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheServerHasNoCommentedVariant_thenTheActionStillHappens() throws Exception {
+        // The decisive case. A user writing {"method": "SUPPRESS", "comment": "..."} wants the alarm
+        // suppressed first and foremost; the comment is best effort. So a server with only the base method
+        // still gets the suppression -- the comment is dropped with a warning rather than failing the write
+        // and leaving an alarm unsuppressed over a note.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addConditionNodeWithoutCommentedMethods("OldServerAlarm", CONDITION_NODE_ID + 42);
+
+        startAdapterWith(conditionNodeId);
+
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "SUPPRESS", "comment": "this server cannot record me"}
+                """);
+
+        verify(output, timeout(10_000)).finish();
+
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).methodName())
+                .as("the suppression must happen even though the comment cannot be recorded")
+                .isEqualTo("Suppress");
+    }
+
+    @Test
+    @Timeout(120)
     void whenAConditionIsConfirmed_thenTheServerIsAskedToConfirm() throws Exception {
         final String conditionNodeId = opcUaServerExtension
                 .getTestNamespace()

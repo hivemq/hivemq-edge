@@ -485,6 +485,26 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * @param nodeIdPart the identifier part of its node id.
      * @return the node id, in the parseable form a tag definition uses.
      */
+    /**
+     * Adds a condition exposing only the base methods, with none of the {@code "2"} variants.
+     * <p>
+     * Models a server implementing the original method set. Both forms are Optional and independent in the
+     * specification, so this is a conformant server rather than a deficient one — and it is the case where a
+     * user's comment cannot be recorded, which is what the fallback exists for.
+     */
+    public @NotNull String addConditionNodeWithoutCommentedMethods(final @NotNull String name, final long nodeIdPart) {
+        final String conditionNodeId = addConditionNode(name, nodeIdPart);
+        final NodeId nodeId = NodeId.parse(conditionNodeId);
+
+        long offset = 1000;
+        for (final String methodName :
+                List.of("Acknowledge", "Confirm", "AddComment", "Suppress", "Unsuppress", "Reset")) {
+            addConditionMethod(nodeId, methodName, nodeIdPart + offset);
+            offset += 1000;
+        }
+        return conditionNodeId;
+    }
+
     public @NotNull String addAcknowledgeableConditionNode(final @NotNull String name, final long nodeIdPart) {
         final String conditionNodeId = addConditionNode(name, nodeIdPart);
         final NodeId nodeId = NodeId.parse(conditionNodeId);
@@ -504,6 +524,13 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                 "RemoveFromService",
                 "PlaceInService",
                 "Reset",
+                // The "2" variants, which take a Comment where their base form takes nothing. A server may
+                // expose either or both -- see addConditionNodeWithoutCommentedMethods for the other case.
+                "Suppress2",
+                "Unsuppress2",
+                "RemoveFromService2",
+                "PlaceInService2",
+                "Reset2",
                 // Defined on ConditionType, so a server offers it on its condition instances. Edge calls it
                 // after every (re)connect to recover the current alarm picture.
                 "ConditionRefresh")) {
@@ -526,7 +553,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             conditionNode.addReference(new Reference(
                     nodeId, NodeIds.HasComponent, shelvingState.getNodeId().expanded(), true));
         }
-        for (final String methodName : List.of("Unshelve", "OneShotShelve", "TimedShelve")) {
+        for (final String methodName :
+                List.of("Unshelve", "OneShotShelve", "TimedShelve", "Unshelve2", "OneShotShelve2", "TimedShelve2")) {
             addConditionMethod(shelvingStateId, methodName, nodeIdPart + offset);
             offset += 1000;
         }
@@ -546,12 +574,17 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
         final MethodInvocationHandler handler = (context, request) -> {
             final Variant[] arguments = request.getInputArguments();
+            // Arguments are found by type rather than by position, because the position differs per method:
+            // Acknowledge(EventId, Comment) puts the comment second, Suppress2(Comment) first, and
+            // TimedShelve2(ShelvingTime, Comment) second again. Each of the three types appears at most once
+            // in any signature, so a type search is unambiguous and survives adding further variants.
             methodCalls.add(new MethodCall(
                     methodName,
-                    argumentAt(arguments, 0),
-                    commentAt(arguments, 1),
-                    durationAt(arguments, 0),
-                    rawCommentAt(arguments, 1)));
+                    firstOfType(arguments, ByteString.class, ByteString.NULL_VALUE),
+                    String.valueOf(firstOfType(arguments, LocalizedText.class, LocalizedText.NULL_VALUE)
+                            .getText()),
+                    firstOfType(arguments, Double.class, null),
+                    firstOfType(arguments, LocalizedText.class, null)));
             return new CallMethodResult(StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]);
         };
 
@@ -572,41 +605,26 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         }
     }
 
-    private static @NotNull ByteString argumentAt(final @Nullable Variant[] arguments, final int index) {
-        return arguments != null
-                        && arguments.length > index
-                        && arguments[index].getValue() instanceof final ByteString bs
-                ? bs
-                : ByteString.NULL_VALUE;
-    }
-
-    private static @NotNull String commentAt(final @Nullable Variant[] arguments, final int index) {
-        return arguments != null
-                        && arguments.length > index
-                        && arguments[index].getValue() instanceof final LocalizedText lt
-                ? String.valueOf(lt.getText())
-                : "";
-    }
-
     /**
-     * The comment argument exactly as it arrived, rather than flattened to its text.
+     * The first argument of the given type, or {@code fallback} when the signature has none.
      * <p>
-     * OPC 10000-9 §5.7.3 gives a null {@code LocalizedText} and one with empty text opposite meanings —
-     * leave the existing comment alone versus erase it — and both flatten to the same string. A test that
-     * checks which of the two was sent has to see the structure.
+     * Positional lookup was wrong once the {@code "2"} variants arrived: the comment is argument 1 of
+     * {@code Acknowledge(EventId, Comment)} and of {@code TimedShelve2(ShelvingTime, Comment)}, but argument
+     * 0 of {@code Suppress2(Comment)}. Each of {@code ByteString}, {@code LocalizedText} and {@code Double}
+     * appears at most once in any of these signatures, so searching by type is unambiguous — and it does not
+     * need revisiting when the next variant is added.
      */
-    private static @Nullable LocalizedText rawCommentAt(final @Nullable Variant[] arguments, final int index) {
-        return arguments != null
-                        && arguments.length > index
-                        && arguments[index].getValue() instanceof final LocalizedText lt
-                ? lt
-                : null;
-    }
-
-    private static @Nullable Double durationAt(final @Nullable Variant[] arguments, final int index) {
-        return arguments != null && arguments.length > index && arguments[index].getValue() instanceof final Double d
-                ? d
-                : null;
+    private static <T> T firstOfType(
+            final @Nullable Variant[] arguments, final @NotNull Class<T> type, final T fallback) {
+        if (arguments == null) {
+            return fallback;
+        }
+        for (final Variant argument : arguments) {
+            if (argument != null && type.isInstance(argument.getValue())) {
+                return type.cast(argument.getValue());
+            }
+        }
+        return fallback;
     }
 
     /**

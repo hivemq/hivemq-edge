@@ -96,42 +96,136 @@ public final class ConditionUpdateWriter {
             final @NotNull NodeId conditionNodeId,
             final @NotNull ConditionUpdate update) {
 
-        final Variant[] arguments = argumentsFor(update);
-
         // Shelving methods hang off the condition's ShelvingState object rather than the condition itself, so
         // the object a call is made on is not always the condition.
         return resolveTargetObject(client, conditionNodeId, update.method()).thenCompose(objectNodeId -> {
             if (objectNodeId == null) {
                 return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_NodeIdUnknown));
             }
-            return resolveMethodOn(client, objectNodeId, update.method()).thenCompose(browsed -> {
-                final NodeId methodNodeId =
-                        browsed != null ? browsed : SPECIFIED_TYPE_LEVEL_METHODS.get(update.method());
-                if (methodNodeId == null) {
-                    // Nothing on the instance and no id the specification prescribes. Logged rather than
-                    // returned silently: this is a southbound command a user sent, and Bad_MethodInvalid on
-                    // its own does not say whether the method is unsupported by the device or unreachable
-                    // because the server keeps its conditions out of the AddressSpace.
-                    log.error(
-                            "Cannot invoke {} on condition {}: the server exposes no such method on the "
-                                    + "instance, and OPC 10000-9 prescribes no type-level MethodId for it. "
-                                    + "If this server does not expose Condition instances, this method cannot "
-                                    + "be called through Edge.",
-                            update.method().browseName(),
-                            conditionNodeId);
-                    return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_MethodInvalid));
-                }
-                if (browsed == null) {
-                    log.debug(
-                            "Condition {} exposes no {} method; calling the ConditionType's method id as OPC "
-                                    + "10000-9 §5.5.4/§5.5.5 prescribe.",
-                            conditionNodeId,
-                            update.method().browseName());
-                }
-                final CallMethodRequest request = new CallMethodRequest(objectNodeId, methodNodeId, arguments);
-                return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
-            });
+            return resolveCommentedMethodOn(client, objectNodeId, update, conditionNodeId)
+                    .thenCompose(commented -> commented != null
+                            ? callCommented(client, objectNodeId, commented, update)
+                            : callBase(client, objectNodeId, conditionNodeId, update));
         });
+    }
+
+    /**
+     * Calls the {@code "2"} variant, which carries the user's comment.
+     */
+    private static @NotNull CompletableFuture<StatusCode> callCommented(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNodeId,
+            final @NotNull NodeId methodNodeId,
+            final @NotNull ConditionUpdate update) {
+
+        final CallMethodRequest request =
+                new CallMethodRequest(objectNodeId, methodNodeId, commentedArgumentsFor(update));
+        return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
+    }
+
+    /** Calls the base method — the original form, which for most methods cannot carry a comment. */
+    private static @NotNull CompletableFuture<StatusCode> callBase(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNodeId,
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull ConditionUpdate update) {
+
+        final Variant[] arguments = argumentsFor(update);
+        return resolveMethodOn(client, objectNodeId, update.method()).thenCompose(browsed -> {
+            final NodeId methodNodeId = browsed != null ? browsed : SPECIFIED_TYPE_LEVEL_METHODS.get(update.method());
+            if (methodNodeId == null) {
+                // Nothing on the instance and no id the specification prescribes. Logged rather than
+                // returned silently: this is a southbound command a user sent, and Bad_MethodInvalid on
+                // its own does not say whether the method is unsupported by the device or unreachable
+                // because the server keeps its conditions out of the AddressSpace.
+                log.error(
+                        "Cannot invoke {} on condition {}: the server exposes no such method on the "
+                                + "instance, and OPC 10000-9 prescribes no type-level MethodId for it. "
+                                + "If this server does not expose Condition instances, this method cannot "
+                                + "be called through Edge.",
+                        update.method().browseName(),
+                        conditionNodeId);
+                return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_MethodInvalid));
+            }
+            if (browsed == null) {
+                log.debug(
+                        "Condition {} exposes no {} method; calling the ConditionType's method id as OPC "
+                                + "10000-9 §5.5.4/§5.5.5 prescribe.",
+                        conditionNodeId,
+                        update.method().browseName());
+            }
+            final CallMethodRequest request = new CallMethodRequest(objectNodeId, methodNodeId, arguments);
+            return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
+        });
+    }
+
+    /**
+     * Finds the {@code "2"} variant of the method, when the user supplied a comment and the server has one.
+     * <p>
+     * The original methods take no arguments — {@code Suppress()} has nowhere to put a note — so the
+     * specification added {@code Suppress2(Comment)} alongside. Both are Optional and independent, so which
+     * exists is a per-device question and has to be browsed.
+     * <p>
+     * <b>The action is what the user asked for; the comment is best effort.</b> Someone writing
+     * {@code {"method": "SUPPRESS", "comment": "..."}} wants the alarm suppressed first and foremost, so a
+     * server without {@code Suppress2} gets the plain {@code Suppress} and the comment is dropped — with a
+     * warning, because silently discarding it is what made this a defect. Failing the write instead would
+     * leave an alarm unsuppressed over a note, which is the worse trade.
+     *
+     * @return the node of the commented variant, or null when there is no comment to carry, no such variant
+     *         in the specification, or none on this server.
+     */
+    private static @NotNull CompletableFuture<NodeId> resolveCommentedMethodOn(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNodeId,
+            final @NotNull ConditionUpdate update,
+            final @NotNull NodeId conditionNodeId) {
+
+        final String comment = update.comment();
+        if (comment == null || update.method().arguments() == ConditionUpdate.Method.Arguments.EVENT_AND_COMMENT) {
+            // Nothing to carry, or the base method already carries it.
+            return CompletableFuture.completedFuture(null);
+        }
+        final String commentedName = update.method().commentedBrowseName();
+        if (commentedName == null) {
+            // Enable, Disable and Silence: the specification defines no "2" form, so no server can record a
+            // comment for these. Worth saying plainly rather than letting the user infer it from silence.
+            log.warn(
+                    "Comment ignored for {} on condition {}: OPC 10000-9 defines no commented variant of this "
+                            + "method, so no server can record one. The {} itself is being performed.",
+                    update.method().name(),
+                    conditionNodeId,
+                    update.method().name());
+            return CompletableFuture.completedFuture(null);
+        }
+        return browseComponent(client, objectNodeId, NodeClass.Method, commentedName)
+                .thenApply(found -> {
+                    if (found == null) {
+                        log.warn(
+                                "Comment ignored for {} on condition {}: this server exposes {} but not {}, "
+                                        + "and only the latter takes a comment. The {} itself is being performed.",
+                                update.method().name(),
+                                conditionNodeId,
+                                update.method().browseName(),
+                                commentedName,
+                                update.method().name());
+                    }
+                    return found;
+                });
+    }
+
+    /**
+     * The arguments of a {@code "2"} variant: the base method's arguments with the comment appended.
+     * <p>
+     * {@code TimedShelve2(ShelvingTime, Comment)} is the only one with two — the rest take the comment alone.
+     */
+    private static @NotNull Variant[] commentedArgumentsFor(final @NotNull ConditionUpdate update) {
+        return switch (update.method().arguments()) {
+            case DURATION -> new Variant[] {Variant.of(update.duration()), Variant.of(commentOf(update))};
+            case NONE -> new Variant[] {Variant.of(commentOf(update))};
+            // The base form already takes the comment, so this variant is never resolved for these.
+            case EVENT_AND_COMMENT -> new Variant[] {Variant.of(update.eventId()), Variant.of(commentOf(update))};
+        };
     }
 
     /**
