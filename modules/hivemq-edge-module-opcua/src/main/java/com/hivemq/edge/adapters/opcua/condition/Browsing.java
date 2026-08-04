@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,6 +129,29 @@ final class Browsing {
                             throwable);
                     return collected;
                 });
+    }
+
+    /**
+     * Whether a browse name is the standard one of that name — same string <em>and</em> namespace 0.
+     * <p>
+     * A {@code QualifiedName} is a namespace and a string, and the namespace is what makes it unique: OPC
+     * 10000-3 §5.2.4 says as much, noting that "different organizations may use the same string having a
+     * slightly different meaning". Every name this module looks for — {@code Acknowledge},
+     * {@code ShelvingState}, {@code Suppress2} — is defined by the specification, and specification names
+     * live in namespace 0 (OPC 10000-5 §5.4.2: "Index 0 is reserved for the OPC UA namespace").
+     * <p>
+     * Matching on the string alone would take a vendor's own {@code Suppress}, defined in its own namespace
+     * as a component of the same condition, whenever the server happened to return it first — calling the
+     * wrong method, or failing on an argument mismatch, with nothing to indicate a collision occurred.
+     * <p>
+     * Namespace 0 is the one index safe to hardcode. Part 5 warns that a server may renumber its namespace
+     * table between sessions, but 0 is reserved and fixed.
+     */
+    static boolean isStandardName(final @Nullable QualifiedName browseName, final @NotNull String expected) {
+        return browseName != null
+                && browseName.getNamespaceIndex() != null
+                && browseName.getNamespaceIndex().intValue() == 0
+                && expected.equals(browseName.getName());
     }
 
     /** Hands a continuation point back to the server, ignoring the outcome. */

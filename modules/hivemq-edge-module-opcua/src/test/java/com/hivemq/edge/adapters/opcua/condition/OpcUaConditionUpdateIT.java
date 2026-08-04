@@ -270,6 +270,65 @@ public class OpcUaConditionUpdateIT {
 
     @Test
     @Timeout(120)
+    void whenAVendorDefinesTheSameMethodName_thenTheStandardOneIsCalled() throws Exception {
+        // A BrowseName is a namespace plus a string, and OPC 10000-3 §5.2.4 warns that "different
+        // organizations may use the same string having a slightly different meaning". Matching on the string
+        // alone took whichever the server listed first -- calling the wrong method, or failing on an
+        // argument mismatch, with nothing to say a collision had occurred.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addConditionNodeWithVendorNameClash("ClashingAlarm", CONDITION_NODE_ID + 50);
+
+        startAdapterWith(conditionNodeId);
+
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "SUPPRESS"}
+                """);
+
+        verify(output, timeout(10_000)).finish();
+
+        assertThat(opcUaServerExtension.getTestNamespace().vendorMethodCalled())
+                .as("the vendor's same-named method must not be called; only namespace 0 is the spec's")
+                .isFalse();
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).methodName()).isEqualTo("Suppress");
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheConditionHasNoShelvingState_thenShelvingIsCalledOnTheConditionItself() throws Exception {
+        // OPC 10000-9 §5.8.17.2: "some Servers do not expose Condition instances in the AddressSpace.
+        // Therefore, all Servers shall also allow Clients to call the Unshelve Method by specifying
+        // ConditionId as the ObjectId". Unlike the MethodId question, this fallback is one the specification
+        // requires every server to accept -- so refusing with a locally invented Bad_NodeIdUnknown made
+        // shelving impossible on that whole class of server, and blamed the operator's tag configuration.
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addConditionNodeWithoutCommentedMethods("NoShelvingStateAlarm", CONDITION_NODE_ID + 51);
+        opcUaServerExtension
+                .getTestNamespace()
+                .addShelvingMethodsOnCondition(conditionNodeId, CONDITION_NODE_ID + 60_000);
+
+        startAdapterWith(conditionNodeId);
+
+        final WritingOutput output = writeToCondition(conditionNodeId, """
+                {"method": "ONE_SHOT_SHELVE"}
+                """);
+
+        verify(output, timeout(10_000)).finish();
+
+        final List<TestNamespace.MethodCall> calls =
+                opcUaServerExtension.getTestNamespace().methodCallsExcludingRefresh();
+        assertThat(calls).hasSize(1);
+        assertThat(calls.get(0).methodName())
+                .as("shelving must fall back to the condition when there is no ShelvingState object")
+                .isEqualTo("OneShotShelve");
+    }
+
+    @Test
+    @Timeout(120)
     void whenAConditionIsConfirmed_thenTheServerIsAskedToConfirm() throws Exception {
         final String conditionNodeId = opcUaServerExtension
                 .getTestNamespace()

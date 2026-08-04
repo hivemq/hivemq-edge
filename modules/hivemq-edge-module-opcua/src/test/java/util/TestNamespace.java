@@ -569,6 +569,76 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * adapter prefers. A server that exposes no condition instance at all is modelled separately by
      * {@link #addConditionNodeWithoutMethods}.
      */
+    /**
+     * Adds a condition whose {@code Suppress} exists twice: once in a vendor namespace and once standard.
+     * <p>
+     * A {@code QualifiedName} is a namespace plus a string, and OPC 10000-3 §5.2.4 notes that "different
+     * organizations may use the same string having a slightly different meaning". A client matching on the
+     * string alone takes whichever the server lists first. The vendor node is added <em>first</em> here so a
+     * name-only match would find it — without that ordering the test would pass either way.
+     * <p>
+     * Only the standard node records its calls, so a wrong match shows up as no recorded call rather than as
+     * a wrong one.
+     */
+    public @NotNull String addConditionNodeWithVendorNameClash(final @NotNull String name, final long nodeIdPart) {
+        final String conditionNodeId = addConditionNode(name, nodeIdPart);
+        final NodeId nodeId = NodeId.parse(conditionNodeId);
+
+        addVendorMethod(nodeId, "Suppress", nodeIdPart + 700);
+        addConditionMethod(nodeId, "Suppress", nodeIdPart + 1000);
+        return conditionNodeId;
+    }
+
+    /**
+     * Puts the shelving methods directly on a condition, with no {@code ShelvingState} object above them.
+     * <p>
+     * Models a server that does not expose the shelving state machine as its own node. OPC 10000-9 §5.8.17
+     * requires every server to accept the ConditionId as the ObjectId for these, so this layout is
+     * conformant — and it is the case a client refusing to fall back cannot shelve on at all.
+     */
+    public void addShelvingMethodsOnCondition(final @NotNull String conditionNodeId, final long methodNodeIdBase) {
+        final NodeId nodeId = NodeId.parse(conditionNodeId);
+        long offset = 0;
+        for (final String methodName : List.of("Unshelve", "OneShotShelve", "TimedShelve")) {
+            addConditionMethod(nodeId, methodName, methodNodeIdBase + offset);
+            offset += 1000;
+        }
+    }
+
+    /** A method carrying a standard name in a vendor namespace — a decoy for the name-only matcher. */
+    private void addVendorMethod(
+            final @NotNull NodeId parentNodeId, final @NotNull String methodName, final long instanceNodeIdPart) {
+
+        final UaMethodNode method = UaMethodNode.builder(getNodeContext())
+                .setNodeId(newNodeId(instanceNodeIdPart))
+                // Namespace 1 rather than 0: this namespace's own index, which is exactly what a vendor
+                // defining its own same-named method would use.
+                .setBrowseName(new QualifiedName(getNamespaceIndex(), methodName))
+                .setDisplayName(LocalizedText.english(methodName + " (vendor)"))
+                .setExecutable(true)
+                .setUserExecutable(true)
+                .build();
+        method.setInvocationHandler((context, request) -> {
+            vendorMethodCalled.set(true);
+            return new CallMethodResult(StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]);
+        });
+        getNodeManager().addNode(method);
+
+        final UaNode parent = getNodeManager().get(parentNodeId);
+        if (parent != null) {
+            parent.addReference(new Reference(
+                    parentNodeId, NodeIds.HasComponent, method.getNodeId().expanded(), true));
+        }
+    }
+
+    private final @NotNull java.util.concurrent.atomic.AtomicBoolean vendorMethodCalled =
+            new java.util.concurrent.atomic.AtomicBoolean();
+
+    /** Whether the vendor-namespace decoy was called instead of the standard method. */
+    public boolean vendorMethodCalled() {
+        return vendorMethodCalled.get();
+    }
+
     private void addConditionMethod(
             final @NotNull NodeId parentNodeId, final @NotNull String methodName, final long instanceNodeIdPart) {
 

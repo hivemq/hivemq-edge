@@ -131,13 +131,31 @@ public final class ConditionTypeVerifier {
         return new Result.Verified(deviceType.get());
     }
 
+    /**
+     * The device's type name, preferring the standard namespace.
+     * <p>
+     * Unlike the method lookup in {@code ConditionUpdateWriter}, a name outside namespace 0 is not a
+     * collision here: a vendor subtype legitimately lives in the vendor's own namespace, and reporting it is
+     * how {@link #compare} produces its "not a standard OPC UA condition type" message. But a node can carry
+     * more than one {@code HasTypeDefinition} reference, and if one of them is a standard type that is the
+     * one worth comparing against — so namespace 0 wins when both are present, rather than whichever the
+     * server happened to list first.
+     */
     private static @NotNull Optional<String> typeNameOf(final @NotNull List<ReferenceDescription> references) {
+        Optional<String> vendorName = Optional.empty();
         for (final ReferenceDescription reference : references) {
             final QualifiedName browseName = reference.getBrowseName();
-            if (browseName != null && browseName.getName() != null) {
+            if (browseName == null || browseName.getName() == null) {
+                continue;
+            }
+            if (browseName.getNamespaceIndex() != null
+                    && browseName.getNamespaceIndex().intValue() == 0) {
                 return Optional.of(browseName.getName());
             }
+            if (vendorName.isEmpty()) {
+                vendorName = Optional.of(browseName.getName());
+            }
         }
-        return Optional.empty();
+        return vendorName;
     }
 }

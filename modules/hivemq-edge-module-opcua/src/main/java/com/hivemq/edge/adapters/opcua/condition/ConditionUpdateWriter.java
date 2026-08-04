@@ -25,7 +25,6 @@ import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
@@ -98,15 +97,11 @@ public final class ConditionUpdateWriter {
 
         // Shelving methods hang off the condition's ShelvingState object rather than the condition itself, so
         // the object a call is made on is not always the condition.
-        return resolveTargetObject(client, conditionNodeId, update.method()).thenCompose(objectNodeId -> {
-            if (objectNodeId == null) {
-                return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_NodeIdUnknown));
-            }
-            return resolveCommentedMethodOn(client, objectNodeId, update, conditionNodeId)
-                    .thenCompose(commented -> commented != null
-                            ? callCommented(client, objectNodeId, commented, update)
-                            : callBase(client, objectNodeId, conditionNodeId, update));
-        });
+        return resolveTargetObject(client, conditionNodeId, update.method())
+                .thenCompose(objectNodeId -> resolveCommentedMethodOn(client, objectNodeId, update, conditionNodeId)
+                        .thenCompose(commented -> commented != null
+                                ? callCommented(client, objectNodeId, commented, update)
+                                : callBase(client, objectNodeId, conditionNodeId, update)));
     }
 
     /**
@@ -263,8 +258,8 @@ public final class ConditionUpdateWriter {
     /**
      * Finds the object the method is invoked on — the condition itself, or its {@code ShelvingState}.
      *
-     * @return the object node, or {@code null} when the condition has no {@code ShelvingState} (it is not an
-     *         alarm, or the server does not expose shelving).
+     * @return the object node. Never null: a shelving method whose {@code ShelvingState} cannot be found
+     *         falls back to the condition, which §5.8.17 requires every server to accept.
      */
     private static @NotNull CompletableFuture<NodeId> resolveTargetObject(
             final @NotNull OpcUaClient client,
@@ -274,7 +269,28 @@ public final class ConditionUpdateWriter {
         if (method.location() == ConditionUpdate.Method.Location.CONDITION) {
             return CompletableFuture.completedFuture(conditionNodeId);
         }
-        return browseComponent(client, conditionNodeId, NodeClass.Object, SHELVING_STATE);
+        // No ShelvingState to be found is not the end of the road. OPC 10000-9 §5.8.17.2 (and §5.8.17.4,
+        // §5.8.17.6 for the other two): "some Servers do not expose Condition instances in the AddressSpace.
+        // Therefore, all Servers shall also allow Clients to call the Unshelve Method by specifying
+        // ConditionId as the ObjectId where the ConditionId is the Condition that has Shelving child."
+        //
+        // So the condition itself is the fallback ObjectId, and it is a fallback the specification requires
+        // every server to accept -- unlike the MethodId question of finding 1, where only Enable and Disable
+        // have a prescribed answer. Returning Bad_NodeIdUnknown here instead, as this used to, made shelving
+        // impossible on that whole class of server and blamed the operator's tag configuration for it.
+        return browseComponent(client, conditionNodeId, NodeClass.Object, SHELVING_STATE)
+                .thenApply(shelvingState -> {
+                    if (shelvingState == null) {
+                        log.debug(
+                                "Condition {} exposes no {} object; calling {} on the condition itself, which "
+                                        + "OPC 10000-9 §5.8.17 requires every server to accept.",
+                                conditionNodeId,
+                                SHELVING_STATE,
+                                method.browseName());
+                        return conditionNodeId;
+                    }
+                    return shelvingState;
+                });
     }
 
     /**
@@ -322,8 +338,7 @@ public final class ConditionUpdateWriter {
         // otherwise make a present method look absent.
         return Browsing.browseAll(client, browse).thenApply(references -> {
             for (final ReferenceDescription reference : references) {
-                final QualifiedName referenceBrowseName = reference.getBrowseName();
-                if (referenceBrowseName != null && browseName.equals(referenceBrowseName.getName())) {
+                if (Browsing.isStandardName(reference.getBrowseName(), browseName)) {
                     return reference
                             .getNodeId()
                             .toNodeId(client.getNamespaceTable())
