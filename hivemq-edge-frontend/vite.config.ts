@@ -62,6 +62,8 @@ export default defineConfig({
     include: [
       '@chakra-ui/skip-nav',
       '@mswjs/data',
+      // The package root, not a pack: the custom icons in src/components/react-icons call GenIcon.
+      'react-icons',
       'react-icons/ai',
       'react-icons/bi',
       'react-icons/bs',
@@ -86,5 +88,15 @@ export default defineConfig({
 
   build: {
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Rolldown splits shared code far more eagerly than Rollup did: the login page ends up
+        // preloading dozens of chunks, most of them a couple of kilobytes, which costs enough
+        // first-contentful-paint to drop the Lighthouse budget. Merge the small ones back.
+        codeSplitting: {
+          groups: [{ name: 'initial', tags: ['$initial'] }],
+        },
+      },
+    },
   },
 })
