@@ -2,12 +2,15 @@ import React from 'react'
 import { setupWorker } from 'msw/browser'
 import ReactDOM from 'react-dom/client'
 
+// Must be evaluated before MainApp: `routes.tsx` wraps `createBrowserRouter` at module scope and
+// Sentry's wrapper is a no-op unless `Sentry.init` has already registered the router integration.
+import './config/sentry.config'
+
 import { createInterceptHandlers } from '@/__test-utils__/msw/handlers.ts'
 import MainApp from './modules/App/MainApp.tsx'
 
 import config from '@/config'
 
-import './config/sentry.config'
 import './config/i18n.config'
 
 if (config.isDevMode) {
