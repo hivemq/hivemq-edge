@@ -15,10 +15,16 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Location of the server-certificate allow-list used by {@link TrustMode#ALLOW_LIST}.
@@ -29,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public record AllowList(
         @JsonProperty(value = "path")
+        @JsonInclude(NON_NULL)
         @ModuleConfigField(
                 title = "Allow-list path",
                 description = "Path on the local file system to the server-certificate allow-list: one SHA-256 "
@@ -38,7 +45,9 @@ public record AllowList(
         @Nullable
         String path) {
 
-    @JsonCreator
+    private static final @NotNull Logger log = LoggerFactory.getLogger(AllowList.class);
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public AllowList {
         // The path is nullable because an operator can write `<allowList/>` with nothing inside it, and
         // Jackson binds that to a null component. Neither rejecting nor defaulting it here would be
@@ -46,5 +55,31 @@ public record AllowList(
         // substituting a value would rewrite what the operator wrote. A missing path is instead caught
         // by TlsChecksProjection, which reports it as the same actionable start-up error as an absent
         // allowList element.
+    }
+
+    /**
+     * Accepts text where an object was expected.
+     *
+     * <p>Edge's XML-to-map conversion collapses a nested element to its text content whenever the
+     * element's first child element is itself empty, so both {@code <allowList/>} and
+     * {@code <allowList><path></path></allowList>} arrive here as {@code ""}. Without this creator
+     * Jackson refuses the coercion, and because every adapter is converted inside a single stream the
+     * exception stops <em>all</em> adapters from being reconfigured, not just this one.
+     *
+     * <p>The result is an allow-list with no path, which {@link TlsChecksProjection} turns into the
+     * same actionable start-up error as an absent {@code allowList}. Text is deliberately not read as
+     * the path: an operator who wrote {@code <allowList>/some/file</allowList>} instead of nesting it
+     * in {@code <path>} should be told, not silently guessed at.
+     */
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+    static @NotNull AllowList fromText(final @Nullable String value) {
+        if (value != null && !value.isBlank()) {
+            log.warn(
+                    "OPC UA adapter TLS configuration: 'allowList' was read as the text '{}' rather than as an "
+                            + "object. The path belongs in a nested element, as "
+                            + "<allowList><path>...</path></allowList>. No allow-list path has been configured.",
+                    value.trim());
+        }
+        return new AllowList(null);
     }
 }

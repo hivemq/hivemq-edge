@@ -139,6 +139,101 @@ class TlsChecksParsingTest {
     }
 
     @Test
+    void anEmptyTlsChecksFullTextMeansEveryAxisUnset() throws Exception {
+        // Edge's XML-to-map conversion hands `<tlsChecksFull/>` over as the empty String, not as an
+        // object. That is the documented spelling of "maximum validation", so it binds to an axis set
+        // with nothing in it, which resolves to the strictest value on every axis.
+        // TlsChecksConfigFileParsingTest drives the same case through a real config.xml.
+        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"\"}", Tls.class);
+
+        assertThat(tls.tlsChecksFull()).isEqualTo(TlsChecksFull.allAxesUnset());
+        assertThat(TlsChecksProjection.project(tls))
+                .isEqualTo(TlsChecksProjection.fromAxes(TlsChecksFull.allAxesUnset()));
+    }
+
+    @Test
+    void tlsChecksFullTextThatIsNotEmptyDropsEveryAxisAndIsLogged() throws Exception {
+        // An empty first axis collapses the element to the concatenated text of the remaining ones, so
+        // `<trustMode></trustMode><revocation>NONE</revocation>` arrives here as "NONE". Which axis
+        // that text belonged to is unrecoverable, so every axis falls back to unset - the same
+        // direction EnumParsing takes, and the only one that cannot loosen validation.
+        final ListAppender<ILoggingEvent> appender = attachAppender(TlsChecksFull.class);
+        try {
+            final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"NONE\"}", Tls.class);
+
+            assertThat(tls.tlsChecksFull()).isEqualTo(TlsChecksFull.allAxesUnset());
+            assertThat(TlsChecksProjection.project(tls).revocation()).isEqualTo(RevocationCheck.REQUIRE_CRLS);
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                        .contains("tlsChecksFull")
+                        .contains("NONE");
+            });
+        } finally {
+            detachAppender(TlsChecksFull.class, appender);
+        }
+    }
+
+    @Test
+    void anEmptyAllowListTextMeansNoPathConfigured() throws Exception {
+        // Both `<allowList/>` and `<allowList><path></path></allowList>` collapse to the empty String.
+        // Neither configures a path, and the missing path is reported by the projection as this
+        // adapter's start-up error rather than as a deserialization failure that takes the whole
+        // adapter refresh down.
+        final Tls tls =
+                MAPPER.readValue("{\"enabled\":true,\"tlsChecks\":\"SELF_SIGNED\",\"allowList\":\"\"}", Tls.class);
+
+        assertThat(tls.allowList()).isNotNull();
+        assertThat(tls.allowList().path()).isNull();
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class);
+    }
+
+    @Test
+    void anAllowListWrittenAsTextIsNotGuessedToBeThePath() throws Exception {
+        // `<allowList>/opt/hivemq/conf/fingerprints.txt</allowList>` is a plausible mistake, and it is
+        // deliberately not read as the path. Silently accepting it would make the nested `<path>`
+        // element optional by accident; the operator is told what to write instead.
+        final ListAppender<ILoggingEvent> appender = attachAppender(AllowList.class);
+        try {
+            final Tls tls = MAPPER.readValue(
+                    "{\"enabled\":true,\"tlsChecks\":\"SELF_SIGNED\",\"allowList\":\"/opt/fingerprints.txt\"}",
+                    Tls.class);
+
+            assertThat(tls.allowList()).isNotNull();
+            assertThat(tls.allowList().path()).isNull();
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                        .contains("/opt/fingerprints.txt")
+                        .contains("<allowList><path>");
+            });
+        } finally {
+            detachAppender(AllowList.class, appender);
+        }
+    }
+
+    @Test
+    void aCollapsedElementCanNeverLoosenValidation() throws Exception {
+        // The invariant behind both creators. Whatever text the collapse produces, the result is the
+        // strictest configuration this model can express - never weaker than the axes the operator
+        // wrote, because every unset axis resolves to its strictest value.
+        for (final String collapsed : new String[] {"", "NONE", "NONE ANY_CERT", "  "}) {
+            final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"" + collapsed + "\"}", Tls.class);
+
+            assertThat(TlsChecksProjection.project(tls))
+                    .as("collapsed text '%s'", collapsed)
+                    .isEqualTo(new EffectiveChecks(
+                            TrustMode.CHAIN,
+                            SanUriCheck.APPLICATION_URI,
+                            HostnameCheck.HOSTNAME,
+                            ValidityCheck.NOT_BEFORE_OR_AFTER,
+                            RevocationCheck.REQUIRE_CRLS,
+                            KeyUsageCheck.SERVER_AUTH));
+        }
+    }
+
+    @Test
     void theRetiredTrustLevelFieldIsRejectedUnderJacksonDefaults() {
         // trustLevel never shipped, but it existed on a pre-release branch. Under Jackson's default
         // settings a field the model does not know is an error rather than a value quietly dropped.
@@ -148,7 +243,11 @@ class TlsChecksParsingTest {
     }
 
     private static @NotNull ListAppender<ILoggingEvent> attachAppender() {
-        final Logger logger = (Logger) LoggerFactory.getLogger("com.hivemq.edge.adapters.opcua.config.EnumParsing");
+        return attachAppender(EnumParsing.class);
+    }
+
+    private static @NotNull ListAppender<ILoggingEvent> attachAppender(final @NotNull Class<?> type) {
+        final Logger logger = (Logger) LoggerFactory.getLogger(type);
         final ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         logger.addAppender(appender);
@@ -156,8 +255,12 @@ class TlsChecksParsingTest {
     }
 
     private static void detachAppender(final @NotNull ListAppender<ILoggingEvent> appender) {
-        ((Logger) LoggerFactory.getLogger("com.hivemq.edge.adapters.opcua.config.EnumParsing"))
-                .detachAppender(appender);
+        detachAppender(EnumParsing.class, appender);
+    }
+
+    private static void detachAppender(
+            final @NotNull Class<?> type, final @NotNull ListAppender<ILoggingEvent> appender) {
+        ((Logger) LoggerFactory.getLogger(type)).detachAppender(appender);
         appender.stop();
     }
 }

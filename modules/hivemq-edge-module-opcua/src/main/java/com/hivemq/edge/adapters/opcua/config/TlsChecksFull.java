@@ -21,7 +21,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The six independent axes of certificate validation — the "full control" door, mutually exclusive
@@ -109,9 +112,46 @@ public record TlsChecksFull(
         @Nullable
         KeyUsageCheck keyUsage) {
 
-    @JsonCreator
+    private static final @NotNull Logger log = LoggerFactory.getLogger(TlsChecksFull.class);
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public TlsChecksFull {
         // Intentionally empty: axes are stored verbatim. Defaulting happens at read time in
         // TlsChecksProjection so that a configuration writeback cannot alter what the operator wrote.
+    }
+
+    /** Every axis unset, which resolves to the strictest value on each — maximum validation. */
+    public static @NotNull TlsChecksFull allAxesUnset() {
+        return new TlsChecksFull(null, null, null, null, null, null);
+    }
+
+    /**
+     * Accepts text where an object was expected, because the configuration layer sometimes hands one
+     * over.
+     *
+     * <p>Edge's XML-to-map conversion collapses a nested element to its text content whenever the
+     * element's first child element is itself empty. So {@code <tlsChecksFull/>} arrives here as
+     * {@code ""}, and {@code <tlsChecksFull><trustMode></trustMode><revocation>NONE</revocation></tlsChecksFull>}
+     * arrives as {@code "NONE"} — the concatenated text of the remaining axes. Without this creator
+     * Jackson refuses the coercion, and because every adapter is converted inside a single stream the
+     * exception stops <em>all</em> adapters from being reconfigured, not just this one.
+     *
+     * <p>The empty form is the documented spelling of "maximum validation", so it is honoured exactly.
+     * Any other text means the first axis element was left empty; which axis the surviving text belonged
+     * to is unrecoverable, so it is reported and then treated the same way, for the reason
+     * {@link EnumParsing} gives: falling back to unset can only ever produce more validation than was
+     * asked for, never less, and throwing here would take every other adapter down.
+     */
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+    static @NotNull TlsChecksFull fromText(final @Nullable String value) {
+        if (value != null && !value.isBlank()) {
+            log.warn(
+                    "OPC UA adapter TLS configuration: 'tlsChecksFull' was read as the text '{}' rather than as a "
+                            + "set of axes, which happens when its first axis element is left empty (for example "
+                            + "<trustMode></trustMode>). Every axis has been treated as unset, which means the "
+                            + "strictest value on each. Remove the empty element, or give it a value.",
+                    value.trim());
+        }
+        return allAxesUnset();
     }
 }
