@@ -206,8 +206,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // Reset stopped flag
         stopped = false;
 
-        startSchedulers();
-
         final ParsedConfig newlyParsedConfig;
         final var result = ParsedConfig.fromConfig(config);
         if (result instanceof Failure<ParsedConfig, String>(final String failure)) {
@@ -237,6 +235,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 config,
                 opcUaServiceFaultListener);
         if (opcUaClientConnection.compareAndSet(null, conn)) {
+
+            // Created only once this start is committed, and deliberately not any earlier. Every
+            // failure return above leaves via output.failStart, and ProtocolAdapterWrapper does not
+            // call stop() on a failed start - so a scheduler pair created before the parse was
+            // abandoned with nothing left holding a reference to shut it down. The worse case was
+            // this branch's else: starting an already-started adapter overwrote the running
+            // adapter's scheduler fields, orphaning its live retry and health-check threads and
+            // silently moving all future scheduling onto the replacements.
+            startSchedulers();
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // Attempt initial connection asynchronously
