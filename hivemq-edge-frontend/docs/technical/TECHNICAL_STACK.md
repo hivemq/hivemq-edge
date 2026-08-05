@@ -1,7 +1,7 @@
 ---
 title: "Technical Stack"
 author: "Edge Frontend Team"
-last_updated: "2026-02-13"
+last_updated: "2026-08-05"
 purpose: "Complete reference for the frontend toolchain, dependencies, scripts, and CI/CD pipeline"
 audience: "Developers, AI agents"
 maintained_at: "docs/technical/TECHNICAL_STACK.md"
@@ -17,13 +17,17 @@ maintained_at: "docs/technical/TECHNICAL_STACK.md"
 
 The HiveMQ Edge Frontend is a modern React-based single-page application built with TypeScript, Vite, and a comprehensive testing infrastructure. This document provides a complete technical reference for developers.
 
+> **`package.json` is the source of truth for versions.** The numbers below are a snapshot for
+> orientation and go stale on every patch bump; treat the **major** as the meaningful part. When you
+> raise a major, update this document in the same change.
+
 ---
 
 ## Core Toolchain
 
 ### Build System
 
-**Vite 7.1.11** - Modern build tool and development server
+**Vite 8.1.5** - Modern build tool and development server (Rolldown/Oxc based since v8)
 
 - **Development Server:** Port 3000 with Hot Module Replacement (HMR)
 - **API Proxy:** `/api` routes proxied to `http://127.0.0.1:8080`
@@ -38,7 +42,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 
 ### Language & Runtime
 
-**TypeScript 5.7.3** - Strict type checking enabled
+**TypeScript 5.9.3** - Strict type checking enabled
 
 - **Target:** ESNext
 - **Module System:** ESNext with bundler resolution
@@ -68,17 +72,17 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### UI Framework & Components
 
 #### Core React
-- **react 18.3.1** - UI library
-- **react-dom 18.3.1** - DOM renderer
+- **react 19.2.8** - UI library
+- **react-dom 19.2.8** - DOM renderer
 
 #### Component Library
-- **@chakra-ui/react 2.8.2** - Component library with custom theming
-- **@chakra-ui/icons 2.1.1** - Icon components
-- **@chakra-ui/theme-tools 2.2.9** - Theme customization utilities
-- **@emotion/react 11.11.4** - CSS-in-JS (required by Chakra UI)
-- **@emotion/styled 11.11.0** - Styled components
-- **framer-motion 10.12.21** - Animation library (Chakra UI dependency)
-- **chakra-react-select 4.7.6** - Enhanced select components with Chakra UI styling
+- **@chakra-ui/react 2.10.10** - Component library with custom theming
+- **@chakra-ui/icons 2.2.4** - Icon components
+- **@chakra-ui/theme-tools 2.2.10** - Theme customization utilities
+- **@emotion/react 11.14.0** - CSS-in-JS (required by Chakra UI)
+- **@emotion/styled 11.14.1** - Styled components
+- **framer-motion 12.42.2** - Animation library (Chakra UI dependency)
+- **chakra-react-select 4.10.1** - Enhanced select components with Chakra UI styling
 
 **Custom Theme:** `src/modules/Theme/themeHiveMQ.ts`
 
@@ -90,43 +94,50 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### State Management
 
 #### Server State
-- **@tanstack/react-query 5.85.5** - Async state management, caching, synchronization
-- **@tanstack/react-query-devtools 5.85.5** - DevTools for debugging queries
+- **@tanstack/react-query 5.101.4** - Async state management, caching, synchronization
+- **@tanstack/react-query-devtools 5.101.4** - DevTools for debugging queries
 
 #### Client State
-- **zustand 4.4.7** - Lightweight state management
+- **zustand 5.0.14** - Lightweight state management
   - Used for: Workspace state, DataHub drafts, UI state
+  - v5 requires stable selector results: wrap object/array selectors in `useShallow`
 
 #### Form State
-- **react-hook-form 7.43.9** - Performant form state management with validation
+- **react-hook-form 7.82.0** - Performant form state management with validation
 
 ### Routing
 
-- **react-router-dom 6.30.3** - Declarative routing
+- **react-router 8.3.0** - Declarative routing
+  - The package was renamed from `react-router-dom` in v7; there is no `react-router-dom` v8
+  - DOM builds must import `RouterProvider` from **`react-router/dom`** — that entry point is the one
+    that supplies `flushSync`, which `viewTransition`/`flushSync` navigations rely on
+  - Router creation is wrapped by Sentry in `src/modules/App/routes.tsx`, which is why
+    `src/config/sentry.config.ts` must be imported before it in `main.tsx`
   - File-based routing structure in `src/modules/App/`
   - Nested routes for DataHub extension
 
 ### Data Visualization
 
 #### Canvas & Node Graphs
-- **@xyflow/react 12.8.4** (React Flow) - Node-based graph editor for workspace topology
-- **@dagrejs/dagre 1.1.5** - Directed graph layout algorithms
-- **elkjs 0.9.1** - Eclipse Layout Kernel for automatic layout
+- **@xyflow/react 12.11.2** (React Flow) - Node-based graph editor for workspace topology
+- **@dagrejs/dagre 3.0.0** - Directed graph layout algorithms (ships its own type declarations; the
+  `@types/dagre` stub is no longer needed)
+- **elkjs 0.12.0** - Eclipse Layout Kernel for automatic layout
 - **webcola 3.4.0** - Constraint-based layout
 
 #### Charts & Diagrams
-- **@nivo/bar 0.88.0** - Bar charts
-- **@nivo/chord 0.88.0** - Chord diagrams
-- **@nivo/line 0.88.0** - Line charts
-- **@nivo/sankey 0.88.0** - Sankey diagrams
-- **@nivo/sunburst 0.88.0** - Sunburst charts
-- **@nivo/tree 0.88.0** - Tree diagrams
-- **recharts 2.12.7** - Additional charting library
+- **@nivo/bar 0.99.0** - Bar charts
+- **@nivo/chord 0.99.0** - Chord diagrams
+- **@nivo/line 0.99.0** - Line charts
+- **@nivo/sankey 0.99.0** - Sankey diagrams
+- **@nivo/sunburst 0.99.0** - Sunburst charts
+- **@nivo/tree 0.99.0** - Tree diagrams
+- **recharts 3.10.1** - Additional charting library
 - **d3-array 3.2.4** - Data manipulation utilities
 - **d3-hierarchy 3.1.2** - Hierarchical data structures
 - **d3-scale-chromatic 3.1.0** - Color scales
 - **d3-shape 3.2.0** - Shape generators
-- **mermaid 11.12.2** - Diagram generation from text
+- **mermaid 11.16.0** - Diagram generation from text
 
 ### Forms & Schema Validation
 
@@ -142,14 +153,17 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Rich Text Editing
 
 #### Tiptap (Headless Editor)
-- **@tiptap/react 2.9.1** - React integration
-- **@tiptap/extension-document 2.9.1** - Document node
-- **@tiptap/extension-paragraph 2.9.1** - Paragraph node
-- **@tiptap/extension-text 2.9.1** - Text node
-- **@tiptap/extension-mention 2.9.1** - Mention functionality
-- **@tiptap/extension-placeholder 2.9.1** - Placeholder text
-- **@tiptap/suggestion 2.9.1** - Suggestion dropdown
-- **@tiptap/pm 2.9.1** - ProseMirror integration
+- **@tiptap/react 3.29.0** - React integration
+- **@tiptap/extension-document 3.29.0** - Document node
+- **@tiptap/extension-paragraph 3.29.0** - Paragraph node
+- **@tiptap/extension-text 3.29.0** - Text node
+- **@tiptap/extension-mention 3.29.0** - Mention functionality
+- **@tiptap/extension-placeholder 3.29.0** - Placeholder text
+- **@tiptap/suggestion 3.29.0** - Suggestion dropdown
+- **@tiptap/pm 3.29.0** - ProseMirror integration
+
+All Tiptap packages must move together — a mixed 2.x/3.x graph pulls in two copies of ProseMirror.
+The project owns its own Tippy-based suggestion renderer rather than using the one v3 dropped.
 
 ### Code Editing
 
@@ -158,24 +172,29 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 
 **Usage:** Code snippets, JSON editing in DataHub policies
 
+> **Pinned to 0.55.1 on purpose.** Monaco 0.56 removed `monaco.languages.json` and
+> `monaco.languages.typescript`, which DataHub's editor configures. The breakage is silent — the
+> editor still renders, but IntelliSense and JSON validation stop working — so do not bump this
+> without reworking the language-service setup.
+
 ### Protocols & Communication
 
 #### HTTP Client
-- **axios 1.13.5** - Promise-based HTTP client
+- **axios 1.18.1** - Promise-based HTTP client
   - API communication with HiveMQ Edge backend
   - Interceptors for auth, error handling
 
 #### MQTT
-- **mqtt 5.10.1** - MQTT protocol implementation
+- **mqtt 5.15.2** - MQTT protocol implementation
 - **mqtt-match 3.0.0** - MQTT topic matching utilities
 
 #### Protocol Buffers
-- **protobufjs 7.2.6** - Protocol buffers support
+- **protobufjs 8.7.1** - Protocol buffers support
 
 ### Internationalization (i18n)
 
-- **i18next 23.11.3** - i18n framework
-- **react-i18next 14.1.3** - React bindings for i18next
+- **i18next 26.3.6** - i18n framework
+- **react-i18next 17.0.11** - React bindings for i18next
 
 **Translation Files:**
 - `src/locales/en/translation.json` - Main translations
@@ -186,33 +205,42 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Utilities
 
 #### Date & Time
-- **luxon 3.3.0** - DateTime handling (Moment.js successor)
+- **luxon 3.7.2** - DateTime handling (Moment.js successor)
 
 #### IDs & Data
-- **uuid 9.0.1** - UUID generation
-- **ts-pattern 5.3.1** - Pattern matching for TypeScript
-- **immutable-json-patch 6.0.2** - JSON patch operations
+- **uuid 14.0.1** - UUID generation (ships its own types; the `@types/uuid` stub is no longer needed)
+- **ts-pattern 5.9.0** - Pattern matching for TypeScript
+- **immutable-json-patch 6.0.3** - JSON patch operations
 
 #### React Hooks
 - **@uidotdev/usehooks 2.4.1** - Custom React hooks collection
-- **react-hotkeys-hook 4.5.0** - Keyboard shortcuts
-- **react-dropzone 14.2.3** - File upload handling
+- **react-hotkeys-hook 5.3.3** - Keyboard shortcuts
+- **react-dropzone 19.1.1** - File upload handling
+  - v19 accepts the files that fit under `maxFiles` and rejects only the excess, where v14 rejected
+    the whole batch. Single-file zones must therefore reject in one `onDrop` handler rather than
+    relying on `onDropAccepted`/`onDropRejected` firing exclusively.
 
 #### UI Utilities
-- **react-icons 5.3.0** - Icon library (Lucide, React Icons, etc.)
-- **@atlaskit/pragmatic-drag-and-drop 1.3.0** - Drag and drop primitives
+- **react-icons 5.7.0** - Icon library (Lucide, React Icons, etc.)
+- **@atlaskit/pragmatic-drag-and-drop 2.0.1** - Drag and drop primitives
 
 #### Data Handling
-- **xlsx 0.20.3** (SheetJS) - Spreadsheet reading/writing
-- **@tanstack/react-table 8.9.3** - Headless table utilities
-- **react-accessible-treeview 2.9.1** - Accessible tree view component
+- **xlsx 0.20.3** (SheetJS) - Spreadsheet reading/writing (installed from the SheetJS CDN tarball,
+  not npm)
+- **@tanstack/react-table 8.21.3** - Headless table utilities
+- **react-accessible-treeview 2.11.2** - Accessible tree view component
 
 ### Error Tracking & Monitoring
 
-- **@sentry/react 8.27.0** - Error tracking and performance monitoring
-- **@sentry/vite-plugin 2.22.3** - Sentry integration for Vite builds
+- **@sentry/react 10.68.0** - Error tracking and performance monitoring
+- **@sentry/vite-plugin 5.4.0** - Sentry integration for Vite builds
 
 **Configuration:** Environment-based Sentry DSN, release tracking
+
+Use the version-neutral `reactRouterBrowserTracingIntegration`; the `reactRouterV6`/`reactRouterV7`
+aliases are deprecated. Route-named transactions also require `Sentry.init` to run **before**
+`createBrowserRouter` is wrapped, since the wrapper is a no-op if the integration is not registered
+yet.
 
 ---
 
@@ -221,18 +249,27 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Testing Framework
 
 #### Cypress (Component & E2E Testing)
-- **cypress 15.8.2** - Test runner
-- **@cypress/code-coverage 3.13.11** - Code coverage reporting
+- **cypress 15.19.0** - Test runner
+- **@cypress/code-coverage 4.0.3** - Code coverage reporting
 - **cypress-axe 1.7.0** - Accessibility testing
-- **axe-core 4.10.3** - Accessibility rules engine
+- **axe-core 4.12.1** - Accessibility rules engine
 - **cypress-real-events 1.15.0** - Real user event simulation
 - **@4tw/cypress-drag-drop 2.3.1** - Drag and drop testing
 - **cypress-each 1.14.1** - Parameterized testing
-- **@cypress/grep 5.0.0** - Test filtering by tags
+- **@cypress/grep 6.0.0** - Test filtering by tags
 - **cypress-terminal-report 7.3.3** - Terminal logging
 - **cypress-multi-reporters 2.0.5** - Multiple test reporters
 
 **Configuration:** `cypress.config.ts`
+
+**Environment/config conventions (Cypress 15):**
+- `Cypress.env()` is deprecated and the project sets `allowCypressEnv: false`. Use `cy.env()` for
+  secrets and `Cypress.expose()` for public values.
+- `@cypress/code-coverage` v4 reads its options from the top-level `expose` object, **not** the `env`
+  bag it used through v3. Options left under `env` are silently ignored.
+- The coverage excludes are load-bearing in two places: `expose.codeCoverage.exclude` filters in the
+  browser, and `.nycrc.json`'s `exclude` filters the report. `nyc`'s `all: true` re-adds every
+  matching file, so an exclude listed in only one of the two has no net effect.
 
 **Custom Commands:**
 - `cy.mountWithProviders()` - Mount with React providers
@@ -241,39 +278,39 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 - `cy.injectAxe()` - Inject axe-core
 
 #### Vitest (Unit Testing)
-- **vitest 3.2.4** - Fast unit test framework
-- **@vitest/ui 3.2.4** - Test UI
-- **@vitest/coverage-v8 3.2.4** - V8 coverage provider
-- **@vitest/coverage-istanbul 3.2.4** - Istanbul coverage provider
-- **jsdom 24.0.0** - DOM implementation for Node.js
+- **vitest 4.1.10** - Fast unit test framework
+- **@vitest/ui 4.1.10** - Test UI
+- **@vitest/coverage-v8 4.1.10** - V8 coverage provider
+- **@vitest/coverage-istanbul 4.1.10** - Istanbul coverage provider
+- **jsdom 24.1.3** - DOM implementation for Node.js
 
 **Configuration:** `vitest.config.ts`
 
 #### Testing Library
-- **@testing-library/react 16.2.0** - React testing utilities
-- **@testing-library/jest-dom 6.6.4** - Custom matchers
+- **@testing-library/react 16.3.2** - React testing utilities
+- **@testing-library/jest-dom 7.0.0** - Custom matchers
 
 #### API Mocking
-- **msw 2.7.0** - Mock Service Worker for API mocking
+- **msw 2.15.0** - Mock Service Worker for API mocking
 - **@mswjs/data 0.16.2** - Data modeling for MSW
 
 **Handlers Location:** `src/api/hooks/__handlers__/`
 
 #### Visual Regression Testing
-- **@percy/cli 1.28.5** - Percy command-line interface
-- **@percy/cypress 3.1.7** - Percy integration for Cypress
+- **@percy/cli 1.32.4** - Percy command-line interface
+- **@percy/cypress 3.1.9** - Percy integration for Cypress
 
 ### Linting & Code Quality
 
-#### ESLint (9.26.0) - Flat Config
-- **@eslint/js 9.26.0** - ESLint JavaScript rules
-- **typescript-eslint 8.32.1** - TypeScript rules and parser
+#### ESLint (10.8.0) - Flat Config
+- **@eslint/js 10.0.1** - ESLint JavaScript rules
+- **typescript-eslint 8.65.0** - TypeScript rules and parser
 - **eslint-plugin-react 7.37.5** - React-specific rules
-- **eslint-plugin-react-hooks 5.2.0** - Hooks rules
-- **eslint-plugin-react-refresh 0.4.20** - React Refresh rules
-- **eslint-plugin-cypress 5.2.1** - Cypress-specific rules
-- **eslint-plugin-sonarjs 3.0.2** - Code quality and bug detection
-- **@tanstack/eslint-plugin-query 5.74.7** - React Query rules
+- **eslint-plugin-react-hooks 7.1.1** - Hooks rules, including the React Compiler rules
+- **eslint-plugin-react-refresh 0.5.3** - React Refresh rules
+- **eslint-plugin-cypress 6.4.3** - Cypress-specific rules
+- **eslint-plugin-sonarjs 4.0.0** - Code quality and bug detection
+- **@tanstack/eslint-plugin-query 5.101.4** - React Query rules
 - **eslint-config-prettier 10.1.8** - Disable conflicting Prettier rules
 
 **Configuration:** `eslint.config.mjs` (flat config format)
@@ -285,7 +322,13 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 - JSX curly brace presence: `props="never"`, `children="never"`
 - No unnecessary Cypress waits
 
-#### Prettier (3.5.3) - Code Formatting
+**Warning policy:** errors block CI; warnings do not. `pnpm lint:eslint` does **not** pass
+`--max-warnings`, so the build stays green on warnings. The React Compiler rules introduced with
+`eslint-plugin-react-hooks` 7 are deliberately set to `warn` rather than `error`, which leaves a
+standing warning baseline (~80 at the time of writing). Treat that number as a backlog to burn down,
+not as a passing grade — and do not assume a warning-free tree.
+
+#### Prettier (3.9.6) - Code Formatting
 - **Configuration:** `.prettierrc.cjs`
 - **Settings:**
   - Single quotes
@@ -294,16 +337,16 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
   - 2-space indentation
   - ES5 trailing commas
 
-#### Stylelint (16.14.1) - CSS Linting
-- **stylelint-config-standard 37.0.0** - Standard CSS rules
-- **stylelint-config-standard-scss 14.0.0** - SCSS rules
+#### Stylelint (17.14.1) - CSS Linting
+- **stylelint-config-standard 40.0.0** - Standard CSS rules
+- **stylelint-config-standard-scss 17.0.0** - SCSS rules
 
 **Usage:** Lint CSS files in `./src/**/*.css`
 
 ### Code Generation
 
 #### OpenAPI Client Generation
-- **openapi-typescript-codegen 0.25.0** - Generate TypeScript client from OpenAPI specs
+- **openapi-typescript-codegen 0.31.0** - Generate TypeScript client from OpenAPI specs
 
 **Command:** `pnpm dev:openAPI`
 
@@ -312,16 +355,16 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 **Source:** `../hivemq-edge-openapi/dist/bundle.yaml`
 
 #### Chakra UI Types
-- **@chakra-ui/cli 2.4.1** - Generate Chakra UI theme types
+- **@chakra-ui/cli 2.5.8** - Generate Chakra UI theme types
 
 **Command:** `pnpm dev:chakra:types`
 
 ### Coverage & Reporting
 
 #### Coverage Tools
-- **nyc 17.1.0** - Istanbul command-line interface
+- **nyc 18.0.0** - Istanbul command-line interface
 - **@istanbuljs/nyc-config-typescript 1.0.2** - TypeScript configuration for NYC
-- **vite-plugin-istanbul 7.2.1** - Istanbul plugin for Vite
+- **vite-plugin-istanbul 9.0.1** - Istanbul plugin for Vite
 
 #### Test Reporters
 - **mocha-junit-reporter 2.2.1** - JUnit XML reports for CI
@@ -333,12 +376,12 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 
 ### Build & Utility Tools
 
-- **@vitejs/plugin-react 4.7.0** - Vite plugin for React Fast Refresh
-- **sass 1.70.0** - CSS preprocessor
+- **@vitejs/plugin-react 6.0.4** - Vite plugin for React Fast Refresh (v6 requires Vite 8)
+- **sass 1.101.6** - CSS preprocessor
 - **copyfiles 2.4.1** - Cross-platform file copying
-- **fs-extra 11.3.3** - Enhanced file system operations
-- **commander 13.1.0** - CLI framework for custom scripts
-- **globals 16.1.0** - Global variable definitions
+- **fs-extra 11.3.6** - Enhanced file system operations
+- **commander 15.0.0** - CLI framework for custom scripts
+- **globals 17.8.0** - Global variable definitions
 
 ---
 
@@ -372,7 +415,7 @@ pnpm bundle:size            # Analyze bundle size with vite-bundle-visualizer
 ### Linting
 
 ```bash
-pnpm lint:eslint            # Run ESLint (max 0 warnings allowed)
+pnpm lint:eslint            # Run ESLint (errors fail; warnings are reported but do not fail)
 pnpm lint:eslint:fix        # Run ESLint with auto-fix
 pnpm lint:prettier          # Check Prettier formatting
 pnpm lint:prettier:write    # Fix Prettier formatting
@@ -512,7 +555,7 @@ import { workspacePage } from '@cypr/pages'
 
 ### Code Quality Gates
 - **TypeScript:** Strict mode, no `any` types
-- **ESLint:** Max 0 warnings in CI
+- **ESLint:** 0 errors in CI; warnings are reported but non-blocking (see the warning policy above)
 - **Prettier:** Automatic formatting
 - **Accessibility:** Automated axe checks in every component test
 - **Test Coverage:** Tracked with Istanbul/NYC
@@ -524,19 +567,19 @@ import { workspacePage } from '@cypr/pages'
 ### Current Versions
 
 **Frontend Version:** 0.0.31 (from package.json)
-**Node Version:** 22 (required)
-**pnpm Version:** 10 (required)
+**Node Version:** 24 (required, `engines.node`)
+**pnpm Version:** 11 (required, `engines.pnpm`; pinned via `packageManager`)
 
 ---
 
 ### Deprecations & Required Migrations
 
-#### openapi-typescript-codegen (Current: 0.25.0)
+#### openapi-typescript-codegen (Current: 0.31.0)
 
 **Status:** Deprecated - No longer maintained
 
 **Current Implementation:**
-- Package: `openapi-typescript-codegen@0.25.0`
+- Package: `openapi-typescript-codegen@0.31.0`
 - Command: `pnpm dev:openAPI`
 - Configuration: Direct invocation in `package.json` scripts
 - Input: `../hivemq-edge-openapi/dist/bundle.yaml`
@@ -564,10 +607,12 @@ import { workspacePage } from '@cypr/pages'
 
 #### Chakra UI v2 → v3
 
-**Status:** Major version upgrade available
+**Status:** Available, but **deliberately not taken** (decided 2026-08-04). The React 19 upgrade was
+completed on Chakra v2; v3 was never a prerequisite for it. The notes below are retained for a future
+standalone attempt, not as pending work.
 
 **Current Implementation:**
-- Package: `@chakra-ui/react@2.8.2`
+- Package: `@chakra-ui/react@2.10.10`
 - Custom theme: `src/modules/Theme/themeHiveMQ.ts`
 - Widespread usage across all UI components
 - Custom variants: `primary`, `outline`, `ghost`, `danger`
@@ -614,4 +659,4 @@ import { workspacePage } from '@cypr/pages'
 ---
 
 **Document Maintained By:** Development Team
-**Last Review:** 2026-02-13
+**Last Review:** 2026-08-05
