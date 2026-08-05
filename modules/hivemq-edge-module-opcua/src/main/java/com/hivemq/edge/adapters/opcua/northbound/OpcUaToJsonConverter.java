@@ -448,12 +448,24 @@ public class OpcUaToJsonConverter {
             }
         }
 
-        final int namespaceIndex = nodeId.getNamespaceIndex().intValue();
-        if (namespaceIndex == 1) { // 1 is always encoded as a number
-            obj.put("namespaceIndex", namespaceIndex);
-        } else {
-            obj.put("namespaceIndex", nodeId.toParseableString());
-        }
+        // The namespace index, always, as the small integer it is. It needs no branching: unlike the
+        // identifier, whose Java type varies and so decides how `id` is written, a namespace index is a
+        // UShort with one representation.
+        //
+        // It used to be written as nodeId.toParseableString() for every index except 1 -- so the field named
+        // for the index held "ns=2;s=Boiler1.Temperature", the whole node id, duplicating idType and id
+        // beside it, and for namespace 0 held "i=9482", a string mentioning no namespace at all. That is a
+        // survival from a 2023 reversible/non-reversible distinction (OPC 10000-6 Annex H, now deprecated)
+        // whose flag was dropped in 2025, leaving only the display-oriented branch under a machine-readable
+        // name.
+        //
+        // Note what this deliberately does NOT do. A namespace index is meaningful only within one server
+        // session: the index-to-URI table is per-server and may be renumbered, so a consumer cannot recover
+        // what "2" means, and it may mean something else tomorrow. OPC 10000-6 §5.4.2.10 accordingly prefers
+        // the namespace URI form and reserves the index form for when a URI cannot be resolved. Publishing
+        // `namespaceUri` alongside would make a node id outlive its session; that is a payload addition, and
+        // a separate decision from correcting this field.
+        obj.put("namespaceIndex", nodeId.getNamespaceIndex().intValue());
         return obj;
     }
 
