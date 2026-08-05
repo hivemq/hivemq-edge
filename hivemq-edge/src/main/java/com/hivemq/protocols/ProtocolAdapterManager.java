@@ -50,6 +50,7 @@ import com.hivemq.util.ThreadFactoryUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,9 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -652,12 +651,18 @@ public class ProtocolAdapterManager {
             executorService.execute(() -> {
                 LOGGER.info("Refreshing adapters");
                 try {
-                    final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
-                            .map(configConverter::fromEntity)
-                            .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
+                    final Set<String> failedAdapterSet = new HashSet<>();
+                    final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = new HashMap<>();
+                    final Set<String> configuredProtocolAdapterIdSet =
+                            convertConfigs(configs, protocolAdapterConfigs, failedAdapterSet);
 
                     final Set<String> oldProtocolAdapterIdSet = getProtocolAdapterIdSet();
-                    final Set<String> newProtocolAdapterIdSet = new HashSet<>(protocolAdapterConfigs.keySet());
+
+                    // Derived from the entities, not from the configs that converted successfully. An
+                    // adapter whose configuration could not be read is still named in the file, so it
+                    // must not fall into the to-be-deleted set - that would stop and delete a running,
+                    // healthy adapter because its new configuration had a typo in it.
+                    final Set<String> newProtocolAdapterIdSet = configuredProtocolAdapterIdSet;
 
                     final Set<String> toBeDeletedProtocolAdapterIdSet =
                             new HashSet<>(Sets.difference(oldProtocolAdapterIdSet, newProtocolAdapterIdSet));
@@ -666,7 +671,11 @@ public class ProtocolAdapterManager {
                     final Set<String> toBeUpdatedProtocolAdapterIdSet =
                             new HashSet<>(Sets.intersection(newProtocolAdapterIdSet, oldProtocolAdapterIdSet));
 
-                    final Set<String> failedAdapterSet = new HashSet<>();
+                    // An unreadable configuration means "leave this adapter exactly as it is": there is
+                    // nothing to create it from, and nothing to update it to.
+                    toBeCreatedProtocolAdapterIdSet.removeAll(failedAdapterSet);
+                    toBeUpdatedProtocolAdapterIdSet.removeAll(failedAdapterSet);
+
                     refreshDeletedAdapters(toBeDeletedProtocolAdapterIdSet, failedAdapterSet);
                     refreshCreatedAdapters(toBeCreatedProtocolAdapterIdSet, protocolAdapterConfigs, failedAdapterSet);
                     refreshUpdatedAdapters(toBeUpdatedProtocolAdapterIdSet, protocolAdapterConfigs, failedAdapterSet);
@@ -710,6 +719,70 @@ public class ProtocolAdapterManager {
             }
             throw e;
         }
+    }
+
+    /**
+     * Converts every adapter entity, one at a time, so that a configuration which cannot be read is that
+     * adapter's problem and nobody else's.
+     * <p>
+     * This used to be a single stream with a {@code Collectors.toMap} terminal, which meant any throw
+     * from {@link ProtocolAdapterConfigConverter#fromEntity} - an unrecognised field, a value that will
+     * not coerce, a duplicated adapter id - aborted the refresh before a single adapter was created,
+     * updated or deleted. One typo in one adapter stopped every adapter in the deployment from being
+     * reconfigured, with a single stack trace and nothing in the event stream. The adapter configs
+     * already apply exactly this reasoning to an unrecognised enum value; the conversion around them did
+     * not.
+     *
+     * @param configs the adapter entities from the configuration file
+     * @param protocolAdapterConfigs populated with the configurations that converted successfully
+     * @param failedAdapterSet populated with the ids of the adapters that did not convert
+     * @return the ids of every adapter the configuration file names, converted or not
+     */
+    private @NotNull Set<String> convertConfigs(
+            final @NotNull List<ProtocolAdapterEntity> configs,
+            final @NotNull Map<String, ProtocolAdapterConfig> protocolAdapterConfigs,
+            final @NotNull Set<String> failedAdapterSet) {
+
+        final Set<String> configuredAdapterIds = new HashSet<>();
+        for (final ProtocolAdapterEntity entity : configs) {
+            final ProtocolAdapterConfig config;
+            try {
+                config = configConverter.fromEntity(entity);
+            } catch (final Exception e) {
+                // The entity's own id is the only one available here, the converted config being what
+                // failed to materialise. It still has to join the set below: an adapter that is named in
+                // the configuration file has not been deleted from it, however unreadable it is.
+                final String adapterId = entity.getAdapterId();
+                configuredAdapterIds.add(adapterId);
+                failedAdapterSet.add(adapterId);
+                LOGGER.error(
+                        "Failed reading the configuration of adapter '{}'. The adapter has been left unchanged and "
+                                + "every other adapter has been refreshed as usual; correct the configuration and it "
+                                + "will be applied on the next reload.",
+                        adapterId,
+                        e);
+                continue;
+            }
+
+            // Keyed on the converted config's id, exactly as the previous Collectors.toMap was.
+            final String adapterId = config.getAdapterId();
+            if (!configuredAdapterIds.add(adapterId)) {
+                // Two adapters sharing an id: which configuration the operator meant is not knowable, so
+                // neither is applied and that adapter alone is left as it is. Previously this threw
+                // IllegalStateException out of Collectors.toMap and took the whole refresh with it.
+                protocolAdapterConfigs.remove(adapterId);
+                if (failedAdapterSet.add(adapterId)) {
+                    LOGGER.error(
+                            "Adapter id '{}' is used by more than one adapter in the configuration. The adapter has "
+                                    + "been left unchanged; give each adapter a unique id. Every other adapter has "
+                                    + "been refreshed as usual.",
+                            adapterId);
+                }
+                continue;
+            }
+            protocolAdapterConfigs.put(adapterId, config);
+        }
+        return configuredAdapterIds;
     }
 
     private void refreshDeletedAdapters(

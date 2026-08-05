@@ -581,6 +581,120 @@ class ProtocolAdapterManagerTest {
         }
     }
 
+    /**
+     * A configuration that cannot be read belongs to one adapter, not to the deployment.
+     *
+     * <p>The conversion used to be a single stream with a {@code Collectors.toMap} terminal, so any
+     * throw from {@code fromEntity} — an unrecognised field, a value that will not coerce, a duplicated
+     * adapter id — aborted the refresh before a single adapter was created, updated or deleted, and was
+     * swallowed by the outer catch with no event fired.
+     */
+    @Nested
+    class RefreshIsolationTests {
+
+        @Test
+        void anUnreadableConfig_doesNotStopTheOtherAdaptersFromBeingRefreshed() throws Exception {
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity unreadable = entity("unreadable-adapter");
+            final ProtocolAdapterEntity healthy = entity("healthy-adapter");
+            final ProtocolAdapterConfig healthyConfig = config("healthy-adapter");
+            when(configConverter.fromEntity(unreadable))
+                    .thenThrow(new IllegalArgumentException("Unrecognized field \"hostame\""));
+            when(configConverter.fromEntity(healthy)).thenReturn(healthyConfig);
+
+            spyManager.refresh(List.of(unreadable, healthy));
+            waitUntilNotBusy(spyManager);
+
+            verify(spyManager).createProtocolAdapter(healthyConfig, "test-version");
+            verify(spyManager).start("healthy-adapter");
+            verify(spyManager, org.mockito.Mockito.never()).start("unreadable-adapter");
+        }
+
+        @Test
+        void anUnreadableConfigForARunningAdapter_doesNotDeleteIt() throws Exception {
+            // The regression guard for the obvious-but-wrong fix. Drop a failed adapter from the map of
+            // converted configs and it disappears from the new-id set, which makes it look deleted -
+            // so a running, healthy adapter gets stopped and removed because its new configuration had
+            // a typo in it. That is worse than the bug being fixed, where nothing happened at all.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            addAdapterToManager(spyManager, "adapter-1", createSuccessAdapter("adapter-1"), config("adapter-1"));
+
+            final ProtocolAdapterEntity unreadable = entity("adapter-1");
+            when(configConverter.fromEntity(unreadable))
+                    .thenThrow(new IllegalArgumentException("Cannot coerce empty String"));
+
+            spyManager.refresh(List.of(unreadable));
+            waitUntilNotBusy(spyManager);
+
+            verify(spyManager, org.mockito.Mockito.never()).stop("adapter-1", true);
+            verify(spyManager, org.mockito.Mockito.never()).deleteProtocolAdapterByAdapterId("adapter-1");
+            verify(spyManager, org.mockito.Mockito.never()).createProtocolAdapter(any(), anyString());
+            assertThat(spyManager.getProtocolAdapterIdSet()).containsExactly("adapter-1");
+        }
+
+        @Test
+        void aDuplicatedAdapterId_doesNotStopTheOtherAdaptersFromBeingRefreshed() throws Exception {
+            // Collectors.toMap threw IllegalStateException on a duplicate key, which killed the refresh
+            // the same way. Which of the two configurations the operator meant is not knowable, so
+            // neither is applied and that adapter alone is left as it is.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity first = entity("duplicated");
+            final ProtocolAdapterEntity second = entity("duplicated");
+            final ProtocolAdapterEntity healthy = entity("healthy-adapter");
+            // Built before the stubbing that returns them: a mock created inside when(...) reads to
+            // Mockito as an unfinished stubbing.
+            final ProtocolAdapterConfig firstConfig = config("duplicated");
+            final ProtocolAdapterConfig secondConfig = config("duplicated");
+            final ProtocolAdapterConfig healthyConfig = config("healthy-adapter");
+            when(configConverter.fromEntity(first)).thenReturn(firstConfig);
+            when(configConverter.fromEntity(second)).thenReturn(secondConfig);
+            when(configConverter.fromEntity(healthy)).thenReturn(healthyConfig);
+
+            spyManager.refresh(List.of(first, second, healthy));
+            waitUntilNotBusy(spyManager);
+
+            verify(spyManager).createProtocolAdapter(healthyConfig, "test-version");
+            verify(spyManager, org.mockito.Mockito.never()).start("duplicated");
+        }
+
+        @Test
+        void anUnreadableConfig_firesTheConfigurationFailedEvent() throws Exception {
+            // Both event branches used to sit after the throw point, so the operator got a single stack
+            // trace and nothing at all in the event stream.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            final ProtocolAdapterEntity unreadable = entity("unreadable-adapter");
+            when(configConverter.fromEntity(unreadable))
+                    .thenThrow(new IllegalArgumentException("Unrecognized field \"hostame\""));
+
+            spyManager.refresh(List.of(unreadable));
+            waitUntilNotBusy(spyManager);
+
+            verify(eventBuilder).withMessage("Reloading of configuration failed");
+            verify(eventBuilder, org.mockito.Mockito.never())
+                    .withMessage("Configuration has been successfully updated");
+        }
+
+        private @NotNull ProtocolAdapterEntity entity(final @NotNull String adapterId) {
+            final ProtocolAdapterEntity entity = mock(ProtocolAdapterEntity.class);
+            when(entity.getAdapterId()).thenReturn(adapterId);
+            return entity;
+        }
+
+        private @NotNull ProtocolAdapterConfig config(final @NotNull String adapterId) {
+            final ProtocolAdapterConfig config = mock(ProtocolAdapterConfig.class);
+            when(config.getAdapterId()).thenReturn(adapterId);
+            return config;
+        }
+    }
+
     @Nested
     class RefreshParityAndConcurrencyTests {
 
