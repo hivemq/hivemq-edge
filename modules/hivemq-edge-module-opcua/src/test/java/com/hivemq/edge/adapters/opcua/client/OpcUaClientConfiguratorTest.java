@@ -21,6 +21,8 @@ import static org.mockito.Mockito.verify;
 
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
+import com.hivemq.edge.adapters.opcua.config.TlsChecksProjection;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.junit.jupiter.api.Test;
@@ -41,7 +43,7 @@ class OpcUaClientConfiguratorTest {
         // Don't use keyPairWithChain to avoid needing to fully mock the certificate chain
         final ParsedConfig parsedConfig = new ParsedConfig(
                 false, // TLS disabled to avoid certificate configuration
-                false,
+                TlsChecksProjection.fromPreset(TlsChecks.STANDARD),
                 null,
                 null,
                 new AnonymousProvider(),
@@ -68,7 +70,7 @@ class OpcUaClientConfiguratorTest {
         // Given
         final ParsedConfig parsedConfig = new ParsedConfig(
                 false, // TLS disabled to avoid certificate configuration
-                false,
+                TlsChecksProjection.fromPreset(TlsChecks.STANDARD),
                 null,
                 null,
                 new AnonymousProvider(),
@@ -95,7 +97,7 @@ class OpcUaClientConfiguratorTest {
         // Given
         final ParsedConfig parsedConfig = new ParsedConfig(
                 false, // TLS disabled
-                false,
+                TlsChecksProjection.fromPreset(TlsChecks.STANDARD),
                 null,
                 null,
                 new AnonymousProvider(),
@@ -120,8 +122,13 @@ class OpcUaClientConfiguratorTest {
     @Test
     void testAccept_withExtractedUri_configuresOtherSettings() {
         // Given
-        final ParsedConfig parsedConfig =
-                new ParsedConfig(false, false, null, null, new AnonymousProvider(), EXTRACTED_URI);
+        final ParsedConfig parsedConfig = new ParsedConfig(
+                false,
+                TlsChecksProjection.fromPreset(TlsChecks.STANDARD),
+                null,
+                null,
+                new AnonymousProvider(),
+                EXTRACTED_URI);
 
         final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
@@ -142,7 +149,7 @@ class OpcUaClientConfiguratorTest {
         // Given - Explicitly test null vs not provided
         final ParsedConfig parsedConfig = new ParsedConfig(
                 false, // TLS disabled to avoid certificate configuration
-                false,
+                TlsChecksProjection.fromPreset(TlsChecks.STANDARD),
                 null,
                 null,
                 new AnonymousProvider(),
@@ -170,7 +177,7 @@ class OpcUaClientConfiguratorTest {
         final String configuredUri = "urn:custom:configured:uri";
         final ParsedConfig parsedConfig = new ParsedConfig(
                 false, // TLS disabled to avoid certificate configuration
-                false,
+                TlsChecksProjection.fromPreset(TlsChecks.STANDARD),
                 null,
                 null,
                 new AnonymousProvider(),

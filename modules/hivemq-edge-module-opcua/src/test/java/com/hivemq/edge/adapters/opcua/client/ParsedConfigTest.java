@@ -21,21 +21,33 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.hivemq.edge.adapters.opcua.config.AllowList;
+import com.hivemq.edge.adapters.opcua.config.EffectiveChecks;
+import com.hivemq.edge.adapters.opcua.config.HostnameCheck;
+import com.hivemq.edge.adapters.opcua.config.KeyUsageCheck;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.RevocationCheck;
+import com.hivemq.edge.adapters.opcua.config.SanUriCheck;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecks;
-import com.hivemq.edge.adapters.opcua.config.TrustLevel;
+import com.hivemq.edge.adapters.opcua.config.TlsChecksFull;
+import com.hivemq.edge.adapters.opcua.config.TlsChecksProjection;
+import com.hivemq.edge.adapters.opcua.config.TrustMode;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
+import com.hivemq.edge.adapters.opcua.config.ValidityCheck;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.security.TrustAnyIdentityCertificateValidator;
+import com.hivemq.edge.adapters.opcua.security.AllowListCertificateValidator;
+import com.hivemq.edge.adapters.opcua.security.CheckOnlyCertificateValidator;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
+import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
@@ -312,9 +324,8 @@ class ParsedConfigTest {
             final String keystorePath,
             final String truststorePath,
             final String applicationUri,
-            final TrustLevel trustLevel) {
-        return createAdapterConfig(
-                tlsEnabled, keystorePath, truststorePath, applicationUri, trustLevel, TlsChecks.NONE);
+            final TlsChecks tlsChecks) {
+        return createAdapterConfig(tlsEnabled, keystorePath, truststorePath, applicationUri, tlsChecks, null, null);
     }
 
     private OpcUaSpecificAdapterConfig createAdapterConfig(
@@ -322,15 +333,22 @@ class ParsedConfigTest {
             final String keystorePath,
             final String truststorePath,
             final String applicationUri,
-            final TrustLevel trustLevel,
-            final TlsChecks tlsChecks) {
+            final TlsChecks tlsChecks,
+            final TlsChecksFull tlsChecksFull,
+            final String allowListPath) {
 
         final Keystore keystore =
                 keystorePath != null ? new Keystore(keystorePath, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD) : null;
 
         final Truststore truststore = truststorePath != null ? new Truststore(truststorePath, KEYSTORE_PASSWORD) : null;
 
-        final Tls tls = new Tls(tlsEnabled, tlsChecks, keystore, truststore, trustLevel);
+        final Tls tls = new Tls(
+                tlsEnabled,
+                tlsChecks,
+                tlsChecksFull,
+                keystore,
+                truststore,
+                allowListPath == null ? null : new AllowList(allowListPath));
         final Security security = new Security(SecPolicy.NONE);
         final OpcUaToMqttConfig opcUaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
 
@@ -345,15 +363,19 @@ class ParsedConfigTest {
                 null);
     }
 
-    // ----- EDG-585: trustLevel x tlsChecks validator selection matrix -----
+    private String writeAllowList(final String name) throws Exception {
+        final Path file = tempDir.resolve(name);
+        Files.writeString(file, "a".repeat(64) + "\n");
+        return file.toString();
+    }
+
+    // ----- EDG-585: which validator each configuration selects -----
 
     @Test
-    void trustLevelTrust_identityNone_noTruststore_selectsInsecureValidator() {
-        // TRUST + identity NONE → chain bypassed, no identity checks → Milo InsecureCertificateValidator.
-        final OpcUaSpecificAdapterConfig adapterConfig =
-                createAdapterConfig(true, null, null, null, TrustLevel.TRUST, TlsChecks.NONE);
-
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+    void noVerification_selectsTheInsecureValidator() {
+        // Nothing is checked at all, so the stack's own do-nothing validator is the honest choice.
+        final Result<ParsedConfig, String> result =
+                ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TlsChecks.NO_VERIFICATION));
 
         assertThat(result).isInstanceOf(Success.class);
         final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
@@ -363,160 +385,306 @@ class ParsedConfigTest {
     }
 
     @Test
-    void trustLevelTrust_identityNone_truststorePresent_stillInsecureValidator() throws Exception {
-        // TRUST + identity NONE ignores the truststore entirely.
+    void noVerification_ignoresAConfiguredTruststore() throws Exception {
         final KeyChain keyChain = KeyChain.createKeyChain("ca");
         final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("truststore-trust").toString(), "ca", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+                tempDir.resolve("truststore-any").toString(), "ca", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
-        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true, null, truststoreFile.getAbsolutePath(), null, TrustLevel.TRUST, TlsChecks.NONE);
-
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(
+                createAdapterConfig(true, null, truststoreFile.getAbsolutePath(), null, TlsChecks.NO_VERIFICATION));
 
         assertThat(result).isInstanceOf(Success.class);
-        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isTrue();
-        assertThat(parsedConfig.clientCertificateValidator())
+        assertThat(((Success<ParsedConfig, String>) result).result().clientCertificateValidator())
                 .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
     }
 
     @Test
-    void trustLevelTrust_identityApplicationUri_selectsTrustAnyIdentityValidator() {
-        // EDG-594 cell: TRUST + identity → chain bypassed, identity still enforced via the custom validator.
-        final OpcUaSpecificAdapterConfig adapterConfig =
-                createAdapterConfig(true, null, null, null, TrustLevel.TRUST, TlsChecks.APPLICATION_URI);
-
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
-
-        assertThat(result).isInstanceOf(Success.class);
-        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isTrue();
-        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(TrustAnyIdentityCertificateValidator.class);
-    }
-
-    @Test
-    void trustLevelTrust_identityHostname_selectsTrustAnyIdentityValidator() {
-        final OpcUaSpecificAdapterConfig adapterConfig =
-                createAdapterConfig(true, null, null, null, TrustLevel.TRUST, TlsChecks.HOSTNAME);
-
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
-
-        assertThat(result).isInstanceOf(Success.class);
-        assertThat(((Success<ParsedConfig, String>) result).result().clientCertificateValidator())
-                .isInstanceOf(TrustAnyIdentityCertificateValidator.class);
-    }
-
-    @Test
-    void trustLevelTrust_identityBoth_selectsTrustAnyIdentityValidator() {
-        final OpcUaSpecificAdapterConfig adapterConfig =
-                createAdapterConfig(true, null, null, null, TrustLevel.TRUST, TlsChecks.APPLICATION_URI_AND_HOSTNAME);
-
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
-
-        assertThat(result).isInstanceOf(Success.class);
-        assertThat(((Success<ParsedConfig, String>) result).result().clientCertificateValidator())
-                .isInstanceOf(TrustAnyIdentityCertificateValidator.class);
-    }
-
-    @Test
-    void trustLevelChain_truststorePresent_selectsDefaultValidator() throws Exception {
-        // CHAIN + truststore present → normal Milo chain-building validator.
-        final KeyChain keyChain = KeyChain.createKeyChain("ca");
-        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("truststore-chain").toString(), "ca", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
-
-        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true, null, truststoreFile.getAbsolutePath(), null, TrustLevel.CHAIN, TlsChecks.APPLICATION_URI);
-
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
-
-        assertThat(result).isInstanceOf(Success.class);
-        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isFalse();
-        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
-    }
-
-    @Test
-    void trustLevelChain_noTruststore_selectsDefaultValidatorWithCacerts() {
-        // CHAIN + no user truststore → DefaultClientCertificateValidator backed by JVM cacerts.
-        // Jochen's case: an unconfigured user truststore must remain a valid configuration.
-        final OpcUaSpecificAdapterConfig adapterConfig =
-                createAdapterConfig(true, null, null, null, TrustLevel.CHAIN, TlsChecks.NONE);
-
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
-
-        assertThat(result).isInstanceOf(Success.class);
-        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isFalse();
-        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
-    }
-
-    @Test
-    void trustLevelChainPki_truststorePresent_selectsDefaultValidator() throws Exception {
-        // CHAIN_PKI + truststore present → DefaultClientCertificateValidator (with PKI-hygiene checks).
-        final KeyChain keyChain = KeyChain.createKeyChain("ca");
-        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("truststore-pki").toString(), "ca", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
-
+    void anyCertWithChecks_selectsTheCheckOnlyValidator() {
+        // ANY_CERT does not mean "check nothing": the remaining axes still have to be applied.
         final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
                 true,
                 null,
-                truststoreFile.getAbsolutePath(),
                 null,
-                TrustLevel.CHAIN_PKI,
-                TlsChecks.APPLICATION_URI_AND_HOSTNAME);
+                null,
+                null,
+                new TlsChecksFull(
+                        TrustMode.ANY_CERT,
+                        SanUriCheck.APPLICATION_URI,
+                        HostnameCheck.NONE,
+                        ValidityCheck.NONE,
+                        RevocationCheck.NONE,
+                        KeyUsageCheck.NONE),
+                null);
 
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
 
         assertThat(result).isInstanceOf(Success.class);
-        assertThat(((Success<ParsedConfig, String>) result).result().clientCertificateValidator())
-                .isInstanceOf(DefaultClientCertificateValidator.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.trustAnyServerCertificate()).isTrue();
+        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(CheckOnlyCertificateValidator.class);
     }
 
     @Test
-    void trustLevelChain_truststoreUnreadable_returnsFailureNamingTrustLevelTrust() {
-        // CHAIN + configured-but-unreadable truststore → Failure.of(...) with an actionable message
-        // that names trustLevel=TRUST as one of the resolutions.
-        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true, null, "/path/that/does/not/exist/truststore.jks", null, TrustLevel.CHAIN, TlsChecks.NONE);
+    void selfSigned_selectsTheAllowListValidator() throws Exception {
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(createAdapterConfig(
+                true, null, null, null, TlsChecks.SELF_SIGNED, null, writeAllowList("allow-list.txt")));
+
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.trustAnyServerCertificate())
+                .as("an allow-list is a trust decision, not the absence of one")
+                .isFalse();
+        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(AllowListCertificateValidator.class);
+    }
+
+    @Test
+    void selfSigned_withAMissingAllowListFile_failsWithAnActionableMessage() {
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(createAdapterConfig(
+                true, null, null, null, TlsChecks.SELF_SIGNED, null, "/path/that/does/not/exist/allow-list.txt"));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("allow-list")
+                .contains("/path/that/does/not/exist/allow-list.txt");
+    }
+
+    @Test
+    void selfSigned_withAMalformedAllowList_failsNamingTheLine() throws Exception {
+        final Path file = tempDir.resolve("bad-allow-list.txt");
+        Files.writeString(file, "a".repeat(64) + "\nnot-a-fingerprint\n");
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(
+                createAdapterConfig(true, null, null, null, TlsChecks.SELF_SIGNED, null, file.toString()));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure()).contains("line 2");
+    }
+
+    @Test
+    void selfSigned_withoutAnAllowList_failsAtStartup() {
+        final Result<ParsedConfig, String> result =
+                ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TlsChecks.SELF_SIGNED));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure()).contains("ALLOW_LIST");
+    }
+
+    @Test
+    void selfSigned_withAnAllowListThatHasNoPath_failsAtStartup() {
+        // `<allowList/>` with nothing inside it. The adapter must refuse to start with the same
+        // message as a missing allowList, rather than letting a NullPointerException escape
+        // fromConfig - by then start() has already spun up the schedulers and will never reach
+        // failStart, leaving the adapter neither started nor cleanly failed.
+        final Tls tls = new Tls(true, TlsChecks.SELF_SIGNED, null, null, null, new AllowList(null));
+        final OpcUaSpecificAdapterConfig adapterConfig = new OpcUaSpecificAdapterConfig(
+                TEST_URI, false, null, null, tls, new OpcUaToMqttConfig(1, 1000), new Security(SecPolicy.NONE), null);
 
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
 
         assertThat(result).isInstanceOf(Failure.class);
-        final String error = ((Failure<ParsedConfig, String>) result).failure();
-        assertThat(error)
-                .contains("Truststore is configured but the file is missing or unreadable")
-                .contains("trustLevel=TRUST");
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("ALLOW_LIST")
+                .contains("allowList");
     }
 
     @Test
-    void trustLevelTrust_reconnectionsKeepInsecureValidator() {
-        // A fresh validator of the same type is produced on each re-parse; documents stability across
-        // reconfigurations under trustLevel=TRUST.
-        final OpcUaSpecificAdapterConfig adapterConfig =
-                createAdapterConfig(true, null, null, null, TrustLevel.TRUST, TlsChecks.NONE);
+    void bothDoorsConfigured_failsAtStartup() {
+        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
+                true,
+                null,
+                null,
+                null,
+                TlsChecks.STANDARD,
+                new TlsChecksFull(TrustMode.CHAIN, null, null, null, null, null),
+                null);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure()).contains("mutually exclusive");
+    }
+
+    @Test
+    void revocationWithoutAChain_failsAtStartup() {
+        // The one combination the axes allow but the stack cannot honour. Failing loudly beats an axis
+        // that silently does nothing.
+        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
+                true,
+                null,
+                null,
+                null,
+                null,
+                new TlsChecksFull(
+                        TrustMode.ANY_CERT,
+                        SanUriCheck.NONE,
+                        HostnameCheck.NONE,
+                        ValidityCheck.NONE,
+                        RevocationCheck.REQUIRE_CRLS,
+                        KeyUsageCheck.NONE),
+                null);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("revocation")
+                .contains("revocation=NONE");
+    }
+
+    @Test
+    void chain_withTruststore_selectsTheDefaultValidator() throws Exception {
+        final KeyChain keyChain = KeyChain.createKeyChain("ca");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-chain").toString(), "ca", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(
+                createAdapterConfig(true, null, truststoreFile.getAbsolutePath(), null, TlsChecks.APPLICATION_URI));
+
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.trustAnyServerCertificate()).isFalse();
+        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
+    }
+
+    @Test
+    void chain_withoutTruststore_fallsBackToCacerts() {
+        // An unconfigured truststore has always been a valid configuration, and stays one.
+        final Result<ParsedConfig, String> result =
+                ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TlsChecks.NONE));
+
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.trustAnyServerCertificate()).isFalse();
+        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
+    }
+
+    @Test
+    void chain_withAnUnreadableTruststore_failsNamingTheWayOut() {
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(
+                createAdapterConfig(true, null, "/path/that/does/not/exist/truststore.jks", null, TlsChecks.NONE));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("Truststore is configured but the file is missing or unreadable")
+                .contains("ALLOW_LIST");
+    }
+
+    @Test
+    void reparsingTheSameConfigurationIsStable() throws Exception {
+        // Reconnects re-parse the configuration; the same file must keep selecting the same validator.
+        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
+                true, null, null, null, TlsChecks.SELF_SIGNED, null, writeAllowList("stable-allow-list.txt"));
 
         final Result<ParsedConfig, String> first = ParsedConfig.fromConfig(adapterConfig);
         final Result<ParsedConfig, String> second = ParsedConfig.fromConfig(adapterConfig);
 
         assertThat(first).isInstanceOf(Success.class);
         assertThat(second).isInstanceOf(Success.class);
-        assertThat(((Success<ParsedConfig, String>) first).result().clientCertificateValidator())
-                .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
+        assertThat(((Success<ParsedConfig, String>) first).result().effectiveChecks())
+                .isEqualTo(((Success<ParsedConfig, String>) second).result().effectiveChecks());
         assertThat(((Success<ParsedConfig, String>) second).result().clientCertificateValidator())
-                .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
+                .isInstanceOf(AllowListCertificateValidator.class);
     }
 
     @Test
-    void trustLevelDefault_isNotTrustAny() {
-        // Secure-by-default: the default trust level is never TRUST.
-        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(false, null, null);
-        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+    void theDefaultConfigurationTrustsNothingBlindly() {
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(createAdapterConfig(false, null, null));
 
         assertThat(result).isInstanceOf(Success.class);
         assertThat(((Success<ParsedConfig, String>) result).result().trustAnyServerCertificate())
                 .isFalse();
+    }
+
+    @Test
+    void aDisabledTlsConfigurationBuildsNoValidator() {
+        final Result<ParsedConfig, String> result =
+                ParsedConfig.fromConfig(createAdapterConfig(false, null, null, null, TlsChecks.NO_VERIFICATION));
+
+        assertThat(result).isInstanceOf(Success.class);
+        assertThat(((Success<ParsedConfig, String>) result).result().clientCertificateValidator())
+                .isNull();
+    }
+
+    // ----- the Milo check set each preset produces -----
+
+    @Test
+    void legacyPresetsProduceTheirReleasedCheckSets() {
+        // Guards the upgrade promise at the level it actually matters: the exact set of optional checks
+        // handed to the stack. These four sets are what the released implementation has always used.
+        assertThat(ParsedConfig.toValidationChecks(TlsChecksProjection.fromPreset(TlsChecks.NONE)))
+                .isEmpty();
+
+        assertThat(ParsedConfig.toValidationChecks(TlsChecksProjection.fromPreset(TlsChecks.APPLICATION_URI)))
+                .isEqualTo(ValidationCheck.NO_OPTIONAL_CHECKS);
+
+        assertThat(ParsedConfig.toValidationChecks(TlsChecksProjection.fromPreset(TlsChecks.STANDARD)))
+                .containsExactlyInAnyOrder(
+                        ValidationCheck.APPLICATION_URI,
+                        ValidationCheck.VALIDITY,
+                        ValidationCheck.REVOCATION,
+                        ValidationCheck.REVOCATION_LISTS);
+
+        assertThat(ParsedConfig.toValidationChecks(TlsChecksProjection.fromPreset(TlsChecks.ALL)))
+                .as("ALL has always meant every optional check, key usage included")
+                .isEqualTo(ValidationCheck.ALL_OPTIONAL_CHECKS);
+    }
+
+    @Test
+    void eachAxisContributesExactlyItsOwnChecks() {
+        assertThat(ParsedConfig.toValidationChecks(new EffectiveChecks(
+                        TrustMode.CHAIN,
+                        SanUriCheck.NONE,
+                        HostnameCheck.HOSTNAME,
+                        ValidityCheck.NONE,
+                        RevocationCheck.NONE,
+                        KeyUsageCheck.NONE)))
+                .containsExactly(ValidationCheck.HOSTNAME);
+
+        assertThat(ParsedConfig.toValidationChecks(new EffectiveChecks(
+                        TrustMode.CHAIN,
+                        SanUriCheck.NONE,
+                        HostnameCheck.NONE,
+                        ValidityCheck.NONE,
+                        RevocationCheck.CHECK,
+                        KeyUsageCheck.NONE)))
+                .as("CHECK asks for revocation without demanding a CRL for every CA")
+                .containsExactly(ValidationCheck.REVOCATION);
+
+        assertThat(ParsedConfig.toValidationChecks(new EffectiveChecks(
+                        TrustMode.CHAIN,
+                        SanUriCheck.NONE,
+                        HostnameCheck.NONE,
+                        ValidityCheck.NONE,
+                        RevocationCheck.REQUIRE_CRLS,
+                        KeyUsageCheck.NONE)))
+                .containsExactlyInAnyOrder(ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS);
+
+        assertThat(ParsedConfig.toValidationChecks(new EffectiveChecks(
+                        TrustMode.CHAIN,
+                        SanUriCheck.NONE,
+                        HostnameCheck.NONE,
+                        ValidityCheck.NONE,
+                        RevocationCheck.NONE,
+                        KeyUsageCheck.KEY_USAGE)))
+                .as("KEY_USAGE stops short of the extended key usage")
+                .containsExactly(ValidationCheck.KEY_USAGE_END_ENTITY);
+
+        assertThat(ParsedConfig.toValidationChecks(new EffectiveChecks(
+                        TrustMode.CHAIN,
+                        SanUriCheck.NONE,
+                        HostnameCheck.NONE,
+                        ValidityCheck.NONE,
+                        RevocationCheck.NONE,
+                        KeyUsageCheck.SERVER_AUTH)))
+                .containsExactlyInAnyOrder(
+                        ValidationCheck.KEY_USAGE_END_ENTITY, ValidationCheck.EXTENDED_KEY_USAGE_END_ENTITY);
+    }
+
+    @Test
+    void maximumValidationAsksForEveryCheck() {
+        assertThat(ParsedConfig.toValidationChecks(
+                        TlsChecksProjection.fromAxes(new TlsChecksFull(null, null, null, null, null, null))))
+                .isEqualTo(ValidationCheck.ALL_OPTIONAL_CHECKS);
     }
 
     // ----- hostname-verification WARN (logged once at start) -----
@@ -525,9 +693,7 @@ class ParsedConfigTest {
     void chainWithoutHostname_logsHostnameVerificationWarn() {
         final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
         try {
-            // CHAIN with an identity that omits HOSTNAME → one-shot advisory WARN.
-            ParsedConfig.fromConfig(
-                    createAdapterConfig(true, null, null, null, TrustLevel.CHAIN, TlsChecks.APPLICATION_URI));
+            ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TlsChecks.STANDARD));
             assertThat(appender.list).anySatisfy(event -> {
                 assertThat(event.getLevel()).isEqualTo(Level.WARN);
                 assertThat(event.getFormattedMessage()).contains("hostname verification is not enabled");
@@ -541,8 +707,7 @@ class ParsedConfigTest {
     void chainWithHostname_doesNotLogHostnameVerificationWarn() {
         final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
         try {
-            ParsedConfig.fromConfig(createAdapterConfig(
-                    true, null, null, null, TrustLevel.CHAIN, TlsChecks.APPLICATION_URI_AND_HOSTNAME));
+            ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TlsChecks.ALL));
             assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
                     .contains("hostname verification is not enabled"));
         } finally {
@@ -551,13 +716,31 @@ class ParsedConfigTest {
     }
 
     @Test
-    void trust_doesNotLogHostnameVerificationWarn() {
-        // Under TRUST the MITM warning already covers it; the hostname advisory must not double up.
+    void anyCert_doesNotLogHostnameVerificationWarn() {
+        // The no-trust warning already covers this case; the hostname advisory must not double up.
         final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
         try {
-            ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TrustLevel.TRUST, TlsChecks.NONE));
+            ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TlsChecks.NO_VERIFICATION));
             assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
                     .contains("hostname verification is not enabled"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void allowList_logsHowManyFingerprintsWereLoaded() throws Exception {
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(createAdapterConfig(
+                    true, null, null, null, TlsChecks.SELF_SIGNED, null, writeAllowList("counted-allow-list.txt")));
+
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel())
+                        .as("trusting by fingerprint is a legitimate configuration, not a warning")
+                        .isEqualTo(Level.INFO);
+                assertThat(event.getFormattedMessage()).contains("1 fingerprint(s) loaded");
+            });
         } finally {
             detachParsedConfigAppender(appender);
         }

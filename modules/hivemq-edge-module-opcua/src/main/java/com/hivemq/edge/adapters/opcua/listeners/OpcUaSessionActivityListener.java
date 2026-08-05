@@ -74,11 +74,14 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
         protocolAdapterState.setConnectionStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
         if (trustAnyServerCertificate) {
+            // Repeated on every successful connect, not just once at start-up: a single line at boot
+            // scrolls out of a production log, and this is the one setting an operator must be able to
+            // see while triaging an incident.
             log.warn(
-                    "OPC UA adapter '{}' connected to '{}' with trustLevel=TRUST: "
-                            + "server certificate was accepted without chain validation. "
-                            + "This deployment is vulnerable to MITM and is intended for "
-                            + "self-signed / factory environments only.",
+                    "OPC UA adapter '{}' connected to '{}' with trust mode ANY_CERT: the server certificate was "
+                            + "accepted without establishing any trust. This deployment is vulnerable to "
+                            + "man-in-the-middle attacks. Consider tlsChecks=SELF_SIGNED, which trusts specific "
+                            + "certificates by SHA-256 fingerprint.",
                     adapterId,
                     endpointUri);
         }

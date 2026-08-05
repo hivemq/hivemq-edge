@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<hivemq>
+    <protocol-adapters>
+        <protocol-adapter>
+            <adapterId>my-opcua-adapter</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-17.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecksFull>
+                        <trustMode>ALLOW_LIST</trustMode>
+                        <hostname>NONE</hostname>
+                        <revocation>NONE</revocation>
+                    </tlsChecksFull>
+                    <allowList>
+                        <path>/opt/hivemq/conf/opcua-fingerprints.txt</path>
+                    </allowList>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-name</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <tagName>tag-name</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+    </protocol-adapters>
+</hivemq>

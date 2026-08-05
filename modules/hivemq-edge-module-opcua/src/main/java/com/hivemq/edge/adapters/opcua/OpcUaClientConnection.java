@@ -87,11 +87,11 @@ public class OpcUaClientConnection {
         log.debug("Subscribing to OPC UA client");
         if (parsedConfig.trustAnyServerCertificate()) {
             log.warn(
-                    "OPC UA adapter '{}' configured for endpoint '{}' with trustLevel=TRUST: "
-                            + "all server certificates will be accepted without chain validation. "
-                            + "Intended for self-signed / factory environments only.",
+                    "OPC UA adapter '{}' configured for endpoint '{}' with trust mode ANY_CERT: every server "
+                            + "certificate will be accepted, establishing no trust at all. Effective checks: {}.",
                     adapterId,
-                    config.getUri());
+                    config.getUri(),
+                    parsedConfig.effectiveChecks().describe());
         }
         final OpcUaClient client;
         final var activityListener = new OpcUaSessionActivityListener(

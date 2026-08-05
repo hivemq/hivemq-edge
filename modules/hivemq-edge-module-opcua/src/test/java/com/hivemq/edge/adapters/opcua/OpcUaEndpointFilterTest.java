@@ -30,7 +30,6 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecks;
-import com.hivemq.edge.adapters.opcua.config.TrustLevel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,7 +53,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, TrustLevel.CHAIN),
+                new Tls(true, TlsChecks.NONE, null, new Keystore("path", "pass", "passPriv"), null, null),
                 null,
                 null,
                 null);
@@ -124,7 +123,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, TrustLevel.CHAIN),
+                new Tls(true, TlsChecks.NONE, null, new Keystore("path", "pass", "passPriv"), null, null),
                 null,
                 null,
                 null);
@@ -178,7 +177,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, TrustLevel.CHAIN),
+                new Tls(true, TlsChecks.NONE, null, new Keystore("path", "pass", "passPriv"), null, null),
                 null,
                 null,
                 null);
@@ -219,7 +218,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, TrustLevel.CHAIN),
+                new Tls(true, TlsChecks.NONE, null, new Keystore("path", "pass", "passPriv"), null, null),
                 null,
                 null,
                 null);

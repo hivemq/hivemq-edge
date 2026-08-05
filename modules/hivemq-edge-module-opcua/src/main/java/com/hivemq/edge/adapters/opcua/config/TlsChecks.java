@@ -21,91 +21,63 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The "identity" axis of certificate validation: does the presented certificate belong to the
- * server we think we are talking to? This is orthogonal to {@link TrustLevel}, which governs the
- * "trust" axis (how the certificate is established as trustworthy at all).
+ * Named presets for certificate validation — the "common cases" door, mutually exclusive with the
+ * {@link TlsChecksFull} axes.
  *
- * <p>The canonical values ({@link #NONE}, {@link #APPLICATION_URI}, {@link #HOSTNAME},
- * {@link #APPLICATION_URI_AND_HOSTNAME}) describe identity checks only. The legacy values
- * {@link #STANDARD} and {@link #ALL} are deprecated compatibility aliases that additionally imply
- * a trust level; they are normalized to a {@code (trustLevel, tlsChecks)} pair at config parse time
- * (see {@link Tls}).
+ * <p>Each preset is an exact combination of the six axes; see {@link TlsChecksProjection} for the
+ * mapping, which is the single source of truth. Presets are stored verbatim and expanded at read
+ * time, never rewritten into the configuration.
  */
 public enum TlsChecks {
 
-    /** No identity check is performed. */
+    /**
+     * Chain validation only: the certificate must chain to a trust anchor, and nothing else is
+     * checked.
+     *
+     * <p>The name is a trap we are stuck with for backward compatibility: it does <b>not</b> mean "no
+     * validation" — the chain is still built. Reading it as "no validation" is the misunderstanding
+     * that originated EDG-585. Use {@link #NO_VERIFICATION} if that is what is actually wanted.
+     */
     @JsonProperty("NONE")
-    NONE("NONE"),
+    NONE,
 
-    /**
-     * The OPC UA {@code ApplicationUri} announced by the server must match the SubjectAltName URI in
-     * its certificate.
-     */
+    /** Chain validation plus the ApplicationUri identity check. */
     @JsonProperty("APPLICATION_URI")
-    APPLICATION_URI("APPLICATION_URI"),
+    APPLICATION_URI,
 
-    /** The endpoint hostname must match a SubjectAltName DNSName / IP address in the certificate. */
-    @JsonProperty("HOSTNAME")
-    HOSTNAME("HOSTNAME"),
-
-    /** Both {@link #APPLICATION_URI} and {@link #HOSTNAME} identity checks are performed. */
-    @JsonProperty("APPLICATION_URI_AND_HOSTNAME")
-    APPLICATION_URI_AND_HOSTNAME("APPLICATION_URI_AND_HOSTNAME"),
-
-    /**
-     * Deprecated alias. Normalizes to identity {@link #APPLICATION_URI} and forces
-     * {@link TrustLevel#CHAIN} to {@link TrustLevel#CHAIN_PKI}. Use {@code trustLevel} +
-     * {@code tlsChecks} explicitly instead.
-     */
-    @Deprecated
+    /** The default. Chain validation, ApplicationUri, validity period and revocation including CRLs. */
     @JsonProperty("STANDARD")
-    STANDARD("STANDARD"),
+    STANDARD,
 
-    /**
-     * Deprecated alias. Normalizes to identity {@link #APPLICATION_URI_AND_HOSTNAME} and forces
-     * {@link TrustLevel#CHAIN} to {@link TrustLevel#CHAIN_PKI}. Use {@code trustLevel} +
-     * {@code tlsChecks} explicitly instead.
-     */
-    @Deprecated
+    /** {@link #STANDARD} plus hostname verification and key-usage enforcement. */
     @JsonProperty("ALL")
-    ALL("ALL");
-
-    private final @NotNull String tlsChecks;
-
-    TlsChecks(final @NotNull String tlsChecks) {
-        this.tlsChecks = tlsChecks;
-    }
+    ALL,
 
     /**
-     * @return {@code true} if this is a deprecated compatibility alias ({@link #STANDARD} /
-     *     {@link #ALL}) rather than a canonical identity value.
+     * For environments with no CA: trust is established from an offline-authored allow-list of
+     * certificate fingerprints, and the certificate must still assert the right application, host and
+     * validity period. Revocation and key-usage machinery, which such deployments typically cannot
+     * provide, is not required.
      */
-    public boolean isDeprecatedAlias() {
-        return this == STANDARD || this == ALL;
+    @JsonProperty("SELF_SIGNED")
+    SELF_SIGNED,
+
+    /**
+     * Accept anything: no trust, no identity, no hygiene. The honest spelling of "do not verify".
+     *
+     * <p>WARNING: a deployment running this is vulnerable to man-in-the-middle attacks. Prefer
+     * {@link #SELF_SIGNED}, which costs one fingerprint per server and closes that hole.
+     */
+    @JsonProperty("NO_VERIFICATION")
+    NO_VERIFICATION;
+
+    @JsonCreator
+    public static @Nullable TlsChecks fromString(final @Nullable String value) {
+        return EnumParsing.parse(TlsChecks.class, values(), value);
     }
 
     @Override
-    public String toString() {
-        return tlsChecks;
-    }
-
-    /**
-     * Jackson creator method for deserialization.
-     *
-     * @param value the string value from JSON
-     * @return the corresponding TlsChecks
-     */
-    @JsonCreator
-    public static @Nullable TlsChecks fromString(final @Nullable String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        for (final var mode : values()) {
-            if (mode.name().equalsIgnoreCase(value)
-                    || mode.name().replace("_", "").equalsIgnoreCase(value)) {
-                return mode;
-            }
-        }
-        return null;
+    public @NotNull String toString() {
+        return name();
     }
 }

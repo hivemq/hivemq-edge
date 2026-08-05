@@ -15,18 +15,25 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import com.hivemq.edge.adapters.opcua.config.AllowList;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
+import com.hivemq.edge.adapters.opcua.config.EffectiveChecks;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.TlsChecks;
-import com.hivemq.edge.adapters.opcua.config.TrustLevel;
+import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.TlsChecksProjection;
+import com.hivemq.edge.adapters.opcua.config.TrustMode;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
+import com.hivemq.edge.adapters.opcua.security.AllowListCertificateValidator;
+import com.hivemq.edge.adapters.opcua.security.CertificateFingerprints;
 import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
-import com.hivemq.edge.adapters.opcua.security.TrustAnyIdentityCertificateValidator;
+import com.hivemq.edge.adapters.opcua.security.CheckOnlyCertificateValidator;
 import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +58,7 @@ import org.slf4j.LoggerFactory;
 
 public record ParsedConfig(
         boolean tlsEnabled,
-        boolean trustAnyServerCertificate,
+        @NotNull EffectiveChecks effectiveChecks,
         @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain,
         @Nullable CertificateValidator clientCertificateValidator,
         @NotNull IdentityProvider identityProvider,
@@ -60,48 +67,73 @@ public record ParsedConfig(
     private static final @NotNull Logger log = LoggerFactory.getLogger(ParsedConfig.class);
 
     public static Result<ParsedConfig, String> fromConfig(final OpcUaSpecificAdapterConfig adapterConfig) {
-        final boolean tlsEnabled = adapterConfig.getTls().enabled();
-        // tlsChecks/trustLevel are normalized (aliases expanded, never null) inside Tls.
-        final TrustLevel trustLevel =
-                Objects.requireNonNull(adapterConfig.getTls().trustLevel());
-        final TlsChecks identity = Objects.requireNonNull(adapterConfig.getTls().tlsChecks());
-        final boolean trustAnyServerCertificate = trustLevel == TrustLevel.TRUST;
+        final Tls tlsConfig = adapterConfig.getTls();
+        final boolean tlsEnabled = tlsConfig.enabled();
+        final String endpointUri = adapterConfig.getUri();
+
+        // Read-time projection: the configuration itself is never rewritten, so writing it back out
+        // returns exactly what the operator wrote.
+        final EffectiveChecks checks;
+        try {
+            checks = TlsChecksProjection.project(tlsConfig);
+        } catch (final TlsChecksProjection.InvalidTlsChecksConfigException e) {
+            return Failure.of(e.reason());
+        }
 
         CertificateValidator certValidator = null;
         if (tlsEnabled) {
-            switch (trustLevel) {
-                case TRUST ->
-                    // Accept any server certificate (no chain build). Identity checks, if any, are
-                    // still enforced on the presented certificate.
-                    certValidator = (identity == TlsChecks.NONE)
-                            ? new CertificateValidator.InsecureCertificateValidator()
-                            : new TrustAnyIdentityCertificateValidator(
-                                    checksApplicationUri(identity), checksHostname(identity));
-                case CHAIN, CHAIN_PKI -> {
-                    final var truststore = adapterConfig.getTls().truststore();
-                    final var trustedCertsOpt = getTrustedCerts(truststore);
+            switch (checks.trustMode()) {
+                case CHAIN -> {
+                    final var trustedCertsOpt = getTrustedCerts(tlsConfig.truststore());
                     if (trustedCertsOpt.isEmpty()) {
                         // Reachable only when the user explicitly configured a truststore path that
                         // is missing or unreadable. "No truststore configured" silently falls back
                         // to JVM cacerts inside getTrustedCerts and does NOT land here.
                         return Failure.of("Truststore is configured but the file is missing or unreadable. "
-                                + "Either correct the path, leave the truststore unset to use JVM cacerts, "
-                                + "or set trustLevel=TRUST to accept any server certificate.");
+                                + "Either correct the path, leave the truststore unset to use the JVM cacerts, "
+                                + "or use trustMode=ALLOW_LIST to trust specific certificates by fingerprint.");
                     }
-                    certValidator = createServerCertificateValidator(trustedCertsOpt.get(), trustLevel, identity);
-                    if (!checksHostname(identity)) {
+                    certValidator = createServerCertificateValidator(trustedCertsOpt.get(), checks);
+                    if (!checks.isHostname()) {
                         // Logged once at start (not per-connect): the certificate is trusted via its
                         // chain, but is not verified to belong to this endpoint's hostname, so a
                         // substituted server whose certificate chains to the same anchor is accepted.
                         log.warn(
-                                "OPC UA adapter endpoint '{}': TLS hostname verification is not enabled "
-                                        + "(tlsChecks={}). The server certificate is trusted via its chain but is "
-                                        + "not checked against the endpoint hostname. Set tlsChecks=HOSTNAME or "
-                                        + "APPLICATION_URI_AND_HOSTNAME to enable it.",
-                                adapterConfig.getUri(),
-                                identity);
+                                "OPC UA adapter endpoint '{}': TLS hostname verification is not enabled. The server "
+                                        + "certificate is trusted via its chain but is not checked against the "
+                                        + "endpoint hostname, so a substituted server whose certificate chains to the "
+                                        + "same anchor would be accepted. Enable it with tlsChecks=ALL or "
+                                        + "tlsChecksFull.hostname=HOSTNAME.",
+                                endpointUri);
                     }
                 }
+                case ALLOW_LIST -> {
+                    // Presence of a non-blank path is guaranteed by the projection's validation.
+                    final AllowList allowList = Objects.requireNonNull(tlsConfig.allowList());
+                    final String allowListPath = Objects.requireNonNull(allowList.path());
+                    final Set<String> fingerprints;
+                    try {
+                        fingerprints = CertificateFingerprints.loadAllowList(Path.of(allowListPath));
+                    } catch (final IOException e) {
+                        return Failure.of("Certificate allow-list '" + allowListPath + "' could not be read: " + e
+                                + ". Correct the path, or make the file readable by the Edge process.");
+                    } catch (final IllegalArgumentException e) {
+                        return Failure.of(String.valueOf(e.getMessage()));
+                    }
+                    log.info(
+                            "OPC UA adapter endpoint '{}': server certificates are trusted by fingerprint; "
+                                    + "{} fingerprint(s) loaded from '{}'.",
+                            endpointUri,
+                            fingerprints.size(),
+                            allowListPath);
+                    certValidator = new AllowListCertificateValidator(fingerprints, checks, endpointUri);
+                }
+                case ANY_CERT ->
+                    // No trust is established at all. Whatever else is configured is still enforced on
+                    // the presented certificate, which is what keeps the axes orthogonal.
+                    certValidator = checks.isAnyCertificateCheckEnabled()
+                            ? new CheckOnlyCertificateValidator(checks)
+                            : new CertificateValidator.InsecureCertificateValidator();
             }
         }
 
@@ -141,20 +173,12 @@ public record ParsedConfig(
         }
 
         return Success.of(new ParsedConfig(
-                tlsEnabled,
-                trustAnyServerCertificate,
-                keyPairWithChain,
-                certValidator,
-                identityProvider.get(),
-                applicationUri));
+                tlsEnabled, checks, keyPairWithChain, certValidator, identityProvider.get(), applicationUri));
     }
 
-    private static boolean checksApplicationUri(final @NotNull TlsChecks identity) {
-        return identity == TlsChecks.APPLICATION_URI || identity == TlsChecks.APPLICATION_URI_AND_HOSTNAME;
-    }
-
-    private static boolean checksHostname(final @NotNull TlsChecks identity) {
-        return identity == TlsChecks.HOSTNAME || identity == TlsChecks.APPLICATION_URI_AND_HOSTNAME;
+    /** Convenience for callers that only care whether any certificate is accepted. */
+    public boolean trustAnyServerCertificate() {
+        return effectiveChecks.trustMode() == TrustMode.ANY_CERT;
     }
 
     private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {
@@ -177,41 +201,51 @@ public record ParsedConfig(
 
         log.info("OPC UA adapter has no user truststore configured; falling back to JVM cacerts. "
                 + "If the server presents a self-signed certificate that does not chain to a public CA, "
-                + "set trustLevel=TRUST to bypass chain validation.");
+                + "use tlsChecks=SELF_SIGNED to trust it by fingerprint instead.");
         return Optional.of(KeystoreUtil.getCertificatesFromDefaultTruststore());
     }
 
     /**
-     * Builds a chain-validating validator for {@code trustLevel} CHAIN / CHAIN_PKI. The Milo
-     * {@link ValidationCheck} set is composed from the two orthogonal knobs: the identity checks
-     * ({@code tlsChecks}) and, for CHAIN_PKI, the PKI-hygiene checks (validity, revocation). CHAIN
-     * contributes no optional checks beyond the chain build itself.
+     * Builds the chain-validating validator for {@code trustMode=CHAIN}. The Milo
+     * {@link ValidationCheck} set is assembled from the five non-trust axes, one contribution each, so
+     * a change on one axis cannot disturb another.
      */
     private static @NotNull CertificateValidator createServerCertificateValidator(
-            final @NotNull List<X509Certificate> trustedCerts,
-            final @NotNull TrustLevel trustLevel,
-            final @NotNull TlsChecks identity) {
-        final EnumSet<ValidationCheck> checks = EnumSet.noneOf(ValidationCheck.class);
-
-        // Identity axis.
-        if (checksApplicationUri(identity)) {
-            checks.add(ValidationCheck.APPLICATION_URI);
-        }
-        if (checksHostname(identity)) {
-            checks.add(ValidationCheck.HOSTNAME);
-        }
-
-        // PKI-hygiene axis (only CHAIN_PKI). Mirrors the legacy STANDARD check set exactly
-        // (validity + revocation); key-usage is intentionally NOT enforced so that STANDARD's
-        // on-upgrade behavior is preserved for server certs without a KeyUsage extension.
-        if (trustLevel == TrustLevel.CHAIN_PKI) {
-            checks.add(ValidationCheck.VALIDITY);
-            checks.add(ValidationCheck.REVOCATION);
-            checks.add(ValidationCheck.REVOCATION_LISTS);
-        }
-
+            final @NotNull List<X509Certificate> trustedCerts, final @NotNull EffectiveChecks checks) {
         return new DefaultClientCertificateValidator(
-                new CertificateTrustListManager(trustedCerts), Set.copyOf(checks), new MemoryCertificateQuarantine());
+                new CertificateTrustListManager(trustedCerts),
+                toValidationChecks(checks),
+                new MemoryCertificateQuarantine());
+    }
+
+    /**
+     * Maps the effective axes onto the Milo optional-check set. Package-private so the mapping can be
+     * asserted directly against the check sets the legacy presets have always produced.
+     */
+    static @NotNull Set<ValidationCheck> toValidationChecks(final @NotNull EffectiveChecks checks) {
+        final EnumSet<ValidationCheck> validationChecks = EnumSet.noneOf(ValidationCheck.class);
+        if (checks.isSanUri()) {
+            validationChecks.add(ValidationCheck.APPLICATION_URI);
+        }
+        if (checks.isHostname()) {
+            validationChecks.add(ValidationCheck.HOSTNAME);
+        }
+        if (checks.isValidity()) {
+            validationChecks.add(ValidationCheck.VALIDITY);
+        }
+        if (checks.isRevocation()) {
+            validationChecks.add(ValidationCheck.REVOCATION);
+        }
+        if (checks.isRevocationLists()) {
+            validationChecks.add(ValidationCheck.REVOCATION_LISTS);
+        }
+        if (checks.isKeyUsage()) {
+            validationChecks.add(ValidationCheck.KEY_USAGE_END_ENTITY);
+        }
+        if (checks.isExtendedKeyUsage()) {
+            validationChecks.add(ValidationCheck.EXTENDED_KEY_USAGE_END_ENTITY);
+        }
+        return Set.copyOf(validationChecks);
     }
 
     private static @NotNull Optional<KeystoreUtil.KeyPairWithChain> getKeyPairWithChain(
