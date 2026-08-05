@@ -746,6 +746,120 @@ class ParsedConfigTest {
         }
     }
 
+    // ----- EDG-585 F2: an allow-list that will never be read (logged once at start) -----
+
+    @Test
+    void chainWithAConfiguredAllowList_warnsThatItIsNeverRead() throws Exception {
+        // The file is opened only under trustMode=ALLOW_LIST. Under CHAIN any certificate chaining to
+        // the truststore or the JVM cacerts is accepted, which is a far wider set than the operator
+        // who wrote the allow-list believes they are trusting. The configuration is honoured as
+        // written - this only makes the gap between intent and effect visible in the log.
+        final String path = writeAllowList("ignored-under-chain.txt");
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            final Result<ParsedConfig, String> result =
+                    ParsedConfig.fromConfig(configWithAllowList(TlsChecks.STANDARD, new AllowList(path)));
+
+            assertThat(result).as("a warning, not a refusal").isInstanceOf(Success.class);
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                        .contains("never reads it")
+                        .contains(path)
+                        .contains("CHAIN");
+            });
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void anyCertWithAConfiguredAllowList_warnsThatItIsNeverRead() throws Exception {
+        final String path = writeAllowList("ignored-under-any-cert.txt");
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(configWithAllowList(TlsChecks.NO_VERIFICATION, new AllowList(path)));
+
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                        .contains("never reads it")
+                        .contains("ANY_CERT");
+            });
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void allowListTrustMode_doesNotWarnAboutItsOwnAllowList() throws Exception {
+        // The negative control that matters: the warning must not fire for the one configuration that
+        // actually uses the file, or it trains operators to ignore it.
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(
+                    configWithAllowList(TlsChecks.SELF_SIGNED, new AllowList(writeAllowList("used-allow-list.txt"))));
+
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("never reads it"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void anAllowListWithNoUsablePath_doesNotWarn() {
+        // `<allowList/>` and `<allowList><path></path></allowList>` both arrive as an allow-list with
+        // no path. Nothing was configured, so there is nothing to report as ignored - and warning here
+        // would fire for any empty object the UI materializes into an adapter that never asked for one.
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(configWithAllowList(TlsChecks.STANDARD, new AllowList(null)));
+            ParsedConfig.fromConfig(configWithAllowList(TlsChecks.STANDARD, new AllowList("   ")));
+
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("never reads it"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void tlsDisabled_doesNotWarnAboutAnAllowList() throws Exception {
+        // No TLS means no certificate validation of any kind; singling out the allow-list would be
+        // noise.
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            final AllowList allowList = new AllowList(writeAllowList("tls-disabled-allow-list.txt"));
+            ParsedConfig.fromConfig(new OpcUaSpecificAdapterConfig(
+                    TEST_URI,
+                    false,
+                    null,
+                    null,
+                    new Tls(false, TlsChecks.STANDARD, null, null, null, allowList),
+                    new OpcUaToMqttConfig(1, 1000),
+                    new Security(SecPolicy.NONE),
+                    null));
+
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("never reads it"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    private OpcUaSpecificAdapterConfig configWithAllowList(final TlsChecks preset, final AllowList allowList) {
+        return new OpcUaSpecificAdapterConfig(
+                TEST_URI,
+                false,
+                null,
+                null,
+                new Tls(true, preset, null, null, null, allowList),
+                new OpcUaToMqttConfig(1, 1000),
+                new Security(SecPolicy.NONE),
+                null);
+    }
+
     private static ListAppender<ILoggingEvent> attachParsedConfigAppender() {
         final Logger logger = (Logger) LoggerFactory.getLogger(ParsedConfig.class);
         final ListAppender<ILoggingEvent> appender = new ListAppender<>();

@@ -135,6 +135,28 @@ public record ParsedConfig(
                             ? new CheckOnlyCertificateValidator(checks)
                             : new CertificateValidator.InsecureCertificateValidator();
             }
+
+            final AllowList configuredAllowList = tlsConfig.allowList();
+            if (checks.trustMode() != TrustMode.ALLOW_LIST
+                    && configuredAllowList != null
+                    && TlsChecksProjection.hasAllowListPath(configuredAllowList)) {
+                // Logged once at start, not per connect. The file is read only under
+                // trustMode=ALLOW_LIST, so an allow-list configured under any other trust mode is
+                // inert - and an operator who believes they have pinned a specific set of
+                // certificates is in fact trusting a much wider one. Deliberately not an error: the
+                // trust mode that is in effect was written explicitly and is enforced in full, so the
+                // adapter is not less safe than that configuration asks for, only less safe than the
+                // operator probably intends.
+                log.warn(
+                        "OPC UA adapter endpoint '{}': a certificate allow-list is configured ('{}') but the "
+                                + "effective trust mode is {}, which never reads it. No server certificate is "
+                                + "pinned by its fingerprint. Set tlsChecks=SELF_SIGNED or "
+                                + "tlsChecksFull.trustMode=ALLOW_LIST to enforce the allow-list, or remove the "
+                                + "'allowList' element.",
+                        endpointUri,
+                        configuredAllowList.path(),
+                        checks.trustMode());
+            }
         }
 
         final Keystore keystore = adapterConfig.getTls().keystore();

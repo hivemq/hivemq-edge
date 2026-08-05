@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -134,44 +133,33 @@ class TlsChecksConfigFileParsingTest {
     }
 
     @Test
-    void anEmptyFirstAxisCollapsesTheWholeElementAndFallsBackToMaximumValidation() throws Exception {
+    void anEmptyFirstAxisCollapsesTheWholeElementAndTheAdapterIsRefused() throws Exception {
         // `<trustMode></trustMode><revocation>NONE</revocation>` arrives as the String "NONE" - the
-        // concatenated text of the axes that are left. There is no way to recover which axis that text
-        // belonged to, so every axis is treated as unset. The operator's revocation=NONE is dropped,
-        // which is the safe direction: unset means the strictest value, so the fallback can only ever
-        // check more than was asked for, never less.
+        // concatenated text of the axes that are left. Which axis that text belonged to cannot be
+        // recovered, so the operator has configured certificate validation that Edge cannot read.
+        // Silently resolving it to maximum validation would check more than they asked for, which is
+        // safe, but it would also discard a security setting they deliberately wrote. The adapter is
+        // refused at start-up instead, with the same shape as every other TLS misconfiguration.
         final Tls tls = tlsOf("collapsed-partial-axes");
 
-        assertThat(tls.tlsChecksFull()).isEqualTo(TlsChecksFull.allAxesUnset());
-        assertThat(TlsChecksProjection.project(tls).revocation())
-                .as("the relaxation the operator wrote is not honoured")
-                .isEqualTo(RevocationCheck.REQUIRE_CRLS);
-        assertThat(TlsChecksProjection.project(tls)).isEqualTo(MAXIMUM_VALIDATION);
+        assertThat(tls.tlsChecksFull()).isNotNull();
+        assertThat(tls.tlsChecksFull().collapsedText()).isEqualTo("NONE");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("could not be read")
+                .hasMessageContaining("'NONE'");
     }
 
     @Test
-    void aCollapsedTlsChecksFullIsReportedToTheOperator() {
-        // Dropping the axes silently would leave the operator with a connection that fails for no
-        // visible reason. The WARN quotes the text back and names the shape that caused it.
-        final List<ILoggingEvent> events = whileCapturing(TlsChecksFull.class, () -> loadAdapters(COLLAPSED));
-
-        assertThat(events).anySatisfy(event -> {
-            assertThat(event.getLevel()).isEqualTo(Level.WARN);
-            assertThat(event.getFormattedMessage())
-                    .contains("tlsChecksFull")
-                    .contains("NONE")
-                    .contains("strictest");
-        });
-    }
-
-    @Test
-    void anEmptyTlsChecksFullElementIsNotWorthAWarning() {
-        // `<tlsChecksFull/>` is a documented, correct thing to write. Warning about it would train
-        // operators to ignore the warning that matters.
-        final List<ILoggingEvent> events =
-                whileCapturing(TlsChecksFull.class, () -> loadAdapters("/opcua-adapter-full-config.xml"));
-
-        assertThat(events).isEmpty();
+    void aCollapsedTlsChecksFullStillConvertsCleanly() {
+        // The refusal is deliberately a start-up failure and not a conversion failure. Throwing during
+        // conversion would leave this adapter absent or silently stale rather than visibly in error,
+        // and - before the refresh was made failure-isolating - would have taken every other adapter
+        // in the deployment down with it.
+        assertThatCode(() -> loadAdapters(COLLAPSED)).doesNotThrowAnyException();
+        assertThat(whileCapturing(TlsChecksFull.class, () -> loadAdapters(COLLAPSED)))
+                .as("nothing is reported at parse time; the start-up failure is the single signal")
+                .isEmpty();
     }
 
     @Test

@@ -18,13 +18,12 @@ package com.hivemq.edge.adapters.opcua.config;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The six independent axes of certificate validation — the "full control" door, mutually exclusive
@@ -110,14 +109,34 @@ public record TlsChecksFull(
                         + "an ExtendedKeyUsage permitting server authentication). "
                         + "Defaults to the strictest value, SERVER_AUTH, when omitted.")
         @Nullable
-        KeyUsageCheck keyUsage) {
+        KeyUsageCheck keyUsage,
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(TlsChecksFull.class);
+        /**
+         * The text this element collapsed into, or {@code null} when the axes were read as written.
+         *
+         * <p>Not a setting and not part of the configuration surface: it never appears in the JSON
+         * schema, is never serialized, and cannot be set from a configuration file. It exists so that
+         * "these axes could not be read" survives deserialization as far as
+         * {@link TlsChecksProjection#project(Tls)}, which is where the adapter is refused. Carrying the
+         * text rather than a flag lets that refusal quote back what was actually found.
+         */
+        @JsonIgnore @Nullable String collapsedText) {
 
+    /**
+     * The axes exactly as the operator wrote them. This is the shape a configuration file binds to;
+     * the canonical seven-argument constructor is reserved for {@link #fromText}.
+     */
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public TlsChecksFull {
-        // Intentionally empty: axes are stored verbatim. Defaulting happens at read time in
-        // TlsChecksProjection so that a configuration writeback cannot alter what the operator wrote.
+    public TlsChecksFull(
+            @JsonProperty("trustMode") final @Nullable TrustMode trustMode,
+            @JsonProperty("sanUri") final @Nullable SanUriCheck sanUri,
+            @JsonProperty("hostname") final @Nullable HostnameCheck hostname,
+            @JsonProperty("validity") final @Nullable ValidityCheck validity,
+            @JsonProperty("revocation") final @Nullable RevocationCheck revocation,
+            @JsonProperty("keyUsage") final @Nullable KeyUsageCheck keyUsage) {
+        // Axes are stored verbatim. Defaulting happens at read time in TlsChecksProjection so that a
+        // configuration writeback cannot alter what the operator wrote.
+        this(trustMode, sanUri, hostname, validity, revocation, keyUsage, null);
     }
 
     /** Every axis unset, which resolves to the strictest value on each — maximum validation. */
@@ -132,26 +151,30 @@ public record TlsChecksFull(
      * <p>Edge's XML-to-map conversion collapses a nested element to its text content whenever the
      * element's first child element is itself empty. So {@code <tlsChecksFull/>} arrives here as
      * {@code ""}, and {@code <tlsChecksFull><trustMode></trustMode><revocation>NONE</revocation></tlsChecksFull>}
-     * arrives as {@code "NONE"} — the concatenated text of the remaining axes. Without this creator
-     * Jackson refuses the coercion, and because every adapter is converted inside a single stream the
-     * exception stops <em>all</em> adapters from being reconfigured, not just this one.
+     * arrives as {@code "NONE"} — the concatenated text of whatever axes remain.
      *
-     * <p>The empty form is the documented spelling of "maximum validation", so it is honoured exactly.
-     * Any other text means the first axis element was left empty; which axis the surviving text belonged
-     * to is unrecoverable, so it is reported and then treated the same way, for the reason
-     * {@link EnumParsing} gives: falling back to unset can only ever produce more validation than was
-     * asked for, never less, and throwing here would take every other adapter down.
+     * <p>The two cases are not the same mistake and are not treated alike:
+     *
+     * <ul>
+     *   <li><b>Empty</b> is the documented spelling of "maximum validation". Nothing was lost, so it is
+     *       honoured exactly.
+     *   <li><b>Anything else</b> means the operator configured axes that can no longer be read. Which
+     *       axis each value belonged to is unrecoverable — {@code revocation=NONE} and
+     *       {@code hostname=NONE} both arrive as {@code "NONE"} — so the text is carried through to
+     *       {@link TlsChecksProjection}, which refuses to start the adapter. Silently resolving it to
+     *       maximum validation would be safe in the validation direction but would discard a security
+     *       setting the operator explicitly wrote, leaving nothing but a start-up log line to say so.
+     * </ul>
+     *
+     * <p>Deliberately does not throw. Throwing here happens during configuration conversion, which
+     * would leave the adapter absent or silently stale rather than visibly failed, and reports nothing
+     * on the adapter itself.
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     static @NotNull TlsChecksFull fromText(final @Nullable String value) {
-        if (value != null && !value.isBlank()) {
-            log.warn(
-                    "OPC UA adapter TLS configuration: 'tlsChecksFull' was read as the text '{}' rather than as a "
-                            + "set of axes, which happens when its first axis element is left empty (for example "
-                            + "<trustMode></trustMode>). Every axis has been treated as unset, which means the "
-                            + "strictest value on each. Remove the empty element, or give it a value.",
-                    value.trim());
+        if (value == null || value.isBlank()) {
+            return allAxesUnset();
         }
-        return allAxesUnset();
+        return new TlsChecksFull(null, null, null, null, null, null, value.trim());
     }
 }

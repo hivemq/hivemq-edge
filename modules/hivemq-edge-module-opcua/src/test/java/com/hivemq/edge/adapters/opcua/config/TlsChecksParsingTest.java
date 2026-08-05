@@ -152,26 +152,64 @@ class TlsChecksParsingTest {
     }
 
     @Test
-    void tlsChecksFullTextThatIsNotEmptyDropsEveryAxisAndIsLogged() throws Exception {
+    void tlsChecksFullTextThatIsNotEmptyIsRefusedRatherThanResolved() throws Exception {
         // An empty first axis collapses the element to the concatenated text of the remaining ones, so
         // `<trustMode></trustMode><revocation>NONE</revocation>` arrives here as "NONE". Which axis
-        // that text belonged to is unrecoverable, so every axis falls back to unset - the same
-        // direction EnumParsing takes, and the only one that cannot loosen validation.
-        final ListAppender<ILoggingEvent> appender = attachAppender(TlsChecksFull.class);
-        try {
-            final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"NONE\"}", Tls.class);
+        // that text belonged to is unrecoverable - revocation=NONE and hostname=NONE are the same
+        // string - so the operator has configured validation settings that cannot be read. Resolving
+        // them to maximum validation would be safe in the checking direction but would discard a
+        // security setting they explicitly wrote, leaving a log line as the only trace. The adapter is
+        // refused instead, quoting back what was found.
+        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"NONE\"}", Tls.class);
 
-            assertThat(tls.tlsChecksFull()).isEqualTo(TlsChecksFull.allAxesUnset());
-            assertThat(TlsChecksProjection.project(tls).revocation()).isEqualTo(RevocationCheck.REQUIRE_CRLS);
-            assertThat(appender.list).anySatisfy(event -> {
-                assertThat(event.getLevel()).isEqualTo(Level.WARN);
-                assertThat(event.getFormattedMessage())
-                        .contains("tlsChecksFull")
-                        .contains("NONE");
-            });
-        } finally {
-            detachAppender(TlsChecksFull.class, appender);
-        }
+        assertThat(tls.tlsChecksFull()).isNotNull();
+        assertThat(tls.tlsChecksFull().collapsedText()).isEqualTo("NONE");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("could not be read")
+                .hasMessageContaining("'NONE'")
+                .hasMessageContaining("<trustMode></trustMode>")
+                .hasMessageContaining("<tlsChecksFull/> is valid");
+    }
+
+    @Test
+    void aCollapsedTlsChecksFullIsRefusedAheadOfTheBothDoorsError() throws Exception {
+        // Both doors are set here too, but the unreadable axes are the mistake worth naming: the
+        // both-doors message would send the operator to delete a setting rather than repair it.
+        final Tls tls =
+                MAPPER.readValue("{\"enabled\":true,\"tlsChecks\":\"ALL\",\"tlsChecksFull\":\"NONE\"}", Tls.class);
+
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("could not be read");
+    }
+
+    @Test
+    void aCollapsedTlsChecksFullIsNotEqualToAnEmptyOne() throws Exception {
+        // The two must keep comparing unequal. If they did not, an adapter whose axes became
+        // unreadable would look unchanged to ProtocolAdapterManager's config comparison, which skips
+        // an update when the new config equals the running one.
+        final Tls collapsed = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"NONE\"}", Tls.class);
+
+        assertThat(collapsed.tlsChecksFull()).isNotEqualTo(TlsChecksFull.allAxesUnset());
+    }
+
+    @Test
+    void theCollapsedMarkerIsNotPartOfTheConfigurationSurface() throws Exception {
+        // It must not survive a writeback, and an operator must not be able to forge it - a
+        // configuration that writes it is read as though it had not, so the marker can only ever be
+        // set by the collapse actually happening.
+        final Tls collapsed = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"NONE\"}", Tls.class);
+        assertThat(MAPPER.writeValueAsString(collapsed)).doesNotContain("collapsedText");
+
+        final Tls forged = MAPPER.readValue(
+                "{\"enabled\":true,\"tlsChecksFull\":{\"collapsedText\":\"NONE\",\"trustMode\":\"CHAIN\"}}", Tls.class);
+        assertThat(forged.tlsChecksFull()).isNotNull();
+        assertThat(forged.tlsChecksFull().collapsedText()).isNull();
+        assertThat(forged.tlsChecksFull().trustMode()).isEqualTo(TrustMode.CHAIN);
+        assertThat(TlsChecksProjection.project(forged).trustMode())
+                .as("a forged marker does not refuse the adapter")
+                .isEqualTo(TrustMode.CHAIN);
     }
 
     @Test
@@ -215,14 +253,14 @@ class TlsChecksParsingTest {
 
     @Test
     void aCollapsedElementCanNeverLoosenValidation() throws Exception {
-        // The invariant behind both creators. Whatever text the collapse produces, the result is the
-        // strictest configuration this model can express - never weaker than the axes the operator
-        // wrote, because every unset axis resolves to its strictest value.
-        for (final String collapsed : new String[] {"", "NONE", "NONE ANY_CERT", "  "}) {
-            final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"" + collapsed + "\"}", Tls.class);
+        // The invariant behind both creators, in its two halves. A blank collapse is the documented
+        // "maximum validation" and resolves to the strictest setting on every axis; any other text is
+        // refused outright. Neither outcome can ever check less than the operator asked for.
+        for (final String blank : new String[] {"", "  "}) {
+            final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"" + blank + "\"}", Tls.class);
 
             assertThat(TlsChecksProjection.project(tls))
-                    .as("collapsed text '%s'", collapsed)
+                    .as("blank collapse '%s'", blank)
                     .isEqualTo(new EffectiveChecks(
                             TrustMode.CHAIN,
                             SanUriCheck.APPLICATION_URI,
@@ -230,6 +268,14 @@ class TlsChecksParsingTest {
                             ValidityCheck.NOT_BEFORE_OR_AFTER,
                             RevocationCheck.REQUIRE_CRLS,
                             KeyUsageCheck.SERVER_AUTH));
+        }
+
+        for (final String text : new String[] {"NONE", "NONE ANY_CERT", "CHAIN"}) {
+            final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"" + text + "\"}", Tls.class);
+
+            assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                    .as("collapsed text '%s'", text)
+                    .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class);
         }
     }
 

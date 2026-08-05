@@ -45,6 +45,18 @@ public final class TlsChecksProjection {
         final TlsChecks preset = tls.tlsChecks();
         final TlsChecksFull axes = tls.tlsChecksFull();
 
+        // Checked before anything else: nothing useful can be said about a configuration that could not
+        // be read, and this message names the actual mistake.
+        if (axes != null && axes.collapsedText() != null) {
+            throw new InvalidTlsChecksConfigException(("The 'tlsChecksFull' certificate-validation settings could "
+                            + "not be read: they arrived as the text '%s' rather than as a set of axes, which happens "
+                            + "when the first axis element is left empty (for example <trustMode></trustMode>). Which "
+                            + "axis each value belonged to cannot be recovered, so no validation setting has been "
+                            + "applied. Give every axis element a value or remove it entirely. An empty "
+                            + "<tlsChecksFull/> is valid and means maximum validation.")
+                    .formatted(axes.collapsedText()));
+        }
+
         if (preset != null && axes != null) {
             throw new InvalidTlsChecksConfigException("Both 'tlsChecks' (preset " + preset
                     + ") and 'tlsChecksFull' (axes) are configured; they are mutually exclusive. "
@@ -160,7 +172,16 @@ public final class TlsChecksProjection {
         }
     }
 
-    private static boolean hasAllowListPath(final @Nullable AllowList allowList) {
+    /**
+     * Whether an allow-list carrying a usable path is configured. A blank path counts as absent, which
+     * is what makes {@code <allowList/>} and {@code <allowList><path></path></allowList>} report the
+     * same missing-path error rather than sending an empty string to the file system.
+     *
+     * <p>Public so that the read-time configuration can use exactly this predicate when deciding
+     * whether an allow-list has been configured but will never be read: two definitions of "an
+     * allow-list is present" would drift apart.
+     */
+    public static boolean hasAllowListPath(final @Nullable AllowList allowList) {
         return allowList != null
                 && allowList.path() != null
                 && !allowList.path().isBlank();
