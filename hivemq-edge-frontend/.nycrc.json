@@ -4,5 +4,5 @@
   "extends": "@istanbuljs/nyc-config-typescript",
   "check-coverage": true,
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["cypress/**/*.*", "**/*.d.ts", "**/*.cy.tsx", "**/*.cy.ts"]
+  "exclude": ["cypress/**/*.*", "**/*.d.ts", "**/*.cy.tsx", "**/*.cy.ts", "**/__generated__/**"]
 }

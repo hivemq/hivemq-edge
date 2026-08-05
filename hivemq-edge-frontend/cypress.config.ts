@@ -5,9 +5,12 @@ import { plugin as cypressGrepPlugin } from '@cypress/grep/plugin'
 import codeCoverage from '@cypress/code-coverage/task'
 
 export default defineConfig({
-  env: {
+  // @cypress/code-coverage v4 reads its public options from `expose`, not from the `env` bag it
+  // used up to v3. Left under `env` the excludes are silently ignored and coverage instruments
+  // the Cypress specs and generated clients.
+  expose: {
     codeCoverage: {
-      exclude: ['cypress/**/*.*', '**/__generated__/*'],
+      exclude: ['cypress/**/*.*', '**/__generated__/**'],
     },
   },
   retries: { runMode: 2, openMode: 0 },
