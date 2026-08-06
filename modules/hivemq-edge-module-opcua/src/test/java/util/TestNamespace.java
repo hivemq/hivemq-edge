@@ -41,6 +41,7 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
@@ -297,6 +298,50 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * Object without one and substitutes {@code BaseObjectType}, which would model a <em>wrong</em> type
      * rather than an absent one — a different case, and one that should be rejected on its own merits.
      */
+    /**
+     * A condition whose type is a <em>vendor</em> subtype of a standard one, exposed only as that subtype.
+     * <p>
+     * Models what OPC 10000-9 §5.5 says to expect — "it is expected that vendors or other standardisation
+     * groups will define additional ConditionTypes deriving from the common base types defined in this part"
+     * — in its hardest form: the condition carries a single {@code HasTypeDefinition}, naming a type Edge
+     * has never heard of, with no standard type listed beside it. The only way to learn what it is, is to
+     * ask the server what it derives from.
+     *
+     * @param supertype the standard type the vendor type declares as its {@code HasSubtype} parent.
+     */
+    public @NotNull String addConditionNodeOfVendorType(
+            final @NotNull String name,
+            final long nodeIdPart,
+            final @NotNull String vendorTypeName,
+            final @NotNull NodeId supertype) {
+
+        final String conditionNodeId = addConditionNode(name, nodeIdPart, supertype);
+
+        // The vendor's own ObjectType node, in this namespace rather than namespace 0.
+        final NodeId vendorTypeId = newNodeId(nodeIdPart + 5000);
+        final UaObjectTypeNode vendorType =
+                UaObjectTypeNode.build(getNodeContext(), builder -> builder.setNodeId(vendorTypeId)
+                        .setBrowseName(newQualifiedName(vendorTypeName))
+                        .setDisplayName(LocalizedText.english(vendorTypeName))
+                        .setIsAbstract(false)
+                        .build());
+        getNodeManager().addNode(vendorType);
+        // Inverse HasSubtype: the standard type has this one beneath it, which is what the walk follows back.
+        vendorType.addReference(new Reference(vendorTypeId, NodeIds.HasSubtype, supertype.expanded(), false));
+
+        // Point the condition at the vendor type instead of the standard one, so nothing standard remains.
+        final UaNode node = getNodeManager().get(NodeId.parse(conditionNodeId));
+        if (node != null) {
+            node.getReferences().stream()
+                    .filter(reference -> NodeIds.HasTypeDefinition.equals(reference.getReferenceTypeId()))
+                    .toList()
+                    .forEach(node::removeReference);
+            node.addReference(new Reference(
+                    NodeId.parse(conditionNodeId), NodeIds.HasTypeDefinition, vendorTypeId.expanded(), true));
+        }
+        return conditionNodeId;
+    }
+
     public @NotNull String addConditionNodeWithoutTypeDefinition(final @NotNull String name, final long nodeIdPart) {
         final String conditionNodeId = addConditionNode(name, nodeIdPart);
         final UaNode node = getNodeManager().get(NodeId.parse(conditionNodeId));

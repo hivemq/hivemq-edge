@@ -238,6 +238,43 @@ public class OpcUaConditionSubscriptionIT {
 
     @Test
     @Timeout(120)
+    void whenTheDeviceReportsAVendorSubtype_thenItIsResolvedToItsStandardAncestor() throws Exception {
+        // OPC 10000-9 §5.5: "It is expected that vendors or other standardisation groups will define
+        // additional ConditionTypes deriving from the common base types defined in this part." So a server
+        // reporting a type Edge has never heard of is doing the normal thing, not misbehaving.
+        //
+        // Edge used to reject the tag outright, and tell the operator to "declare the nearest standard type
+        // it derives from" -- an instruction that cannot be followed, since the rejection depends on what the
+        // *device* reports, not on the declaration. Whatever they set, the same browse returns the same
+        // vendor name and the same rejection fires.
+        //
+        // The condition here carries a single HasTypeDefinition naming a vendor type, with nothing standard
+        // beside it, so the only way to place it is to ask the server what it derives from.
+        final String vendorAlarm = opcUaServerExtension
+                .getTestNamespace()
+                .addConditionNodeOfVendorType(
+                        "VendorAlarm", CONDITION_NODE_ID + 70, "AcmeBoilerAlarmType", NodeIds.AlarmConditionType);
+
+        startAdapterWith(new OpcuaTag(
+                "vendor-alarm",
+                "",
+                new OpcuaTagDefinition(vendorAlarm, OpcuaTagKind.CONDITION, OpcuaConditionType.ALARM_CONDITION)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        // Subscribed, so its transitions arrive: the walk found AlarmConditionType above the vendor type and
+        // verified the declaration against that.
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(vendorAlarm), "vendor alarm", 700, true);
+            assertThat(tagStreamingService.published())
+                    .as("a vendor subtype of a standard condition type must subscribe")
+                    .isNotEmpty();
+        });
+    }
+
+    @Test
+    @Timeout(120)
     void whenTheDeviceExposesNoTypeDefinition_thenTheTagIsRejectedWithBothReadings() throws Exception {
         // A server may legitimately keep its condition instances out of the address space (OPC 10000-9 §4.3),
         // so an empty answer is not proof the tag is wrong. It is not proof the tag is right either, and a
