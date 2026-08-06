@@ -36,6 +36,7 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +52,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemServiceOperationResult;
@@ -288,23 +288,38 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull List<OpcuaTag> tags,
             final @NotNull OpcUaSpecificAdapterConfig config) {
 
-        final var nodeIdToTag = tags.stream()
-                .collect(Collectors.toMap(
-                        tag -> NodeId.parse(tag.getDefinition().getNode()),
-                        Function.identity(),
-                        (first, second) -> first));
-        final var nodeIdToMonitoredItem = subscription.getMonitoredItems().stream()
-                .collect(Collectors.toMap(
-                        monitoredItem -> monitoredItem.getReadValueId().getNodeId(), Function.identity()));
+        // Reconciled by tag, not by node id. Each monitored item carries its own tag in Milo's userObject
+        // slot, so both sides of the comparison can name a tag directly and nothing has to be looked up.
+        //
+        // Node id is not an identity here. The configuration enforces unique tag *names* only, so two tags
+        // may carry the same definition -- and keyed by node the second was silently discarded by a
+        // `(first, second) -> first` merge before it could be subscribed. Measured, not inferred: two tags
+        // on one node produced one monitored item, on both the value and condition paths, with no log and
+        // no event. The user saw a green adapter and one of their tags never producing data.
+        //
+        // A second reason it was the wrong key, latent rather than live: a condition tag's item is created
+        // on the notifier above the condition, not on the condition itself, so the tag's node and its item's
+        // node differ. Nothing reaches that today, because every sync starts from a subscription with no
+        // monitored items -- the initial connect creates one, and onTransferFailed creates a replacement
+        // rather than reusing the broken one. Keying by tag removes the trap either way.
+        //
+        // The dispatch path stopped keying by node id in 6b83694c5; these two maps were the last of it.
+        final Set<OpcuaTag> wanted = new LinkedHashSet<>(tags);
+        final Set<OpcuaTag> subscribed = subscription.getMonitoredItems().stream()
+                .map(this::tagOf)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        final var monitoredItemsToRemove = nodeIdToMonitoredItem.entrySet().stream()
-                .filter(entry -> !nodeIdToTag.containsKey(entry.getKey()))
-                .map(Map.Entry::getValue)
+        // An item with no tag of ours is one we did not create -- it cannot be matched to configuration, so
+        // it is left alone rather than removed.
+        final var monitoredItemsToRemove = subscription.getMonitoredItems().stream()
+                .filter(item -> {
+                    final OpcuaTag tag = tagOf(item);
+                    return tag != null && !wanted.contains(tag);
+                })
                 .toList();
-        final var monitoredItemsToAdd = nodeIdToTag.entrySet().stream()
-                .filter(entry -> !nodeIdToMonitoredItem.containsKey(entry.getKey()))
-                .map(Map.Entry::getValue)
-                .toList();
+        final var monitoredItemsToAdd =
+                tags.stream().filter(tag -> !subscribed.contains(tag)).toList();
 
         // clear deleted monitored items
         if (!monitoredItemsToRemove.isEmpty()) {
@@ -511,6 +526,15 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      *
      * @return true if last keep-alive was received within the computed timeout, false otherwise
      */
+    /**
+     * The subscription currently established, or null if none is. Visible for tests that need to observe the
+     * outcome of a rebuild, which happens on {@link #recoveryExecutor} and so cannot be awaited directly.
+     */
+    @Nullable
+    OpcUaSubscription currentSubscriptionForTesting() {
+        return currentSubscription.get();
+    }
+
     /**
      * Marks this handler's connection as closed, so a recovery still running stops instead of finishing work
      * against a client that has been disconnected. Idempotent; safe to call from any thread.

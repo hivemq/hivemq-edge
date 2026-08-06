@@ -112,6 +112,46 @@ public class OpcUaSubscriptionAbandonIT {
                 .isPresent();
     }
 
+    @Test
+    @Timeout(120)
+    void twoConditionTagsSharingANotifierSurviveARebuild() throws Exception {
+        // Two condition tags under one notifier is the ordinary case, since a condition's events arrive from
+        // a notifier above it, so both monitored items sit on the same node. This drives them through a full
+        // rebuild and checks both survive.
+        //
+        // NOTE ON WHAT THIS DOES NOT PROVE. The reconciliation used to key both sides by node id, and two
+        // items on one notifier collide under that key. This test passes against that code too, because
+        // every sync Edge performs today starts from a subscription with no monitored items -- the initial
+        // connect creates one, and onTransferFailed creates a *replacement* rather than reusing the broken
+        // one. With nothing on the left-hand side there is nothing to collide.
+        //
+        // So the node-id keying was latent, not live: wrong, but unreachable by any path that exists. The
+        // rewrite to key by tag removes the trap rather than fixing an observable failure, and this test
+        // guards the behaviour rather than demonstrating the bug.
+        final String alarmOne =
+                opcUaServerExtension.getTestNamespace().addAcknowledgeableConditionNode("SharedNotifierOne", 92_001);
+        final String alarmTwo =
+                opcUaServerExtension.getTestNamespace().addAcknowledgeableConditionNode("SharedNotifierTwo", 92_002);
+
+        final List<OpcuaTag> tags = List.of(conditionTag("alarm-one", alarmOne), conditionTag("alarm-two", alarmTwo));
+        final OpcUaSubscriptionLifecycleHandler handler = handlerFor(tags);
+
+        final var first = handler.subscribe(client);
+        assertThat(first).as("the first subscribe establishes both tags").isPresent();
+        final int itemsAfterFirst = first.orElseThrow().getMonitoredItems().size();
+        assertThat(itemsAfterFirst).as("both tags subscribe").isEqualTo(2);
+
+        // onTransferFailed's recovery path: a replacement subscription, synchronised against the same tags.
+        handler.onTransferFailed(first.orElseThrow(), StatusCode.GOOD);
+
+        await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> assertThat(handler.currentSubscriptionForTesting())
+                .as("the rebuild must complete rather than throwing on a duplicate node id")
+                .isNotNull()
+                .satisfies(rebuilt -> assertThat(rebuilt.getMonitoredItems())
+                        .as("both tags must be re-established, neither dropped nor duplicated")
+                        .hasSize(2)));
+    }
+
     /**
      * EDG-878: {@code onTransferFailed} must post its rebuild, not perform it.
      * <p>
