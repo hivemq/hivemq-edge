@@ -130,9 +130,10 @@ public final class ConditionUpdateWriter {
             final NodeId methodNodeId = browsed != null ? browsed : SPECIFIED_TYPE_LEVEL_METHODS.get(update.method());
             if (methodNodeId == null) {
                 // Nothing on the instance and no id the specification prescribes. Logged rather than
-                // returned silently: this is a southbound command a user sent, and Bad_MethodInvalid on
-                // its own does not say whether the method is unsupported by the device or unreachable
-                // because the server keeps its conditions out of the AddressSpace.
+                // returned silently: the status code alone does not say whether the method is unsupported
+                // by the device or unreachable because the server keeps its conditions out of the
+                // AddressSpace, and southbound is one-directional -- this log is the only thing an operator
+                // sees, since a failed write is dropped rather than answered.
                 log.error(
                         "Cannot invoke {} on condition {}: the server exposes no such method on the "
                                 + "instance, and OPC 10000-9 prescribes no type-level MethodId for it. "
@@ -140,7 +141,13 @@ public final class ConditionUpdateWriter {
                                 + "be called through Edge.",
                         update.method().browseName(),
                         conditionNodeId);
-                return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_MethodInvalid));
+                // Bad_NotSupported, not Bad_MethodInvalid. OPC 10000-4 Table 61 distinguishes them:
+                // Bad_MethodInvalid is "the method id does not refer to a Method for the specified Object",
+                // which claims we hold an id that points at a non-method. We hold no id at all. The code
+                // for that is Bad_NotSupported -- "the Method is not supported for the Object instance".
+                // It reaches nobody but the log lines that interpolate it, which is reason enough for it
+                // to name the right thing.
+                return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_NotSupported));
             }
             if (browsed == null) {
                 log.debug(
