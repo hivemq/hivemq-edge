@@ -64,6 +64,20 @@ public class OpcUaClientConnection {
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
     private final @NotNull OpcUaServiceFaultListener serviceFaultListener;
 
+    /**
+     * Whether this connection should warn that any server certificate is accepted. True only when the
+     * any-certificate validator is actually installed ({@link ParsedConfig#anyCertificateValidatorActive()})
+     * <em>and</em> the configured security policy presents a certificate to accept: under SecurityPolicy
+     * {@code None} the secure-channel handshake never consults the validator, so "a certificate was
+     * accepted without trust" would be a false alarm — and false security alarms teach operators to
+     * ignore the true ones.
+     */
+    static boolean warnsAnyCertificateAccepted(
+            final @NotNull ParsedConfig parsedConfig, final @NotNull OpcUaSpecificAdapterConfig config) {
+        return parsedConfig.anyCertificateValidatorActive()
+                && config.getSecurity().policy() != SecPolicy.NONE;
+    }
+
     OpcUaClientConnection(
             final @NotNull String adapterId,
             final @NotNull List<OpcuaTag> tags,
@@ -85,7 +99,8 @@ public class OpcUaClientConnection {
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
-        if (parsedConfig.trustAnyServerCertificate()) {
+        final boolean warnAnyCertificateAccepted = warnsAnyCertificateAccepted(parsedConfig, config);
+        if (warnAnyCertificateAccepted) {
             log.warn(
                     "OPC UA adapter '{}' configured for endpoint '{}' with trust mode ANY_CERT: every server "
                             + "certificate will be accepted, establishing no trust at all. Effective checks: {}.",
@@ -99,7 +114,7 @@ public class OpcUaClientConnection {
                 eventService,
                 adapterId,
                 protocolAdapterState,
-                parsedConfig.trustAnyServerCertificate(),
+                warnAnyCertificateAccepted,
                 config.getUri());
 
         // Determine preferred MessageSecurityMode with intelligent defaults

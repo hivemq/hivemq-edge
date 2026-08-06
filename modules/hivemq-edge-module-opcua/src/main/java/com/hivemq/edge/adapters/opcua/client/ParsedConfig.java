@@ -198,9 +198,15 @@ public record ParsedConfig(
                 tlsEnabled, checks, keyPairWithChain, certValidator, identityProvider.get(), applicationUri));
     }
 
-    /** Convenience for callers that only care whether any certificate is accepted. */
-    public boolean trustAnyServerCertificate() {
-        return effectiveChecks.trustMode() == TrustMode.ANY_CERT;
+    /**
+     * Whether the validator that accepts any certificate is actually installed. Named for what is
+     * running, not for what the configuration says: with TLS disabled no certificate validator is
+     * built at all, so a {@code trustMode=ANY_CERT} left in a disabled TLS block is inert — and
+     * warning about certificates that are never examined teaches operators to ignore the warning
+     * that matters.
+     */
+    public boolean anyCertificateValidatorActive() {
+        return tlsEnabled && effectiveChecks.trustMode() == TrustMode.ANY_CERT;
     }
 
     private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {

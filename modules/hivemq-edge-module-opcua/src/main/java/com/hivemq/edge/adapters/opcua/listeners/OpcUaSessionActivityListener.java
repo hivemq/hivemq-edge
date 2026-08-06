@@ -37,7 +37,7 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final boolean trustAnyServerCertificate;
+    private final boolean warnAnyCertificateAccepted;
     private final @NotNull String endpointUri;
 
     public OpcUaSessionActivityListener(
@@ -45,13 +45,13 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
             @NotNull final ProtocolAdapterState protocolAdapterState,
-            final boolean trustAnyServerCertificate,
+            final boolean warnAnyCertificateAccepted,
             @NotNull final String endpointUri) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
-        this.trustAnyServerCertificate = trustAnyServerCertificate;
+        this.warnAnyCertificateAccepted = warnAnyCertificateAccepted;
         this.endpointUri = endpointUri;
     }
 
@@ -73,7 +73,7 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
         protocolAdapterState.setConnectionStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
-        if (trustAnyServerCertificate) {
+        if (warnAnyCertificateAccepted) {
             // Repeated on every successful connect, not just once at start-up: a single line at boot
             // scrolls out of a production log, and this is the one setting an operator must be able to
             // see while triaging an incident.

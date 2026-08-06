@@ -379,7 +379,7 @@ class ParsedConfigTest {
 
         assertThat(result).isInstanceOf(Success.class);
         final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isTrue();
+        assertThat(parsedConfig.anyCertificateValidatorActive()).isTrue();
         assertThat(parsedConfig.clientCertificateValidator())
                 .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
     }
@@ -420,7 +420,7 @@ class ParsedConfigTest {
 
         assertThat(result).isInstanceOf(Success.class);
         final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isTrue();
+        assertThat(parsedConfig.anyCertificateValidatorActive()).isTrue();
         assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(CheckOnlyCertificateValidator.class);
     }
 
@@ -431,7 +431,7 @@ class ParsedConfigTest {
 
         assertThat(result).isInstanceOf(Success.class);
         final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate())
+        assertThat(parsedConfig.anyCertificateValidatorActive())
                 .as("an allow-list is a trust decision, not the absence of one")
                 .isFalse();
         assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(AllowListCertificateValidator.class);
@@ -542,7 +542,7 @@ class ParsedConfigTest {
 
         assertThat(result).isInstanceOf(Success.class);
         final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isFalse();
+        assertThat(parsedConfig.anyCertificateValidatorActive()).isFalse();
         assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
     }
 
@@ -554,7 +554,7 @@ class ParsedConfigTest {
 
         assertThat(result).isInstanceOf(Success.class);
         final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
-        assertThat(parsedConfig.trustAnyServerCertificate()).isFalse();
+        assertThat(parsedConfig.anyCertificateValidatorActive()).isFalse();
         assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
     }
 
@@ -591,7 +591,7 @@ class ParsedConfigTest {
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(createAdapterConfig(false, null, null));
 
         assertThat(result).isInstanceOf(Success.class);
-        assertThat(((Success<ParsedConfig, String>) result).result().trustAnyServerCertificate())
+        assertThat(((Success<ParsedConfig, String>) result).result().anyCertificateValidatorActive())
                 .isFalse();
     }
 
@@ -603,6 +603,19 @@ class ParsedConfigTest {
         assertThat(result).isInstanceOf(Success.class);
         assertThat(((Success<ParsedConfig, String>) result).result().clientCertificateValidator())
                 .isNull();
+    }
+
+    @Test
+    void aDisabledTlsConfigurationDoesNotClaimAnyCertificateIsAccepted() {
+        // <enabled>false</enabled> with tlsChecks=NO_VERIFICATION is inert: no validator is
+        // installed and no certificate is ever examined, so the any-certificate warnings must stay
+        // silent - a false security alarm trains operators to ignore the true ones.
+        final Result<ParsedConfig, String> result =
+                ParsedConfig.fromConfig(createAdapterConfig(false, null, null, null, TlsChecks.NO_VERIFICATION));
+
+        assertThat(result).isInstanceOf(Success.class);
+        assertThat(((Success<ParsedConfig, String>) result).result().anyCertificateValidatorActive())
+                .isFalse();
     }
 
     // ----- the Milo check set each preset produces -----
