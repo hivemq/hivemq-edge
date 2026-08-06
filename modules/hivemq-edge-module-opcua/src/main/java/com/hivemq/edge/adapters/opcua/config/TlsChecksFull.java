@@ -216,9 +216,9 @@ public record TlsChecksFull(
      *       setting the operator explicitly wrote, leaving nothing but a start-up log line to say so.
      * </ul>
      *
-     * <p>Deliberately does not throw. Throwing here happens during configuration conversion, which
-     * would leave the adapter absent or silently stale rather than visibly failed, and reports nothing
-     * on the adapter itself.
+     * <p>Deliberately does not throw. A throw here surfaces as a raw Jackson coercion error;
+     * carrying the sentinel through to {@link TlsChecksProjection} keeps the refusal on this adapter
+     * with the full context — which element collapsed, what text it collapsed to, and how to fix it.
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     static @NotNull TlsChecksFull fromText(final @Nullable String value) {

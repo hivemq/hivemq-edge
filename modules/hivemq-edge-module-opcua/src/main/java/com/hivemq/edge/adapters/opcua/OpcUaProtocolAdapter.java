@@ -237,9 +237,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (opcUaClientConnection.compareAndSet(null, conn)) {
 
             // Created only once this start is committed, and deliberately not any earlier. Every
-            // failure return above leaves via output.failStart, and ProtocolAdapterWrapper does not
-            // call stop() on a failed start - so a scheduler pair created before the parse was
-            // abandoned with nothing left holding a reference to shut it down. The worse case was
+            // failure return above leaves via output.failStart, after which ProtocolAdapterWrapper's
+            // start-cleanup does call stop on this adapter - so stop() on a never-committed start
+            // must be null-safe, which it is: the connection reference is still null and the
+            // scheduler fields are unset. Creating the schedulers before the parse also risked a
+            // pair abandoned with nothing left holding a reference to shut it down. The worse case was
             // this branch's else: starting an already-started adapter overwrote the running
             // adapter's scheduler fields, orphaning its live retry and health-check threads and
             // silently moving all future scheduling onto the replacements.

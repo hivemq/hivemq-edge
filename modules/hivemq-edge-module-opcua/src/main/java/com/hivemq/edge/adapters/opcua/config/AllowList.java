@@ -65,9 +65,9 @@ public record AllowList(
     public AllowList {
         // The path is nullable because an operator can write `<allowList/>` with nothing inside it, and
         // Jackson binds that to a null component. Neither rejecting nor defaulting it here would be
-        // right: throwing aborts the conversion of every other adapter in the same refresh, and
-        // substituting a value would rewrite what the operator wrote. A missing path is instead caught
-        // by TlsChecksProjection, which reports it as the same actionable start-up error as an absent
+        // right: throwing surfaces as a raw Jackson conversion error on this adapter, and substituting
+        // a value would rewrite what the operator wrote. A missing path is instead caught by
+        // TlsChecksProjection, which reports it as the same actionable start-up error as an absent
         // allowList element. The trap map is canonicalized so equal configurations compare equal.
         unknownSettings = unknownSettings == null || unknownSettings.isEmpty()
                 ? Map.of()
@@ -104,8 +104,8 @@ public record AllowList(
      * <p>Edge's XML-to-map conversion collapses a nested element to its text content whenever the
      * element's first child element is itself empty, so both {@code <allowList/>} and
      * {@code <allowList><path></path></allowList>} arrive here as {@code ""}. Without this creator
-     * Jackson refuses the coercion, and because every adapter is converted inside a single stream the
-     * exception stops <em>all</em> adapters from being reconfigured, not just this one.
+     * Jackson refuses the coercion and this adapter's conversion fails with a raw coercion error
+     * instead of the actionable missing-path error below.
      *
      * <p>The result is an allow-list with no path, which {@link TlsChecksProjection} turns into the
      * same actionable start-up error as an absent {@code allowList}. Text is deliberately not read as

@@ -143,6 +143,28 @@ class CertificateFingerprintsTest {
     }
 
     @Test
+    void aLeadingUtf8BomIsStripped() throws Exception {
+        // A Windows editor saving "UTF-8" typically prepends a byte order mark; the file must not
+        // fail with an invisible-character message.
+        final Path file = tempDir.resolve("bom-allow-list.txt");
+        Files.write(file, ("\uFEFF" + VALID + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        assertThat(CertificateFingerprints.loadAllowList(file)).containsExactly(VALID);
+    }
+
+    @Test
+    void aFileThatIsNotUtf8IsRejectedNamingTheEncoding() throws Exception {
+        // 0xFF 0xFE is a UTF-16 BOM and malformed as UTF-8. The error must name the encoding: the
+        // generic could-not-be-read message points at paths and permissions, the wrong hunt entirely.
+        final Path file = tempDir.resolve("utf16-allow-list.txt");
+        Files.write(file, new byte[] {(byte) 0xFF, (byte) 0xFE, 'a', 0, 'b', 0});
+
+        assertThatThrownBy(() -> CertificateFingerprints.loadAllowList(file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not UTF-8");
+    }
+
+    @Test
     void aMissingFileIsAnIoError() {
         assertThatThrownBy(() -> CertificateFingerprints.loadAllowList(tempDir.resolve("absent.txt")))
                 .isInstanceOf(IOException.class);

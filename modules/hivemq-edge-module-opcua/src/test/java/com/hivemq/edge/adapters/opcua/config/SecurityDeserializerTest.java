@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.opcua.Constants;
@@ -74,11 +75,42 @@ class SecurityDeserializerTest {
     }
 
     @Test
-    void deserialize_mapWithoutPolicy_usesDefaultPolicy() throws Exception {
-        final String json = "{\"someOtherField\":\"value\"}";
+    void deserialize_modeOnly_usesDefaultPolicy() throws Exception {
+        final String json = "{\"messageSecurityMode\":\"SIGN\"}";
         final Security security = mapper.readValue(json, Security.class);
         assertThat(security).isNotNull();
         assertThat(security.policy()).isEqualTo(Constants.DEFAULT_SECURITY_POLICY);
+        assertThat(security.messageSecurityMode()).isEqualTo(MsgSecurityMode.SIGN);
+    }
+
+    @Test
+    void deserialize_unknownChild_isRejectedNamingTheEntryAndTheKnownOnes() {
+        // <polciy> is not <policy>. This deserializer reads a raw map, so the application-wide
+        // unknown-setting handling never sees the entry - without the rejection it would silently
+        // become policy NONE, weaker than whatever the operator wrote.
+        assertThatThrownBy(() -> mapper.readValue("{\"polciy\":\"BASIC256SHA256\"}", Security.class))
+                .hasMessageContaining("'polciy'")
+                .hasMessageContaining("policy, messageSecurityMode");
+    }
+
+    @Test
+    void deserialize_nonTextPolicyValue_isRejectedNamingTheElement() {
+        // A present-but-non-text value must not quietly become policy NONE.
+        assertThatThrownBy(() -> mapper.readValue("{\"policy\":{\"nested\":\"NONE\"}}", Security.class))
+                .hasMessageContaining("'policy'")
+                .hasMessageContaining("Permitted values")
+                .hasMessageContaining("BASIC256SHA256");
+    }
+
+    @Test
+    void deserialize_misspelledPolicyValue_isRejectedNamingThePermittedValues() {
+        // SecPolicy.valueOf's bare "No enum constant" is not operator-facing; the rejection names
+        // the offending value and everything that would have been accepted.
+        assertThatThrownBy(() -> mapper.readValue("{\"policy\":\"BASIC256SHA25\"}", Security.class))
+                .hasMessageContaining("'BASIC256SHA25'")
+                .hasMessageContaining("Permitted values")
+                .hasMessageContaining("BASIC256SHA256")
+                .hasMessageContaining("NONE");
     }
 
     @Test

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
@@ -67,27 +68,55 @@ public record Auth(
     }
 
     static class AuthDeserializer extends JsonDeserializer<Auth> {
+
+        /** Quoted back when an unknown child is refused. */
+        private static final @NotNull String KNOWN_SETTINGS = "basic, x509";
+
         @Override
         public @NotNull Auth deserialize(
                 final @NotNull JsonParser parser, final @NotNull DeserializationContext context) throws IOException {
             final String text = parser.getText();
             if (text != null && text.isEmpty()) {
+                // <auth/> collapses to the empty String and means no authentication configured.
                 return new Auth(null, null);
             }
 
+            final Map<String, Object> map;
             try {
-                final Map<String, Object> map = parser.readValueAs(Map.class);
-                if (map == null || map.isEmpty()) {
-                    return new Auth(null, null);
-                }
-
-                final ObjectMapper mapper = (ObjectMapper) parser.getCodec();
-                final BasicAuth basicAuth = fetch(map, "basic", BasicAuth.class, mapper);
-                final X509Auth x509Auth = fetch(map, "x509", X509Auth.class, mapper);
-                return new Auth(basicAuth, x509Auth);
+                map = parser.readValueAs(Map.class);
             } catch (final IOException e) {
+                // Not swallowed: defaulting here would connect the adapter anonymously in place of
+                // authentication configuration that could not be read.
+                throw JsonMappingException.from(
+                        parser,
+                        "The 'auth' configuration could not be read and the adapter configuration has been "
+                                + "rejected. Correct the 'auth' element.",
+                        e);
+            }
+            if (map == null || map.isEmpty()) {
                 return new Auth(null, null);
             }
+
+            // This deserializer reads a raw map, so the application-wide handling for unknown adapter
+            // settings never sees these children. Silently dropping one would connect the adapter
+            // anonymously in place of the credentials the entry was meant to configure, so the
+            // configuration is rejected with the mistake named. The rejection is contained:
+            // ProtocolAdapterManager converts each adapter's configuration in isolation, and a running
+            // instance stays unchanged.
+            for (final String child : map.keySet()) {
+                if (!"basic".equals(child) && !"x509".equals(child)) {
+                    throw new IllegalArgumentException(("The 'auth' configuration contains '%s', which is not a "
+                                    + "setting it has. It cannot be applied, and dropping it could mean connecting "
+                                    + "anonymously where credentials were written, so the configuration is rejected "
+                                    + "instead. Correct or remove the entry. Known settings: %s.")
+                            .formatted(child, KNOWN_SETTINGS));
+                }
+            }
+
+            final ObjectMapper mapper = (ObjectMapper) parser.getCodec();
+            final BasicAuth basicAuth = fetch(map, "basic", BasicAuth.class, mapper);
+            final X509Auth x509Auth = fetch(map, "x509", X509Auth.class, mapper);
+            return new Auth(basicAuth, x509Auth);
         }
     }
 }

@@ -653,6 +653,26 @@ class ParsedConfigTest {
                 .contains("Truststore is configured but has no 'password'");
     }
 
+    @Test
+    void aStructurallyBrokenTruststoreFailsUnderEveryTrustMode() {
+        // The guards run unconditionally, not only when the trust mode reads the truststore: a
+        // configured store must be structurally valid even when it is inert, so the operator learns
+        // about the broken element now rather than the first time a mode change makes it load.
+        for (final TlsChecks preset : TlsChecks.values()) {
+            // SELF_SIGNED requires an allow-list; it is inert but legal under the other presets.
+            final AllowList allowList = new AllowList("/allow.txt");
+            final Tls noPath = new Tls(true, preset, null, null, new Truststore(null, "pass"), allowList);
+            final Tls noPassword = new Tls(true, preset, null, null, new Truststore("/t.jks", null), allowList);
+
+            assertThat(((Failure<ParsedConfig, String>) ParsedConfig.fromConfig(configWith(noPath))).failure())
+                    .as("truststore without a path must fail under preset %s", preset)
+                    .contains("Truststore is configured but has no 'path'");
+            assertThat(((Failure<ParsedConfig, String>) ParsedConfig.fromConfig(configWith(noPassword))).failure())
+                    .as("truststore without a password must fail under preset %s", preset)
+                    .contains("Truststore is configured but has no 'password'");
+        }
+    }
+
     private static @NotNull OpcUaSpecificAdapterConfig configWith(final @NotNull Tls tls) {
         return new OpcUaSpecificAdapterConfig(
                 TEST_URI, false, null, null, tls, new OpcUaToMqttConfig(1, 1000), new Security(SecPolicy.NONE), null);
@@ -909,6 +929,60 @@ class ParsedConfigTest {
 
             assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
                     .contains("never reads it"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    // ----- SecurityPolicy NONE next to TLS settings (logged once at start) -----
+
+    @Test
+    void tlsEnabledUnderSecurityPolicyNone_warnsThatNoTlsSettingRuns() {
+        // SecurityPolicy None exchanges no certificate, so everything in the TLS block is built but
+        // never exercised - the operator who configured it believes they are protected.
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(createAdapterConfig(true, null, null, null, TlsChecks.ALL));
+
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage()).contains("the security policy is NONE");
+            });
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void tlsEnabledUnderARealSecurityPolicy_doesNotWarnAboutPolicyNone() {
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(new OpcUaSpecificAdapterConfig(
+                    TEST_URI,
+                    false,
+                    null,
+                    null,
+                    new Tls(true, TlsChecks.ALL, null, null, null, null),
+                    new OpcUaToMqttConfig(1, 1000),
+                    new Security(SecPolicy.BASIC256SHA256),
+                    null));
+
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("the security policy is NONE"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void tlsDisabled_doesNotWarnAboutPolicyNone() {
+        // No TLS settings are configured to be defeated, so there is nothing to warn about.
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(createAdapterConfig(false, null, null, null, TlsChecks.ALL));
+
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("the security policy is NONE"));
         } finally {
             detachParsedConfigAppender(appender);
         }

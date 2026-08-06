@@ -2,9 +2,10 @@
 <!--
   Every way an operator can misspell a certificate-validation setting, plus one healthy adapter after
   them. A misspelled VALUE (ALLL) fails that adapter's conversion outright; a misspelled NAME
-  (tlsCheks, trustmode) converts but is trapped and refuses the adapter at start-up. Neither may
-  disturb the healthy neighbour: adapter configurations are converted one at a time, so a mistake in
-  one adapter is that adapter's problem and nobody else's.
+  (tlsCheks, trustmode) converts but is trapped and refuses the adapter at start-up; a misspelled
+  ENCLOSING setting (tlls) or security child (polciy) fails the conversion naming the entry. Neither
+  may disturb the healthy neighbour: adapter configurations are converted one at a time, so a mistake
+  in one adapter is that adapter's problem and nobody else's.
 -->
 <hivemq>
     <protocol-adapters>
@@ -126,7 +127,64 @@
             </northboundMappings>
         </protocol-adapter>
 
-        <!-- Nothing misspelled. This one must convert and project regardless of the four above. -->
+        <!-- 'tlls' is not a setting. Without the rejection the whole TLS block would be dropped and
+             the adapter would quietly run without TLS. Must fail conversion naming the entry. -->
+        <protocol-adapter>
+            <adapterId>misspelled-tls-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-5.factory.local:4840</uri>
+                <tlls>
+                    <enabled>true</enabled>
+                    <tlsChecks>ALL</tlsChecks>
+                </tlls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-5</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/5</topic>
+                    <tagName>tag-5</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'polciy' is not a child of security. Without the rejection it would be dropped and the
+             adapter would quietly run with policy NONE. Must fail conversion naming the entry. -->
+        <protocol-adapter>
+            <adapterId>misspelled-policy-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-6.factory.local:4840</uri>
+                <security>
+                    <polciy>BASIC256SHA256</polciy>
+                </security>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-6</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/6</topic>
+                    <tagName>tag-6</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing misspelled. This one must convert and project regardless of the six above. -->
         <protocol-adapter>
             <adapterId>healthy-neighbour</adapterId>
             <protocolId>opcua</protocolId>

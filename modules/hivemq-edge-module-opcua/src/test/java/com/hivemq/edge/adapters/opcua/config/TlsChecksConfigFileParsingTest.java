@@ -56,9 +56,11 @@ import org.slf4j.LoggerFactory;
  * <p>This layer is not the Jackson layer, and the difference is load-bearing. Edge's XML-to-map
  * conversion collapses a nested element to its text content whenever the element's first child element
  * is itself empty, so {@code <tlsChecksFull/>} and {@code <allowList/>} reach Jackson as Strings, not
- * as objects. Deserializing those shapes used to throw, and because adapter configurations are
- * converted in a single pass over every adapter, that exception stopped <em>every</em> adapter in the
- * deployment from being reconfigured — not just the one with the empty element.
+ * as objects. Deserializing those shapes used to throw — the historical motivation for the lenient
+ * creators: at the time adapter configurations were converted in a single pass over every adapter, so
+ * that one exception stopped <em>every</em> adapter in the deployment from being reconfigured.
+ * Conversion is per-adapter today, but the creators remain so the refusal stays on the affected
+ * adapter with an actionable message rather than a raw coercion error.
  *
  * <p>{@link TlsChecksParsingTest} pins the same behaviour one layer down, on the JSON the collapse
  * produces. Both are needed: a Jackson-layer test alone certifies a behaviour the product does not
@@ -239,7 +241,8 @@ class TlsChecksConfigFileParsingTest {
         // including one with a trapped setting NAME, still converts. This is the isolation the
         // per-adapter conversion in ProtocolAdapterManager provides.
         final ProtocolAdapterConfigConverter converter = createConverter();
-        final Set<String> rejectedAtConversion = Set.of("misspelled-preset-value", "collapsed-tls");
+        final Set<String> rejectedAtConversion =
+                Set.of("misspelled-preset-value", "collapsed-tls", "misspelled-tls-name", "misspelled-policy-name");
 
         for (final ProtocolAdapterEntity entity : entitiesOf(INVALID)) {
             if ("misspelled-preset-value".equals(entity.getAdapterId())) {
@@ -252,6 +255,41 @@ class TlsChecksConfigFileParsingTest {
                         .doesNotThrowAnyException();
             }
         }
+    }
+
+    @Test
+    void aMisspelledEnclosingTlsNameIsRejectedAtConversionNamingTheEntry() {
+        // <tlls> is not a setting of the adapter configuration. The application-wide warn-and-drop
+        // handling would discard the whole TLS block and quietly run the adapter without TLS - the
+        // enclosing settings are where a dropped entry loosens security the most. The configuration's
+        // any-setter rejects the conversion instead, naming the entry; the rejection is contained to
+        // this adapter and the healthy neighbour still converts (see the loop test above).
+        final ProtocolAdapterConfigConverter converter = createConverter();
+        final ProtocolAdapterEntity entity = entitiesOf(INVALID).stream()
+                .filter(candidate -> "misspelled-tls-name".equals(candidate.getAdapterId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThatThrownBy(() -> converter.fromEntity(entity))
+                .hasMessageContaining("'tlls'")
+                .hasMessageContaining("Known settings")
+                .hasMessageContaining("tls, security");
+    }
+
+    @Test
+    void aMisspelledSecurityChildIsRejectedAtConversionNamingTheEntry() {
+        // <polciy> is not a child of <security>. The Security deserializer reads a raw map, so the
+        // application-wide unknown-setting handling never sees the entry - without the rejection it
+        // would silently become policy NONE instead of the BASIC256SHA256 the operator wrote.
+        final ProtocolAdapterConfigConverter converter = createConverter();
+        final ProtocolAdapterEntity entity = entitiesOf(INVALID).stream()
+                .filter(candidate -> "misspelled-policy-name".equals(candidate.getAdapterId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThatThrownBy(() -> converter.fromEntity(entity))
+                .hasMessageContaining("'polciy'")
+                .hasMessageContaining("policy, messageSecurityMode");
     }
 
     @Test

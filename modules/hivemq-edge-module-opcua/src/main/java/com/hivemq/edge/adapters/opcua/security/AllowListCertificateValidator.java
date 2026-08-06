@@ -84,7 +84,8 @@ public class AllowListCertificateValidator implements CertificateValidator {
             log.warn(
                     "OPC UA adapter endpoint '{}': the server certificate was rejected, its SHA-256 fingerprint is "
                             + "not in the configured allow-list. Subject='{}', issuer='{}', fingerprint={}. If this "
-                            + "is the expected server, add the fingerprint to the allow-list file.",
+                            + "is the expected server, add the fingerprint to the allow-list file, then restart the "
+                            + "adapter - the allow-list is read once at adapter start.",
                     endpointUri,
                     endEntity.getSubjectX500Principal().getName(),
                     endEntity.getIssuerX500Principal().getName(),

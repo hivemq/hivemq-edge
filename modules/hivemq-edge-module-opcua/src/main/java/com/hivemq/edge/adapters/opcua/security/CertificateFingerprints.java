@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.security;
 
 import java.io.IOException;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,14 +66,29 @@ public final class CertificateFingerprints {
      * debugging a rejected connection whose entry is visibly present in the file.
      *
      * @throws IOException if the file cannot be read.
-     * @throws IllegalArgumentException if a line is malformed, or the file holds no fingerprint.
+     * @throws IllegalArgumentException if a line is malformed, the file is not UTF-8, or the file
+     *         holds no fingerprint.
      */
     public static @NotNull Set<String> loadAllowList(final @NotNull Path path) throws IOException {
-        final List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+        final List<String> lines;
+        try {
+            lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+        } catch (final MalformedInputException e) {
+            // Named explicitly: the generic could-not-be-read message points at paths and
+            // permissions, which is exactly the wrong hunt for an encoding problem.
+            throw new IllegalArgumentException(
+                    ("Certificate allow-list '%s' is not UTF-8 encoded. Save the file as UTF-8 "
+                                    + "(fingerprints are plain hexadecimal, so plain ASCII works too).")
+                            .formatted(path),
+                    e);
+        }
         final Set<String> fingerprints = new LinkedHashSet<>();
 
         for (int i = 0; i < lines.size(); i++) {
-            final String withoutComment = stripComment(lines.get(i));
+            // A Windows editor saving "UTF-8" typically prepends a byte order mark; left in place it
+            // would fail the first fingerprint with an invisible-character message.
+            final String line = i == 0 ? stripBom(lines.get(i)) : lines.get(i);
+            final String withoutComment = stripComment(line);
             if (withoutComment.isBlank()) {
                 continue;
             }
@@ -86,6 +102,10 @@ public final class CertificateFingerprints {
                     .formatted(path));
         }
         return Set.copyOf(fingerprints);
+    }
+
+    private static @NotNull String stripBom(final @NotNull String line) {
+        return !line.isEmpty() && line.charAt(0) == '\uFEFF' ? line.substring(1) : line;
     }
 
     private static @NotNull String stripComment(final @NotNull String line) {

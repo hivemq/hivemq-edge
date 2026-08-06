@@ -21,6 +21,7 @@ import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.EffectiveChecks;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecksProjection;
 import com.hivemq.edge.adapters.opcua.config.TrustMode;
@@ -79,23 +80,39 @@ public record ParsedConfig(
             return Failure.of(e.reason());
         }
 
+        final Truststore truststore = tlsConfig.truststore();
+        // The components are declared non-null, but a truststore element with a missing
+        // (or misspelled, and therefore dropped) child binds nulls anyway. Failing here
+        // with the element named beats a NullPointerException - and silently falling back
+        // to the JVM cacerts would swap the trust anchors the operator meant to use.
+        // Checked unconditionally, mirroring the keystore guards below: a configured store must be
+        // structurally valid even when the effective trust mode leaves it inert, so the operator is
+        // told about the broken element now rather than the first time a mode change makes it load.
+        if (truststore != null && truststore.path() == null) {
+            return Failure.of("Truststore is configured but has no 'path'. Add "
+                    + "<truststore><path>...</path></truststore>, or remove the truststore element.");
+        }
+        if (truststore != null && !truststore.path().isBlank() && truststore.password() == null) {
+            return Failure.of("Truststore is configured but has no 'password'. Add "
+                    + "<truststore><password>...</password></truststore>.");
+        }
+
+        if (tlsEnabled && adapterConfig.getSecurity().policy() == SecPolicy.NONE) {
+            // Logged once at start, not per connect. With SecurityPolicy None the endpoint exchanges
+            // no certificate at all, so every TLS and certificate-validation setting below is built
+            // but never exercised - the operator who configured them believes they are protected.
+            log.warn(
+                    "OPC UA adapter endpoint '{}': TLS and certificate-validation settings are configured, but "
+                            + "the security policy is NONE, which exchanges no certificates - none of those "
+                            + "settings take effect. Set <security><policy> to a policy other than NONE to "
+                            + "enforce them.",
+                    endpointUri);
+        }
+
         CertificateValidator certValidator = null;
         if (tlsEnabled) {
             switch (checks.trustMode()) {
                 case CHAIN -> {
-                    final Truststore truststore = tlsConfig.truststore();
-                    // The components are declared non-null, but a truststore element with a missing
-                    // (or misspelled, and therefore dropped) child binds nulls anyway. Failing here
-                    // with the element named beats a NullPointerException - and silently falling back
-                    // to the JVM cacerts would swap the trust anchors the operator meant to use.
-                    if (truststore != null && truststore.path() == null) {
-                        return Failure.of("Truststore is configured but has no 'path'. Add "
-                                + "<truststore><path>...</path></truststore>, or remove the truststore element.");
-                    }
-                    if (truststore != null && !truststore.path().isBlank() && truststore.password() == null) {
-                        return Failure.of("Truststore is configured but has no 'password'. Add "
-                                + "<truststore><password>...</password></truststore>.");
-                    }
                     final var trustedCertsOpt = getTrustedCerts(truststore);
                     if (trustedCertsOpt.isEmpty()) {
                         // Reachable only when the user explicitly configured a truststore path that
