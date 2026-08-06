@@ -58,34 +58,41 @@ public record ConditionUpdate(
     public static final @NotNull String FIELD_DURATION = "duration";
 
     /**
-     * The transitions Edge can request. The wire form is the integer {@code method} field; the name is
-     * accepted too, since a hand-written command is easier to read as {@code "ACKNOWLEDGE"} than as {@code 0}.
+     * The transitions Edge can request, named by the enum constant: {@code "ACKNOWLEDGE"}, {@code "SUPPRESS"}
+     * and so on, matched case-insensitively. That name is the whole contract — both schemas declare
+     * {@code method} a string, and nothing else is accepted.
+     * <p>
+     * There is deliberately no numeric form. An earlier version assigned each constant an integer and called
+     * it "the wire form", which it never was: no server sees it, since the wire carries a NodeId resolved
+     * from {@link #browseName()}. The numbers identified a method only inside this enum, and only
+     * {@code ConditionUpdate} honoured them — {@code RefreshCommand}, documented as deliberately the same
+     * shape, always required a string.
      */
     public enum Method {
 
         // --- (EventId, Comment): act on one specific transition -------------------------------------------
         // These three take a Comment in their base form, so they need no "2" variant.
-        ACKNOWLEDGE(0, "Acknowledge", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
-        CONFIRM(1, "Confirm", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
-        ADD_COMMENT(2, "AddComment", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        ACKNOWLEDGE("Acknowledge", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        CONFIRM("Confirm", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
+        ADD_COMMENT("AddComment", null, Arguments.EVENT_AND_COMMENT, Location.CONDITION),
 
         // --- no arguments: act on the condition as a whole ------------------------------------------------
         // Most have a "2" variant that is the same operation plus an optional Comment. Enable, Disable and
         // Silence do not: the specification defines no Enable2, Disable2 or Silence2, so a comment sent with
         // those can never reach any server.
-        ENABLE(10, "Enable", null, Arguments.NONE, Location.CONDITION),
-        DISABLE(11, "Disable", null, Arguments.NONE, Location.CONDITION),
-        SILENCE(12, "Silence", null, Arguments.NONE, Location.CONDITION),
-        SUPPRESS(13, "Suppress", "Suppress2", Arguments.NONE, Location.CONDITION),
-        UNSUPPRESS(14, "Unsuppress", "Unsuppress2", Arguments.NONE, Location.CONDITION),
-        REMOVE_FROM_SERVICE(15, "RemoveFromService", "RemoveFromService2", Arguments.NONE, Location.CONDITION),
-        PLACE_IN_SERVICE(16, "PlaceInService", "PlaceInService2", Arguments.NONE, Location.CONDITION),
-        RESET(17, "Reset", "Reset2", Arguments.NONE, Location.CONDITION),
+        ENABLE("Enable", null, Arguments.NONE, Location.CONDITION),
+        DISABLE("Disable", null, Arguments.NONE, Location.CONDITION),
+        SILENCE("Silence", null, Arguments.NONE, Location.CONDITION),
+        SUPPRESS("Suppress", "Suppress2", Arguments.NONE, Location.CONDITION),
+        UNSUPPRESS("Unsuppress", "Unsuppress2", Arguments.NONE, Location.CONDITION),
+        REMOVE_FROM_SERVICE("RemoveFromService", "RemoveFromService2", Arguments.NONE, Location.CONDITION),
+        PLACE_IN_SERVICE("PlaceInService", "PlaceInService2", Arguments.NONE, Location.CONDITION),
+        RESET("Reset", "Reset2", Arguments.NONE, Location.CONDITION),
 
         // --- shelving: on the condition's ShelvingState object, not on the condition ----------------------
-        UNSHELVE(20, "Unshelve", "Unshelve2", Arguments.NONE, Location.SHELVING_STATE),
-        ONE_SHOT_SHELVE(21, "OneShotShelve", "OneShotShelve2", Arguments.NONE, Location.SHELVING_STATE),
-        TIMED_SHELVE(22, "TimedShelve", "TimedShelve2", Arguments.DURATION, Location.SHELVING_STATE);
+        UNSHELVE("Unshelve", "Unshelve2", Arguments.NONE, Location.SHELVING_STATE),
+        ONE_SHOT_SHELVE("OneShotShelve", "OneShotShelve2", Arguments.NONE, Location.SHELVING_STATE),
+        TIMED_SHELVE("TimedShelve", "TimedShelve2", Arguments.DURATION, Location.SHELVING_STATE);
 
         /**
          * What the method takes. Ten of the fourteen take nothing at all, which is why the command's fields
@@ -108,19 +115,16 @@ public record ConditionUpdate(
             SHELVING_STATE
         }
 
-        private final int wireValue;
         private final @NotNull String browseName;
         private final @Nullable String commentedBrowseName;
         private final @NotNull Arguments arguments;
         private final @NotNull Location location;
 
         Method(
-                final int wireValue,
                 final @NotNull String browseName,
                 final @Nullable String commentedBrowseName,
                 final @NotNull Arguments arguments,
                 final @NotNull Location location) {
-            this.wireValue = wireValue;
             this.browseName = browseName;
             this.commentedBrowseName = commentedBrowseName;
             this.arguments = arguments;
@@ -148,10 +152,6 @@ public record ConditionUpdate(
             return arguments == Arguments.EVENT_AND_COMMENT || commentedBrowseName != null;
         }
 
-        public int wireValue() {
-            return wireValue;
-        }
-
         /**
          * The browse name of the OPC UA method, fixed by the specification. The method is looked up by this
          * name on the condition instance, which is the form every server accepts — though not the only legal
@@ -170,16 +170,6 @@ public record ConditionUpdate(
             return location;
         }
 
-        public static @NotNull Method fromWireValue(final int wireValue) {
-            for (final Method method : values()) {
-                if (method.wireValue == wireValue) {
-                    return method;
-                }
-            }
-            throw new IllegalArgumentException(
-                    "Unknown condition method '" + wireValue + "'. Known methods: " + describeKnownMethods());
-        }
-
         public static @NotNull Method fromName(final @NotNull String name) {
             for (final Method method : values()) {
                 if (method.name().equalsIgnoreCase(name)) {
@@ -196,10 +186,7 @@ public record ConditionUpdate(
                 if (!known.isEmpty()) {
                     known.append(", ");
                 }
-                known.append(method.wireValue)
-                        .append(" (")
-                        .append(method.name())
-                        .append(')');
+                known.append(method.name());
             }
             return known.toString();
         }
@@ -221,12 +208,20 @@ public record ConditionUpdate(
         }
 
         // `method` is the only field that is always required: it determines which of the others apply.
+        //
+        // A string, and only a string. The read and write schemas both declare it STRING, and the schema is
+        // the contract Edge publishes -- an alias accepted by the parser but promised by nothing is found by
+        // accident and then depended on. An earlier version also took an integer, but those integers were
+        // Edge's own invention rather than anything OPC-UA defines: no server ever sees them, the wire
+        // carries a NodeId resolved from the browse name. So "13" identified SUPPRESS only within this enum
+        // and meant nothing anywhere else, while RefreshCommand -- documented as deliberately the same shape
+        // -- rejected numbers outright. Three positions, two of them undocumented.
         final JsonNode methodNode = payload.get(FIELD_METHOD);
-        if (methodNode == null || methodNode.isNull()) {
-            throw new IllegalArgumentException("A condition update needs a '" + FIELD_METHOD + "' field");
+        if (methodNode == null || methodNode.isNull() || !methodNode.isTextual()) {
+            throw new IllegalArgumentException("A condition update needs a '" + FIELD_METHOD
+                    + "' field naming the method, for example \"" + Method.ACKNOWLEDGE.name() + "\"");
         }
-        final Method method =
-                methodNode.isNumber() ? Method.fromWireValue(methodNode.asInt()) : Method.fromName(methodNode.asText());
+        final Method method = Method.fromName(methodNode.asText());
 
         // Absent and empty are kept apart, because the specification gives them opposite meanings (§5.7.3:
         // "If the comment field is NULL [...] any existing comments will remain unchanged. To reset the

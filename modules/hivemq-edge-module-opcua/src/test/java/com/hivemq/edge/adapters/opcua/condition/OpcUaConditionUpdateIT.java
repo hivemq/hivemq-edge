@@ -107,7 +107,7 @@ public class OpcUaConditionUpdateIT {
         final String eventId = Base64.getEncoder().encodeToString("transition-42".getBytes());
 
         final WritingOutput output = writeToCondition(conditionNodeId, """
-                {"eventId": "%s", "method": 0, "comment": "Checked - reducing setpoint"}
+                {"eventId": "%s", "method": "ACKNOWLEDGE", "comment": "Checked - reducing setpoint"}
                 """.formatted(eventId));
 
         verify(output, timeout(10_000)).finish();
@@ -339,7 +339,7 @@ public class OpcUaConditionUpdateIT {
 
         final String eventId = Base64.getEncoder().encodeToString("transition-7".getBytes());
         final WritingOutput output = writeToCondition(conditionNodeId, """
-                {"eventId": "%s", "method": 1, "comment": ""}
+                {"eventId": "%s", "method": "CONFIRM", "comment": ""}
                 """.formatted(eventId));
 
         verify(output, timeout(10_000)).finish();
@@ -383,7 +383,7 @@ public class OpcUaConditionUpdateIT {
         // No eventId: there is no way to know which transition this refers to, and guessing at one risks
         // acknowledging something the operator did not intend.
         final WritingOutput output = writeToCondition(conditionNodeId, """
-                {"method": 0, "comment": "no event id"}
+                {"method": "ACKNOWLEDGE", "comment": "no event id"}
                 """);
 
         verify(output, timeout(10_000)).fail(org.mockito.ArgumentMatchers.anyString());
@@ -408,7 +408,7 @@ public class OpcUaConditionUpdateIT {
         // no fallback that reads an undecodable value as literal text: base64 and arbitrary text cannot be
         // told apart by inspection, so a guess would silently acknowledge a transition nobody named.
         final WritingOutput output = writeToCondition(conditionNodeId, """
-                {"method": 0, "eventId": "not base64!", "comment": "typed by hand"}
+                {"method": "ACKNOWLEDGE", "eventId": "not base64!", "comment": "typed by hand"}
                 """);
 
         verify(output, timeout(10_000)).fail(org.mockito.ArgumentMatchers.anyString());
