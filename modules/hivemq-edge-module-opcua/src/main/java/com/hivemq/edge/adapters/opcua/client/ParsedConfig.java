@@ -83,7 +83,20 @@ public record ParsedConfig(
         if (tlsEnabled) {
             switch (checks.trustMode()) {
                 case CHAIN -> {
-                    final var trustedCertsOpt = getTrustedCerts(tlsConfig.truststore());
+                    final Truststore truststore = tlsConfig.truststore();
+                    // The components are declared non-null, but a truststore element with a missing
+                    // (or misspelled, and therefore dropped) child binds nulls anyway. Failing here
+                    // with the element named beats a NullPointerException - and silently falling back
+                    // to the JVM cacerts would swap the trust anchors the operator meant to use.
+                    if (truststore != null && truststore.path() == null) {
+                        return Failure.of("Truststore is configured but has no 'path'. Add "
+                                + "<truststore><path>...</path></truststore>, or remove the truststore element.");
+                    }
+                    if (truststore != null && !truststore.path().isBlank() && truststore.password() == null) {
+                        return Failure.of("Truststore is configured but has no 'password'. Add "
+                                + "<truststore><password>...</password></truststore>.");
+                    }
+                    final var trustedCertsOpt = getTrustedCerts(truststore);
                     if (trustedCertsOpt.isEmpty()) {
                         // Reachable only when the user explicitly configured a truststore path that
                         // is missing or unreadable. "No truststore configured" silently falls back
@@ -166,6 +179,22 @@ public record ParsedConfig(
 
         final Keystore keystore = adapterConfig.getTls().keystore();
         KeystoreUtil.KeyPairWithChain keyPairWithChain = null;
+        // The component is declared non-null, but a keystore element whose <path> child is missing
+        // (or misspelled, and therefore dropped by the unknown-setting handling core applies to this
+        // record) binds a null anyway. Without this guard that null surfaces as a NullPointerException
+        // at adapter start instead of a configuration error naming the element to fix.
+        if (keystore != null && keystore.path() == null) {
+            return Failure.of("Keystore is configured but has no 'path'. Add "
+                    + "<keystore><path>...</path></keystore>, or remove the keystore element.");
+        }
+        if (keystore != null && !keystore.path().isBlank() && keystore.password() == null) {
+            return Failure.of("Keystore is configured but has no 'password'. Add "
+                    + "<keystore><password>...</password></keystore>.");
+        }
+        if (keystore != null && !keystore.path().isBlank() && keystore.privateKeyPassword() == null) {
+            return Failure.of("Keystore is configured but has no 'privateKeyPassword'. Add "
+                    + "<keystore><privateKeyPassword>...</privateKeyPassword></keystore>.");
+        }
         if (keystore != null && !keystore.path().isBlank()) {
             final var kpWithChain = getKeyPairWithChain(keystore);
             if (kpWithChain.isEmpty()) {
@@ -215,6 +244,8 @@ public record ParsedConfig(
     }
 
     private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {
+        // Null path and password are ruled out by the caller's guards, which name the missing element
+        // in the start-up failure instead of the generic missing-or-unreadable message below.
         if (truststore != null && !truststore.path().isBlank()) {
             final File truststoreFile = new File(truststore.path());
             if (!truststoreFile.exists() || !truststoreFile.canRead()) {

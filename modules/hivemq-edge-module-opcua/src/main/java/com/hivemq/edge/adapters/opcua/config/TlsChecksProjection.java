@@ -51,7 +51,9 @@ public final class TlsChecksProjection {
         final TlsChecksFull axes = tls.tlsChecksFull();
 
         // Checked before anything else: nothing useful can be said about a configuration that could not
-        // be read, and this message names the actual mistake.
+        // be read, and this message names the actual mistake. (A collapse of the whole <tls> element is
+        // rejected earlier, at conversion, by Tls.fromText - see there for why it must not survive to
+        // this point.)
         if (axes != null && axes.collapsedText() != null) {
             throw new InvalidTlsChecksConfigException(("The 'tlsChecksFull' certificate-validation settings could "
                             + "not be read: they arrived as the text '%s' rather than as a set of axes, which happens "
@@ -199,8 +201,10 @@ public final class TlsChecksProjection {
      */
     public static @NotNull String requireAllowListPath(final @Nullable AllowList allowList)
             throws InvalidTlsChecksConfigException {
+        // The presence test is hasAllowListPath - the single definition of "an allow-list is
+        // configured" - so the two can never drift apart.
         final String path = allowList == null ? null : allowList.path();
-        if (path == null || path.isBlank()) {
+        if (!hasAllowListPath(allowList) || path == null) {
             throw new InvalidTlsChecksConfigException("Trust mode ALLOW_LIST requires an allow-list of permitted "
                     + "server-certificate fingerprints, but no 'allowList' path is configured. Add "
                     + "<allowList><path>...</path></allowList> to the TLS configuration.");

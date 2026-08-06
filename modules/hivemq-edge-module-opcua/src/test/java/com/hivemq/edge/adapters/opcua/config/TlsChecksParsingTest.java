@@ -253,6 +253,33 @@ class TlsChecksParsingTest {
     }
 
     @Test
+    void anEmptyTlsTextMeansTlsDisabled() throws Exception {
+        // The collapse one element up: `<tls/>` reaches Jackson as "". That is no TLS configuration
+        // at all, and it binds to the default - TLS off - which is also what the REST path has always
+        // produced for an empty value, so file and API agree.
+        final Tls tls = MAPPER.readValue("\"\"", Tls.class);
+
+        assertThat(tls).isEqualTo(Tls.defaultTls());
+        assertThat(TlsChecksProjection.project(tls)).isEqualTo(TlsChecksProjection.fromPreset(TlsChecks.STANDARD));
+    }
+
+    @Test
+    void tlsTextThatIsNotEmptyIsRejectedAtConversionRatherThanCarried() {
+        // `<tls><enabled></enabled><tlsChecks>ALL</tlsChecks></tls>` collapses to "ALL". Which element
+        // that text belonged to is unrecoverable, so the operator has TLS configuration that cannot be
+        // read; the conversion is rejected with the mistake named, instead of a raw coercion error.
+        // Deliberately NOT the sentinel treatment tlsChecksFull gets: a sentinel would let the
+        // conversion succeed and put the unreadable configuration on the GET/PUT surface, where it
+        // serializes as a clean enabled=false - one routine save away from silently running without
+        // TLS.
+        assertThatThrownBy(() -> MAPPER.readValue("\"ALL\"", Tls.class))
+                .isInstanceOf(JsonMappingException.class)
+                .hasMessageContaining("could not be read")
+                .hasMessageContaining("'ALL'")
+                .hasMessageContaining("<tls/> is valid");
+    }
+
+    @Test
     void anEmptyTlsChecksFullTextMeansEveryAxisUnset() throws Exception {
         // Edge's XML-to-map conversion hands `<tlsChecksFull/>` over as the empty String, not as an
         // object. That is the documented spelling of "maximum validation", so it binds to an axis set

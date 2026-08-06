@@ -92,8 +92,8 @@ public record Tls(
         @JsonInclude(NON_NULL)
         @ModuleConfigField(
                 title = "Keystore",
-                description =
-                        "Keystore that contains the client certificate including the chain. Required for X509 authentication.")
+                description = "Keystore that contains the client certificate including the chain. Required whenever "
+                        + "the security policy is not NONE, and for X509 authentication.")
         @Nullable
         Keystore keystore,
 
@@ -182,6 +182,38 @@ public record Tls(
             final @Nullable Truststore truststore,
             final @Nullable AllowList allowList) {
         this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, Map.of());
+    }
+
+    /**
+     * Accepts text where an object was expected, because the configuration layer sometimes hands one
+     * over — the same collapse {@link TlsChecksFull#fromText} documents, one element further up:
+     * {@code <tls>} whose <em>first</em> child element is empty arrives here as the concatenated text
+     * of whatever elements remain, and {@code <tls/>} arrives as {@code ""}.
+     *
+     * <ul>
+     *   <li><b>Empty</b> means no TLS configuration at all and binds to {@link #defaultTls()} — TLS
+     *       disabled, exactly what the REST path has always produced for an empty value.
+     *   <li><b>Anything else</b> is a TLS configuration that can no longer be read, and it
+     *       <b>throws</b> with an operator-facing message: the adapter's configuration is rejected at
+     *       conversion, contained to that adapter, and a running instance is left unchanged. A
+     *       carried-through sentinel — the {@code tlsChecksFull} treatment — is deliberately NOT used
+     *       here: a sentinel makes the conversion succeed, which puts the unreadable configuration on
+     *       the GET/PUT surface, where its serialized form is a clean {@code enabled=false} — and one
+     *       routine save away from silently running without TLS.
+     * </ul>
+     */
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+    static @NotNull Tls fromText(final @Nullable String value) {
+        if (value == null || value.isBlank()) {
+            return defaultTls();
+        }
+        throw new IllegalArgumentException(("The 'tls' configuration could not be read: it arrived as the text "
+                        + "'%s' rather than as a set of elements, which happens when the first child element is left "
+                        + "empty (for example <enabled></enabled>, or a misspelled empty element). Which element each "
+                        + "value belonged to cannot be recovered, so the adapter configuration has been rejected. "
+                        + "Give every element a value or remove it entirely. An empty <tls/> is valid and means TLS "
+                        + "is disabled.")
+                .formatted(value.trim()));
     }
 
     /**

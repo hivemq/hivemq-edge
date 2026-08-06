@@ -44,6 +44,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -95,7 +96,51 @@ class TlsChecksConfigFileParsingTest {
                         "collapsed-empty-allow-list",
                         "collapsed-empty-allow-list-path",
                         "empty-later-axis",
+                        "empty-tls",
                         "healthy-neighbour");
+    }
+
+    @Test
+    void aCollapsedTlsElementIsRejectedAtConversionQuotingTheText() {
+        // The same collapse one element up: `<tls><enabled></enabled><tlsChecks>ALL</tlsChecks></tls>`
+        // arrives as the String "ALL". Deliberately a conversion rejection, not the sentinel treatment
+        // tlsChecksFull gets: a sentinel would let the conversion succeed and put the unreadable
+        // configuration on the GET/PUT surface, where it serializes as a clean enabled=false. The
+        // rejection is contained to this adapter, and the message names the mistake instead of a raw
+        // Jackson coercion error.
+        final ProtocolAdapterConfigConverter converter = createConverter();
+        final ProtocolAdapterEntity entity = entitiesOf(INVALID).stream()
+                .filter(candidate -> "collapsed-tls".equals(candidate.getAdapterId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThatThrownBy(() -> converter.fromEntity(entity))
+                .hasMessageContaining("could not be read")
+                .hasMessageContaining("'ALL'")
+                .hasMessageContaining("<tls/> is valid");
+    }
+
+    @Test
+    void anEmptyTlsElementMeansTlsDisabled() throws Exception {
+        // `<tls/>` collapses to "" and binds to the default: TLS off - the same outcome the REST path
+        // has always produced for an empty value, so file and API agree.
+        final Tls tls = tlsOf("empty-tls");
+
+        assertThat(tls).isEqualTo(Tls.defaultTls());
+        assertThat(tls.enabled()).isFalse();
+        assertThat(TlsChecksProjection.project(tls)).isEqualTo(TlsChecksProjection.fromPreset(TlsChecks.STANDARD));
+    }
+
+    @Test
+    void aTrappedUnknownSettingSurvivesTheProductionWritebackVerbatim() {
+        // The load-bearing writeback claim, pinned on the mapper the product actually uses:
+        // unconvertConfigObject with the protocol-adapter mapper, not a plain ObjectMapper. The
+        // trapped entry must come back under its own name - never a literal 'unknownSettings', and
+        // never dropped, because a dropped entry would make the next reload quietly start the adapter
+        // under the STANDARD default.
+        final Map<String, Object> writtenBack = writtenBackTlsOf(INVALID, "misspelled-setting-name");
+
+        assertThat(writtenBack).containsEntry("tlsCheks", "ALL").doesNotContainKey("unknownSettings");
     }
 
     @Test
@@ -194,13 +239,14 @@ class TlsChecksConfigFileParsingTest {
         // including one with a trapped setting NAME, still converts. This is the isolation the
         // per-adapter conversion in ProtocolAdapterManager provides.
         final ProtocolAdapterConfigConverter converter = createConverter();
+        final Set<String> rejectedAtConversion = Set.of("misspelled-preset-value", "collapsed-tls");
 
         for (final ProtocolAdapterEntity entity : entitiesOf(INVALID)) {
             if ("misspelled-preset-value".equals(entity.getAdapterId())) {
                 assertThatThrownBy(() -> converter.fromEntity(entity))
                         .hasMessageContaining("'ALLL'")
                         .hasMessageContaining("TlsChecks");
-            } else {
+            } else if (!rejectedAtConversion.contains(entity.getAdapterId())) {
                 assertThatCode(() -> converter.fromEntity(entity))
                         .as("adapter '%s' must convert", entity.getAdapterId())
                         .doesNotThrowAnyException();
@@ -288,13 +334,27 @@ class TlsChecksConfigFileParsingTest {
      * a fixture may also contain adapters whose conversion fails by design.
      */
     private @NotNull Tls tlsOf(final @NotNull String resourceName, final @NotNull String adapterId) {
+        return convertedConfigOf(resourceName, adapterId).getTls();
+    }
+
+    private @NotNull OpcUaSpecificAdapterConfig convertedConfigOf(
+            final @NotNull String resourceName, final @NotNull String adapterId) {
         final ProtocolAdapterEntity entity = entitiesOf(resourceName).stream()
                 .filter(candidate -> adapterId.equals(candidate.getAdapterId()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("no adapter '" + adapterId + "' in " + resourceName));
-        return ((OpcUaSpecificAdapterConfig)
-                        createConverter().fromEntity(entity).getAdapterConfig())
-                .getTls();
+        return (OpcUaSpecificAdapterConfig) createConverter().fromEntity(entity).getAdapterConfig();
+    }
+
+    /** The production writeback of one adapter from the given fixture, through the real mapper. */
+    @SuppressWarnings("unchecked")
+    private @NotNull Map<String, Object> writtenBackTlsOf(
+            final @NotNull String resourceName, final @NotNull String adapterId) {
+        final OpcUaProtocolAdapterFactory factory =
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+        final Map<String, Object> writtenBack =
+                factory.unconvertConfigObject(mapper, convertedConfigOf(resourceName, adapterId));
+        return (Map<String, Object>) writtenBack.get("tls");
     }
 
     private @NotNull OpcUaSpecificAdapterConfig adapterConfigOf(final @NotNull String adapterId) {

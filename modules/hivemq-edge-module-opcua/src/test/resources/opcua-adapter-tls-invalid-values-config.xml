@@ -97,7 +97,36 @@
             </northboundMappings>
         </protocol-adapter>
 
-        <!-- Nothing misspelled. This one must convert and project regardless of the three above. -->
+        <!-- An empty FIRST child of <tls> collapses the whole tls element to the text "ALL".
+             Unreadable TLS configuration: the conversion is rejected with the mistake named. -->
+        <protocol-adapter>
+            <adapterId>collapsed-tls</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-7.factory.local:4840</uri>
+                <tls>
+                    <enabled></enabled>
+                    <tlsChecks>ALL</tlsChecks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-7</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/7</topic>
+                    <tagName>tag-7</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing misspelled. This one must convert and project regardless of the four above. -->
         <protocol-adapter>
             <adapterId>healthy-neighbour</adapterId>
             <protocolId>opcua</protocolId>

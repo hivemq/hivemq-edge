@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import org.junit.jupiter.api.Test;
 
@@ -38,5 +39,24 @@ class TlsSchemaSurfaceTest {
                 .contains("allowList")
                 .doesNotContain("unknownSettings")
                 .doesNotContain("collapsedText");
+    }
+
+    @Test
+    void neitherDoorNorAnyAxisCarriesASchemaDefault() {
+        // A schema `default` is not documentation: React JSON Schema Form materializes defaults into
+        // the form data it submits, so a default on either door would make the UI set both doors at
+        // once on adapters that had set neither, and defaults on axes would fill in axes the operator
+        // deliberately left omitted. The defaults live in the descriptions instead.
+        final JsonNode schema = new CustomConfigSchemaGenerator().generateJsonSchema(OpcUaSpecificAdapterConfig.class);
+        final JsonNode tls = schema.at("/properties/tls/properties");
+
+        assertThat(tls.isMissingNode())
+                .as("tls properties present in the schema")
+                .isFalse();
+        for (final String door : new String[] {"tlsChecks", "tlsChecksFull"}) {
+            assertThat(tls.at("/" + door).findParents("default"))
+                    .as("no default anywhere under %s", door)
+                    .isEmpty();
+        }
     }
 }

@@ -48,6 +48,7 @@ import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
@@ -603,6 +604,58 @@ class ParsedConfigTest {
         assertThat(result).isInstanceOf(Success.class);
         assertThat(((Success<ParsedConfig, String>) result).result().clientCertificateValidator())
                 .isNull();
+    }
+
+    @Test
+    void aKeystoreWithoutAPathFailsNamingTheElement() {
+        // The record component is declared non-null, but a keystore whose <path> child is missing or
+        // misspelled binds a null anyway; that must be a configuration error naming the element, not a
+        // NullPointerException at adapter start.
+        final Tls tls = new Tls(true, TlsChecks.NONE, null, new Keystore(null, "pass", "keyPass"), null, null);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(configWith(tls));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("Keystore is configured but has no 'path'");
+    }
+
+    @Test
+    void aKeystoreWithoutPasswordsFailsNamingTheMissingElement() {
+        final Tls noPassword = new Tls(true, TlsChecks.NONE, null, new Keystore("/k.jks", null, "keyPass"), null, null);
+        final Tls noKeyPassword = new Tls(true, TlsChecks.NONE, null, new Keystore("/k.jks", "pass", null), null, null);
+
+        assertThat(((Failure<ParsedConfig, String>) ParsedConfig.fromConfig(configWith(noPassword))).failure())
+                .contains("has no 'password'");
+        assertThat(((Failure<ParsedConfig, String>) ParsedConfig.fromConfig(configWith(noKeyPassword))).failure())
+                .contains("has no 'privateKeyPassword'");
+    }
+
+    @Test
+    void aTruststoreWithoutAPathFailsNamingTheElement() {
+        final Tls tls = new Tls(true, TlsChecks.NONE, null, null, new Truststore(null, "pass"), null);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(configWith(tls));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("Truststore is configured but has no 'path'");
+    }
+
+    @Test
+    void aTruststoreWithoutAPasswordFailsNamingTheElement() {
+        final Tls tls = new Tls(true, TlsChecks.NONE, null, null, new Truststore("/t.jks", null), null);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(configWith(tls));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("Truststore is configured but has no 'password'");
+    }
+
+    private static @NotNull OpcUaSpecificAdapterConfig configWith(final @NotNull Tls tls) {
+        return new OpcUaSpecificAdapterConfig(
+                TEST_URI, false, null, null, tls, new OpcUaToMqttConfig(1, 1000), new Security(SecPolicy.NONE), null);
     }
 
     @Test

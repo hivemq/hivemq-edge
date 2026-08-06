@@ -165,7 +165,32 @@
             </northboundMappings>
         </protocol-adapter>
 
-        <!-- Nothing collapsed. This one must convert regardless of what the five above wrote. -->
+        <!-- `<tls/>`: no TLS configuration at all. Collapses to "" and means TLS disabled. -->
+        <protocol-adapter>
+            <adapterId>empty-tls</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-8.factory.local:4840</uri>
+                <tls/>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-8</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/8</topic>
+                    <tagName>tag-8</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing collapsed. This one must convert regardless of what the six above wrote. -->
         <protocol-adapter>
             <adapterId>healthy-neighbour</adapterId>
             <protocolId>opcua</protocolId>
