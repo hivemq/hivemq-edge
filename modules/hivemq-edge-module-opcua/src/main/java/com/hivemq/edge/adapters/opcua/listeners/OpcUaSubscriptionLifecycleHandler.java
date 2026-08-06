@@ -67,6 +67,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.structured.EventFilter;
+import org.eclipse.milo.opcua.stack.core.types.structured.EventFilterResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -505,6 +506,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      */
     private boolean established(final @NotNull OpcUaSubscription subscription) {
         reportRevisedEventQueueSizes(subscription);
+        reportRejectedSelectClauses(subscription);
         currentSubscription.set(subscription);
         requestConditionRefresh(subscription);
         return true;
@@ -1023,6 +1025,74 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 }
             });
         });
+    }
+
+    /**
+     * Says which selected fields the server rejected outright, so a permanently null field is not mistaken
+     * for one the device merely does not implement.
+     * <p>
+     * A select clause is validated once, when the monitored item is created, and the server answers with one
+     * status code per entry. OPC 10000-4 §7.22.3 scopes that to the permanent errors — "any errors which are
+     * <em>true for all possible Events</em>" — so a bad code here means the field can never arrive: the
+     * browse path resolves to nothing, or names something this type does not have.
+     * <p>
+     * Both cases publish null, and that is deliberate. A declared field the device does not implement
+     * already arrives as null and is accepted as normal — a {@code LimitAlarmType} tag against a server
+     * implementing one limit publishes sixteen, fifteen of them permanently null. Failing the subscription
+     * over one rejected entry would cost a tag its other forty-nine fields for no gain. What is missing
+     * without this log is only the <em>distinction</em>: a rejection is a configuration error someone can
+     * fix by correcting the tag's declared type, while an unimplemented field is a device fact to live with.
+     * <p>
+     * Logged once per tag rather than once per field: a wrongly declared type rejects many entries at once,
+     * and fifty lines saying the same thing would bury it.
+     */
+    private void reportRejectedSelectClauses(final @NotNull OpcUaSubscription subscription) {
+        subscription.getMonitoredItems().forEach(item -> {
+            final OpcuaTag tag = tagOf(item);
+            if (tag == null || tag.getDefinition().getKind() == OpcuaTagKind.VALUE) {
+                return;
+            }
+            item.getFilterResult()
+                    .map(encoded -> encoded.decode(client.getStaticEncodingContext()))
+                    .filter(EventFilterResult.class::isInstance)
+                    .map(EventFilterResult.class::cast)
+                    .ifPresent(result -> reportRejectedFields(tag, result.getSelectClauseResults()));
+        });
+    }
+
+    /** Names the rejected entries of one tag's select clause, matched positionally against its fields. */
+    private void reportRejectedFields(final @NotNull OpcuaTag tag, final StatusCode @Nullable [] results) {
+        if (results == null) {
+            return;
+        }
+        final List<OpcuaConditionType.SelectedField> fields = selectedFieldsFor(tag);
+        final List<String> rejected = new ArrayList<>();
+        for (int i = 0; i < results.length; i++) {
+            final StatusCode status = results[i];
+            if (status == null || !status.isBad()) {
+                continue;
+            }
+            // The results match the select clause positionally, so position i names the field at i. An
+            // entry beyond what we selected would mean the server answered a clause we did not send;
+            // reporting the index alone is more honest than guessing at a name.
+            final String field = i < fields.size() ? fields.get(i).publishedAs() : "#" + i;
+            rejected.add(field + " (" + status + ")");
+        }
+        if (!rejected.isEmpty()) {
+            log.warn(
+                    "Adapter '{}': the server rejected {} of the {} fields selected for tag '{}', so they will be null on every event rather than only on transitions that do not carry them. This is a permanent answer about the type, not a device that happens not to implement them -- check the tag's declared type. Rejected: {}",
+                    adapterId,
+                    rejected.size(),
+                    fields.size(),
+                    tag.getName(),
+                    String.join(", ", rejected));
+        }
+    }
+
+    /** The fields selected for a tag, in the order the select clause was built. */
+    private static @NotNull List<OpcuaConditionType.SelectedField> selectedFieldsFor(final @NotNull OpcuaTag tag) {
+        final OpcuaConditionType type = tag.getDefinition().getType();
+        return type == null ? List.of() : type.selectedFields();
     }
 
     /** A tag cleared for subscription, with the notifier its events arrive on if it is a condition. */
