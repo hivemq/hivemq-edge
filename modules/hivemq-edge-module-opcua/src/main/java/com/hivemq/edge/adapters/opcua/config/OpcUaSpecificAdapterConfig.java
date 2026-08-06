@@ -28,6 +28,7 @@ import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,8 +50,15 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
             .map(JsonProperty::value)
             .collect(Collectors.joining(", "));
 
-    /** Existed in released versions and was retired; a configuration carrying it must keep starting. */
-    private static final @NotNull String RETIRED_INCLUDE_METADATA = "includeMetadata";
+    /**
+     * Settings that released versions accepted and later versions removed. Refusing them would break
+     * an upgrade, so they are reported and ignored instead: {@code includeMetadata} was a top-level
+     * setting until its removal, and {@code mqttToOpcua} carried the southbound mappings of the
+     * bidirectional era — it is still a declared setting of the commercial bidirectional subtype
+     * (where it binds normally and never reaches this trap), but a northbound-only deployment reading
+     * a config written back then must not refuse to start over it.
+     */
+    private static final @NotNull Set<String> RETIRED_SETTINGS = Set.of("includeMetadata", "mqttToOpcua");
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(
@@ -153,15 +161,14 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
      * <p>Inherited by subtypes; a subtype's own declared settings are known to its deserializer and
      * never arrive here.
      *
-     * <p>{@code includeMetadata} is the one exception: it is a retired setting that released
-     * versions accepted, so refusing it would break an upgrade. It is reported and ignored.
+     * <p>The {@link #RETIRED_SETTINGS} are the exception: settings that released versions accepted,
+     * so refusing them would break an upgrade. They are reported and ignored.
      */
     @JsonAnySetter
     void refuseUnknownSetting(final @NotNull String name, final @Nullable Object value) {
-        if (RETIRED_INCLUDE_METADATA.equals(name)) {
+        if (RETIRED_SETTINGS.contains(name)) {
             LOGGER.warn(
-                    "Adapter configuration: '{}' is a retired setting and has been ignored. Remove the entry.",
-                    RETIRED_INCLUDE_METADATA);
+                    "Adapter configuration: '{}' is a retired setting and has been ignored. Remove the entry.", name);
             return;
         }
         throw new IllegalArgumentException(("The adapter configuration contains '%s', which is not a setting it "

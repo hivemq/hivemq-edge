@@ -77,23 +77,27 @@ class UnknownSettingsParsingTest {
     }
 
     @Test
-    void theRetiredIncludeMetadataSettingIsAcceptedWithAWarning() throws Exception {
-        // includeMetadata existed in released versions; refusing it would break an upgrade. It is
-        // the one entry that is reported and dropped rather than rejected.
-        final ListAppender<ILoggingEvent> appender = attachAppender(OpcUaSpecificAdapterConfig.class);
-        try {
-            final OpcUaSpecificAdapterConfig config =
-                    MAPPER.readValue("{" + URI + ",\"includeMetadata\":true}", OpcUaSpecificAdapterConfig.class);
+    void theRetiredSettingsAreAcceptedWithAWarning() throws Exception {
+        // Both existed in released versions; refusing either would break an upgrade. includeMetadata
+        // was a top-level setting until its removal; mqttToOpcua carried the southbound mappings of
+        // the bidirectional era, and a northbound-only deployment reading such a config must keep
+        // starting. They are reported and dropped rather than rejected.
+        for (final String retired : new String[] {"\"includeMetadata\":true", "\"mqttToOpcua\":{}"}) {
+            final ListAppender<ILoggingEvent> appender = attachAppender(OpcUaSpecificAdapterConfig.class);
+            try {
+                final OpcUaSpecificAdapterConfig config =
+                        MAPPER.readValue("{" + URI + "," + retired + "}", OpcUaSpecificAdapterConfig.class);
 
-            assertThat(config.getUri()).isEqualTo("opc.tcp://machine.local:4840");
-            assertThat(appender.list).anySatisfy(event -> {
-                assertThat(event.getLevel()).isEqualTo(Level.WARN);
-                assertThat(event.getFormattedMessage())
-                        .contains("includeMetadata")
-                        .contains("retired");
-            });
-        } finally {
-            detachAppender(OpcUaSpecificAdapterConfig.class, appender);
+                assertThat(config.getUri()).isEqualTo("opc.tcp://machine.local:4840");
+                assertThat(appender.list).as(retired).anySatisfy(event -> {
+                    assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                    assertThat(event.getFormattedMessage())
+                            .contains(retired.substring(1, retired.indexOf(':') - 1))
+                            .contains("retired");
+                });
+            } finally {
+                detachAppender(OpcUaSpecificAdapterConfig.class, appender);
+            }
         }
     }
 
