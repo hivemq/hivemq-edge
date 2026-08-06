@@ -52,6 +52,20 @@ class ConditionSchemasTest {
     }
 
     @Test
+    void theReadSchemaDeclaresTheUnavailableFieldsCompanion() {
+        // EDG-835: a server may substitute a StatusCode for any field's value (OPC 10000-4 §7.22.3), and
+        // such a field is published as null. Every field is nullable already, so the null alone validates --
+        // this key is what keeps the *reason* from being lost, and a consumer cannot rely on a key the
+        // schema does not mention.
+        for (final OpcuaConditionType type : OpcuaConditionType.values()) {
+            final ObjectNode json = render(ConditionSchemas.readSchema(type));
+            assertThat(json.get("properties").has("unavailableFields"))
+                    .as("%s must declare unavailableFields", type.browseName())
+                    .isTrue();
+        }
+    }
+
+    @Test
     void aRicherTypeYieldsARicherReadSchema() {
         // The point of declaring the type: the schema promises exactly what the subscription will select.
         final ObjectNode plain = render(ConditionSchemas.readSchema(

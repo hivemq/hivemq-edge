@@ -17,9 +17,14 @@ package com.hivemq.edge.adapters.opcua.northbound;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +43,18 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class OpcUaEventToJsonConverter {
 
+    /**
+     * The key naming fields the server declined to give a value for. Not a specification browse name — every
+     * other key in the payload is one, so the camel case marks this as Edge's own.
+     */
+    public static final @NotNull String UNAVAILABLE_FIELDS = "unavailableFields";
+
+    /**
+     * Fields whose declared type <em>is</em> a {@code StatusCode}, so a status code arriving for them is the
+     * value rather than a substitution for it.
+     */
+    private static final @NotNull Set<String> STATUS_CODE_VALUED_FIELDS = Set.of("Quality");
+
     private OpcUaEventToJsonConverter() {}
 
     /**
@@ -55,14 +72,24 @@ public final class OpcUaEventToJsonConverter {
 
         // The same list that built the select clause, so position i here is the field selected at i.
         final List<OpcuaConditionType.SelectedField> fields = conditionType.selectedFields();
+
+        // Collected before anything is written: the builder streams, so the companion object naming the
+        // unavailable fields cannot be appended after the fields themselves have been emitted.
+        final Map<String, String> unavailable = unavailableFields(fields, values);
+
         final var valueBuilder = builder.startObjectValue();
+        if (!unavailable.isEmpty()) {
+            final var reasons = valueBuilder.startObject(UNAVAILABLE_FIELDS);
+            unavailable.forEach(reasons::put);
+            reasons.endObject();
+        }
         for (int i = 0; i < fields.size(); i++) {
             final OpcuaConditionType.SelectedField field = fields.get(i);
             if (field.isStateId()) {
                 // Written with its state below, not on its own.
                 continue;
             }
-            final Object value = valueAt(values, i);
+            final Object value = available(field, valueAt(values, i));
             // A two-state field's Id is selected immediately after the state itself, so it is one position
             // ahead. Folding it in has to happen here rather than in the generic converter: the builder
             // streams, so the state's object is closed before the next value is seen, and a second pass
@@ -70,12 +97,85 @@ public final class OpcUaEventToJsonConverter {
             final boolean hasStateId =
                     i + 1 < fields.size() && fields.get(i + 1).isStateId();
             if (hasStateId) {
-                writeStateWithId(valueBuilder, field.publishedAs(), value, valueAt(values, i + 1), ctx);
+                final Object id = available(fields.get(i + 1), valueAt(values, i + 1));
+                writeStateWithId(valueBuilder, field.publishedAs(), value, id, ctx);
             } else {
                 OpcUaToJsonConverter.addValueToObject(valueBuilder, field.publishedAs(), value, ctx);
             }
         }
         valueBuilder.endObject();
+    }
+
+    /**
+     * Which fields the server declined to give a value for, and why.
+     * <p>
+     * OPC 10000-4 §7.22.3 is explicit that this is <em>conforming</em> behaviour, not a broken server:
+     * <blockquote>"If the selected field is supported but not available at the time of the event
+     * notification, the event field shall contain a StatusCode that indicates the reason for the
+     * unavailability. For example, the Server shall set the event field to Bad_UserAccessDenied if the value
+     * is not accessible to the user associated with the Session. If a Value Attribute has an uncertain or
+     * bad StatusCode associated with it then the Server shall provide the StatusCode instead of the Value
+     * Attribute."</blockquote>
+     * So <em>any</em> field, of any declared type, can arrive as a {@link StatusCode} standing in for the
+     * value. Published as-is that status is indistinguishable from data — a {@code Severity} declared UInt16
+     * becomes a status object, and on a two-state field the status lands under {@code text} where a display
+     * string was promised while {@code id} silently vanishes.
+     * <p>
+     * Such a field is therefore published as null, which is what it is: a field with no value. Every field in
+     * the read schema is already nullable, so this needs no consumer change. What would be lost that way is
+     * the <em>reason</em> — and "null because this transition does not carry it" and "null because your
+     * session may not read it" are very different facts, the second being a configuration problem someone
+     * should fix. This companion object keeps them apart, and is absent entirely on the ordinary path.
+     * <p>
+     * {@code Quality} is deliberately not exempted even though its declared type <em>is</em> a StatusCode:
+     * see {@link #isSubstituted}.
+     */
+    private static @NotNull Map<String, String> unavailableFields(
+            final @NotNull List<OpcuaConditionType.SelectedField> fields, final @NotNull Variant[] values) {
+
+        final Map<String, String> unavailable = new LinkedHashMap<>();
+        for (int i = 0; i < fields.size(); i++) {
+            final OpcuaConditionType.SelectedField field = fields.get(i);
+            if (!(valueAt(values, i) instanceof final StatusCode status)) {
+                continue;
+            }
+            if (!isSubstituted(field)) {
+                continue;
+            }
+            // A state and its Id are two entries publishing under one key; naming that key once is enough.
+            unavailable.putIfAbsent(field.publishedAs(), describe(status));
+        }
+        return unavailable;
+    }
+
+    /**
+     * Whether a {@link StatusCode} arriving for this field is a substitution rather than the value itself.
+     * <p>
+     * It almost always is, but not for {@code Quality}, whose declared type is {@code StatusCode} (OPC
+     * 10000-9 §5.5.2 Table 8) — there a status code is the value, and treating it as unavailable would blank
+     * a field present in every event of every type. The two cases are genuinely ambiguous on the wire: a bad
+     * {@code Quality} is both a legitimate value and, read the other way, a substitution. Resolved in favour
+     * of the declared type, because a consumer asking "what is the quality of this condition" gets an answer
+     * either way, whereas blanking it would lose one they cannot recover.
+     */
+    private static boolean isSubstituted(final @NotNull OpcuaConditionType.SelectedField field) {
+        return !STATUS_CODE_VALUED_FIELDS.contains(field.publishedAs());
+    }
+
+    /**
+     * The value to publish for a field: the value itself, or null where a {@link StatusCode} stands in for
+     * one. The reason is recorded under {@link #UNAVAILABLE_FIELDS} rather than lost.
+     */
+    private static @Nullable Object available(
+            final @NotNull OpcuaConditionType.SelectedField field, final @Nullable Object value) {
+        return value instanceof StatusCode && isSubstituted(field) ? null : value;
+    }
+
+    /** A status code as its symbolic name where one is known, else its numeric code. */
+    private static @NotNull String describe(final @NotNull StatusCode status) {
+        return StatusCodes.lookup(status.getValue())
+                .map(names -> names[0])
+                .orElseGet(() -> "0x" + Long.toHexString(status.getValue()));
     }
 
     /** A server may return fewer values than were selected; treat the tail as null rather than failing. */
@@ -123,6 +223,11 @@ public final class OpcUaEventToJsonConverter {
         } else if (state != null) {
             // Not a LocalizedText, which the type table says it should be. Publish what arrived rather than
             // dropping it, so a non-conforming server is visible instead of silently lossy.
+            //
+            // A StatusCode standing in for the value does NOT reach here -- that is conforming behaviour
+            // (OPC 10000-4 §7.22.3), and it is nulled upstream and named under `unavailableFields` instead.
+            // Writing it here would put a status object under `text`, where a display string is promised,
+            // and `id` would silently vanish with it.
             OpcUaToJsonConverter.addValueToObject(nested, "text", state, ctx);
         }
         if (id != null) {

@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
+import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
@@ -137,7 +138,37 @@ public final class ConditionSchemas {
         for (final String field : conditionType.allFields()) {
             appendField(object, field);
         }
+        appendUnavailableFields(object);
         return object.endObject().build();
+    }
+
+    /**
+     * Declares the companion object naming fields the server declined to give a value for.
+     * <p>
+     * A server may substitute a {@code StatusCode} for any field's value — OPC 10000-4 §7.22.3 says it
+     * <em>shall</em>, giving {@code Bad_UserAccessDenied} as the example — so such a field is published as
+     * null, which is what it is. Every field here is nullable already, so that alone would validate; what
+     * this adds is the reason, keyed by field name.
+     * <p>
+     * The distinction is worth the key. "Null because this transition does not carry that field" and "null
+     * because this session may not read it" are different facts, and only the second is a configuration
+     * problem someone can fix. Absent entirely when nothing was withheld, which is the ordinary case.
+     * <p>
+     * Left open rather than enumerating the type's fields as properties: the keys are exactly the fields of
+     * the enclosing payload, and repeating fifty of them to describe a rare diagnostic would double the
+     * schema for no gain a consumer can use.
+     */
+    private static void appendUnavailableFields(final @NotNull ObjectSchemaBuilder<SchemaBuilder> object) {
+        object.property(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS)
+                .startObject()
+                .endObject()
+                .description("Fields the server declined to give a value for, keyed by field name, with the "
+                        + "OPC-UA status code saying why (for example 'Bad_UserAccessDenied'). Those fields "
+                        + "are published as null. Absent when nothing was withheld.")
+                .nullable()
+                .readable()
+                .writable(false)
+                .endProperty();
     }
 
     /**
