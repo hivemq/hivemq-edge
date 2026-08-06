@@ -365,10 +365,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         try {
             subscription.synchronizeMonitoredItems();
             log.info("All monitored items synchronized successfully");
-            reportRevisedEventQueueSizes(subscription);
-            currentSubscription.set(subscription);
-            requestConditionRefresh(subscription);
-            return true;
+            return established(subscription);
         } catch (final MonitoredItemSynchronizationException e) {
             final List<MonitoredItemServiceOperationResult> allResults = new ArrayList<>();
             allResults.addAll(e.getCreateResults());
@@ -406,7 +403,11 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                                 + " failed. Samples: " + failedSample)
                         .withSeverity(Event.SEVERITY.WARN)
                         .fire();
-                return true;
+                // Established on the same terms as the success path. The items that failed are lost; the
+                // subscription they were being added to is not, and the ones that succeeded are streaming on
+                // it. Reporting success without recording it would leave this handler's own state denying
+                // the existence of a subscription the server is happily serving.
+                return established(subscription);
             } else {
                 // Total failure — no items succeeded
                 final String message = "Failed to synchronize monitored items: " + e.getStatusCode() + " "
@@ -420,6 +421,31 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 return false;
             }
         }
+    }
+
+    /**
+     * Records a subscription as established, and does the work that follows from that.
+     * <p>
+     * Every path that reports monitored-item synchronization as successful goes through here, so a
+     * {@code true} return and a recorded subscription cannot come apart. They did once: the partial-failure
+     * branch returned {@code true} while skipping this, which left {@link #currentSubscription} null for the
+     * life of the connection even though a subscription had been created and was streaming.
+     * <p>
+     * What that costs is not obvious from here, because nothing in this method is about refresh. The
+     * subscription id is obtained when the subscription is <em>created</em>, well before any monitored item
+     * exists; this reference is simply how the handler remembers it. Losing it means the handler's own state
+     * denies a subscription the server is serving — so the connect-time refresh never fires, every
+     * reconnect's refresh is silently skipped, and a southbound refresh request answers "no subscription is
+     * established yet" about a subscription that demonstrably is. Any later reader asking "is there a
+     * subscription?" would inherit the same wrong answer.
+     *
+     * @return always {@code true}, so a caller can {@code return established(subscription)}.
+     */
+    private boolean established(final @NotNull OpcUaSubscription subscription) {
+        reportRevisedEventQueueSizes(subscription);
+        currentSubscription.set(subscription);
+        requestConditionRefresh(subscription);
+        return true;
     }
 
     @Override

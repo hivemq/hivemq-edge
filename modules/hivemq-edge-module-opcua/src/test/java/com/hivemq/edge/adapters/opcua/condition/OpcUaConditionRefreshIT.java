@@ -162,7 +162,35 @@ public class OpcUaConditionRefreshIT {
                 .noneSatisfy(call -> assertThat(call.methodName()).isEqualTo("ConditionRefresh"));
     }
 
-    private void startAdapterWith(final @NotNull OpcuaTag tag) {
+    @Test
+    @Timeout(120)
+    void whenOneTagFailsToSubscribe_thenTheHealthyOnesStillGetTheirRefresh() throws Exception {
+        // EDG-835: a partial monitored-item sync used to report success without recording the subscription,
+        // which left the handler's own state denying a subscription the server was serving. Nothing here is
+        // about the failed tag: the subscription id comes from creating the subscription, well before any
+        // monitored item exists, so losing the reference cost the refresh for every *healthy* tag -- on
+        // connect, on every reconnect, and for any southbound refresh request, which answered "no
+        // subscription is established yet" about one that plainly was.
+        opcUaServerExtension.getTestNamespace().observeRefreshEvents();
+        final String conditionNodeId = opcUaServerExtension
+                .getTestNamespace()
+                .addAcknowledgeableConditionNode("PartialSyncAlarm", CONDITION_NODE_ID);
+
+        // A node the server does not have, so its monitored item is rejected while the condition's succeeds.
+        final OpcuaTag missing = new OpcuaTag(
+                "absent-node", "", new OpcuaTagDefinition("ns=2;s=NoSuchNodeAnywhere", OpcuaTagKind.VALUE));
+
+        startAdapterWith(
+                new OpcuaTag("partial-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION)),
+                missing);
+
+        await().untilAsserted(
+                        () -> assertThat(opcUaServerExtension.getTestNamespace().refreshBracketCount())
+                                .as("one rejected tag must not cost the healthy tags their refresh")
+                                .isPositive());
+    }
+
+    private void startAdapterWith(final @NotNull OpcuaTag @NotNull ... tags) {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -181,7 +209,7 @@ public class OpcUaConditionRefreshIT {
         when(input.getAdapterId()).thenReturn("test-adapter-id");
         when(input.getProtocolAdapterState()).thenReturn(protocolAdapterState);
         when(input.getConfig()).thenReturn(config);
-        final List<Tag> genericTags = new ArrayList<>(List.of(tag));
+        final List<Tag> genericTags = new ArrayList<>(List.of(tags));
         when(input.getTags()).thenReturn(genericTags);
         when(input.adapterFactories()).thenReturn(mock(AdapterFactories.class));
         when(input.getProtocolAdapterMetricsHelper()).thenReturn(mock(ProtocolAdapterMetricsService.class));
