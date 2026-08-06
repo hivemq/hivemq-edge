@@ -16,6 +16,7 @@
 package com.hivemq.bridge;
 
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +52,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class BridgeServiceConcurrentOperationsTest {
+
+    /**
+     * Stop timeout used in place of the production 30 seconds.
+     * <p>
+     * The timeout path can only be reached by letting the wait expire, so testing it at the
+     * production value costs 30 seconds of wall clock per test — and this class did exactly that,
+     * making it the slowest unit test in the suite at 56s. Shortening the budget exercises the same
+     * branch; what is being tested is that the fallback happens when the budget runs out, not how
+     * long the budget is.
+     */
+    private static final long TEST_STOP_TIMEOUT_SECONDS = 1;
 
     private @Nullable BridgeService bridgeService;
     private @Nullable BridgeMqttClientFactory clientFactory;
@@ -106,14 +118,20 @@ class BridgeServiceConcurrentOperationsTest {
         final MetricRegistry metricRegistry = new MetricRegistry();
         final BridgeExtractor bridgeExtractor = mock(BridgeExtractor.class);
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
-        bridgeService = new BridgeService(
-                bridgeExtractor,
-                messageForwarder,
-                requireNonNull(clientFactory),
-                executorService,
-                remoteService,
-                shutdownHooks,
-                metricRegistry);
+        bridgeService =
+                new BridgeService(
+                        bridgeExtractor,
+                        messageForwarder,
+                        requireNonNull(clientFactory),
+                        executorService,
+                        remoteService,
+                        shutdownHooks,
+                        metricRegistry) {
+                    @Override
+                    long stopTimeoutSeconds() {
+                        return TEST_STOP_TIMEOUT_SECONDS;
+                    }
+                };
     }
 
     /**
@@ -572,12 +590,21 @@ class BridgeServiceConcurrentOperationsTest {
      * The key test is testStopTimeout_attemptsForcedDisconnect which verifies
      * the forced disconnect logic without needing to wait for actual timeouts.
      */
+    /**
+     * A bridge that is slow to stop but does stop within the budget must be waited for, not cut off
+     * and force-disconnected.
+     * <p>
+     * This is the other side of {@link #testStopTimeout_attemptsForcedDisconnect()}: together they
+     * pin both branches of the timeout. The distinguishing observation is whether the forced
+     * disconnect happened, not how long the call took — the previous version of this test asserted
+     * only that the elapsed time fell between 24 and 35 seconds, which would have passed just as
+     * happily had the timeout been raised to a minute.
+     */
     @Test
-    void testStopTimeout_uses30Seconds() {
-        final long startTime = System.currentTimeMillis();
+    void testSlowButSuccessfulStop_isWaitedForRatherThanForced() throws Exception {
         final SettableFuture<Void> stopFuture = SettableFuture.create();
+        final AtomicInteger forcedDisconnectCalls = new AtomicInteger(0);
 
-        // Create bridge and mock client with delayed stop
         final MqttBridge bridge = createTestBridge("slow-bridge");
         final BridgeMqttClient mockClient = mock(BridgeMqttClient.class);
 
@@ -587,32 +614,34 @@ class BridgeServiceConcurrentOperationsTest {
         when(mockClient.getActiveForwarders()).thenReturn(List.of());
         when(mockClient.getBridge()).thenReturn(bridge);
         when(mockClient.createForwarders()).thenReturn(List.of());
-        when(mockClient.getMqtt5Client()).thenReturn(mock(Mqtt5AsyncClient.class));
+
+        final Mqtt5AsyncClient mqtt5Client = mock(Mqtt5AsyncClient.class);
+        when(mockClient.getMqtt5Client()).thenReturn(mqtt5Client);
+        when(mqtt5Client.disconnect()).thenAnswer(invocation -> {
+            forcedDisconnectCalls.incrementAndGet();
+            return CompletableFuture.completedFuture(null);
+        });
 
         when(requireNonNull(clientFactory).createRemoteClient(bridge)).thenReturn(mockClient);
 
-        // Add bridge
         requireNonNull(bridgeService).updateBridges(List.of(bridge));
 
-        // Complete the stop future after 25 seconds in a background thread
-        new Thread(() -> {
-                    try {
-                        Thread.sleep(25000);
-                        stopFuture.set(null);
-                    } catch (final InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                })
-                .start();
+        // Complete the stop well inside the budget, so the wait ends because the bridge stopped
+        // rather than because the clock ran out.
+        final Thread completer = new Thread(() -> {
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(TEST_STOP_TIMEOUT_SECONDS) / 4);
+                stopFuture.set(null);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        completer.start();
 
-        // Remove bridge (should wait up to 30 seconds)
         requireNonNull(bridgeService).updateBridges(List.of());
+        completer.join(TimeUnit.SECONDS.toMillis(TEST_STOP_TIMEOUT_SECONDS));
 
-        final long duration = System.currentTimeMillis() - startTime;
-
-        // Should have waited at least 25 seconds (when we complete the future)
-        // but less than 30 seconds (the timeout)
-        assertTrue(duration >= 24000, "Should wait for slow stop: " + duration + "ms");
-        assertTrue(duration < 35000, "Should not wait much longer than timeout: " + duration + "ms");
+        assertEquals(
+                0, forcedDisconnectCalls.get(), "A bridge that stops within the budget must not be force-disconnected");
     }
 }

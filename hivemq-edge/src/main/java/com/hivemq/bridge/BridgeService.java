@@ -48,6 +48,21 @@ import org.slf4j.LoggerFactory;
 public class BridgeService {
     private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeService.class);
 
+    /**
+     * How long {@link #updateBridges} waits for a bridge to stop before giving up on it and
+     * disconnecting its client the hard way.
+     * <p>
+     * Generous because a bridge that is mid-reconnect or draining a queue should be allowed to
+     * finish rather than be cut off; the forced disconnect below exists for the case where it never
+     * will.
+     */
+    static final long STOP_TIMEOUT_SECONDS = 30;
+
+    /**
+     * How long the forced disconnect that follows a stop timeout is itself given.
+     */
+    static final long FORCED_DISCONNECT_TIMEOUT_SECONDS = 5;
+
     private final @NotNull MessageForwarder messageForwarder;
     private final @NotNull BridgeMqttClientFactory bridgeMqttClientFactory;
     private final @NotNull ExecutorService executorService;
@@ -75,6 +90,24 @@ public class BridgeService {
         metricRegistry.registerGauge(HiveMQMetrics.BRIDGES_CURRENT.name(), allKnownBridgeConfigs::size);
         shutdownHooks.add(new BridgeShutdownHook(this));
         bridgeConfig.registerConsumer(this::updateBridges);
+    }
+
+    /**
+     * How long to wait for a bridge to stop, in seconds.
+     * <p>
+     * Overridable so that a test can exercise the timeout path without waiting out the production
+     * budget: the branch it guards is reached only by letting the wait expire, so a fixed 30 seconds
+     * would mean 30 seconds of wall clock per test. Production behaviour is the default.
+     */
+    long stopTimeoutSeconds() {
+        return STOP_TIMEOUT_SECONDS;
+    }
+
+    /**
+     * How long to wait for the forced disconnect that follows a stop timeout, in seconds.
+     */
+    long forcedDisconnectTimeoutSeconds() {
+        return FORCED_DISCONNECT_TIMEOUT_SECONDS;
     }
 
     /**
@@ -308,7 +341,7 @@ public class BridgeService {
         }
 
         try {
-            bridgeAndClient.mqttClient().stop().get(30, TimeUnit.SECONDS);
+            bridgeAndClient.mqttClient().stop().get(stopTimeoutSeconds(), TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Interrupted while stopping bridge '{}': {}", bridgeId, e.getMessage());
@@ -317,11 +350,14 @@ public class BridgeService {
             log.warn("Execution error while stopping bridge '{}': {}", bridgeId, e.getMessage());
             log.debug("Execution exception details", e);
         } catch (final TimeoutException e) {
-            log.warn("Timeout (30s) while stopping bridge '{}', attempting forced disconnect", bridgeId);
+            log.warn(
+                    "Timeout ({}s) while stopping bridge '{}', attempting forced disconnect",
+                    stopTimeoutSeconds(),
+                    bridgeId);
             log.debug("Timeout exception details", e);
             try {
                 // Attempt forced disconnect on timeout - the underlying client may still have pending reconnections
-                client.getMqtt5Client().disconnect().get(5, TimeUnit.SECONDS);
+                client.getMqtt5Client().disconnect().get(forcedDisconnectTimeoutSeconds(), TimeUnit.SECONDS);
                 log.info("Forced disconnect of bridge '{}' succeeded", bridgeId);
             } catch (final Exception forcedDisconnectEx) {
                 log.error(
