@@ -83,7 +83,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ProtocolAdapterWrapper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
+    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
 
     private final @NotNull ProtocolAdapter adapter;
     private final @NotNull List<ProtocolAdapterStateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();

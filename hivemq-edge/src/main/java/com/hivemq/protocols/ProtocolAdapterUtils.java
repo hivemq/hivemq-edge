@@ -53,8 +53,7 @@ public class ProtocolAdapterUtils {
         adapterMapper.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
         adapterMapper.addHandler(new ReportUnknownPropertyHandler());
         final SimpleModule module = new SimpleModule("UserPropertyModule", Version.unknownVersion());
-        final SimpleAbstractTypeResolver resolver = new SimpleAbstractTypeResolver();
-        module.setAbstractTypes(resolver);
+        module.setAbstractTypes(new SimpleAbstractTypeResolver());
         adapterMapper.registerModule(module);
         return adapterMapper;
     }
@@ -126,13 +125,13 @@ public class ProtocolAdapterUtils {
         }
 
         private static @NotNull String simpleNameOf(final @NotNull Object beanOrClass) {
-            return beanOrClass instanceof Class<?> type
+            return beanOrClass instanceof final Class<?> type
                     ? type.getSimpleName()
                     : beanOrClass.getClass().getSimpleName();
         }
 
         private static @NotNull List<String> knownPropertiesOf(final @Nullable JsonDeserializer<?> deserializer) {
-            if (!(deserializer instanceof BeanDeserializerBase bean)) {
+            if (!(deserializer instanceof final BeanDeserializerBase bean)) {
                 return List.of();
             }
             final List<String> names = new ArrayList<>();
