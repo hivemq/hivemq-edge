@@ -67,7 +67,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -82,11 +81,6 @@ import org.slf4j.LoggerFactory;
 public class BridgeMqttClient {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeMqttClient.class);
-
-    private static final long RECONNECT_MIN_DELAY_MS = 1_000; // 1 second
-    private static final long RECONNECT_MAX_DELAY_MS = 120_000; // 2 minutes
-    private static final double RECONNECT_JITTER_FACTOR = 0.25; // 25% max jitter
-    private static final int RECONNECT_MAX_BACKOFF_EXPONENT = 10; // 2^10 = 1024 seconds max
 
     private final @NotNull MqttBridge bridge;
     private final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler;
@@ -563,28 +557,22 @@ public class BridgeMqttClient {
                 return;
             }
             if (context.getSource() != MqttDisconnectSource.USER) {
-                // exponential backoff with 1s-2min range, 25% additive jitter for thundering herd prevention
                 final MqttClientReconnector reconnector = context.getReconnector();
                 final int attempts = reconnector.getAttempts();
-                final int exponent = Math.min(attempts, RECONNECT_MAX_BACKOFF_EXPONENT);
-                final long calculatedDelay = RECONNECT_MIN_DELAY_MS << exponent;
-                final long delayMs = Math.min(calculatedDelay, RECONNECT_MAX_DELAY_MS);
-                // Full jitter is often better for reducing load spikes
-                // This gives random delay between 0 and delayMs * JITTER_FACTOR
-                final long jitterMs = (long) (delayMs
-                        * RECONNECT_JITTER_FACTOR
-                        * ThreadLocalRandom.current().nextDouble());
-                final long totalDelayMs = delayMs + jitterMs;
+                // The whole schedule, jitter included, lives in BridgeReconnectDelay: it can be
+                // asserted there, and tests can select a non-exponential one.
+                final BridgeReconnectDelay.Delay delay = BridgeReconnectDelay.nextDelay(attempts);
                 if (log.isInfoEnabled()) {
                     log.info(
-                            "Bridge '{}' will attempt reconnection #{} in {} ms (delay: {} ms, jitter: {} ms)",
+                            "Bridge '{}' will attempt reconnection #{} in {} ms (delay: {} ms, jitter: {} ms, schedule: {})",
                             bridge.getId(),
                             attempts + 1,
-                            totalDelayMs,
-                            delayMs,
-                            jitterMs);
+                            delay.totalMs(),
+                            delay.baseDelayMs(),
+                            delay.jitterMs(),
+                            delay.mode());
                 }
-                reconnector.reconnect(true).delay(totalDelayMs, TimeUnit.MILLISECONDS);
+                reconnector.reconnect(true).delay(delay.totalMs(), TimeUnit.MILLISECONDS);
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Bridge '{}' disconnected by user, not attempting auto-reconnection", bridge.getId());
