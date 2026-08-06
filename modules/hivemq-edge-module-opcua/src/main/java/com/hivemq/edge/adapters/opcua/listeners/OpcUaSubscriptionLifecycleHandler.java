@@ -47,6 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -895,22 +896,36 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         log.info(
                 "Adapter '{}': the server reported that a condition refresh is required, so the current alarm picture is being re-requested",
                 adapterId);
-        @SuppressWarnings("unused")
-        final var unused = ConditionRefresh.request(client, subscriptionId.get())
-                .whenComplete((statusCode, throwable) -> {
-                    refreshRequiredInFlight.set(false);
-                    if (throwable != null) {
-                        log.warn(
-                                "Adapter '{}': the server asked for a condition refresh but the request failed, so the alarm picture may stay incomplete until each alarm next changes",
-                                adapterId,
-                                throwable);
-                    } else if (statusCode.isBad()) {
-                        log.warn(
-                                "Adapter '{}': the server asked for a condition refresh and then refused it ({}), so the alarm picture may stay incomplete until each alarm next changes",
-                                adapterId,
-                                statusCode);
-                    }
-                });
+        // The guard is released on every path out of here, including a synchronous throw. Releasing it only
+        // from whenComplete would leave it set forever if the request never produced a future -- and since
+        // the guard's whole job is to make the compareAndSet above skip duplicate calls, a stuck guard
+        // silently drops every RefreshRequired the server sends for the rest of the connection. Silent
+        // because the skip is a bare return: no log, no event, and the alarm picture simply stops being
+        // resynchronised.
+        try {
+            @SuppressWarnings("unused")
+            final var unused = ConditionRefresh.request(client, subscriptionId.get())
+                    .whenComplete((statusCode, throwable) -> {
+                        refreshRequiredInFlight.set(false);
+                        if (throwable != null) {
+                            log.warn(
+                                    "Adapter '{}': the server asked for a condition refresh but the request failed, so the alarm picture may stay incomplete until each alarm next changes",
+                                    adapterId,
+                                    throwable);
+                        } else if (statusCode.isBad()) {
+                            log.warn(
+                                    "Adapter '{}': the server asked for a condition refresh and then refused it ({}), so the alarm picture may stay incomplete until each alarm next changes",
+                                    adapterId,
+                                    statusCode);
+                        }
+                    });
+        } catch (final Exception e) {
+            refreshRequiredInFlight.set(false);
+            log.warn(
+                    "Adapter '{}': the server asked for a condition refresh but the request could not be sent, so the alarm picture may stay incomplete until each alarm next changes",
+                    adapterId,
+                    e);
+        }
     }
 
     /**
@@ -1043,10 +1058,34 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             Thread.currentThread().interrupt();
             reportUnsubscribableTag(tagName, "verification was interrupted");
             return Optional.empty();
+        } catch (final TimeoutException e) {
+            // Named separately because it says something different from every other failure here, and
+            // because TimeoutException.getMessage() is null -- the generic branch below would report
+            // "verification failed: null", which tells an operator nothing at all.
+            //
+            // The outcome is still a permanent drop until the adapter restarts, which is the honest thing to
+            // say rather than to hide: unlike a type mismatch or a missing notifier, the tag may be
+            // perfectly good and merely asked at a bad moment.
+            reportUnsubscribableTag(
+                    tagName,
+                    "the server did not answer within " + CONDITION_TYPE_VERIFICATION_TIMEOUT_MS
+                            + "ms, so the tag could not be verified. Unlike a type or notifier problem this "
+                            + "may be transient: restart the adapter to try again");
+            return Optional.empty();
         } catch (final Exception e) {
-            reportUnsubscribableTag(tagName, "verification failed: " + e.getMessage());
+            reportUnsubscribableTag(tagName, "verification failed: " + describe(e));
             return Optional.empty();
         }
+    }
+
+    /**
+     * An exception as something an operator can read. Falls back to the class name where there is no
+     * message: several of the exceptions reachable here carry none, and a reason reading "null" is worse
+     * than useless — it looks like a bug in Edge rather than a description of what happened.
+     */
+    private static @NotNull String describe(final @NotNull Exception e) {
+        final String message = e.getMessage();
+        return message != null && !message.isBlank() ? message : e.getClass().getSimpleName();
     }
 
     /**

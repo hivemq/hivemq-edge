@@ -40,6 +40,10 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull AtomicBoolean seenFirstActivation = new AtomicBoolean(false);
+
+    /** Set when a reconnect arrived before {@link #setOnReconnect} had anything to call. */
+    private final @NotNull AtomicBoolean missedReconnect = new AtomicBoolean(false);
+
     private volatile @Nullable Runnable onReconnect;
 
     public OpcUaSessionActivityListener(
@@ -71,9 +75,22 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
      * <p>
      * Set by the connection once the subscription handler exists. Only reconnects are reported: the first
      * activation is the initial connect, where the subscription is created and already refreshes itself.
+     * <p>
+     * A reconnect can land <em>before</em> this is wired: the listener is registered as soon as the client
+     * exists, while the handler it delegates to is built only after the subscription has been established —
+     * and for condition tags that step makes blocking round trips per tag, so the window is not small. Such
+     * a reconnect is remembered here and honoured now, rather than dropped for having arrived early. Without
+     * that the refresh is lost twice over: no hook to run, and the activation still consumes
+     * {@code seenFirstActivation}, so it is miscounted as the initial connect.
      */
     public void setOnReconnect(final @NotNull Runnable onReconnect) {
         this.onReconnect = onReconnect;
+        if (missedReconnect.compareAndSet(true, false)) {
+            log.debug(
+                    "Adapter '{}': a reconnect arrived before the subscription handler was ready, requesting its condition refresh now",
+                    adapterId);
+            onReconnect.run();
+        }
     }
 
     @Override
@@ -89,6 +106,9 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
             final Runnable reconnected = onReconnect;
             if (reconnected != null) {
                 reconnected.run();
+            } else {
+                // Nothing to call yet. Remembered rather than dropped: setOnReconnect runs it on arrival.
+                missedReconnect.set(true);
             }
         }
     }

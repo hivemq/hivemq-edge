@@ -78,11 +78,64 @@ class OpcUaSessionActivityListenerTest {
     @Test
     void withNoCallbackNothingHappens() {
         // The callback is set after the listener is constructed, so an activation in between must not fail.
-        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
-        final OpcUaSessionActivityListener unwired =
-                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state);
+        final OpcUaSessionActivityListener unwired = unwiredListener();
 
         unwired.onSessionActive(mock(UaSession.class));
         unwired.onSessionActive(mock(UaSession.class));
+    }
+
+    @Test
+    void aReconnectArrivingBeforeTheCallbackIsWiredIsNotLost() {
+        // EDG-835: the listener is registered as soon as the client exists, but the handler it delegates to
+        // is built only after the subscription is established -- and for condition tags that step makes
+        // blocking round trips per tag, so the window is real. A reconnect landing in it used to be dropped
+        // twice over: no callback to run, and the activation still consumed seenFirstActivation, so it was
+        // miscounted as the initial connect.
+        final OpcUaSessionActivityListener unwired = unwiredListener();
+        final AtomicInteger late = new AtomicInteger();
+
+        unwired.onSessionActive(mock(UaSession.class)); // the initial connect
+        unwired.onSessionActive(mock(UaSession.class)); // a reconnect, with nothing wired yet
+
+        unwired.setOnReconnect(late::incrementAndGet);
+
+        assertThat(late)
+                .as("the missed reconnect must be honoured once there is something to call")
+                .hasValue(1);
+    }
+
+    @Test
+    void aMissedReconnectIsReplayedOnlyOnce() {
+        final OpcUaSessionActivityListener unwired = unwiredListener();
+        final AtomicInteger late = new AtomicInteger();
+
+        unwired.onSessionActive(mock(UaSession.class));
+        unwired.onSessionActive(mock(UaSession.class));
+        unwired.onSessionActive(mock(UaSession.class)); // two reconnects missed, not one
+
+        unwired.setOnReconnect(late::incrementAndGet);
+
+        // One refresh answers any number of missed reconnects: it re-reports the whole current picture, so
+        // asking twice would only duplicate the burst.
+        assertThat(late).hasValue(1);
+    }
+
+    @Test
+    void nothingIsReplayedWhenNoReconnectWasMissed() {
+        final OpcUaSessionActivityListener unwired = unwiredListener();
+        final AtomicInteger late = new AtomicInteger();
+
+        unwired.onSessionActive(mock(UaSession.class)); // the initial connect alone
+
+        unwired.setOnReconnect(late::incrementAndGet);
+
+        assertThat(late)
+                .as("the initial connect refreshes on its own; replaying here would ask twice")
+                .hasValue(0);
+    }
+
+    private static @NotNull OpcUaSessionActivityListener unwiredListener() {
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        return new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state);
     }
 }
