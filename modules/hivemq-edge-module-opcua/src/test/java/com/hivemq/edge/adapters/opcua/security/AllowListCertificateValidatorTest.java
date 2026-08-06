@@ -150,6 +150,25 @@ class AllowListCertificateValidatorTest {
     }
 
     @Test
+    void anyListedCertificateIsAcceptedNotJustTheIntendedOne() throws Exception {
+        // The allow-list is a trust SET, not endpoint pinning: with two fingerprints in the file,
+        // either certificate passes the trust decision on this adapter. Telling two listed servers
+        // apart is the job of the identity axes (application URI, hostname) - a deployment that
+        // relaxes those and shares one allow-list file across adapters has pinned "one of these
+        // machines", not "this machine". Single-certificate pinning needs a per-adapter file with
+        // exactly one fingerprint; the documentation states the same.
+        final X509Certificate intended = TestCertificates.identityOnly();
+        final X509Certificate other = TestCertificates.identityOnly();
+        final Set<String> shared =
+                Set.of(CertificateFingerprints.fingerprintOf(intended), CertificateFingerprints.fingerprintOf(other));
+
+        assertThatCode(() -> validate(shared, fingerprintOnly(), intended)).doesNotThrowAnyException();
+        assertThatCode(() -> validate(shared, fingerprintOnly(), other))
+                .as("either listed certificate passes the trust decision")
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void identityChecksStillApplyToAListedCertificate() throws Exception {
         // Being on the list establishes trust, not identity: SELF_SIGNED also asserts the application
         // URI and hostname, and a listed certificate that fails them must still be refused.
