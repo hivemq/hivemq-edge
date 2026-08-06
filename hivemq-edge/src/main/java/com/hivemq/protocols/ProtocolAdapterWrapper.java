@@ -52,6 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -111,6 +112,11 @@ public class ProtocolAdapterWrapper {
     // Executor used by startAsync/stopAsync. Injected so the wrapper does not silently fall back to
     // ForkJoinPool.commonPool() for blocking adapter lifecycle work — see fsm-patch-01.
     private final @NotNull Executor lifecycleExecutor;
+
+    // The SDK does not promise that ProtocolAdapter#destroy() is idempotent, and shutdown() can race a
+    // queued refresh's stop(destroy=true) on the manager's refresh executor — both paths reach stop(true)
+    // on this wrapper, so the wrapper owns the at-most-once guarantee for adapter.destroy().
+    private final @NotNull AtomicBoolean destroyed = new AtomicBoolean(false);
 
     /**
      * Full constructor with all context needed for production use.
@@ -526,8 +532,7 @@ public class ProtocolAdapterWrapper {
 
         if (state == ProtocolAdapterRuntimeState.Idle) {
             if (destroy) {
-                LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
-                adapter.destroy();
+                destroyAdapterOnce();
             }
             return true;
         }
@@ -553,8 +558,7 @@ public class ProtocolAdapterWrapper {
                 transitionTo(ProtocolAdapterRuntimeState.Idle).status().isSuccess();
         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
         if (destroy) {
-            LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
-            adapter.destroy();
+            destroyAdapterOnce();
         }
         final boolean success = stateTransitionSuccess && southboundSuccess && northboundSuccess;
         if (success) {
@@ -563,6 +567,18 @@ public class ProtocolAdapterWrapper {
             LOGGER.error("Error stopping adapter with id {}", getAdapterId());
         }
         return success;
+    }
+
+    /**
+     * Invoke {@link ProtocolAdapter#destroy()} at most once for the lifetime of this wrapper.
+     * Both destroy call sites in {@link #stop(boolean)} — the Idle short-circuit and the full stop
+     * path — must go through here.
+     */
+    private void destroyAdapterOnce() {
+        if (destroyed.compareAndSet(false, true)) {
+            LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
+            adapter.destroy();
+        }
     }
 
     // ===== Connection Management =====

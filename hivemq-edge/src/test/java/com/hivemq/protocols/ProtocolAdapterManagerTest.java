@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
@@ -62,6 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -70,6 +72,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.slf4j.LoggerFactory;
+import util.LogbackCapturingAppender;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -592,6 +596,19 @@ class ProtocolAdapterManagerTest {
     @Nested
     class RefreshIsolationTests {
 
+        private @NotNull LogbackCapturingAppender logCapture;
+
+        @BeforeEach
+        void weaveLogCapture() {
+            logCapture =
+                    LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(ProtocolAdapterManager.class));
+        }
+
+        @AfterEach
+        void detachLogCapture() {
+            LogbackCapturingAppender.Factory.cleanUp();
+        }
+
         @Test
         void anUnreadableConfig_doesNotStopTheOtherAdaptersFromBeingRefreshed() throws Exception {
             final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
@@ -682,9 +699,138 @@ class ProtocolAdapterManagerTest {
                     .withMessage("Configuration has been successfully updated");
         }
 
+        @Test
+        void aDuplicatedId_whoseFirstEntityFailsConversion_isStillReportedAsDuplicated() throws Exception {
+            // The duplicate ERROR used to be gated on failedAdapterSet.add, which the conversion
+            // failure had already claimed - so the duplicate was never logged.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity broken = entity("duplicated");
+            final ProtocolAdapterEntity valid = entity("duplicated");
+            final ProtocolAdapterConfig validConfig = config("duplicated");
+            when(configConverter.fromEntity(broken))
+                    .thenThrow(new IllegalArgumentException("Unrecognized field \"hostame\""));
+            when(configConverter.fromEntity(valid)).thenReturn(validConfig);
+
+            spyManager.refresh(List.of(broken, valid));
+            waitUntilNotBusy(spyManager);
+
+            assertThat(duplicatedIdErrorCount("duplicated")).isEqualTo(1);
+            verify(spyManager, org.mockito.Mockito.never()).createProtocolAdapter(any(), anyString());
+            verify(spyManager, org.mockito.Mockito.never()).start("duplicated");
+            verify(eventBuilder).withMessage("Reloading of configuration failed");
+        }
+
+        @Test
+        void aDuplicatedId_whoseSecondEntityFailsConversion_doesNotApplyTheValidConfig() throws Exception {
+            // The failure branch used to miss the duplicate entirely, leaving the first entity's
+            // config in the converted map with no duplicate diagnostic at all.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity valid = entity("duplicated");
+            final ProtocolAdapterEntity broken = entity("duplicated");
+            final ProtocolAdapterConfig validConfig = config("duplicated");
+            when(configConverter.fromEntity(valid)).thenReturn(validConfig);
+            when(configConverter.fromEntity(broken))
+                    .thenThrow(new IllegalArgumentException("Cannot coerce empty String"));
+
+            spyManager.refresh(List.of(valid, broken));
+            waitUntilNotBusy(spyManager);
+
+            assertThat(duplicatedIdErrorCount("duplicated")).isEqualTo(1);
+            verify(spyManager, org.mockito.Mockito.never()).createProtocolAdapter(any(), anyString());
+            verify(spyManager, org.mockito.Mockito.never()).start("duplicated");
+            verify(eventBuilder).withMessage("Reloading of configuration failed");
+        }
+
+        @Test
+        void threeEntitiesSharingAnId_reportTheDuplicateOnce() throws Exception {
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity first = entity("duplicated");
+            final ProtocolAdapterEntity second = entity("duplicated");
+            final ProtocolAdapterEntity third = entity("duplicated");
+            final ProtocolAdapterConfig firstConfig = config("duplicated");
+            final ProtocolAdapterConfig secondConfig = config("duplicated");
+            final ProtocolAdapterConfig thirdConfig = config("duplicated");
+            when(configConverter.fromEntity(first)).thenReturn(firstConfig);
+            when(configConverter.fromEntity(second)).thenReturn(secondConfig);
+            when(configConverter.fromEntity(third)).thenReturn(thirdConfig);
+
+            spyManager.refresh(List.of(first, second, third));
+            waitUntilNotBusy(spyManager);
+
+            assertThat(duplicatedIdErrorCount("duplicated")).isEqualTo(1);
+            verify(spyManager, org.mockito.Mockito.never()).start("duplicated");
+        }
+
+        @Test
+        void anUnreadableConfig_firesAnAdapterScopedCriticalEvent() throws Exception {
+            // The global configuration event says the reload failed; the adapter-scoped event names
+            // the adapter whose configuration could not be read.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            final ProtocolAdapterEntity unreadable = entity("unreadable-adapter");
+            when(configConverter.fromEntity(unreadable))
+                    .thenThrow(new IllegalArgumentException("Unrecognized field \"hostame\""));
+
+            spyManager.refresh(List.of(unreadable));
+            waitUntilNotBusy(spyManager);
+
+            verify(eventService).createAdapterEvent("unreadable-adapter", "test-protocol");
+            // CRITICAL is set twice on the shared builder mock: once for the adapter-scoped event,
+            // once for the global configuration event.
+            verify(eventBuilder, times(2)).withSeverity(Event.SEVERITY.CRITICAL);
+            verify(eventBuilder)
+                    .withMessage("Adapter 'unreadable-adapter' configuration could not be read. "
+                            + "The adapter has been left unchanged.");
+        }
+
+        @Test
+        void aConverterThrowingNoClassDefFoundError_isContainedLikeAnException() throws Exception {
+            // A broken adapter-module classloader surfaces as NoClassDefFoundError, which
+            // catch (Exception) does not cover; it must not abort the whole refresh.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity broken = entity("broken-module-adapter");
+            final ProtocolAdapterEntity healthy = entity("healthy-adapter");
+            final ProtocolAdapterConfig healthyConfig = config("healthy-adapter");
+            when(configConverter.fromEntity(broken))
+                    .thenThrow(new NoClassDefFoundError("com/example/adapter/MissingDependency"));
+            when(configConverter.fromEntity(healthy)).thenReturn(healthyConfig);
+
+            spyManager.refresh(List.of(broken, healthy));
+            waitUntilNotBusy(spyManager);
+
+            verify(spyManager).createProtocolAdapter(healthyConfig, "test-version");
+            verify(spyManager).start("healthy-adapter");
+            verify(spyManager, org.mockito.Mockito.never()).start("broken-module-adapter");
+            verify(eventBuilder).withMessage("Reloading of configuration failed");
+        }
+
+        private long duplicatedIdErrorCount(final @NotNull String adapterId) {
+            return logCapture.getCapturedLogs().stream()
+                    .filter(event -> event.getLevel() == Level.ERROR)
+                    .filter(event -> event.getFormattedMessage()
+                            .startsWith("Adapter id '" + adapterId + "' is used by more than one adapter"))
+                    .count();
+        }
+
         private @NotNull ProtocolAdapterEntity entity(final @NotNull String adapterId) {
             final ProtocolAdapterEntity entity = mock(ProtocolAdapterEntity.class);
             when(entity.getAdapterId()).thenReturn(adapterId);
+            when(entity.getProtocolId()).thenReturn("test-protocol");
             return entity;
         }
 

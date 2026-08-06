@@ -744,23 +744,46 @@ public class ProtocolAdapterManager {
             final @NotNull Set<String> failedAdapterSet) {
 
         final Set<String> configuredAdapterIds = new HashSet<>();
+        // Gates the duplicate-id ERROR on its own set, not on failedAdapterSet: an id whose first
+        // entity failed conversion is already in the failed set, which must not swallow the
+        // duplicate-id diagnostic.
+        final Set<String> reportedDuplicateIds = new HashSet<>();
         for (final ProtocolAdapterEntity entity : configs) {
             final ProtocolAdapterConfig config;
             try {
                 config = configConverter.fromEntity(entity);
-            } catch (final Exception e) {
+            } catch (final Exception | LinkageError e) {
+                // LinkageError included: a broken adapter-module classloader surfaces as
+                // NoClassDefFoundError from the converter, and that is still this one adapter's problem.
                 // The entity's own id is the only one available here, the converted config being what
-                // failed to materialise. It still has to join the set below: an adapter that is named in
+                // failed to materialise. It still has to join the set: an adapter that is named in
                 // the configuration file has not been deleted from it, however unreadable it is.
                 final String adapterId = entity.getAdapterId();
-                configuredAdapterIds.add(adapterId);
-                failedAdapterSet.add(adapterId);
+                if (!configuredAdapterIds.add(adapterId)) {
+                    // A previous entity already claimed this id. Which configuration the operator meant
+                    // is not knowable, so a config that converted under this id must not survive either.
+                    protocolAdapterConfigs.remove(adapterId);
+                    reportDuplicatedAdapterId(reportedDuplicateIds, adapterId);
+                }
+                final boolean firstFailureForId = failedAdapterSet.add(adapterId);
                 LOGGER.error(
                         "Failed reading the configuration of adapter '{}'. The adapter has been left unchanged and "
                                 + "every other adapter has been refreshed as usual; correct the configuration and it "
                                 + "will be applied on the next reload.",
                         adapterId,
                         e);
+                // The log is per entity - each unreadable entity is its own mistake - but the
+                // adapter-scoped event fires once per id, so duplicated unreadable entities do not
+                // show the same complaint twice in one reload.
+                if (firstFailureForId) {
+                    eventService
+                            .createAdapterEvent(adapterId, entity.getProtocolId())
+                            .withSeverity(Event.SEVERITY.CRITICAL)
+                            .withMessage("Adapter '"
+                                    + adapterId
+                                    + "' configuration could not be read. The adapter has been left unchanged.")
+                            .fire();
+                }
                 continue;
             }
 
@@ -771,18 +794,24 @@ public class ProtocolAdapterManager {
                 // neither is applied and that adapter alone is left as it is. Previously this threw
                 // IllegalStateException out of Collectors.toMap and took the whole refresh with it.
                 protocolAdapterConfigs.remove(adapterId);
-                if (failedAdapterSet.add(adapterId)) {
-                    LOGGER.error(
-                            "Adapter id '{}' is used by more than one adapter in the configuration. The adapter has "
-                                    + "been left unchanged; give each adapter a unique id. Every other adapter has "
-                                    + "been refreshed as usual.",
-                            adapterId);
-                }
+                failedAdapterSet.add(adapterId);
+                reportDuplicatedAdapterId(reportedDuplicateIds, adapterId);
                 continue;
             }
             protocolAdapterConfigs.put(adapterId, config);
         }
         return configuredAdapterIds;
+    }
+
+    private static void reportDuplicatedAdapterId(
+            final @NotNull Set<String> reportedDuplicateIds, final @NotNull String adapterId) {
+        if (reportedDuplicateIds.add(adapterId)) {
+            LOGGER.error(
+                    "Adapter id '{}' is used by more than one adapter in the configuration. The adapter has "
+                            + "been left unchanged; give each adapter a unique id. Every other adapter has "
+                            + "been refreshed as usual.",
+                    adapterId);
+        }
     }
 
     private void refreshDeletedAdapters(
@@ -817,6 +846,8 @@ public class ProtocolAdapterManager {
                 }
                 final ProtocolAdapterConfig protocolAdapterConfig = protocolAdapterConfigs.get(adapterId);
                 if (protocolAdapterConfig == null) {
+                    // The refresh must not report success after skipping an adapter.
+                    failedAdapterSet.add(adapterId);
                     LOGGER.error("Config for adapter '{}' not found, skipping creation", adapterId);
                     continue;
                 }
@@ -850,6 +881,8 @@ public class ProtocolAdapterManager {
                 }
                 final ProtocolAdapterConfig protocolAdapterConfig = protocolAdapterConfigs.get(adapterId);
                 if (protocolAdapterConfig == null) {
+                    // The refresh must not report success after skipping an adapter.
+                    failedAdapterSet.add(adapterId);
                     LOGGER.error("Config for adapter '{}' not found, skipping update", adapterId);
                     continue;
                 }

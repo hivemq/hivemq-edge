@@ -840,6 +840,26 @@ class ProtocolAdapterWrapperTest {
             assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
+
+        @Test
+        void stop_withDestroy_calledTwice_destroysAdapterOnlyOnce() {
+            // The SDK does not promise destroy() is idempotent, and shutdown can race a queued
+            // refresh's stop(destroy=true) — the wrapper owns the at-most-once guarantee.
+            wrapper.start();
+            assertThat(wrapper.stop(true)).isTrue();
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter, times(1)).destroy();
+        }
+
+        @Test
+        void stop_withoutDestroy_thenWithDestroy_destroysAdapterOnlyOnce() {
+            wrapper.start();
+            assertThat(wrapper.stop(false)).isTrue();
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter, times(1)).destroy();
+        }
     }
 
     @Nested
