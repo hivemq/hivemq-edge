@@ -85,17 +85,21 @@ public final class OpcUaEventToJsonConverter {
     }
 
     /**
-     * Writes a two-state field as {@code {locale, text, id}} — the display text and the Boolean beside it.
+     * Writes a state as {@code {locale, text, id}} — the display text and the machine-readable id beside it.
      * <p>
      * The {@code Value} of such a field is a human readable name whose wording is locale- and
      * vendor-dependent (OPC 10000-9 §5.2 gives {@code "Enabled"}/{@code "Disabled"} only as an example), so a
      * consumer deciding anything from the text alone is matching a string that a German session or a
-     * different vendor will spell differently. {@code id} is the same state as a Boolean.
+     * different vendor will spell differently. {@code id} is the same state, machine-readable.
      * <p>
-     * {@code id} is omitted rather than written null when the server did not return it. It is Mandatory on
-     * {@code TwoStateVariableType}, so its absence means the server did not honour the two-element browse
-     * path — and an absent key says that more honestly than a null, which would read as "the state is
-     * unknown".
+     * What {@code id} <em>is</em> depends on the field. Beneath a two-state field it is a {@code Boolean};
+     * beneath a state machine's {@code CurrentState} it is a {@code NodeId} identifying the active state
+     * node. Both are written by the generic converter rather than by type here, so neither is privileged and
+     * a third kind would need no change.
+     * <p>
+     * {@code id} is omitted rather than written null when the server did not return it. It is Mandatory in
+     * both cases, so its absence means the server did not honour the browse path — and an absent key says
+     * that more honestly than a null, which would read as "the state is unknown".
      */
     private static void writeStateWithId(
             final @NotNull DataPointBuilder.ObjectBuilder<?> object,
@@ -121,8 +125,8 @@ public final class OpcUaEventToJsonConverter {
             // dropping it, so a non-conforming server is visible instead of silently lossy.
             OpcUaToJsonConverter.addValueToObject(nested, "text", state, ctx);
         }
-        if (id instanceof final Boolean bool) {
-            nested.put("id", bool);
+        if (id != null) {
+            OpcUaToJsonConverter.addValueToObject(nested, "id", id, ctx);
         }
         nested.endObject();
     }

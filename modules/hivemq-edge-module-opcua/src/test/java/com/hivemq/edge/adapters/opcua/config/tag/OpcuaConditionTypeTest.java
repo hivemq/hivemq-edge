@@ -74,6 +74,71 @@ class OpcuaConditionTypeTest {
     }
 
     @Test
+    void anExclusiveLimitAlarmSaysWhichLimitIsViolated() {
+        // EDG-835: LimitState is the one member OPC 10000-9 Table 96 adds, and it is Mandatory. Its absence
+        // left the type publishing that an alarm is active and nothing about which threshold tripped, while
+        // NonExclusiveLimitAlarmType carried all four limit states -- two ways to model the same alarm, only
+        // one of them usable.
+        final OpcuaConditionType exclusive =
+                OpcuaConditionType.fromBrowseName("ExclusiveLimitAlarmType").orElseThrow();
+
+        assertThat(exclusive.allFields()).contains("LimitState");
+    }
+
+    @Test
+    void aStateMachineIsSelectedThroughItsCurrentState() {
+        // A state machine is an Object node, which has no Value attribute at all (OPC 10000-4 Table 129), so
+        // selecting it by name would ask for something that cannot be returned. The readable state is one
+        // level down, and its node id one level below that.
+        final OpcuaConditionType exclusive =
+                OpcuaConditionType.fromBrowseName("ExclusiveLimitAlarmType").orElseThrow();
+
+        assertThat(exclusive.selectedFields())
+                .as("LimitState must never be selected as a bare one-element path")
+                .noneMatch(f -> f.path().equals(List.of("LimitState")));
+
+        assertThat(exclusive.selectedFields())
+                .filteredOn(f -> f.publishedAs().equals("LimitState"))
+                .extracting(OpcuaConditionType.SelectedField::path)
+                .containsExactly(List.of("LimitState", "CurrentState"), List.of("LimitState", "CurrentState", "Id"));
+    }
+
+    @Test
+    void anIdIsFoldedIntoTheFieldItBelongsTo() {
+        // Both kinds of Id -- a two-state field's Boolean and a state machine's node id -- are published
+        // inside the parent's object rather than beside it, so they repeat the parent's key and are marked
+        // ID rather than VALUE.
+        final OpcuaConditionType exclusive =
+                OpcuaConditionType.fromBrowseName("ExclusiveLimitAlarmType").orElseThrow();
+
+        // An Id entry publishes under the key of the entry before it, which is what makes the converter's
+        // positional fold correct. If one ever introduced a key of its own, that fold would write it into
+        // the wrong object.
+        final List<OpcuaConditionType.SelectedField> fields = exclusive.selectedFields();
+        for (int i = 0; i < fields.size(); i++) {
+            if (fields.get(i).isStateId()) {
+                assertThat(i).as("an Id entry is never first").isPositive();
+                assertThat(fields.get(i).publishedAs())
+                        .as("the Id at %d publishes under the preceding entry's key", i)
+                        .isEqualTo(fields.get(i - 1).publishedAs());
+            }
+        }
+
+        assertThat(exclusive.selectedFields())
+                .filteredOn(f -> f.path().equals(List.of("LimitState", "CurrentState", "Id")))
+                .singleElement()
+                .satisfies(f -> {
+                    assertThat(f.role()).isEqualTo(OpcuaConditionType.FieldRole.ID);
+                    assertThat(f.publishedAs()).isEqualTo("LimitState");
+                });
+
+        assertThat(exclusive.selectedFields())
+                .filteredOn(f -> f.path().equals(List.of("ActiveState", "Id")))
+                .singleElement()
+                .satisfies(f -> assertThat(f.role()).isEqualTo(OpcuaConditionType.FieldRole.ID));
+    }
+
+    @Test
     void everyAlarmCarriesItsInputNode() {
         // Mandatory on AlarmConditionType (OPC 10000-9 Table 40), and the field that answers what the alarm
         // is watching -- so it is on every alarm we publish, not just some.

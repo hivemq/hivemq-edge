@@ -182,18 +182,42 @@ class ConditionSchemasTest {
     }
 
     @Test
-    void onlyTwoStateFieldsGetAnId() {
-        // Message is a LocalizedText but not a state, and ShelvingState/LimitState are Objects with their own
-        // state machines rather than two-state variables. An `id` on any of them would be a promise the
-        // server never fills.
+    void onlyStatesGetAnId() {
+        // Message is a LocalizedText but not a state, so an `id` on it would be a promise the server never
+        // fills. State machines do get one -- see limitStateIsPublishedAsAStateWithANodeIdId -- but theirs
+        // comes from CurrentState/Id and is a node id rather than a Boolean.
         final ObjectNode json = render(ConditionSchemas.readSchema(
                 OpcuaConditionType.fromBrowseName("AlarmConditionType").orElseThrow()));
 
         assertThat(shapeOf(json.get("properties").get("Message"))
                         .path("properties")
                         .has("id"))
-                .as("Message is a localized text, not a two-state field")
+                .as("Message is a localized text, not a state")
                 .isFalse();
+    }
+
+    @Test
+    void limitStateIsPublishedAsAStateWithANodeIdId() {
+        // EDG-835: ExclusiveLimitAlarmType's one Mandatory member (OPC 10000-9 Table 96) says which limit is
+        // violated. Without it the type publishes that an alarm is active and nothing about which threshold
+        // tripped, while its non-exclusive sibling carries all four limit states.
+        final ObjectNode json = render(ConditionSchemas.readSchema(
+                OpcuaConditionType.fromBrowseName("ExclusiveLimitAlarmType").orElseThrow()));
+
+        assertThat(json.get("properties").has("LimitState"))
+                .as("ExclusiveLimitAlarmType must promise LimitState")
+                .isTrue();
+
+        final JsonNode shape = shapeOf(json.get("properties").get("LimitState"));
+        assertThat(shape.path("properties").has("text"))
+                .as("LimitState carries its CurrentState display text")
+                .isTrue();
+        // A machine has more than two states, so its id is the node id of the active state, not a Boolean.
+        assertThat(shapeOf(shape.path("properties").get("id"))
+                        .path("properties")
+                        .has("namespaceIndex"))
+                .as("LimitState's id is a node id, not a Boolean")
+                .isTrue();
     }
 
     @Test

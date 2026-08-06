@@ -138,7 +138,11 @@ public enum OpcuaConditionType {
                     "SeverityHighHigh",
                     "SeverityLow",
                     "SeverityLowLow")),
-    EXCLUSIVE_LIMIT_ALARM("ExclusiveLimitAlarmType", "LimitAlarmType", List.of("ActiveState")),
+    // OPC 10000-9 §5.8.19.3 Table 96 adds exactly one member, and it is Mandatory: LimitState, which says
+    // which limit is violated. ActiveState used to stand here instead — it is inherited from
+    // AlarmConditionType, so listing it was redundant, and it made the line look populated while the one
+    // field the type actually contributes was missing.
+    EXCLUSIVE_LIMIT_ALARM("ExclusiveLimitAlarmType", "LimitAlarmType", List.of("LimitState")),
     EXCLUSIVE_DEVIATION_ALARM(
             "ExclusiveDeviationAlarmType", "ExclusiveLimitAlarmType", List.of("BaseSetpointNode", "SetpointNode")),
     EXCLUSIVE_LEVEL_ALARM("ExclusiveLevelAlarmType", "ExclusiveLimitAlarmType", List.of()),
@@ -204,8 +208,35 @@ public enum OpcuaConditionType {
             "SilenceState",
             "SuppressedState");
 
-    /** The browse name of the Boolean companion of a {@link #TWO_STATE_FIELDS} field. */
+    /**
+     * The browse name of the {@code Id} companion — a {@code Boolean} beneath a {@link #TWO_STATE_FIELDS}
+     * field, a {@code NodeId} beneath a state machine's {@link #CURRENT_STATE}.
+     */
     public static final @NotNull String STATE_ID = "Id";
+
+    /**
+     * Fields that are a state machine rather than a value.
+     * <p>
+     * Such a field is an Object node. An Object has no {@code Value} attribute at all (OPC 10000-4 Table
+     * 129 — a select clause names an attribute, and {@code Value} is the only one that carries data), so
+     * selecting the field itself returns nothing. What is readable is the {@code FiniteStateMachineType}
+     * variable one level down saying where the machine currently is.
+     * <p>
+     * Only {@code LimitState} is listed. It is Mandatory on {@code ExclusiveLimitAlarmType} (OPC 10000-9
+     * §5.8.19.3 Table 96) and says <em>which</em> limit was violated — without it that type publishes that
+     * an alarm is active and nothing about which threshold tripped, while its non-exclusive sibling carries
+     * all four limit states. {@code ShelvingState} is deliberately absent: it is also a state machine, but
+     * its shelving behaviour is a separate concern from this one and is not selected today.
+     */
+    public static final @NotNull Set<String> STATE_MACHINE_FIELDS = Set.of("LimitState");
+
+    /**
+     * The browse name of the variable holding a state machine's current state, a {@code LocalizedText}.
+     * <p>
+     * Inherited from {@code FiniteStateMachineType} (OPC 10000-16), not declared by the alarm state machines
+     * themselves — OPC 10000-9 Table 93 lists only the machine's states and transitions, which are Objects.
+     */
+    public static final @NotNull String CURRENT_STATE = "CurrentState";
 
     /**
      * Each type's NodeId in the standard namespace, used to filter events by type.
@@ -301,36 +332,73 @@ public enum OpcuaConditionType {
     }
 
     /**
-     * One selected field: the browse path to ask the server for, and the name to publish it under.
+     * What a selected field contributes to the published JSON.
+     * <p>
+     * This is stated rather than inferred from the browse path's length. It used to be inferred — a
+     * two-element path <em>meant</em> a state's {@code Id} — which held only while two-element paths had
+     * exactly one purpose. {@code LimitState/CurrentState} is a second purpose, and its {@code Id} is a
+     * third element deeper still, so the path can no longer say what the entry is for.
+     */
+    public enum FieldRole {
+        /** Published under its own key, whatever its value turns out to be. */
+        VALUE,
+        /** Folded into the preceding {@link #VALUE} entry as its {@code id}, not published on its own. */
+        ID
+    }
+
+    /**
+     * One selected field: the browse path to ask the server for, the name to publish it under, and what it
+     * contributes.
+     * <p>
+     * A path may be of any length. OPC 10000-4 §7.22.3 requires only that each element be an Object or
+     * Variable node, so {@code LimitState/CurrentState/Id} traverses an Object and two Variables and is as
+     * legal as a one-element path.
      *
-     * @param path        the browse path, one element for an ordinary field and two for a state's {@code Id}.
-     * @param publishedAs the key in the published JSON. For a two-element path this is the state's own name,
-     *                    because the {@code Id} is folded into the state object rather than published beside
-     *                    it — {@code {"ActiveState": {"text": "Active", "id": true}}}.
+     * @param path        the browse path to select.
+     * @param publishedAs the key in the published JSON. An {@link FieldRole#ID} entry repeats the key of the
+     *                    entry it belongs to, because it is folded into that object rather than published
+     *                    beside it — {@code {"ActiveState": {"text": "Active", "id": true}}}.
+     * @param role        what this entry contributes.
      */
     public record SelectedField(
-            @NotNull List<String> path, @NotNull String publishedAs) {
+            @NotNull List<String> path,
+            @NotNull String publishedAs,
+            @NotNull FieldRole role) {
 
-        /** Whether this selects the Boolean {@code Id} beneath a two-state field. */
+        /** Whether this selects an {@code Id} to be folded into the field before it. */
         public boolean isStateId() {
-            return path.size() == 2;
+            return role == FieldRole.ID;
         }
     }
 
     /**
      * Every field to select, in the order the select clause and the decoder both walk.
      * <p>
-     * This is {@link #allFields()} with an extra entry after each two-state field, for that state's
-     * {@code Id}. Both are derived here so the two lists cannot drift: the event decoder matches values to
-     * fields <em>positionally</em> against the select clause, so an entry added to one and not the other
-     * silently shifts every field after it.
+     * This is {@link #allFields()} with an extra {@link FieldRole#ID} entry after each field that has one.
+     * Both are derived here so the two lists cannot drift: the event decoder matches values to fields
+     * <em>positionally</em> against the select clause, so an entry added to one and not the other silently
+     * shifts every field after it.
+     * <p>
+     * Two kinds of field carry an {@code Id}, and they differ in where it sits and what it is:
+     * <ul>
+     *   <li>A {@link #TWO_STATE_FIELDS two-state field} keeps it one level down — {@code ActiveState/Id} —
+     *       and it is a {@code Boolean}.</li>
+     *   <li>A {@link #STATE_MACHINE_FIELDS state machine} is an Object with no value of its own, so the
+     *       readable state is {@code CurrentState} one level down and its {@code Id} one level below that.
+     *       That {@code Id} is a {@code NodeId} identifying the active state node, not a Boolean.</li>
+     * </ul>
      */
     public @NotNull List<SelectedField> selectedFields() {
         final List<SelectedField> selected = new ArrayList<>();
         for (final String field : allFields()) {
-            selected.add(new SelectedField(List.of(field), field));
+            if (STATE_MACHINE_FIELDS.contains(field)) {
+                selected.add(new SelectedField(List.of(field, CURRENT_STATE), field, FieldRole.VALUE));
+                selected.add(new SelectedField(List.of(field, CURRENT_STATE, STATE_ID), field, FieldRole.ID));
+                continue;
+            }
+            selected.add(new SelectedField(List.of(field), field, FieldRole.VALUE));
             if (TWO_STATE_FIELDS.contains(field)) {
-                selected.add(new SelectedField(List.of(field, STATE_ID), field));
+                selected.add(new SelectedField(List.of(field, STATE_ID), field, FieldRole.ID));
             }
         }
         return List.copyOf(selected);

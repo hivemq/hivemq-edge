@@ -243,7 +243,56 @@ public final class ConditionSchemas {
     private static void appendField(
             final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
 
-        if (OpcuaConditionType.TWO_STATE_FIELDS.contains(field)) {
+        if (OpcuaConditionType.STATE_MACHINE_FIELDS.contains(field)) {
+            // A state machine is an Object with no value of its own, so what is published is its
+            // CurrentState -- the display text -- with the NodeId of the active state node as `id`. Same
+            // shape as a two-state field, but `id` is a node id rather than a Boolean, because a machine
+            // has more than two states to distinguish.
+            object.property(field)
+                    .startObject()
+                    .property("locale")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("text")
+                    .scalar(ScalarType.STRING)
+                    .description("The current state's name in the session's locale — for a limit alarm, "
+                            + "which limit is violated. Wording varies by locale and by vendor, so prefer "
+                            + "'id' when deciding anything.")
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("id")
+                    .startObject()
+                    .property("idType")
+                    .scalar(ScalarType.LONG)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("id")
+                    .any()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("namespaceIndex")
+                    .scalar(ScalarType.LONG)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .description("The node id of the active state — the machine-readable half of this "
+                            + "field, stable across locales and vendors.")
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        } else if (OpcuaConditionType.TWO_STATE_FIELDS.contains(field)) {
             // A two-state field carries its Boolean Id alongside the display text. The text is what the
             // server calls the state in the session's locale; `id` is the same state as a Boolean, and is
             // what a consumer should branch on -- "Active"/"Aktiv"/"ACTIVE" are all the same true.
@@ -305,7 +354,10 @@ public final class ConditionSchemas {
                     .writable(false)
                     .endProperty()
                     .property("namespaceIndex")
-                    .any()
+                    .scalar(ScalarType.LONG)
+                    .description("The namespace index, meaningful only against the server that sent it: the "
+                            + "index-to-URI table belongs to the server and may be renumbered between "
+                            + "sessions.")
                     .readable()
                     .writable(false)
                     .endProperty()
