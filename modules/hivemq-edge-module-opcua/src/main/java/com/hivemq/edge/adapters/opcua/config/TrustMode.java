@@ -49,8 +49,9 @@ public enum TrustMode {
     ANY_CERT;
 
     /**
-     * Jackson creator. Blank, absent or unrecognized yields {@code null}: the axis is unset and the
-     * caller applies its strictest default, so a typo can never downgrade the security posture.
+     * Jackson creator. Blank or absent yields {@code null}: the axis is unset and the caller applies
+     * its strictest default. An unrecognized value rejects the configuration — see
+     * {@link EnumParsing}.
      */
     @JsonCreator
     public static @Nullable TrustMode fromString(final @Nullable String value) {

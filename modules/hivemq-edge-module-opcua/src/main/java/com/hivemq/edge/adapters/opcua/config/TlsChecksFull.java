@@ -17,11 +17,16 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,11 +125,31 @@ public record TlsChecksFull(
          * {@link TlsChecksProjection#project(Tls)}, which is where the adapter is refused. Carrying the
          * text rather than a flag lets that refusal quote back what was actually found.
          */
-        @JsonIgnore @Nullable String collapsedText) {
+        @JsonIgnore @Nullable String collapsedText,
+
+        /**
+         * The entries this element carried that are not axes, or an empty map when every entry was
+         * recognized. Same contract and same rationale as {@link Tls#unknownSettings()}: it exists so
+         * that a misspelled axis <em>name</em> refuses the adapter in
+         * {@link TlsChecksProjection#project(Tls)} instead of silently resolving the axis to its
+         * default, and it is serialized back out verbatim so a writeback cannot delete the entry.
+         * Deliberately unannotated: the {@code @JsonAnySetter} lives on the properties-creator
+         * parameter below, and the {@code @JsonAnyGetter} on the explicit accessor.
+         */
+        @JsonIgnore @NotNull Map<String, Object> unknownSettings) {
+
+    public TlsChecksFull {
+        // Canonicalized (never null, insertion-ordered, unmodifiable) so equal configurations compare
+        // equal however they were built. The axes themselves are stored verbatim - defaulting happens
+        // at read time in TlsChecksProjection so that a writeback cannot alter what the operator wrote.
+        unknownSettings = unknownSettings == null || unknownSettings.isEmpty()
+                ? Map.of()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(unknownSettings));
+    }
 
     /**
      * The axes exactly as the operator wrote them. This is the shape a configuration file binds to;
-     * the canonical seven-argument constructor is reserved for {@link #fromText}.
+     * the canonical constructor is reserved for {@link #fromText}.
      */
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public TlsChecksFull(
@@ -133,15 +158,40 @@ public record TlsChecksFull(
             @JsonProperty("hostname") final @Nullable HostnameCheck hostname,
             @JsonProperty("validity") final @Nullable ValidityCheck validity,
             @JsonProperty("revocation") final @Nullable RevocationCheck revocation,
-            @JsonProperty("keyUsage") final @Nullable KeyUsageCheck keyUsage) {
-        // Axes are stored verbatim. Defaulting happens at read time in TlsChecksProjection so that a
-        // configuration writeback cannot alter what the operator wrote.
-        this(trustMode, sanUri, hostname, validity, revocation, keyUsage, null);
+            @JsonProperty("keyUsage") final @Nullable KeyUsageCheck keyUsage,
+            @JsonAnySetter final @Nullable Map<String, Object> unknownSettings) {
+        this(
+                trustMode,
+                sanUri,
+                hostname,
+                validity,
+                revocation,
+                keyUsage,
+                null,
+                unknownSettings == null ? Map.of() : unknownSettings);
+    }
+
+    /** The shape axes are built from in code; only deserialization can fill the trap. */
+    public TlsChecksFull(
+            final @Nullable TrustMode trustMode,
+            final @Nullable SanUriCheck sanUri,
+            final @Nullable HostnameCheck hostname,
+            final @Nullable ValidityCheck validity,
+            final @Nullable RevocationCheck revocation,
+            final @Nullable KeyUsageCheck keyUsage) {
+        this(trustMode, sanUri, hostname, validity, revocation, keyUsage, null, Map.of());
     }
 
     /** Every axis unset, which resolves to the strictest value on each — maximum validation. */
     public static @NotNull TlsChecksFull allAxesUnset() {
         return new TlsChecksFull(null, null, null, null, null, null);
+    }
+
+    /** Serializes the trapped entries back out verbatim; see {@link Tls#unknownSettings()}. */
+    @JsonAnyGetter
+    @Override
+    public @NotNull Map<String, Object> unknownSettings() {
+        return unknownSettings;
     }
 
     /**
@@ -175,6 +225,6 @@ public record TlsChecksFull(
         if (value == null || value.isBlank()) {
             return allAxesUnset();
         }
-        return new TlsChecksFull(null, null, null, null, null, null, value.trim());
+        return new TlsChecksFull(null, null, null, null, null, null, value.trim(), Map.of());
     }
 }

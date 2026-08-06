@@ -114,6 +114,16 @@ class TlsWriteBackTest {
         assertRoundTripIsIdentical("{\"enabled\":true,\"tlsChecks\":\"STANDARD\",\"tlsChecksFull\":{}}");
     }
 
+    @Test
+    void aMisspelledSettingSurvivesTheRoundTripUnaltered() throws Exception {
+        // A misspelled entry refuses the adapter at start-up, and the writeback must still return it
+        // exactly as written: if it were dropped, the next unrelated edit would repair the file into a
+        // valid configuration that silently starts the adapter under the STANDARD default.
+        assertRoundTripIsIdentical("{\"enabled\":true,\"tlsCheks\":\"ALL\"}");
+        assertRoundTripIsIdentical("{\"enabled\":true,\"tlsChecksFull\":{\"trustMod\":\"CHAIN\"}}");
+        assertRoundTripIsIdentical("{\"enabled\":true,\"tlsChecks\":\"SELF_SIGNED\",\"allowList\":{\"pth\":\"/x\"}}");
+    }
+
     static List<String> everyAxisAlone() {
         return List.of(
                 "\"trustMode\":\"CHAIN\"",

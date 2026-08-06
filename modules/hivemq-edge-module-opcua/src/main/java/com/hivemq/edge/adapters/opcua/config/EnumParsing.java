@@ -19,34 +19,28 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Shared parsing for the certificate-validation config enums.
  *
  * <p>Matching is case-insensitive and tolerates missing underscores ({@code allowlist} ==
- * {@code ALLOW_LIST}), mirroring the leniency the OPC UA adapter config has always had.
+ * {@code ALLOW_LIST}), mirroring the leniency the OPC UA adapter config has always had. Blank or
+ * absent input yields {@code null}, meaning "unset": the setting resolves to its default at read time.
  *
- * <p>An unrecognized value is reported at WARN and treated as if the setting had been left out. Two
- * alternatives were rejected:
+ * <p><b>An unrecognized non-blank value is a configuration error and is rejected.</b> The alternative
+ * — reporting it and treating the setting as unset — was tried and withdrawn: unset does not resolve
+ * to the strictest value everywhere. The preset door defaults to {@code STANDARD}, which checks
+ * neither hostname nor key usage, so a typo in {@code tlsChecks=ALL} would have silently run the
+ * adapter under <em>weaker</em> validation than the operator asked for. A misspelled security setting
+ * must stop the adapter, not adjust it.
  *
- * <ul>
- *   <li><b>Throwing.</b> Adapter configurations are converted inside a single stream over every
- *       adapter, and an exception there aborts the whole refresh — one typo in one adapter would
- *       silently stop every other adapter from being reconfigured. The blast radius is far worse than
- *       the problem.
- *   <li><b>Failing silently.</b> The operator would have no way to discover why the setting had no
- *       effect.
- * </ul>
- *
- * <p>Falling back to "unset" is safe in the direction that matters: every default in this model is the
- * strictest value, so a misspelling can only ever produce <em>more</em> validation than was asked for,
- * never less. The connection then fails visibly, next to a WARN naming the offending value.
+ * <p>Throwing here fails the conversion of this adapter's configuration. That is contained:
+ * {@code ProtocolAdapterManager} converts each adapter's configuration in isolation, so the rejection
+ * names this adapter, leaves a running instance unchanged, and every other adapter refreshes as usual
+ * — which is also what an invalid enum value did before these creators existed, minus the isolation
+ * and the actionable message.
  */
 final class EnumParsing {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(EnumParsing.class);
 
     private EnumParsing() {}
 
@@ -63,12 +57,14 @@ final class EnumParsing {
                 return candidate;
             }
         }
-        log.warn(
-                "OPC UA adapter TLS configuration: '{}' is not a valid {} value and was ignored; the setting falls "
-                        + "back to its default, which is the strictest available. Permitted values: {}.",
-                trimmed,
-                type.getSimpleName(),
-                Arrays.stream(values).map(Enum::name).collect(Collectors.joining(", ")));
-        return null;
+        throw new IllegalArgumentException(
+                ("OPC UA adapter TLS configuration: '%s' is not a valid %s value. Permitted values: %s "
+                                + "(case-insensitive, underscores optional). The adapter configuration has been "
+                                + "rejected rather than started with different certificate validation than was "
+                                + "written; correct the value and reload.")
+                        .formatted(
+                                trimmed,
+                                type.getSimpleName(),
+                                Arrays.stream(values).map(Enum::name).collect(Collectors.joining(", "))));
     }
 }

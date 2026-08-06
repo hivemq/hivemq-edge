@@ -17,10 +17,16 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -107,12 +113,86 @@ public record Tls(
                         + "effective trust mode is ALLOW_LIST (preset SELF_SIGNED, or "
                         + "tlsChecksFull.trustMode=ALLOW_LIST).")
         @Nullable
-        AllowList allowList) {
+        AllowList allowList,
 
-    @JsonCreator
+        /**
+         * The settings this element carried that the model does not know, or an empty map when every
+         * setting was recognized.
+         *
+         * <p>Not a setting and not part of the configuration surface: a configuration file cannot
+         * fill it directly — a literal {@code unknownSettings} element is itself an unknown name, so
+         * it lands <em>inside</em> the map and is refused like any other unknown entry (pinned in
+         * {@code TlsChecksParsingTest}). It exists so that "the operator wrote a setting this element
+         * does not have" survives deserialization as far as
+         * {@link TlsChecksProjection#project(Tls)}, which refuses the adapter naming the entry. The
+         * application-wide unknown-setting handling only warns and drops, which is the wrong posture
+         * here: a dropped certificate-validation setting silently runs the adapter under the
+         * {@code STANDARD} default instead of whatever the entry was meant to select.
+         *
+         * <p>On serialization the entries are written back out verbatim, in place (see the
+         * {@code @JsonAnyGetter} accessor). Dropping them would make the writeback of an unrelated
+         * edit delete the misspelled entry from the file — after which the configuration is valid and
+         * the adapter quietly starts under the default, which is exactly the outcome the trap exists
+         * to prevent.
+         */
+        @JsonIgnore @NotNull Map<String, Object> unknownSettings) {
+
     public Tls {
-        // Intentionally empty. See the class javadoc: nothing is normalized here, because writing an
-        // unchanged configuration back out must return exactly what the operator wrote.
+        // The trap map is canonicalized (never null, insertion-ordered, unmodifiable) so that equal
+        // configurations compare equal however they were built. Nothing else is normalized here - see
+        // the class javadoc: writing an unchanged configuration back out must return exactly what the
+        // operator wrote, and the trap is not operator configuration.
+        unknownSettings = unknownSettings == null || unknownSettings.isEmpty()
+                ? Map.of()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(unknownSettings));
+    }
+
+    /**
+     * What a configuration file binds to. The trap parameter comes first only to give this
+     * constructor a signature distinct from the canonical one — Jackson binds by name and any-setter,
+     * not by position. The component itself carries {@code @JsonIgnore} rather than
+     * {@code @JsonAnySetter} deliberately: an any-setter-annotated field is picked up by the JSON
+     * schema generator and would surface the trap in the UI form.
+     */
+    @JsonCreator
+    public Tls(
+            @JsonAnySetter final @Nullable Map<String, Object> unknownSettings,
+            @JsonProperty("enabled") final boolean enabled,
+            @JsonProperty("tlsChecks") final @Nullable TlsChecks tlsChecks,
+            @JsonProperty("tlsChecksFull") final @Nullable TlsChecksFull tlsChecksFull,
+            @JsonProperty("keystore") final @Nullable Keystore keystore,
+            @JsonProperty("truststore") final @Nullable Truststore truststore,
+            @JsonProperty("allowList") final @Nullable AllowList allowList) {
+        this(
+                enabled,
+                tlsChecks,
+                tlsChecksFull,
+                keystore,
+                truststore,
+                allowList,
+                unknownSettings == null ? Map.of() : unknownSettings);
+    }
+
+    /** The shape configuration is built from in code; only deserialization can fill the trap. */
+    public Tls(
+            final boolean enabled,
+            final @Nullable TlsChecks tlsChecks,
+            final @Nullable TlsChecksFull tlsChecksFull,
+            final @Nullable Keystore keystore,
+            final @Nullable Truststore truststore,
+            final @Nullable AllowList allowList) {
+        this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, Map.of());
+    }
+
+    /**
+     * Serializes the trapped entries back out verbatim, each under its own original name — never
+     * under a literal {@code unknownSettings}. Writing an unchanged configuration back out must
+     * return exactly what the operator wrote, including the entries that will refuse the adapter.
+     */
+    @JsonAnyGetter
+    @Override
+    public @NotNull Map<String, Object> unknownSettings() {
+        return unknownSettings;
     }
 
     public static @NotNull Tls defaultTls() {

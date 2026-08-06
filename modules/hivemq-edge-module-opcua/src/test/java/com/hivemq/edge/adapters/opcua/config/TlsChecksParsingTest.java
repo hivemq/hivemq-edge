@@ -22,6 +22,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -34,10 +35,12 @@ import org.slf4j.LoggerFactory;
 /**
  * How configuration values are read.
  *
- * <p>The load-bearing property here is that a misspelled value can never loosen validation. It is
- * reported and then treated as absent, and absent means the strictest available setting — so the
- * observable consequence of a typo is a refused connection next to a warning, never a connection that
- * was checked less than the operator believed.
+ * <p>The load-bearing property here is that a mistake in a certificate-validation setting can never
+ * loosen validation. A misspelled <em>value</em> rejects the configuration outright — "unset" is not a
+ * safe fallback for the preset door, whose default {@code STANDARD} checks less than {@code ALL} — and
+ * a misspelled setting <em>name</em> is trapped through deserialization and refuses the adapter at
+ * start-up. The observable consequence of a typo is always a refused configuration next to a message
+ * naming it, never a connection that was checked less than the operator believed.
  */
 class TlsChecksParsingTest {
 
@@ -77,50 +80,161 @@ class TlsChecksParsingTest {
     }
 
     @Test
-    void anUnknownValueFallsBackToUnsetAndIsLogged() {
-        // Deliberately not an exception: adapter configurations are converted in a single pass over
-        // every adapter, so throwing here would stop unrelated adapters from being reconfigured. Unset
-        // is the safe fallback because every default in this model is the strictest value.
-        final ListAppender<ILoggingEvent> appender = attachAppender();
-        try {
-            assertThat(TlsChecks.fromString("SELFSIGNEND")).isNull();
-
-            assertThat(appender.list).anySatisfy(event -> {
-                assertThat(event.getLevel()).isEqualTo(Level.WARN);
-                assertThat(event.getFormattedMessage()).contains("SELFSIGNEND").contains("SELF_SIGNED");
-            });
-        } finally {
-            detachAppender(appender);
-        }
+    void anUnknownValueIsRejectedNamingThePermittedValues() {
+        // Deliberately an exception, not a fallback: "unset" resolves to STANDARD on the preset door,
+        // which checks less than ALL - so treating a typo as unset can weaken validation. Rejection is
+        // contained: ProtocolAdapterManager converts each adapter's configuration in isolation, so a
+        // typo in one adapter cannot stop any other adapter from being reconfigured.
+        assertThatThrownBy(() -> TlsChecks.fromString("SELFSIGNEND"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("'SELFSIGNEND'")
+                .hasMessageContaining("SELF_SIGNED")
+                .hasMessageContaining("NO_VERIFICATION");
     }
 
     @Test
-    void everyAxisFallsBackToUnsetOnAnUnknownValue() {
-        assertThat(TrustMode.fromString("ANYCERTIFICATE")).isNull();
-        assertThat(RevocationCheck.fromString("REQUIRED")).isNull();
-        assertThat(KeyUsageCheck.fromString("SERVERAUTHENTICATION")).isNull();
-        assertThat(HostnameCheck.fromString("STRICT")).isNull();
-        assertThat(ValidityCheck.fromString("EXPIRY")).isNull();
-        assertThat(SanUriCheck.fromString("URI")).isNull();
+    void everyAxisRejectsAnUnknownValue() {
+        assertThatThrownBy(() -> TrustMode.fromString("ANYCERTIFICATE")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> RevocationCheck.fromString("REQUIRED")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> KeyUsageCheck.fromString("SERVERAUTHENTICATION"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> HostnameCheck.fromString("STRICT")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> ValidityCheck.fromString("EXPIRY")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> SanUriCheck.fromString("URI")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void aMisspelledPresetCanOnlyEverProduceMoreValidation() throws Exception {
-        // The direction that matters. 'NOVERIFY' does not quietly become NO_VERIFICATION; it becomes
-        // nothing, and the configuration falls back to the STANDARD default.
-        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecks\":\"NOVERIFY\"}", Tls.class);
-
-        assertThat(tls.tlsChecks()).isNull();
-        assertThat(TlsChecksProjection.project(tls)).isEqualTo(TlsChecksProjection.fromPreset(TlsChecks.STANDARD));
+    void aMisspelledPresetIsRejectedRatherThanRunAsStandard() {
+        // The case that forced the rejection design: 'ALLL' must not quietly become the STANDARD
+        // default, because STANDARD checks neither hostname nor key usage - the two checks the
+        // operator was asking ALL to enforce. A configuration that cannot be read is refused, with
+        // the offending value named in the failure.
+        assertThatThrownBy(() -> MAPPER.readValue("{\"enabled\":true,\"tlsChecks\":\"ALLL\"}", Tls.class))
+                .isInstanceOf(JsonMappingException.class)
+                .hasMessageContaining("'ALLL'")
+                .hasMessageContaining("TlsChecks");
     }
 
     @Test
-    void aMisspelledAxisValueFallsBackToTheStrictestValue() throws Exception {
+    void aMisspelledPresetAlongsideAxesIsRejectedNeverAxesOnly() {
+        // If the invalid preset were parsed to "unset", the mutual-exclusion check would no longer see
+        // both doors and the axes would be applied on their own - running a configuration the operator
+        // never wrote. The rejection has to fire before any of that can be reasoned about.
+        assertThatThrownBy(() -> MAPPER.readValue(
+                        "{\"enabled\":true,\"tlsChecks\":\"ALLL\",\"tlsChecksFull\":{\"trustMode\":\"ANY_CERT\"}}",
+                        Tls.class))
+                .isInstanceOf(JsonMappingException.class)
+                .hasMessageContaining("'ALLL'");
+    }
+
+    @Test
+    void aMisspelledAxisValueIsRejected() {
         // 'TRUST' was the name on a pre-release branch; it is not a trustMode value. It must not be
         // read as ANY_CERT, and it must not be read as "no trust mode configured, do whatever".
-        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":{\"trustMode\":\"TRUST\"}}", Tls.class);
+        assertThatThrownBy(() ->
+                        MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":{\"trustMode\":\"TRUST\"}}", Tls.class))
+                .isInstanceOf(JsonMappingException.class)
+                .hasMessageContaining("'TRUST'")
+                .hasMessageContaining("TrustMode");
+    }
 
-        assertThat(TlsChecksProjection.project(tls).trustMode()).isEqualTo(TrustMode.CHAIN);
+    @Test
+    void aMisspelledSettingNameInsideTlsRefusesTheAdapter() throws Exception {
+        // <tlsCheks>ALL</tlsCheks>: the name is wrong, not the value. The application-wide handling
+        // for unknown adapter settings warns and drops, which here would leave neither door configured
+        // and quietly run the adapter under the STANDARD default - weaker than the ALL the operator
+        // wrote. The entry is trapped through deserialization instead and refuses the adapter.
+        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsCheks\":\"ALL\"}", Tls.class);
+
+        assertThat(tls.unknownSettings()).containsKey("tlsCheks");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'tlsCheks'")
+                .hasMessageContaining("tlsChecks");
+    }
+
+    @Test
+    void aMisspelledAxisNameInsideTlsChecksFullRefusesTheAdapter() throws Exception {
+        // A misspelled axis name would otherwise mean "axis omitted", which resolves to the strictest
+        // value - safe in the checking direction, but it discards a security setting the operator
+        // explicitly wrote, and they only learn when the connection fails for the wrong reason.
+        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":{\"trustMod\":\"CHAIN\"}}", Tls.class);
+
+        assertThat(tls.tlsChecksFull()).isNotNull();
+        assertThat(tls.tlsChecksFull().unknownSettings()).containsKey("trustMod");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'trustMod'")
+                .hasMessageContaining("trustMode");
+    }
+
+    @Test
+    void aMisspelledEntryInsideAllowListRefusesTheAdapter() throws Exception {
+        // <pth> instead of <path> would otherwise be dropped, leaving the path unset - and the
+        // missing-path error would then send the operator to add an element they believe is there.
+        final Tls tls = MAPPER.readValue(
+                "{\"enabled\":true,\"tlsChecks\":\"SELF_SIGNED\",\"allowList\":{\"pth\":\"/opt/f.txt\"}}", Tls.class);
+
+        assertThat(tls.allowList()).isNotNull();
+        assertThat(tls.allowList().unknownSettings()).containsKey("pth");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'pth'")
+                .hasMessageContaining("path");
+    }
+
+    @Test
+    void theUnknownSettingIsNamedAheadOfTheBothDoorsError() throws Exception {
+        // Both doors are set here too, but the unknown entry is the mistake worth naming: the
+        // both-doors message would send the operator to delete a valid setting rather than repair the
+        // broken one.
+        final Tls tls = MAPPER.readValue(
+                "{\"enabled\":true,\"tlsCheks\":\"NONE\",\"tlsChecks\":\"STANDARD\",\"tlsChecksFull\":{}}", Tls.class);
+
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'tlsCheks'");
+    }
+
+    @Test
+    void anUnknownSettingSurvivesTheWritebackVerbatim() throws Exception {
+        // The trap must not leak into the file as a literal 'unknownSettings', and it must not vanish
+        // either: if a writeback dropped the entry, the configuration would become valid and the
+        // adapter would quietly start under the STANDARD default on the next reload - the exact
+        // outcome the trap exists to prevent. What goes in comes back out, and the refusal is sticky.
+        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"tlsCheks\":\"ALL\"}", Tls.class);
+        final String writtenBack = MAPPER.writeValueAsString(tls);
+
+        assertThat(writtenBack).contains("\"tlsCheks\":\"ALL\"").doesNotContain("unknownSettings");
+
+        final Tls reRead = MAPPER.readValue(writtenBack, Tls.class);
+        assertThat(reRead).isEqualTo(tls);
+        assertThatThrownBy(() -> TlsChecksProjection.project(reRead))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class);
+    }
+
+    @Test
+    void aTlsWithAnUnknownSettingIsNotEqualToACleanOne() throws Exception {
+        // The two must keep comparing unequal. If they did not, an adapter whose configuration gained
+        // a misspelled entry would look unchanged to ProtocolAdapterManager's config comparison, which
+        // skips an update when the new config equals the running one - and the refusal would never run.
+        final Tls withUnknown = MAPPER.readValue("{\"enabled\":true,\"tlsCheks\":\"ALL\"}", Tls.class);
+        final Tls clean = MAPPER.readValue("{\"enabled\":true}", Tls.class);
+
+        assertThat(withUnknown).isNotEqualTo(clean);
+    }
+
+    @Test
+    void theTrapCannotBeForgedIntoAcceptance() throws Exception {
+        // An operator writing a literal 'unknownSettings' element does not reach the trap component -
+        // the name is itself unknown, so it lands inside the map and is refused like any other
+        // unknown entry.
+        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"unknownSettings\":{\"x\":1}}", Tls.class);
+
+        assertThat(tls.unknownSettings()).containsKey("unknownSettings");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'unknownSettings'");
     }
 
     @Test
@@ -196,9 +310,9 @@ class TlsChecksParsingTest {
 
     @Test
     void theCollapsedMarkerIsNotPartOfTheConfigurationSurface() throws Exception {
-        // It must not survive a writeback, and an operator must not be able to forge it - a
-        // configuration that writes it is read as though it had not, so the marker can only ever be
-        // set by the collapse actually happening.
+        // It must not survive a writeback, and an operator must not be able to forge it. Writing a
+        // literal 'collapsedText' does not reach the marker - the name is unknown to the model, so it
+        // lands in the unknown-settings trap and is refused as such, never read as a collapse.
         final Tls collapsed = MAPPER.readValue("{\"enabled\":true,\"tlsChecksFull\":\"NONE\"}", Tls.class);
         assertThat(MAPPER.writeValueAsString(collapsed)).doesNotContain("collapsedText");
 
@@ -207,9 +321,12 @@ class TlsChecksParsingTest {
         assertThat(forged.tlsChecksFull()).isNotNull();
         assertThat(forged.tlsChecksFull().collapsedText()).isNull();
         assertThat(forged.tlsChecksFull().trustMode()).isEqualTo(TrustMode.CHAIN);
-        assertThat(TlsChecksProjection.project(forged).trustMode())
-                .as("a forged marker does not refuse the adapter")
-                .isEqualTo(TrustMode.CHAIN);
+        assertThat(forged.tlsChecksFull().unknownSettings()).containsKey("collapsedText");
+        assertThatThrownBy(() -> TlsChecksProjection.project(forged))
+                .as("a forged marker is refused as an unknown setting, not read as a collapse")
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'collapsedText'")
+                .hasMessageNotContaining("could not be read");
     }
 
     @Test
@@ -280,16 +397,16 @@ class TlsChecksParsingTest {
     }
 
     @Test
-    void theRetiredTrustLevelFieldIsRejectedUnderJacksonDefaults() {
-        // trustLevel never shipped, but it existed on a pre-release branch. Under Jackson's default
-        // settings a field the model does not know is an error rather than a value quietly dropped.
-        assertThatThrownBy(() -> MAPPER.readValue("{\"enabled\":true,\"trustLevel\":\"TRUST\"}", Tls.class))
-                .isInstanceOf(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.class)
-                .hasMessageContaining("trustLevel");
-    }
+    void theRetiredTrustLevelFieldIsTrappedAndRefused() throws Exception {
+        // trustLevel never shipped, but it existed on a pre-release branch. A configuration carrying
+        // it is refused at start-up with the entry named, whichever way the mapper is configured -
+        // the trap runs ahead of both FAIL_ON_UNKNOWN_PROPERTIES and any problem handler.
+        final Tls tls = MAPPER.readValue("{\"enabled\":true,\"trustLevel\":\"TRUST\"}", Tls.class);
 
-    private static @NotNull ListAppender<ILoggingEvent> attachAppender() {
-        return attachAppender(EnumParsing.class);
+        assertThat(tls.unknownSettings()).containsKey("trustLevel");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'trustLevel'");
     }
 
     private static @NotNull ListAppender<ILoggingEvent> attachAppender(final @NotNull Class<?> type) {
@@ -298,10 +415,6 @@ class TlsChecksParsingTest {
         appender.start();
         logger.addAppender(appender);
         return appender;
-    }
-
-    private static void detachAppender(final @NotNull ListAppender<ILoggingEvent> appender) {
-        detachAppender(EnumParsing.class, appender);
     }
 
     private static void detachAppender(

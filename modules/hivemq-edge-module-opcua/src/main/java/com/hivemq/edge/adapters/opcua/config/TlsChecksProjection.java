@@ -15,7 +15,12 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,6 +60,19 @@ public final class TlsChecksProjection {
                             + "applied. Give every axis element a value or remove it entirely. An empty "
                             + "<tlsChecksFull/> is valid and means maximum validation.")
                     .formatted(axes.collapsedText()));
+        }
+
+        // A setting the model does not know cannot be applied, and here that is never harmless: the
+        // application-wide handling for unknown adapter settings warns and drops, which for a
+        // misspelled 'tlsChecks' would silently run the adapter under the STANDARD default instead of
+        // whatever the entry was meant to select. Checked before the both-doors error so the operator
+        // is sent to repair the misspelled entry, not to delete a valid one.
+        refuseUnknownSettings("tls", tls.unknownSettings(), Tls.class);
+        if (axes != null) {
+            refuseUnknownSettings("tlsChecksFull", axes.unknownSettings(), TlsChecksFull.class);
+        }
+        if (tls.allowList() != null) {
+            refuseUnknownSettings("allowList", tls.allowList().unknownSettings(), AllowList.class);
         }
 
         if (preset != null && axes != null) {
@@ -170,6 +188,33 @@ public final class TlsChecksProjection {
                     + "server-certificate fingerprints, but no 'allowList' path is configured. Add "
                     + "<allowList><path>...</path></allowList> to the TLS configuration.");
         }
+    }
+
+    /**
+     * Refuses a certificate-validation element that carried entries the model does not know. The
+     * known-settings list is derived from the record's components — minus the deserialization-internal
+     * ones — so it can never drift from the model it describes.
+     */
+    private static void refuseUnknownSettings(
+            final @NotNull String element,
+            final @NotNull Map<String, Object> unknownSettings,
+            final @NotNull Class<? extends Record> type)
+            throws InvalidTlsChecksConfigException {
+        if (unknownSettings.isEmpty()) {
+            return;
+        }
+        final Set<String> internal = Set.of("collapsedText", "unknownSettings");
+        final String known = Arrays.stream(type.getRecordComponents())
+                .map(RecordComponent::getName)
+                .filter(name -> !internal.contains(name))
+                .collect(Collectors.joining(", "));
+        final String unknown =
+                unknownSettings.keySet().stream().map(name -> "'" + name + "'").collect(Collectors.joining(", "));
+        throw new InvalidTlsChecksConfigException(("The certificate-validation element '%s' contains %s, which is "
+                        + "not a setting it has. It cannot be applied, and running without it could mean weaker "
+                        + "validation than was written, so the adapter is refused instead. Correct or remove the "
+                        + "entry. Settings of '%s': %s.")
+                .formatted(element, unknown, element, known));
     }
 
     /**

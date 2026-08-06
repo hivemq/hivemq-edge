@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Every way an operator can misspell a certificate-validation setting, plus one healthy adapter after
+  them. A misspelled VALUE (ALLL) fails that adapter's conversion outright; a misspelled NAME
+  (tlsCheks, trustmode) converts but is trapped and refuses the adapter at start-up. Neither may
+  disturb the healthy neighbour: adapter configurations are converted one at a time, so a mistake in
+  one adapter is that adapter's problem and nobody else's.
+-->
+<hivemq>
+    <protocol-adapters>
+
+        <!-- 'ALLL' is not a preset. Must fail conversion, never quietly run as STANDARD. -->
+        <protocol-adapter>
+            <adapterId>misspelled-preset-value</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-1.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecks>ALLL</tlsChecks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-1</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/1</topic>
+                    <tagName>tag-1</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'tlsCheks' is not a setting. Neither door is configured, so without the trap this would
+             quietly run under the STANDARD default instead of the ALL the operator wrote. -->
+        <protocol-adapter>
+            <adapterId>misspelled-setting-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-2.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsCheks>ALL</tlsCheks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-2</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/2</topic>
+                    <tagName>tag-2</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'trustmode' is not an axis (the axis is trustMode). Without the trap the axis would be
+             "omitted" and resolve to its default, discarding a setting the operator wrote. -->
+        <protocol-adapter>
+            <adapterId>misspelled-axis-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-3.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecksFull>
+                        <trustmode>CHAIN</trustmode>
+                    </tlsChecksFull>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-3</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/3</topic>
+                    <tagName>tag-3</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing misspelled. This one must convert and project regardless of the three above. -->
+        <protocol-adapter>
+            <adapterId>healthy-neighbour</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-4.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecks>ALL</tlsChecks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-4</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/4</topic>
+                    <tagName>tag-4</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+    </protocol-adapters>
+</hivemq>

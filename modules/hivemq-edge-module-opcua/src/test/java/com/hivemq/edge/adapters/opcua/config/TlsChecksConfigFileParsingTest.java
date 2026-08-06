@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 class TlsChecksConfigFileParsingTest {
 
     private static final @NotNull String COLLAPSED = "/opcua-adapter-tls-collapsed-elements-config.xml";
+    private static final @NotNull String INVALID = "/opcua-adapter-tls-invalid-values-config.xml";
 
     /** Every axis at its strictest value — what an unset axis resolves to. */
     private static final @NotNull EffectiveChecks MAXIMUM_VALIDATION = new EffectiveChecks(
@@ -186,6 +187,68 @@ class TlsChecksConfigFileParsingTest {
     }
 
     @Test
+    void aMisspelledPresetValueFailsOnlyThatAdaptersConversion() {
+        // <tlsChecks>ALLL</tlsChecks> is a value the model cannot read, and "unset" is not a safe
+        // fallback for the preset door - STANDARD checks less than the ALL the operator meant. The
+        // conversion of that adapter fails, naming the value; every other adapter in the file,
+        // including one with a trapped setting NAME, still converts. This is the isolation the
+        // per-adapter conversion in ProtocolAdapterManager provides.
+        final ProtocolAdapterConfigConverter converter = createConverter();
+
+        for (final ProtocolAdapterEntity entity : entitiesOf(INVALID)) {
+            if ("misspelled-preset-value".equals(entity.getAdapterId())) {
+                assertThatThrownBy(() -> converter.fromEntity(entity))
+                        .hasMessageContaining("'ALLL'")
+                        .hasMessageContaining("TlsChecks");
+            } else {
+                assertThatCode(() -> converter.fromEntity(entity))
+                        .as("adapter '%s' must convert", entity.getAdapterId())
+                        .doesNotThrowAnyException();
+            }
+        }
+    }
+
+    @Test
+    void aMisspelledSettingNameIsTrappedAndRefusedAtStartUp() {
+        // <tlsCheks>ALL</tlsCheks>: with neither door configured, the application-wide
+        // warn-and-drop handling for unknown settings would quietly run this adapter under the
+        // STANDARD default. The entry is trapped through conversion instead and refuses the adapter
+        // at start-up, naming it.
+        final Tls tls = tlsOf(INVALID, "misspelled-setting-name");
+
+        assertThat(tls.unknownSettings()).containsKey("tlsCheks");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'tlsCheks'")
+                .hasMessageContaining("tlsChecks");
+    }
+
+    @Test
+    void aMisspelledAxisNameIsTrappedAndRefusedAtStartUp() {
+        // <trustmode> is not <trustMode>. Without the trap the axis would count as omitted and
+        // resolve to its strictest default - safe in the checking direction, but it discards a
+        // setting the operator explicitly wrote.
+        final Tls tls = tlsOf(INVALID, "misspelled-axis-name");
+
+        assertThat(tls.tlsChecksFull()).isNotNull();
+        assertThat(tls.tlsChecksFull().unknownSettings()).containsKey("trustmode");
+        assertThatThrownBy(() -> TlsChecksProjection.project(tls))
+                .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
+                .hasMessageContaining("'trustmode'")
+                .hasMessageContaining("trustMode");
+    }
+
+    @Test
+    void anAdapterAfterTheMisspelledOnesKeepsItsOwnConfiguration() {
+        final Tls tls = tlsOf(INVALID, "healthy-neighbour");
+
+        assertThat(tls.tlsChecks()).isEqualTo(TlsChecks.ALL);
+        assertThatCode(() -> assertThat(TlsChecksProjection.project(tls))
+                        .isEqualTo(TlsChecksProjection.fromPreset(TlsChecks.ALL)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void anAdapterAfterTheCollapsedOnesKeepsItsOwnConfiguration() {
         // Not merely present: unaltered. The point of the fix is that the neighbour is untouched, not
         // that it survives in some degraded form.
@@ -220,6 +283,20 @@ class TlsChecksConfigFileParsingTest {
         return adapterConfigOf(adapterId).getTls();
     }
 
+    /**
+     * Reads one adapter's TLS configuration from the given fixture, converting only that adapter — so
+     * a fixture may also contain adapters whose conversion fails by design.
+     */
+    private @NotNull Tls tlsOf(final @NotNull String resourceName, final @NotNull String adapterId) {
+        final ProtocolAdapterEntity entity = entitiesOf(resourceName).stream()
+                .filter(candidate -> adapterId.equals(candidate.getAdapterId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no adapter '" + adapterId + "' in " + resourceName));
+        return ((OpcUaSpecificAdapterConfig)
+                        createConverter().fromEntity(entity).getAdapterConfig())
+                .getTls();
+    }
+
     private @NotNull OpcUaSpecificAdapterConfig adapterConfigOf(final @NotNull String adapterId) {
         return (OpcUaSpecificAdapterConfig) loadAdapters(COLLAPSED).stream()
                 .filter(config -> adapterId.equals(config.getAdapterId()))
@@ -237,6 +314,15 @@ class TlsChecksConfigFileParsingTest {
     }
 
     private @NotNull List<ProtocolAdapterConfig> loadAdapters(final @NotNull String resourceName) {
+        // Deliberately the same shape as the historical ProtocolAdapterManager.refresh: one stream
+        // over every adapter, so a throw on any of them is a throw on all of them.
+        final ProtocolAdapterConfigConverter converter = createConverter();
+        return entitiesOf(resourceName).stream()
+                .map((ProtocolAdapterEntity entity) -> converter.fromEntity(entity))
+                .toList();
+    }
+
+    private @NotNull List<ProtocolAdapterEntity> entitiesOf(final @NotNull String resourceName) {
         final URL resource = getClass().getResource(resourceName);
         assertThat(resource).as("fixture %s", resourceName).isNotNull();
 
@@ -250,13 +336,7 @@ class TlsChecksConfigFileParsingTest {
         final HiveMQConfigEntity configEntity = new ConfigFileReaderWriter(
                         mock(SystemInformation.class), new ConfigurationFile(file), List.of())
                 .applyConfig();
-
-        // Deliberately the same shape as ProtocolAdapterManager.refresh: one stream over every adapter,
-        // so a throw on any of them is a throw on all of them.
-        final ProtocolAdapterConfigConverter converter = createConverter();
-        return configEntity.getProtocolAdapterConfig().stream()
-                .map((ProtocolAdapterEntity entity) -> converter.fromEntity(entity))
-                .toList();
+        return configEntity.getProtocolAdapterConfig();
     }
 
     private @NotNull ProtocolAdapterConfigConverter createConverter() {
