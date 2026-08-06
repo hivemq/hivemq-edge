@@ -224,6 +224,10 @@ public class OpcUaClientConnection {
 
         final ConnectionContext ctx = context.getAndSet(null);
         if (ctx != null) {
+            // Told before the client is closed, not after: a recovery may be part way through verifying
+            // tags, and this is what lets it stop rather than spend a round trip per remaining tag on a
+            // client that is about to be disconnected.
+            ctx.subscriptionHandler().abandon();
             quietlyCloseClient(ctx.client(), true, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
@@ -234,6 +238,7 @@ public class OpcUaClientConnection {
 
         final ConnectionContext ctx = context.getAndSet(null);
         if (ctx != null) {
+            ctx.subscriptionHandler().abandon();
             quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }

@@ -43,6 +43,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -100,6 +103,33 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private final @NotNull AtomicReference<OpcUaSubscription> currentSubscription = new AtomicReference<>();
 
     /**
+     * Set when the connection this handler belongs to has been closed, so work still in flight can stop.
+     * <p>
+     * A reconnect does not coordinate with a recovery already running: it stops the old connection and
+     * builds a new one, which subscribes every tag from scratch. Whatever the old recovery was still doing
+     * is then work on a client that has been disconnected and a subscription nobody holds — every remaining
+     * call fails, and each failure is reported to the operator as a tag that cannot be subscribed, for tags
+     * that are perfectly fine.
+     * <p>
+     * Checked between tags rather than inside the calls themselves. Most of the time the disconnected client
+     * fails each call immediately, so the cost is spurious events rather than delay; but against a server
+     * that is reachable and simply not answering — the state that produces a transfer failure in the first
+     * place — each call waits its full timeout, and that is the case this bounds to one wait instead of one
+     * per tag.
+     */
+    private final @NotNull AtomicBoolean abandoned = new AtomicBoolean();
+
+    /**
+     * Where a subscription rebuild runs, so it never occupies Milo's delivery queue.
+     * <p>
+     * Single-threaded on purpose: two rebuilds must not run at once, and one thread gives that by
+     * construction rather than by locking. Daemon, so a rebuild in progress cannot hold the JVM open — the
+     * work is an optimisation over letting the adapter's own reconnect rebuild everything, never something
+     * worth delaying shutdown for.
+     */
+    private final @NotNull ExecutorService recoveryExecutor;
+
+    /**
      * Whether a refresh requested by the <em>server</em> is still outstanding.
      * <p>
      * One {@code RefreshRequired} occurrence is delivered to every notifier item in the subscription, so this
@@ -131,6 +161,11 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         this.tags = tags;
         this.tagToFirstSeen = new ConcurrentHashMap<>();
         this.lastKeepAliveTimestamp = System.currentTimeMillis();
+        this.recoveryExecutor = Executors.newSingleThreadExecutor(runnable -> {
+            final Thread thread = new Thread(runnable, "opcua-subscription-recovery-" + adapterId);
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     /**
@@ -304,8 +339,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // to arrive on, is dropped here rather than subscribed. The check is per tag, so one bad tag
             // cannot stop the others -- or the adapter -- from starting.
             final List<VerifiedTag> verifiedTags = new ArrayList<>();
-            for (final OpcuaTag opcuaTag : monitoredItemsToAdd) {
-                verify(opcuaTag).ifPresent(verifiedTags::add);
+            for (int i = 0; i < monitoredItemsToAdd.size(); i++) {
+                // Between tags rather than inside verify(): each tag costs up to two server round trips, so
+                // a connection closed underneath us should not buy the remaining ones. Reported as a plain
+                // failure, not as a tag problem -- these tags were never judged.
+                if (abandoned.get()) {
+                    log.info(
+                            "Adapter '{}': abandoning monitored item sync, the connection was closed with {} of {} tags still to verify",
+                            adapterId,
+                            monitoredItemsToAdd.size() - i,
+                            monitoredItemsToAdd.size());
+                    return false;
+                }
+                verify(monitoredItemsToAdd.get(i)).ifPresent(verifiedTags::add);
             }
 
             verifiedTags.forEach(verified -> {
@@ -464,6 +510,20 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      *
      * @return true if last keep-alive was received within the computed timeout, false otherwise
      */
+    /**
+     * Marks this handler's connection as closed, so a recovery still running stops instead of finishing work
+     * against a client that has been disconnected. Idempotent; safe to call from any thread.
+     * <p>
+     * {@code shutdown()} rather than {@code shutdownNow()}: a rebuild already under way is left to notice
+     * the flag between tags and return, which is tidier than interrupting it mid-request. Nothing is awaited
+     * — the caller is closing a connection whose replacement is already being built, and the executor's
+     * thread is a daemon, so an unfinished rebuild cannot hold anything open.
+     */
+    public void abandon() {
+        abandoned.set(true);
+        recoveryExecutor.shutdown();
+    }
+
     public boolean isKeepAliveHealthy() {
         return (System.currentTimeMillis() - lastKeepAliveTimestamp) < getKeepAliveTimeoutMs();
     }
@@ -481,15 +541,41 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return opts.keepAliveIntervalMs() * (opts.keepAliveFailuresAllowed() + 1) + KEEP_ALIVE_SAFETY_MARGIN_MS;
     }
 
+    /**
+     * Rebuilds the subscription after the server refused to transfer the old one to a new session.
+     * <p>
+     * The work is posted rather than done here. Milo delivers everything about a subscription through one
+     * queue, one task at a time, and this callback runs on it — so anything done inline stops every
+     * notification for that subscription, including the keep-alives Edge uses to decide the connection is
+     * alive. Rebuilding is slow: {@code create()} is a blocking server call, and each condition tag then
+     * costs two more with a ten-second ceiling apiece. Long enough that the health check would see stale
+     * keep-alives and fire a reconnect against the recovery still running — the recovery's own duration
+     * mistaken for a failure.
+     * <p>
+     * Posting returns the delivery queue immediately, so keep-alives keep flowing while the rebuild
+     * proceeds. See EDG-878 for the wider question of whether this belongs here at all: the adapter's
+     * reconnect path already rebuilds everything, and this method duplicates it.
+     */
     @Override
     public void onTransferFailed(
             final @NotNull OpcUaSubscription brokenSubscription, final @NotNull StatusCode status) {
-        // Transfer failed after a disconnect, the current subscription is broken.
-        // We need to create a new subscription and recreate the monitored items.
-
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_TRANSFER_FAILED_COUNT);
-
         log.error("Subscription Transfer failed, recreating subscription for adapter '{}'", adapterId);
+
+        try {
+            recoveryExecutor.execute(this::recreateSubscription);
+        } catch (final RejectedExecutionException e) {
+            // The connection was closed while this callback was in flight. A reconnect is already building a
+            // replacement, so there is nothing to recover to.
+            log.debug("Adapter '{}': not recreating the subscription, the connection is already closing", adapterId);
+        }
+    }
+
+    /**
+     * Creates a replacement subscription and re-establishes every monitored item on it. Runs on
+     * {@link #recoveryExecutor}, never on Milo's delivery queue.
+     */
+    private void recreateSubscription() {
         newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
