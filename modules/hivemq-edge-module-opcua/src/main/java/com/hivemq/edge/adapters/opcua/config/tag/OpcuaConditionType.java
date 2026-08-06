@@ -174,8 +174,25 @@ public enum OpcuaConditionType {
      * for every condition regardless of its type, and listed first so the published shape reads in a stable
      * order.
      */
-    public static final @NotNull List<String> BASE_EVENT_FIELDS =
-            List.of("EventId", "EventType", "SourceNode", "SourceName", "Time", "ReceiveTime", "Message", "Severity");
+    public static final @NotNull List<String> BASE_EVENT_FIELDS = List.of(
+            "EventId",
+            "EventType",
+            "SourceNode",
+            "SourceName",
+            "Time",
+            "ReceiveTime",
+            // The one Optional member of BaseEventType worth selecting here. Time is UTC; this says what the
+            // clock read where the event was issued -- an offset in minutes plus whether it includes DST.
+            //
+            // Optional is not a reason to leave it out. Edge already selects Optional fields throughout: all
+            // sixteen of LimitAlarmType's limits are Optional, as are fourteen of AlarmConditionType's
+            // seventeen members. A server without one returns null (OPC 10000-4 §7.22.3), which is the same
+            // cost paid everywhere else. What made this field different is that it was *unreachable*: every
+            // other field follows from the declared type, and no type adds LocalTime, because it sits on the
+            // base of them all. So no configuration could ask for it.
+            "LocalTime",
+            "Message",
+            "Severity");
 
     /**
      * The fields whose type is {@code TwoStateVariableType}, and which therefore carry a Boolean {@code Id}

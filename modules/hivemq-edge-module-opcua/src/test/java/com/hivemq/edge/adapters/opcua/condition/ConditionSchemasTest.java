@@ -52,6 +52,32 @@ class ConditionSchemasTest {
     }
 
     @Test
+    void localTimeIsDeclaredAsAnOffsetAndADaylightFlag() {
+        // EDG-835: LocalTime is Optional on BaseEventType and was the one field no configuration could ask
+        // for -- every other field follows from the declared type, and no type adds this one, because it
+        // sits on the base of them all. Now selected for every condition type, so its shape is promised for
+        // every one of them.
+        for (final OpcuaConditionType type : OpcuaConditionType.values()) {
+            final ObjectNode json = render(ConditionSchemas.readSchema(type));
+            final JsonNode localTime = json.get("properties").get("LocalTime");
+            assertThat(localTime)
+                    .as("%s must describe LocalTime", type.browseName())
+                    .isNotNull();
+
+            final JsonNode shape = shapeOf(localTime);
+            assertThat(shape.path("properties").has("offset"))
+                    .as("%s must type LocalTime with its minute offset", type.browseName())
+                    .isTrue();
+            assertThat(shape.path("properties").has("daylightSavingInOffset"))
+                    .as(
+                            "%s must say whether the offset includes the DST correction -- without the flag the "
+                                    + "offset cannot be interpreted",
+                            type.browseName())
+                    .isTrue();
+        }
+    }
+
+    @Test
     void theReadSchemaDeclaresTheUnavailableFieldsCompanion() {
         // EDG-835: a server may substitute a StatusCode for any field's value (OPC 10000-4 §7.22.3), and
         // such a field is published as null. Every field is nullable already, so the null alone validates --

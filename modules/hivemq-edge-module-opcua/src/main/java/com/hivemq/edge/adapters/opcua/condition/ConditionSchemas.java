@@ -274,7 +274,32 @@ public final class ConditionSchemas {
     private static void appendField(
             final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
 
-        if (OpcuaConditionType.STATE_MACHINE_FIELDS.contains(field)) {
+        if ("LocalTime".equals(field)) {
+            // OPC 10000-5: the offset in minutes between the event's Time and the time where it was issued,
+            // and whether that offset already includes the daylight-saving correction. Optional on
+            // BaseEventType, so a server that does not supply it publishes null like any other absent field.
+            object.property(field)
+                    .startObject()
+                    .property("offset")
+                    .scalar(ScalarType.LONG)
+                    .description("Minutes between the event's 'Time' (UTC) and the local time where the "
+                            + "event was issued.")
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("daylightSavingInOffset")
+                    .scalar(ScalarType.BOOLEAN)
+                    .description("True when 'offset' already includes the daylight-saving correction. False "
+                            + "means it does not, and DST may or may not have been in effect.")
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        } else if (OpcuaConditionType.STATE_MACHINE_FIELDS.contains(field)) {
             // A state machine is an Object with no value of its own, so what is published is its
             // CurrentState -- the display text -- with the NodeId of the active state node as `id`. Same
             // shape as a two-state field, but `id` is a node id rather than a Boolean, because a machine

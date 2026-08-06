@@ -40,6 +40,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
+import org.eclipse.milo.opcua.stack.core.types.structured.TimeZoneDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -197,6 +198,8 @@ public class OpcUaToJsonConverter {
             final var obj = builder.startObjectValue();
             struct.getMembers().forEach((k, v) -> addValueToObject(obj, k, v, ctx));
             obj.endObject();
+        } else if (value instanceof final TimeZoneDataType timeZone) {
+            populateTimeZone(builder.startObjectValue(), timeZone).endObject();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
@@ -310,6 +313,8 @@ public class OpcUaToJsonConverter {
             final var nested = obj.startObject(key);
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
             nested.endObject();
+        } else if (value instanceof final TimeZoneDataType timeZone) {
+            populateTimeZone(obj.startObject(key), timeZone).endObject();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
@@ -414,6 +419,8 @@ public class OpcUaToJsonConverter {
             final var nested = arr.startObject();
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
             nested.endObject();
+        } else if (value instanceof final TimeZoneDataType timeZone) {
+            populateTimeZone(arr.startObject(), timeZone).endObject();
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             for (final Object elem : values) {
@@ -466,6 +473,32 @@ public class OpcUaToJsonConverter {
         // `namespaceUri` alongside would make a node id outlive its session; that is a payload addition, and
         // a separate decision from correcting this field.
         obj.put("namespaceIndex", nodeId.getNamespaceIndex().intValue());
+        return obj;
+    }
+
+    /**
+     * Writes a {@code TimeZoneDataType} as {@code {offset, daylightSavingInOffset}}.
+     * <p>
+     * OPC 10000-5: the offset is "the time difference (in minutes) between the Time Property and the time at
+     * the location in which the event was issued", and the flag says whether that offset already includes
+     * the daylight-saving correction — so a consumer reconstructing local time adds the offset, and a
+     * consumer reasoning about DST needs the flag to know what it has been told.
+     * <p>
+     * Named explicitly rather than left to the generic structure path: Milo decodes this one into its own
+     * generated class rather than a {@code DynamicStructType}, so without this it would fall through to the
+     * {@code toString()} branch and publish a Java object rendering.
+     */
+    private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateTimeZone(
+            final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull TimeZoneDataType timeZone) {
+
+        final Short offset = timeZone.getOffset();
+        if (offset != null) {
+            obj.put("offset", offset.intValue());
+        }
+        final Boolean daylightSaving = timeZone.getDaylightSavingInOffset();
+        if (daylightSaving != null) {
+            obj.put("daylightSavingInOffset", daylightSaving);
+        }
         return obj;
     }
 
