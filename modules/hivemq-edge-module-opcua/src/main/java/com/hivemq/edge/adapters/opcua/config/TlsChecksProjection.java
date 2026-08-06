@@ -183,11 +183,29 @@ public final class TlsChecksProjection {
                     .formatted(checks.revocation(), checks.trustMode()));
         }
 
-        if (checks.trustMode() == TrustMode.ALLOW_LIST && !hasAllowListPath(tls.allowList())) {
+        if (checks.trustMode() == TrustMode.ALLOW_LIST) {
+            // Enforced through the same method callers use to retrieve the path, so the requirement
+            // and the accessor cannot drift apart.
+            requireAllowListPath(tls.allowList());
+        }
+    }
+
+    /**
+     * The configured allow-list path, validated to be present and non-blank — the requirement
+     * {@code trustMode=ALLOW_LIST} carries. {@link #validate} enforces it through this same method, so
+     * a configuration that projected successfully cannot fail here; a caller that reaches for the path
+     * without projecting first still gets the operator-facing error rather than a
+     * {@code NullPointerException}.
+     */
+    public static @NotNull String requireAllowListPath(final @Nullable AllowList allowList)
+            throws InvalidTlsChecksConfigException {
+        final String path = allowList == null ? null : allowList.path();
+        if (path == null || path.isBlank()) {
             throw new InvalidTlsChecksConfigException("Trust mode ALLOW_LIST requires an allow-list of permitted "
                     + "server-certificate fingerprints, but no 'allowList' path is configured. Add "
                     + "<allowList><path>...</path></allowList> to the TLS configuration.");
         }
+        return path;
     }
 
     /**

@@ -73,11 +73,16 @@ public record EffectiveChecks(
     }
 
     /**
-     * Whether any check beyond the trust decision itself is enabled. When this is {@code false} under
+     * Whether any check that can be enforced on the end-entity certificate alone — without building a
+     * certification path — is enabled: SubjectAltName URI, hostname, validity or key usage. These are
+     * exactly the checks {@code CertificateChecks.apply} performs for the chainless trust modes.
+     * Revocation is deliberately not part of the disjunction: it is decidable only while a path is
+     * built, the projection rejects revocation without {@link TrustMode#CHAIN}, and counting it here
+     * would claim a check the chainless validators cannot perform. When this is {@code false} under
      * {@link TrustMode#ANY_CERT}, nothing whatsoever is verified.
      */
-    public boolean isAnyCertificateCheckEnabled() {
-        return isSanUri() || isHostname() || isValidity() || isRevocation() || isKeyUsage();
+    public boolean hasStandaloneEndEntityChecks() {
+        return isSanUri() || isHostname() || isValidity() || isKeyUsage();
     }
 
     /** A compact, log-friendly rendering of all six axes. */

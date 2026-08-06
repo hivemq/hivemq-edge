@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
@@ -108,9 +107,15 @@ public record ParsedConfig(
                     }
                 }
                 case ALLOW_LIST -> {
-                    // Presence of a non-blank path is guaranteed by the projection's validation.
-                    final AllowList allowList = Objects.requireNonNull(tlsConfig.allowList());
-                    final String allowListPath = Objects.requireNonNull(allowList.path());
+                    final String allowListPath;
+                    try {
+                        allowListPath = TlsChecksProjection.requireAllowListPath(tlsConfig.allowList());
+                    } catch (final TlsChecksProjection.InvalidTlsChecksConfigException e) {
+                        // Unreachable while project() above validates ALLOW_LIST configurations, but a
+                        // future caller that skips projection gets the operator-facing error rather
+                        // than a NullPointerException.
+                        return Failure.of(e.reason());
+                    }
                     final Set<String> fingerprints;
                     try {
                         fingerprints = CertificateFingerprints.loadAllowList(Path.of(allowListPath));
@@ -131,7 +136,7 @@ public record ParsedConfig(
                 case ANY_CERT ->
                     // No trust is established at all. Whatever else is configured is still enforced on
                     // the presented certificate, which is what keeps the axes orthogonal.
-                    certValidator = checks.isAnyCertificateCheckEnabled()
+                    certValidator = checks.hasStandaloneEndEntityChecks()
                             ? new CheckOnlyCertificateValidator(checks)
                             : new CertificateValidator.InsecureCertificateValidator();
             }

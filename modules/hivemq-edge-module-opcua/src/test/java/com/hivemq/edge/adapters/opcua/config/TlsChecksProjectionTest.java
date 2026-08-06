@@ -126,7 +126,7 @@ class TlsChecksProjectionTest {
         void none_isChainOnly() {
             final EffectiveChecks checks = project(preset(TlsChecks.NONE));
             assertThat(checks.trustMode()).isEqualTo(TrustMode.CHAIN);
-            assertThat(checks.isAnyCertificateCheckEnabled())
+            assertThat(checks.hasStandaloneEndEntityChecks())
                     .as("NONE disables the optional checks but still builds the chain")
                     .isFalse();
         }
@@ -192,7 +192,7 @@ class TlsChecksProjectionTest {
         void noVerification_checksNothing() {
             final EffectiveChecks checks = project(preset(TlsChecks.NO_VERIFICATION));
             assertThat(checks.trustMode()).isEqualTo(TrustMode.ANY_CERT);
-            assertThat(checks.isAnyCertificateCheckEnabled()).isFalse();
+            assertThat(checks.hasStandaloneEndEntityChecks()).isFalse();
         }
 
         @Test
