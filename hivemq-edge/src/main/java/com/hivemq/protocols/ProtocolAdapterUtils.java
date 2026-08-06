@@ -79,16 +79,18 @@ public class ProtocolAdapterUtils {
      *
      * <p>The application-wide mapper disables {@code FAIL_ON_UNKNOWN_PROPERTIES}, so a misspelled
      * element in an adapter configuration used to be discarded in complete silence: the operator wrote
-     * a setting, the adapter started without it, and nothing anywhere said so. That is the failure mode
-     * the adapter configs already reject for a misspelled enum <em>value</em> — reported at WARN and
-     * then treated as absent — and it applied to the value but not to the name around it.
+     * a setting, the adapter started without it, and nothing anywhere said so. A misspelled enum
+     * <em>value</em> already fails that adapter's conversion with an error naming the value; this
+     * handler closes the gap for a misspelled setting <em>name</em>, which Jackson would otherwise
+     * drop without a word.
      *
      * <p>Reporting rather than throwing is deliberate. Configurations written for other versions of
      * HiveMQ Edge may legitimately carry settings this one does not know, and refusing to start an
      * adapter over one is a worse outcome than running it without the setting; the operator still
-     * learns about it. Note also that omitting a setting is not the same as writing it wrongly: every
-     * default in the certificate-validation model is the strictest available value, so a discarded
-     * setting yields more checking, never less.
+     * learns about it. Omitting a setting is not the same as writing it wrongly, but it is not always
+     * harmless either: the certificate-validation axes default to their strictest value, so a
+     * discarded axis yields more checking — but the preset door defaults to {@code STANDARD}, which is
+     * weaker than {@code ALL}, so a discarded preset can yield less checking than the operator wrote.
      *
      * <p>A problem handler is consulted before {@code FAIL_ON_UNKNOWN_PROPERTIES} is examined, so this
      * makes the behaviour identical whichever way the base mapper is configured — which also stops

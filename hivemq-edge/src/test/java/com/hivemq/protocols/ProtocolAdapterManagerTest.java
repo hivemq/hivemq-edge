@@ -654,6 +654,24 @@ class ProtocolAdapterManagerTest {
         }
 
         @Test
+        void anUnreadableConfigForANewAdapter_doesNotCreateIt() throws Exception {
+            // The other half of the outcome-neutral message: with no existing instance there is
+            // nothing to leave unchanged, and no adapter must come into being from a configuration
+            // that could not be read.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            final ProtocolAdapterEntity unreadable = entity("brand-new-adapter");
+            when(configConverter.fromEntity(unreadable))
+                    .thenThrow(new IllegalArgumentException("Cannot coerce empty String"));
+
+            spyManager.refresh(List.of(unreadable));
+            waitUntilNotBusy(spyManager);
+
+            verify(spyManager, org.mockito.Mockito.never()).createProtocolAdapter(any(), anyString());
+            verify(spyManager, org.mockito.Mockito.never()).start("brand-new-adapter");
+            assertThat(spyManager.getProtocolAdapterIdSet()).isEmpty();
+        }
+
+        @Test
         void aDuplicatedAdapterId_doesNotStopTheOtherAdaptersFromBeingRefreshed() throws Exception {
             // Collectors.toMap threw IllegalStateException on a duplicate key, which killed the refresh
             // the same way. Which of the two configurations the operator meant is not knowable, so
@@ -791,7 +809,7 @@ class ProtocolAdapterManagerTest {
             verify(eventBuilder, times(2)).withSeverity(Event.SEVERITY.CRITICAL);
             verify(eventBuilder)
                     .withMessage("Adapter 'unreadable-adapter' configuration could not be read. "
-                            + "The adapter has been left unchanged.");
+                            + "An existing instance, if any, was left unchanged; a new adapter was not created.");
         }
 
         @Test

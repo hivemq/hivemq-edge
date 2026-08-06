@@ -766,10 +766,13 @@ public class ProtocolAdapterManager {
                     reportDuplicatedAdapterId(reportedDuplicateIds, adapterId);
                 }
                 final boolean firstFailureForId = failedAdapterSet.add(adapterId);
+                // Outcome-neutral on purpose: the entity may describe an adapter that exists (whose
+                // instance keeps running on its previous configuration) or one that does not (which
+                // is simply not created) - and which of the two it is is not knowable here.
                 LOGGER.error(
-                        "Failed reading the configuration of adapter '{}'. The adapter has been left unchanged and "
-                                + "every other adapter has been refreshed as usual; correct the configuration and it "
-                                + "will be applied on the next reload.",
+                        "Failed reading the configuration of adapter '{}'. An existing instance, if any, was left "
+                                + "unchanged; a new adapter was not created. Every other adapter has been refreshed "
+                                + "as usual; correct the configuration and it will be applied on the next reload.",
                         adapterId,
                         e);
                 // The log is per entity - each unreadable entity is its own mistake - but the
@@ -781,7 +784,8 @@ public class ProtocolAdapterManager {
                             .withSeverity(Event.SEVERITY.CRITICAL)
                             .withMessage("Adapter '"
                                     + adapterId
-                                    + "' configuration could not be read. The adapter has been left unchanged.")
+                                    + "' configuration could not be read. An existing instance, if any, was left "
+                                    + "unchanged; a new adapter was not created.")
                             .fire();
                 }
                 continue;
