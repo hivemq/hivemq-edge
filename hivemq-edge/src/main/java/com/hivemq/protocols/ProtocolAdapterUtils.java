@@ -43,17 +43,20 @@ public class ProtocolAdapterUtils {
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterUtils.class);
 
     public static @NotNull ObjectMapper createProtocolAdapterMapper(final @NotNull ObjectMapper objectMapper) {
-        final ObjectMapper copy = objectMapper.copy();
-        copy.coercionConfigFor(LogicalType.POJO).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
-        copy.coercionConfigFor(LogicalType.Collection)
+        final ObjectMapper adapterMapper = objectMapper.copy();
+        adapterMapper
+                .coercionConfigFor(LogicalType.POJO)
                 .setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
-        copy.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
-        copy.addHandler(new ReportUnknownPropertyHandler());
+        adapterMapper
+                .coercionConfigFor(LogicalType.Collection)
+                .setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+        adapterMapper.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
+        adapterMapper.addHandler(new ReportUnknownPropertyHandler());
         final SimpleModule module = new SimpleModule("UserPropertyModule", Version.unknownVersion());
         final SimpleAbstractTypeResolver resolver = new SimpleAbstractTypeResolver();
         module.setAbstractTypes(resolver);
-        copy.registerModule(module);
-        return copy;
+        adapterMapper.registerModule(module);
+        return adapterMapper;
     }
 
     /**
@@ -67,9 +70,9 @@ public class ProtocolAdapterUtils {
      * path an operator's file actually takes.
      */
     public static @NotNull ObjectMapper withUnknownPropertyReporting(final @NotNull ObjectMapper objectMapper) {
-        final ObjectMapper copy = objectMapper.copy();
-        copy.addHandler(new ReportUnknownPropertyHandler());
-        return copy;
+        final ObjectMapper reportingMapper = objectMapper.copy();
+        reportingMapper.addHandler(new ReportUnknownPropertyHandler());
+        return reportingMapper;
     }
 
     /**
