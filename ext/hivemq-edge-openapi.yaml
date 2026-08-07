@@ -4592,7 +4592,7 @@ paths:
   /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
     get:
       deprecated: true
-      description: '**Deprecated:** Use `GET /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}` instead. This endpoint now returns a 301 redirect to the replacement.'
+      description: '**Deprecated:** Use `GET /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND` instead. This endpoint now returns a 301 redirect to the replacement.'
       operationId: get-writing-schema
       x-roles-allowed:
         - admin
@@ -4614,7 +4614,7 @@ paths:
             format: urlencoded
       responses:
         '301':
-          description: Moved Permanently. The schema endpoint has moved to `/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}`.
+          description: Moved Permanently. The schema endpoint has moved to `/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND`.
           headers:
             Location:
               description: The new URL for this resource.
@@ -4646,15 +4646,15 @@ paths:
           schema:
             type: string
             format: urlencoded
-        - description: The direction of the schema to retrieve. WRITE returns the southbound schema describing only what can be written to the tag (read-only fields omitted). When omitted, the northbound schema describing the full data shape published for the tag is returned.
+        - description: 'The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that a write targets. Whether an individual field can be written is carried per field as readOnly and enforced when the write is validated. When omitted, the NORTHBOUND schema describing the full data shape published for the tag is returned. Any other value is rejected with a 400.'
           in: query
           name: direction
           required: false
           schema:
             type: string
             enum:
-              - READ
-              - WRITE
+              - NORTHBOUND
+              - SOUTHBOUND
       responses:
         '200':
           content:
@@ -4674,6 +4674,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unknown schema direction
         '404':
           content:
             application/json:

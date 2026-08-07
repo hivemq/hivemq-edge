@@ -20,10 +20,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.DomainTagOwnerConverter;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
@@ -51,6 +57,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
 import jakarta.ws.rs.core.Response;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -827,5 +834,76 @@ class ProtocolAdaptersResourceImplTest {
         final Response response = protocolAdaptersResource.updateAdapterDomainTags(adapterId, uniqueTagList);
 
         assertEquals(200, response.getStatus());
+    }
+
+    private void mockAdapterWithTagSchema(final @NotNull String adapterId) {
+        final ProtocolAdapterWrapper wrapper = mock();
+        final ProtocolAdapter adapter = mock();
+        when(wrapper.getAdapter()).thenReturn(adapter);
+        doAnswer(invocation -> {
+                    final TagSchemaCreationOutput output = invocation.getArgument(1);
+                    output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                            new SchemaBuilder()
+                                    .scalar(ScalarType.LONG)
+                                    .title("RPM")
+                                    .build(),
+                            null,
+                            null));
+                    return null;
+                })
+                .when(adapter)
+                .createTagSchema(any(), any());
+        when(protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId))
+                .thenReturn(Optional.of(wrapper));
+    }
+
+    @Test
+    void getSchema_whenDirectionOmitted_thenReturnsTheNorthboundSchema() {
+        mockAdapterWithTagSchema("adapter");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "tag", null);
+
+        assertEquals(200, response.getStatus());
+        final JsonNode schema = (JsonNode) response.getEntity();
+        assertThat(schema.get("properties").has("tagName")).isTrue();
+        assertThat(schema.get("properties").has("value")).isTrue();
+    }
+
+    @Test
+    void getSchema_whenDirectionIsSouthbound_thenReturnsTheEnvelopeFreeSchema() {
+        mockAdapterWithTagSchema("adapter");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "tag", "SOUTHBOUND");
+
+        assertEquals(200, response.getStatus());
+        final JsonNode schema = (JsonNode) response.getEntity();
+        assertThat(schema.get("properties").has("tagName")).isFalse();
+        assertThat(schema.get("properties").has("value")).isTrue();
+    }
+
+    @Test
+    void getSchema_whenDirectionIsUnknown_thenReturns400() {
+        // A typo must fail loudly: silently defaulting to NORTHBOUND would hand the caller a
+        // differently-shaped document with no signal.
+        final Response response = protocolAdaptersResource.getSchema("adapter", "tag", "SOUTBOUND");
+
+        assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    void getSchema_whenDirectionIsLowercase_thenReturns400() {
+        // The OpenAPI enum is uppercase-only; the implementation must not be more lenient than the contract.
+        final Response response = protocolAdaptersResource.getSchema("adapter", "tag", "southbound");
+
+        assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    void getWritingSchema_redirectsWithTheSouthboundDirection() {
+        final Response response = protocolAdaptersResource.getWritingSchema("adapter", "tag");
+
+        assertEquals(301, response.getStatus());
+        assertThat(response.getLocation().toString())
+                .isEqualTo("/api/v1/management/protocol-adapters/schema/adapter/tag?direction=SOUTHBOUND");
     }
 }

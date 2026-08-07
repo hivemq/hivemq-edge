@@ -2,8 +2,8 @@ get:
   deprecated: true
   description: >-
     **Deprecated:** Use `GET
-    /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}` instead.
-    This endpoint now returns a 301 redirect to the replacement.
+    /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND`
+    instead. This endpoint now returns a 301 redirect to the replacement.
   operationId: get-writing-schema
   x-roles-allowed:
     - admin
@@ -31,7 +31,7 @@ get:
     '301':
       description: >-
         Moved Permanently. The schema endpoint has moved to
-        `/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}`.
+        `/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND`.
       headers:
         Location:
           description: The new URL for this resource.

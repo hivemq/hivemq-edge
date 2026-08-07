@@ -12,7 +12,12 @@ const mockTopic = 'test/topic'
 describe('DataModelDestination', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
-    cy.intercept('/api/v1/management/protocol-adapters/schema/*/*', GENERATE_DATA_MODELS(true, mockTopic))
+    // The intercept requires direction=SOUTHBOUND: this is the write target of a southbound mapping, and a
+    // regression to the northbound default would leave this request unmatched and fail the test.
+    cy.intercept(
+      { method: 'GET', pathname: '**/protocol-adapters/schema/**', query: { direction: 'SOUTHBOUND' } },
+      GENERATE_DATA_MODELS(true, mockTopic)
+    )
   })
 
   it('should render properly', () => {

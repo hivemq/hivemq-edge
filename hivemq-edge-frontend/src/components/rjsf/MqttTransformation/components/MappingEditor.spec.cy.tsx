@@ -12,7 +12,12 @@ describe('MappingEditor', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/schema/**', GENERATE_DATA_MODELS(true, 'test'))
+    // The intercept requires direction=SOUTHBOUND: the editor is a southbound destination, and a regression
+    // to the northbound default would leave this request unmatched and fail the test.
+    cy.intercept(
+      { method: 'GET', pathname: '**/protocol-adapters/schema/**', query: { direction: 'SOUTHBOUND' } },
+      GENERATE_DATA_MODELS(true, 'test')
+    )
 
     cy.mountWithProviders(
       <MappingEditor
@@ -40,7 +45,12 @@ describe('MappingEditor', () => {
   it('should be accessible ', () => {
     cy.injectAxe()
 
-    cy.intercept('/api/v1/management/protocol-adapters/schema/**', GENERATE_DATA_MODELS(true, 'test'))
+    // The intercept requires direction=SOUTHBOUND: the editor is a southbound destination, and a regression
+    // to the northbound default would leave this request unmatched and fail the test.
+    cy.intercept(
+      { method: 'GET', pathname: '**/protocol-adapters/schema/**', query: { direction: 'SOUTHBOUND' } },
+      GENERATE_DATA_MODELS(true, 'test')
+    )
     cy.mountWithProviders(
       <MappingEditor
         topic="test"

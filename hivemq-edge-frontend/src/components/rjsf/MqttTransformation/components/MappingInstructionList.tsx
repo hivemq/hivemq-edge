@@ -8,7 +8,11 @@ import { List, ListItem } from '@chakra-ui/react'
 import type { Instruction } from '@/api/__generated__'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { filterReadOnlyInstructions, toJsonPath } from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
+import {
+  filterReadOnlyInstructions,
+  isReadOnly,
+  toJsonPath,
+} from '@/components/rjsf/MqttTransformation/utils/data-type.utils'
 
 interface MappingEditorProps extends Omit<ListProps, 'onChange'> {
   instructions: Instruction[]
@@ -25,8 +29,16 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
   ...props
 }) => {
   const { properties, validInstructions } = useMemo(() => {
-    const properties = getPropertyListFrom(schema)
-    const validInstructions = filterReadOnlyInstructions(instructions, properties)
+    const allProperties = getPropertyListFrom(schema)
+    // Persisted instructions may still target a read-only property (created before the property became
+    // read-only, or before it was hidden); they are pruned against the full list so they cannot ghost-match.
+    const validInstructions = filterReadOnlyInstructions(instructions, allProperties)
+    // A read-only property is not a writable destination, so it is hidden rather than rendered as a
+    // neutralised card (EDG-59). This applies to both consumers: in the southbound editor the envelope is
+    // already gone, so it only fires for a genuinely read-only field inside the value; in the combiner
+    // destination editor, schemas inferred from northbound documents routinely carry read-only envelope
+    // fields (tagName, timestamp, metadata) — those were never mappable and are now hidden too.
+    const properties = allProperties.filter((property) => !isReadOnly(property))
     return { properties, validInstructions }
   }, [schema, instructions])
 

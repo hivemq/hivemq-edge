@@ -36,8 +36,9 @@ const MappingEditor: FC<MappingEditorProps> = ({
 }) => {
   const { t } = useTranslation('components')
   // The properties listed here are the destination of a southbound mapping, i.e. what the user may write to.
-  // The WRITE schema contains only those, so the list no longer has to mark most entries as read-only.
-  const { data, isLoading, isError, error, isSuccess } = useGetSchema(adapterId, topic, 'WRITE')
+  // The SOUTHBOUND schema drops the non-writable envelope; any remaining read-only fields inside the value
+  // are hidden by MappingInstructionList (EDG-59).
+  const { data, isLoading, isError, error, isSuccess } = useGetSchema(adapterId, topic, 'SOUTHBOUND')
 
   const properties = useMemo(() => {
     const allProperties = data ? getPropertyListFrom(data) : []

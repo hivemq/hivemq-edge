@@ -323,7 +323,6 @@
       "validation": {
         "required": "Required",
         "notSupported": "Not supported",
-        "readOnly": "Read-only",
         "matching": "Matching",
         "error": {
           "noValidation": "There is a problem validating the mapping instructions",

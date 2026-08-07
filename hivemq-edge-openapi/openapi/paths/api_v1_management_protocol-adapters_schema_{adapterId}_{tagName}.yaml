@@ -24,17 +24,19 @@ get:
         type: string
         format: urlencoded
     - description: >-
-        The direction of the schema to retrieve. WRITE returns the southbound schema describing only what can
-        be written to the tag (read-only fields omitted). When omitted, the northbound schema describing the
-        full data shape published for the tag is returned.
+        The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the
+        non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that
+        a write targets. Whether an individual field can be written is carried per field as readOnly and
+        enforced when the write is validated. When omitted, the NORTHBOUND schema describing the full data
+        shape published for the tag is returned. Any other value is rejected with a 400.
       in: query
       name: direction
       required: false
       schema:
         type: string
         enum:
-          - READ
-          - WRITE
+          - NORTHBOUND
+          - SOUTHBOUND
   responses:
     '200':
       content:
@@ -54,6 +56,12 @@ get:
           schema:
             $ref: ../components/schemas/JsonNode.yaml
       description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Unknown schema direction
     '404':
       content:
         application/json:

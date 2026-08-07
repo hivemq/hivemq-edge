@@ -31,18 +31,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
 
-    /**
-     * The direction of the tag schema requested by a consumer.
-     */
-    public enum Direction {
-        /** Northbound / read: the full data shape — {@code tagName}, {@code timestamp}, {@code value}, and any
-         * {@code metadata} / {@code context}. */
-        READ,
-        /** Southbound / write: only what can be written — just the {@code value}, with the non-writable
-         * {@code tagName} / {@code timestamp} / {@code metadata} / {@code context} dropped. */
-        WRITE
-    }
-
     private volatile @Nullable String message = null;
     private volatile @NotNull Status status = Status.SUCCESS;
 
@@ -56,47 +44,52 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     /**
-     * The composed schema as a future, in the read (northbound) direction.
+     * The composed schema as a future, in the northbound (read) direction.
      *
      * @deprecated retained for source compatibility with callers outside this repository (e.g. the commercial
      *     bidirectional adapter and the integration tests in hivemq-edge-test). Use
-     *     {@link #getSchema(Direction)} instead, which makes the direction explicit. Note this returns the READ
-     *     schema, which is what this method always produced.
+     *     {@link #getSchema(TagSchemaDirection)} instead, which makes the direction explicit. Note this returns
+     *     the NORTHBOUND schema, which is what this method always produced — the southbound DataHub resources in
+     *     {@code ProtocolAdapterWritingServiceImpl.createDataHubResources} rely on that.
      */
     @Deprecated(forRemoval = true)
     public @NotNull CompletableFuture<ObjectNode> getFuture() {
         return future.thenApply(
-                tagSchemas -> SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(readSchema(tagSchemas)));
+                tagSchemas -> SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(northboundSchema(tagSchemas)));
     }
 
     /**
      * Resolves the produced schema, selects the schema for the requested direction, and renders it as a
      * JSON Schema document.
      * <p>
-     * Which aspects belong to a read vs a write shape is this class's concern, because it owns the
+     * Which aspects belong to a northbound vs a southbound shape is this class's concern, because it owns the
      * {@link DataPointSchema}. {@link SchemaJsonRepresentation} is direction-agnostic: it only converts a
      * {@link Schema} to its JSON representation.
      *
-     * @param direction READ (northbound) or WRITE (southbound).
+     * @param direction NORTHBOUND (read) or SOUTHBOUND (write).
      * @return the JSON schema document for that direction.
      */
-    public @NotNull ObjectNode getSchema(final @NotNull Direction direction)
+    public @NotNull ObjectNode getSchema(final @NotNull TagSchemaDirection direction)
             throws ExecutionException, InterruptedException {
         final DataPointSchema tagSchemas = future.get();
         final Schema schema =
                 switch (direction) {
-                    case READ -> readSchema(tagSchemas);
-                    case WRITE -> writeSchema(tagSchemas);
+                    case NORTHBOUND -> northboundSchema(tagSchemas);
+                    case SOUTHBOUND -> southboundSchema(tagSchemas);
                 };
         return SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(schema);
     }
 
     /**
-     * The schema for the <em>read</em> (northbound) direction: the envelope ({@code tagName}, {@code timestamp})
+     * The schema for the <em>northbound</em> (read) direction: the envelope ({@code tagName}, {@code timestamp})
      * wrapping {@code value}, plus optional {@code metadata} / {@code context}. Writability is irrelevant here — a
      * read consumer observes the full data shape.
+     * <p>
+     * Must stay semantically identical to the deprecated
+     * {@link SchemaJsonRepresentation#toCompositeSchema(DataPointSchema)}, which adapters built against an older
+     * SDK still see; the equality is pinned by {@code TagSchemaCreationOutputImplSchemaBuilderTest}.
      */
-    private static @NotNull Schema readSchema(final @NotNull DataPointSchema tagSchemas) {
+    private static @NotNull Schema northboundSchema(final @NotNull DataPointSchema tagSchemas) {
         final var builder = new SchemaBuilder().startObject();
 
         builder.property("tagName").scalar(ScalarType.STRING).readable().writable(false);
@@ -121,7 +114,7 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     /**
-     * The schema for the <em>write</em> (southbound) direction: only what can be written. The non-writable
+     * The schema for the <em>southbound</em> (write) direction: only what a write targets. The non-writable
      * envelope ({@code tagName}, {@code timestamp}, {@code metadata}, {@code context}) is dropped entirely — a write
      * form should never present fields that cannot be written. The {@code value} is the adapter's explicit
      * {@link DataPointSchema#writeSchema() writeSchema} when it provides one (e.g. a condition tag's
@@ -132,12 +125,16 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * makes the object unsatisfiable) — that is a runtime concern (the {@code readOnly ⇒ ⊥} matcher rule) left to
      * Nevsky. Only the non-writable envelope is stripped here.
      */
-    private static @NotNull Schema writeSchema(final @NotNull DataPointSchema tagSchemas) {
+    private static @NotNull Schema southboundSchema(final @NotNull DataPointSchema tagSchemas) {
         final Schema writeValue =
                 tagSchemas.writeSchema() != null ? tagSchemas.writeSchema() : tagSchemas.valueSchema();
 
         final var builder = new SchemaBuilder().startObject();
-        builder.property("value").required().schema(writeValue).readable(false).writable();
+        // No readable/writable annotations here: a property defined via schema() renders the prebuilt schema
+        // as-is (SchemaBuilder ignores annotations chained after schema()), so the value's flags are whatever
+        // the adapter put on its own schema root — identical to the northbound rendering of the same value,
+        // which is what lets a consumer detect "read and write use the same schema" by comparing value shapes.
+        builder.property("value").required().schema(writeValue);
         return builder.endObject().build();
     }
 
