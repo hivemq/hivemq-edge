@@ -407,6 +407,25 @@ class ProtocolAdapterManagerTest {
         assertThat(snapshot.lastErrorReason()).contains("SUBSCRIPTIONS");
     }
 
+    // An adapter removed from config.xml while Edge was down never gets a removal transition (it was never in this
+    // process's containerMap), and its southbound queue is exempt from the broker's orphan cleanup — so the FIRST
+    // reconcile is the only door its durable commands can be reclaimed at.
+    @Test
+    void firstReconcile_sweepsOrphanedSouthboundQueuesExactlyOnce_countingRejectedEntitiesAsOwners() {
+        send(new ConfigurationChanged(
+                List.of(adapter("kept").build()),
+                List.of(new RejectedAdapterEntity(adapter("broken").build(), "invalid"))));
+
+        // One sweep, told about the accepted AND the rejected adapter — a rejected entity still owns its queues:
+        // destroying durable commands over a config typo the operator is about to fix would be worse than keeping
+        // them.
+        assertThat(wrapperFactory.reclaimSweeps()).containsExactly(List.of("kept", "broken"));
+
+        // Later reloads never sweep again: a live removal reaches the explicit discard path instead.
+        send(new ConfigurationChanged(List.of(adapter("kept").build())));
+        assertThat(wrapperFactory.reclaimSweeps()).hasSize(1);
+    }
+
     // EDG-824 #4: an invalid new adapter arrives pre-scoped in the rejected list and surfaces as an ERROR handle —
     // the sibling runs, nothing shuts down.
     @Test

@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
@@ -92,4 +93,22 @@ public interface ProtocolAdapterWrapperFactory {
      */
     default void discardSouthboundQueues(
             final @NotNull ProtocolAdapterEntity entity, final @NotNull Set<String> tagNames) {}
+
+    /**
+     * Destroy every southbound command queue whose owning adapter is absent from the given configuration — the
+     * <b>startup</b> counterpart of {@link #discardSouthboundQueues(ProtocolAdapterEntity)}. A live removal reaches
+     * that method through the manager's reconcile, but an adapter (or a mapping topic) deleted from the
+     * configuration <b>while Edge was down</b> never does: no container ever existed for it in this process, the
+     * orphan-cleanup exemption keeps its queue alive forever, and a later adapter with the same id and topic would
+     * derive the same queue id and execute the stale commands. This sweep is the only door that case can be caught
+     * at.
+     * <p>
+     * Ownership is derived from the configuration alone: every queue id any given entity's southbound mappings can
+     * derive is owned — including the entities of <b>rejected</b> adapters, because destroying durable commands
+     * over a config typo the operator is about to fix would be worse than keeping them. Called once, on the first
+     * reconcile after start. Best-effort; implementations must not throw.
+     *
+     * @param configured every adapter entity the loaded configuration names, accepted and rejected alike.
+     */
+    default void reclaimOrphanedSouthboundQueues(final @NotNull Collection<ProtocolAdapterEntity> configured) {}
 }

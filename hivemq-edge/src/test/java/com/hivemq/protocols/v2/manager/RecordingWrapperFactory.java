@@ -54,6 +54,8 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     private final @NotNull List<String> closedAdapterIds = new ArrayList<>();
     private final @NotNull List<String> discardedSouthboundQueueAdapterIds = new ArrayList<>();
     private final @NotNull List<String> discardedSouthboundQueueTags = new ArrayList<>();
+    // one entry per reclaim sweep, holding the adapter ids the sweep was told are configured
+    private final @NotNull List<List<String>> reclaimSweeps = new ArrayList<>();
     // adapterId → an error create() throws for it, to model a mispackaged adapter jar (EDG-824 #4/R1, #4/R2).
     private final @NotNull Map<String, Throwable> createFailures = new HashMap<>();
     private @Nullable ProtocolAdapterWrapperEventListener healthListener;
@@ -110,6 +112,15 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
         }
     }
 
+    @Override
+    public void reclaimOrphanedSouthboundQueues(final @NotNull java.util.Collection<ProtocolAdapterEntity> configured) {
+        final List<String> adapterIds = new ArrayList<>();
+        for (final ProtocolAdapterEntity entity : configured) {
+            adapterIds.add(entity.getAdapterId());
+        }
+        reclaimSweeps.add(adapterIds);
+    }
+
     // ── test helpers ────────────────────────────────────────────────────────────────────────────────────────────
 
     @NotNull
@@ -135,6 +146,11 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     @NotNull
     List<String> discardedSouthboundQueueTags() {
         return discardedSouthboundQueueTags;
+    }
+
+    @NotNull
+    List<List<String>> reclaimSweeps() {
+        return reclaimSweeps;
     }
 
     @NotNull

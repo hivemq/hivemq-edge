@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
@@ -365,6 +366,19 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             }
             return null;
         });
+    }
+
+    @Override
+    @NotNull
+    public ListenableFuture<ImmutableSet<String>> getSharedQueues() {
+        return Futures.transform(
+                Futures.allAsList(singleWriter.submitToAllBucketsParallel(localPersistence::getSharedQueues)),
+                perBucket -> {
+                    final ImmutableSet.Builder<String> all = ImmutableSet.builder();
+                    perBucket.forEach(all::addAll);
+                    return all.build();
+                },
+                MoreExecutors.directExecutor());
     }
 
     @Override

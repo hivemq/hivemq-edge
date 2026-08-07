@@ -18,6 +18,10 @@ package com.hivemq.protocols.v2.manager;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
@@ -35,6 +39,7 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.util.FutureUtils;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -61,7 +66,9 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperTick;
 import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -385,6 +392,51 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             // (or that has been ERROR ever since) still owns whatever its predecessor queued under the same id.
             clearQueue(adapterId, mapping.getTopic());
         }
+    }
+
+    @Override
+    public void reclaimOrphanedSouthboundQueues(final @NotNull Collection<ProtocolAdapterEntity> configured) {
+        if (southboundBrokerRuntime == null) {
+            return;
+        }
+        // Every queue id the loaded configuration can derive is owned; anything else under the internal prefix is a
+        // corpse — an adapter or mapping topic removed while Edge was down, which no reconcile transition can see.
+        final Set<String> owned = new HashSet<>();
+        for (final ProtocolAdapterEntity entity : configured) {
+            for (final SouthboundMappingEntity mapping : entity.getSouthboundMappings()) {
+                owned.add(SouthboundMqttIntake.queueId(entity.getAdapterId(), mapping.getTopic()));
+            }
+        }
+        final ClientQueuePersistence clientQueuePersistence =
+                Objects.requireNonNull(southboundBrokerRuntime).clientQueuePersistence();
+        Futures.addCallback(
+                clientQueuePersistence.getSharedQueues(),
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final @Nullable ImmutableSet<String> sharedQueues) {
+                        for (final String queueId : Objects.requireNonNull(sharedQueues)) {
+                            if (!queueId.startsWith(SouthboundMqttIntake.INTERNAL_SHARE_PREFIX)
+                                    || owned.contains(queueId)) {
+                                continue;
+                            }
+                            log.warn(
+                                    "Reclaiming the orphaned southbound command queue '{}': its owning adapter (or "
+                                            + "mapping topic) is not in the loaded configuration — it was removed "
+                                            + "while Edge was down. Any command still queued is destroyed here, so "
+                                            + "a future adapter with the same id and topic cannot execute it.",
+                                    queueId);
+                            FutureUtils.addExceptionLogger(clientQueuePersistence.clear(queueId, true));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(final @NotNull Throwable failure) {
+                        // Never fatal: the sweep is a safety net, and failing it must not stop the adapters from
+                        // starting. The orphaned queues (if any) survive to the next start.
+                        log.warn("Failed to sweep for orphaned southbound command queues", failure);
+                    }
+                },
+                MoreExecutors.directExecutor());
     }
 
     /** Destroy one mapping's durable queue. Best effort: this runs on the manager's dispatch thread mid-teardown. */

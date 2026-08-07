@@ -20,7 +20,10 @@ import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +32,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.schema.Schema;
@@ -52,6 +57,8 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -62,6 +69,8 @@ import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.FakeClock;
 import com.hivemq.protocols.v2.runtime.ManualDispatcher;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
+import com.hivemq.protocols.v2.southbound.SouthboundBrokerRuntime;
+import com.hivemq.protocols.v2.southbound.SouthboundMqttIntake;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand;
@@ -414,6 +423,39 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         verify(tagManager).addConsumer(firstConsumer);
         verify(tagManager).removeConsumer(firstConsumer);
         assertThat(metricsFor(registry, "a")).isZero();
+    }
+
+    @Test
+    void reclaimOrphanedSouthboundQueues_clearsOnlyUnownedInternalQueues() {
+        final ClientQueuePersistence clientQueuePersistence = mock(ClientQueuePersistence.class);
+        final String owned = SouthboundMqttIntake.queueId("a1", "plant/a/set");
+        final String removedAdapter = SouthboundMqttIntake.queueId("gone", "plant/g/set");
+        final String movedTopic = SouthboundMqttIntake.queueId("a1", "plant/old/set");
+        final String ordinaryShared = "ordinary-group/some/topic";
+        when(clientQueuePersistence.getSharedQueues())
+                .thenReturn(
+                        Futures.immediateFuture(ImmutableSet.of(owned, removedAdapter, movedTopic, ordinaryShared)));
+        when(clientQueuePersistence.clear(anyString(), anyBoolean())).thenReturn(Futures.immediateFuture(null));
+        final DefaultProtocolAdapterWrapperFactory factoryWithBroker = new DefaultProtocolAdapterWrapperFactory(
+                clock,
+                dispatcher,
+                new MetricRegistry(),
+                new TestDataPointFactory(),
+                new ObjectMapper(),
+                100,
+                null,
+                null,
+                new SouthboundBrokerRuntime(mock(LocalTopicTree.class), clientQueuePersistence));
+
+        factoryWithBroker.reclaimOrphanedSouthboundQueues(List.of(
+                adapter("a1").southboundMapping("plant/a/set", "temperature").build()));
+
+        // The corpses: an adapter deleted while Edge was down, and a mapping topic moved while Edge was down.
+        verify(clientQueuePersistence).clear(removedAdapter, true);
+        verify(clientQueuePersistence).clear(movedTopic, true);
+        // The configured queue keeps its durable commands, and an ordinary shared queue is not this sweep's to touch.
+        verify(clientQueuePersistence, never()).clear(owned, true);
+        verify(clientQueuePersistence, never()).clear(ordinaryShared, true);
     }
 
     @Test

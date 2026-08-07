@@ -104,6 +104,9 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
 
     private @Nullable ProtocolAdapterManagerHealthListener healthListener;
 
+    /** One-shot latch for the startup queue sweep — see the first lines of {@code reconcile}. */
+    private boolean orphanedSouthboundQueuesReclaimed;
+
     /**
      * @param factoryRegistry the protocol-adapter type factories (empty in production, D8).
      * @param handleRegistry  the REST-readable adapter registry the manager populates.
@@ -167,6 +170,19 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     private void reconcile(
             final @NotNull List<ProtocolAdapterEntity> newConfigs,
             final @NotNull List<RejectedAdapterEntity> rejectedConfigs) {
+        if (!orphanedSouthboundQueuesReclaimed) {
+            // First configuration this process sees: sweep the durable southbound queues of adapters (or mapping
+            // topics) that were removed from the configuration WHILE EDGE WAS DOWN. No removal transition below can
+            // reach them — they were never in containerMap — and the broker's orphan cleanup is forbidden to touch
+            // them, so this sweep is their only reclamation. Rejected entities count as owners: destroying durable
+            // commands over a config typo the operator is about to fix would be worse than keeping them.
+            orphanedSouthboundQueuesReclaimed = true;
+            final List<ProtocolAdapterEntity> everythingConfigured = new ArrayList<>(newConfigs);
+            for (final RejectedAdapterEntity rejectedEntity : rejectedConfigs) {
+                everythingConfigured.add(rejectedEntity.entity());
+            }
+            wrapperFactory.reclaimOrphanedSouthboundQueues(everythingConfigured);
+        }
         final Map<String, ProtocolAdapterEntity> updatedById = new LinkedHashMap<>();
         for (final ProtocolAdapterEntity entity : newConfigs) {
             updatedById.put(entity.getAdapterId(), entity);

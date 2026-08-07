@@ -852,6 +852,15 @@ public class ClientQueueMemoryLocalPersistenceTest {
     }
 
     @Test
+    public void test_get_shared_queues_returns_shared_ids_only() {
+        persistence.add("client1", false, createPublish(1, QoS.AT_LEAST_ONCE), 10, DISCARD, false, 0);
+        persistence.add("group/topic", true, createPublish(2, QoS.AT_LEAST_ONCE), 10, DISCARD, false, 0);
+
+        assertEquals(Set.of("group/topic"), persistence.getSharedQueues(0));
+        assertTrue(persistence.getSharedQueues(1).isEmpty());
+    }
+
+    @Test
     public void test_clean_up_expired_southbound_command_is_logged() {
         final LogbackCapturingAppender capturing = LogbackCapturingAppender.Factory.weaveInto(
                 LoggerFactory.getLogger(ClientQueueMemoryLocalPersistence.class));

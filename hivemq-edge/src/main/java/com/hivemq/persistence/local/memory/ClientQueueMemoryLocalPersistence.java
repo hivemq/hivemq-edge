@@ -686,6 +686,13 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         return ImmutableSet.copyOf(sharedBucket.keySet());
     }
 
+    @Override
+    @ExecuteInSingleWriter
+    public @NotNull ImmutableSet<String> getSharedQueues(final int bucketIndex) {
+        ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
+        return ImmutableSet.copyOf(sharedBuckets[bucketIndex].keySet());
+    }
+
     /**
      * {@inheritDoc}
      */

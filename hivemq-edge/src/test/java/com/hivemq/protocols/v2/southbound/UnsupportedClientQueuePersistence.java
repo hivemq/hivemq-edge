@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.southbound;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.mqtt.message.MessageWithID;
@@ -94,6 +95,11 @@ abstract class UnsupportedClientQueuePersistence implements ClientQueuePersisten
 
     @Override
     public @NotNull ListenableFuture<Void> cleanUp(final int bucketIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public @NotNull ListenableFuture<ImmutableSet<String>> getSharedQueues() {
         throw new UnsupportedOperationException();
     }
 
