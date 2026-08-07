@@ -140,9 +140,6 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
      * @param tagManager               the shared tag manager used by MQTT northbound consumers.
      * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
-     * @param southboundBrokerRuntime  the broker collaborators the southbound write path stands on (topic tree,
-     *                                 client queues, publish path, retained store); {@code null} (unit rigs) falls
-     *                                 the southbound plane back to in-memory backlogs.
      */
     public DefaultProtocolAdapterWrapperFactory(
             final @NotNull Clock clock,

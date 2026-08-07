@@ -17,6 +17,7 @@ package com.hivemq.protocols.v2.southbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -224,6 +225,50 @@ class SouthboundWritePlaneTest {
         assertThat(reads.get()).isEqualTo(1); // only the healthy channel polled
     }
 
+    @Test
+    void theTickGuardContainsALinkageError_likeAnyException() {
+        // A mispackaged adapter or store jar surfaces as a LinkageError, not an Exception. The guard's promise is
+        // per-channel containment for anything non-VM-fatal; before the Throwable-wide catch this escaped, skipped
+        // the remaining channels and that tick's batch dispatch, and faulted the whole adapter into ERROR.
+        final AtomicInteger reads = new AtomicInteger();
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWritePlane plane = planeOverCountingStores(reads, TAG, sender);
+        plane.onMessage(new TagWritability(TAG, true));
+        plane.onMessage(new TagWritability(OTHER, true));
+        sender.pump(plane);
+        sickenWith(plane, TAG, new NoClassDefFoundError("scripted store LinkageError"));
+        reads.set(0);
+
+        assertThatCode(() -> {
+                    for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+                        plane.onTick();
+                    }
+                })
+                .doesNotThrowAnyException();
+
+        sender.pump(plane);
+        assertThat(reads.get()).isEqualTo(1); // only the healthy channel polled
+    }
+
+    @Test
+    void aVmFatalErrorEscapesTheTickGuard() {
+        // The one thing containment must NOT swallow: a VM-fatal condition (AdapterFaults' contract). Logging an
+        // OutOfMemoryError as a per-tag hiccup and carrying on would be lying about the process's health.
+        final AtomicInteger reads = new AtomicInteger();
+        final CapturingSender sender = new CapturingSender();
+        final SouthboundWritePlane plane = planeOverCountingStores(reads, TAG, sender);
+        plane.onMessage(new TagWritability(TAG, true));
+        sender.pump(plane);
+        sickenWith(plane, TAG, new OutOfMemoryError("scripted"));
+
+        assertThatThrownBy(() -> {
+                    for (int tick = 0; tick < SouthboundWriteQueue.POLL_TICKS; tick++) {
+                        plane.onTick();
+                    }
+                })
+                .isInstanceOf(OutOfMemoryError.class);
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
 
     /** A plane over two stores that only count their reads; {@code sickTag}'s store can be made to refuse them. */
@@ -278,7 +323,6 @@ class SouthboundWritePlaneTest {
         private final @NotNull String tagName;
         private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> sender;
         private boolean sick;
-        private int discards;
 
         private CountingStore(
                 final @NotNull AtomicInteger reads,
@@ -291,14 +335,26 @@ class SouthboundWritePlaneTest {
             this.sender = sender;
         }
 
+        private @Nullable Throwable scriptedFailure;
+
         private void sicken() {
-            sick = canSicken;
+            sickenWith(new IllegalStateException("scripted read failure"));
+        }
+
+        private void sickenWith(final @NotNull Throwable failure) {
+            if (canSicken) {
+                sick = true;
+                scriptedFailure = failure;
+            }
         }
 
         @Override
         public void requestRead(final long readToken) {
             if (sick) {
-                throw new IllegalStateException("scripted read failure");
+                if (scriptedFailure instanceof final Error error) {
+                    throw error;
+                }
+                throw (RuntimeException) scriptedFailure;
             }
             reads.incrementAndGet();
             // Answer empty: an unanswered read would leave the channel's read slot occupied, and no later poll
@@ -316,9 +372,7 @@ class SouthboundWritePlaneTest {
         public void releaseMarkers() {}
 
         @Override
-        public void discardAll() {
-            discards++;
-        }
+        public void discardAll() {}
 
         @Override
         public void close() {}
@@ -328,6 +382,15 @@ class SouthboundWritePlaneTest {
         final SouthboundWritePlane.TagChannel channel = plane.channel(tagName);
         assertThat(channel).isNotNull();
         ((CountingStore) channel.backlog()).sicken();
+    }
+
+    private static void sickenWith(
+            final @NotNull SouthboundWritePlane plane,
+            final @NotNull String tagName,
+            final @NotNull Throwable failure) {
+        final SouthboundWritePlane.TagChannel channel = plane.channel(tagName);
+        assertThat(channel).isNotNull();
+        ((CountingStore) channel.backlog()).sickenWith(failure);
     }
 
     private static int pending(final @NotNull SouthboundWritePlane.TagChannel channel) {

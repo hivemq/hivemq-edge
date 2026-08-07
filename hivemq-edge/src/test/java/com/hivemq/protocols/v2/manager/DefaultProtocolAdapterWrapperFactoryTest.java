@@ -456,8 +456,6 @@ class DefaultProtocolAdapterWrapperFactoryTest {
 
         private final @NotNull Clock delegate;
         private int failuresRemaining;
-        private int scheduled;
-        private int cancelled;
 
         private ScriptedClock(final @NotNull Clock delegate, final int failuresRemaining) {
             this.delegate = delegate;
@@ -478,16 +476,7 @@ class DefaultProtocolAdapterWrapperFactoryTest {
                 failuresRemaining--;
                 throw new IllegalStateException("tick scheduling failed");
             }
-            final AutoCloseable handle = delegate.scheduleTick(periodMillis, target, tickMessage);
-            scheduled++;
-            return () -> {
-                cancelled++;
-                handle.close();
-            };
-        }
-
-        private int liveTicks() {
-            return scheduled - cancelled;
+            return delegate.scheduleTick(periodMillis, target, tickMessage);
         }
     }
 

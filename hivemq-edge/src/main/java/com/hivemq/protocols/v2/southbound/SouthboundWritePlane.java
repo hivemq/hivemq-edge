@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
+import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperSouthboundMessage;
@@ -138,9 +139,11 @@ public final class SouthboundWritePlane implements AutoCloseable {
                     channels.put(pair.tag().name(), newChannel(pair.tag().name(), pair.node()));
                 }
             }
-        } catch (final RuntimeException failure) {
+        } catch (final Throwable failure) {
             // A failed channel build must not leak the channels already created — their stores hold broker-side
-            // callbacks and possibly a lease.
+            // callbacks and possibly a lease. Throwable-wide: a LinkageError from a mispackaged jar must unwind
+            // exactly like an exception (only VM-fatal conditions pass straight through).
+            AdapterFaults.rethrowIfFatal(failure);
             close();
             throw failure;
         }
@@ -212,7 +215,10 @@ public final class SouthboundWritePlane implements AutoCloseable {
         for (final Map.Entry<String, TagChannel> entry : channels.entrySet()) {
             try {
                 entry.getValue().queue().onTick();
-            } catch (final Exception failure) {
+            } catch (final Throwable failure) {
+                // Throwable, as the javadoc above promises: a LinkageError surfacing through a store callback is
+                // contained to this channel like any exception; only VM-fatal conditions pass through.
+                AdapterFaults.rethrowIfFatal(failure);
                 log.warn(
                         "Southbound tick failed for tag '{}' on adapter '{}' — retrying on the next tick",
                         entry.getKey(),
@@ -368,7 +374,8 @@ public final class SouthboundWritePlane implements AutoCloseable {
     private void closeBacklog(final @NotNull String tagName, final @NotNull TagChannel channel) {
         try {
             channel.backlog().close();
-        } catch (final Exception exception) {
+        } catch (final Throwable exception) {
+            AdapterFaults.rethrowIfFatal(exception);
             log.warn("Failed to close the southbound store of tag '{}' on adapter '{}'", tagName, adapterId, exception);
         }
     }
