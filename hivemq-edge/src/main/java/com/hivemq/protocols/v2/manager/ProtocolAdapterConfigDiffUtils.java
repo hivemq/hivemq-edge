@@ -36,8 +36,8 @@ import org.jetbrains.annotations.NotNull;
  * The classification is layered, gentlest last to win only when nothing more disruptive changed:
  * <ol>
  * <li>any <b>connection-critical</b> field differs (protocol id, config version, skip-verification, adapter
- * configuration, retry policy, watchdog / command timeouts, southbound write-backlog capacity, southbound
- * mappings — the last two are baked into the adapter's southbound write plane and MQTT intake) &rarr;
+ * configuration, retry policy, watchdog / command timeouts, southbound mappings — the last is baked into the
+ * adapter's southbound write plane and MQTT intake) &rarr;
  * {@link ProtocolAdapterConfigStateTransition#FULL_RECREATE};</li>
  * <li>otherwise, if the <b>tag set</b> (a tag's identity beyond its activation flags) or the <b>northbound
  * mappings</b> (which drive {@code read-used}) differ &rarr; {@link ProtocolAdapterConfigStateTransition#TAGS_ONLY};</li>
@@ -146,7 +146,6 @@ public final class ProtocolAdapterConfigDiffUtils {
             @NotNull RetryPolicyEntity retryPolicy,
             long watchdogTimeoutMillis,
             long commandTimeoutMillis,
-            int southboundWriteBacklogCapacity,
             @NotNull List<SouthboundMappingEntity> southboundMappings) {}
 
     private static @NotNull ConnectionCritical connectionCritical(final @NotNull ProtocolAdapterEntity entity) {
@@ -158,9 +157,9 @@ public final class ProtocolAdapterConfigDiffUtils {
                 entity.getRetryPolicy(),
                 entity.getWatchdogTimeoutMillis(),
                 entity.getCommandTimeoutMillis(),
-                // The backlog bound is baked into the southbound write plane at creation; changing it rebuilds the
-                // adapter (and deliberately drops the interim in-memory backlogs with it).
-                entity.getSouthboundWriteBacklogCapacity(),
+                // southbound-write-backlog-capacity is deliberately NOT here: it bounds only the in-memory backlog
+                // of broker-less rigs (the durable queue's bound is the broker's max-queued-messages), so changing
+                // it must not cost a production adapter a full recreate.
                 // Southbound mappings define the MQTT intake subscriptions and durable queues, baked in at creation;
                 // a change recreates the adapter — the durable queues themselves survive the recreate.
                 entity.getSouthboundMappings());

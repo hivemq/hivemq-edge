@@ -680,8 +680,8 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Map<String, Messages> bucket = buckets[bucketIndex];
         final Map<String, Messages> sharedBucket = sharedBuckets[bucketIndex];
 
-        bucket.forEach((queueId, messages) -> cleanExpiredMessages(messages));
-        sharedBucket.forEach((queueId, messages) -> cleanExpiredMessages(messages));
+        bucket.forEach((queueId, messages) -> cleanExpiredMessages(queueId, false, messages));
+        sharedBucket.forEach((queueId, messages) -> cleanExpiredMessages(queueId, true, messages));
 
         return ImmutableSet.copyOf(sharedBucket.keySet());
     }
@@ -896,12 +896,14 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
     }
 
-    private void cleanExpiredMessages(final @NotNull Messages messages) {
+    private void cleanExpiredMessages(
+            final @NotNull String queueId, final boolean shared, final @NotNull Messages messages) {
 
         final Iterator<PublishWithRetained> iterator = messages.qos0Messages.iterator();
         while (iterator.hasNext()) {
             final PublishWithRetained publishWithRetained = iterator.next();
             if (publishWithRetained.isExpired()) {
+                logExpiredSouthboundCommand(queueId, shared, publishWithRetained);
                 increaseQos0MessagesMemory(-publishWithRetained.getEstimatedSize());
                 increaseClientQos0MessagesMemory(messages, -publishWithRetained.getEstimatedSize());
                 increaseMessagesMemory(-publishWithRetained.getEstimatedSize());
@@ -933,6 +935,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 final boolean isInflight = publish.getQoS() == QoS.EXACTLY_ONCE && publish.getPacketIdentifier() > 0;
                 final boolean drop = publish.isExpired() && (!isInflight || expireInflight);
                 if (drop) {
+                    logExpiredSouthboundCommand(queueId, shared, publish);
                     payloadPersistence.decrementReferenceCounter(publish.getPublishId());
                     if (publish.retained) {
                         messages.retainedQos1Or2Messages--;
@@ -991,7 +994,8 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
      * here, on the read that would otherwise have leased it, so no read ever answers with it and the tag's channel
      * never learns it existed. Without this line the command simply vanishes, with no record at any layer.
      * <p>
-     * Scoped to the internal adapter queues by share name: this runs in the read path of every client queue in the
+     * Scoped to the internal adapter queues by share name: this runs in the read and cleanup-sweep paths of every
+     * client queue in the
      * broker, and an expiring publish is ordinary everywhere else. The twin of this method lives in the Xodus client
      * queue, which is the implementation production actually uses — the client queue stays Xodus even under
      * {@code file-native}, so a fix only here would never fire where it matters.

@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import jakarta.xml.bind.ValidationEvent;
@@ -63,8 +64,9 @@ public class ProtocolAdapterEntity implements EntityValidatable {
 
     /**
      * Default bound of the per-tag southbound write backlog — the number of pending commands a write-mapped tag can
-     * hold before the newest offer is shed. The bound is the back-pressure limit; it applies at the durable backlog,
-     * never at the adapter (which holds one write at most).
+     * hold before the newest offer is shed. It applies only to the <b>in-memory</b> backlog of broker-less rigs
+     * (unit tests); on a real broker the durable client queue is the backlog and its bound is the broker's
+     * {@code max-queued-messages}, so this value has no effect there.
      */
     public static final int DEFAULT_SOUTHBOUND_WRITE_BACKLOG_CAPACITY = 1_000;
 
@@ -194,7 +196,8 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     }
 
     /**
-     * @return the per-tag bound of the southbound write backlog; offers beyond it shed the newest command.
+     * @return the per-tag bound of the in-memory southbound write backlog (broker-less rigs only; offers beyond it
+     *         shed the newest command). The durable backlog is bounded by the broker's {@code max-queued-messages}.
      */
     public int getSouthboundWriteBacklogCapacity() {
         return southboundWriteBacklogCapacity;
@@ -340,6 +343,24 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                 () -> "adapter [" + adapterId + "] declares southbound mappings with the duplicate topic ["
                         + mapping.getTopic()
                         + "] — one command topic feeds exactly one tag"));
+        // A southbound mapping on a tag whose access model forbids writing is a contradiction, not a paused tag
+        // (write-activated=false is the paused form): the mapping's durable queue would accept commands that no
+        // delivery can ever drain — the write window never opens, nothing is dead-lettered, nothing is reported —
+        // so the queue hoards silently until the broker's limit sheds them. Refused outright, same as any other
+        // fatal configuration error: at startup the adapter is not created; on reload this adapter's new
+        // configuration is rejected and Edge carries on.
+        final Map<String, TagEntity> declaredTagsByName = new LinkedHashMap<>();
+        tags.forEach(tag -> declaredTagsByName.putIfAbsent(tag.getName(), tag));
+        southboundMappings.forEach(mapping -> EntityValidatable.notMatch(
+                validationEvents,
+                () -> {
+                    final TagEntity tag = declaredTagsByName.get(mapping.getTagName());
+                    // an unknown tag already produced its own fatal event above
+                    return tag == null || tag.getAccess().getWritable() == AccessTriState.YES;
+                },
+                () -> "adapter [" + adapterId + "] southbound mapping [" + mapping.getTopic() + "] targets tag ["
+                        + mapping.getTagName()
+                        + "] whose access model is not writable — its commands could never be delivered"));
     }
 
     /**

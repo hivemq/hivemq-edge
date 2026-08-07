@@ -247,12 +247,13 @@ public final class ClientQueueSouthboundWriteBacklog implements SouthboundWriteB
                                 }
                                 log.error(
                                         "Gave up deleting southbound command '{}' for tag '{}' on adapter '{}' after {} "
-                                                + "attempts. The command WAS executed, but it cannot be removed from "
-                                                + "the queue, so it will keep resurfacing until this Edge restarts. "
-                                                + "The delivery side refuses to execute it a second time (see "
-                                                + "redeliveriesRefused), so the device is safe; what leaks is the "
-                                                + "queue entry. Investigate the client-queue persistence for this "
-                                                + "queue.",
+                                                + "attempts. The command's outcome was already decided — executed, "
+                                                + "refused by the device, or dead-lettered as undeliverable — but it "
+                                                + "cannot be removed from the queue, so it will keep resurfacing "
+                                                + "until this Edge restarts. The delivery side refuses to execute it "
+                                                + "a second time (see redeliveriesRefused), so the device is safe; "
+                                                + "what leaks is the queue entry. Investigate the client-queue "
+                                                + "persistence for this queue.",
                                         commandId,
                                         tagName,
                                         adapterId,

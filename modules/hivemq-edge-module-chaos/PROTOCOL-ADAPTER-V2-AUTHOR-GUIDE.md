@@ -50,7 +50,7 @@ public final class MyAdapter extends AbstractProtocolAdapter {
     }
 
     @Override protected void doAddSubscription(final Node node) { /* subscribe; push via output.dataPoint(...) */ }
-    @Override protected void doWrite(final Node node, final DataPoint value) { /* write; output.writeResult(node, true, null) */ }
+    @Override protected void doWrite(final Node node, final DataPoint value, final long attemptId) { /* write; output.writeResult(node, attemptId, true, null) — pass the attempt id back verbatim */ }
 }
 ```
 

@@ -70,6 +70,9 @@ public sealed interface ProtocolAdapterWrapperCommand extends ProtocolAdapterWra
      *                           derivation).
      * @param writeUsedTagNames  the tags produced to by at least one southbound mapping (the {@code writeUsed}
      *                           derivation).
+     * @param reTargetedTagNames the write-mapped tags whose configured node changed (compared on the
+     *                           {@code node-string}) — their queued commands are dead-lettered, not delivered to
+     *                           the new node.
      * @param pollIntervalMillis the poll cadence derived from the new configuration — carried so an
      *                           interval-only change actually applies on a tags-only reload (EDG-824 #2).
      */

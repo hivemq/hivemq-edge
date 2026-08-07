@@ -527,15 +527,6 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     }
 
     /**
-     * Destroy the southbound command queues of an adapter that has been removed for good.
-     * <p>
-     * These queues are exempt from the broker's subscriber-absence cleanup, because that cleanup cannot tell a
-     * recreate's handoff window from a genuine orphan and would erase pending commands mid-handoff. The manager can
-     * tell the difference, so it owns the reclamation — and must, or a removed adapter's commands would sit in the
-     * store forever and be delivered to the device if an adapter with the same id and topic were ever configured
-     * again.
-     */
-    /**
      * B2, second door. A node change on its own is a tags-only reload, handled inside the running wrapper; bundled
      * with any connection-critical field it becomes a <b>full recreate</b> instead, which never reaches that path —
      * the adapter is torn down and rebuilt, the successor's intake subscribes the same topic, derives the same queue
@@ -578,6 +569,15 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         }
     }
 
+    /**
+     * Destroy the southbound command queues of an adapter that has been removed for good.
+     * <p>
+     * These queues are exempt from the broker's subscriber-absence cleanup, because that cleanup cannot tell a
+     * recreate's handoff window from a genuine orphan and would erase pending commands mid-handoff. The manager can
+     * tell the difference, so it owns the reclamation — and must, or a removed adapter's commands would sit in the
+     * store forever and be delivered to the device if an adapter with the same id and topic were ever configured
+     * again.
+     */
     private void discardSouthboundQueues(final @NotNull ProtocolAdapterContainer discarded) {
         final String adapterId = discarded.handle().adapterId();
         final PendingRemoval pending = pendingRemovalMap.get(adapterId);

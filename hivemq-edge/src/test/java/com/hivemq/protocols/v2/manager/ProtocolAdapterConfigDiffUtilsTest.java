@@ -171,6 +171,24 @@ class ProtocolAdapterConfigDiffUtilsTest {
     }
 
     @Test
+    void changedSouthboundWriteBacklogCapacity_isNoChange() throws Exception {
+        // The capacity bounds only the in-memory backlog of broker-less rigs; on a real broker it has no effect,
+        // so changing it must never cost a full recreate (which would abort the in-flight write and re-verify
+        // every tag for nothing). The field is JAXB-only, hence the reflective set.
+        final ProtocolAdapterEntity running =
+                adapter("a").southboundMapping("cmd/temperature", "temperature").build();
+        final ProtocolAdapterEntity updated =
+                adapter("a").southboundMapping("cmd/temperature", "temperature").build();
+        final java.lang.reflect.Field capacity =
+                ProtocolAdapterEntity.class.getDeclaredField("southboundWriteBacklogCapacity");
+        capacity.setAccessible(true);
+        capacity.setInt(updated, ProtocolAdapterEntity.DEFAULT_SOUTHBOUND_WRITE_BACKLOG_CAPACITY * 2);
+
+        assertThat(ProtocolAdapterConfigDiffUtils.classify(running, updated))
+                .isEqualTo(ProtocolAdapterConfigStateTransition.NO_CHANGE);
+    }
+
+    @Test
     void changedSkipVerification_isFullRecreate() {
         final ProtocolAdapterEntity running =
                 adapter("a").skipVerification(false).build();
