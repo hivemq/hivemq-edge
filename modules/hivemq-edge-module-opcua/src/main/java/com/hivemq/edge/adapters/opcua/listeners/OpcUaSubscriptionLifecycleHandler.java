@@ -328,7 +328,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             log.debug(
                     "Removed monitored items: {}",
                     monitoredItemsToRemove.stream()
-                            .map(item -> item.getReadValueId().getNodeId()));
+                            .map(item -> item.getReadValueId().getNodeId())
+                            .toList());
         }
 
         // update existing monitored items
