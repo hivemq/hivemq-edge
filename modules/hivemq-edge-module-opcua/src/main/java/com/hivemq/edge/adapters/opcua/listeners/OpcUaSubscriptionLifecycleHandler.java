@@ -883,8 +883,14 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * <p>
      * Three refresh types bracket or request a {@code ConditionRefresh} and are copied to <em>every</em>
      * notifier item in the subscription (OPC 10000-9 §4.5, §5.5.7); the overflow type is delivered only to
-     * the one item whose queue overflowed (OPC 10000-4 §5.12.1.5, §7.22). Both families bypass the where
-     * clause, which is why they are dropped here rather than filtered at the server.
+     * the item whose queue overflowed — OPC 10000-4 §7.22.3: "These Events are only published to the
+     * MonitoredItems in the Subscription that produced the EventQueueOverflowEventType Event. These Events
+     * bypass the whereClause." Both families bypass the where clause, which is why they are dropped here
+     * rather than filtered at the server.
+     * <p>
+     * The overflow event reaches the client at all because OPC 10000-4 §5.13.1.5 places it in the item's
+     * queue <em>in addition to</em> the configured size — at the front when {@code discardOldest} is true,
+     * and never itself discarded. So a queue that overflowed still has room to say so.
      */
     private static final @NotNull Set<NodeId> CONTROL_EVENT_TYPES = Set.of(
             NodeIds.RefreshStartEventType,
