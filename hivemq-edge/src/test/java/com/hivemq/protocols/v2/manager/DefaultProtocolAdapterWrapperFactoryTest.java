@@ -20,7 +20,10 @@ import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,10 +32,11 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.schema.Schema;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
@@ -52,10 +56,9 @@ import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import com.hivemq.protocols.InternalWritingContext;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -66,6 +69,8 @@ import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.FakeClock;
 import com.hivemq.protocols.v2.runtime.ManualDispatcher;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
+import com.hivemq.protocols.v2.southbound.SouthboundBrokerRuntime;
+import com.hivemq.protocols.v2.southbound.SouthboundMqttIntake;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand;
@@ -74,7 +79,6 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -271,6 +275,35 @@ class DefaultProtocolAdapterWrapperFactoryTest {
     }
 
     @Test
+    void constructionThatFailsAfterRegisteringMetrics_deregistersThem_soTheAdapterIdStaysCreatable() {
+        // The metrics object registers GAUGES, and a duplicate gauge registration throws. Leaking them on a failed
+        // build therefore does not merely waste memory: every later attempt at the same adapter id dies at the
+        // registration with "A metric named ... already exists", reporting that instead of the real fault, for the
+        // life of the process. The id would be permanently uncreatable.
+        //
+        // The failure has to land AFTER the metrics are registered, which is why it is injected at the wrapper's own
+        // dispatcher attach rather than in the adapter's constructor.
+        final MetricRegistry registry = new MetricRegistry();
+        final ThrowingOnWrapperAttachDispatcher throwing = new ThrowingOnWrapperAttachDispatcher();
+        final DefaultProtocolAdapterWrapperFactory failing = new DefaultProtocolAdapterWrapperFactory(
+                clock, throwing, registry, new TestDataPointFactory(), new ObjectMapper(), 100);
+
+        assertThatThrownBy(() ->
+                        failing.create(adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("attach refused");
+
+        assertThat(registry.getNames()).noneMatch(name -> name.startsWith(ProtocolAdapterMetrics.ADAPTER_PREFIX));
+
+        // And the proof that matters: the same id can be built again without tripping over its own residue — the
+        // second attempt must fail for its own reason, not with "A metric named ... already exists".
+        assertThatThrownBy(() ->
+                        failing.create(adapter("a").build(), sdkFactory, ProtocolAdapterWrapperEventListener.NONE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("attach refused");
+    }
+
+    @Test
     void constructionThatFailsAfterOpeningABinding_releasesItBeforeRethrowing() {
         final CountingDispatcher counting = new CountingDispatcher();
         final DefaultProtocolAdapterWrapperFactory factoryOnCounting = new DefaultProtocolAdapterWrapperFactory(
@@ -352,44 +385,6 @@ class DefaultProtocolAdapterWrapperFactoryTest {
     }
 
     @Test
-    void aFailureWiringTheSouthboundWriters_releasesEverythingAcquiredBeforeIt() {
-        final CountingDispatcher counting = new CountingDispatcher();
-        final MetricRegistry registry = new MetricRegistry();
-        final ScriptedClock scriptedClock = new ScriptedClock(clock, 0);
-        final FailingWritingService writingService = new FailingWritingService();
-        final DefaultProtocolAdapterWrapperFactory factoryWithFailingWriters = new DefaultProtocolAdapterWrapperFactory(
-                scriptedClock,
-                counting,
-                registry,
-                new TestDataPointFactory(),
-                new ObjectMapper(),
-                100,
-                null,
-                null,
-                writingService);
-
-        // The southbound registry is the LAST thing built, so its failure is the one with the most to unwind.
-        assertThatThrownBy(() -> factoryWithFailingWriters.create(
-                        adapter("a")
-                                .southboundMapping("plant/a/setpoint", "temperature")
-                                .build(),
-                        sdkFactory,
-                        ProtocolAdapterWrapperEventListener.NONE))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("writing service unavailable");
-
-        assertThat(metricsFor(registry, "a")).isZero();
-        assertThat(counting.liveBindings()).isZero();
-        assertThat(scriptedClock.liveTicks()).isZero();
-        // The registry had already adopted its writing contexts when the start threw. Unless the scope owns the
-        // registry BEFORE it is initialized, nothing can undo that — the object that holds the contexts is never
-        // returned to anyone (Sam round 3, finding 4).
-        assertThat(writingService.stops())
-                .as("the partially-started southbound wiring is stopped")
-                .isEqualTo(1);
-    }
-
-    @Test
     void aFailureBuildingTheSecondNorthboundConsumer_removesTheFirstOneAlreadyAdded() {
         final MetricRegistry registry = new MetricRegistry();
         final TagManager tagManager = spy(new TagManager());
@@ -428,6 +423,39 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         verify(tagManager).addConsumer(firstConsumer);
         verify(tagManager).removeConsumer(firstConsumer);
         assertThat(metricsFor(registry, "a")).isZero();
+    }
+
+    @Test
+    void reclaimOrphanedSouthboundQueues_clearsOnlyUnownedInternalQueues() {
+        final ClientQueuePersistence clientQueuePersistence = mock(ClientQueuePersistence.class);
+        final String owned = SouthboundMqttIntake.queueId("a1", "plant/a/set");
+        final String removedAdapter = SouthboundMqttIntake.queueId("gone", "plant/g/set");
+        final String movedTopic = SouthboundMqttIntake.queueId("a1", "plant/old/set");
+        final String ordinaryShared = "ordinary-group/some/topic";
+        when(clientQueuePersistence.getSharedQueues())
+                .thenReturn(
+                        Futures.immediateFuture(ImmutableSet.of(owned, removedAdapter, movedTopic, ordinaryShared)));
+        when(clientQueuePersistence.clear(anyString(), anyBoolean())).thenReturn(Futures.immediateFuture(null));
+        final DefaultProtocolAdapterWrapperFactory factoryWithBroker = new DefaultProtocolAdapterWrapperFactory(
+                clock,
+                dispatcher,
+                new MetricRegistry(),
+                new TestDataPointFactory(),
+                new ObjectMapper(),
+                100,
+                null,
+                null,
+                new SouthboundBrokerRuntime(mock(LocalTopicTree.class), clientQueuePersistence));
+
+        factoryWithBroker.reclaimOrphanedSouthboundQueues(List.of(
+                adapter("a1").southboundMapping("plant/a/set", "temperature").build()));
+
+        // The corpses: an adapter deleted while Edge was down, and a mapping topic moved while Edge was down.
+        verify(clientQueuePersistence).clear(removedAdapter, true);
+        verify(clientQueuePersistence).clear(movedTopic, true);
+        // The configured queue keeps its durable commands, and an ordinary shared queue is not this sweep's to touch.
+        verify(clientQueuePersistence, never()).clear(owned, true);
+        verify(clientQueuePersistence, never()).clear(ordinaryShared, true);
     }
 
     @Test
@@ -470,8 +498,6 @@ class DefaultProtocolAdapterWrapperFactoryTest {
 
         private final @NotNull Clock delegate;
         private int failuresRemaining;
-        private int scheduled;
-        private int cancelled;
 
         private ScriptedClock(final @NotNull Clock delegate, final int failuresRemaining) {
             this.delegate = delegate;
@@ -492,60 +518,21 @@ class DefaultProtocolAdapterWrapperFactoryTest {
                 failuresRemaining--;
                 throw new IllegalStateException("tick scheduling failed");
             }
-            final AutoCloseable handle = delegate.scheduleTick(periodMillis, target, tickMessage);
-            scheduled++;
-            return () -> {
-                cancelled++;
-                handle.close();
-            };
-        }
-
-        private int liveTicks() {
-            return scheduled - cancelled;
+            return delegate.scheduleTick(periodMillis, target, tickMessage);
         }
     }
 
-    /**
-     * A writing service that refuses to start — models the southbound wiring failing at the last step. It counts the
-     * stops it is asked for: a start that threw <b>after</b> the registry adopted its contexts must still be undone,
-     * and only the construction scope can do that (Sam round 3, finding 4).
-     */
-    private static final class FailingWritingService implements InternalProtocolAdapterWritingService {
-
-        private int stops;
-
-        private int stops() {
-            return stops;
-        }
+    /** Refuses every binding — the test adapter opens none, so the first attach is the wrapper's, well after the
+     * metrics are registered. */
+    private static final class ThrowingOnWrapperAttachDispatcher implements MessageDispatcher {
 
         @Override
-        public boolean writingEnabled() {
-            return true;
+        public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
+                final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
+            throw new IllegalStateException("attach refused");
         }
-
-        @Override
-        public @NotNull CompletableFuture<Boolean> startWritingAsync(
-                final @NotNull WritingProtocolAdapter writingProtocolAdapter,
-                final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-                final @NotNull List<InternalWritingContext> writingContexts) {
-            throw new IllegalStateException("writing service unavailable");
-        }
-
-        @Override
-        public void stopWriting(
-                final @NotNull WritingProtocolAdapter writingProtocolAdapter,
-                final @NotNull List<InternalWritingContext> writingContexts) {
-            stops++;
-        }
-
-        @Override
-        public void addWritingChangedCallback(final @NotNull WritingChangedCallback callback) {}
     }
 
-    /**
-     * A {@link MessageDispatcher} double that counts the bindings it hands out and the ones later closed, so a test can
-     * assert every binding an adapter opened is released on teardown and a failed construction leaves none behind.
-     */
     private static final class CountingDispatcher implements MessageDispatcher {
 
         private int attaches;

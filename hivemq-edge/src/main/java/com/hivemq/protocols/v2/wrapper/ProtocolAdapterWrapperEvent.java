@@ -150,12 +150,17 @@ public sealed interface ProtocolAdapterWrapperEvent extends ProtocolAdapterWrapp
     /**
      * Acknowledges one entry of a write batch.
      *
-     * @param node    the node the write targeted.
-     * @param success whether the write succeeded.
-     * @param reason  a human-readable description of the failure, or {@code null} on success.
+     * @param node      the node the write targeted.
+     * @param attemptId the correlation the adapter echoed back; a result naming an attempt the aspect is no longer
+     *                  serving is a stale duplicate and is dropped rather than credited to the current write.
+     * @param success   whether the write succeeded.
+     * @param reason    a human-readable description of the failure, or {@code null} on success.
      */
     record WriteResultReceived(
-            @NotNull Node node, boolean success, @Nullable String reason) implements ProtocolAdapterWrapperEvent {}
+            @NotNull Node node,
+            long attemptId,
+            boolean success,
+            @Nullable String reason) implements ProtocolAdapterWrapperEvent {}
 
     /**
      * One page of a paginated browse DISCOVER phase — fed to the wrapper's browse engine, not the adapter

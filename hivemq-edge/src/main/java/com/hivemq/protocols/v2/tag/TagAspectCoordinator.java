@@ -118,10 +118,14 @@ public interface TagAspectCoordinator {
     /**
      * Submit a southbound write to the node's write aspect — the "write arrives" trigger.
      *
-     * @param node  the node to write to.
-     * @param value the reused v1 value to write.
+     * @param node          the node to write to.
+     * @param value         the reused v1 value to write.
+     * @param deliveryToken the delivering channel's correlation, echoed when the outcome is reported.
+     * @return whether a write aspect took the write. {@code false} means no tag runtime owns that node, and the
+     *         caller must report the outcome itself — a channel left waiting on a write nobody accepted would hold
+     *         its delivery slot for good.
      */
-    void submitWrite(@NotNull Node node, @NotNull DataPoint value);
+    boolean submitWrite(@NotNull Node node, @NotNull DataPoint value, long deliveryToken);
 
     /**
      * Route a write acknowledgment to the node's write aspect.
@@ -130,7 +134,7 @@ public interface TagAspectCoordinator {
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
      */
-    void routeWriteResult(@NotNull Node node, boolean success, @Nullable String reason);
+    void routeWriteResult(@NotNull Node node, long attemptId, boolean success, @Nullable String reason);
 
     /**
      * Apply changed activation flags atomically — the activation-only transition. Recomputes aspect

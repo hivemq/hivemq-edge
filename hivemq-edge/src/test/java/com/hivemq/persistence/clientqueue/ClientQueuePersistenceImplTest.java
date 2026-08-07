@@ -44,6 +44,7 @@ import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.memory.ClientQueueMemoryLocalPersistence;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+import com.hivemq.protocols.v2.southbound.SouthboundMqttIntake;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.concurrent.ExecutionException;
@@ -289,6 +290,26 @@ public class ClientQueuePersistenceImplTest {
         clientQueuePersistence.cleanUp(0).get();
 
         verify(topicTree).getSharedSubscriber(anyString(), anyString());
+        verify(localPersistence).clear(eq("group/topic"), eq(true), anyInt());
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_clean_up_never_clears_a_v2_adapter_southbound_queue()
+            throws ExecutionException, InterruptedException {
+        // A v2 protocol adapter's southbound command queue loses its only subscriber for the whole span of a
+        // recreate — the predecessor's intake unsubscribes before the successor's subscribes — so subscriber
+        // absence says nothing about whether anyone will consume it. This job runs every few seconds, so landing in
+        // that window is routine, and clearing there destroys durable commands that were promised at-least-once
+        // execution. Reclamation is the adapter manager's job instead.
+        final String southboundQueue = SouthboundMqttIntake.queueId("a1", "cmd/setpoint");
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(southboundQueue));
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence, never()).clear(eq(southboundQueue), anyBoolean(), anyInt());
+        verify(topicTree, never()).getSharedSubscriber(anyString(), anyString());
     }
 
     @Test

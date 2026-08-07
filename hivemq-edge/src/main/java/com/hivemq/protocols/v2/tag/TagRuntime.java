@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.tag;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
@@ -25,6 +26,7 @@ import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,6 +57,8 @@ public final class TagRuntime {
      * @param batches                the actor's batch collector.
      * @param metrics                the per-adapter metrics.
      * @param sharedNodeVerification the shared verification authority.
+     * @param selfSender              the wrapper's own mailbox — where the write aspect reports settlements and
+     *                                writability changes.
      * @param pollIntervalMillis      the poll cadence for a polled read aspect, in milliseconds.
      * @param pollResultTimeoutMillis the deadline for a requested poll's result (EDG-824 #15).
      * @param retryPolicy             the backoff policy for verification and subscription retries.
@@ -67,6 +71,7 @@ public final class TagRuntime {
             final @NotNull BatchCollector batches,
             final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
+            final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> selfSender,
             final long pollIntervalMillis,
             final long pollResultTimeoutMillis,
             final @NotNull RetryPolicy retryPolicy) {
@@ -92,6 +97,8 @@ public final class TagRuntime {
                 batches,
                 metrics,
                 sharedNodeVerification,
+                selfSender,
+                pollResultTimeoutMillis,
                 retryPolicy);
     }
 
@@ -263,10 +270,11 @@ public final class TagRuntime {
     /**
      * Route a southbound write request to the write aspect.
      *
-     * @param value the reused v1 value to write.
+     * @param value         the reused v1 value to write.
+     * @param deliveryToken the delivering channel's correlation for this write.
      */
-    public void submitWrite(final @NotNull DataPoint value) {
-        writeAspect.onWriteRequested(value);
+    public void submitWrite(final @NotNull DataPoint value, final long deliveryToken) {
+        writeAspect.onWriteRequested(value, deliveryToken);
     }
 
     /**
@@ -275,8 +283,8 @@ public final class TagRuntime {
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
      */
-    public void onWriteResult(final boolean success, final @Nullable String reason) {
-        writeAspect.onWriteResult(success, reason);
+    public void onWriteResult(final long attemptId, final boolean success, final @Nullable String reason) {
+        writeAspect.onWriteResult(attemptId, success, reason);
     }
 
     // ── snapshot ────────────────────────────────────────────────────────────────────────────

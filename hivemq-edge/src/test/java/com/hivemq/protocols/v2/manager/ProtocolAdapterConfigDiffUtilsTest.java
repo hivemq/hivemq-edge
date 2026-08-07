@@ -42,6 +42,19 @@ class ProtocolAdapterConfigDiffUtilsTest {
     }
 
     @Test
+    void changedSouthboundMapping_isAFullRecreate() {
+        // Southbound mappings define the adapter's MQTT intake subscriptions and durable queues, baked in at
+        // creation — they never mutate in place. (Northbound mappings stay TAGS_ONLY.)
+        final ProtocolAdapterEntity running =
+                adapter("a").southboundMapping("cmd/temperature", "temperature").build();
+        final ProtocolAdapterEntity updated =
+                adapter("a").southboundMapping("cmd/other", "temperature").build();
+
+        assertThat(ProtocolAdapterConfigDiffUtils.classify(running, updated))
+                .isEqualTo(ProtocolAdapterConfigStateTransition.FULL_RECREATE);
+    }
+
+    @Test
     void flippedAdapterDirection_isActivationOnly() {
         final ProtocolAdapterEntity running =
                 adapter("a").southboundActivated(false).build();
@@ -155,6 +168,24 @@ class ProtocolAdapterConfigDiffUtilsTest {
 
         assertThat(ProtocolAdapterConfigDiffUtils.classify(running, updated))
                 .isEqualTo(ProtocolAdapterConfigStateTransition.FULL_RECREATE);
+    }
+
+    @Test
+    void changedSouthboundWriteBacklogCapacity_isNoChange() throws Exception {
+        // The capacity bounds only the in-memory backlog of broker-less rigs; on a real broker it has no effect,
+        // so changing it must never cost a full recreate (which would abort the in-flight write and re-verify
+        // every tag for nothing). The field is JAXB-only, hence the reflective set.
+        final ProtocolAdapterEntity running =
+                adapter("a").southboundMapping("cmd/temperature", "temperature").build();
+        final ProtocolAdapterEntity updated =
+                adapter("a").southboundMapping("cmd/temperature", "temperature").build();
+        final java.lang.reflect.Field capacity =
+                ProtocolAdapterEntity.class.getDeclaredField("southboundWriteBacklogCapacity");
+        capacity.setAccessible(true);
+        capacity.setInt(updated, ProtocolAdapterEntity.DEFAULT_SOUTHBOUND_WRITE_BACKLOG_CAPACITY * 2);
+
+        assertThat(ProtocolAdapterConfigDiffUtils.classify(running, updated))
+                .isEqualTo(ProtocolAdapterConfigStateTransition.NO_CHANGE);
     }
 
     @Test

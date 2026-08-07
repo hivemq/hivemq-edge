@@ -80,7 +80,7 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
      * @param nodeVerifier the adapter's {@code verifyBatch} seam.
      */
     public void bindVerifier(final @NotNull NodeVerifier nodeVerifier) {
-        this.verification = new SharedNodeVerification(nodeVerifier, node -> null);
+        this.verification = new SharedNodeVerification(nodeVerifier, _ -> null);
     }
 
     @Override
@@ -140,12 +140,13 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     }
 
     @Override
-    public void submitWrite(final @NotNull Node node, final @NotNull DataPoint value) {
-        // No write aspect; the write is absorbed.
+    public boolean submitWrite(final @NotNull Node node, final @NotNull DataPoint value, final long deliveryToken) {
+        return false; // no write aspect in the snapshot-only plane — the caller reports it
     }
 
     @Override
-    public void routeWriteResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+    public void routeWriteResult(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
         // No write aspect; the acknowledgment is absorbed.
     }
 

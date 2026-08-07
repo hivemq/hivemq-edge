@@ -91,6 +91,63 @@ class ProtocolAdapterEntityTest {
     }
 
     @Test
+    void duplicateSouthboundTopic_isRejected() {
+        // Two mappings on one topic would share one durable command queue between two tags (and the second
+        // backlog's wakeup would replace the first's) — one command topic feeds exactly one tag.
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags().add(tag("setpoint"));
+        entity.getTags().add(tag("ramp-rate"));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity("plant/a/cmd", "setpoint"));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity("plant/a/cmd", "ramp-rate"));
+
+        assertThat(messages(entity))
+                .anyMatch(message -> message.contains("duplicate topic") && message.contains("plant/a/cmd"));
+    }
+
+    @Test
+    void southboundMappingOnUnwritableTag_isRejected() {
+        // The mapping's durable queue would accept commands no delivery can ever drain (the write window never
+        // opens for a tag whose access model forbids writing) — a contradiction refused at load, not a paused tag.
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags()
+                .add(new TagEntity(
+                        "setpoint",
+                        "{\"id\":\"setpoint\"}",
+                        true,
+                        true,
+                        true,
+                        false,
+                        5_000,
+                        new AccessFlagsEntity(
+                                AccessTriState.YES, AccessTriState.NO, AccessTriState.YES, AccessTriState.NO)));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity("plant/a/cmd", "setpoint"));
+
+        assertThat(messages(entity))
+                .anyMatch(message -> message.contains("not writable") && message.contains("setpoint"));
+    }
+
+    @Test
+    void southboundMappingOnWriteDeactivatedTag_isAccepted() {
+        // write-activated=false is the PAUSED form: the tag CAN be written, delivery is merely suspended, and
+        // queued commands drain when it is re-activated. Only an access model that forbids writing is fatal.
+        final ProtocolAdapterEntity entity = validAdapter();
+        entity.getTags()
+                .add(new TagEntity(
+                        "setpoint",
+                        "{\"id\":\"setpoint\"}",
+                        true,
+                        false,
+                        true,
+                        false,
+                        5_000,
+                        new AccessFlagsEntity(
+                                AccessTriState.YES, AccessTriState.YES, AccessTriState.YES, AccessTriState.NO)));
+        entity.getSouthboundMappings().add(new SouthboundMappingEntity("plant/a/cmd", "setpoint"));
+
+        assertThat(validate(entity)).isEmpty();
+    }
+
+    @Test
     void mappingToDeclaredTag_isAccepted() {
         final ProtocolAdapterEntity entity = validAdapter();
         entity.getTags().add(tag("temperature"));

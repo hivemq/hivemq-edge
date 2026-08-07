@@ -104,11 +104,14 @@ public sealed interface TagAspectEvent extends com.hivemq.protocols.v2.fsm.FSMEv
 
     /**
      * A southbound write arrived for the tag — request the write. Consumed only by the write
-     * aspect; the read aspect's table ignores it. The carried value is the reused v1 value to write.
+     * aspect; the read aspect's table ignores it. The carried value is the reused v1 value to write, and the
+     * completion is settled when the write reaches a terminal outcome (or immediately, rejected, if one is
+     * already in flight).
      *
-     * @param value the reused v1 value to write.
+     * @param value         the reused v1 value to write.
+     * @param deliveryToken the delivering channel's correlation, echoed when the write's outcome is reported.
      */
-    record WriteRequested(@NotNull DataPoint value) implements TagAspectEvent {}
+    record WriteRequested(@NotNull DataPoint value, long deliveryToken) implements TagAspectEvent {}
 
     /**
      * The protocol adapter acknowledged the in-flight write successfully. Consumed only by the

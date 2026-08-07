@@ -28,8 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The Protocol Adapter Wrapper — a {@link MessageHandler} that owns the adapter machine and <b>all</b> policy
- *. Every input arrives as one {@link ProtocolAdapterWrapperMessage}:
+ * The Protocol Adapter Wrapper — a {@link MessageHandler} that owns the adapter machine and <b>all</b> policy.
+ * Every input arrives as one {@link ProtocolAdapterWrapperMessage}:
  * <ul>
  * <li>a {@link ProtocolAdapterWrapperTick} fires the due timers and dispatches the pending batches;</li>
  * <li>a {@link ProtocolAdapterWrapperCommand} runs through the goal-command bypass (mutate the goal, then
@@ -91,7 +91,11 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 case ProtocolAdapterWrapperWriteRequest write ->
                     // A southbound write: route it to the node's write aspect. It changes no adapter
                     // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
-                    context.routeWriteRequestToTags(write.node(), write.value());
+                    context.routeWriteRequestToTags(write);
+                case ProtocolAdapterWrapperSouthboundMessage southbound ->
+                    // The delivery side's own traffic: a settlement or writability report from a write aspect, a
+                    // store answer, an arrival hint. None of it touches the adapter machine.
+                    context.routeSouthboundMessage(southbound);
                 case ProtocolAdapterWrapperBrowseRequest browse ->
                     // A REST browse request: bridge it to the protocol adapter. It changes no adapter
                     // goal or machine state — it issues one browse() when CONNECTED and stashes the future.
@@ -183,7 +187,7 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
             case ProtocolAdapterWrapperEvent.NodeErrorReceived nodeError ->
                 context.routeNodeErrorToTags(nodeError.node(), nodeError.reason(), nodeError.spontaneous());
             case ProtocolAdapterWrapperEvent.WriteResultReceived write ->
-                context.routeWriteResultToTags(write.node(), write.success(), write.reason());
+                context.routeWriteResultToTags(write.node(), write.attemptId(), write.success(), write.reason());
             case ProtocolAdapterWrapperEvent.PollTimerFired ignored -> {
                 // Unused: aspects schedule and fire their own timers on the actor's single timer queue.
             }

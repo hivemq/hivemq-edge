@@ -267,10 +267,10 @@ public final class HttpProtocolAdapter extends AbstractProtocolAdapter {
     }
 
     @Override
-    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value, final long attemptId) {
         // The HTTP adapter does not advertise the WRITE capability, so the framework never calls this; report a failed
         // write defensively should it ever be invoked.
-        output.writeResult(node, false, "the http adapter does not support writing");
+        output.writeResult(node, attemptId, false, "the http adapter does not support writing");
     }
 
     private static @NotNull String describe(final @NotNull Throwable throwable) {

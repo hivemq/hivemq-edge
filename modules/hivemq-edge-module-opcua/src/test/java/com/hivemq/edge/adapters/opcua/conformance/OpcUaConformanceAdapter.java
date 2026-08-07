@@ -248,7 +248,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     }
 
     @Override
-    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value, final long attemptId) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
             final List<StatusCode> statusCodes = requireNonNull(client)
@@ -259,9 +259,12 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
             final Optional<StatusCode> bad =
                     statusCodes.stream().filter(StatusCode::isBad).findFirst();
             output.writeResult(
-                    node, bad.isEmpty(), bad.map(StatusCode::toString).orElse(null));
+                    node,
+                    attemptId,
+                    bad.isEmpty(),
+                    bad.map(StatusCode::toString).orElse(null));
         } catch (final @NotNull Exception failure) {
-            output.writeResult(node, false, String.valueOf(failure.getMessage()));
+            output.writeResult(node, attemptId, false, String.valueOf(failure.getMessage()));
         }
     }
 

@@ -55,12 +55,14 @@ final class WrapperTestFixture {
     final @NotNull ManualDispatcher dispatcher;
     final @NotNull MetricRegistry metricRegistry;
     final @NotNull Mailbox<ProtocolAdapterWrapperMessage> mailbox;
+    final @NotNull ProtocolAdapterMetrics metrics;
     final @NotNull ProtocolAdapterOutputFacade output;
     final @NotNull MockProtocolAdapter adapter;
     final @NotNull RecordingProtocolAdapterWrapperEventListener health;
     final @NotNull AtomicReference<AdapterStatusSnapshot> snapshotReference;
     final @NotNull ProtocolAdapterWrapper wrapper;
     final @NotNull List<NodeTagPair> nodes;
+    private final @NotNull ProtocolAdapterWrapperContext context;
 
     /**
      * The stamped data points the wrapper offered to northbound consumers, in order — captures what actually
@@ -85,6 +87,7 @@ final class WrapperTestFixture {
         final Set<String> writeUsed = builder.writeUsed != null ? builder.writeUsed : new HashSet<>();
 
         final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
+        this.metrics = metrics;
         // The default tag plane is the snapshot-only stand-in (adapter-machine tests); opt in to the running
         // coordinator to exercise the read and write aspect machines.
         final TagAspectCoordinator tagPlane;
@@ -128,13 +131,15 @@ final class WrapperTestFixture {
                     context.timers(),
                     context.batches(),
                     context.metrics(),
-                    context.protocolAdapter()::verifyBatch);
+                    context.protocolAdapter()::verifyBatch,
+                    mailbox);
         }
         if (snapshotOnlyTagPlane != null) {
             // The connect gate runs through the shared verification authority even with no aspect machines; bind
             // it to the adapter's verify seam so the adapter-machine tests still exercise the verification flow.
             snapshotOnlyTagPlane.bindVerifier(context.protocolAdapter()::verifyBatch);
         }
+        this.context = context;
         this.snapshotReference = new AtomicReference<>();
         this.wrapper = new ProtocolAdapterWrapper(context, snapshotReference);
         dispatcher.attach(mailbox, wrapper);
@@ -143,6 +148,16 @@ final class WrapperTestFixture {
 
     static @NotNull Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Bind a southbound delivery side, as the production factory does. From here the wrapper routes every
+     * southbound message to it and ticks it — so a test drives the real loop rather than poking the plane.
+     *
+     * @param plane the delivery side to bind.
+     */
+    void bindSouthboundPlane(final @NotNull com.hivemq.protocols.v2.southbound.SouthboundWritePlane plane) {
+        context.bindSouthboundPlane(plane);
     }
 
     // ── driving ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -200,7 +215,7 @@ final class WrapperTestFixture {
      * Submit a southbound write to a tag's write aspect — the "write arrives" trigger.
      */
     void submitWrite(final @NotNull String tagName, final @NotNull DataPoint value) {
-        send(new ProtocolAdapterWrapperWriteRequest(nodeFor(tagName), value));
+        send(new ProtocolAdapterWrapperWriteRequest(nodeFor(tagName), tagName, value));
     }
 
     // ── observation (snapshot-only, per the actor model) ─────────────────────────────────────────────────────

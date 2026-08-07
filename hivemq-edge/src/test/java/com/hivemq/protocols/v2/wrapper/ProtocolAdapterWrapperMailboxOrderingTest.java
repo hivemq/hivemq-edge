@@ -92,4 +92,26 @@ class ProtocolAdapterWrapperMailboxOrderingTest {
         assertThat(fixture.mailbox.poll()).isInstanceOf(ProtocolAdapterWrapperEvent.DataPointReceived.class);
         assertThat(fixture.mailbox.poll()).isInstanceOf(ProtocolAdapterWrapperEvent.NodeErrorReceived.class);
     }
+
+    @Test
+    void everySouthboundMessageRidesTheDataBand_soSettleThenWritabilityOrderingHolds() {
+        // Load-bearing (the interface javadoc says why): the mailbox is strict FIFO only WITHIN a band. If a
+        // TagWritability(true) ever overtook the outgoing aspect's WriteSettled(ABORTED) during a tags-only
+        // reload, openWindow() would no-op against the still-set in-flight token and the late ABORTED would then
+        // close the window for good — a permanently wedged channel. Every southbound message must therefore
+        // inherit the sealed interface's DATA default, and the write request must declare the same band.
+        assertThat(ProtocolAdapterWrapperSouthboundMessage.class.getPermittedSubclasses())
+                .isNotEmpty();
+        for (final Class<?> message : ProtocolAdapterWrapperSouthboundMessage.class.getPermittedSubclasses()) {
+            assertThat(java.util.Arrays.stream(message.getDeclaredMethods()).map(java.lang.reflect.Method::getName))
+                    .as("%s must inherit the DATA default, not declare its own priority()", message.getSimpleName())
+                    .doesNotContain("priority");
+        }
+        assertThat(new ProtocolAdapterWrapperSouthboundMessage.TagWritability("t", true).priority())
+                .isEqualTo(MailboxMessagePriority.DATA);
+        assertThat(new ProtocolAdapterWrapperWriteRequest(
+                                WrapperTestSupport.node("x"), "t", WrapperTestSupport.dataPoint("t", "1"))
+                        .priority())
+                .isEqualTo(MailboxMessagePriority.DATA);
+    }
 }

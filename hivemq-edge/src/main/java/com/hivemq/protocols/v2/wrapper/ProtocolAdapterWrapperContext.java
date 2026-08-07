@@ -46,6 +46,8 @@ import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
+import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
+import com.hivemq.protocols.v2.tag.SouthboundWriteOutcome;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import java.util.List;
@@ -126,6 +128,14 @@ public final class ProtocolAdapterWrapperContext {
 
     private @Nullable TimerHandle watchdog;
     private @Nullable TimerHandle backoffTimer;
+
+    /**
+     * The southbound delivery side (bound after construction, like the machine), or {@code null} for an adapter
+     * with no southbound mappings. Every southbound message the wrapper receives is routed here, and every tick
+     * gives it its backstop-poll cadence — which is why no scheduler exists outside the wrapper's own tick.
+     */
+    private @Nullable SouthboundWritePlane southboundPlane;
+
     private final @NotNull ProtocolAdapterBrowseEngine browseEngine = new ProtocolAdapterBrowseEngine();
     private @Nullable PendingBrowse pendingBrowse;
     private @Nullable FSM<ProtocolAdapterWrapperState, ProtocolAdapterWrapperEvent, ProtocolAdapterWrapperContext>
@@ -308,6 +318,14 @@ public final class ProtocolAdapterWrapperContext {
             }
             case ProtocolAdapterWrapperCommand.UpdateTagSet update -> {
                 activation = Map.copyOf(update.activation());
+                // The delivery side learns the new tag set BEFORE the aspects are rebuilt, so a rebuilt aspect's
+                // writability report always finds its channel in place. Both happen on this thread, in this
+                // order — what used to be a cross-thread ordering contract between the manager and the wrapper is
+                // now plain statement order.
+                if (southboundPlane != null) {
+                    southboundPlane.updateTagSet(
+                            update.nodes(), update.writeUsedTagNames(), update.reTargetedTagNames());
+                }
                 tagPlane.updateTagSet(
                         update.nodes(),
                         update.activation(),
@@ -501,15 +519,6 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * An adapter-facing call threw on the dispatch thread — the contract-violation case (EDG-824 #7).
-     * Without this step the exception would kill the dispatch loop and freeze the last (GREEN) snapshot forever;
-     * instead the wrapper counts it as a defensive reset and enters {@code ERROR} — never false-green.
-     */
-    /**
-     * A last-resort status for {@code publishSnapshot} when building the full snapshot itself throws (a
-     * half-mutated tag plane): never leave a stale healthy-looking snapshot in place.
-     */
-    /**
      * Tell the supervisor this adapter's actor is gone — its dispatch loop was ended by a fatal JVM condition and no
      * further message will ever be processed (Sam round 3, finding 2).
      *
@@ -519,6 +528,10 @@ public final class ProtocolAdapterWrapperContext {
         healthListener.wrapperDied(adapterId, reason);
     }
 
+    /**
+     * A last-resort status for {@code publishSnapshot} when building the full snapshot itself throws (a
+     * half-mutated tag plane): never leave a stale healthy-looking snapshot in place.
+     */
     @NotNull
     AdapterStatusSnapshot fallbackErrorSnapshot(final @NotNull String reason) {
         return new AdapterStatusSnapshot(
@@ -531,6 +544,11 @@ public final class ProtocolAdapterWrapperContext {
                 reason);
     }
 
+    /**
+     * An adapter-facing call threw on the dispatch thread — the contract-violation case (EDG-824 #7).
+     * Without this step the exception would kill the dispatch loop and freeze the last (GREEN) snapshot forever;
+     * instead the wrapper counts it as a defensive reset and enters {@code ERROR} — never false-green.
+     */
     @NotNull
     ProtocolAdapterWrapperState adapterThrowStep(
             final @NotNull ProtocolAdapterWrapperState current, final @NotNull Throwable exception) {
@@ -654,18 +672,57 @@ public final class ProtocolAdapterWrapperContext {
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
      */
-    public void routeWriteResultToTags(final @NotNull Node node, final boolean success, final @Nullable String reason) {
-        tagPlane.routeWriteResult(node, success, reason);
+    public void routeWriteResultToTags(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
+        tagPlane.routeWriteResult(node, attemptId, success, reason);
     }
 
     /**
      * Route a southbound write request to its write aspect — the "write arrives" trigger.
+     * <p>
+     * When no tag runtime owns the node the outcome is reported here instead: leaving it unreported would strand the
+     * channel's delivery slot for good. It is reported {@code ABORTED}, the same outcome every other "the tag cannot
+     * take this write right now" path uses, so the command is <b>kept</b> and redelivered once the tag reports itself
+     * writable again. It must not be {@code REJECTED_BUSY}: that outcome means a violation of the in-flight window of
+     * one, and {@code windowViolations()} is documented to stay at zero — reporting an unrelated fault through it
+     * would tell an operator the pacing invariant broke when it did not.
+     * <p>
+     * This is a routine outcome, not an alarm, which is why it logs at debug. A tags-only reload arrives as a
+     * {@code CONTROL} command and so overtakes any write request already sitting in the {@code DATA} band; that
+     * request still carries the pre-reload {@link Node}, and {@link Node} correlates by identity, so the rebuilt
+     * tag runtimes never match it. The command is kept and redelivered to the tag's current node a moment later.
      *
-     * @param node  the node to write to.
-     * @param value the reused v1 value to write.
+     * @param request the write to route.
      */
-    public void routeWriteRequestToTags(final @NotNull Node node, final @NotNull DataPoint value) {
-        tagPlane.submitWrite(node, value);
+    public void routeWriteRequestToTags(final @NotNull ProtocolAdapterWrapperWriteRequest request) {
+        if (tagPlane.submitWrite(request.node(), request.value(), request.deliveryToken())) {
+            return;
+        }
+        log.debug(
+                "Southbound write for tag '{}' on adapter '{}' found no tag runtime for its node (usually a write "
+                        + "request overtaken by a tag-set reload) — the command is kept and redelivered when the "
+                        + "tag reports itself writable again",
+                request.tagName(),
+                adapterId);
+        if (southboundPlane != null) {
+            southboundPlane.onMessage(new ProtocolAdapterWrapperSouthboundMessage.WriteSettled(
+                    request.tagName(),
+                    request.deliveryToken(),
+                    SouthboundWriteOutcome.ABORTED,
+                    "no tag runtime owns this node"));
+        }
+    }
+
+    /**
+     * Route a southbound delivery message — a settlement, a writability report, a store answer, an arrival hint —
+     * to the delivery side. A no-op for an adapter with no southbound mappings.
+     *
+     * @param message the message to route.
+     */
+    public void routeSouthboundMessage(final @NotNull ProtocolAdapterWrapperSouthboundMessage message) {
+        if (southboundPlane != null) {
+            southboundPlane.onMessage(message);
+        }
     }
 
     private void synthesizeAllVerified() {
@@ -860,7 +917,20 @@ public final class ProtocolAdapterWrapperContext {
     public void onTick(final long tickMillis) {
         metrics.recordTickLag(clock.nowMillis() - tickMillis);
         timers.fireDue(tickMillis);
+        if (southboundPlane != null) {
+            southboundPlane.onTick();
+        }
         batches.dispatch(protocolAdapter);
+    }
+
+    /**
+     * Bind the southbound delivery side — set once by the factory when the adapter has southbound mappings; never
+     * rebound. Its state belongs to this dispatch thread from here on.
+     *
+     * @param plane the adapter's delivery side.
+     */
+    public void bindSouthboundPlane(final @NotNull SouthboundWritePlane plane) {
+        this.southboundPlane = plane;
     }
 
     /**

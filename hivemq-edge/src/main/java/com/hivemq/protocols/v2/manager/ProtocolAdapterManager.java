@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.RejectedAdapterEntity;
+import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ActivateAdapter;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.BrowseRequested;
@@ -43,10 +44,12 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -100,6 +103,9 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             new AtomicReference<>(ProtocolAdapterManagerSnapshot.empty());
 
     private @Nullable ProtocolAdapterManagerHealthListener healthListener;
+
+    /** One-shot latch for the startup queue sweep — see the first lines of {@code reconcile}. */
+    private boolean orphanedSouthboundQueuesReclaimed;
 
     /**
      * @param factoryRegistry the protocol-adapter type factories (empty in production, D8).
@@ -164,6 +170,19 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     private void reconcile(
             final @NotNull List<ProtocolAdapterEntity> newConfigs,
             final @NotNull List<RejectedAdapterEntity> rejectedConfigs) {
+        if (!orphanedSouthboundQueuesReclaimed) {
+            // First configuration this process sees: sweep the durable southbound queues of adapters (or mapping
+            // topics) that were removed from the configuration WHILE EDGE WAS DOWN. No removal transition below can
+            // reach them — they were never in containerMap — and the broker's orphan cleanup is forbidden to touch
+            // them, so this sweep is their only reclamation. Rejected entities count as owners: destroying durable
+            // commands over a config typo the operator is about to fix would be worse than keeping them.
+            orphanedSouthboundQueuesReclaimed = true;
+            final List<ProtocolAdapterEntity> everythingConfigured = new ArrayList<>(newConfigs);
+            for (final RejectedAdapterEntity rejectedEntity : rejectedConfigs) {
+                everythingConfigured.add(rejectedEntity.entity());
+            }
+            wrapperFactory.reclaimOrphanedSouthboundQueues(everythingConfigured);
+        }
         final Map<String, ProtocolAdapterEntity> updatedById = new LinkedHashMap<>();
         for (final ProtocolAdapterEntity entity : newConfigs) {
             updatedById.put(entity.getAdapterId(), entity);
@@ -313,6 +332,12 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             stopAndDiscard(updated.getAdapterId(), updated);
             return;
         }
+        // The wrapper updates its delivery side and rebuilds its aspects in that order, both on its own dispatch
+        // thread, when it handles this command — so no ordering has to be arranged from here.
+        // B2, first door: a tags-only reload can move a write-mapped tag to a different node. Everything queued for
+        // that tag was authored against the old target, and the queue is keyed by the mapping topic rather than the
+        // node, so without this the successor reads the same commands back and executes them on a device the operator
+        // never addressed. Detected from the node-string — see reTargetedWriteMappedTags for why not from Node.
         tellWrapper(
                 existing,
                 new ProtocolAdapterWrapperCommand.UpdateTagSet(
@@ -320,9 +345,9 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                         ProtocolAdapterConfigSupport.activationOf(updated),
                         updated.getReadUsedTagNames(),
                         updated.getWriteUsedTagNames(),
+                        ProtocolAdapterConfigDiffUtils.reTargetedWriteMappedTags(running, updated),
                         ProtocolAdapterConfigSupport.pollIntervalMillisOf(updated)));
         existing.updateNorthboundMappings(updated.getNorthboundMappings());
-        existing.updateSouthboundMappings(updated.getSouthboundMappings(), nodes);
         if (ProtocolAdapterConfigDiffUtils.adapterDirectionChanged(running, updated)) {
             // The tag-set update does not carry the adapter direction goal; re-assert the config-declared goal when
             // it changed too. Still never reconnects.
@@ -410,15 +435,17 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             // No wrapper to wind down, or it is already at rest — tear down now.
             handleRegistry.unregister(adapterId);
             adapter.close();
-            if (recreateAs != null) {
-                if (pendingRemovalMap.containsKey(adapterId)) {
-                    // A previous instance of this id is still stopping (its metrics and resources are live):
-                    // fold the recreate into the pending removal instead of building a colliding instance now.
-                    final PendingRemoval pending = pendingRemovalMap.get(adapterId);
-                    pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), recreateAs));
-                } else {
-                    createAdapter(recreateAs);
-                }
+            if (recreateAs == null) {
+                discardSouthboundQueues(adapter);
+            } else if (pendingRemovalMap.containsKey(adapterId)) {
+                // A previous instance of this id is still stopping (its metrics and resources are live):
+                // fold the recreate into the pending removal instead of building a colliding instance now. Its
+                // queues are dealt with when that stop lands, against the entity that instance was running.
+                final PendingRemoval pending = pendingRemovalMap.get(adapterId);
+                pendingRemovalMap.put(adapterId, new PendingRemoval(pending.stopping(), recreateAs));
+            } else {
+                discardStaleSouthboundQueues(adapter.appliedEntity(), recreateAs);
+                createAdapter(recreateAs);
             }
             return;
         }
@@ -490,6 +517,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                 return;
             }
             try {
+                discardStaleSouthboundQueues(pending.stopping().appliedEntity(), pending.recreateAs());
                 createAdapter(pending.recreateAs());
             } catch (final @NotNull Throwable exception) {
                 // EDG-824 #4/R2: the recreate runs outside the reconcile loop's guard, so a LinkageError (or any
@@ -507,6 +535,82 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
                                     + exception.getMessage());
                 }
             }
+            return;
+        }
+        // Neither recreated nor rejected: the adapter is gone from the configuration. Nothing will ever consume its
+        // southbound queues again, and the broker's orphan cleanup no longer reclaims them, so do it here.
+        discardSouthboundQueues(pending.stopping());
+    }
+
+    /**
+     * B2, second door. A node change on its own is a tags-only reload, handled inside the running wrapper; bundled
+     * with any connection-critical field it becomes a <b>full recreate</b> instead, which never reaches that path —
+     * the adapter is torn down and rebuilt, the successor's intake subscribes the same topic, derives the same queue
+     * id, and reads the predecessor's commands straight back. Same hazard, different door, and it only shows up when
+     * an operator changes two things at once.
+     * <p>
+     * Also cleans up after itself in a case the cleanup exemption created: a recreate that <b>moves or removes</b> a
+     * southbound mapping leaves the old topic's queue with no subscriber and no owner, and orphan cleanup no longer
+     * reclaims it. Such a queue would sit in the store for good, and resurrect if that topic were ever configured
+     * again.
+     *
+     * @param previous the configuration the outgoing instance was running — the one the existing queues belong to.
+     * @param successor the configuration about to replace it.
+     */
+    private void discardStaleSouthboundQueues(
+            final @NotNull ProtocolAdapterEntity previous, final @NotNull ProtocolAdapterEntity successor) {
+        final Map<String, String> topicAfter = new LinkedHashMap<>();
+        for (final SouthboundMappingEntity mapping : successor.getSouthboundMappings()) {
+            topicAfter.putIfAbsent(mapping.getTagName(), mapping.getTopic());
+        }
+        final Set<String> reTargeted = ProtocolAdapterConfigDiffUtils.reTargetedWriteMappedTags(previous, successor);
+        final Set<String> stale = new LinkedHashSet<>();
+        for (final SouthboundMappingEntity mapping : previous.getSouthboundMappings()) {
+            final String tagName = mapping.getTagName();
+            final String topicNow = topicAfter.get(tagName);
+            if (topicNow == null || !topicNow.equals(mapping.getTopic()) || reTargeted.contains(tagName)) {
+                stale.add(tagName);
+            }
+        }
+        if (stale.isEmpty()) {
+            return;
+        }
+        try {
+            wrapperFactory.discardSouthboundQueues(previous, stale);
+        } catch (final Exception failure) {
+            log.warn(
+                    "Failed to discard the stale southbound queues of recreated v2 adapter '{}'",
+                    previous.getAdapterId(),
+                    failure);
+        }
+    }
+
+    /**
+     * Destroy the southbound command queues of an adapter that has been removed for good.
+     * <p>
+     * These queues are exempt from the broker's subscriber-absence cleanup, because that cleanup cannot tell a
+     * recreate's handoff window from a genuine orphan and would erase pending commands mid-handoff. The manager can
+     * tell the difference, so it owns the reclamation — and must, or a removed adapter's commands would sit in the
+     * store forever and be delivered to the device if an adapter with the same id and topic were ever configured
+     * again.
+     */
+    private void discardSouthboundQueues(final @NotNull ProtocolAdapterContainer discarded) {
+        final String adapterId = discarded.handle().adapterId();
+        final PendingRemoval pending = pendingRemovalMap.get(adapterId);
+        if (containerMap.containsKey(adapterId) || (pending != null && pending.recreateAs() != null)) {
+            // A backstop, not a live path: no route reaches this today. An id re-added while its previous instance is
+            // still stopping folds into that pending removal as a recreate target rather than becoming a second live
+            // instance, so both callers below have already excluded a successor. It is kept because the operation it
+            // guards is the only irreversible one on this page — queue ids are derived from the adapter id and the
+            // mapping topic, so a successor's queues are the SAME queues, and getting this wrong destroys the very
+            // commands the successor exists to deliver.
+            return;
+        }
+        try {
+            wrapperFactory.discardSouthboundQueues(discarded.appliedEntity());
+        } catch (final Exception failure) {
+            // A leaked queue is a leak, not a fault: never let it break the manager's dispatch thread.
+            log.warn("Failed to discard the southbound queues of removed v2 adapter '{}'", adapterId, failure);
         }
     }
 

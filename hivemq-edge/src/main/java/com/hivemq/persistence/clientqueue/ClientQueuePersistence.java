@@ -16,6 +16,7 @@
 package com.hivemq.persistence.clientqueue;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.mqtt.message.MessageWithID;
@@ -145,6 +146,18 @@ public interface ClientQueuePersistence {
      */
     @NotNull
     ListenableFuture<Void> cleanUp(int bucketIndex);
+
+    /**
+     * Enumerate the shared queue ids of every bucket — a pure read with none of {@link #cleanUp(int)}'s side
+     * effects. Exists for the v2 protocol-adapter manager's startup reclamation: the southbound command queues are
+     * exempt from the broker's orphan cleanup, so one whose owning adapter was removed from the configuration while
+     * Edge was down can only be found — and cleared — by comparing this enumeration against the loaded
+     * configuration.
+     *
+     * @return the ids of all shared queues across all buckets
+     */
+    @NotNull
+    ListenableFuture<ImmutableSet<String>> getSharedQueues();
 
     /**
      * Returns the amount of messages queued for the client.

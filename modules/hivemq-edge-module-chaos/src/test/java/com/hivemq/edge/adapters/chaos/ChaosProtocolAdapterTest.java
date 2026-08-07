@@ -417,7 +417,8 @@ class ChaosProtocolAdapterTest {
         }
 
         @Override
-        public void writeResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+        public void writeResult(
+                final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
             events.add("writeResult:" + node.nodeId() + ":" + success);
         }
 

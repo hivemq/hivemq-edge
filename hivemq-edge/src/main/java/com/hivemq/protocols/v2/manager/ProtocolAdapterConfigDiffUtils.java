@@ -22,8 +22,10 @@ import com.hivemq.protocols.v2.config.RetryPolicyEntity;
 import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -34,9 +36,11 @@ import org.jetbrains.annotations.NotNull;
  * The classification is layered, gentlest last to win only when nothing more disruptive changed:
  * <ol>
  * <li>any <b>connection-critical</b> field differs (protocol id, config version, skip-verification, adapter
- * configuration, retry policy, watchdog / command timeouts) &rarr; {@link ProtocolAdapterConfigStateTransition#FULL_RECREATE};</li>
- * <li>otherwise, if the <b>tag set</b> (a tag's identity beyond its activation flags) or the <b>mappings</b> (which
- * drive {@code used}) differ &rarr; {@link ProtocolAdapterConfigStateTransition#TAGS_ONLY};</li>
+ * configuration, retry policy, watchdog / command timeouts, southbound mappings — the last is baked into the
+ * adapter's southbound write plane and MQTT intake) &rarr;
+ * {@link ProtocolAdapterConfigStateTransition#FULL_RECREATE};</li>
+ * <li>otherwise, if the <b>tag set</b> (a tag's identity beyond its activation flags) or the <b>northbound
+ * mappings</b> (which drive {@code read-used}) differ &rarr; {@link ProtocolAdapterConfigStateTransition#TAGS_ONLY};</li>
  * <li>otherwise, if any <b>activation flag</b> differs (adapter {@code northbound-activated} /
  * {@code southbound-activated} or a tag's {@code read-activated} / {@code write-activated}) &rarr;
  * {@link ProtocolAdapterConfigStateTransition#ACTIVATION_ONLY};</li>
@@ -72,6 +76,50 @@ public final class ProtocolAdapterConfigDiffUtils {
     }
 
     /**
+     * The write-mapped tags whose <b>configured node changed</b> between two configurations of the same adapter.
+     * <p>
+     * Compared on the {@code node-string} — the raw configuration text — and deliberately not on deserialized
+     * {@link com.hivemq.adapter.sdk.api.v2.node.Node} objects. {@code Node} is an SDK type with no equality contract:
+     * no implementation overrides {@code equals}, and it is deserialized afresh on every reload, so an object
+     * comparison is <b>always</b> unequal. That is precisely the defect the v2 delivery side shipped — it believed it
+     * was detecting node changes and was in fact firing on every reload. Requiring {@code equals} on {@code Node}
+     * would push a contract onto every adapter author; the configuration string is what was actually authored, it is
+     * already the field {@link #classify} uses to decide a tag set differs at all, and it costs the SDK nothing.
+     * <p>
+     * Only tags that are write-mapped in <b>both</b> configurations are returned: a tag that gains or loses its
+     * southbound mapping has its channel created or dropped outright, which already disposes of its queue.
+     *
+     * @param running the configuration currently applied to the running adapter.
+     * @param updated the freshly-loaded configuration.
+     * @return the names of write-mapped tags now addressing a different node; empty when none do.
+     */
+    public static @NotNull Set<String> reTargetedWriteMappedTags(
+            final @NotNull ProtocolAdapterEntity running, final @NotNull ProtocolAdapterEntity updated) {
+        final Set<String> writeMappedBefore = running.getWriteUsedTagNames();
+        final Set<String> writeMappedAfter = updated.getWriteUsedTagNames();
+        final Map<String, String> nodeStringBefore = nodeStringsByTag(running);
+        final Set<String> reTargeted = new LinkedHashSet<>();
+        for (final TagEntity tag : updated.getTags()) {
+            if (!writeMappedBefore.contains(tag.getName()) || !writeMappedAfter.contains(tag.getName())) {
+                continue;
+            }
+            final String before = nodeStringBefore.get(tag.getName());
+            if (before != null && !before.equals(tag.getNodeString())) {
+                reTargeted.add(tag.getName());
+            }
+        }
+        return reTargeted;
+    }
+
+    private static @NotNull Map<String, String> nodeStringsByTag(final @NotNull ProtocolAdapterEntity entity) {
+        final Map<String, String> byName = new LinkedHashMap<>();
+        for (final TagEntity tag : entity.getTags()) {
+            byName.put(tag.getName(), tag.getNodeString());
+        }
+        return byName;
+    }
+
+    /**
      * @param running the running configuration.
      * @param updated the freshly-loaded configuration.
      * @return whether the adapter-level direction activation (the {@code northbound-activated} /
@@ -97,7 +145,8 @@ public final class ProtocolAdapterConfigDiffUtils {
             @NotNull Map<String, Object> adapterConfiguration,
             @NotNull RetryPolicyEntity retryPolicy,
             long watchdogTimeoutMillis,
-            long commandTimeoutMillis) {}
+            long commandTimeoutMillis,
+            @NotNull List<SouthboundMappingEntity> southboundMappings) {}
 
     private static @NotNull ConnectionCritical connectionCritical(final @NotNull ProtocolAdapterEntity entity) {
         return new ConnectionCritical(
@@ -107,7 +156,13 @@ public final class ProtocolAdapterConfigDiffUtils {
                 entity.getAdapterConfiguration(),
                 entity.getRetryPolicy(),
                 entity.getWatchdogTimeoutMillis(),
-                entity.getCommandTimeoutMillis());
+                entity.getCommandTimeoutMillis(),
+                // southbound-write-backlog-capacity is deliberately NOT here: it bounds only the in-memory backlog
+                // of broker-less rigs (the durable queue's bound is the broker's max-queued-messages), so changing
+                // it must not cost a production adapter a full recreate.
+                // Southbound mappings define the MQTT intake subscriptions and durable queues, baked in at creation;
+                // a change recreates the adapter — the durable queues themselves survive the recreate.
+                entity.getSouthboundMappings());
     }
 
     /**
@@ -138,11 +193,11 @@ public final class ProtocolAdapterConfigDiffUtils {
 
     private static boolean mappingsChanged(
             final @NotNull ProtocolAdapterEntity running, final @NotNull ProtocolAdapterEntity updated) {
+        // Northbound only: southbound mappings are connection-critical (they define the adapter's MQTT intake
+        // subscriptions and durable queues, which never mutate in place — see SouthboundMqttIntake).
         final List<NorthboundMappingEntity> runningNorth = running.getNorthboundMappings();
         final List<NorthboundMappingEntity> updatedNorth = updated.getNorthboundMappings();
-        final List<SouthboundMappingEntity> runningSouth = running.getSouthboundMappings();
-        final List<SouthboundMappingEntity> updatedSouth = updated.getSouthboundMappings();
-        return !runningNorth.equals(updatedNorth) || !runningSouth.equals(updatedSouth);
+        return !runningNorth.equals(updatedNorth);
     }
 
     private static boolean activationChanged(

@@ -404,7 +404,7 @@ public final class ProtocolAdapterManagerTestSupport {
 
         @Override
         public void writeBatch(final @NotNull List<WriteEntry> entries) {
-            entries.forEach(entry -> output.writeResult(entry.node(), true, null));
+            entries.forEach(entry -> output.writeResult(entry.node(), WriteEntry.UNCORRELATED, true, null));
         }
 
         @Override

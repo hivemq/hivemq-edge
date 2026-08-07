@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import jakarta.xml.bind.ValidationEvent;
@@ -61,6 +62,14 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     public static final long DEFAULT_WATCHDOG_TIMEOUT_MILLIS = 30_000;
     public static final long DEFAULT_COMMAND_TIMEOUT_MILLIS = 10_000;
 
+    /**
+     * Default bound of the per-tag southbound write backlog — the number of pending commands a write-mapped tag can
+     * hold before the newest offer is shed. It applies only to the <b>in-memory</b> backlog of broker-less rigs
+     * (unit tests); on a real broker the durable client queue is the backlog and its bound is the broker's
+     * {@code max-queued-messages}, so this value has no effect there.
+     */
+    public static final int DEFAULT_SOUTHBOUND_WRITE_BACKLOG_CAPACITY = 1_000;
+
     private static final @NotNull Pattern PROTOCOL_ID_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
 
     @XmlElement(name = "adapter-id", required = true)
@@ -93,6 +102,9 @@ public class ProtocolAdapterEntity implements EntityValidatable {
 
     @XmlElement(name = "command-timeout-millis")
     private long commandTimeoutMillis = DEFAULT_COMMAND_TIMEOUT_MILLIS;
+
+    @XmlElement(name = "southbound-write-backlog-capacity")
+    private int southboundWriteBacklogCapacity = DEFAULT_SOUTHBOUND_WRITE_BACKLOG_CAPACITY;
 
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
@@ -183,6 +195,14 @@ public class ProtocolAdapterEntity implements EntityValidatable {
         return commandTimeoutMillis;
     }
 
+    /**
+     * @return the per-tag bound of the in-memory southbound write backlog (broker-less rigs only; offers beyond it
+     *         shed the newest command). The durable backlog is bounded by the broker's {@code max-queued-messages}.
+     */
+    public int getSouthboundWriteBacklogCapacity() {
+        return southboundWriteBacklogCapacity;
+    }
+
     public @NotNull List<TagEntity> getTags() {
         return tags;
     }
@@ -260,6 +280,12 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + ") must be strictly greater than command-timeout-millis ("
                         + commandTimeoutMillis
                         + ")");
+        EntityValidatable.notMatch(
+                validationEvents,
+                () -> southboundWriteBacklogCapacity > 0,
+                () -> "adapter [" + adapterId + "] southbound-write-backlog-capacity ("
+                        + southboundWriteBacklogCapacity
+                        + ") must be positive");
 
         retryPolicy.validate(validationEvents);
         // Both passes are per-tag; the second needs this adapter's id for its messages, which the tag has no way to
@@ -303,6 +329,38 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         + "] which is not declared in adapter ["
                         + adapterId
                         + "]"));
+        // Two southbound mappings sharing a topic would share one durable command queue between two tags: the
+        // second backlog's wakeup replaces the first's in the client-queue callback map, and both would compete
+        // for the same commands. One command topic feeds exactly one tag.
+        // Exact filter strings only. Two DIFFERENT filters may still overlap (`plant/a/set` and `plant/+/set`),
+        // and that is left alone deliberately: each gets its own subscription and its own queue, so a publish is
+        // delivered to both tags independently — no shared queue, no competing consumers — and commanding several
+        // tags from one topic is a legitimate thing to want.
+        final Set<String> seenSouthboundTopics = new HashSet<>();
+        southboundMappings.forEach(mapping -> EntityValidatable.notMatch(
+                validationEvents,
+                () -> seenSouthboundTopics.add(mapping.getTopic()),
+                () -> "adapter [" + adapterId + "] declares southbound mappings with the duplicate topic ["
+                        + mapping.getTopic()
+                        + "] — one command topic feeds exactly one tag"));
+        // A southbound mapping on a tag whose access model forbids writing is a contradiction, not a paused tag
+        // (write-activated=false is the paused form): the mapping's durable queue would accept commands that no
+        // delivery can ever drain — the write window never opens, nothing is dead-lettered, nothing is reported —
+        // so the queue hoards silently until the broker's limit sheds them. Refused outright, same as any other
+        // fatal configuration error: at startup the adapter is not created; on reload this adapter's new
+        // configuration is rejected and Edge carries on.
+        final Map<String, TagEntity> declaredTagsByName = new LinkedHashMap<>();
+        tags.forEach(tag -> declaredTagsByName.putIfAbsent(tag.getName(), tag));
+        southboundMappings.forEach(mapping -> EntityValidatable.notMatch(
+                validationEvents,
+                () -> {
+                    final TagEntity tag = declaredTagsByName.get(mapping.getTagName());
+                    // an unknown tag already produced its own fatal event above
+                    return tag == null || tag.getAccess().getWritable() == AccessTriState.YES;
+                },
+                () -> "adapter [" + adapterId + "] southbound mapping [" + mapping.getTopic() + "] targets tag ["
+                        + mapping.getTagName()
+                        + "] whose access model is not writable — its commands could never be delivered"));
     }
 
     /**
@@ -345,6 +403,7 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                     && skipVerification == that.skipVerification
                     && watchdogTimeoutMillis == that.watchdogTimeoutMillis
                     && commandTimeoutMillis == that.commandTimeoutMillis
+                    && southboundWriteBacklogCapacity == that.southboundWriteBacklogCapacity
                     && Objects.equals(adapterId, that.adapterId)
                     && Objects.equals(protocolId, that.protocolId)
                     && Objects.equals(adapterConfiguration, that.adapterConfiguration)
@@ -369,6 +428,7 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                 retryPolicy,
                 watchdogTimeoutMillis,
                 commandTimeoutMillis,
+                southboundWriteBacklogCapacity,
                 tags,
                 northboundMappings,
                 southboundMappings);

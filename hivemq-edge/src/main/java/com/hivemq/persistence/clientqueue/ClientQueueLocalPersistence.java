@@ -223,6 +223,19 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
     ImmutableSet<String> cleanUp(int bucketIndex);
 
     /**
+     * A pure read of the shared queue ids in one bucket — the enumeration {@link #cleanUp(int)} performs, without
+     * its expiry side effects. Exists so the v2 protocol-adapter manager can reclaim the southbound command queues
+     * of adapters that were removed from the configuration while Edge was down: those queues are exempt from the
+     * broker's orphan cleanup, so without this sweep they would survive forever and hand their stale commands to a
+     * later adapter with the same id and topic.
+     *
+     * @param bucketIndex of the bucket to read
+     * @return queue ids of all shared queues in the bucket
+     */
+    @NotNull
+    ImmutableSet<String> getSharedQueues(int bucketIndex);
+
+    /**
      * Remove a PUBLISH with a given unique ID. Messages with QoS 0 are not checked.
      *
      * @param sharedSubscription for which the message is removed

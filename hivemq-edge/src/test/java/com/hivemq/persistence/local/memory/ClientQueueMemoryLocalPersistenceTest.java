@@ -19,8 +19,10 @@ import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENC
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy.DISCARD;
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
 import static com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER;
+import static com.hivemq.protocols.v2.southbound.SouthboundMqttIntake.INTERNAL_SHARE_PREFIX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,6 +61,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.slf4j.LoggerFactory;
+import util.LogbackCapturingAppender;
 
 /**
  * @author Florian Limpöck
@@ -93,6 +97,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
     @AfterEach
     public void tearDown() throws Exception {
         InternalConfigurations.EXPIRE_INFLIGHT_PUBRELS_ENABLED = false;
+        LogbackCapturingAppender.Factory.cleanUp();
     }
 
     @Test
@@ -843,6 +848,66 @@ public class ClientQueueMemoryLocalPersistenceTest {
 
         assertTrue(sharedQueues.isEmpty());
         verify(payloadPersistence, never()).decrementReferenceCounter(anyLong()); // 2 expired
+        assertEquals(0, persistence.size("client1", false, 0));
+    }
+
+    @Test
+    public void test_get_shared_queues_returns_shared_ids_only() {
+        persistence.add("client1", false, createPublish(1, QoS.AT_LEAST_ONCE), 10, DISCARD, false, 0);
+        persistence.add("group/topic", true, createPublish(2, QoS.AT_LEAST_ONCE), 10, DISCARD, false, 0);
+
+        assertEquals(Set.of("group/topic"), persistence.getSharedQueues(0));
+        assertTrue(persistence.getSharedQueues(1).isEmpty());
+    }
+
+    @Test
+    public void test_clean_up_expired_southbound_command_is_logged() {
+        final LogbackCapturingAppender capturing = LogbackCapturingAppender.Factory.weaveInto(
+                LoggerFactory.getLogger(ClientQueueMemoryLocalPersistence.class));
+        final String queueId = INTERNAL_SHARE_PREFIX + "adapter-1/plant/line/setpoint";
+
+        persistence.add(
+                queueId,
+                true,
+                createPublish(0, QoS.AT_LEAST_ONCE, 1, System.currentTimeMillis() - 10000),
+                10,
+                DISCARD,
+                false,
+                0);
+
+        persistence.cleanUp(0);
+
+        // The sweep is the only expiry path a command on a never-writable tag can take (the read path is gated on
+        // the write window being open) — it must leave the same record the read path leaves.
+        assertTrue(capturing.isLogCaptured());
+        assertEquals(
+                ch.qos.logback.classic.Level.WARN,
+                capturing.getLastCapturedLog().getLevel());
+        assertTrue(capturing
+                .getLastCapturedLog()
+                .getFormattedMessage()
+                .contains("expired before it could be written to the device"));
+        assertEquals(0, persistence.size(queueId, true, 0));
+    }
+
+    @Test
+    public void test_clean_up_expired_ordinary_queue_is_not_logged() {
+        final LogbackCapturingAppender capturing = LogbackCapturingAppender.Factory.weaveInto(
+                LoggerFactory.getLogger(ClientQueueMemoryLocalPersistence.class));
+
+        persistence.add(
+                "client1",
+                false,
+                createPublish(0, QoS.AT_LEAST_ONCE, 1, System.currentTimeMillis() - 10000),
+                10,
+                DISCARD,
+                false,
+                0);
+
+        persistence.cleanUp(0);
+
+        // An expiring publish is ordinary everywhere but the internal adapter queues: no WARN for regular clients.
+        assertFalse(capturing.isLogCaptured());
         assertEquals(0, persistence.size("client1", false, 0));
     }
 

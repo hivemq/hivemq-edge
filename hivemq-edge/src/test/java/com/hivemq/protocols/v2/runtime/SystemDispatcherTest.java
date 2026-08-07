@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -77,6 +79,82 @@ class SystemDispatcherTest {
 
         await().pollDelay(QUIET_WINDOW).atMost(TIMEOUT).untilAsserted(() -> assertThat(handler.count())
                 .isEqualTo(1));
+    }
+
+    @Test
+    void closeWaitsForTheInFlightMessage_soTeardownCanReleaseWhatTheHandlerIsStillUsing() {
+        // close() is a quiescence point, not a request for one. Callers tear down an actor's collaborators
+        // immediately after — the southbound plane releases the durable queue's in-flight markers there — and a
+        // handler still running would re-acquire what teardown just released.
+        final SystemDispatcher dispatcher = new SystemDispatcher();
+        final DefaultMailbox<TestMessage> mailbox = new DefaultMailbox<>();
+        final CountDownLatch entered = new CountDownLatch(1);
+        final AtomicBoolean finished = new AtomicBoolean();
+        final MessageDispatcherHandle handle = dispatcher.attach(mailbox, message -> {
+            entered.countDown();
+            busyWork();
+            finished.set(true);
+        });
+
+        mailbox.tell(new TestMessage("in-flight", MailboxMessagePriority.EVENT));
+        await().pollDelay(Duration.ZERO)
+                .pollInterval(Duration.ofMillis(5))
+                .atMost(TIMEOUT)
+                .until(() -> entered.getCount() == 0);
+
+        handle.close();
+
+        assertThat(finished).isTrue();
+    }
+
+    @Test
+    void closeStillWaits_whenTheClosingThreadHasAlreadyBeenInterrupted() {
+        // Teardown routinely runs on a just-interrupted thread: closing an actor's binding interrupts it, and that
+        // actor's handler may in turn close a child's binding. Thread.join throws immediately when the caller's
+        // flag is set, so without setting it aside the join silently degrades to a no-op in exactly the case it
+        // was written for — and re-setting the flag would poison every later join in the same teardown.
+        final SystemDispatcher dispatcher = new SystemDispatcher();
+        final DefaultMailbox<TestMessage> mailbox = new DefaultMailbox<>();
+        final CountDownLatch entered = new CountDownLatch(1);
+        final AtomicBoolean finished = new AtomicBoolean();
+        final MessageDispatcherHandle handle = dispatcher.attach(mailbox, message -> {
+            entered.countDown();
+            busyWork();
+            finished.set(true);
+        });
+
+        mailbox.tell(new TestMessage("in-flight", MailboxMessagePriority.EVENT));
+        await().pollDelay(Duration.ZERO)
+                .pollInterval(Duration.ofMillis(5))
+                .atMost(TIMEOUT)
+                .until(() -> entered.getCount() == 0);
+
+        Thread.currentThread().interrupt();
+        try {
+            handle.close();
+            assertThat(finished).isTrue();
+            // And the caller's own interrupt is handed back, not swallowed.
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted(); // clear, so the flag does not leak into the next test
+        }
+    }
+
+    @Test
+    void closingOwnBindingFromTheDispatchThreadDoesNotDeadlock() {
+        final SystemDispatcher dispatcher = new SystemDispatcher();
+        final DefaultMailbox<TestMessage> mailbox = new DefaultMailbox<>();
+        final AtomicReference<MessageDispatcherHandle> self = new AtomicReference<>();
+        final AtomicBoolean returned = new AtomicBoolean();
+        final MessageDispatcherHandle handle = dispatcher.attach(mailbox, message -> {
+            self.get().close(); // a handler that closes its own binding must not join itself
+            returned.set(true);
+        });
+        self.set(handle);
+
+        mailbox.tell(new TestMessage("self-close", MailboxMessagePriority.EVENT));
+
+        await().atMost(TIMEOUT).until(returned::get);
     }
 
     @Test
@@ -138,6 +216,18 @@ class SystemDispatcherTest {
             mailbox.tell(new TestMessage("after", MailboxMessagePriority.EVENT));
             await().pollDelay(QUIET_WINDOW).atMost(TIMEOUT).untilAsserted(() -> assertThat(handler.count())
                     .isEqualTo(1));
+        }
+    }
+
+    /**
+     * Work the close-time interrupt cannot cut short. A blocking call would throw {@code InterruptedException} the
+     * moment {@code close()} interrupts, so a handler built on one finishes early whether or not {@code close()}
+     * joins — and the test would pass against a {@code close()} that does not wait at all.
+     */
+    private static void busyWork() {
+        final long until = System.nanoTime() + Duration.ofSeconds(1).toNanos();
+        while (System.nanoTime() < until) {
+            Thread.onSpinWait();
         }
     }
 

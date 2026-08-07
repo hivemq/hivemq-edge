@@ -17,6 +17,7 @@ package com.hivemq.persistence.local.memory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hivemq.configuration.service.InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR;
+import static com.hivemq.protocols.v2.southbound.SouthboundMqttIntake.INTERNAL_SHARE_PREFIX;
 import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
 
 import com.codahale.metrics.Gauge;
@@ -297,6 +298,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             }
 
             if (publishWithRetained.isExpired()) {
+                logExpiredSouthboundCommand(queueId, shared, publishWithRetained);
                 iterator.remove();
                 // the payloads for QoS-0 messages are not extracted and their reference count is not incremented.
                 // therefor it must not be decremented
@@ -678,10 +680,17 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Map<String, Messages> bucket = buckets[bucketIndex];
         final Map<String, Messages> sharedBucket = sharedBuckets[bucketIndex];
 
-        bucket.forEach((queueId, messages) -> cleanExpiredMessages(messages));
-        sharedBucket.forEach((queueId, messages) -> cleanExpiredMessages(messages));
+        bucket.forEach((queueId, messages) -> cleanExpiredMessages(queueId, false, messages));
+        sharedBucket.forEach((queueId, messages) -> cleanExpiredMessages(queueId, true, messages));
 
         return ImmutableSet.copyOf(sharedBucket.keySet());
+    }
+
+    @Override
+    @ExecuteInSingleWriter
+    public @NotNull ImmutableSet<String> getSharedQueues(final int bucketIndex) {
+        ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
+        return ImmutableSet.copyOf(sharedBuckets[bucketIndex].keySet());
     }
 
     /**
@@ -894,12 +903,14 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
     }
 
-    private void cleanExpiredMessages(final @NotNull Messages messages) {
+    private void cleanExpiredMessages(
+            final @NotNull String queueId, final boolean shared, final @NotNull Messages messages) {
 
         final Iterator<PublishWithRetained> iterator = messages.qos0Messages.iterator();
         while (iterator.hasNext()) {
             final PublishWithRetained publishWithRetained = iterator.next();
             if (publishWithRetained.isExpired()) {
+                logExpiredSouthboundCommand(queueId, shared, publishWithRetained);
                 increaseQos0MessagesMemory(-publishWithRetained.getEstimatedSize());
                 increaseClientQos0MessagesMemory(messages, -publishWithRetained.getEstimatedSize());
                 increaseMessagesMemory(-publishWithRetained.getEstimatedSize());
@@ -931,6 +942,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 final boolean isInflight = publish.getQoS() == QoS.EXACTLY_ONCE && publish.getPacketIdentifier() > 0;
                 final boolean drop = publish.isExpired() && (!isInflight || expireInflight);
                 if (drop) {
+                    logExpiredSouthboundCommand(queueId, shared, publish);
                     payloadPersistence.decrementReferenceCounter(publish.getPublishId());
                     if (publish.retained) {
                         messages.retainedQos1Or2Messages--;
@@ -979,5 +991,32 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                     + MemoryEstimator.OBJECT_SHELL_SIZE // the object itself
                     + MemoryEstimator.BOOLEAN_SIZE; // retain flag
         }
+    }
+
+    /**
+     * Say why a southbound command disappeared.
+     * <p>
+     * The v2 southbound write contract is that every command is either executed at least once <b>or removed with a
+     * logged reason</b>. Message expiry is the one removal the delivery layer cannot report: the entry is dropped
+     * here, on the read that would otherwise have leased it, so no read ever answers with it and the tag's channel
+     * never learns it existed. Without this line the command simply vanishes, with no record at any layer.
+     * <p>
+     * Scoped to the internal adapter queues by share name: this runs in the read and cleanup-sweep paths of every
+     * client queue in the
+     * broker, and an expiring publish is ordinary everywhere else. The twin of this method lives in the Xodus client
+     * queue, which is the implementation production actually uses — the client queue stays Xodus even under
+     * {@code file-native}, so a fix only here would never fire where it matters.
+     */
+    private static void logExpiredSouthboundCommand(
+            final @NotNull String queueId, final boolean shared, final @NotNull PUBLISH publish) {
+        if (!shared || !queueId.startsWith(INTERNAL_SHARE_PREFIX)) {
+            return;
+        }
+        log.warn(
+                "Southbound command '{}' on queue '{}' expired before it could be written to the device and has been "
+                        + "removed. Its message expiry interval elapsed while the tag was not writable, so it was "
+                        + "never executed. Publish commands with a longer expiry, or none.",
+                publish.getUniqueId(),
+                queueId);
     }
 }

@@ -17,6 +17,7 @@ package com.hivemq.persistence.clientqueue;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+import static com.hivemq.protocols.v2.southbound.SouthboundMqttIntake.INTERNAL_SHARE_PREFIX;
 import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
 
 import com.google.common.collect.ImmutableList;
@@ -24,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
@@ -344,6 +346,16 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         return singleWriter.submit(bucketIndex, (bucketIndex1) -> {
             final ImmutableSet<String> sharedQueues = localPersistence.cleanUp(bucketIndex1);
             for (final String sharedQueue : sharedQueues) {
+                if (sharedQueue.startsWith(INTERNAL_SHARE_PREFIX)) {
+                    // A v2 protocol adapter's southbound command queue. Subscriber absence is not a liveness signal
+                    // for these: the adapter that consumes them unsubscribes for the whole span of a recreate — its
+                    // predecessor's intake closes before the successor's registers — and this job runs every
+                    // INTERVAL_BETWEEN_CLEANUP_JOBS_SEC seconds, so landing in that window is routine, not exotic.
+                    // Clearing there destroys durable commands that were guaranteed at-least-once execution.
+                    // Reclamation is explicit instead: the adapter manager clears these queues when it discards the
+                    // owning adapter for good.
+                    continue;
+                }
                 final SharedSubscription sharedSubscription =
                         SharedSubscriptionServiceImpl.splitTopicAndGroup(sharedQueue);
                 final ImmutableSet<SubscriberWithQoS> sharedSubscriber = topicTree.getSharedSubscriber(
@@ -354,6 +366,19 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             }
             return null;
         });
+    }
+
+    @Override
+    @NotNull
+    public ListenableFuture<ImmutableSet<String>> getSharedQueues() {
+        return Futures.transform(
+                Futures.allAsList(singleWriter.submitToAllBucketsParallel(localPersistence::getSharedQueues)),
+                perBucket -> {
+                    final ImmutableSet.Builder<String> all = ImmutableSet.builder();
+                    perBucket.forEach(all::addAll);
+                    return all.build();
+                },
+                MoreExecutors.directExecutor());
     }
 
     @Override

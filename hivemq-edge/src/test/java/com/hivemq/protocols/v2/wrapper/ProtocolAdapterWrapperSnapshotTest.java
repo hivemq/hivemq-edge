@@ -90,6 +90,7 @@ class ProtocolAdapterWrapperSnapshotTest {
                 Map.of("temperature", TagAspectActivationPreference.defaults()),
                 Set.of("temperature"),
                 Set.of(),
+                Set.of(),
                 5_000L));
         fixture.send(new ProtocolAdapterWrapperCommand.RetryTag("temperature"));
         fixture.send(new ProtocolAdapterWrapperCommand.StopAdapter());

@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.tag;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
@@ -28,6 +29,7 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.SchemaConformance;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +59,8 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             @NotNull PriorityTimerQueue timers,
             @NotNull BatchCollector batches,
             @NotNull ProtocolAdapterMetrics metrics,
-            @NotNull SharedNodeVerification sharedNodeVerification) {}
+            @NotNull SharedNodeVerification sharedNodeVerification,
+            @NotNull MailboxSender<ProtocolAdapterWrapperMessage> selfSender) {}
 
     /** The adapter's connection phase as the wrapper last reported it — mirrored per aspect, tracked here too. */
     private enum AdapterPhase {
@@ -83,11 +86,11 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     private @NotNull AdapterPhase adapterPhase = AdapterPhase.DISCONNECTED;
 
     /**
-     * @param adapterId          the owning adapter's id.
-     * @param nodes              the configured node/tag pairs.
-     * @param activation         the per-tag activation preferences.
-     * @param readUsedTagNames   the tags consumed by a northbound mapping.
-     * @param writeUsedTagNames  the tags produced to by a southbound mapping.
+     * @param adapterId               the owning adapter's id.
+     * @param nodes                   the configured node/tag pairs.
+     * @param activation              the per-tag activation preferences.
+     * @param readUsedTagNames        the tags consumed by a northbound mapping.
+     * @param writeUsedTagNames       the tags produced to by a southbound mapping.
      * @param initialGoal             the initial adapter direction goal (from configuration).
      * @param pollIntervalMillis      the poll cadence for polled read aspects, in milliseconds.
      * @param pollResultTimeoutMillis the deadline for a requested poll's result — the adapter's command timeout
@@ -125,17 +128,21 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
      * @param timers          the actor's single timer queue.
      * @param batches         the actor's batch collector.
      * @param metrics         the per-adapter metrics.
-     * @param nodeVerifier the seam re-verifications are issued through — the adapter's {@code verifyBatch}.
+     * @param nodeVerifier    the seam re-verifications are issued through — the adapter's {@code verifyBatch}.
+     * @param selfSender      the wrapper's own mailbox — where each write aspect reports the outcome of a write
+     *                        and its writability changes, so the southbound delivery side needs no callback into
+     *                        the tag package at all.
      */
     public void bindRuntime(
             final @NotNull Clock clock,
             final @NotNull PriorityTimerQueue timers,
             final @NotNull BatchCollector batches,
             final @NotNull ProtocolAdapterMetrics metrics,
-            final @NotNull NodeVerifier nodeVerifier) {
+            final @NotNull NodeVerifier nodeVerifier,
+            final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> selfSender) {
         final SharedNodeVerification sharedNodeVerification =
                 new SharedNodeVerification(nodeVerifier, this::findTagRuntime);
-        this.runtime = new BoundRuntime(clock, timers, batches, metrics, sharedNodeVerification);
+        this.runtime = new BoundRuntime(clock, timers, batches, metrics, sharedNodeVerification, selfSender);
         rebuildTagRuntimes();
         applyGoalToAll();
     }
@@ -245,18 +252,21 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     @Override
-    public void submitWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+    public boolean submitWrite(final @NotNull Node node, final @NotNull DataPoint value, final long deliveryToken) {
         final TagRuntime tagRuntime = findTagRuntime(node);
-        if (tagRuntime != null) {
-            tagRuntime.submitWrite(value);
+        if (tagRuntime == null) {
+            return false; // no such tag under this adapter — the caller reports it
         }
+        tagRuntime.submitWrite(value, deliveryToken);
+        return true;
     }
 
     @Override
-    public void routeWriteResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
+    public void routeWriteResult(
+            final @NotNull Node node, final long attemptId, final boolean success, final @Nullable String reason) {
         final TagRuntime tagRuntime = findTagRuntime(node);
         if (tagRuntime != null) {
-            tagRuntime.onWriteResult(success, reason);
+            tagRuntime.onWriteResult(attemptId, success, reason);
         }
     }
 
@@ -340,6 +350,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
                     bound.batches(),
                     bound.metrics(),
                     bound.sharedNodeVerification(),
+                    bound.selfSender(),
                     pollIntervalMillis,
                     pollResultTimeoutMillis,
                     retryPolicy);

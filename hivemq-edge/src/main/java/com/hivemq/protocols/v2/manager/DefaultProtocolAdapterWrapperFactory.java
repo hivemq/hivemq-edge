@@ -18,6 +18,10 @@ package com.hivemq.protocols.v2.manager;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
@@ -35,9 +39,11 @@ import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.util.FutureUtils;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
@@ -45,7 +51,9 @@ import com.hivemq.protocols.v2.runtime.AdapterFaults;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
-import com.hivemq.protocols.v2.southbound.SouthboundWriterRegistry;
+import com.hivemq.protocols.v2.southbound.SouthboundBrokerRuntime;
+import com.hivemq.protocols.v2.southbound.SouthboundMqttIntake;
+import com.hivemq.protocols.v2.southbound.SouthboundWritePlane;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
@@ -58,7 +66,9 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperTick;
 import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,8 +81,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one configuration
- *, exactly as the wrapper test rig does but driven from the read-only configuration and the
+ * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one
+ * configuration, exactly as the wrapper test rig does but driven from the read-only configuration and the
  * injected runtime. For each adapter it
  * <ol>
  * <li>creates the wrapper mailbox and the tell-façade the protocol adapter reports through;</li>
@@ -106,7 +116,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     private final @NotNull ObjectMapper objectMapper;
     private final @Nullable TagManager tagManager;
     private final @Nullable NorthboundConsumerFactory northboundConsumerFactory;
-    private final @Nullable InternalProtocolAdapterWritingService writingService;
+    private final @Nullable SouthboundBrokerRuntime southboundBrokerRuntime;
     private final long tickPeriodMillis;
 
     /**
@@ -137,8 +147,41 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
      * @param tagManager               the shared tag manager used by MQTT northbound consumers.
      * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
-     * @param writingService           the reused writing service that drives southbound MQTT&rarr;adapter writes
-     *                                 (EDG-824 #3); {@code null} disables southbound wiring (unit-test rigs).
+     */
+    public DefaultProtocolAdapterWrapperFactory(
+            final @NotNull Clock clock,
+            final @NotNull MessageDispatcher dispatcher,
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull DataPointFactory dataPointFactory,
+            final @NotNull ObjectMapper objectMapper,
+            final long tickPeriodMillis,
+            final @Nullable TagManager tagManager,
+            final @Nullable NorthboundConsumerFactory northboundConsumerFactory) {
+        this(
+                clock,
+                dispatcher,
+                metricRegistry,
+                dataPointFactory,
+                objectMapper,
+                tickPeriodMillis,
+                tagManager,
+                northboundConsumerFactory,
+                null);
+    }
+
+    /**
+     * @param clock                    the clock the wrapper timers and tick are scheduled against.
+     * @param dispatcher               the dispatcher each wrapper mailbox is attached to.
+     * @param metricRegistry           the shared registry per-adapter metrics are registered on.
+     * @param dataPointFactory         the reused v1 factory the protocol adapter builds its values with.
+     * @param objectMapper             the JSON mapper that deserializes a {@code node-string} into the type's node
+     *                                 class.
+     * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
+     * @param tagManager               the shared tag manager used by MQTT northbound consumers.
+     * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
+     * @param southboundBrokerRuntime  the broker collaborators the southbound write path stands on (topic tree,
+     *                                 client queues, publish path, retained store); {@code null} (unit rigs) falls
+     *                                 the southbound plane back to in-memory backlogs.
      */
     public DefaultProtocolAdapterWrapperFactory(
             final @NotNull Clock clock,
@@ -149,7 +192,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             final long tickPeriodMillis,
             final @Nullable TagManager tagManager,
             final @Nullable NorthboundConsumerFactory northboundConsumerFactory,
-            final @Nullable InternalProtocolAdapterWritingService writingService) {
+            final @Nullable SouthboundBrokerRuntime southboundBrokerRuntime) {
         this.clock = clock;
         this.dispatcher = dispatcher;
         this.metricRegistry = metricRegistry;
@@ -157,7 +200,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         this.objectMapper = objectMapper;
         this.tagManager = tagManager;
         this.northboundConsumerFactory = northboundConsumerFactory;
-        this.writingService = writingService;
+        this.southboundBrokerRuntime = southboundBrokerRuntime;
         this.tickPeriodMillis = tickPeriodMillis;
     }
 
@@ -235,6 +278,25 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final Set<String> writeUsed = entity.getWriteUsedTagNames();
         final RetryPolicy retryPolicy = entity.getRetryPolicy().toRetryPolicy();
 
+        // The southbound delivery side: one suspended queue+backlog per write-mapped tag, opened and closed by the
+        // write aspects' readiness notifications (the plane IS the readiness listener). With the broker runtime
+        // present, the MQTT intake subscribes each mapping's topic and the backlogs lease from the durable client
+        // queues; without it (unit rigs), the plane falls back to the interim in-memory backlogs.
+        // Both join the scope as they are acquired, so a construction that throws afterwards — including the
+        // LinkageError case the scope exists for — releases the intake's shared subscriptions and the plane's
+        // backlogs and leases. The durable queues and their contents survive, as always.
+        final SouthboundMqttIntake southboundIntake;
+        final SouthboundWritePlane southboundWritePlane;
+        if (southboundBrokerRuntime != null && !entity.getSouthboundMappings().isEmpty()) {
+            southboundIntake = scope.register(new SouthboundMqttIntake(
+                    adapterId, southboundBrokerRuntime, dataPointFactory, entity.getSouthboundMappings()));
+            southboundWritePlane = scope.register(new SouthboundWritePlane(
+                    adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed, metrics));
+        } else {
+            southboundIntake = null;
+            southboundWritePlane = scope.register(new SouthboundWritePlane(
+                    adapterId, mailbox, entity.getSouthboundWriteBacklogCapacity(), nodes, writeUsed, metrics));
+        }
         final TagAspectRuntimeCoordinator tagPlane = new TagAspectRuntimeCoordinator(
                 adapterId,
                 nodes,
@@ -264,7 +326,11 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 context.timers(),
                 context.batches(),
                 context.metrics(),
-                context.protocolAdapter()::verifyBatch);
+                context.protocolAdapter()::verifyBatch,
+                mailbox);
+        // The delivery side becomes dispatch-thread state from here: the wrapper routes every southbound
+        // message to it, and its backstop poll rides the wrapper's tick — the only timing surface in v2.
+        context.bindSouthboundPlane(southboundWritePlane);
 
         final AtomicReference<AdapterStatusSnapshot> snapshot = new AtomicReference<>();
         final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(context, snapshot);
@@ -279,14 +345,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         // still released.
         final AutoCloseable adapterDispatcherHandle = adapterTeardown(protocolAdapter, recordingDispatcher);
 
-        // Same shape as the northbound registry above: the scope owns it before its first subscription exists, so a
-        // start that throws after the contexts were adopted is still stopped on the way out.
-        final SouthboundWriterRegistry southboundWriters =
-                scope.registerOptional(createSouthboundWriters(adapterId, factory, mailbox, nodes));
-        if (southboundWriters != null) {
-            southboundWriters.updateMappings(entity.getSouthboundMappings(), nodes);
-        }
-        final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, mailbox, snapshot);
+        final ProtocolAdapterHandle handle =
+                new ProtocolAdapterHandle(adapterId, mailbox, snapshot, southboundWritePlane);
         return scope.commit(new ProtocolAdapterContainer(
                 handle,
                 dispatcherHandle,
@@ -294,8 +354,103 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 tickHandle,
                 metrics,
                 northboundConsumers,
-                southboundWriters,
+                southboundIntake,
                 entity));
+    }
+
+    @Override
+    public void discardSouthboundQueues(
+            final @NotNull ProtocolAdapterEntity entity, final @NotNull Set<String> tagNames) {
+        if (southboundBrokerRuntime == null || tagNames.isEmpty()) {
+            return;
+        }
+        log.info(
+                "Discarding the southbound command queues of tag(s) {} on recreated v2 adapter '{}': the tag now "
+                        + "addresses a different node, or its mapping topic moved, so commands queued under the "
+                        + "previous configuration must not be executed against the new one.",
+                tagNames,
+                entity.getAdapterId());
+        for (final SouthboundMappingEntity mapping : entity.getSouthboundMappings()) {
+            if (tagNames.contains(mapping.getTagName())) {
+                clearQueue(entity.getAdapterId(), mapping.getTopic());
+            }
+        }
+    }
+
+    @Override
+    public void discardSouthboundQueues(final @NotNull ProtocolAdapterEntity entity) {
+        if (southboundBrokerRuntime == null || entity.getSouthboundMappings().isEmpty()) {
+            return;
+        }
+        final String adapterId = entity.getAdapterId();
+        log.info(
+                "Discarding the southbound command queues of removed v2 adapter '{}': any command still queued for it "
+                        + "is destroyed here, because nothing will consume it again.",
+                adapterId);
+        for (final SouthboundMappingEntity mapping : entity.getSouthboundMappings()) {
+            // Rebuilt from the configuration rather than read off the intake: an adapter that failed to construct one
+            // (or that has been ERROR ever since) still owns whatever its predecessor queued under the same id.
+            clearQueue(adapterId, mapping.getTopic());
+        }
+    }
+
+    @Override
+    public void reclaimOrphanedSouthboundQueues(final @NotNull Collection<ProtocolAdapterEntity> configured) {
+        if (southboundBrokerRuntime == null) {
+            return;
+        }
+        // Every queue id the loaded configuration can derive is owned; anything else under the internal prefix is a
+        // corpse — an adapter or mapping topic removed while Edge was down, which no reconcile transition can see.
+        final Set<String> owned = new HashSet<>();
+        for (final ProtocolAdapterEntity entity : configured) {
+            for (final SouthboundMappingEntity mapping : entity.getSouthboundMappings()) {
+                owned.add(SouthboundMqttIntake.queueId(entity.getAdapterId(), mapping.getTopic()));
+            }
+        }
+        final ClientQueuePersistence clientQueuePersistence =
+                Objects.requireNonNull(southboundBrokerRuntime).clientQueuePersistence();
+        Futures.addCallback(
+                clientQueuePersistence.getSharedQueues(),
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final @Nullable ImmutableSet<String> sharedQueues) {
+                        for (final String queueId : Objects.requireNonNull(sharedQueues)) {
+                            if (!queueId.startsWith(SouthboundMqttIntake.INTERNAL_SHARE_PREFIX)
+                                    || owned.contains(queueId)) {
+                                continue;
+                            }
+                            log.warn(
+                                    "Reclaiming the orphaned southbound command queue '{}': its owning adapter (or "
+                                            + "mapping topic) is not in the loaded configuration — it was removed "
+                                            + "while Edge was down. Any command still queued is destroyed here, so "
+                                            + "a future adapter with the same id and topic cannot execute it.",
+                                    queueId);
+                            FutureUtils.addExceptionLogger(clientQueuePersistence.clear(queueId, true));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(final @NotNull Throwable failure) {
+                        // Never fatal: the sweep is a safety net, and failing it must not stop the adapters from
+                        // starting. The orphaned queues (if any) survive to the next start.
+                        log.warn("Failed to sweep for orphaned southbound command queues", failure);
+                    }
+                },
+                MoreExecutors.directExecutor());
+    }
+
+    /** Destroy one mapping's durable queue. Best effort: this runs on the manager's dispatch thread mid-teardown. */
+    private void clearQueue(final @NotNull String adapterId, final @NotNull String topic) {
+        final String queueId = SouthboundMqttIntake.queueId(adapterId, topic);
+        try {
+            FutureUtils.addExceptionLogger(Objects.requireNonNull(southboundBrokerRuntime)
+                    .clientQueuePersistence()
+                    .clear(queueId, true));
+        } catch (final Exception failure) {
+            // Never fatal: a throw here would abandon the teardown steps after it, and a queue that survives is a
+            // leak rather than a correctness fault.
+            log.warn("Failed to discard the southbound queue '{}' of adapter '{}'", queueId, adapterId, failure);
+        }
     }
 
     /** Builds the empty registry; the caller registers it with the scope and only then wires its mappings. */
@@ -310,25 +465,6 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 tagManager,
                 northboundConsumerFactory,
                 new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry));
-    }
-
-    /** Builds the empty registry; the caller registers it with the scope and only then starts its writing. */
-    private @Nullable SouthboundWriterRegistry createSouthboundWriters(
-            final @NotNull String adapterId,
-            final @NotNull ProtocolAdapterFactory factory,
-            final @NotNull Mailbox<ProtocolAdapterWrapperMessage> mailbox,
-            final @NotNull List<NodeTagPair> nodes) {
-        if (writingService == null) {
-            return null;
-        }
-        return new SouthboundWriterRegistry(
-                adapterId,
-                factory.information(),
-                writingService,
-                new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
-                mailbox,
-                dataPointFactory,
-                nodes);
     }
 
     @Override

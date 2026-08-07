@@ -19,6 +19,7 @@ import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.CONNEC
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.protocols.v2.view.TagStatus;
 import java.util.List;
 import java.util.Set;
@@ -66,7 +67,7 @@ class TagAspectWriteTest {
         fixture.advance(100); // a tick dispatches the pending write batch to the adapter
         assertThat(fixture.commands()).contains("writeBatch");
 
-        fixture.output.writeResult(fixture.nodeFor("setpoint"), true, null);
+        fixture.output.writeResult(fixture.nodeFor("setpoint"), WriteEntry.UNCORRELATED, true, null);
         fixture.drain();
         assertThat(fixture.writeState("setpoint")).isEqualTo("WAITING_FOR_WRITE_REQUEST");
         assertThat(fixture.tag("setpoint").failureCount()).isZero();
@@ -78,8 +79,10 @@ class TagAspectWriteTest {
         final WrapperTestFixture fixture = writeOnlyFixture();
         fixture.activate(ProtocolAdapterDirection.SOUTHBOUND);
         fixture.submitWrite("setpoint", WrapperTestSupport.dataPoint("setpoint", "42"));
+        fixture.advance(100); // the tick hands the write to the adapter — only then can it answer
 
-        fixture.output.writeResult(fixture.nodeFor("setpoint"), false, "device rejected the value");
+        fixture.output.writeResult(
+                fixture.nodeFor("setpoint"), WriteEntry.UNCORRELATED, false, "device rejected the value");
         fixture.drain();
 
         assertThat(fixture.writeState("setpoint")).isEqualTo("WAITING_FOR_WRITE_REQUEST");

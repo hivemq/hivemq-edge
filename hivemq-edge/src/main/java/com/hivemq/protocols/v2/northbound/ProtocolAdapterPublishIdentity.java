@@ -28,7 +28,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A legacy-SDK identity for v2 northbound publishes and the southbound write bridge.
+ * A legacy-SDK identity for v2 northbound publishes.
  * <p>
  * The existing publish and writing services and protocol-adapter interceptors still key their context from the v1
  * {@link ProtocolAdapter} shape. V2 delivery only needs that identity surface — adapter id, protocol id,

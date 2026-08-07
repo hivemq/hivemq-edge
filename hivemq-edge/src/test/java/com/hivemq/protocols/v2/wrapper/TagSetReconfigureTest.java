@@ -76,7 +76,7 @@ class TagSetReconfigureTest {
             names.add(pair.tag().name());
         }
         return new ProtocolAdapterWrapperCommand.UpdateTagSet(
-                List.of(pairs), activation, names, Set.of(), POLL_INTERVAL_MILLIS);
+                List.of(pairs), activation, names, Set.of(), Set.of(), POLL_INTERVAL_MILLIS);
     }
 
     @Test
@@ -97,6 +97,7 @@ class TagSetReconfigureTest {
                         "temperature", TagAspectActivationPreference.defaults(),
                         "pressure", TagAspectActivationPreference.defaults()),
                 Set.of("temperature", "pressure"),
+                Set.of(),
                 Set.of(),
                 POLL_INTERVAL_MILLIS));
 
@@ -137,6 +138,7 @@ class TagSetReconfigureTest {
                 Map.of("temperature", TagAspectActivationPreference.defaults()),
                 Set.of("temperature"),
                 Set.of(),
+                Set.of(),
                 POLL_INTERVAL_MILLIS / 5));
 
         // The first poll after the reload runs at the NEW 200 ms cadence: it fires well before the stale
@@ -159,6 +161,7 @@ class TagSetReconfigureTest {
                         "temperature", TagAspectActivationPreference.defaults(),
                         "pressure", TagAspectActivationPreference.defaults()),
                 Set.of("temperature", "pressure"),
+                Set.of(),
                 Set.of(),
                 POLL_INTERVAL_MILLIS));
         assertThat(fixture.readState("temperature")).isEqualTo("DEACTIVATED");
