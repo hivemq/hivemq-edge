@@ -140,8 +140,9 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
      * @param tickPeriodMillis         the wrapper tick period, in milliseconds (~50 ms in production).
      * @param tagManager               the shared tag manager used by MQTT northbound consumers.
      * @param northboundConsumerFactory builds MQTT consumers for v2 northbound mappings.
-     * @param writingService           the reused writing service that drives southbound MQTT&rarr;adapter writes
-     *                                 (EDG-824 #3); {@code null} disables southbound wiring (unit-test rigs).
+     * @param southboundBrokerRuntime  the broker collaborators the southbound write path stands on (topic tree,
+     *                                 client queues, publish path, retained store); {@code null} (unit rigs) falls
+     *                                 the southbound plane back to in-memory backlogs.
      */
     public DefaultProtocolAdapterWrapperFactory(
             final @NotNull Clock clock,
@@ -285,9 +286,8 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         if (southboundBrokerRuntime != null && !entity.getSouthboundMappings().isEmpty()) {
             southboundIntake = scope.register(new SouthboundMqttIntake(
                     adapterId, southboundBrokerRuntime, dataPointFactory, entity.getSouthboundMappings()));
-            southboundWritePlane = scope.register(
-                    new SouthboundWritePlane(
-                            adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed, metrics));
+            southboundWritePlane = scope.register(new SouthboundWritePlane(
+                    adapterId, mailbox, southboundIntake.backlogFactory(), nodes, writeUsed, metrics));
         } else {
             southboundIntake = null;
             southboundWritePlane = scope.register(new SouthboundWritePlane(
@@ -416,25 +416,6 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
                 tagManager,
                 northboundConsumerFactory,
                 new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry));
-    }
-
-    /** Builds the empty registry; the caller registers it with the scope and only then starts its writing. */
-    private @Nullable SouthboundWriterRegistry createSouthboundWriters(
-            final @NotNull String adapterId,
-            final @NotNull ProtocolAdapterFactory factory,
-            final @NotNull Mailbox<ProtocolAdapterWrapperMessage> mailbox,
-            final @NotNull List<NodeTagPair> nodes) {
-        if (writingService == null) {
-            return null;
-        }
-        return new SouthboundWriterRegistry(
-                adapterId,
-                factory.information(),
-                writingService,
-                new ProtocolAdapterMetricsServiceImpl(factory.information().protocolId(), adapterId, metricRegistry),
-                mailbox,
-                dataPointFactory,
-                nodes);
     }
 
     @Override

@@ -32,7 +32,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.schema.Schema;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterInformation;
@@ -52,10 +51,7 @@ import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import com.hivemq.protocols.InternalWritingContext;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -74,7 +70,6 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -381,44 +376,6 @@ class DefaultProtocolAdapterWrapperFactoryTest {
     }
 
     @Test
-    void aFailureWiringTheSouthboundWriters_releasesEverythingAcquiredBeforeIt() {
-        final CountingDispatcher counting = new CountingDispatcher();
-        final MetricRegistry registry = new MetricRegistry();
-        final ScriptedClock scriptedClock = new ScriptedClock(clock, 0);
-        final FailingWritingService writingService = new FailingWritingService();
-        final DefaultProtocolAdapterWrapperFactory factoryWithFailingWriters = new DefaultProtocolAdapterWrapperFactory(
-                scriptedClock,
-                counting,
-                registry,
-                new TestDataPointFactory(),
-                new ObjectMapper(),
-                100,
-                null,
-                null,
-                writingService);
-
-        // The southbound registry is the LAST thing built, so its failure is the one with the most to unwind.
-        assertThatThrownBy(() -> factoryWithFailingWriters.create(
-                        adapter("a")
-                                .southboundMapping("plant/a/setpoint", "temperature")
-                                .build(),
-                        sdkFactory,
-                        ProtocolAdapterWrapperEventListener.NONE))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("writing service unavailable");
-
-        assertThat(metricsFor(registry, "a")).isZero();
-        assertThat(counting.liveBindings()).isZero();
-        assertThat(scriptedClock.liveTicks()).isZero();
-        // The registry had already adopted its writing contexts when the start threw. Unless the scope owns the
-        // registry BEFORE it is initialized, nothing can undo that — the object that holds the contexts is never
-        // returned to anyone (Sam round 3, finding 4).
-        assertThat(writingService.stops())
-                .as("the partially-started southbound wiring is stopped")
-                .isEqualTo(1);
-    }
-
-    @Test
     void aFailureBuildingTheSecondNorthboundConsumer_removesTheFirstOneAlreadyAdded() {
         final MetricRegistry registry = new MetricRegistry();
         final TagManager tagManager = spy(new TagManager());
@@ -534,47 +491,6 @@ class DefaultProtocolAdapterWrapperFactoryTest {
         }
     }
 
-    /**
-     * A writing service that refuses to start — models the southbound wiring failing at the last step. It counts the
-     * stops it is asked for: a start that threw <b>after</b> the registry adopted its contexts must still be undone,
-     * and only the construction scope can do that (Sam round 3, finding 4).
-     */
-    private static final class FailingWritingService implements InternalProtocolAdapterWritingService {
-
-        private int stops;
-
-        private int stops() {
-            return stops;
-        }
-
-        @Override
-        public boolean writingEnabled() {
-            return true;
-        }
-
-        @Override
-        public @NotNull CompletableFuture<Boolean> startWritingAsync(
-                final @NotNull WritingProtocolAdapter writingProtocolAdapter,
-                final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-                final @NotNull List<InternalWritingContext> writingContexts) {
-            throw new IllegalStateException("writing service unavailable");
-        }
-
-        @Override
-        public void stopWriting(
-                final @NotNull WritingProtocolAdapter writingProtocolAdapter,
-                final @NotNull List<InternalWritingContext> writingContexts) {
-            stops++;
-        }
-
-        @Override
-        public void addWritingChangedCallback(final @NotNull WritingChangedCallback callback) {}
-    }
-
-    /**
-     * A {@link MessageDispatcher} double that counts the bindings it hands out and the ones later closed, so a test can
-     * assert every binding an adapter opened is released on teardown and a failed construction leaves none behind.
-     */
     /** Refuses every binding — the test adapter opens none, so the first attach is the wrapper's, well after the
      * metrics are registered. */
     private static final class ThrowingOnWrapperAttachDispatcher implements MessageDispatcher {

@@ -18,7 +18,6 @@ package com.hivemq.protocols.v2.manager;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
 import com.hivemq.protocols.v2.config.NorthboundMappingEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
-import com.hivemq.protocols.v2.config.SouthboundMappingEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.northbound.NorthboundTagConsumerRegistry;
 import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;

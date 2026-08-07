@@ -125,6 +125,9 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
     @NotNull
     List<String> closedAdapterIds() {
         return closedAdapterIds;
+    }
+
+    @NotNull
     List<String> discardedSouthboundQueueAdapterIds() {
         return discardedSouthboundQueueAdapterIds;
     }

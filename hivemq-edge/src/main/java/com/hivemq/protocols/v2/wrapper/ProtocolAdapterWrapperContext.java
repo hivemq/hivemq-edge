@@ -519,10 +519,6 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * A last-resort status for {@code publishSnapshot} when building the full snapshot itself throws (a
-     * half-mutated tag plane): never leave a stale healthy-looking snapshot in place.
-     */
-    /**
      * Tell the supervisor this adapter's actor is gone — its dispatch loop was ended by a fatal JVM condition and no
      * further message will ever be processed (Sam round 3, finding 2).
      *
@@ -532,6 +528,10 @@ public final class ProtocolAdapterWrapperContext {
         healthListener.wrapperDied(adapterId, reason);
     }
 
+    /**
+     * A last-resort status for {@code publishSnapshot} when building the full snapshot itself throws (a
+     * half-mutated tag plane): never leave a stale healthy-looking snapshot in place.
+     */
     @NotNull
     AdapterStatusSnapshot fallbackErrorSnapshot(final @NotNull String reason) {
         return new AdapterStatusSnapshot(

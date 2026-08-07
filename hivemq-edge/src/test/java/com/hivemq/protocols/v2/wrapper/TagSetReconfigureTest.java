@@ -76,7 +76,7 @@ class TagSetReconfigureTest {
             names.add(pair.tag().name());
         }
         return new ProtocolAdapterWrapperCommand.UpdateTagSet(
-                List.of(pairs), activation, names, Set.of(), POLL_INTERVAL_MILLIS);
+                List.of(pairs), activation, names, Set.of(), Set.of(), POLL_INTERVAL_MILLIS);
     }
 
     @Test
