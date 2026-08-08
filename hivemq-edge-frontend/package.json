@@ -127,7 +127,7 @@
     "uuid": "9.0.1",
     "webcola": "^3.4.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zustand": "4.5.7"
+    "zustand": "5.0.14"
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "2.3.1",
