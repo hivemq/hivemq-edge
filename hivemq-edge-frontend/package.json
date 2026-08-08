@@ -133,7 +133,7 @@
     "@4tw/cypress-drag-drop": "2.3.1",
     "@chakra-ui/cli": "2.5.8",
     "@cypress/code-coverage": "3.14.7",
-    "@cypress/grep": "^5.0.0",
+    "@cypress/grep": "^6.0.0",
     "@eslint/js": "9.39.5",
     "@istanbuljs/nyc-config-typescript": "1.0.2",
     "@mswjs/data": "0.16.2",
