@@ -26,8 +26,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -174,9 +176,31 @@ public enum OpcuaConditionType {
      * for every condition regardless of its type, and listed first so the published shape reads in a stable
      * order.
      */
+    /**
+     * The field naming <em>which condition</em> an event is about.
+     * <p>
+     * Not a property beneath the event, unlike every other field: it is the event's own node id, so it is
+     * selected with an empty browse path against the {@code NodeId} attribute — exactly the operand the
+     * where clause uses to confine a condition tag to its own condition.
+     * <p>
+     * That difference is why it was missing. The field table is a list of names, and this field has no name
+     * to look up and a different attribute to read, so it had nowhere to sit until {@link SelectedField}
+     * could carry an attribute. Meanwhile the filter built the same operand by hand, so the concept was
+     * present on the subscribing side and absent on the publishing side.
+     * <p>
+     * It belongs to <b>every</b> event, not just an event subscription's. The same transition must produce
+     * the same message however it was subscribed — a {@code CONDITION} tag and an
+     * {@code EVENT_SUBSCRIPTION} tag declaring one type publish one shape — and a message that can only be
+     * understood by knowing which tag delivered it is not self-describing. For an event subscription it is
+     * decisive rather than merely tidy: that tag carries many conditions by design, and without this field
+     * nothing in the payload tells them apart.
+     */
+    public static final @NotNull String CONDITION_ID = "ConditionId";
+
     public static final @NotNull List<String> BASE_EVENT_FIELDS = List.of(
             "EventId",
             "EventType",
+            CONDITION_ID,
             "SourceNode",
             "SourceName",
             "Time",
@@ -364,23 +388,36 @@ public enum OpcuaConditionType {
     }
 
     /**
-     * One selected field: the browse path to ask the server for, the name to publish it under, and what it
-     * contributes.
+     * One selected field: the browse path to ask the server for, the name to publish it under, what it
+     * contributes, and which attribute of the node it reads.
      * <p>
      * A path may be of any length. OPC 10000-4 §7.22.3 requires only that each element be an Object or
      * Variable node, so {@code LimitState/CurrentState/Id} traverses an Object and two Variables and is as
      * legal as a one-element path.
+     * <p>
+     * <b>An empty path means the event node itself</b>, which is how {@code ConditionId} is selected: it is
+     * not a property beneath the event but the event's own node id, so there is no browse path to walk and
+     * the attribute read is {@code NodeId} rather than {@code Value}. Every other field is a property and
+     * reads its {@code Value}, which is why that is the default.
      *
-     * @param path        the browse path to select.
+     * @param path        the browse path to select; empty means the event node itself.
      * @param publishedAs the key in the published JSON. An {@link FieldRole#ID} entry repeats the key of the
      *                    entry it belongs to, because it is folded into that object rather than published
      *                    beside it — {@code {"ActiveState": {"text": "Active", "id": true}}}.
      * @param role        what this entry contributes.
+     * @param attribute   the attribute id to read, from {@code AttributeId}. {@code Value} for a property.
      */
     public record SelectedField(
             @NotNull List<String> path,
             @NotNull String publishedAs,
-            @NotNull FieldRole role) {
+            @NotNull FieldRole role,
+            @NotNull UInteger attribute) {
+
+        /** A field read as its {@code Value}, which is every field but {@code ConditionId}. */
+        public SelectedField(
+                final @NotNull List<String> path, final @NotNull String publishedAs, final @NotNull FieldRole role) {
+            this(path, publishedAs, role, AttributeId.Value.uid());
+        }
 
         /** Whether this selects an {@code Id} to be folded into the field before it. */
         public boolean isStateId() {
@@ -408,6 +445,12 @@ public enum OpcuaConditionType {
     public @NotNull List<SelectedField> selectedFields() {
         final List<SelectedField> selected = new ArrayList<>();
         for (final String field : allFields()) {
+            if (CONDITION_ID.equals(field)) {
+                // The event node itself: no browse path to walk, and its NodeId attribute rather than a
+                // Value. See CONDITION_ID for why this one field is shaped differently from every other.
+                selected.add(new SelectedField(List.of(), field, FieldRole.VALUE, AttributeId.NodeId.uid()));
+                continue;
+            }
             if (STATE_MACHINE_FIELDS.contains(field)) {
                 selected.add(new SelectedField(List.of(field, CURRENT_STATE), field, FieldRole.VALUE));
                 selected.add(new SelectedField(List.of(field, CURRENT_STATE, STATE_ID), field, FieldRole.ID));

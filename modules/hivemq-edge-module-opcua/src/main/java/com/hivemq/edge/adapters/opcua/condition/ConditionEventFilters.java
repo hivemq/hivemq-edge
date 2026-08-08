@@ -268,6 +268,9 @@ public final class ConditionEventFilters {
     private static @NotNull SimpleAttributeOperand selectField(final @NotNull OpcuaConditionType.SelectedField field) {
         final QualifiedName[] path =
                 field.path().stream().map(name -> new QualifiedName(0, name)).toArray(QualifiedName[]::new);
-        return new SimpleAttributeOperand(BASE_EVENT_TYPE, path, AttributeId.Value.uid(), null);
+        // The attribute comes from the field rather than being fixed at Value. Almost every field is a
+        // property and reads its Value; ConditionId is the event node itself, read as NodeId with an empty
+        // path -- the same operand shape conditionIdOperand() builds for the where clause.
+        return new SimpleAttributeOperand(BASE_EVENT_TYPE, path, field.attribute(), null);
     }
 }

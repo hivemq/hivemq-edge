@@ -132,7 +132,7 @@ public class OpcUaConditionSubscriptionIT {
         // A NodeId is emitted as a structure, not as a parseable string, so the identifier is compared
         // field-wise rather than against "ns=1;i=9100".
         // SourceNode is the ConditionSource — the process variable the alarm is about — so it is deliberately
-        // NOT the condition node. Which condition this came from is settled by the filter, not by this field.
+        // NOT the condition node. Which condition this came from is ConditionId, asserted in its own test.
         assertThat(value.get("SourceNode").get("id").asText()).contains("source-of");
         assertThat(value.get("SourceName").asText()).isEqualTo("source-of-" + conditionNodeId);
     }
@@ -234,6 +234,55 @@ public class OpcUaConditionSubscriptionIT {
                 .isTrue();
         assertThat(value.has("LowLowLimit")).isTrue();
         assertThat(value.has("EventId")).isTrue();
+    }
+
+    @Test
+    @Timeout(120)
+    void whenAnAlarmFires_thenConditionIdNamesTheConditionItCameFrom() throws Exception {
+        // Patrick D'Addona, 2026-08-07: the documentation said ConditionId and SourceNode "both appear in
+        // every event", and only SourceNode did. ConditionId existed solely as a filter operand.
+        //
+        // It is not a property beneath the event -- it is the event's own node id, selected with an empty
+        // browse path against the NodeId attribute. That is why it fell out of a field table keyed by name,
+        // and why SelectedField had to learn to carry an attribute before it could be added.
+        //
+        // The value is what makes this worth asserting rather than merely checking presence: it must be the
+        // *condition* node, not the ConditionSource that SourceNode names. Those are different nodes, and a
+        // consumer acknowledging an alarm needs this one.
+        final String conditionNodeId =
+                opcUaServerExtension.getTestNamespace().addConditionNode("IdentifiedAlarm", CONDITION_NODE_ID + 80);
+
+        startAdapterWith(
+                new OpcuaTag("identified-alarm", "", new OpcuaTagDefinition(conditionNodeId, OpcuaTagKind.CONDITION)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension
+                    .getTestNamespace()
+                    .fireAlarm(NodeId.parse(conditionNodeId), "which condition am I", 700, true);
+            assertThat(tagStreamingService.published()).isNotEmpty();
+        });
+
+        final JsonNode value = tagStreamingService.published().get(0);
+        final NodeId expected = NodeId.parse(conditionNodeId);
+
+        assertThat(value.get("ConditionId").isNull())
+                .as("ConditionId must be published, not merely used to build the where clause")
+                .isFalse();
+        assertThat(value.get("ConditionId").get("id").asText())
+                .as("ConditionId must name the condition node itself")
+                .isEqualTo(expected.getIdentifier().toString());
+        assertThat(value.get("ConditionId").get("namespaceIndex").asInt())
+                .isEqualTo(expected.getNamespaceIndex().intValue());
+
+        // The distinction that makes the field worth having: SourceNode is the ConditionSource -- the sensor
+        // the alarm is about -- and is a different node. A payload carrying only SourceNode cannot say which
+        // alarm fired when several alarms watch one sensor.
+        assertThat(value.get("SourceNode").get("id").asText())
+                .as("SourceNode is the ConditionSource, so ConditionId is not redundant with it")
+                .isNotEqualTo(value.get("ConditionId").get("id").asText());
     }
 
     @Test

@@ -73,6 +73,9 @@ public final class ConditionSchemas {
      * list is maintained from the tables rather than by pattern-matching the names.
      */
     private static final @NotNull Set<String> NODE_ID_FIELDS = Set.of(
+            // The condition this event is about. Not to be confused with ConditionClassId below, which
+            // classifies the condition (process, system, maintenance) rather than identifying it.
+            OpcuaConditionType.CONDITION_ID,
             "SourceNode",
             "EventType",
             "ConditionClassId",
