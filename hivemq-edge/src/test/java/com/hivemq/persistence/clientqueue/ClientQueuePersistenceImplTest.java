@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bridge.MessageForwarder;
+import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.MqttConfigurationService;
@@ -36,6 +37,7 @@ import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.services.PublishPollService;
+import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientsession.ClientSession;
@@ -44,6 +46,7 @@ import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.memory.ClientQueueMemoryLocalPersistence;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+import com.hivemq.sampling.SamplingService;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.concurrent.ExecutionException;
@@ -86,6 +89,9 @@ public class ClientQueuePersistenceImplTest {
     @Mock
     private PublishPollService publishPollService;
 
+    @Mock
+    private MessageForwarder messageForwarder;
+
     private ClientQueuePersistenceImpl clientQueuePersistence;
 
     final int bucketSize = 4;
@@ -110,7 +116,7 @@ public class ClientQueuePersistenceImplTest {
                 topicTree,
                 connectionPersistence,
                 () -> publishPollService,
-                mock(MessageForwarder.class));
+                messageForwarder);
     }
 
     @AfterEach
@@ -289,6 +295,101 @@ public class ClientQueuePersistenceImplTest {
         clientQueuePersistence.cleanUp(0).get();
 
         verify(topicTree).getSharedSubscriber(anyString(), anyString());
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_clean_up_active_forwarder_queue_with_slash_in_hash_not_cleared()
+            throws ExecutionException, InterruptedException {
+        // EDG-882: the Base64 subscription hash in a forwarder queue ID may contain '/', which made
+        // the clean-up misparse the queue ID and wipe a live bridge queue
+        final String queueId = MessageForwarderImpl.FORWARDER_PREFIX
+                + "bridge-Bt80p78iNo/w7W1W7bGwcg==/miele/v1/production/sapdm/dev/+/+/from-plc-to-dm";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(true);
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
+        verify(topicTree, never()).getSharedSubscriber(anyString(), anyString());
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_clean_up_orphaned_forwarder_queue_cleared() throws ExecutionException, InterruptedException {
+        final String queueId = MessageForwarderImpl.FORWARDER_PREFIX
+                + "bridge-Bt80p78iNo/w7W1W7bGwcg==/miele/v1/production/sapdm/dev/+/+/from-plc-to-dm";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(false);
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence).clear(queueId, true, 0);
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_clean_up_active_sampler_queue_for_topic_with_slash_not_cleared()
+            throws ExecutionException, InterruptedException {
+        // the sampler share name is $SAMPLER::<topic>, so for a hierarchical topic the share-name
+        // boundary is not the first '/': splitting there resolves an owner that never existed
+        final String topic = "a/b/c";
+        final String queueId = SamplingService.createQueueId(topic);
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
+        when(topicTree.getSharedSubscriber(SamplingService.SAMPLER_PREFIX + topic, topic))
+                .thenReturn(ImmutableSet.of(
+                        new SubscriberWithQoS(SamplingService.SAMPLER_PREFIX + topic, 1, (byte) 0, null)));
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_clean_up_orphaned_sampler_queue_cleared() throws ExecutionException, InterruptedException {
+        final String queueId = SamplingService.createQueueId("a/b/c");
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence).clear(queueId, true, 0);
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_clean_up_client_shared_subscription_colliding_with_sampler_prefix_not_cleared()
+            throws ExecutionException, InterruptedException {
+        // symmetric to the $FORWARDER:: case: a client may legally use "$SAMPLER::grp" as a share
+        // group, and the generic split resolves it correctly — it must not be treated as a sampler
+        final String queueId = SamplingService.SAMPLER_PREFIX + "grp/topic";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
+        when(topicTree.getSharedSubscriber(SamplingService.SAMPLER_PREFIX + "grp", "topic"))
+                .thenReturn(ImmutableSet.of(new SubscriberWithQoS("client", 1, (byte) 0, null)));
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_clean_up_client_shared_subscription_colliding_with_forwarder_prefix_not_cleared()
+            throws ExecutionException, InterruptedException {
+        // a client may legally subscribe to $share/$FORWARDER::group/topic: no forwarder owns that
+        // queue, so ownership must still be resolved through the topic tree rather than assumed absent
+        final String queueId = MessageForwarderImpl.FORWARDER_PREFIX + "group/topic";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(false);
+        when(topicTree.getSharedSubscriber(MessageForwarderImpl.FORWARDER_PREFIX + "group", "topic"))
+                .thenReturn(ImmutableSet.of(new SubscriberWithQoS("client", 1, (byte) 0, null)));
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
     }
 
     @Test

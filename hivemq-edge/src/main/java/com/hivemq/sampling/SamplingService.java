@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,9 +71,34 @@ public class SamplingService {
         localTopicTree.removeSubscriber(clientId, topic, null);
     }
 
+    /**
+     * The queue backing a sampled topic. The share name is {@code $SAMPLER::<topic>}, so the topic
+     * appears twice and, when it contains a '/', the share-name boundary is not the first slash.
+     */
+    public static @NotNull String createQueueId(final @NotNull String topic) {
+        return SAMPLER_PREFIX + topic + "/" + topic;
+    }
+
+    /**
+     * Recovers the sampled topic from a queue ID built by {@link #createQueueId(String)}, or null if
+     * the ID does not have that shape. Splitting at the first '/' would yield the wrong share name
+     * for any sampled topic containing a '/'.
+     */
+    public static @Nullable String extractSampledTopic(final @NotNull String queueId) {
+        if (!queueId.startsWith(SAMPLER_PREFIX)) {
+            return null;
+        }
+        final String topicTwice = queueId.substring(SAMPLER_PREFIX.length());
+        final int separator = topicTwice.length() / 2;
+        if (topicTwice.length() % 2 == 0 || topicTwice.charAt(separator) != '/') {
+            return null;
+        }
+        final String topic = topicTwice.substring(0, separator);
+        return topic.equals(topicTwice.substring(separator + 1)) ? topic : null;
+    }
+
     public @NotNull List<byte[]> getSamples(final @NotNull String topic) {
-        final String clientId = SAMPLER_PREFIX + topic;
-        final String queueId = clientId + "/" + topic;
+        final String queueId = createQueueId(topic);
         final ListenableFuture<ImmutableList<PUBLISH>> publishes =
                 clientQueuePersistence.peek(queueId, true, BYTE_LIMIT_SAMPLES, SAMPLE_SIZE);
         try {
