@@ -241,8 +241,12 @@ class TlsChecksConfigFileParsingTest {
         // including one with a trapped setting NAME, still converts. This is the isolation the
         // per-adapter conversion in ProtocolAdapterManager provides.
         final ProtocolAdapterConfigConverter converter = createConverter();
-        final Set<String> rejectedAtConversion =
-                Set.of("misspelled-preset-value", "collapsed-tls", "misspelled-tls-name", "misspelled-policy-name");
+        final Set<String> rejectedAtConversion = Set.of(
+                "misspelled-preset-value",
+                "collapsed-tls",
+                "misspelled-tls-name",
+                "misspelled-policy-name",
+                "misspelled-message-security-mode");
 
         for (final ProtocolAdapterEntity entity : entitiesOf(INVALID)) {
             if ("misspelled-preset-value".equals(entity.getAdapterId())) {
@@ -320,6 +324,26 @@ class TlsChecksConfigFileParsingTest {
                 .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
                 .hasMessageContaining("'trustmode'")
                 .hasMessageContaining("trustMode");
+    }
+
+    @Test
+    void aMisspelledMessageSecurityModeIsRejectedAtConversionNamingTheValue() {
+        // <messageSecurityMode>SING</messageSecurityMode> under <policy>NONE</policy>. Read as
+        // "unset" - which is what the mode used to fall back to - the policy picks
+        // MessageSecurityMode.None and the adapter connects with neither signing nor encryption. The
+        // correct spelling SIGN pairs with no endpoint under policy NONE and refuses to connect, so
+        // defaulting here converted a safe failure into an insecure success. Rejected at conversion,
+        // contained to this adapter.
+        final ProtocolAdapterConfigConverter converter = createConverter();
+        final ProtocolAdapterEntity entity = entitiesOf(INVALID).stream()
+                .filter(candidate -> "misspelled-message-security-mode".equals(candidate.getAdapterId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThatThrownBy(() -> converter.fromEntity(entity))
+                .hasMessageContaining("'SING'")
+                .hasMessageContaining("MsgSecurityMode")
+                .hasMessageContaining("SIGN_AND_ENCRYPT");
     }
 
     @Test

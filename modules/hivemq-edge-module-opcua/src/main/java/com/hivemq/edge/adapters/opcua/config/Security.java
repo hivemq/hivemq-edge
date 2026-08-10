@@ -141,10 +141,21 @@ public record Security(
 
             final Object modeValue = map.get("messageSecurityMode");
             final MsgSecurityMode messageSecurityMode;
-            if (modeValue instanceof String modeString) {
+            if (modeValue == null) {
+                messageSecurityMode = MsgSecurityMode.IGNORED;
+            } else if (modeValue instanceof String modeString) {
+                // Blank is "unset" and the constructor resolves it to IGNORED; a misspelling throws
+                // out of fromString. Defaulting instead is what made this the last fail-open value in
+                // the block: IGNORED hands the choice to the policy, so 'SING' under policy NONE
+                // connects with message security None where the correctly spelled 'SIGN' matches no
+                // endpoint at all.
                 messageSecurityMode = MsgSecurityMode.fromString(modeString);
             } else {
-                messageSecurityMode = MsgSecurityMode.IGNORED;
+                // A present-but-non-text value must not quietly become IGNORED either.
+                throw new IllegalArgumentException(("The 'messageSecurityMode' setting of 'security' could not be "
+                                + "read: '%s' is not a single text value, so the adapter configuration has been "
+                                + "rejected. Permitted values: %s.")
+                        .formatted(modeValue, permittedModes()));
             }
 
             return new Security(policy, messageSecurityMode);
@@ -152,6 +163,10 @@ public record Security(
 
         private static @NotNull String permittedPolicies() {
             return Arrays.stream(SecPolicy.values()).map(Enum::name).collect(Collectors.joining(", "));
+        }
+
+        private static @NotNull String permittedModes() {
+            return Arrays.stream(MsgSecurityMode.values()).map(Enum::name).collect(Collectors.joining(", "));
         }
     }
 }

@@ -21,7 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Shared parsing for the certificate-validation config enums.
+ * Shared parsing for the security-relevant config enums: the certificate-validation preset, the six
+ * validation axes, and the message security mode.
  *
  * <p>Matching is case-insensitive and tolerates missing underscores ({@code allowlist} ==
  * {@code ALLOW_LIST}), mirroring the leniency the OPC UA adapter config has always had. Blank or
@@ -31,8 +32,11 @@ import org.jetbrains.annotations.Nullable;
  * — reporting it and treating the setting as unset — was tried and withdrawn: unset does not resolve
  * to the strictest value everywhere. The preset door defaults to {@code STANDARD}, which checks
  * neither hostname nor key usage, so a typo in {@code tlsChecks=ALL} would have silently run the
- * adapter under <em>weaker</em> validation than the operator asked for. A misspelled security setting
- * must stop the adapter, not adjust it.
+ * adapter under <em>weaker</em> validation than the operator asked for. {@code messageSecurityMode} is
+ * the same trap one block over: unset means "let the security policy decide", so {@code SING} under
+ * {@code policy=NONE} would have connected with message security {@code None} where the correctly
+ * spelled {@code SIGN} matches no endpoint at all — a typo turning a refused connection into an
+ * unsigned one. A misspelled security setting must stop the adapter, not adjust it.
  *
  * <p>Throwing here fails the conversion of this adapter's configuration. That is contained:
  * {@code ProtocolAdapterManager} converts each adapter's configuration in isolation, so the rejection
@@ -58,10 +62,10 @@ final class EnumParsing {
             }
         }
         throw new IllegalArgumentException(
-                ("OPC UA adapter TLS configuration: '%s' is not a valid %s value. Permitted values: %s "
+                ("OPC UA adapter configuration: '%s' is not a valid %s value. Permitted values: %s "
                                 + "(case-insensitive, underscores optional). The adapter configuration has been "
-                                + "rejected rather than started with different certificate validation than was "
-                                + "written; correct the value and reload.")
+                                + "rejected rather than started with weaker security than was written; correct the "
+                                + "value and reload.")
                         .formatted(
                                 trimmed,
                                 type.getSimpleName(),

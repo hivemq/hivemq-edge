@@ -69,22 +69,19 @@ public enum MsgSecurityMode {
     }
 
     /**
-     * Jackson creator method for deserialization.
+     * Jackson creator. Blank or absent yields {@code null}, which {@link Security} resolves to
+     * {@link #IGNORED}: the mode is unset and the security policy decides it.
+     *
+     * <p>An unrecognized value rejects the configuration rather than resolving to {@link #IGNORED} —
+     * see {@link EnumParsing}. Returning {@code null} for a misspelling, which this used to do, made
+     * {@code SING} indistinguishable from "not configured", and under {@code policy=NONE} that
+     * selects message security {@code None} where {@code SIGN} would have matched no endpoint at all.
      *
      * @param value the string value from JSON
-     * @return the corresponding MsgSecurityMode
+     * @return the corresponding MsgSecurityMode, or {@code null} when the value is absent or blank
      */
     @JsonCreator
     public static @Nullable MsgSecurityMode fromString(final @Nullable String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        for (final var mode : values()) {
-            if (mode.name().equalsIgnoreCase(value)
-                    || mode.name().replace("_", "").equalsIgnoreCase(value)) {
-                return mode;
-            }
-        }
-        return null;
+        return EnumParsing.parse(MsgSecurityMode.class, values(), value);
     }
 }

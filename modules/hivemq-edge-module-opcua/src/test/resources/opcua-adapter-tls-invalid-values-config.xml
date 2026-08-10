@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
-  Every way an operator can misspell a certificate-validation setting, plus one healthy adapter after
-  them. A misspelled VALUE (ALLL) fails that adapter's conversion outright; a misspelled NAME
-  (tlsCheks, trustmode) converts but is trapped and refuses the adapter at start-up; a misspelled
-  ENCLOSING setting (tlls) or security child (polciy) fails the conversion naming the entry. Neither
-  may disturb the healthy neighbour: adapter configurations are converted one at a time, so a mistake
-  in one adapter is that adapter's problem and nobody else's.
+  Every way an operator can misspell a certificate-validation or security setting, plus one healthy
+  adapter after them. A misspelled VALUE (ALLL, SING) fails that adapter's conversion outright; a
+  misspelled NAME (tlsCheks, trustmode) converts but is trapped and refuses the adapter at start-up; a
+  misspelled ENCLOSING setting (tlls) or security child (polciy) fails the conversion naming the entry.
+  None may disturb the healthy neighbour: adapter configurations are converted one at a time, so a
+  mistake in one adapter is that adapter's problem and nobody else's.
 -->
 <hivemq>
     <protocol-adapters>
@@ -184,7 +184,39 @@
             </northboundMappings>
         </protocol-adapter>
 
-        <!-- Nothing misspelled. This one must convert and project regardless of the six above. -->
+        <!-- 'SING' is not a messageSecurityMode. Without the rejection it resolved to "unset", which
+             hands the choice to the policy - and under policy NONE that is MessageSecurityMode.None,
+             an unsigned, unencrypted connection. The correctly spelled SIGN matches no endpoint under
+             policy NONE and refuses to connect, so the typo turned a safe failure into an insecure
+             success. Must fail conversion naming the value. -->
+        <protocol-adapter>
+            <adapterId>misspelled-message-security-mode</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-8.factory.local:4840</uri>
+                <security>
+                    <policy>NONE</policy>
+                    <messageSecurityMode>SING</messageSecurityMode>
+                </security>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-8</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/8</topic>
+                    <tagName>tag-8</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing misspelled. This one must convert and project regardless of the seven above. -->
         <protocol-adapter>
             <adapterId>healthy-neighbour</adapterId>
             <protocolId>opcua</protocolId>
