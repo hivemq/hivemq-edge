@@ -33,7 +33,6 @@ import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.mqtt.services.PublishPollService;
-import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.AbstractPersistence;
 import com.hivemq.persistence.ProducerQueues;
@@ -43,6 +42,7 @@ import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.payload.PayloadPersistenceException;
+import com.hivemq.sampling.SamplingService;
 import dagger.Lazy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -344,16 +344,37 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         return singleWriter.submit(bucketIndex, (bucketIndex1) -> {
             final ImmutableSet<String> sharedQueues = localPersistence.cleanUp(bucketIndex1);
             for (final String sharedQueue : sharedQueues) {
-                final SharedSubscription sharedSubscription =
-                        SharedSubscriptionServiceImpl.splitTopicAndGroup(sharedQueue);
-                final ImmutableSet<SubscriberWithQoS> sharedSubscriber = topicTree.getSharedSubscriber(
-                        sharedSubscription.getShareName(), sharedSubscription.getTopicFilter());
-                if (sharedSubscriber.isEmpty()) {
+                if (isOrphaned(sharedQueue)) {
                     localPersistence.clear(sharedQueue, true, bucketIndex);
                 }
             }
             return null;
         });
+    }
+
+    /**
+     * A shared queue is orphaned when no subscriber holds it any more. Queue IDs are
+     * {@code <share name>/<topic filter>}, but two internal producers put a '/' inside the share name
+     * itself — bridge forwarders through the Base64 subscription hash, samplers through the sampled
+     * topic — so splitting at the first '/' resolves an owner that never existed and would clear a
+     * live queue. Both shapes are therefore resolved by their own convention, and a queue is only
+     * declared orphaned when no reading of it finds an owner.
+     */
+    private boolean isOrphaned(final @NotNull String queueId) {
+        if (queueId.startsWith(MessageForwarderImpl.FORWARDER_PREFIX) && messageForwarder.isForwarderQueue(queueId)) {
+            return false;
+        }
+        final SharedSubscription sharedSubscription = SharedSubscriptionServiceImpl.splitTopicAndGroup(queueId);
+        if (!topicTree
+                .getSharedSubscriber(sharedSubscription.getShareName(), sharedSubscription.getTopicFilter())
+                .isEmpty()) {
+            return false;
+        }
+        final String sampledTopic = SamplingService.extractSampledTopic(queueId);
+        return sampledTopic == null
+                || topicTree
+                        .getSharedSubscriber(SAMPLER_PREFIX + sampledTopic, sampledTopic)
+                        .isEmpty();
     }
 
     @Override

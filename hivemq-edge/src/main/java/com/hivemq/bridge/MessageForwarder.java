@@ -46,4 +46,14 @@ public interface MessageForwarder {
      * Check if new messages need to be polled for the buffer.
      */
     void checkBuffers();
+
+    /**
+     * Check whether a queue belongs to a currently registered forwarder.
+     * Forwarder queue IDs cannot be parsed positionally: the embedded subscription hash is standard
+     * Base64 and may itself contain '/', so ownership must be resolved against the registry instead.
+     *
+     * @param queueId the shared queue ID to check
+     * @return true if a registered forwarder owns this queue
+     */
+    boolean isForwarderQueue(@NotNull String queueId);
 }

@@ -153,14 +153,20 @@ public class MessageForwarderImpl implements MessageForwarder {
 
         final ImmutableSet.Builder<@NotNull String> queueIdsBuilder = ImmutableSet.builder();
         for (final String topic : mqttForwarder.getTopics()) {
+            queueIdsBuilder.add(createQueueId(forwarderId, topic));
+        }
+        final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
+        // register the queue IDs before anything else can observe the queues: the periodic clean-up
+        // clears forwarder queues it finds unowned, so a pre-existing persisted queue must never be
+        // visible while its forwarder is mid-registration
+        queueIdsForForwarder.put(forwarderId, queueIds);
+        for (final String topic : mqttForwarder.getTopics()) {
             topicTree.addTopic(
                     clientId,
                     new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
                     SubscriptionFlag.getDefaultFlags(true, true, false),
                     shareName);
-            queueIdsBuilder.add(createQueueId(forwarderId, topic));
         }
-        final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
         mqttForwarder.setExecutorService(executorService);
         mqttForwarder.setAfterForwardCallback(
                 (qos, uniqueId, queueId, cancelled) -> messageProcessed(qos, uniqueId, forwarderId, queueId));
@@ -250,7 +256,6 @@ public class MessageForwarderImpl implements MessageForwarder {
         });
 
         forwarders.put(forwarderId, mqttForwarder);
-        queueIdsForForwarder.put(forwarderId, queueIds);
         notEmptyQueues.addAll(queueIds);
         mqttForwarder.start();
 
@@ -361,6 +366,16 @@ public class MessageForwarderImpl implements MessageForwarder {
             checkBuffers();
             return null;
         });
+    }
+
+    @Override
+    public boolean isForwarderQueue(final @NotNull String queueId) {
+        for (final Set<String> queueIds : queueIdsForForwarder.values()) {
+            if (queueIds.contains(queueId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
