@@ -297,8 +297,8 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
     @Test
     void test_repeatedCalls_produceEqualButIndependentDocuments() throws ExecutionException, InterruptedException {
         final var output = new TagSchemaCreationOutputImpl();
-        output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                alarmEventSchema(), null, null, conditionCommandSchema()));
+        output.finish(
+                new TagSchemaCreationOutput.DataPointSchema(alarmEventSchema(), null, null, conditionCommandSchema()));
 
         // Both accessors compose a document per call rather than handing out one shared instance. Composition is
         // a pure function of the DataPointSchema the adapter finished with, so every call must produce an equal
@@ -318,8 +318,7 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
 
         first.put("$id", "urn:mutated-by-a-caller");
         assertThat(second.has("$id")).isFalse();
-        assertThat(output.getSchema(TagSchemaDirection.NORTHBOUND).has("$id"))
-                .isFalse();
+        assertThat(output.getSchema(TagSchemaDirection.NORTHBOUND).has("$id")).isFalse();
         assertThat(output.getFuture().get().has("$id")).isFalse();
     }
 
@@ -330,8 +329,8 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
 
         // A tag whose write shape is not a projection of its read shape — e.g. an OPC-UA condition tag, whose
         // northbound shape is the alarm event but whose write target is {eventId, method, comment}.
-        output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                alarmEventSchema(), null, null, conditionCommandSchema()));
+        output.finish(
+                new TagSchemaCreationOutput.DataPointSchema(alarmEventSchema(), null, null, conditionCommandSchema()));
 
         final JsonNode writeValue = output.getSchema(TagSchemaDirection.SOUTHBOUND)
                 .get("properties")
@@ -356,8 +355,8 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
     void test_southboundSchema_writableCommandFieldsAreNotRenderedReadOnly()
             throws ExecutionException, InterruptedException {
         final var output = new TagSchemaCreationOutputImpl();
-        output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                alarmEventSchema(), null, null, conditionCommandSchema()));
+        output.finish(
+                new TagSchemaCreationOutput.DataPointSchema(alarmEventSchema(), null, null, conditionCommandSchema()));
 
         final JsonNode writeValue = output.getSchema(TagSchemaDirection.SOUTHBOUND)
                 .get("properties")
@@ -376,8 +375,8 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
     @Test
     void test_southboundSchema_conditionCommandDocumentIsPinned() throws Exception {
         final var output = new TagSchemaCreationOutputImpl();
-        output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                alarmEventSchema(), null, null, conditionCommandSchema()));
+        output.finish(
+                new TagSchemaCreationOutput.DataPointSchema(alarmEventSchema(), null, null, conditionCommandSchema()));
 
         // The exact document the REST endpoint serves for an A&C condition tag. It is pinned here because the
         // frontend fixture in MappingInstructionList.spec.cy.tsx is a copy of it: a hand-written fixture that
@@ -386,8 +385,7 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
         //
         // Note the readOnly on the root: that flag is on the wrapper this class builds, not on the adapter's
         // command schema, and no consumer reads it (getPropertyListFrom only walks `properties`).
-        final String expected =
-                """
+        final String expected = """
                 {
                   "type": "object",
                   "properties": {

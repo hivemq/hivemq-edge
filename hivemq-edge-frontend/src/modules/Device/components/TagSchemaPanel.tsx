@@ -37,23 +37,31 @@ interface TagSchemaPanelProps {
 const valueShape = (schema: JsonNode): JsonNode => ((schema as JSONSchema7).properties?.value as JsonNode) ?? schema
 
 /**
- * Object member order carries no meaning in JSON, and the two directions are assembled independently, so
- * `{eventId, method}` and `{method, eventId}` are the same shape and must compare equal. Array order is
- * preserved: `required`, `enum` and `anyOf` are sequences, not sets, as far as this panel's display is
- * concerned.
+ * Structural equality: object member order carries no meaning in JSON, and the two directions are assembled
+ * independently, so `{eventId, method}` and `{method, eventId}` are the same shape and must compare equal.
+ * Array order *is* significant — `required`, `enum` and `anyOf` are sequences, not sets, as far as this
+ * panel's display is concerned.
+ *
+ * Compared structurally rather than by sorting keys and stringifying: sorting would need a comparator, and a
+ * locale-aware one would make the result depend on the machine's locale, which is the opposite of what a
+ * canonical form is for.
  */
-const canonical = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(canonical)
-  if (value === null || typeof value !== 'object') return value
-  return Object.fromEntries(
-    Object.keys(value as Record<string, unknown>)
-      .sort()
-      .map((key) => [key, canonical((value as Record<string, unknown>)[key])])
-  )
+const isSameStructure = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
+    return a.every((item, index) => isSameStructure(item, b[index]))
+  }
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false
+
+  const left = a as Record<string, unknown>
+  const right = b as Record<string, unknown>
+  const leftKeys = Object.keys(left)
+  if (leftKeys.length !== Object.keys(right).length) return false
+  return leftKeys.every((key) => Object.hasOwn(right, key) && isSameStructure(left[key], right[key]))
 }
 
-const isSameShape = (a: JsonNode, b: JsonNode): boolean =>
-  JSON.stringify(canonical(valueShape(a))) === JSON.stringify(canonical(valueShape(b)))
+const isSameShape = (a: JsonNode, b: JsonNode): boolean => isSameStructure(valueShape(a), valueShape(b))
 
 export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
   // This panel is pure inspection, so it shows both directions. They are usually the same for a plain value
