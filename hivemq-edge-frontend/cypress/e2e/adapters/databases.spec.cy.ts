@@ -24,6 +24,21 @@ describe('Databases Protocol Adapter', () => {
         '*, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }'
       doc.head.appendChild(style)
     })
+
+    // While the adapter list is loading, the table is filled with four placeholder rows and every
+    // cell is wrapped in a Chakra <Skeleton>. A loading skeleton paints its text at `opacity: 0.7`
+    // over a grey fill, so axe blends the two and reports a `color-contrast` violation against
+    // placeholder text that is not meant to be read. `cy.wait` above only proves the response
+    // arrived, not that React has re-rendered from it, which is the window this raced in on CI.
+    // Chakra keeps the `chakra-skeleton` class once loaded and only drops the opacity, so wait for
+    // the placeholders to settle rather than for them to disappear.
+    cy.get('.chakra-skeleton').should(($skeletons) => {
+      const stillLoading = $skeletons
+        .toArray()
+        .filter((element) => element.ownerDocument.defaultView?.getComputedStyle(element).opacity !== '1')
+      expect(stillLoading, 'skeleton placeholders still loading').to.have.length(0)
+    })
+
     adapterPage.addNewAdapter.should('be.visible')
     cy.checkAccessibility()
 
