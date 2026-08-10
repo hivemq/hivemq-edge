@@ -1,6 +1,6 @@
 import type { FC, MouseEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { ButtonGroup, HStack } from '@chakra-ui/react'
 import { LuFilePen, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
 

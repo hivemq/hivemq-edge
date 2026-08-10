@@ -1,8 +1,8 @@
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useReactFlow, useNodeConnections, useNodesData } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 
 import { AssetMapping, Capability, type ManagedAsset, PulseStatus } from '@/api/__generated__'
@@ -24,17 +24,20 @@ import type { NodePulseType, NodeCombinerType } from '@/modules/Workspace/types'
 import { createPulseStatusModel } from '@/modules/Workspace/utils/status-mapping.utils.ts'
 import { computePulseNodeOperationalStatus } from '@/modules/Workspace/utils/status-edge-operational.utils.ts'
 import { OperationalStatus } from '@/modules/Workspace/types/status.types.ts'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging }) => {
   const { t } = useTranslation()
   const { data: hasPulseCapability, isSuccess } = useGetCapability(Capability.id.PULSE_ASSET_MANAGEMENT)
   const { data: allAssets, isLoading } = useListManagedAssets()
-  const { updateNodeData } = useReactFlow()
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/pulse-agent/${id}`)
 
   // Get outbound connections to asset mappers using React Flow's efficient hooks
   const connections = useNodeConnections({ id })
-  const connectedNodes = useNodesData<NodeCombinerType>(connections.map((connection) => connection.target))
+  // useNodesData memoises its selector on the ids array, so a fresh array on every render makes
+  // the store recompute and return a new selection every time.
+  const connectedNodeIds = useMemo(() => connections.map((connection) => connection.target), [connections])
+  const connectedNodes = useNodesData<NodeCombinerType>(connectedNodeIds)
 
   const unmappedAssets = useMemo<ManagedAsset[]>(() => {
     if (!allAssets?.items) return []
@@ -63,10 +66,7 @@ const NodePulse: FC<NodeProps<NodePulseType>> = ({ id, data, selected, dragging 
     return createPulseStatusModel(data.status, operational)
   }, [data.status, connectedNodes, allAssets])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, data.statusModel)
 
   const pulseStatus: PulseStatus.activation = hasPulseCapability
     ? PulseStatus.activation.ACTIVATED

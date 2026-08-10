@@ -9,7 +9,7 @@ describe('AssetNameCell', () => {
   })
 
   it('should render errors', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', { statusCode: 404 }).as('getStatus')
+    cy.intercept('/api/v1/management/pulse/managed-assets', { delay: 100, statusCode: 404 }).as('getStatus')
 
     cy.mountWithProviders(<AssetNameCell assetId={MOCK_PULSE_ASSET_MAPPED_UNIQUE.id} />)
 
@@ -20,7 +20,7 @@ describe('AssetNameCell', () => {
   })
 
   it('should render errors', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+    cy.intercept('/api/v1/management/pulse/managed-assets', { body: MOCK_PULSE_ASSET_LIST, delay: 100 }).as('getStatus')
 
     cy.mountWithProviders(<AssetNameCell />)
 
@@ -31,7 +31,7 @@ describe('AssetNameCell', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+    cy.intercept('/api/v1/management/pulse/managed-assets', { body: MOCK_PULSE_ASSET_LIST, delay: 100 }).as('getStatus')
 
     cy.mountWithProviders(<AssetNameCell assetId={MOCK_PULSE_ASSET_MAPPED_UNIQUE.id} />)
 
@@ -42,7 +42,7 @@ describe('AssetNameCell', () => {
   })
 
   it('should render description properly', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+    cy.intercept('/api/v1/management/pulse/managed-assets', { body: MOCK_PULSE_ASSET_LIST, delay: 100 }).as('getStatus')
 
     cy.mountWithProviders(<AssetNameCell assetId={MOCK_PULSE_ASSET_MAPPED_UNIQUE.id} showDescription />)
 
@@ -54,7 +54,7 @@ describe('AssetNameCell', () => {
   })
 
   it('should be accessible', () => {
-    cy.intercept('/api/v1/management/pulse/managed-assets', MOCK_PULSE_ASSET_LIST).as('getStatus')
+    cy.intercept('/api/v1/management/pulse/managed-assets', { body: MOCK_PULSE_ASSET_LIST, delay: 100 }).as('getStatus')
     cy.injectAxe()
 
     cy.mountWithProviders(<AssetNameCell assetId={MOCK_PULSE_ASSET_MAPPED_UNIQUE.id} showDescription />)

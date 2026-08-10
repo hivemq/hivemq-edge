@@ -1,9 +1,9 @@
 import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
+import { useNavigate } from 'react-router'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Image, Text, VStack } from '@chakra-ui/react'
 
@@ -21,17 +21,20 @@ import type { NodeEdgeType } from '../../types'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils'
 import MappingBadge from '../parts/MappingBadge'
 import { OperationalStatus } from '@/modules/Workspace/types/status.types'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
   const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(props.id, props.selected, `/workspace/edge/${props.id}`)
   const navigate = useNavigate()
   const { data } = useListTopicFilters()
-  const { updateNodeData } = useReactFlow()
 
   // Use React Flow's efficient hooks to get connected nodes (adapters, bridges, pulse)
   const connections = useNodeConnections({ handleType: 'target', id: props.id })
-  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
+  // useNodesData memoises its selector on the ids array, so a fresh array on every render makes
+  // the store recompute and return a new selection every time.
+  const connectedNodeIds = useMemo(() => connections.map((connection) => connection.source), [connections])
+  const connectedNodes = useNodesData(connectedNodeIds)
 
   const topicFilters = useMemo(() => {
     return data?.items.map((e) => e.topicFilter) || []
@@ -47,10 +50,7 @@ const NodeEdge: FC<NodeProps<NodeEdgeType>> = (props) => {
     return computeNodeRuntimeStatus(operational, connectedNodes)
   }, [connectedNodes, topicFilters.length])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(props.id, { statusModel })
-  }, [props.id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(props.id, statusModel, props.data.statusModel)
 
   return (
     <>

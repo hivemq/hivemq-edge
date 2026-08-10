@@ -1,7 +1,7 @@
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import type { FC, PropsWithChildren } from 'react'
 import type { Edge, Node } from '@xyflow/react'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router'
 import { Card, CardBody, CardHeader } from '@chakra-ui/react'
 
 import { BehaviorPolicyTransitionEvent, DataPolicyValidator } from '@/api/__generated__'

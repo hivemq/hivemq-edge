@@ -1,6 +1,6 @@
 import { HStack } from '@chakra-ui/react'
 import type { CSSProperties, FC } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useMemo } from 'react'
 import {
   BaseEdge,

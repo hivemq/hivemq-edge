@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import type { IChangeEvent } from '@rjsf/core'
 import type { RJSFSchema } from '@rjsf/utils'
 

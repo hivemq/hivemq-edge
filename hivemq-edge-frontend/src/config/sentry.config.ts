@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react'
 import { useEffect } from 'react'
-import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router-dom'
+import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType } from 'react-router'
 
 /* istanbul ignore next -- @preserve */
 if (import.meta.env.MODE !== 'development')
@@ -13,7 +13,8 @@ if (import.meta.env.MODE !== 'development')
       Sentry.browserProfilingIntegration(),
       Sentry.replayIntegration(),
       // https://docs.sentry.io/platforms/javascript/guides/react/configuration/integrations/react-router/
-      Sentry.reactRouterV6BrowserTracingIntegration({
+      // Version-neutral since SDK v10; the `reactRouterV6`/`V7` helpers are deprecated aliases.
+      Sentry.reactRouterBrowserTracingIntegration({
         useEffect,
         useLocation,
         useNavigationType,

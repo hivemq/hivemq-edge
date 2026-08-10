@@ -1867,7 +1867,7 @@
     "description": "Manage Assets and their data mappings to stream live data from Edge to HiveMQ's Data Intelligence Platform and other external infrastructure.",
     "error": {
       "loading": "We cannot load the assets at this time. Please try again later",
-      "notYetAvailable": "Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1",
+      "notYetAvailable": "Assets are not yet available for HiveMQ Edge. <1>Please contact us for more information.</1>",
       "notActivated": "This Edge instance is not connected to the HiveMQ Platform.",
       "asset": {
         "title": "Loading Asset",

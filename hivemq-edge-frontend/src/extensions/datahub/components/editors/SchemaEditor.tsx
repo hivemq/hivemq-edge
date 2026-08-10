@@ -220,7 +220,7 @@ export const SchemaEditor: FC<SchemaEditorProps> = ({ isOpen, onClose, schema })
         try {
           schemaDefinition = encodeProtobufSchema(formData.schemaSource || '')
         } catch (e) {
-          throw new Error(t('error.validation.protobuf.encoding'))
+          throw new Error(t('error.validation.protobuf.encoding'), { cause: e })
         }
       } else {
         // JSON schemas - simple base64 encoding

@@ -14,11 +14,11 @@ export class LoginPage extends Page {
   }
 
   get userLabel() {
-    return cy.get('#field-\\:r1\\:-label')
+    return cy.get('label[for="username"]')
   }
 
   get passwordLabel() {
-    return cy.get('#field-\\:r3\\:-label')
+    return cy.get('label[for="password"]')
   }
 
   get userInput() {

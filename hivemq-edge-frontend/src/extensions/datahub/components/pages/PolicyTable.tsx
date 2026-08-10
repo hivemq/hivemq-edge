@@ -4,7 +4,7 @@ import type { CellContext, ColumnDef } from '@tanstack/react-table'
 import type { UseMutationResult } from '@tanstack/react-query'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Skeleton, Text } from '@chakra-ui/react'
 
 import type { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'

@@ -52,7 +52,9 @@ describe('LoginPage', () => {
     }).as('getConfig')
 
     cy.mountWithProviders(<LoginPage />)
-    cy.getByTestId('loading-spinner').should('be.visible')
+    // No assertion on the spinner being visible first: the stub resolves immediately, so the spinner
+    // can come and go before the assertion runs. 'should show spinner while loading the first-use
+    // payload' above covers it against a request that stays pending.
     cy.wait('@getConfig')
     cy.getByTestId('loading-spinner').should('not.exist')
     cy.get("[role='alert']").should('not.exist')

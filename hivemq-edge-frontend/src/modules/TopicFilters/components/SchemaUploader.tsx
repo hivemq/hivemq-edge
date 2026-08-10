@@ -23,24 +23,32 @@ const SchemaUploader: FC<SchemaUploaderProps> = ({ onUpload }) => {
     noKeyboard: true,
     maxFiles: 1,
     accept: ACCEPT_JSON_SCHEMA,
-    onDropRejected: (fileRejections) => {
-      const status: AlertStatus = 'error'
-      setLoading(false)
-      fileRejections.forEach((fileRejection) => {
-        toast({
-          ...DEFAULT_TOAST_OPTION,
-          status,
-          title: t('rjsf.batchUpload.dropZone.status', {
-            ns: 'components',
-            context: status,
-            fileName: fileRejection.file.name,
-          }),
-          description: fileRejection.errors[0].message,
+    // react-dropzone 19 stopped rejecting an over-limit batch as a whole: it keeps the files that
+    // fit and rejects only the excess. Split across onDropAccepted/onDropRejected that would import
+    // the first file *and* raise an error for the rest, so both are handled in one callback and any
+    // rejection discards the whole batch.
+    onDrop: (acceptedFiles, fileRejections) => {
+      if (fileRejections.length) {
+        const status: AlertStatus = 'error'
+        setLoading(false)
+        fileRejections.forEach((fileRejection) => {
+          toast({
+            ...DEFAULT_TOAST_OPTION,
+            status,
+            title: t('rjsf.batchUpload.dropZone.status', {
+              ns: 'components',
+              context: status,
+              fileName: fileRejection.file.name,
+            }),
+            description: fileRejection.errors[0].message,
+          })
         })
-      })
-    },
-    onDropAccepted: async (files) => {
-      const [file] = files
+        return
+      }
+
+      const [file] = acceptedFiles
+      if (!file) return
+
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = () => {

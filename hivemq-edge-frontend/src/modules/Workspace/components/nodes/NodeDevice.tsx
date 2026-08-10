@@ -1,8 +1,8 @@
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useStore, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
+import { Handle, Position, useStore, useNodeConnections, useNodesData } from '@xyflow/react'
 import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
@@ -26,6 +26,7 @@ import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, dragging }) => {
   const { t } = useTranslation()
@@ -38,11 +39,13 @@ const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, draggin
   const capabilities = adapterProtocol?.capabilities ?? data.capabilities
   const showSkeleton = useStore(selectorIsSkeletonZoom)
   const { data: deviceTags } = useGetDomainTags(data.sourceAdapterId)
-  const { updateNodeData } = useReactFlow()
 
   // Use React Flow's efficient hooks to get connected nodes (parent adapter)
   const connections = useNodeConnections({ id })
-  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
+  // useNodesData memoises its selector on the ids array, so a fresh array on every render makes
+  // the store recompute and return a new selection every time.
+  const connectedNodeIds = useMemo(() => connections.map((connection) => connection.source), [connections])
+  const connectedNodes = useNodesData(connectedNodeIds)
 
   const tagNames = useMemo(() => {
     return deviceTags?.items?.map((tag) => tag.name) || []
@@ -84,10 +87,7 @@ const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, draggin
     }
   }, [connectedNodes, tagNames.length])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, data.statusModel)
 
   return (
     <>

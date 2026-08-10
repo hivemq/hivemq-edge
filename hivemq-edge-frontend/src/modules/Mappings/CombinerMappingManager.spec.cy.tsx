@@ -1,5 +1,5 @@
 import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate } from 'react-router'
 import type { Node } from '@xyflow/react'
 import { Button } from '@chakra-ui/react'
 
@@ -126,11 +126,13 @@ describe('CombinerMappingManager', () => {
   })
 
   it('should render the toolbar properly', () => {
-    let caughtError: Error | null = null
-    cy.on('uncaught:exception', (err) => {
-      caughtError = err
-      return false // Prevent Cypress from failing
-    })
+    // Deleting the combiner removes its node and redirects to the workspace. React 18 rendered the
+    // manager once in between, with the node already gone, which threw 'No combiner node found';
+    // React 19 batches both updates so that render never happens, and where it does it reports the
+    // recovery itself. Neither is a failure — the assertions below cover the delete flow — so
+    // tolerate both rather than requiring either.
+    const EXPECTED_DURING_DELETE = ['No combiner node found', 'error during concurrent rendering']
+    cy.on('uncaught:exception', (err) => !EXPECTED_DURING_DELETE.some((msg) => err.message.includes(msg)))
 
     cy.intercept('DELETE', '/api/v1/management/combiners/**', { deleted: 'the combiner' }).as('delete')
     cy.mountWithProviders(<CombinerMappingManager />, {
@@ -152,10 +154,6 @@ describe('CombinerMappingManager', () => {
     cy.get('section[role="alertdialog"]').should('be.visible')
     cy.get('section[role="alertdialog"]').within(() => {
       cy.get('footer button').eq(1).click()
-    })
-    cy.wrap(null).then(() => {
-      expect(caughtError).to.not.be.null
-      expect(caughtError?.message).to.include('No combiner node found')
     })
     cy.wait('@delete')
     cy.get('[role="dialog"]').should('not.exist')

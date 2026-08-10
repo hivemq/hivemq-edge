@@ -82,6 +82,14 @@ describe('DeleteListener', () => {
       ),
     })
 
+    // The hotkey reads the selection synchronously, so the store has to be seeded before it fires.
+    // React 19 commits that initial state a tick later than React 18 did; wait for the counters
+    // (as the multi-element test below already does) rather than racing them.
+    cy.get('td').then((w) => {
+      cy.wrap(w[0]).should('contain.text', 1)
+      cy.wrap(w[1]).should('contain.text', 1)
+    })
+
     cy.get("[role='alertdialog']").should('not.exist')
     cy.get('body').type('{backspace}')
     cy.get("[role='alertdialog']")
@@ -159,6 +167,13 @@ describe('DeleteListener', () => {
         [],
         DesignerStatus.LOADED
       ),
+    })
+
+    // Same wait as above — without it the node would not be selected yet and the dialog would stay
+    // closed regardless of the readonly guard this test is meant to cover.
+    cy.get('td').then((w) => {
+      cy.wrap(w[0]).should('contain.text', 1)
+      cy.wrap(w[1]).should('contain.text', 1)
     })
 
     cy.get("[role='alertdialog']").should('not.exist')

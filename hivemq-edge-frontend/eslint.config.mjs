@@ -25,7 +25,7 @@ export default tsEslint.config(
       globals: globals.browser,
     },
     settings: {
-      react: { version: 'detect' },
+      react: { version: '19.2' },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -36,6 +36,16 @@ export default tsEslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // v7 of the plugin folded the React Compiler diagnostics into `recommended`, taking it from 2
+      // rules to 16. We don't run the compiler, and the new rules flag ~50 long-standing sites (rjsf
+      // templates, the workspace canvas, the DataHub designer). Keep them reported, but don't gate CI
+      // on a cross-cutting refactor that belongs in its own change. `rules-of-hooks` and
+      // `exhaustive-deps` — the two we have always enforced — keep their recommended severity.
+      ...Object.fromEntries(
+        Object.keys(reactHooks.configs.recommended.rules)
+          .filter((rule) => !['react-hooks/rules-of-hooks', 'react-hooks/exhaustive-deps'].includes(rule))
+          .map((rule) => [rule, 'warn'])
+      ),
 
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'local/no-bare-cy-intercept': 'off',

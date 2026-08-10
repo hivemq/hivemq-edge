@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { useDisclosure } from '@chakra-ui/react'
 
 import { useListManagedAssets } from '@/api/hooks/usePulse/useListManagedAssets.ts'

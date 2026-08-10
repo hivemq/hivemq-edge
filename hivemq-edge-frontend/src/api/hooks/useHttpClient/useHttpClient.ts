@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { AxiosError } from 'axios'
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 import config from '@/config'
 

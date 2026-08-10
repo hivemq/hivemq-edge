@@ -35,7 +35,7 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({
   footer,
 }) => {
   const { t } = useTranslation()
-  const cancelRef = useRef<HTMLButtonElement>()
+  const cancelRef = useRef<HTMLButtonElement>(null)
 
   return (
     <AlertDialog

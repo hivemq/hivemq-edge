@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import type { ReactElement } from 'react'
 import { type UseDisclosureProps, Button } from '@chakra-ui/react'
 import { MockAdapterType } from '@/__test-utils__/adapters/types'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
@@ -8,7 +9,7 @@ import TagSchemaDrawer from './TagSchemaDrawer'
 
 const mocTag = MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA)[0]
 
-const trigger: (disclosureProps: UseDisclosureProps) => JSX.Element = ({ onOpen: onOpenArrayDrawer }) => (
+const trigger: (disclosureProps: UseDisclosureProps) => ReactElement = ({ onOpen: onOpenArrayDrawer }) => (
   <Button data-testid="dev-trigger" onClick={onOpenArrayDrawer}>
     The trigger
   </Button>

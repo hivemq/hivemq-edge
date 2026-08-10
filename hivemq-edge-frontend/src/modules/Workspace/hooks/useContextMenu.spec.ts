@@ -11,19 +11,24 @@ const mocks = vi.hoisted(() => {
   }
 })
 
+// Hoisted by Vitest regardless of where it is written; keep it at the top level so the file reads
+// the way it actually executes (nesting it is a warning in Vitest 4 and an error later).
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<object>('react-router')
+  return {
+    ...actual,
+    useNavigate() {
+      return mocks.navigate
+    },
+  }
+})
+
 describe('useContextMenu', () => {
   beforeEach(() => {
     window.localStorage.clear()
-
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual<object>('react-router-dom')
-      return {
-        ...actual,
-        useNavigate() {
-          return mocks.navigate
-        },
-      }
-    })
+    // Vitest 4's restoreAllMocks only restores spies, so a plain vi.fn() keeps its calls between
+    // tests unless it is cleared explicitly.
+    mocks.navigate.mockClear()
   })
 
   afterEach(() => {

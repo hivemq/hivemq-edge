@@ -49,7 +49,7 @@ const debugLog = debug('workspace:wizard:selection')
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
   const toast = useToast()
-  const { isActive: isWizardActive } = useWizardStore((state) => ({ isActive: state.isActive }))
+  const isWizardActive = useWizardStore((state) => state.isActive)
   const { protocolAdapters } = useProtocolAdaptersContext()
   const { nodes: newNodes, edges: newEdges } = useGetFlowElements()
   const nodeTypes = useMemo(

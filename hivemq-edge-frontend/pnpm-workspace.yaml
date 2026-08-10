@@ -7,34 +7,58 @@ allowBuilds:
   esbuild: true
   msw: true
   protobufjs: true
+# Overrides exist to pull transitive dependencies onto patched releases. Keep every entry inside the
+# major its consumers declare: an override is only a resolution instruction, it does not widen a
+# package's tested semver contract. Forcing minimatch@3 consumers onto 10 breaks them outright, for
+# instance, because v3's callable CommonJS export became a namespace object in v10.
 overrides:
   minimatch@3: 3.1.5
   minimatch@8: 8.0.7
   minimatch@9: 9.0.9
-  minimatch@10: 10.2.5
+  minimatch@10: 10.2.6
   flatted: 3.4.3
   ajv@>=8 <9: ^8.20.0
-  immutable: ^5.1.5
-  brace-expansion@^1: ^1.1.16
-  brace-expansion@^2: ^2.1.2
-  brace-expansion@^5: ^5.0.8
+  immutable@^5: ^5.1.8
+  brace-expansion@^1: ^1.1.18
+  brace-expansion@^2: ^2.1.4
+  brace-expansion@^5: ^5.0.9
   lodash: ^4.18.0
   lodash-es: ^4.18.0
+  picomatch@^2: ^2.3.2
   picomatch@^4: ^4.0.4
   qs@^6: ^6.15.2
   rollup@^4: ^4.57.1
-  dompurify@>=3 <4: ^3.4.1
+  dompurify@>=3 <4: ^3.4.12
   markdown-it: ^14.1.1
   postcss@^8: ^8.5.18
+  nanoid@^3: ^3.3.17
+  '@babel/core@^7': ^7.29.7
   yaml@^1: ^1.10.3
   yaml@^2: ^2.8.3
   js-yaml@^3: ^5.2.2
   js-yaml@^4: ^5.2.2
   follow-redirects: ^1.16.0
-  ws@^8: ^8.20.1
-  fast-uri@^3: ^3.1.2
-  systeminformation@^5: ^5.31.6
-  ip-address: ^10.1.1
+  ws@^8: ^8.21.0
+  fast-uri@^3: ^3.1.5
+  systeminformation@^5: ^5.31.7
+  ip-address@^10: ^10.3.1
+  # No patched release exists on the 8.x line, so @jsonhero/json-infer-types (which declares ^8.1.0)
+  # has to cross a major to clear the advisory. It only constructs `Address4`/`Address6`, both of
+  # which v10 still exports, and master already resolved this consumer to 10.x.
+  ip-address@^8: ^10.3.1
+  basic-ftp@^5: ^5.3.1
+  tmp@^0.2: ^0.2.6
+  form-data@^4: ^4.0.6
+  '@opentelemetry/core@^2': ^2.8.0
+  '@opentelemetry/propagator-jaeger@^2': ^2.9.0
   '@protobufjs/utf8': ^1.1.1
   '@protobufjs/codegen': ^2.0.5
   uuid@^11: ^11.1.1
+  # ProseMirror does instanceof checks across its own classes, so tiptap breaks with
+  # "Can not convert <mention> to a Fragment (looks like multiple versions of prosemirror-model
+  # were loaded)" as soon as two copies are resolved. Keep it to one.
+  prosemirror-model: ^1.25.11
+  # The plugin accepts zod-validation-error ^3.5.0 || ^4.0.0 but only ever imports the
+  # v4-only 'zod-validation-error/v4' subpath; left alone, pnpm reuses the 3.x copy that
+  # langbase pulls in and ESLint dies with ERR_PACKAGE_PATH_NOT_EXPORTED.
+  'eslint-plugin-react-hooks>zod-validation-error': ^4.0.0

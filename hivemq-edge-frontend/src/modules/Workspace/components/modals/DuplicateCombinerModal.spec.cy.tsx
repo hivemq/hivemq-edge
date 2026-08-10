@@ -257,7 +257,10 @@ describe('DuplicateCombinerModal', () => {
       </ReactFlowProvider>
     )
 
-    cy.get('body').type('{esc}')
+    // Typing on `body` only reaches the dialog once its autofocus has landed, and React 19 settles
+    // that a tick later. Wait for the focus, then send the key to the element that actually has it.
+    cy.getByTestId('modal-button-use-existing').should('have.focus')
+    cy.focused().type('{esc}')
     cy.get('@onClose').should('have.been.calledOnce')
   })
 

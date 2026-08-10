@@ -1,5 +1,5 @@
 import { type FC, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Button, ButtonGroup, Card, CardBody, Text, useDisclosure } from '@chakra-ui/react'

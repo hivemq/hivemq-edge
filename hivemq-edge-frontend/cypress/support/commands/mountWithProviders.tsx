@@ -1,7 +1,7 @@
 import type { MountOptions } from 'cypress/react'
 import { mount } from 'cypress/react'
-import type { MemoryRouterProps } from 'react-router-dom'
-import { MemoryRouter } from 'react-router-dom'
+import type { MemoryRouterProps } from 'react-router'
+import { MemoryRouter } from 'react-router'
 import { ChakraProvider, VisuallyHidden } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
