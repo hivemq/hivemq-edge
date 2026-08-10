@@ -296,6 +296,10 @@
         "header": "Destination output",
         "check": {
           "aria-label": "Mapping valid"
+        },
+        "empty": {
+          "allReadOnly": "None of this tag's fields can be written to, so there is nothing to map here.",
+          "noProperties": "This schema defines no fields, so there is nothing to map here."
         }
       },
       "instructions": {

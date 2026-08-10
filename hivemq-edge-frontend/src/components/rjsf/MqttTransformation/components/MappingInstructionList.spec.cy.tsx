@@ -49,6 +49,25 @@ const MOCK_SOUTHBOUND_CONDITION_SCHEMA: RJSFSchema = {
   $schema: 'https://json-schema.org/draft/2019-09/schema',
 }
 
+/**
+ * The A&C command shape as an adapter produces it when it forgets to chain `.writable()` — the trap the SDK
+ * Javadoc warns about, rendered exactly as `TagSchemaCreationOutputImplSchemaBuilderTest` pins it.
+ */
+const MOCK_ALL_READ_ONLY_SCHEMA: RJSFSchema = {
+  type: 'object',
+  properties: {
+    value: {
+      type: 'object',
+      readOnly: true,
+      properties: {
+        eventId: { type: 'string', readOnly: true },
+        method: { type: 'integer', readOnly: true },
+        comment: { type: 'string', readOnly: true },
+      },
+    },
+  },
+}
+
 // A read-only container whose child carries no flag of its own — the shape an uploaded or inferred combiner
 // destination schema routinely has, since JSON Schema does not require readOnly to be repeated on every leaf.
 const MOCK_READONLY_ANCESTOR_SCHEMA: RJSFSchema = {
@@ -152,10 +171,57 @@ describe('MappingInstructionList', () => {
     cy.get('@onChange').should('have.been.calledOnceWith', [{ source: '$.a', destination: '$.setpoint' }])
   })
 
+  it('should explain an empty list when every field is read-only', () => {
+    // Hiding read-only properties (EDG-59) can hide all of them — e.g. an adapter that supplies a southbound
+    // schema without marking it writable. A blank panel is indistinguishable from "still loading" or "broken",
+    // so the list must say which it is.
+    cy.mountWithProviders(
+      <MappingInstructionList schema={MOCK_ALL_READ_ONLY_SCHEMA} instructions={[]} onChange={cy.stub()} />
+    )
+
+    cy.get('[role="list"]').should('not.exist')
+    cy.getByTestId('mapping-instruction-empty')
+      .should('be.visible')
+      .should('contain.text', "None of this tag's fields can be written to")
+  })
+
+  it('should distinguish a schema with no fields at all', () => {
+    // A different problem with a different remedy: nothing was hidden, there was simply nothing there.
+    cy.mountWithProviders(
+      <MappingInstructionList schema={{ type: 'object', properties: {} }} instructions={[]} onChange={cy.stub()} />
+    )
+
+    cy.getByTestId('mapping-instruction-empty').should('contain.text', 'This schema defines no fields')
+  })
+
+  it('should still prune stale instructions when every field is hidden', () => {
+    // The empty state must not short-circuit the sanitising: an instruction targeting a now-read-only field
+    // has to leave the parent's form data whether or not anything remains to render.
+    const onChange = cy.stub().as('onChange')
+    cy.mountWithProviders(
+      <MappingInstructionList
+        schema={MOCK_ALL_READ_ONLY_SCHEMA}
+        instructions={[{ source: '$.a', destination: '$.value.eventId' }]}
+        onChange={onChange}
+      />
+    )
+
+    cy.getByTestId('mapping-instruction-empty').should('exist')
+    cy.get('@onChange').should('have.been.calledOnceWith', [])
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
       <MappingInstructionList schema={MOCK_SCHEMA} instructions={MOCK_INSTRUCTIONS} onChange={cy.stub()} />
+    )
+    cy.checkAccessibility()
+  })
+
+  it('should be accessible when empty', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(
+      <MappingInstructionList schema={MOCK_ALL_READ_ONLY_SCHEMA} instructions={[]} onChange={cy.stub()} />
     )
     cy.checkAccessibility()
   })
