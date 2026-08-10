@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -69,6 +70,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -597,6 +600,10 @@ class ProtocolAdapterManagerTest {
     @Nested
     class RefreshIsolationTests {
 
+        private static final @NotNull String SUBJECT = "subject";
+        private static final @NotNull String NEIGHBOUR = "healthy-neighbour";
+        private static final @NotNull String GOING_AWAY = "going-away";
+
         /**
          * Pinned in full rather than by fragment: outcome-neutral wording is the whole point of the
          * fix, so a paraphrase that quietly reintroduces an absolute claim has to fail here.
@@ -852,6 +859,60 @@ class ProtocolAdapterManagerTest {
         }
 
         @Test
+        void aDuplicatedId_firesAnAdapterScopedCriticalEvent() throws Exception {
+            // From the operator's seat a duplicated id and an unreadable configuration are the same
+            // outcome: the adapter is not running what the file says. Only the unreadable one used to
+            // reach the event stream, so a duplicated id was invisible in the UI - the global
+            // "Reloading of configuration failed" event fires for both, but names no adapter.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity first = entity("duplicated");
+            final ProtocolAdapterEntity second = entity("duplicated");
+            final ProtocolAdapterConfig firstConfig = config("duplicated");
+            final ProtocolAdapterConfig secondConfig = config("duplicated");
+            when(configConverter.fromEntity(first)).thenReturn(firstConfig);
+            when(configConverter.fromEntity(second)).thenReturn(secondConfig);
+
+            spyManager.refresh(List.of(first, second));
+            waitUntilNotBusy(spyManager);
+
+            verify(eventService).createAdapterEvent("duplicated", "test-protocol");
+            verify(eventBuilder)
+                    .withMessage("Adapter id 'duplicated' is used by more than one adapter in the configuration, "
+                            + "so no configuration for this id was applied. An existing instance, if any, was left "
+                            + "unchanged; a new adapter was not created.");
+        }
+
+        @Test
+        void threeEntitiesSharingAnId_fireTheAdapterScopedEventOnce() throws Exception {
+            // Same gate as the log: one complaint per id per reload, not one per entity.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity first = entity("duplicated");
+            final ProtocolAdapterEntity second = entity("duplicated");
+            final ProtocolAdapterEntity third = entity("duplicated");
+            // Built before the stubbing that returns them: a mock created inside when(...) reads to
+            // Mockito as an unfinished stubbing.
+            final ProtocolAdapterConfig firstConfig = config("duplicated");
+            final ProtocolAdapterConfig secondConfig = config("duplicated");
+            final ProtocolAdapterConfig thirdConfig = config("duplicated");
+            when(configConverter.fromEntity(first)).thenReturn(firstConfig);
+            when(configConverter.fromEntity(second)).thenReturn(secondConfig);
+            when(configConverter.fromEntity(third)).thenReturn(thirdConfig);
+
+            spyManager.refresh(List.of(first, second, third));
+            waitUntilNotBusy(spyManager);
+
+            verify(eventService, times(1)).createAdapterEvent("duplicated", "test-protocol");
+        }
+
+        @Test
         void anUnreadableConfig_firesAnAdapterScopedCriticalEvent() throws Exception {
             // The global configuration event says the reload failed; the adapter-scoped event names
             // the adapter whose configuration could not be read.
@@ -895,6 +956,103 @@ class ProtocolAdapterManagerTest {
             verify(spyManager).start("healthy-adapter");
             verify(spyManager, org.mockito.Mockito.never()).start("broken-module-adapter");
             verify(eventBuilder).withMessage("Reloading of configuration failed");
+        }
+
+        /**
+         * The refresh set arithmetic over its whole input space, rather than over the cases somebody
+         * thought of.
+         *
+         * <p>The safety of this change rests on one invariant: an id the configuration file names is
+         * always in the new-id set, whether or not its configuration could be read, and the delete set
+         * is {@code old - new}. So a conversion failure <em>cannot</em> put an adapter in the delete
+         * set. That is an argument from reading code; this makes it executable across every
+         * combination of the three things that vary — does the configuration convert, is the id
+         * duplicated, was the adapter already running.
+         *
+         * <p>Two constant companions ride along in every case: a healthy adapter that must be created
+         * and started identically no matter what the subject does (the isolation claim), and a running
+         * adapter absent from the file that must still be deleted (proof that keeping failed ids in the
+         * new set did not break deletion itself).
+         *
+         * <p>A running subject is seeded with the same config instance the converter returns, so the
+         * update path resolves to "unchanged, leave it alone" without needing a real adapter factory.
+         * The mechanics of applying an update are not this test's subject.
+         */
+        @ParameterizedTest(name = "converts={0} duplicated={1} running={2}")
+        @CsvSource({
+            "true,false,false",
+            "true,false,true",
+            "true,true,false",
+            "true,true,true",
+            "false,false,false",
+            "false,false,true",
+            "false,true,false",
+            "false,true,true",
+        })
+        void theRefreshArithmeticHoldsOverEveryCombination(
+                final boolean converts, final boolean duplicated, final boolean running) throws Exception {
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterConfig subjectConfig = config(SUBJECT);
+            final ProtocolAdapterConfig neighbourConfig = config(NEIGHBOUR);
+            if (running) {
+                addAdapterToManager(spyManager, SUBJECT, createSuccessAdapter(SUBJECT), subjectConfig);
+            }
+            addAdapterToManager(spyManager, GOING_AWAY, createSuccessAdapter(GOING_AWAY), config(GOING_AWAY));
+
+            final List<ProtocolAdapterEntity> entities = new java.util.ArrayList<>();
+            entities.add(stubbedEntity(SUBJECT, converts, subjectConfig));
+            if (duplicated) {
+                entities.add(stubbedEntity(SUBJECT, converts, subjectConfig));
+            }
+            final ProtocolAdapterEntity neighbour = entity(NEIGHBOUR);
+            when(configConverter.fromEntity(neighbour)).thenReturn(neighbourConfig);
+            entities.add(neighbour);
+
+            spyManager.refresh(entities);
+            waitUntilNotBusy(spyManager);
+
+            // 1. An id the file names is never deleted, however badly it is written.
+            verify(spyManager, org.mockito.Mockito.never()).deleteProtocolAdapterByAdapterId(SUBJECT);
+
+            final boolean applied = converts && !duplicated;
+            if (running) {
+                // 2. A running adapter survives untouched unless its configuration was applied.
+                assertThat(spyManager.getProtocolAdapterIdSet()).contains(SUBJECT);
+                verify(spyManager, org.mockito.Mockito.never()).createProtocolAdapter(eq(subjectConfig), anyString());
+            } else if (applied) {
+                verify(spyManager).createProtocolAdapter(subjectConfig, "test-version");
+                verify(spyManager).start(SUBJECT);
+            } else {
+                // 3. Nothing is created from a configuration that could not be read or resolved.
+                verify(spyManager, org.mockito.Mockito.never()).createProtocolAdapter(eq(subjectConfig), anyString());
+                verify(spyManager, org.mockito.Mockito.never()).start(SUBJECT);
+                assertThat(spyManager.getProtocolAdapterIdSet()).doesNotContain(SUBJECT);
+            }
+
+            // 4. A running adapter the file no longer names is still deleted.
+            verify(spyManager).deleteProtocolAdapterByAdapterId(GOING_AWAY);
+            assertThat(spyManager.getProtocolAdapterIdSet()).doesNotContain(GOING_AWAY);
+
+            // 5. The healthy neighbour is unaffected by whatever the subject did - the isolation claim,
+            //    asserted identically in all eight cases.
+            verify(spyManager).createProtocolAdapter(neighbourConfig, "test-version");
+            verify(spyManager).start(NEIGHBOUR);
+        }
+
+        private @NotNull ProtocolAdapterEntity stubbedEntity(
+                final @NotNull String adapterId, final boolean converts, final @NotNull ProtocolAdapterConfig config) {
+            final ProtocolAdapterEntity created = entity(adapterId);
+            if (converts) {
+                when(configConverter.fromEntity(created)).thenReturn(config);
+            } else {
+                when(configConverter.fromEntity(created))
+                        .thenThrow(new IllegalArgumentException("Unrecognized field \"hostame\""));
+            }
+            return created;
         }
 
         private long duplicatedIdErrorCount(final @NotNull String adapterId) {

@@ -763,7 +763,7 @@ public class ProtocolAdapterManager {
                     // A previous entity already claimed this id. Which configuration the operator meant
                     // is not knowable, so a config that converted under this id must not survive either.
                     protocolAdapterConfigs.remove(adapterId);
-                    reportDuplicatedAdapterId(reportedDuplicateIds, adapterId);
+                    reportDuplicatedAdapterId(reportedDuplicateIds, adapterId, entity);
                 }
                 final boolean firstFailureForId = failedAdapterSet.add(adapterId);
                 // Outcome-neutral on purpose: the entity may describe an adapter that exists (whose
@@ -799,7 +799,7 @@ public class ProtocolAdapterManager {
                 // IllegalStateException out of Collectors.toMap and took the whole refresh with it.
                 protocolAdapterConfigs.remove(adapterId);
                 failedAdapterSet.add(adapterId);
-                reportDuplicatedAdapterId(reportedDuplicateIds, adapterId);
+                reportDuplicatedAdapterId(reportedDuplicateIds, adapterId, entity);
                 continue;
             }
             protocolAdapterConfigs.put(adapterId, config);
@@ -807,8 +807,10 @@ public class ProtocolAdapterManager {
         return configuredAdapterIds;
     }
 
-    private static void reportDuplicatedAdapterId(
-            final @NotNull Set<String> reportedDuplicateIds, final @NotNull String adapterId) {
+    private void reportDuplicatedAdapterId(
+            final @NotNull Set<String> reportedDuplicateIds,
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterEntity entity) {
         if (reportedDuplicateIds.add(adapterId)) {
             // Outcome-neutral for the same reason the conversion-failure log is: the duplicated
             // entities may name an adapter that exists, whose instance keeps running on its previous
@@ -821,6 +823,20 @@ public class ProtocolAdapterManager {
                             + "adapter was not created. Give each adapter a unique id. Every other adapter has "
                             + "been refreshed as usual.",
                     adapterId);
+            // Adapter-scoped, matching the conversion-failure branch. The two outcomes are identical
+            // from the operator's seat - the adapter is not running the configuration they wrote - so
+            // reporting one in the event stream and the other only in the log left a duplicated id
+            // invisible in the UI. The global configuration event fires for both, but does not name
+            // the adapter.
+            eventService
+                    .createAdapterEvent(adapterId, entity.getProtocolId())
+                    .withSeverity(Event.SEVERITY.CRITICAL)
+                    .withMessage("Adapter id '"
+                            + adapterId
+                            + "' is used by more than one adapter in the configuration, so no configuration for "
+                            + "this id was applied. An existing instance, if any, was left unchanged; a new "
+                            + "adapter was not created.")
+                    .fire();
         }
     }
 

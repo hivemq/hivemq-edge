@@ -342,6 +342,34 @@ class ProtocolAdapterWrapperTest {
         }
 
         @Test
+        void stop_whenIdleWithDestroy_stillDestroysTheAdapter() {
+            // The resource leak the Idle short-circuit exists to close, and the reason it is a fix
+            // rather than tidying. Idle -> Stopping is not a permitted transition, so before the
+            // short-circuit stop() returned false at the transition guard - which sits *above* the
+            // destroy block. ProtocolAdapterManager.refreshDeletedAdapters calls stop(id, true) and
+            // then deletes, so deleting an adapter that was idle never released whatever destroy()
+            // releases. It also turned a no-op stop into a CRITICAL "Error stopping adapter" event,
+            // because stopWrapper is the sole consumer of this return value.
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter).destroy();
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+        }
+
+        @Test
+        void stop_whenIdleWithDestroyTwice_destroysOnce() {
+            // Destroy is now reachable from two places in stop() - the Idle short-circuit and the
+            // full stop path - and the SDK makes no idempotence promise about it, which is what the
+            // wrapper's at-most-once guard is for.
+            wrapper.stop(true);
+            wrapper.stop(true);
+
+            verify(protocolAdapter, times(1)).destroy();
+        }
+
+        @Test
         void start_afterStopAndRestart_succeeds() throws ProtocolAdapterException {
             assertThat(wrapper.start()).isTrue();
             assertThat(wrapper.stop(false)).isTrue();
@@ -459,8 +487,8 @@ class ProtocolAdapterWrapperTest {
             wrapper.start();
             assertThat(wrapper.stop(false)).isTrue();
 
-            // Northbound is already disconnected, stop again should handle gracefully
-            // (stop from Idle fails at FSM level, but the internal stopNorthbound handles it)
+            // Northbound is already disconnected, stop again should handle gracefully. A second stop
+            // never reaches the FSM at all now: stop() short-circuits on Idle and reports success.
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
     }
@@ -556,7 +584,9 @@ class ProtocolAdapterWrapperTest {
             final AtomicInteger callCount = new AtomicInteger(0);
             wrapper.addStateChangeListener((from, to) -> callCount.incrementAndGet());
 
-            // Idle->Stopping is invalid, should not notify
+            // Stopping an already-Idle wrapper short-circuits before any transition is attempted, so
+            // there is no state change to report. (It reaches the same outcome the old code did by
+            // failing the invalid Idle->Stopping transition, but for a different reason.)
             wrapper.stop(false);
             assertThat(callCount.get()).isEqualTo(0);
         }
