@@ -36,6 +36,25 @@ interface TagSchemaPanelProps {
  */
 const valueShape = (schema: JsonNode): JsonNode => ((schema as JSONSchema7).properties?.value as JsonNode) ?? schema
 
+/**
+ * Object member order carries no meaning in JSON, and the two directions are assembled independently, so
+ * `{eventId, method}` and `{method, eventId}` are the same shape and must compare equal. Array order is
+ * preserved: `required`, `enum` and `anyOf` are sequences, not sets, as far as this panel's display is
+ * concerned.
+ */
+const canonical = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(canonical)
+  if (value === null || typeof value !== 'object') return value
+  return Object.fromEntries(
+    Object.keys(value as Record<string, unknown>)
+      .sort()
+      .map((key) => [key, canonical((value as Record<string, unknown>)[key])])
+  )
+}
+
+const isSameShape = (a: JsonNode, b: JsonNode): boolean =>
+  JSON.stringify(canonical(valueShape(a))) === JSON.stringify(canonical(valueShape(b)))
+
 export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
   // This panel is pure inspection, so it shows both directions. They are usually the same for a plain value
   // tag; they differ when a tag's write shape is not a projection of its read shape (e.g. a condition tag).
@@ -48,10 +67,7 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
   const { t } = useTranslation()
 
   const areIdentical = useMemo(
-    () =>
-      Boolean(
-        readSchema && writeSchema && JSON.stringify(valueShape(readSchema)) === JSON.stringify(valueShape(writeSchema))
-      ),
+    () => Boolean(readSchema && writeSchema && isSameShape(readSchema, writeSchema)),
     [readSchema, writeSchema]
   )
 

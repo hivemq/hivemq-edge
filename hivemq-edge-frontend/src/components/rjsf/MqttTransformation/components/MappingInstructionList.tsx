@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { RJSFSchema } from '@rjsf/utils'
 
 import type { ListProps } from '@chakra-ui/react'
@@ -41,6 +41,21 @@ export const MappingInstructionList: FC<MappingEditorProps> = ({
     const properties = allProperties.filter((property) => !isReadOnly(property))
     return { properties, validInstructions }
   }, [schema, instructions])
+
+  // Pruning only inside the renderer would leave the stale instruction in the parent's form data: it is
+  // invisible here but still submitted and still executed. Hiding the read-only card (above) makes that harder
+  // to notice, not easier, so the sanitised list is pushed up as soon as the destination schema resolves rather
+  // than waiting for the user to happen to edit some other, visible mapping.
+  const hasPrunedInstructions = validInstructions.length !== instructions.length
+
+  useEffect(() => {
+    // filterReadOnlyInstructions only ever removes entries, so a length difference is exactly "something was
+    // pruned" — no deep comparison needed.
+    if (hasPrunedInstructions) onChange?.(validInstructions)
+    // onChange is deliberately not a dependency: parents pass a fresh closure on every render, and including it
+    // would re-fire this effect on each one for as long as the parent has not persisted the sanitised list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPrunedInstructions, validInstructions])
 
   return (
     <List {...props} gap={2}>

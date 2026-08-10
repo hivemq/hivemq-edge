@@ -18,13 +18,16 @@ package com.hivemq.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import com.hivemq.protocols.tag.TagSchemaDirection;
 import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -232,9 +235,9 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
     @SuppressWarnings({"deprecation", "removal"})
     @Test
     void test_getFuture_returnsTheNorthboundSchema() throws ExecutionException, InterruptedException {
-        // getFuture() is the compatibility surface for callers outside this repository — most importantly the
-        // southbound DataHub resources (ProtocolAdapterWritingServiceImpl.createDataHubResources): if this pin
-        // breaks, southbound policy validation silently changes shape.
+        // getFuture() is the compatibility surface for callers outside this repository (the hivemq-edge-test
+        // integration tests). It must keep producing the northbound document it always produced. The southbound
+        // DataHub resources used to read the schema through here — they now ask for SOUTHBOUND explicitly.
         final var output = new TagSchemaCreationOutputImpl();
 
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
@@ -250,6 +253,76 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
         assertThat(output.getFuture().get()).isEqualTo(output.getSchema(TagSchemaDirection.NORTHBOUND));
     }
 
+    /**
+     * The condition-command shape exactly as an adapter must build it: {@code .writable()} on the root and on
+     * every writable member. {@link com.hivemq.adapter.sdk.api.schema.SchemaBuilder} defaults to
+     * {@code writable = false}, and the mapping editor does not offer a read-only field as a write destination,
+     * so omitting these calls yields a southbound schema with no destinations —
+     * {@link #test_southboundSchema_unmarkedExplicitSchemaRendersReadOnly()} pins that trap.
+     * <p>
+     * This is also the fixture used by {@code MappingInstructionList.spec.cy.tsx}: the frontend test must see the
+     * document this builder actually produces, so if this shape changes, that fixture changes with it.
+     */
+    private static @NotNull Schema conditionCommandSchema() {
+        return new SchemaBuilder()
+                .startObject()
+                .property("eventId")
+                .required()
+                .scalar(ScalarType.STRING)
+                .writable()
+                .property("method")
+                .required()
+                .scalar(ScalarType.LONG)
+                .writable()
+                .property("comment")
+                .scalar(ScalarType.STRING)
+                .writable()
+                .endObject()
+                .writable()
+                .build();
+    }
+
+    private static @NotNull Schema alarmEventSchema() {
+        return new SchemaBuilder()
+                .startObject()
+                .property("active")
+                .scalar(ScalarType.BOOLEAN)
+                .property("severity")
+                .scalar(ScalarType.LONG)
+                .endObject()
+                .build();
+    }
+
+    @SuppressWarnings({"deprecation", "removal"})
+    @Test
+    void test_repeatedCalls_produceEqualButIndependentDocuments() throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                alarmEventSchema(), null, null, conditionCommandSchema()));
+
+        // Both accessors compose a document per call rather than handing out one shared instance. Composition is
+        // a pure function of the DataPointSchema the adapter finished with, so every call must produce an equal
+        // document — repeated calls are interchangeable in value.
+        assertThat(output.getFuture().get()).isEqualTo(output.getFuture().get());
+        assertThat(output.getSchema(TagSchemaDirection.NORTHBOUND))
+                .isEqualTo(output.getSchema(TagSchemaDirection.NORTHBOUND));
+        assertThat(output.getSchema(TagSchemaDirection.SOUTHBOUND))
+                .isEqualTo(output.getSchema(TagSchemaDirection.SOUTHBOUND));
+
+        // ...and they must be *separate* instances. ObjectNode is mutable: handing every caller the same node
+        // would let one caller's edit rewrite what the others already hold. That was the situation while this
+        // future carried a pre-composed ObjectNode; per-call composition is what removes it.
+        final ObjectNode first = output.getSchema(TagSchemaDirection.NORTHBOUND);
+        final ObjectNode second = output.getSchema(TagSchemaDirection.NORTHBOUND);
+        assertThat(first).isNotSameAs(second);
+
+        first.put("$id", "urn:mutated-by-a-caller");
+        assertThat(second.has("$id")).isFalse();
+        assertThat(output.getSchema(TagSchemaDirection.NORTHBOUND).has("$id"))
+                .isFalse();
+        assertThat(output.getFuture().get().has("$id")).isFalse();
+    }
+
     @Test
     void test_southboundSchema_explicitWriteSchemaIsUsedInsteadOfTheValue()
             throws ExecutionException, InterruptedException {
@@ -258,14 +331,96 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
         // A tag whose write shape is not a projection of its read shape — e.g. an OPC-UA condition tag, whose
         // northbound shape is the alarm event but whose write target is {eventId, method, comment}.
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                new SchemaBuilder()
-                        .startObject()
-                        .property("active")
-                        .scalar(ScalarType.BOOLEAN)
-                        .property("severity")
-                        .scalar(ScalarType.LONG)
-                        .endObject()
-                        .build(),
+                alarmEventSchema(), null, null, conditionCommandSchema()));
+
+        final JsonNode writeValue = output.getSchema(TagSchemaDirection.SOUTHBOUND)
+                .get("properties")
+                .get("value");
+
+        assertThat(writeValue.get("properties").has("eventId")).isTrue();
+        assertThat(writeValue.get("properties").has("method")).isTrue();
+        assertThat(writeValue.get("properties").has("comment")).isTrue();
+        // The northbound value shape must not leak into the southbound direction.
+        assertThat(writeValue.get("properties").has("active")).isFalse();
+        assertThat(writeValue.get("properties").has("severity")).isFalse();
+
+        // ...while the northbound direction still shows the alarm-event shape.
+        final JsonNode readValue = output.getSchema(TagSchemaDirection.NORTHBOUND)
+                .get("properties")
+                .get("value");
+        assertThat(readValue.get("properties").has("active")).isTrue();
+        assertThat(readValue.get("properties").has("eventId")).isFalse();
+    }
+
+    @Test
+    void test_southboundSchema_writableCommandFieldsAreNotRenderedReadOnly()
+            throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                alarmEventSchema(), null, null, conditionCommandSchema()));
+
+        final JsonNode writeValue = output.getSchema(TagSchemaDirection.SOUTHBOUND)
+                .get("properties")
+                .get("value");
+
+        // The whole point of an explicit southbound schema is to give a write somewhere to land. A consumer
+        // treats readOnly as "not a destination", so neither the command object nor any of its members may
+        // carry it — this is what makes the A&C mapping editor show three destinations rather than none.
+        assertThat(writeValue.has("readOnly")).isFalse();
+        final JsonNode properties = writeValue.get("properties");
+        assertThat(properties.get("eventId").has("readOnly")).isFalse();
+        assertThat(properties.get("method").has("readOnly")).isFalse();
+        assertThat(properties.get("comment").has("readOnly")).isFalse();
+    }
+
+    @Test
+    void test_southboundSchema_conditionCommandDocumentIsPinned() throws Exception {
+        final var output = new TagSchemaCreationOutputImpl();
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                alarmEventSchema(), null, null, conditionCommandSchema()));
+
+        // The exact document the REST endpoint serves for an A&C condition tag. It is pinned here because the
+        // frontend fixture in MappingInstructionList.spec.cy.tsx is a copy of it: a hand-written fixture that
+        // drifts from this output tests the mock rather than the feature (which is how the missing readOnly
+        // annotations went unnoticed). Change one, change the other.
+        //
+        // Note the readOnly on the root: that flag is on the wrapper this class builds, not on the adapter's
+        // command schema, and no consumer reads it (getPropertyListFrom only walks `properties`).
+        final String expected =
+                """
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "eventId": { "type": "string" },
+                        "method": { "type": "integer" },
+                        "comment": { "type": "string" }
+                      },
+                      "required": [ "eventId", "method" ]
+                    }
+                  },
+                  "required": [ "value" ],
+                  "readOnly": true,
+                  "$schema": "https://json-schema.org/draft/2019-09/schema"
+                }
+                """;
+
+        assertThat(output.getSchema(TagSchemaDirection.SOUTHBOUND))
+                .isEqualTo(new com.fasterxml.jackson.databind.ObjectMapper().readTree(expected));
+    }
+
+    @Test
+    void test_southboundSchema_unmarkedExplicitSchemaRendersReadOnly() throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+
+        // The same command shape, built the way it reads most naturally — without a single .writable() call.
+        // SchemaBuilder's default is writable = false, so every node renders readOnly and the mapping editor
+        // offers nothing. This test exists to make that failure visible here rather than in the UI; it pins the
+        // reason the SDK Javadoc on DataPointSchema.southboundSchema insists on .writable().
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                alarmEventSchema(),
                 null,
                 null,
                 new SchemaBuilder()
@@ -285,19 +440,11 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
                 .get("properties")
                 .get("value");
 
-        assertThat(writeValue.get("properties").has("eventId")).isTrue();
-        assertThat(writeValue.get("properties").has("method")).isTrue();
-        assertThat(writeValue.get("properties").has("comment")).isTrue();
-        // The northbound value shape must not leak into the southbound direction.
-        assertThat(writeValue.get("properties").has("active")).isFalse();
-        assertThat(writeValue.get("properties").has("severity")).isFalse();
-
-        // ...while the northbound direction still shows the alarm-event shape.
-        final JsonNode readValue = output.getSchema(TagSchemaDirection.NORTHBOUND)
-                .get("properties")
-                .get("value");
-        assertThat(readValue.get("properties").has("active")).isTrue();
-        assertThat(readValue.get("properties").has("eventId")).isFalse();
+        assertThat(writeValue.get("readOnly").asBoolean()).isTrue();
+        final JsonNode properties = writeValue.get("properties");
+        assertThat(properties.get("eventId").get("readOnly").asBoolean()).isTrue();
+        assertThat(properties.get("method").get("readOnly").asBoolean()).isTrue();
+        assertThat(properties.get("comment").get("readOnly").asBoolean()).isTrue();
     }
 
     @Test

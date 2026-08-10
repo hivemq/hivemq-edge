@@ -658,7 +658,7 @@ export class ProtocolAdaptersService {
      * Get a json schema that explains the json schema that represents the tag with the provided name."
      * @param adapterId The id of the adapter for which the Json Schema should be retrieved.
      * @param tagName The tag name (urlencoded) for which the Json Schema should be retrieved.
-     * @param direction The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that a write targets. Whether an individual field can be written is carried per field as readOnly and enforced when the write is validated. When omitted, the NORTHBOUND schema describing the full data shape published for the tag is returned. Any other value is rejected with a 400.
+     * @param direction The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that a write targets. Fields inside the value that the device does not accept a write for are marked readOnly. That flag is descriptive metadata only - it is a JSON Schema annotation rather than an assertion, and it is not currently enforced when a write is validated; use it to decide what to offer as a write destination, not as a safety boundary. When omitted, the NORTHBOUND schema describing the full data shape published for the tag is returned. Any other value is rejected with a 400.
      * @returns JsonNode Success
      * @throws ApiError
      */

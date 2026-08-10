@@ -45,12 +45,19 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
 
     /**
      * The composed schema as a future, in the northbound (read) direction.
+     * <p>
+     * Each call composes a fresh document. Composition is a pure function of the {@link DataPointSchema} the
+     * adapter finished with, so repeated calls are equal in value; they are deliberately <em>not</em> the same
+     * instance, because {@link ObjectNode} is mutable and a shared one would let one caller's edit rewrite what
+     * every other caller already holds. Pinned by
+     * {@code TagSchemaCreationOutputImplSchemaBuilderTest.test_repeatedCalls_produceEqualButIndependentDocuments}.
      *
-     * @deprecated retained for source compatibility with callers outside this repository (e.g. the commercial
-     *     bidirectional adapter and the integration tests in hivemq-edge-test). Use
-     *     {@link #getSchema(TagSchemaDirection)} instead, which makes the direction explicit. Note this returns
-     *     the NORTHBOUND schema, which is what this method always produced — the southbound DataHub resources in
-     *     {@code ProtocolAdapterWritingServiceImpl.createDataHubResources} rely on that.
+     * @deprecated retained for source compatibility with callers outside this repository (the integration tests
+     *     in hivemq-edge-test). Use {@link #getSchema(TagSchemaDirection)} instead, which makes the direction
+     *     explicit. Note this returns the NORTHBOUND schema, which is what this method always produced. The
+     *     southbound DataHub resources in {@code ProtocolAdapterWritingServiceImpl.createDataHubResources} used
+     *     to obtain the schema through here and therefore registered the northbound document as the destination
+     *     of a write; they now request {@link TagSchemaDirection#SOUTHBOUND} explicitly.
      */
     @Deprecated(forRemoval = true)
     public @NotNull CompletableFuture<ObjectNode> getFuture() {
@@ -117,15 +124,31 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * The schema for the <em>southbound</em> (write) direction: only what a write targets. The non-writable
      * envelope ({@code tagName}, {@code timestamp}, {@code metadata}, {@code context}) is dropped entirely — a write
      * form should never present fields that cannot be written. The {@code value} is the adapter's explicit
-     * {@link DataPointSchema#writeSchema() writeSchema} when it provides one (e.g. a condition tag's
-     * {@code {eventId, method, comment}}); otherwise the plain {@code valueSchema}.
+     * southbound schema when it provides one (e.g. a condition tag's {@code {eventId, method, comment}});
+     * otherwise the plain {@code valueSchema}.
      * <p>
-     * <b>Note:</b> read-only fields are <em>not</em> pruned. A statically-derived write schema cannot express
-     * write-validity correctly (an array of read-only items admits only {@code []}; a required read-only member
-     * makes the object unsatisfiable) — that is a runtime concern (the {@code readOnly ⇒ ⊥} matcher rule) left to
-     * Nevsky. Only the non-writable envelope is stripped here.
+     * <b>Note:</b> read-only fields inside the value are <em>not</em> pruned. A statically-derived write schema
+     * cannot express write-validity correctly (an array of read-only items admits only {@code []}; a required
+     * read-only member makes the object unsatisfiable). Only the non-writable envelope is stripped here.
+     * <p>
+     * <b>{@code readOnly} is descriptive metadata, not a safety boundary.</b> It is a JSON Schema annotation, not
+     * an assertion: the DataHub validator on the southbound path (networknt, default configuration) does not
+     * reject an instance for carrying a read-only field. Consumers use it to decide what to <em>offer</em> as a
+     * write destination. Turning it into an enforced rule ({@code readOnly ⇒ ⊥}) is runtime matcher work left to
+     * Nevsky; until then nothing in Edge rejects a write on the strength of this flag.
+     * <p>
+     * Because {@link com.hivemq.adapter.sdk.api.schema.SchemaBuilder} defaults every node to
+     * {@code writable = false}, an adapter supplying an explicit southbound schema must chain {@code .writable()}
+     * on the root and on each writable member — otherwise the whole shape renders {@code readOnly} and offers no
+     * destinations at all. See {@code TagSchemaCreationOutputImplSchemaBuilderTest} for both cases.
      */
+    @SuppressWarnings({"deprecation", "removal"})
     private static @NotNull Schema southboundSchema(final @NotNull DataPointSchema tagSchemas) {
+        // Deliberately the deprecated accessor. The SDK renames this component to southboundSchema in a
+        // separate PR, and CI resolves the adapter SDK by matching the branch name — a PR whose branch has no
+        // SDK counterpart builds against SDK master. writeSchema() exists on both the current SDK and the
+        // renamed one (which keeps it as a delegate), so this compiles either way; switching to
+        // southboundSchema() here before the SDK rename lands would break every PR stacked on this branch.
         final Schema writeValue =
                 tagSchemas.writeSchema() != null ? tagSchemas.writeSchema() : tagSchemas.valueSchema();
 

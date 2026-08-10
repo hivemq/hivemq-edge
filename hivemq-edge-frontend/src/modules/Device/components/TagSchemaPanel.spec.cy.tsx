@@ -37,6 +37,26 @@ const MOCK_WRITE_SCHEMA: RJSFSchema = {
   },
 }
 
+/**
+ * Rebuilds a value with every object's members in the opposite insertion order, recursively. JSON object
+ * member order carries no meaning, and the two directions are assembled independently, so a schema that only
+ * differs this way is the same shape and must still collapse to a single panel.
+ */
+const reverseKeyOrder = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(reverseKeyOrder)
+  if (value === null || typeof value !== 'object') return value
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .reverse()
+      .map(([key, member]) => [key, reverseKeyOrder(member)])
+  )
+}
+
+const MOCK_WRITE_SCHEMA_REORDERED: RJSFSchema = {
+  ...MOCK_WRITE_SCHEMA,
+  properties: { value: reverseKeyOrder(MOCK_VALUE_SCHEMA) as RJSFSchema },
+}
+
 // A tag whose write shape is not a projection of its read shape, e.g. an OPC-UA condition tag.
 const MOCK_WRITE_SCHEMA_INDEPENDENT: RJSFSchema = {
   $schema: 'https://json-schema.org/draft/2019-09/schema',
@@ -90,6 +110,17 @@ describe('TagSchemaPanel', () => {
     cy.mountWithProviders(<TagSchemaPanel adapterId="test" tag={mocTag} />)
 
     // The documents differ (envelope vs value-only) but the value shapes match, so only one panel renders.
+    cy.getByTestId('tag-schema-read').should('be.visible')
+    cy.getByTestId('tag-schema-panel').find('label').should('have.text', 'Current schema')
+    cy.getByTestId('tag-schema-panel-write').should('not.exist')
+  })
+
+  it('should show a single schema when the value shapes differ only in member order', () => {
+    interceptWriteSchema(MOCK_WRITE_SCHEMA_REORDERED)
+    cy.mountWithProviders(<TagSchemaPanel adapterId="test" tag={mocTag} />)
+
+    // Same shape, different insertion order — a stringify-based comparison would split this into two panels
+    // and tell the user the tag reads and writes differently, which is false.
     cy.getByTestId('tag-schema-read').should('be.visible')
     cy.getByTestId('tag-schema-panel').find('label').should('have.text', 'Current schema')
     cy.getByTestId('tag-schema-panel-write').should('not.exist')
