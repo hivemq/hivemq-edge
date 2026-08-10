@@ -810,9 +810,15 @@ public class ProtocolAdapterManager {
     private static void reportDuplicatedAdapterId(
             final @NotNull Set<String> reportedDuplicateIds, final @NotNull String adapterId) {
         if (reportedDuplicateIds.add(adapterId)) {
+            // Outcome-neutral for the same reason the conversion-failure log is: the duplicated
+            // entities may name an adapter that exists, whose instance keeps running on its previous
+            // configuration, or one that does not, which is simply not created. "The adapter has been
+            // left unchanged" claimed the first of those unconditionally, and sent an operator whose
+            // duplicates were both new looking for an instance that never existed.
             LOGGER.error(
-                    "Adapter id '{}' is used by more than one adapter in the configuration. The adapter has "
-                            + "been left unchanged; give each adapter a unique id. Every other adapter has "
+                    "Adapter id '{}' is used by more than one adapter in the configuration, so no configuration "
+                            + "for this id was applied. An existing instance, if any, was left unchanged; a new "
+                            + "adapter was not created. Give each adapter a unique id. Every other adapter has "
                             + "been refreshed as usual.",
                     adapterId);
         }

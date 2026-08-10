@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
@@ -596,6 +597,16 @@ class ProtocolAdapterManagerTest {
     @Nested
     class RefreshIsolationTests {
 
+        /**
+         * Pinned in full rather than by fragment: outcome-neutral wording is the whole point of the
+         * fix, so a paraphrase that quietly reintroduces an absolute claim has to fail here.
+         */
+        private static final @NotNull String DUPLICATE_ID_ERROR =
+                "Adapter id 'duplicated' is used by more than one adapter in the configuration, so no "
+                        + "configuration for this id was applied. An existing instance, if any, was left "
+                        + "unchanged; a new adapter was not created. Give each adapter a unique id. Every "
+                        + "other adapter has been refreshed as usual.";
+
         private @NotNull LogbackCapturingAppender logCapture;
 
         @BeforeEach
@@ -792,6 +803,55 @@ class ProtocolAdapterManagerTest {
         }
 
         @Test
+        void anAllNewDuplicatedId_doesNotClaimAnInstanceWasLeftUnchanged() throws Exception {
+            // Both entities are new, so there is nothing to leave unchanged: convertConfigs removes
+            // the converted entry, marks the id failed and skips creation. The message used to say
+            // "The adapter has been left unchanged" regardless, sending an operator looking for an
+            // instance that never existed.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            org.mockito.Mockito.doNothing().when(spyManager).createProtocolAdapter(any(), anyString());
+            org.mockito.Mockito.doNothing().when(spyManager).start(anyString());
+            when(versionProvider.getVersion()).thenReturn("test-version");
+
+            final ProtocolAdapterEntity first = entity("duplicated");
+            final ProtocolAdapterEntity second = entity("duplicated");
+            final ProtocolAdapterConfig firstConfig = config("duplicated");
+            final ProtocolAdapterConfig secondConfig = config("duplicated");
+            when(configConverter.fromEntity(first)).thenReturn(firstConfig);
+            when(configConverter.fromEntity(second)).thenReturn(secondConfig);
+
+            spyManager.refresh(List.of(first, second));
+            waitUntilNotBusy(spyManager);
+
+            assertThat(duplicatedIdErrors("duplicated")).containsExactly(DUPLICATE_ID_ERROR);
+            assertThat(spyManager.getProtocolAdapterIdSet()).isEmpty();
+            verify(spyManager, org.mockito.Mockito.never()).createProtocolAdapter(any(), anyString());
+        }
+
+        @Test
+        void aDuplicatedIdOfARunningAdapter_reportsTheSameWordsAndLeavesTheInstanceAlone() throws Exception {
+            // The other outcome, and the reason the wording has to be outcome-neutral rather than
+            // merely vaguer: it must be literally the same text whether an instance exists or not,
+            // because convertConfigs cannot tell which case it is in.
+            final ProtocolAdapterManager spyManager = org.mockito.Mockito.spy(manager);
+            addAdapterToManager(spyManager, "duplicated", createSuccessAdapter("duplicated"), config("duplicated"));
+
+            final ProtocolAdapterEntity first = entity("duplicated");
+            final ProtocolAdapterEntity second = entity("duplicated");
+            final ProtocolAdapterConfig firstConfig = config("duplicated");
+            final ProtocolAdapterConfig secondConfig = config("duplicated");
+            when(configConverter.fromEntity(first)).thenReturn(firstConfig);
+            when(configConverter.fromEntity(second)).thenReturn(secondConfig);
+
+            spyManager.refresh(List.of(first, second));
+            waitUntilNotBusy(spyManager);
+
+            assertThat(duplicatedIdErrors("duplicated")).containsExactly(DUPLICATE_ID_ERROR);
+            assertThat(spyManager.getProtocolAdapterIdSet()).containsExactly("duplicated");
+            verify(spyManager, org.mockito.Mockito.never()).deleteProtocolAdapterByAdapterId("duplicated");
+        }
+
+        @Test
         void anUnreadableConfig_firesAnAdapterScopedCriticalEvent() throws Exception {
             // The global configuration event says the reload failed; the adapter-scoped event names
             // the adapter whose configuration could not be read.
@@ -838,11 +898,16 @@ class ProtocolAdapterManagerTest {
         }
 
         private long duplicatedIdErrorCount(final @NotNull String adapterId) {
+            return duplicatedIdErrors(adapterId).size();
+        }
+
+        private @NotNull List<String> duplicatedIdErrors(final @NotNull String adapterId) {
             return logCapture.getCapturedLogs().stream()
                     .filter(event -> event.getLevel() == Level.ERROR)
-                    .filter(event -> event.getFormattedMessage()
-                            .startsWith("Adapter id '" + adapterId + "' is used by more than one adapter"))
-                    .count();
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .filter(message ->
+                            message.startsWith("Adapter id '" + adapterId + "' is used by more than one adapter"))
+                    .toList();
         }
 
         private @NotNull ProtocolAdapterEntity entity(final @NotNull String adapterId) {
