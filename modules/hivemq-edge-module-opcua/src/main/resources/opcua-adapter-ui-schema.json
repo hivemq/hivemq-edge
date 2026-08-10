@@ -72,7 +72,7 @@
       "ui:order": ["path", "password", "privateKeyPassword"]
     },
     "truststore": {
-      "ui:order": ["enabled", "path", "password"]
+      "ui:order": ["path", "password"]
     }
   }
 }
