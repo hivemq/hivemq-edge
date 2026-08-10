@@ -88,11 +88,20 @@ public record ParsedConfig(
         // Checked unconditionally, mirroring the keystore guards below: a configured store must be
         // structurally valid even when the effective trust mode leaves it inert, so the operator is
         // told about the broken element now rather than the first time a mode change makes it load.
-        if (truststore != null && truststore.path() == null) {
+        //
+        // Blank counts as absent. A present element with an empty <path> used to fall through to the
+        // cacerts fallback, so the adapter ran on the public CA bundle while the configuration said
+        // it had a truststore - the same fail-open shape as a missing path, which was already
+        // refused. Nothing generates that shape: the UI form drops empty strings and submits no path
+        // at all, no fixture or documented example has one, and the documentation already states that
+        // a store without a path stops the adapter. Absence is still spelled by leaving the element
+        // out, which is what the "system truststore" example in the documentation does.
+        if (truststore != null && isBlank(truststore.path())) {
             return Failure.of("Truststore is configured but has no 'path'. Add "
-                    + "<truststore><path>...</path></truststore>, or remove the truststore element.");
+                    + "<truststore><path>...</path></truststore>, or remove the truststore element "
+                    + "entirely to trust the JVM cacerts.");
         }
-        if (truststore != null && !truststore.path().isBlank() && truststore.password() == null) {
+        if (truststore != null && truststore.password() == null) {
             return Failure.of("Truststore is configured but has no 'password'. Add "
                     + "<truststore><password>...</password></truststore>.");
         }
@@ -200,19 +209,23 @@ public record ParsedConfig(
         // (or misspelled, and therefore dropped by the unknown-setting handling core applies to this
         // record) binds a null anyway. Without this guard that null surfaces as a NullPointerException
         // at adapter start instead of a configuration error naming the element to fix.
-        if (keystore != null && keystore.path() == null) {
+        // Blank counts as absent here for the same reason it does on the truststore above: a present
+        // element with an empty <path> used to skip every guard below and leave the adapter with no
+        // client certificate, which surfaces as a connection failure under a security policy that
+        // needs one, or under X509 authentication - far from the element that caused it.
+        if (keystore != null && isBlank(keystore.path())) {
             return Failure.of("Keystore is configured but has no 'path'. Add "
-                    + "<keystore><path>...</path></keystore>, or remove the keystore element.");
+                    + "<keystore><path>...</path></keystore>, or remove the keystore element entirely.");
         }
-        if (keystore != null && !keystore.path().isBlank() && keystore.password() == null) {
+        if (keystore != null && keystore.password() == null) {
             return Failure.of("Keystore is configured but has no 'password'. Add "
                     + "<keystore><password>...</password></keystore>.");
         }
-        if (keystore != null && !keystore.path().isBlank() && keystore.privateKeyPassword() == null) {
+        if (keystore != null && keystore.privateKeyPassword() == null) {
             return Failure.of("Keystore is configured but has no 'privateKeyPassword'. Add "
                     + "<keystore><privateKeyPassword>...</privateKeyPassword></keystore>.");
         }
-        if (keystore != null && !keystore.path().isBlank()) {
+        if (keystore != null) {
             final var kpWithChain = getKeyPairWithChain(keystore);
             if (kpWithChain.isEmpty()) {
                 return Failure.of("Failed to load keypair with chain from keystore, check keystore configuration");
@@ -260,10 +273,16 @@ public record ParsedConfig(
         return tlsEnabled && effectiveChecks.trustMode() == TrustMode.ANY_CERT;
     }
 
+    /** A path that is null, empty or whitespace-only is no path at all. */
+    private static boolean isBlank(final @Nullable String path) {
+        return path == null || path.isBlank();
+    }
+
     private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {
-        // Null path and password are ruled out by the caller's guards, which name the missing element
-        // in the start-up failure instead of the generic missing-or-unreadable message below.
-        if (truststore != null && !truststore.path().isBlank()) {
+        // A blank path and a null password are ruled out by the caller's guards, which name the
+        // missing element in the start-up failure instead of the generic missing-or-unreadable
+        // message below. Only a genuinely absent truststore reaches the cacerts fallback.
+        if (truststore != null) {
             final File truststoreFile = new File(truststore.path());
             if (!truststoreFile.exists() || !truststoreFile.canRead()) {
                 log.error(

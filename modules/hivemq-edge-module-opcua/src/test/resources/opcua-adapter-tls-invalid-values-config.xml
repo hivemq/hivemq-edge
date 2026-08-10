@@ -216,7 +216,40 @@
             </northboundMappings>
         </protocol-adapter>
 
-        <!-- Nothing misspelled. This one must convert and project regardless of the seven above. -->
+        <!-- An empty FIRST child of <truststore> collapses the whole element to the text "pw" - the
+             concatenated text of what is left. Unreadable truststore configuration: the conversion is
+             rejected naming the element, rather than the raw Jackson coercion error it used to be. -->
+        <protocol-adapter>
+            <adapterId>collapsed-truststore</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-9.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <truststore>
+                        <path></path>
+                        <password>pw</password>
+                    </truststore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-9</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/9</topic>
+                    <tagName>tag-9</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing misspelled. This one must convert and project regardless of the eight above. -->
         <protocol-adapter>
             <adapterId>healthy-neighbour</adapterId>
             <protocolId>opcua</protocolId>

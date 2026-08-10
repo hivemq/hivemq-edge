@@ -6,9 +6,10 @@
 
   The healthy adapter is last on purpose. Historically it was the blast-radius witness: adapter
   configurations were converted in a single pass over every adapter, so a coercion failure on any of
-  the six above stopped it - and every other adapter in the deployment - from being configured at all.
-  ProtocolAdapterManager converts each adapter in isolation today, so it is now the neighbour witness:
-  the six above must not disturb it, and it must arrive unaltered rather than merely present.
+  the eight above stopped it - and every other adapter in the deployment - from being configured at
+  all. ProtocolAdapterManager converts each adapter in isolation today, so it is now the neighbour
+  witness: the eight above must not disturb it, and it must arrive unaltered rather than merely
+  present.
 -->
 <hivemq>
     <protocol-adapters>
@@ -68,6 +69,69 @@
                 <northboundMapping>
                     <topic>my/topic/2</topic>
                     <tagName>tag-2</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- `<truststore/>` and `<keystore/>`: both collapse to "" and mean "not configured" - the JVM
+             cacerts and no client certificate. This is how the documentation's minimal TLS example
+             spells "use the system truststore", so it has to keep converting cleanly. -->
+        <protocol-adapter>
+            <adapterId>collapsed-empty-stores</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-8.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <truststore/>
+                    <keystore/>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-8</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/8</topic>
+                    <tagName>tag-8</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- An empty <path> that is NOT the first child leaves the object intact and binds a blank
+             path. It converts; the refusal is at start-up, where a blank path is no path. -->
+        <protocol-adapter>
+            <adapterId>blank-truststore-path</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-9.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <truststore>
+                        <password>pw</password>
+                        <path></path>
+                    </truststore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-9</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/9</topic>
+                    <tagName>tag-9</tagName>
                 </northboundMapping>
             </northboundMappings>
         </protocol-adapter>

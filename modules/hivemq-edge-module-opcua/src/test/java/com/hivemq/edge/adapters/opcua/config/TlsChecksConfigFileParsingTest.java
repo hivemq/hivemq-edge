@@ -86,10 +86,10 @@ class TlsChecksConfigFileParsingTest {
     void everyAdapterInTheFileConverts_soOneEmptyElementCannotStopTheRest() {
         // The historical blast radius, reproduced: `loadAdapters` deliberately keeps the old
         // single-stream shape of ProtocolAdapterManager.refresh, where one throw aborted the whole
-        // refresh before any adapter was created, updated or deleted. Six adapters in this file carry
-        // a collapsed element; the seventh is healthy and must still arrive. The production refresh
-        // converts each adapter in isolation now, so this pins the parsing rather than the isolation -
-        // that is ProtocolAdapterManagerTest's job.
+        // refresh before any adapter was created, updated or deleted. Eight adapters in this file
+        // carry a collapsed element; the ninth is healthy and must still arrive. The production
+        // refresh converts each adapter in isolation now, so this pins the parsing rather than the
+        // isolation - that is ProtocolAdapterManagerTest's job.
         assertThatCode(() -> loadAdapters(COLLAPSED)).doesNotThrowAnyException();
 
         assertThat(loadAdapters(COLLAPSED))
@@ -97,6 +97,8 @@ class TlsChecksConfigFileParsingTest {
                 .containsExactly(
                         "collapsed-empty-axes",
                         "collapsed-partial-axes",
+                        "collapsed-empty-stores",
+                        "blank-truststore-path",
                         "collapsed-empty-allow-list",
                         "collapsed-empty-allow-list-path",
                         "empty-later-axis",
@@ -253,7 +255,8 @@ class TlsChecksConfigFileParsingTest {
                 "collapsed-tls",
                 "misspelled-tls-name",
                 "misspelled-policy-name",
-                "misspelled-message-security-mode");
+                "misspelled-message-security-mode",
+                "collapsed-truststore");
 
         for (final ProtocolAdapterEntity entity : entitiesOf(INVALID)) {
             if ("misspelled-preset-value".equals(entity.getAdapterId())) {
@@ -361,6 +364,50 @@ class TlsChecksConfigFileParsingTest {
         assertThatCode(() -> assertThat(TlsChecksProjection.project(tls))
                         .isEqualTo(TlsChecksProjection.fromPreset(TlsChecks.ALL)))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void anEmptyStoreElementMeansTheStoreIsNotConfigured() throws Exception {
+        // `<truststore/>` is how the documentation's minimal TLS example spells "use the system
+        // truststore", and `<keystore/>` means no client certificate. Both collapse to "" and must
+        // bind to nothing at all - not to a store object with empty components, which start-up would
+        // then refuse.
+        final Tls tls = tlsOf("collapsed-empty-stores");
+
+        assertThat(tls.truststore()).isNull();
+        assertThat(tls.keystore()).isNull();
+    }
+
+    @Test
+    void anEmptyPathAfterTheFirstChildBindsABlankPathRatherThanCollapsing() {
+        // The boundary that makes the blank path reachable at all: only the FIRST empty child element
+        // collapses the enclosing element to text, so `<password>pw</password><path></path>` leaves
+        // the object intact and binds path="". Parsing keeps it verbatim; ParsedConfig refuses it at
+        // start-up, which ParsedConfigTest pins.
+        final Tls tls = tlsOf("blank-truststore-path");
+
+        assertThat(tls.truststore()).isNotNull();
+        assertThat(tls.truststore().path()).isEmpty();
+        assertThat(tls.truststore().password()).isEqualTo("pw");
+    }
+
+    @Test
+    void aCollapsedStoreElementIsRejectedAtConversionQuotingTheText() {
+        // The other order: `<truststore><path></path><password>pw</password></truststore>` collapses
+        // to the text "pw". Which element that belonged to cannot be recovered, so the adapter is
+        // refused - naming the element, in place of the raw "Cannot construct instance of Truststore"
+        // coercion error the same input used to produce.
+        final ProtocolAdapterConfigConverter converter = createConverter();
+        final ProtocolAdapterEntity entity = entitiesOf(INVALID).stream()
+                .filter(candidate -> "collapsed-truststore".equals(candidate.getAdapterId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThatThrownBy(() -> converter.fromEntity(entity))
+                .hasMessageContaining("'truststore'")
+                .hasMessageContaining("could not be read")
+                .hasMessageContaining("'pw'")
+                .hasMessageContaining("<truststore/> is valid");
     }
 
     @Test

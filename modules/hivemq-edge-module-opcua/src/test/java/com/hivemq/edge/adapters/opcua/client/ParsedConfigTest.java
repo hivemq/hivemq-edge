@@ -51,6 +51,8 @@ import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 import util.KeyChain;
 
@@ -671,6 +673,61 @@ class ParsedConfigTest {
                     .as("truststore without a password must fail under preset %s", preset)
                     .contains("Truststore is configured but has no 'password'");
         }
+    }
+
+    // ----- a blank path is no path -----
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "   ", "\t"})
+    void aTruststoreWithABlankPathIsRefusedRatherThanRunOnTheJvmCacerts(final @NotNull String blank) {
+        // The fail-open this closes. A present <truststore> whose <path> is empty used to skip the
+        // guard, skip the password guard with it, and fall through to getTrustedCerts, which read the
+        // blank path as "no truststore configured" and trusted every CA in the JVM cacerts bundle -
+        // while the configuration on disk said the deployment had its own truststore. A missing path
+        // was already refused; only the blank spelling slipped through.
+        final Tls tls = new Tls(true, TlsChecks.STANDARD, null, null, new Truststore(blank, "pass"), null);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(configWith(tls));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("Truststore is configured but has no 'path'")
+                .contains("remove the truststore element entirely");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "   ", "\t"})
+    void aKeystoreWithABlankPathIsRefusedRatherThanRunWithoutAClientCertificate(final @NotNull String blank) {
+        // The same hole one element over, and it fails later and further away: no keypair is loaded,
+        // so the adapter starts and then cannot complete a handshake under a security policy that
+        // needs a client certificate, or under X509 authentication.
+        final Tls tls = new Tls(true, TlsChecks.STANDARD, null, new Keystore(blank, "pass", "keyPass"), null, null);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(configWith(tls));
+
+        assertThat(result).isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains("Keystore is configured but has no 'path'");
+    }
+
+    @Test
+    void aBlankPathDoesNotSwallowTheMissingPasswordItUsedToHide() {
+        // The password guards were gated on the path being non-blank, so a blank path reported
+        // nothing at all. Whichever element is named, exactly one problem is reported and it is the
+        // one closest to the operator's mistake.
+        final Tls blankPathNoPassword = new Tls(true, TlsChecks.STANDARD, null, null, new Truststore("  ", null), null);
+
+        assertThat(((Failure<ParsedConfig, String>) ParsedConfig.fromConfig(configWith(blankPathNoPassword))).failure())
+                .contains("Truststore is configured but has no 'path'");
+    }
+
+    @Test
+    void anAbsentTruststoreStillMeansTheJvmCacerts() {
+        // The compatibility half of the same change: absence is spelled by leaving the element out,
+        // and that must keep working exactly as the documentation's minimal TLS example shows.
+        final Tls tls = new Tls(true, TlsChecks.STANDARD, null, null, null, null);
+
+        assertThat(ParsedConfig.fromConfig(configWith(tls))).isInstanceOf(Success.class);
     }
 
     private static @NotNull OpcUaSpecificAdapterConfig configWith(final @NotNull Tls tls) {
