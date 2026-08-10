@@ -84,10 +84,12 @@ class TlsChecksConfigFileParsingTest {
 
     @Test
     void everyAdapterInTheFileConverts_soOneEmptyElementCannotStopTheRest() {
-        // The blast radius, reproduced. ProtocolAdapterManager.refresh maps every adapter entity in one
-        // stream, and a single throw there aborts the whole refresh before any adapter is created,
-        // updated or deleted - with one stack trace and nothing in the event stream. Four adapters in
-        // this file carry a collapsed element; the fifth is healthy and must still arrive.
+        // The historical blast radius, reproduced: `loadAdapters` deliberately keeps the old
+        // single-stream shape of ProtocolAdapterManager.refresh, where one throw aborted the whole
+        // refresh before any adapter was created, updated or deleted. Six adapters in this file carry
+        // a collapsed element; the seventh is healthy and must still arrive. The production refresh
+        // converts each adapter in isolation now, so this pins the parsing rather than the isolation -
+        // that is ProtocolAdapterManagerTest's job.
         assertThatCode(() -> loadAdapters(COLLAPSED)).doesNotThrowAnyException();
 
         assertThat(loadAdapters(COLLAPSED))
@@ -200,10 +202,13 @@ class TlsChecksConfigFileParsingTest {
 
     @Test
     void aCollapsedTlsChecksFullStillConvertsCleanly() {
-        // The refusal is deliberately a start-up failure and not a conversion failure. Throwing during
-        // conversion would leave this adapter absent or silently stale rather than visibly in error,
-        // and - before the refresh was made failure-isolating - would have taken every other adapter
-        // in the deployment down with it.
+        // The refusal is deliberately a start-up failure and not a conversion failure, and the reason
+        // is no longer blast radius: conversion rejection is isolated to this adapter, logged, and
+        // raised as an adapter-scoped CRITICAL event, so it is neither silent nor contagious. What a
+        // start-up refusal buys instead is that the adapter is converted - so it is visible in an
+        // error state on the API surface, and the TLS fields the operator actually wrote survive
+        // writeback rather than being dropped on the next save. The sentinel is worth its complexity
+        // only where that is preferable; nowhere else.
         assertThatCode(() -> loadAdapters(COLLAPSED)).doesNotThrowAnyException();
         assertThat(whileCapturing(TlsChecksFull.class, () -> loadAdapters(COLLAPSED)))
                 .as("nothing is reported at parse time; the start-up failure is the single signal")
@@ -212,9 +217,11 @@ class TlsChecksConfigFileParsingTest {
 
     @Test
     void anEmptyAllowListElementBecomesAnActionableStartUpErrorRatherThanARefreshFailure() {
-        // `<allowList/>` under a trust mode that needs one is a genuine misconfiguration, and it must
-        // be reported as this adapter's problem at start-up - naming the element to add - instead of
-        // aborting the conversion of every adapter in the file.
+        // `<allowList/>` under a trust mode that needs one is a genuine misconfiguration, and it is
+        // reported as this adapter's problem at start-up, naming the element to add. Refusing it at
+        // conversion instead would also be contained today, but it would cost the visible error state
+        // and the writeback of what the operator wrote; historically it would additionally have
+        // aborted the conversion of every adapter in the file.
         assertThatThrownBy(() -> TlsChecksProjection.project(tlsOf("collapsed-empty-allow-list")))
                 .isInstanceOf(TlsChecksProjection.InvalidTlsChecksConfigException.class)
                 .hasMessageContaining("ALLOW_LIST")

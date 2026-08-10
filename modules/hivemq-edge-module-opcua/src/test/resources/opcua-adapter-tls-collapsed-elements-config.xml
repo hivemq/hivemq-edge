@@ -4,9 +4,11 @@
   healthy adapter after them. The collapse happens whenever an element's first child element is itself
   empty, so `tlsChecksFull` and `allowList` arrive at Jackson as Strings rather than objects.
 
-  The healthy adapter is last on purpose: adapter configurations are converted in a single pass over
-  every adapter, so a coercion failure on any of the four above would stop it - and every other adapter
-  in the deployment - from being configured at all.
+  The healthy adapter is last on purpose. Historically it was the blast-radius witness: adapter
+  configurations were converted in a single pass over every adapter, so a coercion failure on any of
+  the six above stopped it - and every other adapter in the deployment - from being configured at all.
+  ProtocolAdapterManager converts each adapter in isolation today, so it is now the neighbour witness:
+  the six above must not disturb it, and it must arrive unaltered rather than merely present.
 -->
 <hivemq>
     <protocol-adapters>
