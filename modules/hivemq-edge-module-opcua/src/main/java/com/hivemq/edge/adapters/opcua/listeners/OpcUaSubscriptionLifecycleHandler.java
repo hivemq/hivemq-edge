@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -1515,68 +1516,18 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final NodeId node =
                     definition.getKind() == OpcuaTagKind.REFRESH ? null : parseField(definition.getNode(), "node");
 
-            if (definition.getKind() != OpcuaTagKind.CONDITION) {
-                // A value tag needs no further check. An event subscription tag has no single declared type
-                // to verify -- the point of the tag is that many conditions of differing types pass its
-                // filter -- but it does name a notifier directly, and that node has to be one.
-                final NodeId sourceNode = parseField(definition.getSourceNode(), "sourceNode");
-                final NodeId conditionNode = parseField(definition.getConditionNode(), "conditionNode");
-                if (definition.getKind() == OpcuaTagKind.EVENT_SUBSCRIPTION) {
-                    final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
-                                    client, Objects.requireNonNull(node), tagName)
-                            .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                    if (optionalUnsubscribableTag.isPresent()) {
-                        reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
-                        return Optional.empty();
-                    }
-                }
-                return Optional.of(new VerifiedTag(opcuaTag, node, null, sourceNode, conditionNode));
-            }
-
-            final ConditionTypeVerifier.Result result = ConditionTypeVerifier.verify(
-                            client, Objects.requireNonNull(node), definition.getType(), tagName)
-                    .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-
-            if (result instanceof final ConditionTypeVerifier.Result.Rejected rejected) {
-                reportUnsubscribableTag(tagName, rejected.reason());
-                return Optional.empty();
-            }
-
-            // A condition is not an event notifier, so without a notifier there is nowhere to subscribe and
-            // the tag simply cannot be honoured. Same outcome as a type mismatch: this tag alone is dropped.
-            final NotifierResolver.Result notifier = NotifierResolver.resolve(
-                            client, node, definition.getNotifierNode(), tagName)
-                    .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-
-            if (notifier instanceof final NotifierResolver.Result.NotFound notFound) {
-                reportUnsubscribableTag(tagName, notFound.reason());
-                return Optional.empty();
-            }
-            final NotifierResolver.Result.Found found = (NotifierResolver.Result.Found) notifier;
-
-            // A declared notifier is checked; a walked one is not, and the asymmetry is deliberate rather
-            // than an oversight. The walk *is* the check -- it only ever returns a node whose
-            // EventNotifier attribute it has already read and found to carry the SubscribeToEvents bit, so
-            // asking again would be a second round trip for an answer already known. A declared one has had
-            // no such check by construction: it exists precisely because the walk could not be relied on,
-            // and it was previously "taken at its word", leaving nothing between a typo and a tag that
-            // subscribes cleanly and then stays silent forever.
-            if (definition.getNotifierNode() != null) {
-                final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
-                                client, found.notifier(), tagName)
-                        .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                if (optionalUnsubscribableTag.isPresent()) {
-                    reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
-                    return Optional.empty();
-                }
-            }
-            log.debug(
-                    "Adapter '{}': tag '{}' will receive events from notifier {} ({})",
-                    adapterId,
-                    tagName,
-                    found.notifier(),
-                    found.how());
-            return Optional.of(new VerifiedTag(opcuaTag, node, found.notifier(), null, null));
+            // A switch expression rather than a chain of inequalities, so the compiler enforces that every
+            // kind states its own answer. What each kind needs verified has nothing in common with the
+            // others, and the old shape -- "everything that is not a CONDITION" -- quietly made VALUE and
+            // REFRESH share whatever EVENT_SUBSCRIPTION happened to need. That is how they came to be
+            // rejected over sourceNode and conditionNode: fields read by nothing but a query tag's where
+            // clause. A fifth kind would have inherited the same by default; now it cannot compile without
+            // saying what it wants.
+            return switch (definition.getKind()) {
+                case VALUE, REFRESH -> Optional.of(new VerifiedTag(opcuaTag, node, null, null, null));
+                case EVENT_SUBSCRIPTION -> verifyEventSubscription(opcuaTag, node, tagName);
+                case CONDITION -> verifyCondition(opcuaTag, Objects.requireNonNull(node), tagName);
+            };
         } catch (final MalformedNodeIdException e) {
             reportUnsubscribableTag(tagName, describe(e));
             return Optional.empty();
@@ -1602,6 +1553,92 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             reportUnsubscribableTag(tagName, "verification failed: " + describe(e));
             return Optional.empty();
         }
+    }
+
+    /**
+     * Verifies an event subscription tag: its notifier must be a node this session may subscribe to, and its
+     * two narrowing predicates must be node ids.
+     * <p>
+     * {@code sourceNode} and {@code conditionNode} are parsed <em>here</em> rather than alongside the tag's
+     * own node, because this is the only kind that reads them — they become operands in the where clause and
+     * exist nowhere else. Parsed for every non-condition kind, as they were, a stale or hand-authored value
+     * dropped a perfectly good VALUE or REFRESH tag over a field its filter never consults. A migrated
+     * configuration is exactly where such a leftover lives.
+     */
+    private @NotNull Optional<VerifiedTag> verifyEventSubscription(
+            final @NotNull OpcuaTag opcuaTag, final @Nullable NodeId node, final @NotNull String tagName)
+            throws InterruptedException, ExecutionException, TimeoutException {
+
+        final OpcuaTagDefinition definition = opcuaTag.getDefinition();
+        final NodeId sourceNode = parseField(definition.getSourceNode(), "sourceNode");
+        final NodeId conditionNode = parseField(definition.getConditionNode(), "conditionNode");
+
+        // An event subscription tag has no single declared type to verify -- the point of the tag is that
+        // many conditions of differing types pass its filter -- but it does name a notifier directly, and
+        // that node has to be one.
+        final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
+                        client, Objects.requireNonNull(node), tagName)
+                .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        if (optionalUnsubscribableTag.isPresent()) {
+            reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
+            return Optional.empty();
+        }
+        return Optional.of(new VerifiedTag(opcuaTag, node, null, sourceNode, conditionNode));
+    }
+
+    /**
+     * Verifies a condition tag: the device's condition must satisfy the declared type, and a notifier to
+     * receive its events from must be found.
+     */
+    private @NotNull Optional<VerifiedTag> verifyCondition(
+            final @NotNull OpcuaTag opcuaTag, final @NotNull NodeId node, final @NotNull String tagName)
+            throws InterruptedException, ExecutionException, TimeoutException {
+
+        final OpcuaTagDefinition definition = opcuaTag.getDefinition();
+        final ConditionTypeVerifier.Result result = ConditionTypeVerifier.verify(
+                        client, node, definition.getType(), tagName)
+                .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        if (result instanceof final ConditionTypeVerifier.Result.Rejected rejected) {
+            reportUnsubscribableTag(tagName, rejected.reason());
+            return Optional.empty();
+        }
+
+        // A condition is not an event notifier, so without a notifier there is nowhere to subscribe and
+        // the tag simply cannot be honoured. Same outcome as a type mismatch: this tag alone is dropped.
+        final NotifierResolver.Result notifier = NotifierResolver.resolve(
+                        client, node, definition.getNotifierNode(), tagName)
+                .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        if (notifier instanceof final NotifierResolver.Result.NotFound notFound) {
+            reportUnsubscribableTag(tagName, notFound.reason());
+            return Optional.empty();
+        }
+        final NotifierResolver.Result.Found found = (NotifierResolver.Result.Found) notifier;
+
+        // A declared notifier is checked; a walked one is not, and the asymmetry is deliberate rather
+        // than an oversight. The walk *is* the check -- it only ever returns a node whose
+        // EventNotifier attribute it has already read and found to carry the SubscribeToEvents bit, so
+        // asking again would be a second round trip for an answer already known. A declared one has had
+        // no such check by construction: it exists precisely because the walk could not be relied on,
+        // and it was previously "taken at its word", leaving nothing between a typo and a tag that
+        // subscribes cleanly and then stays silent forever.
+        if (definition.getNotifierNode() != null) {
+            final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
+                            client, found.notifier(), tagName)
+                    .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            if (optionalUnsubscribableTag.isPresent()) {
+                reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
+                return Optional.empty();
+            }
+        }
+        log.debug(
+                "Adapter '{}': tag '{}' will receive events from notifier {} ({})",
+                adapterId,
+                tagName,
+                found.notifier(),
+                found.how());
+        return Optional.of(new VerifiedTag(opcuaTag, node, found.notifier(), null, null));
     }
 
     /**
