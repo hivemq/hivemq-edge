@@ -299,14 +299,30 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
-                .map(subscription -> {
-                    subscription.setSubscriptionListener(this);
-                    if (syncTagsAndMonitoredItems(subscription, tags, config)) {
-                        return subscription;
-                    } else {
-                        return null;
-                    }
-                });
+                .flatMap(this::establishInitial);
+    }
+
+    /**
+     * Installs a freshly created subscription on the initial connect, or disposes of it if it cannot carry
+     * the tags.
+     * <p>
+     * The counterpart of {@link #establishReplacement} for the connect path, and package-private for the same
+     * reason: reaching it honestly needs a {@code create()} that succeeds, which needs a live server.
+     *
+     * @return the subscription, or empty when it could not be established — in which case it has already been
+     *         deleted, because an empty answer here is the last anyone sees of it.
+     */
+    @NotNull
+    Optional<OpcUaSubscription> establishInitial(final @NotNull OpcUaSubscription subscription) {
+        subscription.setSubscriptionListener(this);
+        if (syncTagsAndMonitoredItems(subscription, tags, config)) {
+            return Optional.of(subscription);
+        }
+        // Answering empty is not the same as never having created one. The subscription exists on the server
+        // from the moment create() returned, and this reference is the last one -- the caller gets an empty
+        // Optional and has nothing left to clean up with.
+        discardSubscription(subscription);
+        return Optional.empty();
     }
 
     /**
@@ -723,37 +739,63 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             log.info(
                     "Adapter '{}': discarding a replacement subscription, the connection was closed while it was being created",
                     adapterId);
-            discardReplacement(replacementSubscription);
+            discardSubscription(replacementSubscription);
             return;
         }
         // reconnect the listener with the new subscription
         replacementSubscription.setSubscriptionListener(this);
-        if (!syncTagsAndMonitoredItems(replacementSubscription, tags, config)) {
-            reportRecoveryFailed("its monitored items could not be re-established");
+        if (syncTagsAndMonitoredItems(replacementSubscription, tags, config)) {
+            return;
         }
+        // Nothing streams on this one and nothing here will hold it: the false answer means either that no
+        // monitored item survived at all, or that the connection closed part-way through. A partial success
+        // takes the other branch and is established, so this cannot be throwing away a working subscription.
+        discardSubscription(replacementSubscription);
+        if (abandoned.get()) {
+            log.debug(
+                    "Adapter '{}': the subscription rebuild stopped because the connection was closed while its monitored items were being re-established",
+                    adapterId);
+            return;
+        }
+        reportRecoveryFailed("its monitored items could not be re-established");
     }
 
     /**
-     * Detaches a replacement that will not be installed, and asks the server to forget it.
+     * Detaches a subscription that will not be used, and asks the server to forget it.
      * <p>
-     * Both halves matter. The listener comes off first so nothing arriving in the meantime is routed into a
-     * handler that has stopped: this object is the listener, and it would go on publishing transitions for a
-     * connection that is closed. The delete then releases the subscription on the <em>server</em>, which is
-     * the part nothing else can do — {@link #currentSubscription} never held this one, so no later cleanup
-     * path can find it, and it would sit there until the session ends.
+     * Called from every path that creates a subscription and then decides against it, which is the shape the
+     * failure has: the subscription exists on the server from the moment {@code create()} returns, whether or
+     * not a single monitored item was ever established on it. Nothing else can clean it up, because
+     * {@link #currentSubscription} only ever holds one that reached {@code established()} — an abandoned one
+     * is unreachable from here the instant the method returns, and would sit on the server until the session
+     * ends.
      * <p>
-     * A failed delete is logged and no more. The subscription is already unreachable from here, the session
-     * it belongs to is being closed, and there is no second thing to try.
+     * Three steps, in this order, and each is doing something the others do not.
+     * <ol>
+     *   <li>The listener comes off first. This object is the listener, so anything arriving in the meantime
+     *       would be routed into a handler that has stopped — published as a transition on a tag whose
+     *       subscription is being thrown away.</li>
+     *   <li>The delete releases it on the <em>server</em>, which is the part nothing local can substitute
+     *       for.</li>
+     *   <li>{@code reset()} on failure, because Milo only deregisters on success: its {@code delete()} calls
+     *       {@code reset()} when the server answers Good (or {@code Bad_SubscriptionIdInvalid}) and throws
+     *       otherwise, so a subscription that could not be deleted stays registered with the client and its
+     *       publishing manager, keeps its watchdog timer, and goes on receiving publish responses. The
+     *       server-side subscription is beyond reach at that point, but the client-side one need not be.</li>
+     * </ol>
+     * A failed delete is otherwise logged and no more: the session it belongs to is being closed or has
+     * already failed, and there is no second thing to try.
      */
-    private void discardReplacement(final @NotNull OpcUaSubscription replacementSubscription) {
-        replacementSubscription.setSubscriptionListener(null);
+    private void discardSubscription(final @NotNull OpcUaSubscription subscription) {
+        subscription.setSubscriptionListener(null);
         try {
-            replacementSubscription.delete();
+            subscription.delete();
         } catch (final Exception e) {
             log.warn(
-                    "Adapter '{}': a discarded replacement subscription could not be deleted, so it may remain on the server until the session ends",
+                    "Adapter '{}': a discarded subscription could not be deleted, so it may remain on the server until the session ends",
                     adapterId,
                     e);
+            subscription.reset();
         }
     }
 
