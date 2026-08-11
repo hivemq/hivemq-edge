@@ -147,15 +147,9 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * on the root and on each writable member — otherwise the whole shape renders {@code readOnly} and offers no
      * destinations at all. See {@code TagSchemaCreationOutputImplSchemaBuilderTest} for both cases.
      */
-    @SuppressWarnings({"deprecation", "removal"})
     private static @NotNull Schema southboundSchema(final @NotNull DataPointSchema tagSchemas) {
-        // Deliberately the deprecated accessor. The SDK renames this component to southboundSchema in a
-        // separate PR, and CI resolves the adapter SDK by matching the branch name — a PR whose branch has no
-        // SDK counterpart builds against SDK master. writeSchema() exists on both the current SDK and the
-        // renamed one (which keeps it as a delegate), so this compiles either way; switching to
-        // southboundSchema() here before the SDK rename lands would break every PR stacked on this branch.
         final Schema writeValue =
-                tagSchemas.writeSchema() != null ? tagSchemas.writeSchema() : tagSchemas.valueSchema();
+                tagSchemas.southboundSchema() != null ? tagSchemas.southboundSchema() : tagSchemas.valueSchema();
 
         final var builder = new SchemaBuilder().startObject();
         // No readable/writable annotations here: a property defined via schema() renders the prebuilt schema
