@@ -57,8 +57,10 @@ import org.jetbrains.annotations.Nullable;
  * permanently null.
  * <p>
  * Generated from the specification's type model; the field lists are the members each type adds, excluding
- * methods and nested objects (a condition's {@code ShelvingState} is an object with its own methods, not an
- * event field).
+ * methods and nested objects, with one deliberate exception: a condition's {@code ShelvingState} is an
+ * Object carrying its own methods, and it is selected anyway — through the state-machine variable one level
+ * down — because Edge lets an operator command shelving and they would otherwise have no way to observe the
+ * result. See {@link #STATE_MACHINE_FIELDS}.
  */
 public enum OpcuaConditionType implements EventFieldSet {
     CONDITION(
@@ -101,9 +103,19 @@ public enum OpcuaConditionType implements EventFieldSet {
                     "OutOfServiceState",
                     "ReAlarmRepeatCount",
                     "ReAlarmTime",
+                    // OPC 10000-9 §5.8.2 Table 40: ShelvedStateMachineType, Optional. Selected because Edge
+                    // exposes all three shelving commands, and SuppressedOrShelved beside it is a single
+                    // Boolean that cannot say which of the two it means -- let alone tell TimedShelved from
+                    // OneShotShelved. An operator could shelve an alarm and then had no way to see that they
+                    // had, or to see it come back.
+                    "ShelvingState",
                     "SilenceState",
                     "SuppressedOrShelved",
-                    "SuppressedState")),
+                    "SuppressedState",
+                    // ShelvedStateMachineType's own property (§5.8.17 Table 73), and Mandatory there: when
+                    // the machine is TimedShelved this says when it returns to Unshelved. Nested one level
+                    // down rather than a member of the alarm, hence NESTED_FIELD_PATHS.
+                    "UnshelveTime")),
     DISCRETE_ALARM("DiscreteAlarmType", "AlarmConditionType", List.of()),
     OFF_NORMAL_ALARM("OffNormalAlarmType", "DiscreteAlarmType", List.of("NormalState")),
     SYSTEM_OFF_NORMAL_ALARM("SystemOffNormalAlarmType", "OffNormalAlarmType", List.of()),
@@ -271,10 +283,32 @@ public enum OpcuaConditionType implements EventFieldSet {
      * Only {@code LimitState} is listed. It is Mandatory on {@code ExclusiveLimitAlarmType} (OPC 10000-9
      * §5.8.19.3 Table 96) and says <em>which</em> limit was violated — without it that type publishes that
      * an alarm is active and nothing about which threshold tripped, while its non-exclusive sibling carries
-     * all four limit states. {@code ShelvingState} is deliberately absent: it is also a state machine, but
-     * its shelving behaviour is a separate concern from this one and is not selected today.
+     * all four limit states.
+     * <p>
+     * {@code ShelvingState} is the other, and it used to be absent on the grounds that shelving was a
+     * separate concern. It is not a separate concern from the write side: Edge exposes {@code UNSHELVE},
+     * {@code ONE_SHOT_SHELVE} and {@code TIMED_SHELVE}, so an operator could command a shelving state and
+     * then had nothing in any published message to confirm it. {@code SuppressedOrShelved} is no substitute
+     * — a single Boolean that says neither which of the two it means nor, when it means shelved, which of
+     * the two shelving modes is in force.
      */
-    public static final @NotNull Set<String> STATE_MACHINE_FIELDS = Set.of("LimitState");
+    public static final @NotNull Set<String> STATE_MACHINE_FIELDS = Set.of("LimitState", "ShelvingState");
+
+    /**
+     * Fields whose browse path is not simply their own name.
+     * <p>
+     * Almost every field is a property of the event, so its path is one element and falls out of the name.
+     * {@code UnshelveTime} is a property of the {@code ShelvingState} machine instead — one level down —
+     * and is published under its own key rather than nested, because every other field in the payload is
+     * flat and a lone nested object would be a shape of its own to handle.
+     * <p>
+     * A map rather than a special case, because the select clause has always supported paths of any length
+     * (OPC 10000-4 §7.22.3 requires only that each element be an Object or Variable); it was the
+     * <em>generation</em> that assumed path equals name. One entry today, and the next field like it needs a
+     * line rather than a branch.
+     */
+    public static final @NotNull Map<String, List<String>> NESTED_FIELD_PATHS =
+            Map.of("UnshelveTime", List.of("ShelvingState", "UnshelveTime"));
 
     /**
      * The browse name of the variable holding a state machine's current state, a {@code LocalizedText}.
@@ -475,7 +509,8 @@ public enum OpcuaConditionType implements EventFieldSet {
                 selected.add(new SelectedField(List.of(field, CURRENT_STATE, STATE_ID), field, FieldRole.ID));
                 continue;
             }
-            selected.add(new SelectedField(List.of(field), field, FieldRole.VALUE));
+            selected.add(
+                    new SelectedField(NESTED_FIELD_PATHS.getOrDefault(field, List.of(field)), field, FieldRole.VALUE));
             if (TWO_STATE_FIELDS.contains(field)) {
                 selected.add(new SelectedField(List.of(field, STATE_ID), field, FieldRole.ID));
             }

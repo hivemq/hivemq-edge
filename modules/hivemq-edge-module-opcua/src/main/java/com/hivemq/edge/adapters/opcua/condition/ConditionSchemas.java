@@ -133,6 +133,9 @@ public final class ConditionSchemas {
             "Severity",
             "LastSeverity",
             "MaxTimeShelved",
+            // ShelvedStateMachineType's UnshelveTime (OPC 10000-9 §5.8.17 Table 73), a Duration -- so a
+            // number of milliseconds, like MaxTimeShelved above it.
+            "UnshelveTime",
             "OnDelay",
             "OffDelay",
             "ReAlarmTime",

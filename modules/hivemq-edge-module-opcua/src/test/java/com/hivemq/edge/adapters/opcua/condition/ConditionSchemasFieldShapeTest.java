@@ -136,6 +136,12 @@ class ConditionSchemasFieldShapeTest {
         table.put("ReAlarmTime", new Expected("Duration", ConditionSchemas.Shape.NUMBER));
         table.put("SilenceState", new Expected("TwoStateVariableType", ConditionSchemas.Shape.TWO_STATE));
         table.put("SuppressedOrShelved", new Expected("Boolean", ConditionSchemas.Shape.BOOLEAN));
+        // Review-02 finding 11. AlarmConditionType §5.8.2 Table 40, Optional; the machine's current state is
+        // read one level down like LimitState's, so the published shape is the same.
+        table.put("ShelvingState", new Expected("ShelvedStateMachineType", ConditionSchemas.Shape.STATE_MACHINE));
+        // ShelvedStateMachineType's own property, §5.8.17 Table 73, and Mandatory there -- so wherever the
+        // machine is exposed at all this is too. A Duration, like MaxTimeShelved.
+        table.put("UnshelveTime", new Expected("Duration", ConditionSchemas.Shape.NUMBER));
         table.put("SuppressedState", new Expected("TwoStateVariableType", ConditionSchemas.Shape.TWO_STATE));
 
         // ── OffNormalAlarmType — §5.8.20 ─────────────────────────────────────────────────────────────
