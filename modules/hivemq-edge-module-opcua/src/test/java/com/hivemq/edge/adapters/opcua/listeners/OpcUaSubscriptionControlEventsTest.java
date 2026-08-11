@@ -258,7 +258,125 @@ class OpcUaSubscriptionControlEventsTest {
         verify(client, times(2)).callAsync(any());
     }
 
+    // ── review-02 finding 2: an occurrence arriving while a call is outstanding ──────────────────────
+
+    @Test
+    void aDistinctRefreshRequiredArrivingDuringACallIsNotLost() {
+        // The defect. The id was recorded as handled by isFirstSightOf and *then* dropped by the in-flight
+        // guard, so nothing was left to retry it: the deduplication memory now says it has been dealt with,
+        // and no state anywhere says otherwise. RefreshRequired means the server can no longer guarantee the
+        // client is in sync, so losing one leaves the retained alarm picture stale indefinitely.
+        //
+        // Every earlier test returns an already-completed future, which is why none of them reached this: the
+        // call settles before the next notification is delivered, and the overlap never happens.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription subscription = subscriptionWithId();
+        final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
+
+        refreshRequired(handler, subscription, tag, "occurrence-E");
+        refreshRequired(handler, subscription, tag, "occurrence-E"); // a copy of it, which must add nothing
+        refreshRequired(handler, subscription, tag, "occurrence-F"); // a genuinely different one
+
+        verify(client, times(1)).callAsync(any());
+
+        outstanding.complete(goodCallResponse());
+
+        verify(client, times(2)).callAsync(any());
+    }
+
+    @Test
+    void copiesOfOneOccurrenceArrivingDuringACallStillAddNothing() {
+        // The property the fix must not cost. Coalescing by identity has to keep working while a call is
+        // outstanding, or the pending flag simply moves the duplicate refresh to just after the call instead
+        // of just after the burst -- which is the collision the specification defines Bad_RefreshInProgress
+        // for, only later.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription subscription = subscriptionWithId();
+        final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
+
+        refreshRequired(handler, subscription, tag, "occurrence-G");
+        refreshRequired(handler, subscription, tag, "occurrence-G");
+        refreshRequired(handler, subscription, tag, "occurrence-G");
+
+        outstanding.complete(goodCallResponse());
+
+        verify(client, times(1)).callAsync(any());
+    }
+
+    @Test
+    void severalDistinctOccurrencesDuringOneCallCollapseIntoOneFollowUp() {
+        // Why a flag rather than a queue of ids. OPC 10000-9 §4.5 makes a ConditionRefresh subscription-wide,
+        // so one call covers every reason outstanding when it starts. Three reasons that arrived during the
+        // first call are all answered by the second; a queue would make three calls and the last two would
+        // collide with the first.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription subscription = subscriptionWithId();
+        final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
+
+        refreshRequired(handler, subscription, tag, "occurrence-H");
+        refreshRequired(handler, subscription, tag, "occurrence-I");
+        refreshRequired(handler, subscription, tag, "occurrence-J");
+        refreshRequired(handler, subscription, tag, "occurrence-K");
+
+        outstanding.complete(goodCallResponse());
+
+        verify(client, times(2)).callAsync(any());
+    }
+
+    @Test
+    void aFailedCallStillPicksUpTheWorkThatArrivedDuringIt() {
+        // The pending occurrence asked for the server to be re-read, not for this particular attempt to
+        // succeed. Draining only on success would make a transient failure swallow a reason that outlives it.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription subscription = subscriptionWithId();
+        final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
+
+        refreshRequired(handler, subscription, tag, "occurrence-L");
+        refreshRequired(handler, subscription, tag, "occurrence-M");
+
+        outstanding.completeExceptionally(new IllegalStateException("the session went away"));
+
+        verify(client, times(2)).callAsync(any());
+    }
+
+    @Test
+    void anOccurrenceThatArrivesAfterTheCallSettlesIsHandledDirectly() {
+        // The drain must not become the only way in. With no call outstanding the flag is raised and claimed
+        // by the same thread, and the refresh happens immediately rather than waiting for a completion that
+        // has already been and gone.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription subscription = subscriptionWithId();
+        stubRefreshCallCompletingImmediately();
+
+        refreshRequired(handler, subscription, tag, "occurrence-N");
+        refreshRequired(handler, subscription, tag, "occurrence-O");
+        refreshRequired(handler, subscription, tag, "occurrence-P");
+
+        verify(client, times(3)).callAsync(any());
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
+
+    private static void refreshRequired(
+            final @NotNull OpcUaSubscriptionLifecycleHandler handler,
+            final @NotNull OpcUaSubscription subscription,
+            final @NotNull OpcuaTag tag,
+            final @NotNull String eventId) {
+
+        handler.onEventReceived(
+                subscription,
+                List.of(itemFor(tag)),
+                List.<Variant[]>of(controlEvent(NodeIds.RefreshRequiredEventType, eventId)));
+    }
 
     private @NotNull OpcUaSubscriptionLifecycleHandler handlerFor(final @NotNull OpcuaTag... tags) {
         return new OpcUaSubscriptionLifecycleHandler(
@@ -280,11 +398,18 @@ class OpcUaSubscriptionControlEventsTest {
     }
 
     private void stubRefreshCallCompletingImmediately() {
-        when(client.callAsync(any()))
-                .thenReturn(CompletableFuture.completedFuture(new CallResponse(
-                        new ResponseHeader(null, uint(0), StatusCode.GOOD, null, null, null),
-                        new CallMethodResult[] {new CallMethodResult(StatusCode.GOOD, null, null, null)},
-                        null)));
+        when(client.callAsync(any())).thenReturn(completedRefreshCall());
+    }
+
+    private static @NotNull CompletableFuture<CallResponse> completedRefreshCall() {
+        return CompletableFuture.completedFuture(goodCallResponse());
+    }
+
+    private static @NotNull CallResponse goodCallResponse() {
+        return new CallResponse(
+                new ResponseHeader(null, uint(0), StatusCode.GOOD, null, null, null),
+                new CallMethodResult[] {new CallMethodResult(StatusCode.GOOD, null, null, null)},
+                null);
     }
 
     private static @NotNull OpcUaSubscription subscriptionWithId() {

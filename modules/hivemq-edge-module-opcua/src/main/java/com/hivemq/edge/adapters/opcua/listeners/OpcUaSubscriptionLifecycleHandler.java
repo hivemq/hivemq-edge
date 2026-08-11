@@ -148,6 +148,23 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private final @NotNull AtomicBoolean refreshRequiredInFlight = new AtomicBoolean();
 
     /**
+     * Whether a {@code RefreshRequired} has arrived that no call has covered yet.
+     * <p>
+     * The in-flight guard alone cannot express this. It answers "is a call outstanding", and a distinct
+     * occurrence arriving while one is has to be remembered rather than dropped: the call already running was
+     * started for an earlier reason and may well have been answered by the server before the later reason
+     * existed. Without somewhere to record it, the second occurrence was marked handled by
+     * {@link #isFirstSightOf} and then discarded by the in-flight guard, so nothing was left to retry it and
+     * the alarm picture could stay stale for the rest of the connection.
+     * <p>
+     * One flag rather than a queue of ids, because §4.5 makes a {@code ConditionRefresh} subscription-wide:
+     * one call covers every reason outstanding at the moment it starts, so several pending occurrences
+     * genuinely do collapse into one. What must not collapse is a reason that arrived <em>after</em> the
+     * covering call began, and that is exactly what the flag being set again expresses.
+     */
+    private final @NotNull AtomicBoolean refreshRequiredPending = new AtomicBoolean();
+
+    /**
      * The {@code EventId}s of {@code RefreshRequired} occurrences already acted on, most recent last.
      * <p>
      * The in-flight guard above collapses copies only while a call is outstanding, which is not the same
@@ -966,9 +983,14 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * with ten condition tags sees ten copies of one occurrence. Refreshing per copy would be wrong twice
      * over: §4.5 says "ConditionRefresh applies to a Subscription [...] all Event Notifiers are refreshed",
      * so one call already covers them all, and the second call would collide with the first — the
-     * specification defines {@code Bad_RefreshInProgress} for exactly that. The guard is released when the
-     * call settles rather than when the burst ends, which is the conservative choice: a later
-     * {@code RefreshRequired} is a fresh reason to resynchronise and must not be swallowed.
+     * specification defines {@code Bad_RefreshInProgress} for exactly that.
+     * <p>
+     * <b>Coalescing is not suppression, though.</b> A distinct occurrence arriving while a call is outstanding
+     * is a fresh reason to resynchronise, and the call already running was started for an earlier one — the
+     * server may have answered it before the later reason existed. So the occurrence is recorded as
+     * {@link #refreshRequiredPending} rather than dropped, and {@link #drainRefreshRequests} starts the call it
+     * asks for once the current one settles. This used to fall through a bare {@code return}: the id was
+     * already in {@link #isFirstSightOf}'s memory by then, so nothing could retry it and nothing said so.
      */
     private void onRefreshRequired(final @NotNull OpcUaSubscription subscription, final @Nullable ByteString eventId) {
         // Identity first, duration second. The two guards answer different questions: this one asks "have I
@@ -981,28 +1003,64 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         if (eventId != null && !isFirstSightOf(eventId)) {
             return;
         }
-        if (!refreshRequiredInFlight.compareAndSet(false, true)) {
-            return;
+        // Recorded as outstanding work before any attempt to start it, and that order is the whole
+        // correctness argument: a completion racing this can then only ever see the flag already set. Setting
+        // it after a failed attempt would leave the window where the completion checks for pending work,
+        // finds none, releases the guard, and only then does this flag go up -- with nobody left to drain it.
+        refreshRequiredPending.set(true);
+        drainRefreshRequests(subscription);
+    }
+
+    /**
+     * Starts the refresh that pending work asks for, unless a call is already covering it.
+     * <p>
+     * Called from both ends: by {@link #onRefreshRequired} when an occurrence arrives, and by the completion
+     * of every call this starts. Whichever of the two finds both a pending flag and a free in-flight guard
+     * makes the call, so the work cannot be dropped by either racing the other.
+     * <p>
+     * The loop exists for one interleaving. A drain can win the in-flight guard and then find the pending flag
+     * already claimed by a drain that has since finished — at which point it holds a guard it has no use for,
+     * and a producer that arrived in between would have seen that guard held and returned. Releasing and
+     * re-reading covers that producer. Each pass either starts a call or observes the flag settled, so it runs
+     * at most twice in practice and cannot spin.
+     */
+    private void drainRefreshRequests(final @NotNull OpcUaSubscription subscription) {
+        while (refreshRequiredPending.get()) {
+            if (!refreshRequiredInFlight.compareAndSet(false, true)) {
+                // A call is running. It drains on completion, and it will see this flag.
+                return;
+            }
+            if (refreshRequiredPending.compareAndSet(true, false)) {
+                requestRefreshTheServerAskedFor(subscription);
+                return;
+            }
+            refreshRequiredInFlight.set(false);
         }
+    }
+
+    /**
+     * Makes the {@code ConditionRefresh} call, and drains again once it settles.
+     * <p>
+     * The in-flight guard is released on every path out of here, including a synchronous throw. Releasing it
+     * only from {@code whenComplete} would leave it set forever if the request never produced a future — and
+     * since the guard's whole job is to make {@link #drainRefreshRequests} skip a call that is already
+     * covered, a stuck guard silently drops every {@code RefreshRequired} the server sends for the rest of the
+     * connection. Silent because the skip is a bare return: no log, no event, and the alarm picture simply
+     * stops being resynchronised.
+     */
+    private void requestRefreshTheServerAskedFor(final @NotNull OpcUaSubscription subscription) {
         final Optional<UInteger> subscriptionId = subscription.getSubscriptionId();
         if (subscriptionId.isEmpty()) {
-            refreshRequiredInFlight.set(false);
+            releaseAndDrain(subscription);
             return;
         }
         log.info(
                 "Adapter '{}': the server reported that a condition refresh is required, so the current alarm picture is being re-requested",
                 adapterId);
-        // The guard is released on every path out of here, including a synchronous throw. Releasing it only
-        // from whenComplete would leave it set forever if the request never produced a future -- and since
-        // the guard's whole job is to make the compareAndSet above skip duplicate calls, a stuck guard
-        // silently drops every RefreshRequired the server sends for the rest of the connection. Silent
-        // because the skip is a bare return: no log, no event, and the alarm picture simply stops being
-        // resynchronised.
         try {
             @SuppressWarnings("unused")
             final var unused = ConditionRefresh.request(client, subscriptionId.get())
                     .whenComplete((statusCode, throwable) -> {
-                        refreshRequiredInFlight.set(false);
                         if (throwable != null) {
                             log.warn(
                                     "Adapter '{}': the server asked for a condition refresh but the request failed, so the alarm picture may stay incomplete until each alarm next changes",
@@ -1014,14 +1072,26 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                                     adapterId,
                                     statusCode);
                         }
+                        releaseAndDrain(subscription);
                     });
         } catch (final Exception e) {
-            refreshRequiredInFlight.set(false);
             log.warn(
                     "Adapter '{}': the server asked for a condition refresh but the request could not be sent, so the alarm picture may stay incomplete until each alarm next changes",
                     adapterId,
                     e);
+            releaseAndDrain(subscription);
         }
+    }
+
+    /**
+     * Hands the in-flight guard back and picks up whatever arrived while it was held.
+     * <p>
+     * A failed call still drains. The occurrence that is waiting asked the server to be re-read, not for this
+     * particular attempt to succeed, and the reason it was raised for outlives the attempt.
+     */
+    private void releaseAndDrain(final @NotNull OpcUaSubscription subscription) {
+        refreshRequiredInFlight.set(false);
+        drainRefreshRequests(subscription);
     }
 
     /**
