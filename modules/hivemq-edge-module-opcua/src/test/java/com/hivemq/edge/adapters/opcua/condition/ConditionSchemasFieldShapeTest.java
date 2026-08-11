@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -91,11 +92,11 @@ class ConditionSchemasFieldShapeTest {
         table.put("EventType", new Expected("NodeId", ConditionSchemas.Shape.NODE_ID));
         table.put("SourceNode", new Expected("NodeId", ConditionSchemas.Shape.NODE_ID));
         table.put("SourceName", new Expected("String", ConditionSchemas.Shape.STRING));
-        table.put("Time", new Expected("UtcTime", ConditionSchemas.Shape.STRING));
-        table.put("ReceiveTime", new Expected("UtcTime", ConditionSchemas.Shape.STRING));
+        table.put("Time", new Expected("UtcTime", ConditionSchemas.Shape.INSTANT));
+        table.put("ReceiveTime", new Expected("UtcTime", ConditionSchemas.Shape.INSTANT));
         table.put("LocalTime", new Expected("TimeZoneDataType", ConditionSchemas.Shape.LOCAL_TIME));
         table.put("Message", new Expected("LocalizedText", ConditionSchemas.Shape.LOCALIZED_TEXT));
-        table.put("Severity", new Expected("UInt16", ConditionSchemas.Shape.NUMBER));
+        table.put("Severity", new Expected("UInt16", ConditionSchemas.Shape.INTEGER));
         // Not a member of any type: the event's own node id, selected with an empty browse path against the
         // NodeId attribute. See OpcuaConditionType.CONDITION_ID.
         table.put("ConditionId", new Expected("NodeId (the event node itself)", ConditionSchemas.Shape.NODE_ID));
@@ -111,7 +112,7 @@ class ConditionSchemasFieldShapeTest {
         table.put(
                 "ConditionSubClassName", new Expected("LocalizedText[]", ConditionSchemas.Shape.LOCALIZED_TEXT_ARRAY));
         table.put("EnabledState", new Expected("TwoStateVariableType", ConditionSchemas.Shape.TWO_STATE));
-        table.put("LastSeverity", new Expected("UInt16", ConditionSchemas.Shape.NUMBER));
+        table.put("LastSeverity", new Expected("UInt16", ConditionSchemas.Shape.INTEGER));
         table.put("Quality", new Expected("StatusCode", ConditionSchemas.Shape.STATUS_CODE));
         table.put("Retain", new Expected("Boolean", ConditionSchemas.Shape.BOOLEAN));
         table.put("SupportsFilteredRetain", new Expected("Boolean", ConditionSchemas.Shape.BOOLEAN));
@@ -132,7 +133,7 @@ class ConditionSchemasFieldShapeTest {
         table.put("OffDelay", new Expected("Duration", ConditionSchemas.Shape.NUMBER));
         table.put("OnDelay", new Expected("Duration", ConditionSchemas.Shape.NUMBER));
         table.put("OutOfServiceState", new Expected("TwoStateVariableType", ConditionSchemas.Shape.TWO_STATE));
-        table.put("ReAlarmRepeatCount", new Expected("Int16", ConditionSchemas.Shape.NUMBER));
+        table.put("ReAlarmRepeatCount", new Expected("Int16", ConditionSchemas.Shape.INTEGER));
         table.put("ReAlarmTime", new Expected("Duration", ConditionSchemas.Shape.NUMBER));
         table.put("SilenceState", new Expected("TwoStateVariableType", ConditionSchemas.Shape.TWO_STATE));
         table.put("SuppressedOrShelved", new Expected("Boolean", ConditionSchemas.Shape.BOOLEAN));
@@ -152,7 +153,7 @@ class ConditionSchemasFieldShapeTest {
         // ── CertificateExpirationAlarmType — §5.8.24 Table 112 ───────────────────────────────────────
         table.put("Certificate", new Expected("ByteString", ConditionSchemas.Shape.BYTE_STRING));
         table.put("CertificateType", new Expected("NodeId", ConditionSchemas.Shape.NODE_ID));
-        table.put("ExpirationDate", new Expected("DateTime", ConditionSchemas.Shape.STRING));
+        table.put("ExpirationDate", new Expected("DateTime", ConditionSchemas.Shape.INSTANT));
         table.put("ExpirationLimit", new Expected("Duration", ConditionSchemas.Shape.NUMBER));
 
         // ── DialogConditionType — §5.6.2 Table 32 ────────────────────────────────────────────────────
@@ -186,7 +187,7 @@ class ConditionSchemasFieldShapeTest {
             table.put(limit, new Expected("Double", ConditionSchemas.Shape.NUMBER));
         }
         for (final String severity : List.of("SeverityHigh", "SeverityHighHigh", "SeverityLow", "SeverityLowLow")) {
-            table.put(severity, new Expected("UInt16", ConditionSchemas.Shape.NUMBER));
+            table.put(severity, new Expected("UInt16", ConditionSchemas.Shape.INTEGER));
         }
 
         // ── ExclusiveLimitAlarmType — §5.8.19.3 Table 96 ─────────────────────────────────────────────
@@ -207,7 +208,7 @@ class ConditionSchemasFieldShapeTest {
         }
 
         // ── TrustListOutOfDateAlarmType — OPC 10000-12 §7.8.2.11 ─────────────────────────────────────
-        table.put("LastUpdateTime", new Expected("UtcTime", ConditionSchemas.Shape.STRING));
+        table.put("LastUpdateTime", new Expected("UtcTime", ConditionSchemas.Shape.INSTANT));
         table.put("TrustListId", new Expected("NodeId", ConditionSchemas.Shape.NODE_ID));
         table.put("UpdateFrequency", new Expected("Duration", ConditionSchemas.Shape.NUMBER));
 
@@ -468,6 +469,79 @@ class ConditionSchemasFieldShapeTest {
      * what these actually are; reading {@code type} as text on one silently yields the empty string, which
      * would make this assertion pass for anything.
      */
+    // ── review-02 finding 14: what the schema says the value is ────────────────────────────────────
+
+    @Test
+    void aTimestampIsDeclaredAnInstantRatherThanArbitraryText() {
+        // The four temporal fields reached the STRING fallback, which is true as far as JSON goes and
+        // useless as a contract: it tells a consumer it may receive any text at all, where the adapter in
+        // fact promises an RFC 3339 instant. Nothing was ever wrong on the wire -- the converter has always
+        // rendered these as ISO -- so this is entirely about what the schema is willing to say.
+        final ObjectNode properties = propertiesOf(OpcuaConditionType.CERTIFICATE_EXPIRATION_ALARM);
+
+        for (final String field : List.of("Time", "ReceiveTime", "ExpirationDate")) {
+            final JsonNode shape = nonNullAlternative(properties.get(field));
+            assertDeclaredType(field, shape, "string");
+            assertThat(shape.path("format").asText())
+                    .as("%s is a timestamp, and the schema now says which kind of string it is", field)
+                    .isEqualTo("date-time");
+        }
+    }
+
+    @Test
+    void aSeverityIsDeclaredAnIntegerRatherThanANumber() {
+        // Severity is a UInt16 on BaseEventType and the four limit severities are UInt16 on LimitAlarmType.
+        // Declared NUMBER, the schema accepted 700.5 as a valid alarm priority, and a generated client took
+        // a double for something that indexes a priority scale.
+        final ObjectNode properties = propertiesOf(OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM);
+
+        for (final String field : List.of(
+                "Severity", "LastSeverity", "SeverityHigh", "SeverityHighHigh", "SeverityLow", "SeverityLowLow")) {
+            assertDeclaredType(field, nonNullAlternative(properties.get(field)), "integer");
+        }
+    }
+
+    @Test
+    void andSoIsTheReAlarmRepeatCount() {
+        // An Int16 on AlarmConditionType (Table 40). A count of 2.5 re-alarms is not a thing to accept.
+        assertDeclaredType(
+                "ReAlarmRepeatCount",
+                nonNullAlternative(
+                        propertiesOf(OpcuaConditionType.ALARM_CONDITION).get("ReAlarmRepeatCount")),
+                "integer");
+    }
+
+    @Test
+    void butAGenuineDoubleIsStillANumber() {
+        // The control. The limits, deadbands and delays really are Double in the specification, and
+        // narrowing those to integers would be the same defect in the opposite direction -- a schema that
+        // refuses a limit of 90.5.
+        final ObjectNode properties = propertiesOf(OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM);
+
+        for (final String field : List.of("HighLimit", "HighDeadband", "OnDelay", "MaxTimeShelved")) {
+            assertDeclaredType(field, nonNullAlternative(properties.get(field)), "number");
+        }
+    }
+
+    @Test
+    void andAFieldThatReallyIsTextStillIsText() {
+        // The other control, and the reason the STRING fallback still exists at all.
+        final ObjectNode properties = propertiesOf(OpcuaConditionType.CONDITION);
+
+        for (final String field : List.of("SourceName", "ConditionName", "ClientUserId")) {
+            assertDeclaredType(field, nonNullAlternative(properties.get(field)), "string");
+            assertThat(nonNullAlternative(properties.get(field)).has("format"))
+                    .as("%s is not a timestamp and must not claim to be one", field)
+                    .isFalse();
+        }
+    }
+
+    private static @NotNull ObjectNode propertiesOf(final @NotNull OpcuaConditionType type) {
+        return (ObjectNode) SchemaJsonRepresentation.INSTANCE
+                .toJsonSchemaDocument(ConditionSchemas.readSchema(type))
+                .get("properties");
+    }
+
     private static void assertDeclaredType(
             final @NotNull String where, final @NotNull JsonNode schemaShape, final @NotNull String expected) {
 
@@ -535,12 +609,14 @@ class ConditionSchemasFieldShapeTest {
                         new LocalizedText("en", "degree Celsius")));
             case STATUS_CODE -> new Variant(new StatusCode(StatusCodes.Good));
             case NUMBER -> new Variant(90.0);
-            case INTEGER -> new Variant(2);
+            // Deliberately a UInt16 rather than a plain int: Severity and the four limit severities arrive
+            // from the server as unsigned shorts, and the point of declaring them integral is that the
+            // converter's rendering of that type is a JSON integer.
+            case INTEGER -> new Variant(ushort(700));
+            case INSTANT -> new Variant(new DateTime());
             case BOOLEAN -> new Variant(true);
             case BYTE_STRING -> new Variant(new ByteString(new byte[] {0, 1, 2, 3}));
-            // A timestamp renders as an ISO string, which is the same JSON kind as a plain string -- so one
-            // representative covers both, and the datatype column in SPECIFICATION is what keeps them apart.
-            case STRING -> new Variant(new DateTime());
+            case STRING -> new Variant("Boiler1.Temperature");
         };
     }
 

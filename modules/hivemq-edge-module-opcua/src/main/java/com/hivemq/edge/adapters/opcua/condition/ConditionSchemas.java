@@ -130,8 +130,6 @@ public final class ConditionSchemas {
             "TrustListId");
 
     private static final @NotNull Set<String> NUMERIC_FIELDS = Set.of(
-            "Severity",
-            "LastSeverity",
             "MaxTimeShelved",
             // ShelvedStateMachineType's UnshelveTime (OPC 10000-9 §5.8.17 Table 73), a Duration -- so a
             // number of milliseconds, like MaxTimeShelved above it.
@@ -139,7 +137,6 @@ public final class ConditionSchemas {
             "OnDelay",
             "OffDelay",
             "ReAlarmTime",
-            "ReAlarmRepeatCount",
             "HighHighLimit",
             "HighLimit",
             "LowLimit",
@@ -148,10 +145,6 @@ public final class ConditionSchemas {
             "BaseHighLimit",
             "BaseLowLimit",
             "BaseLowLowLimit",
-            "SeverityHighHigh",
-            "SeverityHigh",
-            "SeverityLow",
-            "SeverityLowLow",
             "HighHighDeadband",
             "HighDeadband",
             "LowDeadband",
@@ -166,13 +159,52 @@ public final class ConditionSchemas {
     /**
      * Fields whose value is an integer, published as a JSON integer rather than a fractional number.
      * <p>
-     * The four dialog response indices, all {@code Int32} on {@code DialogConditionType} (§5.6.2 Table 32).
-     * They index into {@code ResponseOptionSet}, so a fractional value would be meaningless — which is why
-     * they are declared {@code LONG} here rather than folded into {@link #NUMERIC_FIELDS} with the limits
-     * and delays, whose {@code Double} values genuinely are fractional.
+     * Two groups, both integral in the specification's own type tables and neither of them meaningfully
+     * fractional:
+     * <ul>
+     *   <li>the four dialog response indices, {@code Int32} on {@code DialogConditionType} (§5.6.2 Table 32),
+     *       which index into {@code ResponseOptionSet};</li>
+     *   <li>the severities and the re-alarm count. {@code Severity} is a {@code UInt16} on
+     *       {@code BaseEventType}, {@code LastSeverity} a {@code UInt16} on {@code ConditionType}, the four
+     *       limit severities {@code UInt16} on {@code LimitAlarmType} (Table 92), and
+     *       {@code ReAlarmRepeatCount} an {@code Int16} on {@code AlarmConditionType} (Table 40).</li>
+     * </ul>
+     * The second group used to sit in {@link #NUMERIC_FIELDS} beside the limits and delays, whose
+     * {@code Double} values genuinely are fractional. Nothing broke — JSON Schema's {@code number} admits
+     * integers, so the payloads validated — but a generated client took a {@code double} for a severity, and
+     * the declared contract accepted 700.5 as a valid alarm priority and 2.5 as a repeat count.
      */
-    private static final @NotNull Set<String> INTEGER_FIELDS =
+    private static final @NotNull Set<String> INTEGER_FIELDS = Set.of(
+            "CancelResponse",
+            "DefaultResponse",
+            "LastResponse",
+            "OkResponse",
+            "Severity",
+            "LastSeverity",
+            "ReAlarmRepeatCount",
+            "SeverityHighHigh",
+            "SeverityHigh",
+            "SeverityLow",
+            "SeverityLowLow");
+
+    /** The four dialog indices, which are the only integers with something extra to say about themselves. */
+    private static final @NotNull Set<String> RESPONSE_INDEX_FIELDS =
             Set.of("CancelResponse", "DefaultResponse", "LastResponse", "OkResponse");
+
+    /**
+     * Fields carrying a point in time, declared as an instant rather than as unconstrained text.
+     * <p>
+     * {@code Time} and {@code ReceiveTime} are {@code UtcTime} on {@code BaseEventType},
+     * {@code ExpirationDate} a {@code DateTime} on {@code CertificateExpirationAlarmType} (§5.8.24 Table 112),
+     * and {@code LastUpdateTime} a {@code UtcTime} on {@code TrustListOutOfDateAlarmType} (OPC 10000-12
+     * §7.8.2.11). The converter renders all four as RFC 3339 instants.
+     * <p>
+     * They reached the {@code STRING} fallback before, which is true as far as JSON goes and useless as a
+     * contract: it says a consumer may receive any text at all where the adapter in fact promises a
+     * timestamp, so a generated model gets a {@code String} field and every consumer parses it by hand.
+     */
+    private static final @NotNull Set<String> TIMESTAMP_FIELDS =
+            Set.of("Time", "ReceiveTime", "ExpirationDate", "LastUpdateTime");
 
     private static final @NotNull Set<String> BOOLEAN_FIELDS =
             Set.of("Retain", "SupportsFilteredRetain", "AudibleEnabled", "SuppressedOrShelved", "FirstInGroupFlag");
@@ -374,6 +406,7 @@ public final class ConditionSchemas {
         STATUS_CODE(Shape::appendStatusCode),
         NUMBER(Shape::appendNumber),
         INTEGER(Shape::appendInteger),
+        INSTANT(Shape::appendInstant),
         BOOLEAN(Shape::appendBoolean),
         BYTE_STRING(Shape::appendByteString),
         STRING(Shape::appendString);
@@ -413,6 +446,9 @@ public final class ConditionSchemas {
             }
             if (STATUS_CODE_FIELDS.contains(field)) {
                 return STATUS_CODE;
+            }
+            if (TIMESTAMP_FIELDS.contains(field)) {
+                return INSTANT;
             }
             if (NUMERIC_FIELDS.contains(field)) {
                 return NUMBER;
@@ -782,14 +818,30 @@ public final class ConditionSchemas {
         }
 
         /**
-         * An integer rather than a number. The four dialog response indices are {@code Int32} and index into
-         * {@code ResponseOptionSet}, so a fractional value would be meaningless.
+         * An integer rather than a number, for the fields the specification declares integral. The
+         * description is only added for the dialog indices, which are the ones whose meaning the name does
+         * not carry; a severity needs no gloss.
          */
         private static void appendInteger(
                 final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
+            final var property = object.property(field).scalar(ScalarType.LONG);
+            if (RESPONSE_INDEX_FIELDS.contains(field)) {
+                property.description("An index into 'ResponseOptionSet'.");
+            }
+            property.nullable().readable().writable(false).endProperty();
+        }
+
+        /**
+         * A point in time, declared as such rather than as unconstrained text.
+         * <p>
+         * The converter renders these as RFC 3339, so the payload is unchanged — what changes is that the
+         * schema now says so, and a generated model gets a timestamp type instead of a string a consumer
+         * has to know to parse.
+         */
+        private static void appendInstant(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
-                    .scalar(ScalarType.LONG)
-                    .description("An index into 'ResponseOptionSet'.")
+                    .scalar(ScalarType.INSTANT)
                     .nullable()
                     .readable()
                     .writable(false)
