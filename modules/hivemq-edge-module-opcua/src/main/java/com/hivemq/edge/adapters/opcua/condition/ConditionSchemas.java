@@ -333,6 +333,14 @@ public final class ConditionSchemas {
                 .writable()
                 .readable(false)
                 .endProperty()
+                .property(ConditionUpdate.FIELD_SELECTED_RESPONSE)
+                .scalar(ScalarType.LONG)
+                .description("Which of a dialog's offered responses to give, as a zero-based index into the "
+                        + "ResponseOptionSet published on the event. Required for RESPOND, and meaningless "
+                        + "for every other method.")
+                .writable()
+                .readable(false)
+                .endProperty()
                 .endObject()
                 // The command object itself is written, not read. Without this the root renders as readOnly
                 // while its properties render as writeOnly, which describes something nobody can send.

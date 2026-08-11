@@ -46,17 +46,21 @@ import org.jetbrains.annotations.Nullable;
  *                 things</b> — null leaves any existing comment untouched, empty erases it. See
  *                 {@link #fromJson}.
  * @param duration the shelving time in milliseconds; null for every method except {@code TimedShelve}.
+ * @param selectedResponse which of a dialog's offered responses to give, as an index into its
+ *                         {@code ResponseOptionSet}; null for every method except {@code Respond}.
  */
 public record ConditionUpdate(
         @NotNull Method method,
         @Nullable ByteString eventId,
         @Nullable String comment,
-        @Nullable Double duration) {
+        @Nullable Double duration,
+        @Nullable Integer selectedResponse) {
 
     public static final @NotNull String FIELD_EVENT_ID = "eventId";
     public static final @NotNull String FIELD_METHOD = "method";
     public static final @NotNull String FIELD_COMMENT = "comment";
     public static final @NotNull String FIELD_DURATION = "duration";
+    public static final @NotNull String FIELD_SELECTED_RESPONSE = "selectedResponse";
 
     /**
      * The transitions Edge can request, named by the enum constant: {@code "ACKNOWLEDGE"}, {@code "SUPPRESS"}
@@ -90,6 +94,14 @@ public record ConditionUpdate(
         PLACE_IN_SERVICE("PlaceInService", "PlaceInService2", Arguments.NONE, Location.CONDITION),
         RESET("Reset", "Reset2", Arguments.NONE, Location.CONDITION),
 
+        // --- dialog: answer a question the server asked ---------------------------------------------------
+        // DialogConditionType is one of the twenty-two types Edge publishes, and it was read-only: Edge
+        // reported the prompt and the available responses and offered no way to pick one, so a dialog raised
+        // by a server could be observed and never answered. OPC 10000-9 §5.6.3 defines Respond(SelectedResponse)
+        // and §5.6.4 the newer Respond2(SelectedResponse, Comment), which is why this method has a "2" variant
+        // like the alarm methods rather than taking its comment in the base form.
+        RESPOND("Respond", "Respond2", Arguments.SELECTED_RESPONSE, Location.CONDITION),
+
         // --- shelving: on the condition's ShelvingState object, not on the condition ----------------------
         UNSHELVE("Unshelve", "Unshelve2", Arguments.NONE, Location.SHELVING_STATE),
         ONE_SHOT_SHELVE("OneShotShelve", "OneShotShelve2", Arguments.NONE, Location.SHELVING_STATE),
@@ -105,7 +117,9 @@ public record ConditionUpdate(
             /** No input arguments; the method acts on the condition as a whole. */
             NONE,
             /** {@code (ShelvingTime)} — a duration in milliseconds. */
-            DURATION
+            DURATION,
+            /** {@code (SelectedResponse)} — an index into the dialog's {@code ResponseOptionSet}. */
+            SELECTED_RESPONSE
         }
 
         /** Where the method node hangs, which decides how it is resolved on the instance. */
@@ -256,8 +270,9 @@ public record ConditionUpdate(
 
         final ByteString eventId = readEventId(payload, method);
         final Double duration = readDuration(payload, method);
+        final Integer selectedResponse = readSelectedResponse(payload, method);
 
-        return new ConditionUpdate(method, eventId, comment, duration);
+        return new ConditionUpdate(method, eventId, comment, duration, selectedResponse);
     }
 
     /**
@@ -293,6 +308,38 @@ public record ConditionUpdate(
                     "'" + method.name() + "' needs a numeric '" + FIELD_DURATION + "' in milliseconds");
         }
         return durationNode.asDouble();
+    }
+
+    /**
+     * Reads {@code selectedResponse}, required exactly for {@code Respond} and meaningless elsewhere.
+     * <p>
+     * An index into the dialog's {@code ResponseOptionSet} — the array of choices the server published on the
+     * event, so a caller picks one by position in the list it was given. Not validated against that array
+     * here: Edge does not retain the event, and the option set is a property of the condition that may have
+     * changed since. The server owns the dialog's state and rejects an index it no longer offers, which is
+     * the same division of labour as the {@code eventId} of an acknowledgement.
+     * <p>
+     * Rejected rather than defaulted when absent. There is no safe default for "which answer did you mean" —
+     * zero is a valid option on every dialog that offers any, so guessing would answer a question on the
+     * operator's behalf.
+     */
+    private static @Nullable Integer readSelectedResponse(
+            final @NotNull JsonNode payload, final @NotNull Method method) {
+
+        if (method.arguments() != Method.Arguments.SELECTED_RESPONSE) {
+            return null;
+        }
+        final JsonNode selectedResponse = payload.get(FIELD_SELECTED_RESPONSE);
+        if (selectedResponse == null || !selectedResponse.isIntegralNumber()) {
+            throw new IllegalArgumentException("'" + method.name() + "' needs an integer '"
+                    + FIELD_SELECTED_RESPONSE + "', the index of the chosen entry in the dialog's "
+                    + "ResponseOptionSet");
+        }
+        if (selectedResponse.asInt() < 0) {
+            throw new IllegalArgumentException("'" + FIELD_SELECTED_RESPONSE
+                    + "' is an index into the dialog's ResponseOptionSet, so it cannot be negative");
+        }
+        return selectedResponse.asInt();
     }
 
     /**

@@ -288,7 +288,7 @@ class ConditionUpdateWriterHiddenInstanceTest {
             final String comment,
             final Double duration) {
         return ConditionUpdateWriter.requestTransition(
-                        client, CONDITION, new ConditionUpdate(method, eventId, comment, duration))
+                        client, CONDITION, new ConditionUpdate(method, eventId, comment, duration, null))
                 .join();
     }
 

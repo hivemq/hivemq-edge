@@ -203,7 +203,9 @@ class ConditionUpdateWriterMethodResolutionTest {
 
     private @NotNull StatusCode suppress(final String comment) {
         return ConditionUpdateWriter.requestTransition(
-                        client, CONDITION, new ConditionUpdate(ConditionUpdate.Method.SUPPRESS, null, comment, null))
+                        client,
+                        CONDITION,
+                        new ConditionUpdate(ConditionUpdate.Method.SUPPRESS, null, comment, null, null))
                 .join();
     }
 

@@ -105,6 +105,10 @@ public final class ConditionUpdateWriter {
             Map.entry("PlaceInService2", NodeIds.AlarmConditionType_PlaceInService2),
             Map.entry("Reset", NodeIds.AlarmConditionType_Reset),
             Map.entry("Reset2", NodeIds.AlarmConditionType_Reset2),
+            // DialogConditionType (§5.6). A dialog is a condition in its own right rather than an alarm, so
+            // its methods hang off a sibling of AlarmConditionType rather than beneath it.
+            Map.entry("Respond", NodeIds.DialogConditionType_Respond),
+            Map.entry("Respond2", NodeIds.DialogConditionType_Respond2),
             // Shelving reached through the condition, because this server exposes no ShelvingState object
             // either. AlarmConditionType declares the machine at ShelvingState, so its instance-declaration
             // method node is the one the condition's own type defines.
@@ -412,11 +416,14 @@ public final class ConditionUpdateWriter {
     /**
      * The arguments of a {@code "2"} variant: the base method's arguments with the comment appended.
      * <p>
-     * {@code TimedShelve2(ShelvingTime, Comment)} is the only one with two — the rest take the comment alone.
+     * {@code TimedShelve2(ShelvingTime, Comment)} and {@code Respond2(SelectedResponse, Comment)} are the two
+     * with a second argument — the rest take the comment alone.
      */
     private static @NotNull Variant[] commentedArgumentsFor(final @NotNull ConditionUpdate update) {
         return switch (update.method().arguments()) {
             case DURATION -> new Variant[] {Variant.of(update.duration()), Variant.of(commentOf(update))};
+            case SELECTED_RESPONSE ->
+                new Variant[] {Variant.of(update.selectedResponse()), Variant.of(commentOf(update))};
             case NONE -> new Variant[] {Variant.of(commentOf(update))};
             // The base form already takes the comment, so this variant is never resolved for these.
             case EVENT_AND_COMMENT -> new Variant[] {Variant.of(update.eventId()), Variant.of(commentOf(update))};
@@ -433,6 +440,9 @@ public final class ConditionUpdateWriter {
         return switch (update.method().arguments()) {
             case EVENT_AND_COMMENT -> new Variant[] {Variant.of(update.eventId()), Variant.of(commentOf(update))};
             case DURATION -> new Variant[] {Variant.of(update.duration())};
+            // Int32: OPC 10000-9 §5.6.3 declares SelectedResponse an Int32, and a Variant carrying anything
+            // else is a type mismatch the server rejects rather than coerces.
+            case SELECTED_RESPONSE -> new Variant[] {Variant.of(update.selectedResponse())};
             case NONE -> new Variant[0];
         };
     }
