@@ -137,6 +137,11 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * write destination. Turning it into an enforced rule ({@code readOnly ⇒ ⊥}) is runtime matcher work left to
      * Nevsky; until then nothing in Edge rejects a write on the strength of this flag.
      * <p>
+     * Because that rule is coming, the flags this method emits must already be true rather than merely
+     * harmless: the document root is marked writable below, and
+     * {@code test_southboundRoot_isNeverReadOnly_soEnforcementWouldNotRejectEveryWrite} pins it by running a
+     * conforming write through networknt with enforcement switched on.
+     * <p>
      * Because {@link com.hivemq.adapter.sdk.api.schema.SchemaBuilder} defaults every node to
      * {@code writable = false}, an adapter supplying an explicit southbound schema must chain {@code .writable()}
      * on the root and on each writable member — otherwise the whole shape renders {@code readOnly} and offers no
@@ -158,7 +163,17 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         // the adapter put on its own schema root — identical to the northbound rendering of the same value,
         // which is what lets a consumer detect "read and write use the same schema" by comparing value shapes.
         builder.property("value").required().schema(writeValue);
-        return builder.endObject().build();
+        // The wrapper itself is writable, and saying so matters. SchemaBuilder defaults every node to
+        // writable = false, which renders readOnly on the document root — on the one document whose entire
+        // purpose is to be written. Harmless while readOnly is only an annotation, but the moment it becomes
+        // an assertion (the readOnly ⇒ ⊥ rule) a read-only root rejects EVERY southbound write for EVERY tag,
+        // arrays or not: networknt's readOnly check fires on the node being present at all, so the root error
+        // lands on every instance. Verified against networknt with readOnly enforcement enabled — with the
+        // default flag a conforming command produces "$: is a readonly field, it cannot be changed".
+        //
+        // The northbound wrapper keeps its readOnly, and correctly so: that document describes what is
+        // published, and it genuinely cannot be written. The asymmetry is the point, not an oversight.
+        return builder.endObject().writable().build();
     }
 
     @Override

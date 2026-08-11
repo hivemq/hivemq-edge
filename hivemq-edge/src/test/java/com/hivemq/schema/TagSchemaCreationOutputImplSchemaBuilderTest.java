@@ -383,8 +383,9 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
         // drifts from this output tests the mock rather than the feature (which is how the missing readOnly
         // annotations went unnoticed). Change one, change the other.
         //
-        // Note the readOnly on the root: that flag is on the wrapper this class builds, not on the adapter's
-        // command schema, and no consumer reads it (getPropertyListFrom only walks `properties`).
+        // Note the absence of readOnly anywhere: the wrapper root is writable (it is the document being
+        // written) and the adapter marked its command fields writable. Any readOnly in here is a bug — see
+        // test_southboundRoot_isNeverReadOnly_soEnforcementWouldNotRejectEveryWrite.
         final String expected = """
                 {
                   "type": "object",
@@ -400,13 +401,96 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
                     }
                   },
                   "required": [ "value" ],
-                  "readOnly": true,
                   "$schema": "https://json-schema.org/draft/2019-09/schema"
                 }
                 """;
 
         assertThat(output.getSchema(TagSchemaDirection.SOUTHBOUND))
                 .isEqualTo(new com.fasterxml.jackson.databind.ObjectMapper().readTree(expected));
+    }
+
+    /**
+     * The southbound document's <em>root</em> must never be {@code readOnly}, and this asserts it the only way
+     * that is convincing: by switching {@code readOnly} enforcement on and writing to it.
+     * <p>
+     * networknt's read-only check fires on the node being <em>present</em>, not on it changing, so a read-only
+     * root rejects every instance — i.e. every southbound write for every tag, arrays or not. While
+     * {@code readOnly} is a bare annotation that costs nothing and is easy to dismiss as cosmetic; the day the
+     * {@code readOnly ⇒ ⊥} rule is switched on it would reject 100% of writes and look like the rule itself
+     * being unimplementable. Pinning it under enforcement is what stops that.
+     */
+    @Test
+    void test_southboundRoot_isNeverReadOnly_soEnforcementWouldNotRejectEveryWrite() throws Exception {
+        final var output = new TagSchemaCreationOutputImpl();
+        output.finish(
+                new TagSchemaCreationOutput.DataPointSchema(alarmEventSchema(), null, null, conditionCommandSchema()));
+
+        final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        final JsonNode document = output.getSchema(TagSchemaDirection.SOUTHBOUND);
+        final String command = "{\"value\":{\"eventId\":\"evt-1\",\"method\":7,\"comment\":\"ack\"}}";
+
+        final var enforcing = com.networknt.schema.SchemaValidatorsConfig.builder()
+                .readOnly(true)
+                .build();
+        final var errors = com.networknt.schema.JsonSchemaFactory.getInstance(
+                        com.networknt.schema.SpecVersion.VersionFlag.V201909)
+                .getSchema(document, enforcing)
+                .validate(mapper.readTree(command));
+
+        assertThat(errors)
+                .as(
+                        "a conforming southbound command must survive readOnly enforcement; a readOnly root or "
+                                + "readOnly command fields would reject it: %s",
+                        errors)
+                .isEmpty();
+        assertThat(document.has("readOnly"))
+                .as("the document being written must not declare itself read-only")
+                .isFalse();
+    }
+
+    /**
+     * The counterpart: the northbound wrapper keeps {@code readOnly}, and that is correct. The published shape
+     * genuinely cannot be written, so the asymmetry between the two roots is meaningful rather than an
+     * oversight — and a future enforcement pass must not "tidy" it away.
+     */
+    @Test
+    void test_northboundRoot_staysReadOnly() throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+        output.finish(
+                new TagSchemaCreationOutput.DataPointSchema(alarmEventSchema(), null, null, conditionCommandSchema()));
+
+        assertThat(output.getSchema(TagSchemaDirection.NORTHBOUND)
+                        .get("readOnly")
+                        .asBoolean())
+                .isTrue();
+    }
+
+    /** A read-only tag must still be refused under enforcement — the fix must not make everything writable. */
+    @Test
+    void test_readOnlyValue_isStillRejectedUnderEnforcement() throws Exception {
+        final var output = new TagSchemaCreationOutputImpl();
+        // A tag the device does not accept writes for: the adapter leaves its value schema non-writable.
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                new SchemaBuilder()
+                        .scalar(ScalarType.LONG)
+                        .readable()
+                        .writable(false)
+                        .build(),
+                null,
+                null));
+
+        final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        final var enforcing = com.networknt.schema.SchemaValidatorsConfig.builder()
+                .readOnly(true)
+                .build();
+        final var errors = com.networknt.schema.JsonSchemaFactory.getInstance(
+                        com.networknt.schema.SpecVersion.VersionFlag.V201909)
+                .getSchema(output.getSchema(TagSchemaDirection.SOUTHBOUND), enforcing)
+                .validate(mapper.readTree("{\"value\":42}"));
+
+        assertThat(errors)
+                .as("writing to a read-only tag must be refused once enforcement exists")
+                .isNotEmpty();
     }
 
     @Test

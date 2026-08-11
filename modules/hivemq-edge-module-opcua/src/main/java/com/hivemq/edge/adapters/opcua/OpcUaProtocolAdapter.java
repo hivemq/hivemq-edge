@@ -81,6 +81,9 @@ import org.slf4j.LoggerFactory;
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrowser {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
+    /** OPC UA's standard Objects folder — the conventional entry point when a browse names no root. */
+    private static final @NotNull String OBJECTS_FOLDER_NODE_ID = "i=85";
+
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
@@ -540,11 +543,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             output.fail("Discovery failed: Adapter has been stopped");
             return;
         }
-        if (input.getRootNode() == null) {
-            log.error("Discovery failed: Root node is null");
-            output.fail("Root node is null");
-            return;
-        }
+        // No root means "start from the top", which for OPC UA is the standard Objects folder (i=85). Failing
+        // instead turned the ordinary "browse this server" call into a 500 with no indication of what was
+        // missing; every caller that wanted the whole address space had to know to pass i=85 itself.
+        final String rootNode = input.getRootNode() == null ? OBJECTS_FOLDER_NODE_ID : input.getRootNode();
         final OpcUaClientConnection conn = opcUaClientConnection.get();
         if (conn == null) {
             output.fail("Discovery failed: ClientConnection not connected or not initialized");
@@ -554,8 +556,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 .ifPresentOrElse(
                         client -> {
                             @SuppressWarnings("unused")
-                            final var unused = OpcUaNodeDiscovery.discoverValues(
-                                            client, input.getRootNode(), input.getDepth())
+                            final var unused = OpcUaNodeDiscovery.discoverValues(client, rootNode, input.getDepth())
                                     .whenComplete((collectedNodes, throwable) -> {
                                         if (throwable == null) {
                                             final NodeTree nodeTree = output.getNodeTree();

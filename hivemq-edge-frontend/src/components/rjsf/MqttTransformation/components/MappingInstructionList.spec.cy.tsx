@@ -26,10 +26,9 @@ const MOCK_INSTRUCTIONS: Instruction[] = [
  *
  * This is a verbatim copy of the backend output, pinned by
  * `TagSchemaCreationOutputImplSchemaBuilderTest.test_southboundSchema_conditionCommandDocumentIsPinned`.
- * Do not "tidy" it: the readOnly on the root is really there (it is on the wrapper Edge builds, not on the
- * adapter's command schema), and the absence of readOnly on the three command fields is exactly what this
- * fixture is here to prove — an earlier hand-written fixture omitted those annotations altogether and so
- * could not have caught a backend that marked every field read-only.
+ * Do not "tidy" it, and do not add annotations to it: the absence of readOnly anywhere — the root included —
+ * is exactly what this fixture exists to prove. Its predecessor was hand-written and simply omitted every
+ * readOnly, so it could not have caught a backend that marked the whole document read-only.
  */
 const MOCK_SOUTHBOUND_CONDITION_SCHEMA: RJSFSchema = {
   type: 'object',
@@ -45,7 +44,6 @@ const MOCK_SOUTHBOUND_CONDITION_SCHEMA: RJSFSchema = {
     },
   },
   required: ['value'],
-  readOnly: true,
   $schema: 'https://json-schema.org/draft/2019-09/schema',
 }
 
