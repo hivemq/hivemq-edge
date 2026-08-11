@@ -709,21 +709,31 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                         opcuaTag.getName());
                             }
 
-                            final NodeId nodeId =
-                                    NodeId.parse(opcuaTag.getDefinition().getNode());
+                            // A refresh tag is written to ask for the current alarm picture. Its node plays
+                            // no part: the call is made on the well-known ConditionType, and the only
+                            // argument is the subscription id, which is ours rather than the caller's.
+                            //
+                            // Dispatched before anything parses that node, which is the whole of the fix
+                            // here. Subscription verification deliberately does not parse a refresh tag's
+                            // node either -- it passes null and says why -- so a tag with a placeholder
+                            // there starts, subscribes and publishes control events perfectly well, and
+                            // then threw on the one command it exists to accept. Worse than a failed write:
+                            // the throw happened inside this consumer, where nothing maps it to a failure,
+                            // so the WritingOutput was never completed at all.
+                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.REFRESH) {
+                                requestRefresh(opcUAWritePayload, tagName, output);
+                                return;
+                            }
+
+                            final NodeId nodeId = parseNodeOrFail(opcuaTag, tagName, output);
+                            if (nodeId == null) {
+                                return;
+                            }
 
                             // A condition is moved by calling a method on it, not by assigning to it: the
                             // server owns the state machine. Everything else is an ordinary value write.
                             if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.CONDITION) {
                                 writeConditionUpdate(client, nodeId, opcUAWritePayload, tagName, output);
-                                return;
-                            }
-
-                            // A refresh tag is written to ask for the current alarm picture. Its node plays
-                            // no part: the call is made on the well-known ConditionType, and the only
-                            // argument is the subscription id, which is ours rather than the caller's.
-                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.REFRESH) {
-                                requestRefresh(opcUAWritePayload, tagName, output);
                                 return;
                             }
 
@@ -750,6 +760,28 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     });
                         },
                         () -> output.fail("Discovery failed: Client not connected or not initialized"));
+    }
+
+    /**
+     * Parses the node a write is aimed at, answering the write rather than throwing when it cannot.
+     * <p>
+     * {@code NodeId.parse} throws an unchecked exception, and this runs inside the consumer of an
+     * {@code ifPresentOrElse} — so a throw leaves the {@link WritingOutput} uncompleted rather than failed,
+     * which is the difference between a write that reports an error and one that never answers.
+     *
+     * @return the parsed node, or {@code null} when the write has already been failed.
+     */
+    private @Nullable NodeId parseNodeOrFail(
+            final @NotNull OpcuaTag opcuaTag, final @NotNull String tagName, final @NotNull WritingOutput output) {
+
+        final String node = opcuaTag.getDefinition().getNode();
+        try {
+            return NodeId.parse(node);
+        } catch (final Exception e) {
+            log.error("Cannot write to tag '{}': '{}' is not a node id", tagName, node, e);
+            output.fail("Cannot write to tag '" + tagName + "': '" + node + "' is not a node id");
+            return null;
+        }
     }
 
     /**

@@ -17,9 +17,14 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -30,6 +35,9 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.writing.WritingContext;
+import com.hivemq.adapter.sdk.api.writing.WritingInput;
+import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.edge.adapters.opcua.FakeEventService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
@@ -37,6 +45,7 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
+import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.ArrayList;
 import java.util.List;
@@ -188,6 +197,60 @@ public class OpcUaConditionRefreshIT {
                         () -> assertThat(opcUaServerExtension.getTestNamespace().refreshBracketCount())
                                 .as("one rejected tag must not cost the healthy tags their refresh")
                                 .isPositive());
+    }
+
+    @Test
+    @Timeout(120)
+    void whenARefreshTagsNodeIsAPlaceholder_thenItsRefreshCommandStillWorks() throws Exception {
+        // Review-02 finding 7. A refresh tag's node "plays no part" -- the call names the well-known
+        // ConditionType and carries the subscription id -- and subscription verification says so by not
+        // parsing it at all. The write path parsed it anyway, before dispatching on kind, so a tag that
+        // starts, subscribes and publishes control events perfectly well threw on the one command it exists
+        // to accept. The throw landed inside an ifPresentOrElse consumer with nothing to map it to a
+        // failure, so the write did not fail either: it never answered.
+        //
+        // The node below is deliberately not a node id. "ns=2;s=" would not do -- Milo parses that happily
+        // as a string identifier that happens to be empty -- so this is a plain word, which cannot be one.
+        opcUaServerExtension.getTestNamespace().observeRefreshEvents();
+        opcUaServerExtension.getTestNamespace().addAcknowledgeableConditionNode("RefreshableAlarm", CONDITION_NODE_ID);
+
+        startAdapterWith(new OpcuaTag("refresh", "", new OpcuaTagDefinition("not-a-node-id", OpcuaTagKind.REFRESH)));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .as("a placeholder node must not stop a refresh tag starting -- verification never reads it")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+        await().untilAsserted(
+                        () -> assertThat(opcUaServerExtension.getTestNamespace().refreshBracketCount())
+                                .isPositive());
+        final int afterConnect = opcUaServerExtension.getTestNamespace().refreshBracketCount();
+
+        final WritingOutput output = writeToRefreshTag("""
+                { "method": "REFRESH" }
+                """);
+
+        verify(output, timeout(10_000)).finish();
+        verify(output, never()).fail(anyString());
+        await().untilAsserted(
+                        () -> assertThat(opcUaServerExtension.getTestNamespace().refreshBracketCount())
+                                .as("the command has to reach the server, not merely avoid throwing")
+                                .isGreaterThan(afterConnect));
+    }
+
+    private @NotNull WritingOutput writeToRefreshTag(final @NotNull String json) throws Exception {
+        final WritingContext writingContext = mock(WritingContext.class);
+        when(writingContext.getTagName()).thenReturn("refresh");
+
+        final WritingInput writingInput = mock(WritingInput.class);
+        when(writingInput.getWritingContext()).thenReturn(writingContext);
+        when(writingInput.getWritingPayload()).thenReturn(new OpcUaPayload(new ObjectMapper().readTree(json)));
+
+        final WritingOutput output = mock(WritingOutput.class);
+        final OpcUaProtocolAdapter started = adapter;
+        if (started == null) {
+            throw new IllegalStateException("the adapter has not been started");
+        }
+        started.write(writingInput, output);
+        return output;
     }
 
     private void startAdapterWith(final @NotNull OpcuaTag @NotNull ... tags) {
