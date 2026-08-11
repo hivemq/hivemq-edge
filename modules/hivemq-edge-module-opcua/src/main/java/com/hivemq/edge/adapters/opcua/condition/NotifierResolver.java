@@ -19,12 +19,15 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
@@ -87,6 +90,25 @@ public final class NotifierResolver {
      * thing that makes a node a valid target for an event monitored item.
      */
     private static final int SUBSCRIBE_TO_EVENTS = 0x01;
+
+    /**
+     * The statuses that settle the question rather than dodging it.
+     * <p>
+     * {@code Bad_NodeIdUnknown} and {@code Bad_NodeIdInvalid} are the server saying the configured target does
+     * not identify a node — the first that no such node exists, the second that the id is not well formed for
+     * this server. Neither is a matter of permission or timing, and neither will read differently on a
+     * restart.
+     * <p>
+     * {@code Bad_AttributeIdInvalid} is the same answer arrived at from the other side. It means the node does
+     * not have the attribute being read, and {@code EventNotifier} is defined for exactly the node classes
+     * that can deliver events — OPC 10000-3 §7.17 gives it to Objects and Views, and it is mandatory on both.
+     * So a node that has no {@code EventNotifier} is not a notifier, whatever else it is. This is also the
+     * one entry that only applies to the second read: a NodeClass read that answers
+     * {@code Bad_AttributeIdInvalid} would mean something has gone very strangely wrong, since every node has
+     * a NodeClass.
+     */
+    private static final @NotNull Set<Long> DEFINITELY_NOT_A_NOTIFIER =
+            Set.of(StatusCodes.Bad_NodeIdUnknown, StatusCodes.Bad_NodeIdInvalid, StatusCodes.Bad_AttributeIdInvalid);
 
     /** The outcome of looking for a notifier. */
     public sealed interface Result {
@@ -155,16 +177,28 @@ public final class NotifierResolver {
      * then stays silent forever. The second is the bad one: nothing distinguishes it from an alarm that
      * simply has not fired.
      * <p>
-     * <b>Only a definite answer rejects.</b> A server that declines to say — the read fails, or answers with
-     * a bad status — leaves the tag alone with a warning, because refusing on silence would break servers
-     * that restrict attribute reads while the node is perfectly good. What rejects is the server saying
-     * plainly that this node is a Variable, or that its {@code EventNotifier} has the bit clear.
+     * <b>Only a definite answer rejects.</b> A server that <em>declines</em> to say — the read fails, or comes
+     * back {@code Bad_UserAccessDenied} — leaves the tag alone with a warning, because refusing on silence
+     * would break servers that restrict attribute reads while the node is perfectly good.
+     * <p>
+     * Not every bad status is silence, though, and treating them alike was the defect here.
+     * {@code Bad_NodeIdUnknown} and {@code Bad_NodeIdInvalid} are not the server withholding an attribute;
+     * they are the server stating that the configured target does not identify a node at all. Admitting those
+     * let a typo through the one preflight that exists to catch it, and the tag then either failed the
+     * monitored-item batch — taking healthy tags with it, on some servers — or subscribed cleanly and stayed
+     * silent forever, which is indistinguishable from an alarm that has not fired. See
+     * {@link #DEFINITELY_NOT_A_NOTIFIER}.
      *
+     * @param field the tag definition field this node came from, named in the rejection so an operator knows
+     *              which line to correct.
      * @return the reason the node cannot be subscribed, or empty when it can be (or when the server would
      *         not say).
      */
     public static @NotNull CompletableFuture<Optional<String>> checkSubscribable(
-            final @NotNull OpcUaClient client, final @NotNull NodeId nodeId, final @NotNull String tagName) {
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId nodeId,
+            final @NotNull String tagName,
+            final @NotNull String field) {
 
         final List<ReadValueId> reads = List.of(
                 new ReadValueId(nodeId, AttributeId.NodeClass.uid(), null, null),
@@ -181,11 +215,11 @@ public final class NotifierResolver {
                                 nodeId);
                         return Optional.<String>empty();
                     }
-                    final Optional<String> wrongClass = rejectByNodeClass(results[0], nodeId, tagName);
+                    final Optional<String> wrongClass = rejectByNodeClass(results[0], nodeId, tagName, field);
                     if (wrongClass.isPresent()) {
                         return wrongClass;
                     }
-                    return rejectByEventNotifier(results[1], nodeId, tagName);
+                    return rejectByEventNotifier(results[1], nodeId, tagName, field);
                 })
                 .exceptionally(throwable -> {
                     log.warn(
@@ -206,15 +240,16 @@ public final class NotifierResolver {
      * notifier is the commonest form of this mistake — a value tag's node id pasted into an event tag.
      */
     private static @NotNull Optional<String> rejectByNodeClass(
-            final @NotNull DataValue result, final @NotNull NodeId nodeId, final @NotNull String tagName) {
+            final @NotNull DataValue result,
+            final @NotNull NodeId nodeId,
+            final @NotNull String tagName,
+            final @NotNull String field) {
 
+        final Optional<String> definite = rejectByStatus(result, nodeId, tagName, field, "NodeClass");
+        if (definite.isPresent()) {
+            return definite;
+        }
         if (result.statusCode() != null && result.statusCode().isBad()) {
-            log.warn(
-                    "Tag '{}': the server would not report the NodeClass of {} ({}); not treating that as a "
-                            + "reason to refuse the tag.",
-                    tagName,
-                    nodeId,
-                    result.statusCode());
             return Optional.empty();
         }
         final Object value = result.value().value();
@@ -225,7 +260,7 @@ public final class NotifierResolver {
         if (nodeClass == NodeClass.Object || nodeClass == NodeClass.View) {
             return Optional.empty();
         }
-        return Optional.of("its event target " + nodeId + " is a " + nodeClass
+        return Optional.of("its event target " + nodeId + " (from '" + field + "') is a " + nodeClass
                 + ", and only an Object or a View can deliver events (OPC 10000-3 §7.17). For a CONDITION tag "
                 + "name the alarm in 'node' and let Edge find the notifier, or name a real notifier in "
                 + "'notifierNode'; for an EVENT_SUBSCRIPTION tag 'node' must be the notifier itself");
@@ -233,15 +268,16 @@ public final class NotifierResolver {
 
     /** Rejects a node whose {@code EventNotifier} attribute says it does not accept event subscriptions. */
     private static @NotNull Optional<String> rejectByEventNotifier(
-            final @NotNull DataValue result, final @NotNull NodeId nodeId, final @NotNull String tagName) {
+            final @NotNull DataValue result,
+            final @NotNull NodeId nodeId,
+            final @NotNull String tagName,
+            final @NotNull String field) {
 
+        final Optional<String> definite = rejectByStatus(result, nodeId, tagName, field, "EventNotifier attribute");
+        if (definite.isPresent()) {
+            return definite;
+        }
         if (result.statusCode() != null && result.statusCode().isBad()) {
-            log.warn(
-                    "Tag '{}': the server would not report the EventNotifier attribute of {} ({}); not treating "
-                            + "that as a reason to refuse the tag.",
-                    tagName,
-                    nodeId,
-                    result.statusCode());
             return Optional.empty();
         }
         final Object value = result.value().value();
@@ -252,9 +288,52 @@ public final class NotifierResolver {
         if ((bits.intValue() & SUBSCRIBE_TO_EVENTS) != 0) {
             return Optional.empty();
         }
-        return Optional.of("its event target " + nodeId + " has the SubscribeToEvents bit clear in its "
-                + "EventNotifier attribute, so the server will not deliver events from it. Name a node that "
-                + "is an event notifier, or leave 'notifierNode' empty to have Edge walk to one");
+        return Optional.of("its event target " + nodeId + " (from '" + field + "') has the SubscribeToEvents "
+                + "bit clear in its EventNotifier attribute, so the server will not deliver events from it. "
+                + "Name a node that is an event notifier, or leave 'notifierNode' empty to have Edge walk to one");
+    }
+
+    /**
+     * Separates a server that <em>cannot</em> answer from one that <em>will not</em>.
+     * <p>
+     * Every bad status used to be read as the latter and waved through, which is defensible for exactly one
+     * of them. {@code Bad_UserAccessDenied} says the session may not read the attribute and says nothing
+     * about the node; so does a timeout, or a transport failure. Admitting those is the right trade, because
+     * refusing a tag because a server restricts attribute reads would break perfectly good configurations.
+     * <p>
+     * {@link #DEFINITELY_NOT_A_NOTIFIER} is the other kind, and the distinction is not a nuance: those
+     * statuses are the server stating that the configured target does not identify a usable node. Waving one
+     * through defeats the entire purpose of this preflight — a typo reaches monitored-item synchronization,
+     * where it either fails the whole batch or produces a tag that subscribes cleanly and never publishes.
+     *
+     * @param attribute the attribute being read, for the message.
+     * @return the rejection when the status is a definite answer, empty when it is silence or success.
+     */
+    private static @NotNull Optional<String> rejectByStatus(
+            final @NotNull DataValue result,
+            final @NotNull NodeId nodeId,
+            final @NotNull String tagName,
+            final @NotNull String field,
+            final @NotNull String attribute) {
+
+        final StatusCode status = result.statusCode();
+        if (status == null || !status.isBad()) {
+            return Optional.empty();
+        }
+        if (DEFINITELY_NOT_A_NOTIFIER.contains(status.value())) {
+            return Optional.of("its event target " + nodeId + " (from '" + field + "') was refused by the server "
+                    + "with " + status + " when reading its " + attribute + ". That is not the server declining "
+                    + "to answer: it is the server saying this is not a node it can deliver events from. Check "
+                    + "'" + field + "' for a typo, a stale node id, or a namespace index that has changed");
+        }
+        log.warn(
+                "Tag '{}': the server would not report the {} of {} ({}); not treating that as a reason to "
+                        + "refuse the tag.",
+                tagName,
+                attribute,
+                nodeId,
+                status);
+        return Optional.empty();
     }
 
     /** The {@code NodeClass} a read returned, or null when the server sent something unrecognisable. */

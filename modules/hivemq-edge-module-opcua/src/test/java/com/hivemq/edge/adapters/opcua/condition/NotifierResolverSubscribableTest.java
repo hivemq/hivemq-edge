@@ -36,6 +36,9 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ResponseHeader;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Validation of an event target a tag names directly, rather than one Edge walked to.
@@ -145,10 +148,77 @@ class NotifierResolverSubscribableTest {
         assertThat(check()).isEmpty();
     }
 
+    // ── review-02 finding 9: silence and refusal are different answers ──────────────────────────────
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("definiteRefusals")
+    void aServerSayingTheNodeIsNotOneRejectsTheTag(final long statusCode, final @NotNull String name) {
+        // The defect. Every bad status was read as "this server will not disclose the attribute", which is
+        // true of Bad_UserAccessDenied and of nothing else here. These say the configured target does not
+        // identify a node Edge can take events from -- not a matter of permission, not transient, and not
+        // going to read differently on a restart. Waving them through defeats the whole point of a preflight
+        // whose reason for existing is to catch a typo before it reaches monitored-item synchronization.
+        answers(bad(statusCode), good(uint(1)));
+
+        assertThat(check())
+                .as("%s is the server answering, not declining to answer", name)
+                .hasValueSatisfying(reason -> assertThat(reason).contains(name).contains("node"));
+    }
+
+    static @NotNull java.util.stream.Stream<Arguments> definiteRefusals() {
+        return java.util.stream.Stream.of(
+                Arguments.of(StatusCodes.Bad_NodeIdUnknown, "Bad_NodeIdUnknown"),
+                Arguments.of(StatusCodes.Bad_NodeIdInvalid, "Bad_NodeIdInvalid"));
+    }
+
+    @Test
+    void andSoDoesAnUnknownNodeOnTheEventNotifierRead() {
+        // Same classification on the second read. A server may answer the NodeClass and refuse the other.
+        answers(good(NodeClass.Object), bad(StatusCodes.Bad_NodeIdUnknown));
+
+        assertThat(check()).isPresent();
+    }
+
+    @Test
+    void anAttributeThatDoesNotExistOnTheNodeRejectsItToo() {
+        // The same answer reached from the other side. Bad_AttributeIdInvalid means the node has no such
+        // attribute, and EventNotifier is mandatory on exactly the classes that can deliver events (OPC
+        // 10000-3 §7.17), so a node without one is not a notifier whatever else it is.
+        answers(good(NodeClass.Object), bad(StatusCodes.Bad_AttributeIdInvalid));
+
+        assertThat(check()).isPresent();
+    }
+
+    @Test
+    void anAccessDeniedStillGetsTheBenefitOfTheDoubt() {
+        // The line the classification must not cross. This one really is the server declining to answer, and
+        // refusing a tag because a server restricts attribute reads would break working configurations. It is
+        // asserted here as well as above so the two policies sit side by side and neither can drift alone.
+        answers(bad(StatusCodes.Bad_UserAccessDenied), good(uint(1)));
+
+        assertThat(check()).isEmpty();
+    }
+
+    @Test
+    void aRejectionNamesTheFieldToCorrect() {
+        // An operator with a rejected tag needs to know which line of their configuration to look at, and
+        // "node" and "notifierNode" are different lines with different fixes.
+        answers(bad(StatusCodes.Bad_NodeIdUnknown), good(uint(1)));
+
+        assertThat(NotifierResolver.checkSubscribable(client, TARGET, "boiler-high-temp", "notifierNode")
+                        .join())
+                .hasValueSatisfying(reason -> assertThat(reason).contains("'notifierNode'"));
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     private @NotNull Optional<String> check() {
-        return NotifierResolver.checkSubscribable(client, TARGET, "area-alarms").join();
+        return NotifierResolver.checkSubscribable(client, TARGET, "area-alarms", "node")
+                .join();
+    }
+
+    private static @NotNull DataValue bad(final long statusCode) {
+        return new DataValue(Variant.NULL_VALUE, new StatusCode(statusCode), null);
     }
 
     private void answers(final @NotNull DataValue nodeClass, final @NotNull DataValue eventNotifier) {

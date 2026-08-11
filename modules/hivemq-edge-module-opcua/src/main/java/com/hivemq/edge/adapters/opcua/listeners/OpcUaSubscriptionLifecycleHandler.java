@@ -1577,7 +1577,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // many conditions of differing types pass its filter -- but it does name a notifier directly, and
         // that node has to be one.
         final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
-                        client, Objects.requireNonNull(node), tagName)
+                        client, Objects.requireNonNull(node), tagName, "node")
                 .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         if (optionalUnsubscribableTag.isPresent()) {
             reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
@@ -1625,7 +1625,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // subscribes cleanly and then stays silent forever.
         if (definition.getNotifierNode() != null) {
             final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
-                            client, found.notifier(), tagName)
+                            client, found.notifier(), tagName, "notifierNode")
                     .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             if (optionalUnsubscribableTag.isPresent()) {
                 reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
