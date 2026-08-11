@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.hivemq.edge.adapters.opcua.config.tag.BaseEventFieldSet;
+import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,8 +73,8 @@ public final class ConditionEventFilters {
      * @param conditionType   the declared type, whose fields are selected.
      */
     public static @NotNull EventFilter forCondition(
-            final @NotNull NodeId conditionNodeId, final @NotNull OpcuaConditionType conditionType) {
-        return new EventFilter(selectClauses(conditionType), conditionIs(conditionNodeId));
+            final @NotNull NodeId conditionNodeId, final @NotNull EventFieldSet publishedFields) {
+        return new EventFilter(selectClauses(publishedFields), conditionIs(conditionNodeId));
     }
 
     /**
@@ -113,7 +115,7 @@ public final class ConditionEventFilters {
      * </ul>
      * Omitting all three is legitimate and means the firehose: everything the notifier carries.
      * <p>
-     * The select clause is driven by {@code publishedType}, deliberately independent of the filter. Filtering
+     * The select clause is driven by {@code publishedFields}, deliberately independent of the filter. Filtering
      * narrowly while publishing a broader shape is safe — every selected field exists on everything that
      * passed — while filtering broadly and publishing a narrower shape is allowed and yields nulls where an
      * event is not that specific type.
@@ -121,13 +123,13 @@ public final class ConditionEventFilters {
      * @param sourceNode    the source to narrow to, or null for all sources.
      * @param conditionNode the condition to narrow to, or null for all conditions.
      * @param filterType    the event type to narrow to, or null for all event types.
-     * @param publishedType the type whose fields each event carries.
+     * @param publishedFields the field set each event is published in.
      */
     public static @NotNull EventFilter forQuery(
             final @Nullable NodeId sourceNode,
             final @Nullable NodeId conditionNode,
             final @Nullable OpcuaConditionType filterType,
-            final @NotNull OpcuaConditionType publishedType) {
+            final @NotNull EventFieldSet publishedFields) {
 
         final List<ContentFilterElement> predicates = new ArrayList<>();
         if (sourceNode != null) {
@@ -142,7 +144,7 @@ public final class ConditionEventFilters {
             predicates.add(new ContentFilterElement(
                     FilterOperator.OfType, new ExtensionObject[] {literal(filterType.nodeId())}));
         }
-        return new EventFilter(selectClauses(publishedType), combine(predicates));
+        return new EventFilter(selectClauses(publishedFields), combine(predicates));
     }
 
     /**
@@ -166,7 +168,7 @@ public final class ConditionEventFilters {
         final ContentFilter admitsNothing = new ContentFilter(new ContentFilterElement[] {
             new ContentFilterElement(FilterOperator.Equals, new ExtensionObject[] {alwaysFalseLeft, alwaysFalseRight})
         });
-        return new EventFilter(selectClauses(OpcuaConditionType.CONDITION), admitsNothing);
+        return new EventFilter(selectClauses(BaseEventFieldSet.INSTANCE), admitsNothing);
     }
 
     /**
@@ -251,8 +253,8 @@ public final class ConditionEventFilters {
     }
 
     private static @NotNull SimpleAttributeOperand @NotNull [] selectClauses(
-            final @NotNull OpcuaConditionType conditionType) {
-        return conditionType.selectedFields().stream()
+            final @NotNull EventFieldSet publishedFields) {
+        return publishedFields.selectedFields().stream()
                 .map(ConditionEventFilters::selectField)
                 .toArray(SimpleAttributeOperand[]::new);
     }

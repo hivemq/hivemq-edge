@@ -49,7 +49,7 @@ import com.hivemq.edge.adapters.opcua.condition.ConditionUpdateWriter;
 import com.hivemq.edge.adapters.opcua.condition.RefreshCommand;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
+import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
@@ -890,14 +890,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // or nothing at all.
         final OpcuaTagKind tagKind = tag.getDefinition().getKind();
         if (tagKind != OpcuaTagKind.VALUE) {
-            // getPublishedType(), the same accessor the select clause and the decoder use, so the schema
+            // getPublishedFields(), the same accessor the select clause and the decoder use, so the schema
             // cannot promise a field the server was never asked for. They differ only for a REFRESH tag.
-            final OpcuaConditionType publishedType = tag.getDefinition().getPublishedType();
+            final EventFieldSet publishedFields = tag.getDefinition().getPublishedFields();
             log.debug(
                     "Schema for {} tag='{}' derived from declared type '{}'",
                     tagKind,
                     tagName,
-                    publishedType.browseName());
+                    publishedFields.browseName());
             // Northbound is the same for all three: type names the published shape, whether the tag observes
             // one condition, queries a notifier, or carries the refresh bracket. Southbound is where they
             // differ -- a transition command, a refresh request, or nothing writable at all.
@@ -908,7 +908,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         case EVENT_SUBSCRIPTION, VALUE -> ConditionSchemas.unwritableSchema();
                     };
             output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                    ConditionSchemas.readSchema(publishedType), null, null, writeSchema));
+                    ConditionSchemas.readSchema(publishedFields), null, null, writeSchema));
             return;
         }
 

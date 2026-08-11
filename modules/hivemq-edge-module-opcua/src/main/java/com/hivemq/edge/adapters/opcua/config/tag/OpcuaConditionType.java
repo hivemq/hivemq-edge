@@ -60,7 +60,7 @@ import org.jetbrains.annotations.Nullable;
  * methods and nested objects (a condition's {@code ShelvingState} is an object with its own methods, not an
  * event field).
  */
-public enum OpcuaConditionType {
+public enum OpcuaConditionType implements EventFieldSet {
     CONDITION(
             "ConditionType",
             null,
@@ -335,6 +335,7 @@ public enum OpcuaConditionType {
      * form in configuration: a config file names the OPC UA type, not this enum's constant.
      */
     @JsonValue
+    @Override
     public @NotNull String browseName() {
         return browseName;
     }
@@ -367,6 +368,7 @@ public enum OpcuaConditionType {
      * the root down, then this type's own. Ordered and de-duplicated — a subtype may re-declare a field its
      * parent already has, and it must appear once.
      */
+    @Override
     public @NotNull List<String> allFields() {
         final Set<String> fields = new LinkedHashSet<>(BASE_EVENT_FIELDS);
         final List<OpcuaConditionType> lineage = new ArrayList<>();
@@ -447,9 +449,21 @@ public enum OpcuaConditionType {
      *       That {@code Id} is a {@code NodeId} identifying the active state node, not a Boolean.</li>
      * </ul>
      */
+    @Override
     public @NotNull List<SelectedField> selectedFields() {
+        return selectClauseFor(allFields());
+    }
+
+    /**
+     * Builds the select clause for a list of field names.
+     * <p>
+     * Shared with {@link BaseEventFieldSet}, which publishes a fixed list rather than one derived from a type
+     * hierarchy. The {@code Id}-companion rules are a property of the <em>fields</em>, not of the type that
+     * happens to declare them, so both go through here and neither can grow a rule the other lacks.
+     */
+    static @NotNull List<SelectedField> selectClauseFor(final @NotNull List<String> fields) {
         final List<SelectedField> selected = new ArrayList<>();
-        for (final String field : allFields()) {
+        for (final String field : fields) {
             if (CONDITION_ID.equals(field)) {
                 // The event node itself: no browse path to walk, and its NodeId attribute rather than a
                 // Value. See CONDITION_ID for why this one field is shaped differently from every other.

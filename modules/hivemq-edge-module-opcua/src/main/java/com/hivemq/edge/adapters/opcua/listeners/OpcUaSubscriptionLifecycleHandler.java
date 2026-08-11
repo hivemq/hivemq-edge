@@ -933,12 +933,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
 
                 final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
-                // getPublishedType(), not getType(): for a REFRESH tag the two differ, and the select clause
+                // getPublishedFields(), not getType(): for a REFRESH tag the two differ, and the select clause
                 // was built from the former. Event fields arrive positionally against the select clause, so
                 // decoding against any other list would attach values to the wrong names.
                 OpcUaEventToJsonConverter.convertPayload(
                         client.getDynamicEncodingContext(),
-                        tag.getDefinition().getPublishedType(),
+                        tag.getDefinition().getPublishedFields(),
                         eventFields,
                         dataPointBuilder);
             } catch (final @NotNull UaSerializationException e) {
@@ -1074,11 +1074,11 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                         verified.sourceNode(),
                         verified.conditionNode(),
                         definition.getFilterType(),
-                        definition.getPublishedType());
+                        definition.getPublishedFields());
             case REFRESH -> ConditionEventFilters.forRefresh();
             case CONDITION, VALUE ->
                 ConditionEventFilters.forCondition(
-                        Objects.requireNonNull(verified.node()), definition.getPublishedType());
+                        Objects.requireNonNull(verified.node()), definition.getPublishedFields());
         };
     }
 
@@ -1471,7 +1471,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     /** The fields selected for a tag, in the order the select clause was built. */
     private static @NotNull List<OpcuaConditionType.SelectedField> selectedFieldsFor(final @NotNull OpcuaTag tag) {
-        return tag.getDefinition().getPublishedType().selectedFields();
+        return tag.getDefinition().getPublishedFields().selectedFields();
     }
 
     /**

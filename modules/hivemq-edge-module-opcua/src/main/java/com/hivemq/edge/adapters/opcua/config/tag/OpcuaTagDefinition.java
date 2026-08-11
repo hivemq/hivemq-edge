@@ -154,7 +154,7 @@ public class OpcuaTagDefinition implements TagDefinition {
     /**
      * The type whose structure the northbound output has, exactly as configured.
      * <p>
-     * Prefer {@link #getPublishedType()} anywhere the answer decides what is on the wire: for a
+     * Prefer {@link #getPublishedFields()} anywhere the answer decides what is on the wire: for a
      * {@code REFRESH} tag this field is accepted and ignored, and the two differ.
      */
     public @NotNull OpcuaConditionType getType() {
@@ -183,8 +183,8 @@ public class OpcuaTagDefinition implements TagDefinition {
      * then rejects as unrecognised, so a tag could be written and not re-read.
      */
     @JsonIgnore
-    public @NotNull OpcuaConditionType getPublishedType() {
-        return kind == OpcuaTagKind.REFRESH ? OpcuaConditionType.CONDITION : type;
+    public @NotNull EventFieldSet getPublishedFields() {
+        return kind == OpcuaTagKind.REFRESH ? BaseEventFieldSet.INSTANCE : type;
     }
 
     /**

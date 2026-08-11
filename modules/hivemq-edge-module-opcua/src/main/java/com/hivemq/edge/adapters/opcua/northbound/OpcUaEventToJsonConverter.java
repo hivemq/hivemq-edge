@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.northbound;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -66,12 +67,12 @@ public final class OpcUaEventToJsonConverter {
      */
     public static void convertPayload(
             final @NotNull EncodingContext ctx,
-            final @NotNull OpcuaConditionType conditionType,
+            final @NotNull EventFieldSet publishedFields,
             final @NotNull Variant[] values,
             final @NotNull DataPointBuilder<?> builder) {
 
         // The same list that built the select clause, so position i here is the field selected at i.
-        final List<OpcuaConditionType.SelectedField> fields = conditionType.selectedFields();
+        final List<OpcuaConditionType.SelectedField> fields = publishedFields.selectedFields();
 
         // Collected before anything is written: the builder streams, so the companion object naming the
         // unavailable fields cannot be appended after the fields themselves have been emitted.

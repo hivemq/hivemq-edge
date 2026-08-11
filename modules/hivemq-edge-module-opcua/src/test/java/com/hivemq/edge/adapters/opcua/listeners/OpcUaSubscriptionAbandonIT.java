@@ -30,7 +30,6 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import java.time.Duration;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -169,15 +168,28 @@ public class OpcUaSubscriptionAbandonIT {
     @Test
     @Timeout(120)
     void onTransferFailedRebuildsOnItsOwnThread() throws Exception {
-        final OpcUaSubscriptionLifecycleHandler handler =
-                handlerFor(List.of(conditionTag("absent-1", "ns=2;s=NoSuchAlarm1")));
+        final String alarm =
+                opcUaServerExtension.getTestNamespace().addAcknowledgeableConditionNode("RebuiltOnOwnThread", 92_010);
+        final OpcUaSubscriptionLifecycleHandler handler = handlerFor(List.of(conditionTag("alarm", alarm)));
+
+        // The callback has to name the subscription the handler currently holds. It used to be a bare mock,
+        // with nothing established at all, which review-02 finding 3 turned into a deliberate no-op: a
+        // callback about a subscription the handler has already moved on from schedules nothing. The test
+        // went on passing for a while regardless, because recoveryThreadNames() reads every thread in the
+        // JVM and some other class's recovery thread was still alive -- so it was asserting on a thread this
+        // handler never created. Establishing a real subscription first makes the callback the one the
+        // rebuild path is for.
+        final var established = handler.subscribe(client);
+        assertThat(established)
+                .as("precondition: something to have a transfer failure about")
+                .isPresent();
 
         // Which thread, not how long. A timing assertion would not bite: against this test server the
         // inline rebuild also finishes in milliseconds, and the ten-second ceilings that make the inline
         // version harmful only fire against a server that is reachable and not answering -- exactly what
         // cannot be arranged here. The thread name is the property itself rather than a proxy for it.
         final String callerThread = Thread.currentThread().getName();
-        handler.onTransferFailed(mock(OpcUaSubscription.class), StatusCode.GOOD);
+        handler.onTransferFailed(established.orElseThrow(), StatusCode.GOOD);
 
         await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertThat(recoveryThreadNames())
                 .as("the rebuild must run on the recovery thread, never on the caller's")

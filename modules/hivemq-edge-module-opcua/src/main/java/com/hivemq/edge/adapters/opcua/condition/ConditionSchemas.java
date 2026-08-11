@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.schema.ObjectSchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
+import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import java.util.Set;
@@ -206,9 +207,9 @@ public final class ConditionSchemas {
      * Every field is optional. The server fills what applies to a given transition and leaves the rest null, so
      * requiring any of them would describe a payload the device does not actually promise.
      */
-    public static @NotNull Schema readSchema(final @NotNull OpcuaConditionType conditionType) {
+    public static @NotNull Schema readSchema(final @NotNull EventFieldSet publishedFields) {
         final ObjectSchemaBuilder<SchemaBuilder> object = new SchemaBuilder().startObject();
-        for (final String field : conditionType.allFields()) {
+        for (final String field : publishedFields.allFields()) {
             Shape.shapeOf(field).append(object, field);
         }
         appendUnavailableFields(object);
