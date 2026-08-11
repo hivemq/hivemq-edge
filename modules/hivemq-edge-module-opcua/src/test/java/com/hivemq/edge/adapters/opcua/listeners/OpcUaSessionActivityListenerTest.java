@@ -18,6 +18,8 @@ package com.hivemq.edge.adapters.opcua.listeners;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.FakeEventService;
@@ -33,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 /**
  * The reconnect callback decides whether a condition refresh happens after a session comes back.
@@ -180,6 +183,21 @@ class OpcUaSessionActivityListenerTest {
         // a half million calls grows without bound and slows to a crawl -- and a *per-round* mock costs more
         // to construct than everything under test. Half a million rounds needs the collaborators to be plain
         // no-ops; the listener does nothing with them that this test is about.
+        // And no logging either, for the same reason the collaborators are no-ops rather than mocks.
+        // onSessionActive logs the connection at INFO before it decides whether this is a reconnect, so each
+        // round emits two lines -- half a million of them across the loop. Gradle captures a test's output
+        // into its JUnit XML, which made this class's report 119,155,642 bytes over 500,689 lines, and
+        // GitHub's Test Results check fails parsing it with "CData section too big" before it reads a single
+        // assertion. Zero failures, red check.
+        //
+        // Suppressed here rather than fixed in the production logger, which is doing nothing wrong: one line
+        // per connection is what an operator wants, and it is this test's round count that is unreasonable,
+        // not the logging. Scoped to this method and restored in the finally, so no other test loses it --
+        // and set to WARN rather than OFF, so a warning raised by the code under test would still be seen.
+        final Logger listenerLog = (Logger) LoggerFactory.getLogger(OpcUaSessionActivityListener.class);
+        final Level previousLevel = listenerLog.getLevel();
+        listenerLog.setLevel(Level.WARN);
+
         final ProtocolAdapterState sharedState = new NoOpAdapterState();
         final ProtocolAdapterMetricsService sharedMetrics = new NoOpMetrics();
         final FakeEventService sharedEvents = new FakeEventService();
@@ -219,6 +237,10 @@ class OpcUaSessionActivityListenerTest {
             }
         } finally {
             threads.shutdownNow();
+            // Null restores inheritance from the parent logger, which is what getLevel() returns when the
+            // level was never set explicitly -- so this puts the logger back however it was configured
+            // rather than pinning it to whatever this test found.
+            listenerLog.setLevel(previousLevel);
         }
     }
 
