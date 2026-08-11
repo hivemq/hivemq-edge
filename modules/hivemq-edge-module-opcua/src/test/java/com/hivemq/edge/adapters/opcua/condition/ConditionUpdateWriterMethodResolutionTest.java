@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,7 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
-import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -160,15 +159,19 @@ class ConditionUpdateWriterMethodResolutionTest {
     }
 
     @Test
-    void aServerExposingNeitherFormIsReportedAsNotSupported() {
-        // Neither on the instance, and Part 9 prescribes no type-level MethodId for Suppress -- so there is
-        // nothing left to try, and nothing is guessed from a vendor library's constant table.
+    void aServerExposingNeitherFormFallsBackToTheStandardTypesMethodId() {
+        // Review-02 finding 1. This used to assert the opposite -- Bad_NotSupported and no Call at all -- on
+        // the reading that Part 9 prescribes a type-level MethodId for Enable and Disable alone. OPC 10000-4
+        // §5.12.2.2 Table 59 states the rule once for every method, so a missing instance node is the end of
+        // what browsing can answer rather than the end of the road, and whether the server supports the
+        // method is the server's answer to give.
         exposes();
 
         final StatusCode status = suppress(null);
 
-        assertThat(status).isEqualTo(new StatusCode(StatusCodes.Bad_NotSupported));
-        verify(client, never()).callAsync(any());
+        assertThat(status.isGood()).isTrue();
+        assertThat(calledMethod()).isEqualTo(NodeIds.AlarmConditionType_Suppress);
+        verify(client, times(1)).callAsync(any());
     }
 
     @Test
