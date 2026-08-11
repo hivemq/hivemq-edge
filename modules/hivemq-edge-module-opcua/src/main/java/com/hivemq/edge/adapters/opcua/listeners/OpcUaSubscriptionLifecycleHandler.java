@@ -637,7 +637,20 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         //
         // compareAndSet rather than set: a rebuild that already finished has installed its replacement, and
         // that one must survive.
-        currentSubscription.compareAndSet(brokenSubscription, null);
+        //
+        // And the result decides whether there is anything to rebuild. A failed swap says this callback is
+        // about a subscription the handler has already moved on from -- either a replacement is established,
+        // or an earlier callback about this same one already cleared it and its rebuild is under way. Either
+        // way the work is done or in hand, and doing it again is not merely wasteful. The rebuild ends at
+        // established(), which overwrites the reference: the healthy subscription installed a moment ago
+        // would be forgotten while still holding its listener and its monitored items, so it would go on
+        // publishing every transition a second time, on a server subscription nothing left here can delete.
+        if (!currentSubscription.compareAndSet(brokenSubscription, null)) {
+            log.debug(
+                    "Adapter '{}': ignoring a transfer failure for a subscription that is no longer the current one; a replacement is already established or being built",
+                    adapterId);
+            return;
+        }
 
         try {
             recoveryExecutor.execute(this::recreateSubscription);

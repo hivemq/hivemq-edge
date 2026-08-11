@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.listeners;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
 
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
@@ -30,6 +31,8 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
@@ -105,7 +108,98 @@ class OpcUaSubscriptionTransferFailureTest {
                 .isSameAs(replacement);
     }
 
+    // ── review-02 finding 3: and it must not be replaced a second time either ───────────────────────
+
+    @Test
+    void andNoSecondRebuildIsStartedForIt() throws Exception {
+        // The half the assertion above could not see. Leaving the replacement in the slot was only the first
+        // requirement; the callback went on to schedule a rebuild regardless, on the strength of a
+        // compareAndSet whose result nobody read. That rebuild ends at established(), which *overwrites* the
+        // slot -- so the healthy replacement is dropped from the handler's view while still holding its
+        // listener and its monitored items. It keeps publishing every transition a second time, on a server
+        // subscription nothing left here can delete.
+        //
+        // Asserted through the client rather than through the slot, because the slot is exactly what stops
+        // showing the problem once the second rebuild lands.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        final OpcUaSubscriptionLifecycleHandler handler = handler(client);
+        final OpcUaSubscription broken = mock(OpcUaSubscription.class);
+        record(handler, mock(OpcUaSubscription.class));
+
+        handler.onTransferFailed(broken, new StatusCode(StatusCodes.Bad_SubscriptionIdInvalid));
+        awaitRecoveryQueue(handler);
+
+        assertThat(mockingDetails(client).getInvocations())
+                .as("no rebuild may be attempted for a subscription the handler has already moved on from")
+                .isEmpty();
+    }
+
+    @Test
+    void aGenuineTransferFailureStillStartsOne() throws Exception {
+        // The guard must not swallow the case it exists to narrow. When the callback does name the current
+        // subscription there is nothing established to protect, and the rebuild is the whole point of the
+        // callback. This is also what stops the test above from passing vacuously: the same assertion, on the
+        // same mock, comes out the other way.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        final OpcUaSubscriptionLifecycleHandler handler = handler(client);
+        final OpcUaSubscription broken = mock(OpcUaSubscription.class);
+        record(handler, broken);
+
+        handler.onTransferFailed(broken, new StatusCode(StatusCodes.Bad_SubscriptionIdInvalid));
+        awaitRecoveryQueue(handler);
+
+        assertThat(mockingDetails(client).getInvocations())
+                .as("the rebuild this callback exists to start")
+                .isNotEmpty();
+    }
+
+    @Test
+    void aSecondCallbackAboutTheSameBrokenSubscriptionIsIgnored() throws Exception {
+        // The commonest shape of the late callback, and the one that needs no replacement to have been
+        // installed at all: the first call clears the slot to null, so the second and third find nothing
+        // matching and must not queue rebuilds of their own behind the one already running.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        final OpcUaSubscriptionLifecycleHandler handler = handler(client);
+        final OpcUaSubscription broken = mock(OpcUaSubscription.class);
+        record(handler, broken);
+
+        handler.onTransferFailed(broken, new StatusCode(StatusCodes.Bad_SubscriptionIdInvalid));
+        awaitRecoveryQueue(handler);
+        final int afterOneRebuild = mockingDetails(client).getInvocations().size();
+        assertThat(afterOneRebuild)
+                .as("precondition: the first callback did start a rebuild")
+                .isNotZero();
+
+        handler.onTransferFailed(broken, new StatusCode(StatusCodes.Bad_SubscriptionIdInvalid));
+        handler.onTransferFailed(broken, new StatusCode(StatusCodes.Bad_SubscriptionIdInvalid));
+        awaitRecoveryQueue(handler);
+
+        assertThat(mockingDetails(client).getInvocations())
+                .as("one rebuild for one broken subscription, however many times the server says so")
+                .hasSize(afterOneRebuild);
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Waits until the recovery executor has run everything queued before this call.
+     * <p>
+     * The executor is single-threaded and FIFO, so a task submitted now completes only after every task
+     * submitted earlier has. That turns "nothing was scheduled" from a race into an assertion.
+     */
+    private static void awaitRecoveryQueue(final @NotNull OpcUaSubscriptionLifecycleHandler handler) throws Exception {
+        recoveryExecutor(handler).submit(() -> {}).get(10, TimeUnit.SECONDS);
+    }
+
+    private static @NotNull ExecutorService recoveryExecutor(final @NotNull OpcUaSubscriptionLifecycleHandler handler) {
+        try {
+            final Field field = OpcUaSubscriptionLifecycleHandler.class.getDeclaredField("recoveryExecutor");
+            field.setAccessible(true);
+            return (ExecutorService) field.get(handler);
+        } catch (final ReflectiveOperationException e) {
+            throw new LinkageError("the handler no longer rebuilds on a 'recoveryExecutor'", e);
+        }
+    }
 
     /**
      * Puts a subscription in the slot {@code established()} would fill.
@@ -131,6 +225,10 @@ class OpcUaSubscriptionTransferFailureTest {
     }
 
     private static @NotNull OpcUaSubscriptionLifecycleHandler handler() {
+        return handler(mock(OpcUaClient.class));
+    }
+
+    private static @NotNull OpcUaSubscriptionLifecycleHandler handler(final @NotNull OpcUaClient client) {
         final OpcuaTag tag = new OpcuaTag(
                 "boiler-high-temp",
                 "a condition tag",
@@ -142,7 +240,7 @@ class OpcUaSubscriptionTransferFailureTest {
                 new FakeEventService(),
                 "test-adapter",
                 List.of(tag),
-                mock(OpcUaClient.class),
+                client,
                 new OpcUaSpecificAdapterConfig(
                         "opc.tcp://localhost:4840",
                         false,
