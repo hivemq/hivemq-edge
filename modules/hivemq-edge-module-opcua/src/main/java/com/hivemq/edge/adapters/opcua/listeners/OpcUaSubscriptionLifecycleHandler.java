@@ -580,9 +580,15 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * against a client that has been disconnected. Idempotent; safe to call from any thread.
      * <p>
      * {@code shutdown()} rather than {@code shutdownNow()}: a rebuild already under way is left to notice
-     * the flag between tags and return, which is tidier than interrupting it mid-request. Nothing is awaited
-     * — the caller is closing a connection whose replacement is already being built, and the executor's
-     * thread is a daemon, so an unfinished rebuild cannot hold anything open.
+     * the flag and return, which is tidier than interrupting it mid-request — Milo's blocking calls are not
+     * interruption-aware, so an interrupt could as easily leave a half-created subscription on the server as
+     * stop anything. Nothing is awaited — the caller is closing a connection whose replacement is already
+     * being built, and the executor's thread is a daemon, so an unfinished rebuild cannot hold anything open.
+     * <p>
+     * The cost of {@code shutdown()} is that a rebuild <em>queued</em> at this moment still runs, and the
+     * review's alternative was to hold the submitted {@code Future} and cancel it. The flag it would race is
+     * the same flag {@link #recreateSubscription} now reads on entry, so a cancellation would only ever win
+     * the cases that check already covers, at the cost of a second piece of state to keep in step with it.
      */
     public void abandon() {
         abandoned.set(true);
@@ -664,20 +670,91 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     /**
      * Creates a replacement subscription and re-establishes every monitored item on it. Runs on
      * {@link #recoveryExecutor}, never on Milo's delivery queue.
+     * <p>
+     * <b>Nothing may escape this method.</b> It is the whole body of an executor task, so an exception thrown
+     * out of it goes to the thread's uncaught handler — printed to {@code System.err} by a daemon thread named
+     * after the adapter, and nowhere else. {@link #reportRecoveryFailed} is skipped, so the operator is never
+     * told that the adapter has stopped monitoring; the executor quietly replaces the dead worker; and the
+     * task counts as having run. That is how a rebuild racing a closed client — {@code getTransport()} is null
+     * by then, so Milo's subscription constructor throws — used to look like nothing at all.
+     * <p>
+     * The {@code abandoned} checks bracket the one blocking step this method owns. Entry covers the task that
+     * was still queued when the connection closed, which {@code shutdown()} runs anyway; the check inside
+     * {@link #establishReplacement} covers the connection closing <em>during</em> the create, which the entry
+     * check cannot see. Between tags is already handled by {@code syncTagsAndMonitoredItems}.
      */
     private void recreateSubscription() {
-        newSubscription(client)
-                .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
-                .create()
-                .ifPresentOrElse(
-                        replacementSubscription -> {
-                            // reconnect the listener with the new subscription
-                            replacementSubscription.setSubscriptionListener(this);
-                            if (!syncTagsAndMonitoredItems(replacementSubscription, tags, config)) {
-                                reportRecoveryFailed("its monitored items could not be re-established");
-                            }
-                        },
-                        () -> reportRecoveryFailed("a replacement subscription could not be created"));
+        if (abandoned.get()) {
+            log.debug(
+                    "Adapter '{}': not rebuilding the subscription, the connection was closed before the rebuild started",
+                    adapterId);
+            return;
+        }
+        try {
+            newSubscription(client)
+                    .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
+                    .create()
+                    .ifPresentOrElse(
+                            this::establishReplacement,
+                            () -> reportRecoveryFailed("a replacement subscription could not be created"));
+        } catch (final Exception e) {
+            if (abandoned.get()) {
+                // Expected, and not the operator's problem: the client this was building against has been
+                // disconnected, and the reconnect that disconnected it is building a replacement of its own.
+                log.debug(
+                        "Adapter '{}': the subscription rebuild failed after the connection was closed, which is the ordinary outcome of that race",
+                        adapterId,
+                        e);
+                return;
+            }
+            log.error("Adapter '{}': the subscription rebuild threw", adapterId, e);
+            reportRecoveryFailed("the rebuild failed with " + e);
+        }
+    }
+
+    /**
+     * Installs a freshly created replacement, unless the connection went away while it was being created.
+     * <p>
+     * Package-private so the abandonment branch can be exercised: reaching it honestly needs a create that
+     * succeeds, which needs a live server, and the case under test is one where the client is already gone.
+     */
+    void establishReplacement(final @NotNull OpcUaSubscription replacementSubscription) {
+        if (abandoned.get()) {
+            log.info(
+                    "Adapter '{}': discarding a replacement subscription, the connection was closed while it was being created",
+                    adapterId);
+            discardReplacement(replacementSubscription);
+            return;
+        }
+        // reconnect the listener with the new subscription
+        replacementSubscription.setSubscriptionListener(this);
+        if (!syncTagsAndMonitoredItems(replacementSubscription, tags, config)) {
+            reportRecoveryFailed("its monitored items could not be re-established");
+        }
+    }
+
+    /**
+     * Detaches a replacement that will not be installed, and asks the server to forget it.
+     * <p>
+     * Both halves matter. The listener comes off first so nothing arriving in the meantime is routed into a
+     * handler that has stopped: this object is the listener, and it would go on publishing transitions for a
+     * connection that is closed. The delete then releases the subscription on the <em>server</em>, which is
+     * the part nothing else can do — {@link #currentSubscription} never held this one, so no later cleanup
+     * path can find it, and it would sit there until the session ends.
+     * <p>
+     * A failed delete is logged and no more. The subscription is already unreachable from here, the session
+     * it belongs to is being closed, and there is no second thing to try.
+     */
+    private void discardReplacement(final @NotNull OpcUaSubscription replacementSubscription) {
+        replacementSubscription.setSubscriptionListener(null);
+        try {
+            replacementSubscription.delete();
+        } catch (final Exception e) {
+            log.warn(
+                    "Adapter '{}': a discarded replacement subscription could not be deleted, so it may remain on the server until the session ends",
+                    adapterId,
+                    e);
+        }
     }
 
     /**
