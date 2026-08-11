@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Base64;
+import java.util.Locale;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -231,8 +232,26 @@ public record ConditionUpdate(
         // An explicit `"comment": null` is treated as absent rather than as an erase. It reads as "I am not
         // saying anything about the comment", and serialisers that emit nulls for unset fields are common
         // enough that reading it as "erase" would surprise a caller who never thought about the field.
+        //
+        // A string, and only a string. `asText()` used to stand here, and Jackson's coercions make that
+        // materially unsafe rather than merely lax: it renders a number or a boolean as its text, and -- the
+        // dangerous one -- returns the *empty string* for an object or an array. So `"comment": {}`, which is
+        // nothing anyone means, parsed as the deliberate erase form and wiped the condition's existing
+        // comment. Not a local mistake either: OPC 10000-9 §5.5.2 fires a fresh event on any comment change,
+        // so every other client watching that alarm is told the note is gone, and the audit trail cannot be
+        // recovered. Rejecting is the only safe reading of a payload nobody meant to send.
         final JsonNode commentNode = payload.get(FIELD_COMMENT);
-        final String comment = commentNode == null || commentNode.isNull() ? null : commentNode.asText();
+        final String comment;
+        if (commentNode == null || commentNode.isNull()) {
+            comment = null;
+        } else if (commentNode.isTextual()) {
+            comment = commentNode.textValue();
+        } else {
+            throw new IllegalArgumentException("'" + FIELD_COMMENT
+                    + "' must be a string, or absent to leave the existing comment unchanged. An empty "
+                    + "string erases it. Received: "
+                    + commentNode.getNodeType().name().toLowerCase(Locale.ROOT));
+        }
 
         final ByteString eventId = readEventId(payload, method);
         final Double duration = readDuration(payload, method);

@@ -41,10 +41,30 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull AtomicBoolean seenFirstActivation = new AtomicBoolean(false);
 
-    /** Set when a reconnect arrived before {@link #setOnReconnect} had anything to call. */
-    private final @NotNull AtomicBoolean missedReconnect = new AtomicBoolean(false);
+    /**
+     * Guards the reconnect handoff — {@link #onReconnect} and {@link #missedReconnect} together.
+     * <p>
+     * One lock rather than two atomics, because the two fields are not independent facts: they are two
+     * halves of one state, "who is going to run the refresh". Reading one and writing the other has to be a
+     * single transition or the handoff can fall between them. It did. With a volatile callback and a
+     * separate {@code AtomicBoolean} this interleaving loses a reconnect outright:
+     * <ol>
+     *   <li>the session thread reads {@code onReconnect} and finds it null;</li>
+     *   <li>the connection thread stores the callback;</li>
+     *   <li>the connection thread tests {@code missedReconnect}, still false, and returns;</li>
+     *   <li>the session thread sets {@code missedReconnect} to true.</li>
+     * </ol>
+     * The flag now says a reconnect is pending and the callback that would honour it is already installed,
+     * so nobody is left to run it — and nothing notices until the <em>next</em> reconnect happens to
+     * consume the stale flag. {@code volatile} makes each field's value visible; it does not make
+     * check-then-act atomic, which is what this needs.
+     */
+    private final @NotNull Object reconnectLock = new Object();
 
-    private volatile @Nullable Runnable onReconnect;
+    /** Set when a reconnect arrived before {@link #setOnReconnect} had anything to call. */
+    private boolean missedReconnect;
+
+    private @Nullable Runnable onReconnect;
 
     public OpcUaSessionActivityListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -82,10 +102,21 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
      * a reconnect is remembered here and honoured now, rather than dropped for having arrived early. Without
      * that the refresh is lost twice over: no hook to run, and the activation still consumes
      * {@code seenFirstActivation}, so it is miscounted as the initial connect.
+     * <p>
+     * Installing the callback and claiming any pending reconnect happen as one transition under
+     * {@link #reconnectLock} — see that field for the interleaving that made two separate atomics wrong.
+     * The callback itself runs <em>after</em> the lock is released: it requests a condition refresh, which
+     * is a server round trip, and holding a lock across it would block the session thread's next
+     * activation for no benefit.
      */
     public void setOnReconnect(final @NotNull Runnable onReconnect) {
-        this.onReconnect = onReconnect;
-        if (missedReconnect.compareAndSet(true, false)) {
+        final boolean owed;
+        synchronized (reconnectLock) {
+            this.onReconnect = onReconnect;
+            owed = missedReconnect;
+            missedReconnect = false;
+        }
+        if (owed) {
             log.debug(
                     "Adapter '{}': a reconnect arrived before the subscription handler was ready, requesting its condition refresh now",
                     adapterId);
@@ -103,12 +134,19 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
         // server to re-report its retained conditions. Skipping the first activation avoids refreshing twice
         // on the initial connect, where creating the subscription already does it.
         if (!seenFirstActivation.compareAndSet(false, true)) {
-            final Runnable reconnected = onReconnect;
+            final Runnable reconnected;
+            synchronized (reconnectLock) {
+                reconnected = onReconnect;
+                if (reconnected == null) {
+                    // Nothing to call yet. Remembered rather than dropped: setOnReconnect runs it on
+                    // arrival. Claiming the callback and recording the debt are one transition, so a
+                    // registration racing this one cannot slip between them and leave nobody responsible.
+                    missedReconnect = true;
+                }
+            }
             if (reconnected != null) {
+                // Outside the lock, for the same reason as in setOnReconnect: this is a server round trip.
                 reconnected.run();
-            } else {
-                // Nothing to call yet. Remembered rather than dropped: setOnReconnect runs it on arrival.
-                missedReconnect.set(true);
             }
         }
     }

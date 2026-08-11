@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
@@ -33,6 +34,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Finds the node a condition tag's events are received from.
@@ -72,10 +75,18 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class NotifierResolver {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(NotifierResolver.class);
+
     private NotifierResolver() {}
 
     /** How far to walk upward before giving up; deep enough for real hierarchies, bounded against cycles. */
     private static final int MAX_WALK_DEPTH = 10;
+
+    /**
+     * The {@code SubscribeToEvents} bit of the {@code EventNotifier} attribute (OPC 10000-3 §8.59) — the one
+     * thing that makes a node a valid target for an event monitored item.
+     */
+    private static final int SUBSCRIBE_TO_EVENTS = 0x01;
 
     /** The outcome of looking for a notifier. */
     public sealed interface Result {
@@ -125,8 +136,136 @@ public final class NotifierResolver {
                         ? new Result.NotFound("no notifier could be found by walking up from tag '" + tagName
                                 + "'. Set 'notifierNode' on the tag to name it explicitly")
                         : (Result) new Result.Found(found, "found by walking up from the condition"))
-                .exceptionally(throwable -> new Result.NotFound(
-                        "could not look for a notifier for tag '" + tagName + "': " + throwable.getMessage()));
+                // The per-tag boundary for a browse failure. Browsing propagates one now instead of
+                // returning an empty list, so this handler says the walk could not be performed rather than
+                // reporting that it found nothing -- two answers that pointed an operator at opposite
+                // problems, one at their tag's node id and the other at the connection.
+                .exceptionally(throwable -> new Result.NotFound("could not look for a notifier for tag '" + tagName
+                        + "': " + Browsing.describeException(throwable)));
+    }
+
+    /**
+     * Whether a node Edge was told to subscribe to can actually deliver events.
+     * <p>
+     * Two kinds of tag name their event target directly rather than having it walked to: an
+     * {@code EVENT_SUBSCRIPTION} tag, whose {@code node} <em>is</em> the notifier, and a {@code CONDITION}
+     * tag carrying an explicit {@code notifierNode}. Neither was checked. A variable, a plain object with no
+     * {@code SubscribeToEvents} bit, or a typo went straight to monitored-item synchronization — where,
+     * depending on the server, it fails the whole batch or is accepted into a tag that subscribes cleanly and
+     * then stays silent forever. The second is the bad one: nothing distinguishes it from an alarm that
+     * simply has not fired.
+     * <p>
+     * <b>Only a definite answer rejects.</b> A server that declines to say — the read fails, or answers with
+     * a bad status — leaves the tag alone with a warning, because refusing on silence would break servers
+     * that restrict attribute reads while the node is perfectly good. What rejects is the server saying
+     * plainly that this node is a Variable, or that its {@code EventNotifier} has the bit clear.
+     *
+     * @return the reason the node cannot be subscribed, or empty when it can be (or when the server would
+     *         not say).
+     */
+    public static @NotNull CompletableFuture<Optional<String>> checkSubscribable(
+            final @NotNull OpcUaClient client, final @NotNull NodeId nodeId, final @NotNull String tagName) {
+
+        final List<ReadValueId> reads = List.of(
+                new ReadValueId(nodeId, AttributeId.NodeClass.uid(), null, null),
+                new ReadValueId(nodeId, AttributeId.EventNotifier.uid(), null, null));
+
+        return client.readAsync(0.0, TimestampsToReturn.Neither, reads)
+                .thenApply(response -> {
+                    final DataValue[] results = response.getResults();
+                    if (results == null || results.length < 2) {
+                        log.warn(
+                                "Tag '{}': the server did not answer the NodeClass/EventNotifier read for {}, so "
+                                        + "whether it can deliver events was not checked. Subscribing anyway.",
+                                tagName,
+                                nodeId);
+                        return Optional.<String>empty();
+                    }
+                    final Optional<String> wrongClass = rejectByNodeClass(results[0], nodeId, tagName);
+                    if (wrongClass.isPresent()) {
+                        return wrongClass;
+                    }
+                    return rejectByEventNotifier(results[1], nodeId, tagName);
+                })
+                .exceptionally(throwable -> {
+                    log.warn(
+                            "Tag '{}': could not read NodeClass/EventNotifier of {} ({}), so whether it can "
+                                    + "deliver events was not checked. Subscribing anyway.",
+                            tagName,
+                            nodeId,
+                            Browsing.describeException(throwable));
+                    return Optional.empty();
+                });
+    }
+
+    /**
+     * Rejects a node whose class cannot carry the {@code EventNotifier} attribute at all.
+     * <p>
+     * OPC 10000-3 §7.17: the source of a {@code HasEventSource} "shall be an Object or View", and those are
+     * the two classes the specification gives an {@code EventNotifier} attribute. A Variable named as a
+     * notifier is the commonest form of this mistake — a value tag's node id pasted into an event tag.
+     */
+    private static @NotNull Optional<String> rejectByNodeClass(
+            final @NotNull DataValue result, final @NotNull NodeId nodeId, final @NotNull String tagName) {
+
+        if (result.statusCode() != null && result.statusCode().isBad()) {
+            log.warn(
+                    "Tag '{}': the server would not report the NodeClass of {} ({}); not treating that as a "
+                            + "reason to refuse the tag.",
+                    tagName,
+                    nodeId,
+                    result.statusCode());
+            return Optional.empty();
+        }
+        final Object value = result.value().value();
+        final NodeClass nodeClass = asNodeClass(value);
+        if (nodeClass == null) {
+            return Optional.empty();
+        }
+        if (nodeClass == NodeClass.Object || nodeClass == NodeClass.View) {
+            return Optional.empty();
+        }
+        return Optional.of("its event target " + nodeId + " is a " + nodeClass
+                + ", and only an Object or a View can deliver events (OPC 10000-3 §7.17). For a CONDITION tag "
+                + "name the alarm in 'node' and let Edge find the notifier, or name a real notifier in "
+                + "'notifierNode'; for an EVENT_SUBSCRIPTION tag 'node' must be the notifier itself");
+    }
+
+    /** Rejects a node whose {@code EventNotifier} attribute says it does not accept event subscriptions. */
+    private static @NotNull Optional<String> rejectByEventNotifier(
+            final @NotNull DataValue result, final @NotNull NodeId nodeId, final @NotNull String tagName) {
+
+        if (result.statusCode() != null && result.statusCode().isBad()) {
+            log.warn(
+                    "Tag '{}': the server would not report the EventNotifier attribute of {} ({}); not treating "
+                            + "that as a reason to refuse the tag.",
+                    tagName,
+                    nodeId,
+                    result.statusCode());
+            return Optional.empty();
+        }
+        final Object value = result.value().value();
+        if (!(value instanceof final Number bits)) {
+            // Present but not a number, or absent altogether. Not a statement that events are unavailable.
+            return Optional.empty();
+        }
+        if ((bits.intValue() & SUBSCRIBE_TO_EVENTS) != 0) {
+            return Optional.empty();
+        }
+        return Optional.of("its event target " + nodeId + " has the SubscribeToEvents bit clear in its "
+                + "EventNotifier attribute, so the server will not deliver events from it. Name a node that "
+                + "is an event notifier, or leave 'notifierNode' empty to have Edge walk to one");
+    }
+
+    /** The {@code NodeClass} a read returned, or null when the server sent something unrecognisable. */
+    private static @Nullable NodeClass asNodeClass(final @Nullable Object value) {
+        if (value instanceof final NodeClass nodeClass) {
+            return nodeClass;
+        }
+        if (value instanceof final Number encoded) {
+            return NodeClass.from(encoded.intValue());
+        }
+        return null;
     }
 
     /**

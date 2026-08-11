@@ -312,6 +312,92 @@ public class OpcUaEventSubscriptionIT {
                         .isFalse());
     }
 
+    @Test
+    @Timeout(120)
+    void whenAQueryTagHasAMalformedFilterNodeId_thenOnlyThatTagIsDropped() throws Exception {
+        // Review finding 10. `sourceNode` and `conditionNode` are optional narrowing filters, and they were
+        // parsed while *building monitored items* — inside verifiedTags.forEach, which sits outside the
+        // per-tag verify() boundary and outside the try/catch around synchronization. So NodeId.parse threw
+        // straight out of syncTagsAndMonitoredItems and aborted the adapter's whole subscribe path.
+        //
+        // One typo in an optional filter on one tag therefore took down every other tag with it, which is the
+        // exact opposite of the per-tag isolation the code documents everywhere else. Parsing now happens
+        // inside verify(), so a bad value rejects its own tag and nothing else.
+        final String alarm =
+                opcUaServerExtension.getTestNamespace().addConditionNode("HealthyAlarm", CONDITION_NODE_ID + 70);
+
+        // "ns=2;s=" would not do: Milo parses that as a string identifier that happens to be empty. This is
+        // the shape a real typo takes -- a browse path pasted in where a node id belongs.
+        startAdapterWith(
+                queryTag("broken-query", "Boiler1.Temperature", null),
+                new OpcuaTag("healthy-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagKind.CONDITION)));
+
+        awaitConnected();
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "still fine", 700, true);
+            assertThat(publishedSourceNames())
+                    .as("a healthy tag must not be taken down by a typo in a sibling tag's filter")
+                    .contains("source-of-" + alarm);
+        });
+
+        assertThat(eventService.readEvents(null, null))
+                .as("and the offending tag gets one actionable event naming the field and the value")
+                .anySatisfy(event -> assertThat(event.getMessage())
+                        .contains("broken-query")
+                        .contains("sourceNode")
+                        .contains("not a valid OPC UA node id"));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenAConditionTagHasAMalformedNode_thenOnlyThatTagIsDropped() throws Exception {
+        // The same boundary, reached through the tag's primary node rather than an optional filter.
+        final String alarm =
+                opcUaServerExtension.getTestNamespace().addConditionNode("SurvivingAlarm", CONDITION_NODE_ID + 80);
+
+        startAdapterWith(
+                new OpcuaTag("broken-condition", "", new OpcuaTagDefinition("not-a-node-id", OpcuaTagKind.CONDITION)),
+                new OpcuaTag("surviving-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagKind.CONDITION)));
+
+        awaitConnected();
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "unaffected", 700, true);
+            assertThat(publishedSourceNames()).contains("source-of-" + alarm);
+        });
+
+        assertThat(eventService.readEvents(null, null)).anySatisfy(event -> assertThat(event.getMessage())
+                .contains("broken-condition")
+                .contains("node"));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenARefreshTagsUnusedNodeIsMalformed_thenItIsStillSubscribed() throws Exception {
+        // A REFRESH tag's `node` names nothing: its item goes on the Server object and its filter reads no
+        // node id at all. Rejecting the tag over a value nothing consumes would be a rejection with no
+        // consequence behind it, so the field is simply not parsed for this kind.
+        final String alarm =
+                opcUaServerExtension.getTestNamespace().addConditionNode("RefreshNeighbour", CONDITION_NODE_ID + 90);
+
+        startAdapterWith(
+                new OpcuaTag("refresh", "", new OpcuaTagDefinition("not-a-node-id", OpcuaTagKind.REFRESH)),
+                new OpcuaTag("neighbour-alarm", "", new OpcuaTagDefinition(alarm, OpcuaTagKind.CONDITION)));
+
+        awaitConnected();
+
+        await().untilAsserted(() -> {
+            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "unaffected", 700, true);
+            assertThat(publishedSourceNames()).contains("source-of-" + alarm);
+        });
+
+        assertThat(eventService.readEvents(null, null))
+                .as("nothing is reported about a field the refresh tag never reads")
+                .noneSatisfy(event ->
+                        assertThat(event.getMessage()).contains("refresh").contains("not a valid OPC UA node id"));
+    }
+
     private void startAdapterWith(final @NotNull OpcuaTag... tags) {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),

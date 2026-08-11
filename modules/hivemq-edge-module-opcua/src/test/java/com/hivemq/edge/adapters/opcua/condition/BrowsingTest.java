@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -130,20 +132,61 @@ class BrowsingTest {
     }
 
     @Test
-    void whenBrowseNextFails_thenThePagesAlreadyReadAreKept() {
-        // A partial list is closer to the truth than an exception, and every caller already treats "not
-        // found" as an answer. Failing adapter start over a paging hiccup would be the worse outcome.
+    void whenBrowseNextFails_thenTheFailureIsReportedRatherThanAPartialList() {
+        // Reversed deliberately (review finding 8). This used to keep the pages already read and report
+        // success, which makes an incomplete list indistinguishable from a complete one -- and every caller
+        // asks "is X present?". A method on the unread page then reads as absent, and ConditionUpdateWriter
+        // acts on that by falling back to a different call.
         final OpcUaClient client = mock(OpcUaClient.class);
         when(client.browseAsync(any(BrowseDescription.class)))
                 .thenReturn(CompletableFuture.completedFuture(page(token("cp-1"), "Acknowledge")));
         when(client.browseNextAsync(eq(false), any()))
                 .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("session closed")));
+        when(client.browseNextAsync(eq(true), any()))
+                .thenReturn(CompletableFuture.completedFuture(nextResponse(page(ByteString.NULL_VALUE))));
 
-        final List<ReferenceDescription> references =
-                Browsing.browseAll(client, BROWSE).join();
+        assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
+                .hasCauseInstanceOf(Browsing.BrowseFailedException.class)
+                .cause()
+                .hasMessageContaining("incomplete")
+                .hasMessageContaining("session closed");
+    }
 
-        assertThat(references).hasSize(1);
-        assertThat(references.get(0).getBrowseName().getName()).isEqualTo("Acknowledge");
+    @Test
+    void whenBrowseNextFails_thenTheContinuationPointIsHandedBack() {
+        // Review finding 15. The max-page branch released its token; this path did not, so a flaky server
+        // accumulated continuation points until the session was torn down. OPC 10000-4 §5.9.3: a client
+        // shall always use the continuation point to free the server's resources.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(page(token("cp-1"), "Acknowledge")));
+        when(client.browseNextAsync(eq(false), any()))
+                .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("session closed")));
+        when(client.browseNextAsync(eq(true), any()))
+                .thenReturn(CompletableFuture.completedFuture(nextResponse(page(ByteString.NULL_VALUE))));
+
+        assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
+                .hasCauseInstanceOf(Browsing.BrowseFailedException.class);
+
+        // Released with the same token, and exactly once.
+        verify(client, times(1)).browseNextAsync(true, List.of(token("cp-1")));
+    }
+
+    @Test
+    void whenReleasingTheTokenAlsoFails_thenTheOriginalFailureIsWhatPropagates() {
+        // A release that fails must not replace the reason. "BrowseNext failed" is the fact worth having;
+        // "the release of the token for the BrowseNext that failed also failed" tells an operator nothing.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(page(token("cp-1"), "Acknowledge")));
+        when(client.browseNextAsync(eq(false), any()))
+                .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("session closed")));
+        when(client.browseNextAsync(eq(true), any()))
+                .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("still closed")));
+
+        assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
+                .cause()
+                .hasMessageContaining("session closed");
     }
 
     @Test
@@ -151,6 +194,9 @@ class BrowsingTest {
         // A server that always returns a continuation point would otherwise hang adapter start. Stopping is
         // not enough on its own: OPC 10000-4 §5.9.3 says a client shall always use the continuation point to
         // free the server's resources, including when it wants no more data.
+        //
+        // Reported as a failure rather than a truncated success, for the same reason as the BrowseNext case
+        // above: the list is incomplete either way, and only the caller can decide what that means.
         final OpcUaClient client = mock(OpcUaClient.class);
         when(client.browseAsync(any(BrowseDescription.class)))
                 .thenReturn(CompletableFuture.completedFuture(page(token("cp"), "First")));
@@ -159,20 +205,69 @@ class BrowsingTest {
         when(client.browseNextAsync(eq(true), any()))
                 .thenReturn(CompletableFuture.completedFuture(nextResponse(page(ByteString.NULL_VALUE))));
 
-        final List<ReferenceDescription> references =
-                Browsing.browseAll(client, BROWSE).join();
+        assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
+                .cause()
+                .hasMessageContaining("pages of references");
 
-        assertThat(references).as("the loop must terminate").isNotEmpty();
         verify(client, times(1)).browseNextAsync(eq(true), any());
     }
 
     @Test
-    void whenTheBrowseItselfFails_thenTheAnswerIsNoReferences() {
-        // Callers ask "is X present?" and handle absence. An exception here would propagate into adapter
-        // start, where a single unreadable node would abort a whole tag sequence.
+    void whenTheBrowseItselfFails_thenTheFailureIsReported() {
+        // Review finding 8. Swallowing this to an empty list made a transport error indistinguishable from a
+        // node with no references -- so ConditionTypeVerifier's own exceptionally() handler was unreachable
+        // and a disconnect was reported to the operator as "the node has no type definition".
         final OpcUaClient client = mock(OpcUaClient.class);
         when(client.browseAsync(any(BrowseDescription.class)))
                 .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("not connected")));
+
+        assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
+                .hasCauseInstanceOf(Browsing.BrowseFailedException.class)
+                .cause()
+                .hasMessageContaining("not connected");
+    }
+
+    @Test
+    void whenTheBrowseResultCarriesABadStatus_thenTheFailureIsReported() {
+        // The service call can succeed while the operation inside it fails. Reading getReferences() without
+        // checking the result's own status takes Bad_NodeIdUnknown -- or a permissions refusal -- for a node
+        // that simply has no references.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(
+                        new BrowseResult(new StatusCode(StatusCodes.Bad_NodeIdUnknown), ByteString.NULL_VALUE, null)));
+
+        assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
+                .hasCauseInstanceOf(Browsing.BrowseFailedException.class)
+                .cause()
+                .hasMessageContaining("refused");
+    }
+
+    @Test
+    void whenBrowseNextReturnsABadStatus_thenTheFailureIsReported() {
+        // Same rule one level down: BrowseNext answers with a result array, and each result carries its own
+        // status. A bad one means the continuation was not honoured, so the list is incomplete.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(page(token("cp-1"), "Acknowledge")));
+        when(client.browseNextAsync(eq(false), any()))
+                .thenReturn(CompletableFuture.completedFuture(nextResponse(new BrowseResult(
+                        new StatusCode(StatusCodes.Bad_ContinuationPointInvalid), ByteString.NULL_VALUE, null))));
+        when(client.browseNextAsync(eq(true), any()))
+                .thenReturn(CompletableFuture.completedFuture(nextResponse(page(ByteString.NULL_VALUE))));
+
+        assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
+                .cause()
+                .hasMessageContaining("refused");
+    }
+
+    @Test
+    void whenTheNodeGenuinelyHasNoReferences_thenTheAnswerIsAnEmptyListRatherThanAFailure() {
+        // The distinction the whole reversal exists to preserve: empty is a fact about the address space and
+        // must stay an ordinary answer, or every caller's "not found" branch becomes unreachable.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(page(ByteString.NULL_VALUE)));
 
         assertThat(Browsing.browseAll(client, BROWSE).join()).isEmpty();
     }

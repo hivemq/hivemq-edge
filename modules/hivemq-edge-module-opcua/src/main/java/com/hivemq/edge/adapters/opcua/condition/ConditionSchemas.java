@@ -42,10 +42,44 @@ public final class ConditionSchemas {
      * Fields whose value is a localised text — published as {@code {locale, text}} rather than a bare string.
      * Listing them keeps the schema honest about a shape a consumer would otherwise have to discover.
      * <p>
-     * Only {@code Message}. The state fields are localised texts too, but they carry a Boolean {@code Id}
-     * as well and are described by {@link OpcuaConditionType#TWO_STATE_FIELDS} instead.
+     * The state fields are localised texts too, but they carry an {@code Id} as well and are described by
+     * {@link OpcuaConditionType#TWO_STATE_FIELDS} instead.
+     * <p>
+     * {@code Comment} is the one that matters most here. It is declared {@code LocalizedText} on
+     * {@code ConditionType} (OPC 10000-9 §5.5.2 Table 8), so it rides in every event of all 22 types — and
+     * while it was missing from this set, every condition carrying a non-null comment published an object
+     * against a schema promising a string. A valid payload that violates its own advertised contract is
+     * worse than a wrong type on a rare field, because a schema-validating consumer rejects the message that
+     * matters most: the one an operator just commented on.
      */
-    private static final @NotNull Set<String> LOCALIZED_TEXT_FIELDS = Set.of("Message");
+    private static final @NotNull Set<String> LOCALIZED_TEXT_FIELDS = Set.of(
+            "Message",
+            // ConditionType (§5.5.2 Table 8)
+            "Comment",
+            "ConditionClassName",
+            // DialogConditionType (§5.6.2 Table 32)
+            "Prompt");
+
+    /**
+     * Fields whose value is an <em>array</em> of localised texts, published as a JSON array of
+     * {@code {locale, text}} objects.
+     * <p>
+     * Cardinality is part of the type, and the specification's tables state it: {@code ConditionSubClassName}
+     * is {@code LocalizedText[]} (§5.5.2 Table 8) and {@code ResponseOptionSet} is {@code LocalizedText[]}
+     * (§5.6.2 Table 32). The converter renders a Java array as a JSON array, so describing either as a
+     * single value — string or object — is wrong whatever the element type says.
+     */
+    private static final @NotNull Set<String> LOCALIZED_TEXT_ARRAY_FIELDS =
+            Set.of("ConditionSubClassName", "ResponseOptionSet");
+
+    /**
+     * Fields whose value is an array of node ids, published as a JSON array of node-id structures.
+     * <p>
+     * Only {@code ConditionSubClassId}, declared {@code NodeId[]} on {@code ConditionType} (§5.5.2 Table 8).
+     * It sat in {@link #NODE_ID_FIELDS} and so was described as a single node id — right about the element,
+     * wrong about the shape.
+     */
+    private static final @NotNull Set<String> NODE_ID_ARRAY_FIELDS = Set.of("ConditionSubClassId");
 
     /**
      * Fields whose value is a {@code StatusCode}, published as {@code {code, symbol}}.
@@ -79,13 +113,16 @@ public final class ConditionSchemas {
             "SourceNode",
             "EventType",
             "ConditionClassId",
-            "ConditionSubClassId",
             "BranchId",
             "InputNode",
             "NormalState",
             "SetpointNode",
             "BaseSetpointNode",
             "TargetValueNode",
+            // CertificateExpirationAlarmType (§5.8.24 Table 112): the type of the certificate that is
+            // expiring, as a NodeId. The name carries no `Node` suffix, which is why it was missed and
+            // described as a string -- the suffix is a hint, the type tables are the rule.
+            "CertificateType",
             // OPC 10000-12 §7.8.2.11: the NodeId of the TrustList that is out of date. Mandatory on
             // TrustListOutOfDateAlarmType, and the one node-id field defined outside Part 9 -- which is why
             // the Part 9 sweep behind finding 11 did not catch it.
@@ -115,7 +152,23 @@ public final class ConditionSchemas {
             "HighDeadband",
             "LowDeadband",
             "LowLowDeadband",
-            "ExpirationLimit");
+            "ExpirationLimit",
+            // DiscrepancyAlarmType (§5.8.23 Table 111): ExpectedTime is a Duration, Tolerance a Double.
+            "ExpectedTime",
+            "Tolerance",
+            // TrustListOutOfDateAlarmType (OPC 10000-12 §7.8.2.11): a Duration.
+            "UpdateFrequency");
+
+    /**
+     * Fields whose value is an integer, published as a JSON integer rather than a fractional number.
+     * <p>
+     * The four dialog response indices, all {@code Int32} on {@code DialogConditionType} (§5.6.2 Table 32).
+     * They index into {@code ResponseOptionSet}, so a fractional value would be meaningless — which is why
+     * they are declared {@code LONG} here rather than folded into {@link #NUMERIC_FIELDS} with the limits
+     * and delays, whose {@code Double} values genuinely are fractional.
+     */
+    private static final @NotNull Set<String> INTEGER_FIELDS =
+            Set.of("CancelResponse", "DefaultResponse", "LastResponse", "OkResponse");
 
     private static final @NotNull Set<String> BOOLEAN_FIELDS =
             Set.of("Retain", "SupportsFilteredRetain", "AudibleEnabled", "SuppressedOrShelved", "FirstInGroupFlag");
@@ -125,7 +178,24 @@ public final class ConditionSchemas {
      * them {@code BINARY} is what puts {@code contentEncoding: base64} in the schema so a consumer is told
      * that rather than left to infer it from the shape of the string.
      */
-    private static final @NotNull Set<String> BYTE_STRING_FIELDS = Set.of("EventId");
+    private static final @NotNull Set<String> BYTE_STRING_FIELDS = Set.of(
+            "EventId",
+            // AlarmConditionType (§5.8.2 Table 40): AudioDataType, which is a ByteString subtype.
+            "AudibleSound",
+            // CertificateExpirationAlarmType (§5.8.24 Table 112): the DER-encoded certificate.
+            "Certificate");
+
+    /**
+     * Fields whose value is an {@code EUInformation} structure — the engineering unit of a rate-of-change
+     * alarm, published as {@code {namespaceUri, unitId, displayName, description}}.
+     * <p>
+     * Named rather than left to the generic structure path for the same reason as {@code TimeZoneDataType}:
+     * Milo decodes it into its own generated class rather than a {@code DynamicStructType}, so without an
+     * explicit converter branch it fell through to {@code toString()} — publishing a Java rendering whose
+     * stability depends on Milo's implementation, and discarding the four members that make the unit
+     * machine-readable in the first place.
+     */
+    private static final @NotNull Set<String> ENGINEERING_UNITS_FIELDS = Set.of("EngineeringUnits");
 
     /**
      * The northbound shape: every field the declared condition type carries.
@@ -139,7 +209,7 @@ public final class ConditionSchemas {
     public static @NotNull Schema readSchema(final @NotNull OpcuaConditionType conditionType) {
         final ObjectSchemaBuilder<SchemaBuilder> object = new SchemaBuilder().startObject();
         for (final String field : conditionType.allFields()) {
-            appendField(object, field);
+            Shape.shapeOf(field).append(object, field);
         }
         appendUnavailableFields(object);
         return object.endObject().build();
@@ -268,19 +338,117 @@ public final class ConditionSchemas {
     }
 
     /**
-     * Adds one event field, typed by what the northbound converter actually emits for it.
+     * The published JSON shape of one event field, and how to write it.
      * <p>
-     * The types are not guessed per device: the converter's rendering is fixed, so a {@code LocalizedText}
-     * always arrives as {@code {locale, text}} and a {@code NodeId} always as a structure. Anything not
-     * recognised is left open rather than asserted to be a string.
+     * This is the one authoritative answer to "what does this field look like on the wire". Both halves of
+     * the contract read it: the constant writes the schema through its own {@link FieldAppender}, and
+     * {@code ConditionSchemasFieldShapeTest} feeds a representative value of that shape through the converter
+     * and checks the result validates. Splitting the question across a chain of {@code Set.contains} tests is
+     * what let fifteen fields drift — each set was maintained on its own, and nothing anywhere enumerated the
+     * fields that belonged to none of them and silently became strings.
+     * <p>
+     * The appenders live on the constants because this is where the answer is decided. A shape and the schema it produces are one fact, and holding them apart is what created the
+     * gap in the first place: a constant could be added to one and forgotten in the other.
      */
-    private static void appendField(
-            final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
+    enum Shape {
+        LOCAL_TIME(Shape::appendLocalTime),
+        STATE_MACHINE(Shape::appendStateMachine),
+        TWO_STATE(Shape::appendTwoState),
+        LOCALIZED_TEXT(Shape::appendLocalizedText),
+        LOCALIZED_TEXT_ARRAY(Shape::appendLocalizedTextArray),
+        NODE_ID(Shape::appendNodeId),
+        NODE_ID_ARRAY(Shape::appendNodeIdArray),
+        ENGINEERING_UNITS(Shape::appendEngineeringUnits),
+        STATUS_CODE(Shape::appendStatusCode),
+        NUMBER(Shape::appendNumber),
+        INTEGER(Shape::appendInteger),
+        BOOLEAN(Shape::appendBoolean),
+        BYTE_STRING(Shape::appendByteString),
+        STRING(Shape::appendString);
 
-        if ("LocalTime".equals(field)) {
-            // OPC 10000-5: the offset in minutes between the event's Time and the time where it was issued,
-            // and whether that offset already includes the daylight-saving correction. Optional on
-            // BaseEventType, so a server that does not supply it publishes null like any other absent field.
+        /**
+         * What the northbound converter emits for a field, decided by the specification's type tables.
+         * <p>
+         * Not guessed per device: the converter's rendering is fixed, so a {@code LocalizedText} always arrives
+         * as {@code {locale, text}} and a {@code NodeId} always as a structure. The order of the tests is not
+         * arbitrary — the state fields are localised texts that carry an {@code Id}, so they have to be
+         * recognised before the plain localised-text set, and the array sets before their scalar counterparts.
+         */
+        public static @NotNull Shape shapeOf(final @NotNull String field) {
+            if ("LocalTime".equals(field)) {
+                return LOCAL_TIME;
+            }
+            if (OpcuaConditionType.STATE_MACHINE_FIELDS.contains(field)) {
+                return STATE_MACHINE;
+            }
+            if (OpcuaConditionType.TWO_STATE_FIELDS.contains(field)) {
+                return TWO_STATE;
+            }
+            if (LOCALIZED_TEXT_FIELDS.contains(field)) {
+                return LOCALIZED_TEXT;
+            }
+            if (LOCALIZED_TEXT_ARRAY_FIELDS.contains(field)) {
+                return LOCALIZED_TEXT_ARRAY;
+            }
+            if (NODE_ID_ARRAY_FIELDS.contains(field)) {
+                return NODE_ID_ARRAY;
+            }
+            if (ENGINEERING_UNITS_FIELDS.contains(field)) {
+                return ENGINEERING_UNITS;
+            }
+            if (NODE_ID_FIELDS.contains(field)) {
+                return NODE_ID;
+            }
+            if (STATUS_CODE_FIELDS.contains(field)) {
+                return STATUS_CODE;
+            }
+            if (NUMERIC_FIELDS.contains(field)) {
+                return NUMBER;
+            }
+            if (INTEGER_FIELDS.contains(field)) {
+                return INTEGER;
+            }
+            if (BOOLEAN_FIELDS.contains(field)) {
+                return BOOLEAN;
+            }
+            if (BYTE_STRING_FIELDS.contains(field)) {
+                return BYTE_STRING;
+            }
+            return STRING;
+        }
+
+        /**
+         * How a field of this shape is written into the schema.
+         * <p>
+         * A field rather than a switch, and that is the whole of finding 2. This began as an
+         * {@code if}/{@code else} chain ending in an {@code else} that caught everything left over and
+         * declared it a string, so a shape nobody had handled did not go missing — it silently acquired the
+         * wrong type, and fifteen fields did.
+         * <p>
+         * A {@code switch} would only have moved that risk. A statement over an enum is not required to be
+         * exhaustive, and a missing case is an ErrorProne warning that leaves the build green — measured by
+         * adding a constant and building, not assumed. Holding the appender here removes the question instead
+         * of guarding it: there is no arm to forget because there are no arms, and a constant cannot be
+         * declared without saying how it is written.
+         */
+        private final @NotNull FieldAppender appender;
+
+        Shape(final @NotNull FieldAppender appender) {
+            this.appender = appender;
+        }
+
+        /** Writes one field of this shape into the object being built. */
+        void append(final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
+            appender.append(object, field);
+        }
+
+        /**
+         * OPC 10000-5: the offset in minutes between the event's {@code Time} and the time where it was issued,
+         * and whether that offset already includes the daylight-saving correction. Optional on
+         * {@code BaseEventType}, so a server that does not supply it publishes null like any other absent field.
+         */
+        private static void appendLocalTime(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
                     .property("offset")
@@ -302,11 +470,16 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (OpcuaConditionType.STATE_MACHINE_FIELDS.contains(field)) {
-            // A state machine is an Object with no value of its own, so what is published is its
-            // CurrentState -- the display text -- with the NodeId of the active state node as `id`. Same
-            // shape as a two-state field, but `id` is a node id rather than a Boolean, because a machine
-            // has more than two states to distinguish.
+        }
+
+        /**
+         * A state machine is an Object with no value of its own, so what is published is its {@code CurrentState}
+         * — the display text — with the NodeId of the active state node as {@code id}. The same shape as a
+         * two-state field, but {@code id} is a node id rather than a Boolean, because a machine has more than two
+         * states to distinguish.
+         */
+        private static void appendStateMachine(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
                     .property("locale")
@@ -351,10 +524,15 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (OpcuaConditionType.TWO_STATE_FIELDS.contains(field)) {
-            // A two-state field carries its Boolean Id alongside the display text. The text is what the
-            // server calls the state in the session's locale; `id` is the same state as a Boolean, and is
-            // what a consumer should branch on -- "Active"/"Aktiv"/"ACTIVE" are all the same true.
+        }
+
+        /**
+         * A two-state field carries its Boolean {@code Id} alongside the display text. The text is what the server
+         * calls the state in the session's locale; {@code id} is the same state as a Boolean, and is what a
+         * consumer should branch on — {@code "Active"}/{@code "Aktiv"}/{@code "ACTIVE"} are all the same true.
+         */
+        private static void appendTwoState(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
                     .property("locale")
@@ -381,7 +559,11 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (LOCALIZED_TEXT_FIELDS.contains(field)) {
+        }
+
+        /** A localised text, published as {@code {locale, text}} rather than a bare string. */
+        private static void appendLocalizedText(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
                     .property("locale")
@@ -399,7 +581,35 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (NODE_ID_FIELDS.contains(field)) {
+        }
+
+        /** An array of localised texts. Cardinality is part of the type, so the array is part of the shape. */
+        private static void appendLocalizedTextArray(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
+            object.property(field)
+                    .startArray()
+                    .startObject()
+                    .property("locale")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("text")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .endArray()
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        }
+
+        /** A node id, published as a structure rather than a parseable string. */
+        private static void appendNodeId(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
                     .property("idType")
@@ -425,7 +635,107 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (STATUS_CODE_FIELDS.contains(field)) {
+        }
+
+        /** An array of node ids — only {@code ConditionSubClassId}, declared {@code NodeId[]} on ConditionType. */
+        private static void appendNodeIdArray(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
+            object.property(field)
+                    .startArray()
+                    .startObject()
+                    .property("idType")
+                    .scalar(ScalarType.LONG)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("id")
+                    .any()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("namespaceIndex")
+                    .scalar(ScalarType.LONG)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .endArray()
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        }
+
+        /**
+         * An {@code EUInformation}: the authority defining the unit, the unit's id within it, and the symbol and
+         * full name as localised texts. The pair {@code namespaceUri}/{@code unitId} is what makes an engineering
+         * unit machine-readable, which stringifying the structure destroyed.
+         */
+        private static void appendEngineeringUnits(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
+            object.property(field)
+                    .startObject()
+                    .property("namespaceUri")
+                    .scalar(ScalarType.STRING)
+                    .description("The URI of the authority defining the unit — by default the UNECE "
+                            + "Recommendation 20 code list.")
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("unitId")
+                    .scalar(ScalarType.LONG)
+                    .description("The unit's identifier within that authority's list.")
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("displayName")
+                    .startObject()
+                    .property("locale")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("text")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .description("The unit's symbol, for example \"°C\".")
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("description")
+                    .startObject()
+                    .property("locale")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .property("text")
+                    .scalar(ScalarType.STRING)
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .description("The unit's full name, for example \"degree Celsius\".")
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty()
+                    .endObject()
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        }
+
+        /** A {@code StatusCode}, published as {@code {code, symbol}}. Only {@code Quality} is declared one. */
+        private static void appendStatusCode(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
                     .property("code")
@@ -446,14 +756,37 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (NUMERIC_FIELDS.contains(field)) {
+        }
+
+        /** A number that may be fractional: the limits, the deadbands, the durations and the severities. */
+        private static void appendNumber(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .scalar(ScalarType.DOUBLE)
                     .nullable()
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (BOOLEAN_FIELDS.contains(field)) {
+        }
+
+        /**
+         * An integer rather than a number. The four dialog response indices are {@code Int32} and index into
+         * {@code ResponseOptionSet}, so a fractional value would be meaningless.
+         */
+        private static void appendInteger(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
+            object.property(field)
+                    .scalar(ScalarType.LONG)
+                    .description("An index into 'ResponseOptionSet'.")
+                    .nullable()
+                    .readable()
+                    .writable(false)
+                    .endProperty();
+        }
+
+        /** A boolean, with {@link ConditionSchemas#describeBoolean} supplying the meaning the name lacks. */
+        private static void appendBoolean(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .scalar(ScalarType.BOOLEAN)
                     .description(describeBoolean(field))
@@ -461,16 +794,35 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else if (BYTE_STRING_FIELDS.contains(field)) {
+        }
+
+        /**
+         * Bytes, not text. Declaring {@code BINARY} is what puts {@code contentEncoding: base64} in the schema, so
+         * a consumer is told that rather than left to infer it from the shape of the string.
+         */
+        private static void appendByteString(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .scalar(ScalarType.BINARY)
                     .nullable()
                     .readable()
                     .writable(false)
                     .endProperty();
-        } else {
-            // SourceName, Time, ReceiveTime, ClientUserId, ConditionName and the rest render as strings;
-            // anything unrecognised is left open rather than mistyped.
+        }
+
+        /**
+         * A genuine string: {@code SourceName}, {@code ClientUserId}, {@code ConditionName}, and the timestamps.
+         * <p>
+         * <b>An assertion, not a fallback</b>, and the difference is the whole of finding 2. This used to be the
+         * {@code else} of a chain, described in its own comment as "left open rather than mistyped" while
+         * declaring STRING — so a field nobody had classified was not left open at all, it was asserted to be a
+         * string. Fifteen arrived here that way, {@code Comment} among them, on {@code ConditionType} and so in
+         * every event of all 22 types. It is now the appender of {@link Shape#STRING} and nothing else can
+         * reach it, and {@code ConditionSchemasFieldShapeTest} fails if any field so classified is not a
+         * string on the wire.
+         */
+        private static void appendString(
+                final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .scalar(ScalarType.STRING)
                     .nullable()
@@ -478,6 +830,13 @@ public final class ConditionSchemas {
                     .writable(false)
                     .endProperty();
         }
+    }
+
+    /** Writes one field's schema. One implementation per {@link Shape}, held by the constant itself. */
+    @FunctionalInterface
+    interface FieldAppender {
+
+        void append(@NotNull ObjectSchemaBuilder<SchemaBuilder> object, @NotNull String field);
     }
 
     /**

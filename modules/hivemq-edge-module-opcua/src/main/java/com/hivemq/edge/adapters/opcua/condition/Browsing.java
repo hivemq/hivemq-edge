@@ -19,16 +19,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Browsing that reads every page rather than only the first.
@@ -51,8 +51,6 @@ import org.slf4j.LoggerFactory;
  */
 final class Browsing {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(Browsing.class);
-
     /**
      * How many pages to read before giving up.
      * <p>
@@ -65,27 +63,85 @@ final class Browsing {
     private Browsing() {}
 
     /**
+     * A browse that did not produce a complete answer — a transport failure, a bad service status, or a
+     * continuation the server would not follow.
+     * <p>
+     * A distinct type because the distinction it carries is the whole point: an <em>empty</em> reference list
+     * is a fact about the address space, while a failure is a fact about the connection, and the callers here
+     * act on the first. Treating the second as the first is how a transient network error became "this
+     * condition has no Acknowledge method" and then a fallback to a different call.
+     */
+    static final class BrowseFailedException extends RuntimeException {
+
+        @java.io.Serial
+        private static final long serialVersionUID = 1L;
+
+        BrowseFailedException(final @NotNull String message) {
+            super(message);
+        }
+
+        BrowseFailedException(final @NotNull String message, final @NotNull Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
      * Every reference the browse yields, following continuation points to the end.
      * <p>
-     * Never completes exceptionally: a failed BrowseNext yields the references gathered so far, because
-     * every caller already treats "not found" as an answer and a partial list is closer to the truth than a
-     * thrown exception during adapter start. It is logged, though — "absent because the server stopped
-     * answering" and "absent because it is not there" are different problems that would otherwise look
-     * identical.
+     * <b>Completes exceptionally when the answer is incomplete</b>, with a {@link BrowseFailedException}.
+     * That is a deliberate reversal: this used to swallow every failure into an empty list, so a transport
+     * exception, an authorization refusal, {@code Bad_NodeIdUnknown}, a timeout and a genuinely empty node
+     * all produced the same answer. Every caller asks a browse "is X present?", so erasing the cause turned
+     * a temporary failure into a permanent-sounding fact about the device — a tag reported as having no
+     * notifier, a type reported as unreadable rather than unread, and worst of all a method reported absent,
+     * which sends {@code ConditionUpdateWriter} down a fallback path against a server that never answered.
+     * <p>
+     * Per-tag isolation is preserved where it belongs, at the caller: {@code ConditionTypeVerifier} and
+     * {@code NotifierResolver} both convert a failure into a rejection of <em>their</em> tag. Isolation is a
+     * property of the boundary, not something a shared primitive should buy by discarding information.
      *
      * @param client the connected client.
      * @param browse what to browse; the caller owns the direction, reference type and node class mask.
-     * @return the references, in server order. Empty when the node has none.
+     * @return the references, in server order. Empty when the node genuinely has none.
      */
     static @NotNull CompletableFuture<List<ReferenceDescription>> browseAll(
             final @NotNull OpcUaClient client, final @NotNull BrowseDescription browse) {
 
         return client.browseAsync(browse)
-                .thenCompose(result -> collect(client, result, new ArrayList<>(), 1))
-                .exceptionally(throwable -> {
-                    log.debug("Browse of {} failed; treating it as no references", browse.getNodeId(), throwable);
-                    return List.of();
+                .handle((result, throwable) -> {
+                    if (throwable != null) {
+                        throw new BrowseFailedException(
+                                "browsing " + browse.getNodeId() + " failed: " + describeException(throwable),
+                                throwable);
+                    }
+                    return result;
+                })
+                .thenCompose(result -> {
+                    // The service call succeeded; the operation inside it may still not have. A BrowseResult
+                    // carries its own status, and reading getReferences() without checking it takes
+                    // Bad_NodeIdUnknown -- or a permissions refusal -- for a node with no references.
+                    final StatusCode status = result.getStatusCode();
+                    if (status != null && status.isBad()) {
+                        return CompletableFuture.failedFuture(new BrowseFailedException(
+                                "browsing " + browse.getNodeId() + " was refused by the server: " + status));
+                    }
+                    return collect(client, result, new ArrayList<>(), 1);
                 });
+    }
+
+    /**
+     * Describes a throwable for a browse-failure message, unwrapping the {@link CompletionException} that
+     * the async plumbing wraps everything in. Falls back to the class name where there is no message, since
+     * several of the exceptions reachable here carry none and "failed: null" describes nothing.
+     */
+    static @NotNull String describeException(final @NotNull Throwable throwable) {
+        final Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
+                ? throwable.getCause()
+                : throwable;
+        final String message = cause.getMessage();
+        return message != null && !message.isBlank()
+                ? message
+                : cause.getClass().getSimpleName();
     }
 
     /** Accumulates one page and follows its continuation point, if it has one. */
@@ -107,28 +163,63 @@ final class Browsing {
         if (page >= MAX_PAGES) {
             // Stop, but hand the token back: OPC 10000-4 §5.9.3 is explicit that a client shall always use
             // the continuation point to free the server's resources, including when it wants no more data.
-            log.warn(
-                    "Browse of a node returned more than {} pages of references; stopping and releasing the "
-                            + "continuation point. The reference list is incomplete.",
-                    MAX_PAGES);
-            return release(client, continuationPoint).thenApply(released -> collected);
+            //
+            // A failure rather than a truncated success, for the same reason a transport error is: the list
+            // is incomplete, and a caller asking "is X present?" cannot tell an incomplete list from a
+            // complete one. Fifty pages of references on one node is already past anything this adapter
+            // reasons about, so this reports a server doing something unexpected rather than a limit anyone
+            // should meet.
+            return release(client, continuationPoint)
+                    .thenCompose(released -> CompletableFuture.failedFuture(new BrowseFailedException("browsing a "
+                            + "node returned more than " + MAX_PAGES + " pages of references; the reference "
+                            + "list is incomplete, so a node that exists could be reported as absent")));
         }
         return client.browseNextAsync(false, List.of(continuationPoint))
+                // Hand the token back before giving up. The class comment cites the requirement and the
+                // max-page branch above honours it, but this path did not: a BrowseNext that fails at the
+                // transport leaves the server holding the continuation point, and against a flaky server that
+                // repeats until the session is torn down. Best effort, and the original failure is what
+                // propagates either way -- a release that also fails must not replace the reason.
+                //
+                // Attached to this call alone, not to the recursion below it. A continuation point is
+                // consumed the moment the server answers -- what comes back is a *new* token, or none -- so
+                // once this call succeeds there is nothing here left to release. Wrapping the recursion too
+                // released a spent token once per frame as a deeper failure unwound: fifty release calls for
+                // one failure, forty-nine of them naming tokens the server had already reclaimed.
+                .exceptionallyCompose(throwable -> release(client, continuationPoint)
+                        .thenCompose(released -> CompletableFuture.failedFuture(asBrowseFailure(throwable, page))))
                 .thenCompose(response -> {
                     final BrowseResult[] results = response.getResults();
                     if (results == null || results.length == 0) {
-                        return CompletableFuture.completedFuture(collected);
+                        return CompletableFuture.<List<ReferenceDescription>>failedFuture(
+                                new BrowseFailedException("BrowseNext returned no result for a continuation "
+                                        + "point after " + page + " page(s); the reference list is incomplete"));
+                    }
+                    final StatusCode status = results[0].getStatusCode();
+                    if (status != null && status.isBad()) {
+                        // No release: a BrowseNext that answers with a bad status has already released the
+                        // continuation point server-side (OPC 10000-4 §5.9.3), so handing it back again would
+                        // be a second call about a token that no longer exists.
+                        return CompletableFuture.<List<ReferenceDescription>>failedFuture(
+                                new BrowseFailedException("BrowseNext was refused after " + page + " page(s): " + status
+                                        + "; the reference list is incomplete"));
                     }
                     return collect(client, results[0], collected, page + 1);
-                })
-                .exceptionally(throwable -> {
-                    log.warn(
-                            "BrowseNext failed after {} page(s); the reference list is incomplete, so a node "
-                                    + "that exists may be reported as absent.",
-                            page,
-                            throwable);
-                    return collected;
                 });
+    }
+
+    /** The failure to propagate from a continuation attempt, already described if it is not one of ours. */
+    private static @NotNull Throwable asBrowseFailure(final @NotNull Throwable throwable, final int page) {
+        final Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
+                ? throwable.getCause()
+                : throwable;
+        if (cause instanceof BrowseFailedException) {
+            return cause;
+        }
+        return new BrowseFailedException(
+                "BrowseNext failed after " + page + " page(s): " + describeException(cause)
+                        + "; the reference list is incomplete",
+                cause);
     }
 
     /**

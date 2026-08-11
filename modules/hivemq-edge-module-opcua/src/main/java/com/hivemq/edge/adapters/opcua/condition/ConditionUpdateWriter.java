@@ -101,7 +101,25 @@ public final class ConditionUpdateWriter {
                 .thenCompose(objectNodeId -> resolveCommentedMethodOn(client, objectNodeId, update, conditionNodeId)
                         .thenCompose(commented -> commented != null
                                 ? callCommented(client, objectNodeId, commented, update)
-                                : callBase(client, objectNodeId, conditionNodeId, update)));
+                                : callBase(
+                                        client,
+                                        objectNodeId,
+                                        conditionNodeId,
+                                        update,
+                                        commentedVariantAlreadyBrowsed(update))));
+    }
+
+    /**
+     * Whether {@link #resolveCommentedMethodOn} has already browsed for the {@code "2"} variant and not
+     * found it, so {@link #callBase}'s own fallback must not browse for it a second time.
+     * <p>
+     * It browses exactly when there is a comment to carry, the base form does not already take one, and the
+     * specification defines a variant at all — the same three conditions, stated once.
+     */
+    private static boolean commentedVariantAlreadyBrowsed(final @NotNull ConditionUpdate update) {
+        return update.comment() != null
+                && update.method().arguments() != ConditionUpdate.Method.Arguments.EVENT_AND_COMMENT
+                && update.method().commentedBrowseName() != null;
     }
 
     /**
@@ -123,42 +141,96 @@ public final class ConditionUpdateWriter {
             final @NotNull OpcUaClient client,
             final @NotNull NodeId objectNodeId,
             final @NotNull NodeId conditionNodeId,
-            final @NotNull ConditionUpdate update) {
+            final @NotNull ConditionUpdate update,
+            final boolean commentedVariantKnownAbsent) {
 
         final Variant[] arguments = argumentsFor(update);
         return resolveMethodOn(client, objectNodeId, update.method()).thenCompose(browsed -> {
-            final NodeId methodNodeId = browsed != null ? browsed : SPECIFIED_TYPE_LEVEL_METHODS.get(update.method());
-            if (methodNodeId == null) {
-                // Nothing on the instance and no id the specification prescribes. Logged rather than
-                // returned silently: the status code alone does not say whether the method is unsupported
-                // by the device or unreachable because the server keeps its conditions out of the
-                // AddressSpace, and southbound is one-directional -- this log is the only thing an operator
-                // sees, since a failed write is dropped rather than answered.
-                log.error(
-                        "Cannot invoke {} on condition {}: the server exposes no such method on the "
-                                + "instance, and OPC 10000-9 prescribes no type-level MethodId for it. "
-                                + "If this server does not expose Condition instances, this method cannot "
-                                + "be called through Edge.",
-                        update.method().browseName(),
-                        conditionNodeId);
-                // Bad_NotSupported, not Bad_MethodInvalid. OPC 10000-4 Table 61 distinguishes them:
-                // Bad_MethodInvalid is "the method id does not refer to a Method for the specified Object",
-                // which claims we hold an id that points at a non-method. We hold no id at all. The code
-                // for that is Bad_NotSupported -- "the Method is not supported for the Object instance".
-                // It reaches nobody but the log lines that interpolate it, which is reason enough for it
-                // to name the right thing.
-                return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_NotSupported));
+            if (browsed != null) {
+                final CallMethodRequest request = new CallMethodRequest(objectNodeId, browsed, arguments);
+                return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
             }
-            if (browsed == null) {
+            final NodeId specified = SPECIFIED_TYPE_LEVEL_METHODS.get(update.method());
+            if (specified != null) {
                 log.debug(
                         "Condition {} exposes no {} method; calling the ConditionType's method id as OPC "
                                 + "10000-9 §5.5.4/§5.5.5 prescribe.",
                         conditionNodeId,
                         update.method().browseName());
+                final CallMethodRequest request = new CallMethodRequest(objectNodeId, specified, arguments);
+                return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
             }
-            final CallMethodRequest request = new CallMethodRequest(objectNodeId, methodNodeId, arguments);
-            return client.callAsync(List.of(request)).thenApply(ConditionUpdateWriter::statusOf);
+            return callCommentedAsFallback(client, objectNodeId, conditionNodeId, update, commentedVariantKnownAbsent);
         });
+    }
+
+    /**
+     * Tries the {@code "2"} variant when the base method is not on the instance and no type-level id exists.
+     * <p>
+     * The two forms are Optional and <em>independent</em> — Table 40 lists {@code Suppress} and
+     * {@code Suppress2} as separate members — so a server may expose either. The resolution used to be
+     * one-directional: it preferred {@code Suppress2} when the user sent a comment, and otherwise looked
+     * only for {@code Suppress}. A server exposing only the newer form therefore rejected a command with
+     * {@code Bad_NotSupported} purely because the user had left an optional field out, which made whether an
+     * alarm could be suppressed depend on whether anyone wrote a note about it.
+     * <p>
+     * Nothing has to be invented to close that. {@code commentOf} already renders an absent comment as
+     * {@link LocalizedText#NULL_VALUE}, and OPC 10000-9 §5.7.3 defines exactly that as "ignored and any
+     * existing comments will remain unchanged" — so the commented form carries "no comment" natively, and
+     * calling it without one is not a substitution but the encoding the specification provides.
+     */
+    private static @NotNull CompletableFuture<StatusCode> callCommentedAsFallback(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNodeId,
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull ConditionUpdate update,
+            final boolean commentedVariantKnownAbsent) {
+
+        final String commentedName = update.method().commentedBrowseName();
+        if (commentedName == null || commentedVariantKnownAbsent) {
+            return notSupported(conditionNodeId, update);
+        }
+        return browseComponent(client, objectNodeId, NodeClass.Method, commentedName)
+                .thenCompose(commented -> {
+                    if (commented == null) {
+                        return notSupported(conditionNodeId, update);
+                    }
+                    log.debug(
+                            "Condition {} exposes {} but not {}; calling the commented variant with a null "
+                                    + "LocalizedText, which OPC 10000-9 §5.7.3 defines as leaving any existing "
+                                    + "comment unchanged.",
+                            conditionNodeId,
+                            commentedName,
+                            update.method().browseName());
+                    return callCommented(client, objectNodeId, commented, update);
+                });
+    }
+
+    /**
+     * Reports that neither form of the method can be reached on this server.
+     * <p>
+     * Logged rather than returned silently: the status code alone does not say whether the method is
+     * unsupported by the device or unreachable because the server keeps its conditions out of the
+     * AddressSpace, and southbound is one-directional — this log is the only thing an operator sees, since a
+     * failed write is dropped rather than answered.
+     */
+    private static @NotNull CompletableFuture<StatusCode> notSupported(
+            final @NotNull NodeId conditionNodeId, final @NotNull ConditionUpdate update) {
+
+        log.error(
+                "Cannot invoke {} on condition {}: the server exposes neither {} nor its commented variant "
+                        + "on the instance, and OPC 10000-9 prescribes no type-level MethodId for it. If this "
+                        + "server does not expose Condition instances, this method cannot be called through Edge.",
+                update.method().name(),
+                conditionNodeId,
+                update.method().browseName());
+        // Bad_NotSupported, not Bad_MethodInvalid. OPC 10000-4 Table 61 distinguishes them:
+        // Bad_MethodInvalid is "the method id does not refer to a Method for the specified Object",
+        // which claims we hold an id that points at a non-method. We hold no id at all. The code
+        // for that is Bad_NotSupported -- "the Method is not supported for the Object instance".
+        // It reaches nobody but the log lines that interpolate it, which is reason enough for it
+        // to name the right thing.
+        return CompletableFuture.completedFuture(new StatusCode(StatusCodes.Bad_NotSupported));
     }
 
     /**

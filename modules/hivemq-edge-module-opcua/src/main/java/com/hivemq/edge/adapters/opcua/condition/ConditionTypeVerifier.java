@@ -96,10 +96,15 @@ public final class ConditionTypeVerifier {
                 uint(NodeClass.ObjectType.getValue()),
                 uint(BrowseResultMask.All.getValue()));
 
+        // This is where per-tag isolation is applied: Browsing propagates a failure now rather than
+        // flattening it to an empty list, so this handler is reached and says "could not read" instead of
+        // the "no type definition" rejection a swallowed failure used to produce. Same outcome for the tag,
+        // a very different instruction for the operator -- one says check the node id, the other says the
+        // server did not answer.
         return Browsing.browseAll(client, browse)
                 .thenCompose(references -> compare(client, references, declaredType, tagName))
-                .exceptionally(throwable -> new Result.Rejected(
-                        "could not read the type of '" + tagName + "' from the device: " + throwable.getMessage()));
+                .exceptionally(throwable -> new Result.Rejected("could not read the type of '" + tagName
+                        + "' from the device: " + Browsing.describeException(throwable)));
     }
 
     private static @NotNull CompletableFuture<Result> compare(
@@ -108,7 +113,7 @@ public final class ConditionTypeVerifier {
             final @NotNull OpcuaConditionType declaredType,
             final @NotNull String tagName) {
 
-        final Optional<String> deviceTypeName = typeNameOf(references);
+        final Optional<QualifiedName> deviceTypeName = typeNameOf(references);
         if (deviceTypeName.isEmpty()) {
             // Rejected, not waved through. The specification does permit a server to keep condition
             // instances out of the AddressSpace (§4.3), so an empty answer is not proof the tag is wrong --
@@ -126,25 +131,25 @@ public final class ConditionTypeVerifier {
                     + "be possible but has not been seen on a real device"));
         }
 
-        final Optional<OpcuaConditionType> deviceType = OpcuaConditionType.fromBrowseName(deviceTypeName.get());
+        final String reportedName = describe(deviceTypeName.get());
+        final Optional<NodeId> typeNode = typeNodeOf(client, references, deviceTypeName.get());
+        final Optional<OpcuaConditionType> deviceType = standardTypeOf(deviceTypeName.get(), typeNode);
         if (deviceType.isPresent()) {
             log.debug(
                     "Tag '{}': the device reports type '{}', which is a standard condition type.",
                     tagName,
-                    deviceTypeName.get());
-            return CompletableFuture.completedFuture(
-                    decide(declaredType, deviceType.get(), deviceTypeName.get(), tagName));
+                    reportedName);
+            return CompletableFuture.completedFuture(decide(declaredType, deviceType.get(), reportedName, tagName));
         }
 
         // Not a name this build knows, which OPC 10000-9 §5.5 says to expect: "It is expected that vendors or
         // other standardisation groups will define additional ConditionTypes deriving from the common base
         // types defined in this part." So ask the server what it derives from rather than refusing.
-        final Optional<NodeId> typeNode = typeNodeOf(client, references, deviceTypeName.get());
         if (typeNode.isEmpty()) {
             return CompletableFuture.completedFuture(new Result.Rejected("tag '"
                     + tagName
                     + "' points at a node of type '"
-                    + deviceTypeName.get()
+                    + reportedName
                     + "', which is not a standard OPC UA condition type, and the server gave no node id for that "
                     + "type, so its ancestry could not be followed"));
         }
@@ -153,7 +158,7 @@ public final class ConditionTypeVerifier {
                 "Tag '{}': the device reports type '{}' ({}), which is not a standard condition type. Following "
                         + "HasSubtype upwards to find one it derives from.",
                 tagName,
-                deviceTypeName.get(),
+                reportedName,
                 typeNode.get());
 
         return walkToStandardType(client, typeNode.get(), tagName, 0).thenApply(ancestor -> {
@@ -161,7 +166,7 @@ public final class ConditionTypeVerifier {
                 return new Result.Rejected("tag '"
                         + tagName
                         + "' points at a node of type '"
-                        + deviceTypeName.get()
+                        + reportedName
                         + "', and none of the types it derives from is a standard OPC UA condition type either. "
                         + "Edge cannot tell what fields such a condition carries. If this server's type does "
                         + "derive from a standard one, please report it — the ancestry it reports is in the "
@@ -171,10 +176,60 @@ public final class ConditionTypeVerifier {
                     "Tag '{}': the device's type '{}' is vendor-specific; it derives from the standard type '{}', "
                             + "which is what the tag is verified against and what decides the fields published.",
                     tagName,
-                    deviceTypeName.get(),
+                    reportedName,
                     ancestor.browseName());
-            return decide(declaredType, ancestor, deviceTypeName.get(), tagName);
+            return decide(declaredType, ancestor, reportedName, tagName);
         });
+    }
+
+    /**
+     * The standard condition type a reported browse name denotes, or empty when it denotes a vendor type.
+     * <p>
+     * <b>Namespace is part of the identity, not decoration.</b> A {@code QualifiedName} is a namespace plus a
+     * string, and OPC 10000-3 §5.2.4 says why both are needed: "different organizations may use the same
+     * string having a slightly different meaning". Specification names live in namespace 0 (OPC 10000-5
+     * §5.4.2, "Index 0 is reserved for the OPC UA namespace"), so a type called {@code AlarmConditionType} in
+     * namespace 2 is a vendor type that happens to share a string — not the standard type.
+     * <p>
+     * Matching on the string alone accepted it as standard outright, skipping the ancestry walk that exists
+     * for vendor types. Edge would then subscribe with the standard type's field set against a type that
+     * need not have any of it, and the server would reject the select clause entries — fields permanently
+     * null, for a reason no message named. {@code Browsing.isStandardName} already applied this rule to
+     * method lookups; this is the same rule where it decides a tag's whole published shape.
+     * <p>
+     * The node id is checked as well when the server gave one, which is strictly stronger: namespace 0 is
+     * reserved, so a standard name in it should be the standard node, and anything else is a server doing
+     * something no client should follow.
+     */
+    private static @NotNull Optional<OpcuaConditionType> standardTypeOf(
+            final @NotNull QualifiedName browseName, final @NotNull Optional<NodeId> typeNode) {
+
+        if (browseName.getNamespaceIndex() == null
+                || browseName.getNamespaceIndex().intValue() != 0) {
+            return Optional.empty();
+        }
+        final Optional<OpcuaConditionType> byName = OpcuaConditionType.fromBrowseName(browseName.getName());
+        if (byName.isEmpty()) {
+            return Optional.empty();
+        }
+        if (typeNode.isPresent() && !typeNode.get().equals(byName.get().nodeId())) {
+            log.warn(
+                    "The server reports a type named '{}' in namespace 0 whose node id is {}, not the standard "
+                            + "{}. Treating it as a vendor type and following its ancestry instead.",
+                    browseName.getName(),
+                    typeNode.get(),
+                    byName.get().nodeId());
+            return Optional.empty();
+        }
+        return byName;
+    }
+
+    /** A browse name as an operator sees it, keeping the namespace because that is half its identity. */
+    private static @NotNull String describe(final @NotNull QualifiedName browseName) {
+        final int namespaceIndex = browseName.getNamespaceIndex() == null
+                ? 0
+                : browseName.getNamespaceIndex().intValue();
+        return namespaceIndex == 0 ? String.valueOf(browseName.getName()) : namespaceIndex + ":" + browseName.getName();
     }
 
     /** Whether the declaration is satisfied by the standard type the device turned out to be. */
@@ -243,25 +298,26 @@ public final class ConditionTypeVerifier {
                 if (browseName == null || browseName.getName() == null) {
                     continue;
                 }
-                final Optional<OpcuaConditionType> standard = OpcuaConditionType.fromBrowseName(browseName.getName());
+                final Optional<NodeId> ancestorNode = reference.getNodeId().toNodeId(client.getNamespaceTable());
+                // The same namespace rule as the first hop, and needed for the same reason: a vendor
+                // supertype named like a standard one would otherwise end the walk early and hand back a
+                // field set the real ancestry never promised.
+                final Optional<OpcuaConditionType> standard = standardTypeOf(browseName, ancestorNode);
                 if (standard.isPresent()) {
                     log.debug(
                             "Tag '{}': step {} reached '{}', a standard condition type.",
                             tagName,
                             depth + 1,
-                            browseName.getName());
+                            describe(browseName));
                     return CompletableFuture.completedFuture(standard.get());
                 }
                 if (next == null) {
-                    next = reference
-                            .getNodeId()
-                            .toNodeId(client.getNamespaceTable())
-                            .orElse(null);
+                    next = ancestorNode.orElse(null);
                     log.debug(
                             "Tag '{}': step {} reached '{}', also not standard; continuing upwards.",
                             tagName,
                             depth + 1,
-                            browseName.getName());
+                            describe(browseName));
                 }
             }
             return next == null
@@ -270,15 +326,19 @@ public final class ConditionTypeVerifier {
         });
     }
 
-    /** The node id the server gave for the type it reported, needed to browse that type's own references. */
+    /**
+     * The node id the server gave for the type it reported, needed to browse that type's own references.
+     * <p>
+     * Matched on the full {@code QualifiedName} rather than its string, so a node carrying two type
+     * definitions that differ only by namespace cannot yield the other one's id.
+     */
     private static @NotNull Optional<NodeId> typeNodeOf(
             final @NotNull OpcUaClient client,
             final @NotNull List<ReferenceDescription> references,
-            final @NotNull String reportedName) {
+            final @NotNull QualifiedName reportedName) {
 
         for (final ReferenceDescription reference : references) {
-            final QualifiedName browseName = reference.getBrowseName();
-            if (browseName != null && reportedName.equals(browseName.getName())) {
+            if (reportedName.equals(reference.getBrowseName())) {
                 return reference.getNodeId().toNodeId(client.getNamespaceTable());
             }
         }
@@ -288,15 +348,16 @@ public final class ConditionTypeVerifier {
     /**
      * The device's type name, preferring the standard namespace.
      * <p>
-     * Unlike the method lookup in {@code ConditionUpdateWriter}, a name outside namespace 0 is not a
-     * collision here: a vendor subtype legitimately lives in the vendor's own namespace, and reporting it is
-     * how {@link #compare} produces its "not a standard OPC UA condition type" message. But a node can carry
-     * more than one {@code HasTypeDefinition} reference, and if one of them is a standard type that is the
-     * one worth comparing against — so namespace 0 wins when both are present, rather than whichever the
-     * server happened to list first.
+     * The whole {@code QualifiedName} is carried out of here, not its string. A vendor subtype legitimately
+     * lives in the vendor's own namespace, and reporting it is how {@link #compare} produces its "not a
+     * standard OPC UA condition type" message — but that decision needs the namespace to make it, and
+     * returning the string alone is what let a namespace-2 type named {@code AlarmConditionType} be accepted
+     * as the standard one. A node can also carry more than one {@code HasTypeDefinition} reference, and if
+     * one of them is standard that is the one worth comparing against, so namespace 0 still wins over
+     * whichever the server happened to list first.
      */
-    private static @NotNull Optional<String> typeNameOf(final @NotNull List<ReferenceDescription> references) {
-        Optional<String> vendorName = Optional.empty();
+    private static @NotNull Optional<QualifiedName> typeNameOf(final @NotNull List<ReferenceDescription> references) {
+        Optional<QualifiedName> vendorName = Optional.empty();
         for (final ReferenceDescription reference : references) {
             final QualifiedName browseName = reference.getBrowseName();
             if (browseName == null || browseName.getName() == null) {
@@ -304,10 +365,10 @@ public final class ConditionTypeVerifier {
             }
             if (browseName.getNamespaceIndex() != null
                     && browseName.getNamespaceIndex().intValue() == 0) {
-                return Optional.of(browseName.getName());
+                return Optional.of(browseName);
             }
             if (vendorName.isEmpty()) {
-                vendorName = Optional.of(browseName.getName());
+                vendorName = Optional.of(browseName);
             }
         }
         return vendorName;

@@ -86,6 +86,11 @@ public enum OpcuaConditionType {
             List.of(
                     "ActiveState",
                     "AudibleEnabled",
+                    // OPC 10000-9 §5.8.2 Table 40: AudioDataType, Optional -- and a ByteString subtype, so
+                    // it publishes as base64 with contentEncoding declared, like EventId. It was omitted
+                    // while AudibleEnabled beside it was present, which left the pair half-usable: a
+                    // consumer could learn that a sound is configured but never obtain it.
+                    "AudibleSound",
                     "EnabledState",
                     "FirstInGroupFlag",
                     "InputNode",

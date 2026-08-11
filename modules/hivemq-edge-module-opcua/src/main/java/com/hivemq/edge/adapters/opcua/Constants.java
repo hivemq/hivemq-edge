@@ -36,6 +36,18 @@ public class Constants {
     public static final String METRIC_SESSION_INACTIVE_COUNT = "session.inactive.count";
     public static final String METRIC_SESSION_ACTIVE_COUNT = "session.active.count";
 
+    /**
+     * How many times a server reported that a monitored item's event queue overflowed — that is, how many
+     * times condition transitions were dropped before Edge could read them.
+     * <p>
+     * Worth a metric of its own rather than folding into the error count: every other counter here reports
+     * something Edge failed to do, while this one reports data that no longer exists. A refresh restores the
+     * current picture but not the transitions in between, so this is the only number that says the alarm
+     * history has a hole in it.
+     */
+    public static final String METRIC_SUBSCRIPTION_EVENT_QUEUE_OVERFLOW_COUNT =
+            "subscription.event.queue.overflow.count";
+
     public static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     public static final @NotNull byte[] EMPTY_BYTES = new byte[] {};
 

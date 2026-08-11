@@ -61,6 +61,7 @@ import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaSerializationException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -83,6 +84,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             TimeUnit.MILLISECONDS.toNanos(TYPE_REGISTRY_RESET_THROTTLE_MS);
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaSubscriptionLifecycleHandler.class);
     private static final int MAX_MONITORED_ITEM_COUNT = 5;
+
+    /**
+     * How many {@code RefreshRequired} {@code EventId}s to remember when collapsing the copies of one
+     * occurrence. See {@link #isFirstSightOf} for why this is bounded by count rather than by age.
+     */
+    private static final int MAX_REMEMBERED_REFRESH_REQUESTS = 64;
 
     // Verification is one browse against an already-connected session. The bound only exists so a server that
     // never answers cannot stall adapter start indefinitely.
@@ -139,6 +146,17 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * guarded: the connect-time and reconnect refreshes fire once by construction.
      */
     private final @NotNull AtomicBoolean refreshRequiredInFlight = new AtomicBoolean();
+
+    /**
+     * The {@code EventId}s of {@code RefreshRequired} occurrences already acted on, most recent last.
+     * <p>
+     * The in-flight guard above collapses copies only while a call is outstanding, which is not the same
+     * question as whether two notifications are the same event — see {@link #isFirstSightOf}. Guarded by its
+     * own monitor rather than made concurrent: {@code onEventReceived} is the only caller and Milo delivers
+     * a subscription's notifications one at a time, so contention is theoretical and a
+     * {@code LinkedHashSet} with an explicit bound is the clearer statement of what this holds.
+     */
+    private final @NotNull Set<ByteString> handledRefreshRequests = new LinkedHashSet<>();
 
     // Track last dynamic-type-registry reset so a permanently undecodable type cannot trigger a
     // full DataTypeTree browse per notification (EDG-776). Monotonic clock (nanoTime), seeded one
@@ -374,7 +392,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
             verifiedTags.forEach(verified -> {
                 final OpcuaTag opcuaTag = verified.tag();
-                final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
+                // Already parsed, inside verify()'s per-tag boundary. Nothing here may throw: this loop is
+                // outside that boundary, so a failure would abort the sync for every tag.
+                final NodeId nodeId = verified.node();
                 // A condition is observed through its transitions, so it needs an event item carrying an
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
@@ -388,7 +408,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                                 // to every notifier item and cannot be selected by any filter.
                                 final var eventItem = OpcUaMonitoredItem.newEventItem(
                                         eventItemNodeFor(opcuaTag, nodeId, verified.notifier()),
-                                        eventFilterFor(opcuaTag, nodeId));
+                                        eventFilterFor(verified));
                                 // Event parameters, not value parameters. queueSize means something different
                                 // here: for an event item 1 asks for the smallest queue the server supports
                                 // (OPC 10000-4 §7.21), where for a value item it means a single entry.
@@ -590,6 +610,18 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_TRANSFER_FAILED_COUNT);
         log.error("Subscription Transfer failed, recreating subscription for adapter '{}'", adapterId);
 
+        // Forget the broken subscription before trying to replace it, so nothing keeps using it if the
+        // replacement never arrives. It is not merely stale: the server refused to transfer it, so its id
+        // names nothing on the new session. Left in place -- as it was -- a failed rebuild leaves every
+        // later reader believing a subscription is established: onSessionReactivated() would request a
+        // refresh against the dead id, and a southbound write to a refresh tag would report success on a
+        // call that cannot land. `established()` installs the replacement only once it is genuinely
+        // established, so clearing here cannot race a successful rebuild into oblivion.
+        //
+        // compareAndSet rather than set: a rebuild that already finished has installed its replacement, and
+        // that one must survive.
+        currentSubscription.compareAndSet(brokenSubscription, null);
+
         try {
             recoveryExecutor.execute(this::recreateSubscription);
         } catch (final RejectedExecutionException e) {
@@ -611,10 +643,32 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                         replacementSubscription -> {
                             // reconnect the listener with the new subscription
                             replacementSubscription.setSubscriptionListener(this);
-                            syncTagsAndMonitoredItems(replacementSubscription, tags, config);
+                            if (!syncTagsAndMonitoredItems(replacementSubscription, tags, config)) {
+                                reportRecoveryFailed("its monitored items could not be re-established");
+                            }
                         },
-                        () -> log.error(
-                                "Subscription Transfer failed, unable to create new subscription '{}'", adapterId));
+                        () -> reportRecoveryFailed("a replacement subscription could not be created"));
+    }
+
+    /**
+     * Says that the rebuild after a failed transfer did not produce a usable subscription.
+     * <p>
+     * Reported rather than only logged because the adapter is left without one: no condition refresh will
+     * fire, and a southbound refresh request will answer that nothing is established. The adapter's own
+     * reconnect path is what recovers from here — this is the notice that it needs to.
+     */
+    private void reportRecoveryFailed(final @NotNull String what) {
+        final String message = String.format(
+                "Adapter '%s' could not rebuild its OPC UA subscription after the server refused to "
+                        + "transfer the old one: %s. Conditions are not being monitored until the adapter "
+                        + "reconnects.",
+                adapterId, what);
+        log.error(message);
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withSeverity(Event.SEVERITY.ERROR)
+                .withMessage(message)
+                .fire();
     }
 
     @Override
@@ -685,19 +739,29 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             if (tag == null) {
                 continue;
             }
+            // Read once. Three of the four questions below are about this one notification's EventType, and
+            // resolving it per question meant decoding the same field three times for every alarm delivered.
+            final Variant[] eventFields = events.get(i);
+            final NodeId eventType = eventTypeOf(eventFields);
             // Four event types reach a monitored item regardless of its filter -- the three refresh types
             // (OPC 10000-9 §4.5) and the queue-overflow type (OPC 10000-4 §7.22). The where clause cannot
             // exclude them, so they are routed here: a refresh tag exists to publish them, and on any other
             // kind they are dropped. Published as a transition they would carry that tag's field list with
             // almost every value null, which reads as an alarm whose state is unknown.
-            final boolean isControlEvent = isControlEvent(events.get(i));
+            final boolean isControlEvent = isControlEvent(eventType);
             final boolean isRefreshTag = tag.getDefinition().getKind() == OpcuaTagKind.REFRESH;
             // RefreshRequired is the one control event that asks for something rather than reporting it, so
             // it is acted on before the publish decision -- on every kind of tag, including the ones that
             // drop it. Whether a user chose to see the event is unrelated to whether our alarm picture is
             // stale.
-            if (isRefreshRequired(events.get(i))) {
-                onRefreshRequired(subscription);
+            if (isRefreshRequired(eventType)) {
+                onRefreshRequired(subscription, eventIdOf(eventFields));
+            }
+            // Queue overflow is likewise acted on before the publish decision, and for a sharper reason: it
+            // arrives on the tag whose data was lost and on no other, so the publish decision below is the
+            // last place it exists. See onQueueOverflow.
+            if (isQueueOverflow(eventType)) {
+                onQueueOverflow(tag);
             }
             if (isControlEvent && !isRefreshTag) {
                 continue;
@@ -719,13 +783,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
 
                 final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
-                // conditionType decides the published shape for both tag types, so decoding uses the same
-                // field list the select clause was built from. Event fields arrive positionally against that
-                // list, which is what keeps this correct.
+                // getPublishedType(), not getType(): for a REFRESH tag the two differ, and the select clause
+                // was built from the former. Event fields arrive positionally against the select clause, so
+                // decoding against any other list would attach values to the wrong names.
                 OpcUaEventToJsonConverter.convertPayload(
                         client.getDynamicEncodingContext(),
-                        tag.getDefinition().getType(),
-                        events.get(i),
+                        tag.getDefinition().getPublishedType(),
+                        eventFields,
                         dataPointBuilder);
             } catch (final @NotNull UaSerializationException e) {
                 // Same failure mode as the value path: a structure nested in an event field cannot be
@@ -836,7 +900,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @param notifier the notifier resolved for a condition tag, null for the other kinds.
      */
     private static @NotNull NodeId eventItemNodeFor(
-            final @NotNull OpcuaTag opcuaTag, final @NotNull NodeId nodeId, final @Nullable NodeId notifier) {
+            final @NotNull OpcuaTag opcuaTag, final @Nullable NodeId nodeId, final @Nullable NodeId notifier) {
         return switch (opcuaTag.getDefinition().getKind()) {
             // A condition is not itself a notifier, so its events come from one above it.
             case CONDITION -> Objects.requireNonNull(notifier);
@@ -844,39 +908,28 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // item there sees the refresh bracket the server broadcasts to every notifier item.
             case REFRESH -> NodeIds.Server;
             // A query names its notifier directly; a value item never reaches here.
-            case EVENT_SUBSCRIPTION, VALUE -> nodeId;
+            case EVENT_SUBSCRIPTION, VALUE -> Objects.requireNonNull(nodeId);
         };
     }
 
-    /** The event filter for an event item, which differs by kind. */
-    private static @NotNull EventFilter eventFilterFor(final @NotNull OpcuaTag opcuaTag, final @NotNull NodeId nodeId) {
-        return switch (opcuaTag.getDefinition().getKind()) {
-            case EVENT_SUBSCRIPTION -> queryFilterFor(opcuaTag);
+    /** The event filter for an event item, which differs by kind. Builds from ids already parsed. */
+    private static @NotNull EventFilter eventFilterFor(final @NotNull VerifiedTag verified) {
+        final OpcuaTagDefinition definition = verified.tag().getDefinition();
+        return switch (definition.getKind()) {
+            // Each of the three narrowing dimensions is independently optional, so a tag naming none of them
+            // is a legitimate request for everything the notifier carries. `filterType` says which events to
+            // accept; `type` says what shape to publish them in -- deliberately independent.
+            case EVENT_SUBSCRIPTION ->
+                ConditionEventFilters.forQuery(
+                        verified.sourceNode(),
+                        verified.conditionNode(),
+                        definition.getFilterType(),
+                        definition.getPublishedType());
             case REFRESH -> ConditionEventFilters.forRefresh();
             case CONDITION, VALUE ->
                 ConditionEventFilters.forCondition(
-                        nodeId, opcuaTag.getDefinition().getType());
+                        Objects.requireNonNull(verified.node()), definition.getPublishedType());
         };
-    }
-
-    /**
-     * The event filter for an event subscription tag, translated from its definition.
-     * <p>
-     * Each of the three narrowing dimensions is independently optional, so a tag that names none of them is a
-     * legitimate request for everything the notifier carries. {@code conditionType} doubles as the type
-     * filter here: on a query tag it says which events to accept rather than what the node is.
-     */
-    private static @NotNull EventFilter queryFilterFor(final @NotNull OpcuaTag opcuaTag) {
-        final OpcuaTagDefinition definition = opcuaTag.getDefinition();
-        return ConditionEventFilters.forQuery(
-                parseOrNull(definition.getSourceNode()),
-                parseOrNull(definition.getConditionNode()),
-                definition.getFilterType(),
-                definition.getType());
-    }
-
-    private static @Nullable NodeId parseOrNull(final @Nullable String nodeId) {
-        return nodeId == null ? null : NodeId.parse(nodeId);
     }
 
     /**
@@ -917,7 +970,17 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * call settles rather than when the burst ends, which is the conservative choice: a later
      * {@code RefreshRequired} is a fresh reason to resynchronise and must not be swallowed.
      */
-    private void onRefreshRequired(final @NotNull OpcUaSubscription subscription) {
+    private void onRefreshRequired(final @NotNull OpcUaSubscription subscription, final @Nullable ByteString eventId) {
+        // Identity first, duration second. The two guards answer different questions: this one asks "have I
+        // already handled this occurrence", the in-flight flag below asks "is a call already outstanding".
+        // Only the first is a correct answer to a duplicate, because nothing bounds the copies of one
+        // occurrence to a single publish batch -- the specification copies the event to every notifier item
+        // and says nothing about when each copy is delivered. A call that completes between two batches
+        // therefore releases the in-flight flag and lets the same occurrence start a second refresh, which
+        // the server answers with Bad_RefreshInProgress or, worse, honours.
+        if (eventId != null && !isFirstSightOf(eventId)) {
+            return;
+        }
         if (!refreshRequiredInFlight.compareAndSet(false, true)) {
             return;
         }
@@ -962,35 +1025,142 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
+     * Reports that the server dropped condition transitions for one tag, because its event queue was full.
+     * <p>
+     * <b>This is the only place the fact exists.</b> Overflow is not broadcast like the refresh bracket: OPC
+     * 10000-4 §7.22.3 — "These Events are only published to the MonitoredItems in the Subscription that
+     * produced the EventQueueOverflowEventType Event" — so it reaches the one item whose queue filled and no
+     * other. A refresh tag's own item did not overflow, so nothing arrives there, and the routing below
+     * would otherwise drop the notification on the condition or query tag that did overflow. The loss would
+     * then be invisible in every direction: no MQTT message, no adapter event, no metric.
+     * <p>
+     * That matters more than an ordinary dropped notification because an event is a <em>transition report</em>
+     * and is never re-sent. A reconnect does not recover it and neither does a {@code ConditionRefresh},
+     * which re-reports current state and cannot reconstruct the transitions in between. A consumer's alarm
+     * history has a hole in it and this is what says so.
+     * <p>
+     * Reported rather than published. Putting the overflow event on the tag's own topic would mean emitting
+     * it under that tag's declared field list with every alarm field null — an alarm whose state is unknown,
+     * which reads worse than silence and is why the control events are dropped from data tags in the first
+     * place. A tag modelled for this is <a href="https://linear.app/hivemq/issue/EDG-856">EDG-856</a>;
+     * until it exists the operator-visible event and the metric are the honest surface.
+     */
+    private void onQueueOverflow(final @NotNull OpcuaTag tag) {
+        protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_EVENT_QUEUE_OVERFLOW_COUNT);
+        final String message = String.format(
+                "Adapter '%s' lost condition transitions for tag '%s': the server's event queue for it "
+                        + "overflowed and older notifications were discarded. An event is never re-sent, so "
+                        + "those transitions are gone -- a refresh restores the current state but not the "
+                        + "history. Raise 'eventQueueSize' if this recurs.",
+                adapterId, tag.getName());
+        log.warn(message);
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withSeverity(Event.SEVERITY.WARN)
+                .withMessage(message)
+                .fire();
+    }
+
+    /**
+     * Whether a notification is the server reporting that this item's event queue overflowed.
+     * <p>
+     * Separate from {@link #isControlEvent} for the same reason as {@link #isRefreshRequired}: that one
+     * decides whether to publish, this one decides whether to report.
+     */
+    private static boolean isQueueOverflow(final @Nullable NodeId eventType) {
+        return NodeIds.EventQueueOverflowEventType.equals(eventType);
+    }
+
+    /**
      * Whether a notification is the server asking for a refresh, as opposed to the other control events.
      * <p>
      * Separate from {@link #isControlEvent} because the two answer different questions: that one decides
      * whether to publish, this one decides whether to act.
      */
-    private static boolean isRefreshRequired(final @NotNull Variant @NotNull [] eventFields) {
-        return NodeIds.RefreshRequiredEventType.equals(eventTypeOf(eventFields));
+    private static boolean isRefreshRequired(final @Nullable NodeId eventType) {
+        return NodeIds.RefreshRequiredEventType.equals(eventType);
+    }
+
+    /**
+     * Whether this {@code RefreshRequired} occurrence has not been seen before, recording it if so.
+     * <p>
+     * {@code EventId} is what identifies an occurrence: OPC 10000-9 §4.5 has the server copy one
+     * {@code RefreshRequired} to every notifier item in the subscription, and the copies of one occurrence
+     * carry one id. So an adapter with ten condition tags sees ten notifications that are one event, and
+     * telling them apart from ten genuinely separate ones is exactly this comparison.
+     * <p>
+     * Bounded by count rather than by age. The window only has to outlive the delivery of one occurrence's
+     * copies, which is bounded by the number of monitored items in the subscription; sixty-four is
+     * comfortably beyond any realistic count and costs nothing to hold. An id evicted early degrades to the
+     * in-flight guard, which is where this started.
+     */
+    private boolean isFirstSightOf(final @NotNull ByteString eventId) {
+        synchronized (handledRefreshRequests) {
+            if (!handledRefreshRequests.add(eventId)) {
+                return false;
+            }
+            // Insertion-ordered, so the first element is the oldest. One eviction per insertion keeps the
+            // set at its bound without ever needing to walk it.
+            if (handledRefreshRequests.size() > MAX_REMEMBERED_REFRESH_REQUESTS) {
+                final var oldest = handledRefreshRequests.iterator();
+                oldest.next();
+                oldest.remove();
+            }
+            return true;
+        }
+    }
+
+    /** The notification's {@code EventId}, or null when it is absent or not a byte string. */
+    private static @Nullable ByteString eventIdOf(final @NotNull Variant @NotNull [] eventFields) {
+        if (EVENT_ID_INDEX < 0 || EVENT_ID_INDEX >= eventFields.length) {
+            return null;
+        }
+        final Variant eventId = eventFields[EVENT_ID_INDEX];
+        return eventId != null && eventId.value() instanceof final ByteString bytes ? bytes : null;
     }
 
     /**
      * Whether a notification is one of the control events rather than a transition report.
      * <p>
-     * {@code EventType} is read positionally: it is part of {@code BASE_EVENT_FIELDS}, which every select
-     * clause begins with, so its index is the same for every tag whatever type it declares.
+     * Takes the resolved type rather than the field array, like its two siblings: all three ask a question
+     * about the same {@code EventType}, and reading it once per notification is what keeps that visible.
      */
-    private static boolean isControlEvent(final @NotNull Variant @NotNull [] eventFields) {
-        final NodeId typeId = eventTypeOf(eventFields);
-        return typeId != null && CONTROL_EVENT_TYPES.contains(typeId);
+    private static boolean isControlEvent(final @Nullable NodeId eventType) {
+        return eventType != null && CONTROL_EVENT_TYPES.contains(eventType);
     }
 
-    /** The notification's {@code EventType}, or null when it is absent or not a node id. */
+    /**
+     * The notification's {@code EventType}, or null when it is absent or not a node id.
+     * <p>
+     * Read positionally: {@code EventType} is part of {@code BASE_EVENT_FIELDS}, which every select clause
+     * begins with, so its index is the same for every tag whatever type it declares.
+     */
     private static @Nullable NodeId eventTypeOf(final @NotNull Variant @NotNull [] eventFields) {
-        final int eventTypeIndex = OpcuaConditionType.BASE_EVENT_FIELDS.indexOf("EventType");
-        if (eventTypeIndex < 0 || eventTypeIndex >= eventFields.length) {
+        if (EVENT_TYPE_INDEX < 0 || EVENT_TYPE_INDEX >= eventFields.length) {
             return null;
         }
-        final Variant eventType = eventFields[eventTypeIndex];
+        final Variant eventType = eventFields[EVENT_TYPE_INDEX];
         return eventType != null && eventType.value() instanceof final NodeId typeId ? typeId : null;
     }
+
+    /**
+     * Where {@code EventId} and {@code EventType} sit in every notification's value array.
+     * <p>
+     * Constants, because they are constant: {@code BASE_EVENT_FIELDS} is an immutable list, so these indices
+     * cannot change once the class is loaded. Deriving them with {@code indexOf} inside the accessors meant a
+     * linear scan with string comparison on every field read — and the event type was read three times per
+     * notification, once for each question asked about it — on the delivery path that carries every alarm the
+     * adapter receives.
+     * <p>
+     * They are positions in the <em>select clause</em>, which is what makes reading a value array by index
+     * correct at all: every select clause begins with {@code BASE_EVENT_FIELDS} whatever type a tag declares,
+     * and none of those ten fields carries an {@code Id} companion that would shift the ones after it.
+     * {@code OpcUaSubscriptionEventFieldPositionsTest} pins that for all 22 types, because it is an
+     * assumption this class depends on and does not own.
+     */
+    private static final int EVENT_ID_INDEX = OpcuaConditionType.BASE_EVENT_FIELDS.indexOf("EventId");
+
+    private static final int EVENT_TYPE_INDEX = OpcuaConditionType.BASE_EVENT_FIELDS.indexOf("EventType");
 
     /**
      * The tag a notification belongs to, carried on the monitored item itself.
@@ -1098,13 +1268,31 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     /** The fields selected for a tag, in the order the select clause was built. */
     private static @NotNull List<OpcuaConditionType.SelectedField> selectedFieldsFor(final @NotNull OpcuaTag tag) {
-        final OpcuaConditionType type = tag.getDefinition().getType();
-        return type == null ? List.of() : type.selectedFields();
+        return tag.getDefinition().getPublishedType().selectedFields();
     }
 
-    /** A tag cleared for subscription, with the notifier its events arrive on if it is a condition. */
+    /**
+     * A tag cleared for subscription, with every node id it needs already parsed.
+     * <p>
+     * The parsing belongs here rather than at item-construction time because {@link #verify} is the per-tag
+     * boundary: everything inside it answers "do not subscribe <em>this</em> tag", while a throw outside it
+     * aborts the whole synchronization and takes every healthy tag with it. A malformed {@code sourceNode}
+     * on one query tag used to do exactly that — {@code NodeId.parse} raised from inside the loop that
+     * builds monitored items, which is past the try/catch, so one typo in an optional narrowing filter
+     * failed the adapter's start.
+     *
+     * @param node          the tag's own node. Null for a {@code REFRESH} tag, which names none of its own —
+     *                      its item goes on the Server object and its filter reads no node id.
+     * @param notifier      the notifier resolved for a condition tag, null for the other kinds.
+     * @param sourceNode    an event subscription tag's source predicate, null when it has none.
+     * @param conditionNode an event subscription tag's condition predicate, null when it has none.
+     */
     private record VerifiedTag(
-            @NotNull OpcuaTag tag, @Nullable NodeId notifier) {}
+            @NotNull OpcuaTag tag,
+            @Nullable NodeId node,
+            @Nullable NodeId notifier,
+            @Nullable NodeId sourceNode,
+            @Nullable NodeId conditionNode) {}
 
     /**
      * Whether a tag may be subscribed, and on what: present for anything that is not a condition, and for a
@@ -1114,19 +1302,37 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * throwing. This runs inside adapter start, where an escaping exception would abort the whole sequence.
      */
     private @NotNull Optional<VerifiedTag> verify(final @NotNull OpcuaTag opcuaTag) {
-        // Only a condition tag needs either check. A value tag needs neither, and an event subscription tag
-        // names its notifier directly -- there is nothing to resolve, and no single declared type to verify,
-        // since the point of the tag is that many conditions of possibly differing types pass its filter.
-        if (opcuaTag.getDefinition().getKind() != OpcuaTagKind.CONDITION) {
-            return Optional.of(new VerifiedTag(opcuaTag, null));
-        }
+        final OpcuaTagDefinition definition = opcuaTag.getDefinition();
         final String tagName = opcuaTag.getName();
         try {
+            // Every configured node id is parsed here, inside the boundary, so nothing downstream can throw
+            // while building monitored items. A REFRESH tag's own `node` is deliberately not parsed: it
+            // names nothing -- the item goes on the Server object and the filter reads no node id -- so
+            // rejecting the tag over a value that is never used would be a rejection with no consequence
+            // behind it.
+            final NodeId node =
+                    definition.getKind() == OpcuaTagKind.REFRESH ? null : parseField(definition.getNode(), "node");
+
+            if (definition.getKind() != OpcuaTagKind.CONDITION) {
+                // A value tag needs no further check. An event subscription tag has no single declared type
+                // to verify -- the point of the tag is that many conditions of differing types pass its
+                // filter -- but it does name a notifier directly, and that node has to be one.
+                final NodeId sourceNode = parseField(definition.getSourceNode(), "sourceNode");
+                final NodeId conditionNode = parseField(definition.getConditionNode(), "conditionNode");
+                if (definition.getKind() == OpcuaTagKind.EVENT_SUBSCRIPTION) {
+                    final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
+                                    client, Objects.requireNonNull(node), tagName)
+                            .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                    if (optionalUnsubscribableTag.isPresent()) {
+                        reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
+                        return Optional.empty();
+                    }
+                }
+                return Optional.of(new VerifiedTag(opcuaTag, node, null, sourceNode, conditionNode));
+            }
+
             final ConditionTypeVerifier.Result result = ConditionTypeVerifier.verify(
-                            client,
-                            NodeId.parse(opcuaTag.getDefinition().getNode()),
-                            opcuaTag.getDefinition().getType(),
-                            tagName)
+                            client, Objects.requireNonNull(node), definition.getType(), tagName)
                     .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
             if (result instanceof final ConditionTypeVerifier.Result.Rejected rejected) {
@@ -1137,10 +1343,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // A condition is not an event notifier, so without a notifier there is nowhere to subscribe and
             // the tag simply cannot be honoured. Same outcome as a type mismatch: this tag alone is dropped.
             final NotifierResolver.Result notifier = NotifierResolver.resolve(
-                            client,
-                            NodeId.parse(opcuaTag.getDefinition().getNode()),
-                            opcuaTag.getDefinition().getNotifierNode(),
-                            tagName)
+                            client, node, definition.getNotifierNode(), tagName)
                     .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
             if (notifier instanceof final NotifierResolver.Result.NotFound notFound) {
@@ -1148,13 +1351,33 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 return Optional.empty();
             }
             final NotifierResolver.Result.Found found = (NotifierResolver.Result.Found) notifier;
+
+            // A declared notifier is checked; a walked one is not, and the asymmetry is deliberate rather
+            // than an oversight. The walk *is* the check -- it only ever returns a node whose
+            // EventNotifier attribute it has already read and found to carry the SubscribeToEvents bit, so
+            // asking again would be a second round trip for an answer already known. A declared one has had
+            // no such check by construction: it exists precisely because the walk could not be relied on,
+            // and it was previously "taken at its word", leaving nothing between a typo and a tag that
+            // subscribes cleanly and then stays silent forever.
+            if (definition.getNotifierNode() != null) {
+                final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
+                                client, found.notifier(), tagName)
+                        .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                if (optionalUnsubscribableTag.isPresent()) {
+                    reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
+                    return Optional.empty();
+                }
+            }
             log.debug(
                     "Adapter '{}': tag '{}' will receive events from notifier {} ({})",
                     adapterId,
                     tagName,
                     found.notifier(),
                     found.how());
-            return Optional.of(new VerifiedTag(opcuaTag, found.notifier()));
+            return Optional.of(new VerifiedTag(opcuaTag, node, found.notifier(), null, null));
+        } catch (final MalformedNodeIdException e) {
+            reportUnsubscribableTag(tagName, describe(e));
+            return Optional.empty();
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             reportUnsubscribableTag(tagName, "verification was interrupted");
@@ -1176,6 +1399,40 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         } catch (final Exception e) {
             reportUnsubscribableTag(tagName, "verification failed: " + describe(e));
             return Optional.empty();
+        }
+    }
+
+    /**
+     * A configured node id that is not one. Carries a message naming the field and the value, because those
+     * are the two things an operator needs and neither is in {@code NodeId.parse}'s own complaint.
+     */
+    private static final class MalformedNodeIdException extends RuntimeException {
+
+        @java.io.Serial
+        private static final long serialVersionUID = 1L;
+
+        private MalformedNodeIdException(final @NotNull String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Parses one configured node id, naming the field if it will not parse.
+     *
+     * @param value the configured string, or null when the field was not set.
+     * @param field the field's name in the tag definition, for the message.
+     * @return the parsed node id, or null when the field was not set.
+     * @throws MalformedNodeIdException when the value is set but is not a node id.
+     */
+    private static @Nullable NodeId parseField(final @Nullable String value, final @NotNull String field) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return NodeId.parse(value);
+        } catch (final Exception e) {
+            throw new MalformedNodeIdException("its '" + field + "' is '" + value
+                    + "', which is not a valid OPC UA node id. Expected something like 'ns=2;s=Boiler1.HighTemp'");
         }
     }
 

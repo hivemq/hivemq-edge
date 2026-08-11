@@ -216,8 +216,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // Reset stopped flag
         stopped = false;
 
-        startSchedulers();
-
+        // Every synchronous check the configuration can fail happens before any runtime resource exists.
+        // The schedulers used to start first, and neither failure path below shut them down again -- so a
+        // rejected start left two executor threads running until some later lifecycle call happened to
+        // collect them, and repeated invalid starts accumulated them.
+        //
         // At most one refresh tag. A second would place a second item on the Server object, and since the
         // refresh bracket is copied to every notifier item in the subscription, both would publish the same
         // event -- a duplicate that looks like two refreshes. Rejected at start rather than tolerated,
@@ -253,6 +256,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     "Failed to parse configuration for OPC UA client");
             return;
         }
+
+        // The configuration is known to be usable from here, so runtime resources may be created.
+        startSchedulers();
 
         final OpcUaClientConnection conn = new OpcUaClientConnection(
                 adapterId,
@@ -852,7 +858,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // or nothing at all.
         final OpcuaTagKind tagKind = tag.getDefinition().getKind();
         if (tagKind != OpcuaTagKind.VALUE) {
-            final OpcuaConditionType publishedType = tag.getDefinition().getType();
+            // getPublishedType(), the same accessor the select clause and the decoder use, so the schema
+            // cannot promise a field the server was never asked for. They differ only for a REFRESH tag.
+            final OpcuaConditionType publishedType = tag.getDefinition().getPublishedType();
             log.debug(
                     "Schema for {} tag='{}' derived from declared type '{}'",
                     tagKind,

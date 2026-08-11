@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.config.tag;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
@@ -28,7 +29,10 @@ public class OpcuaTagDefinition implements TagDefinition {
     @JsonProperty(value = "node", required = true)
     @ModuleConfigField(
             title = "Destination Node ID",
-            description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
+            description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\". "
+                    + "For a CONDITION node this is the alarm itself; for an EVENT_SUBSCRIPTION node it is the "
+                    + "notifier to subscribe to. A REFRESH node still requires the field but ignores its "
+                    + "value: that tag always attaches to the Server object.",
             required = true)
     private final @NotNull String node;
 
@@ -36,7 +40,11 @@ public class OpcuaTagDefinition implements TagDefinition {
     @ModuleConfigField(
             title = "Node kind",
             description = "what the node is: an ordinary VALUE (default), a CONDITION (a single alarm), "
-                    + "or an EVENT_SUBSCRIPTION (a query against a notifier, delivering events from many conditions)",
+                    + "an EVENT_SUBSCRIPTION (a query against a notifier, delivering events from many "
+                    + "conditions), or a REFRESH (the adapter's refresh channel — northbound it publishes the "
+                    + "server's control events, including the queue-overflow event that says transitions were "
+                    + "lost, and southbound it accepts {\"method\": \"REFRESH\"} to ask the server to "
+                    + "re-report every condition it currently retains). At most one REFRESH tag per adapter.",
             defaultValue = "VALUE")
     private final @NotNull OpcuaTagKind kind;
 
@@ -48,7 +56,8 @@ public class OpcuaTagDefinition implements TagDefinition {
                     + "it is also verified against the device when the tag is subscribed, and declaring a "
                     + "supertype of what the device offers is allowed. For an EVENT_SUBSCRIPTION node nothing "
                     + "is verified — many conditions of differing types may pass the filter — so a field an "
-                    + "event does not carry is published as null.",
+                    + "event does not carry is published as null. For a REFRESH node the field is ignored: "
+                    + "control events are BaseEventType events and always publish the ConditionType shape.",
             defaultValue = "AlarmConditionType")
     private final @NotNull OpcuaConditionType type;
 
@@ -143,11 +152,39 @@ public class OpcuaTagDefinition implements TagDefinition {
     }
 
     /**
-     * The type whose structure the northbound output has — the input to schema generation, and the field
-     * list the select clause and the event decoder both work from.
+     * The type whose structure the northbound output has, exactly as configured.
+     * <p>
+     * Prefer {@link #getPublishedType()} anywhere the answer decides what is on the wire: for a
+     * {@code REFRESH} tag this field is accepted and ignored, and the two differ.
      */
     public @NotNull OpcuaConditionType getType() {
         return type;
+    }
+
+    /**
+     * The type whose fields this tag actually publishes — the one list the select clause, the event decoder,
+     * the read schema and the rejected-field report must all derive from.
+     * <p>
+     * The same as {@link #getType()} for every kind but {@code REFRESH}, where it is fixed at
+     * {@code ConditionType} whatever the configuration says. A refresh tag carries the server's control
+     * events, which are {@code BaseEventType} events — they have no alarm state, so the type a user declares
+     * cannot describe them, and the filter does not ask the server for those fields either.
+     * <p>
+     * It is stated here rather than at each use because those four places had drifted into three different
+     * answers: the select clause asked for {@code ConditionType}'s fields, while the schema and the decoder
+     * both used the configured {@code type}, defaulting to {@code AlarmConditionType}. The published shape
+     * survived that — the field list is built root-down, so the alarm list begins with exactly the condition
+     * list and the extra entries simply decoded as null — but the tag advertised some fifty alarm fields it
+     * could never carry, and {@code type} appeared configurable while changing nothing that reached the
+     * server.
+     * <p>
+     * {@code @JsonIgnore} because this is derived, not configured. Without it Jackson reads the getter as a
+     * bean property and writes a {@code publishedType} key into every serialised tag — which a read back
+     * then rejects as unrecognised, so a tag could be written and not re-read.
+     */
+    @JsonIgnore
+    public @NotNull OpcuaConditionType getPublishedType() {
+        return kind == OpcuaTagKind.REFRESH ? OpcuaConditionType.CONDITION : type;
     }
 
     /**

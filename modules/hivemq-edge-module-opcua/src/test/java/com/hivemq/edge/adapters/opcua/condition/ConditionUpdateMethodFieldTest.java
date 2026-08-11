@@ -74,6 +74,85 @@ class ConditionUpdateMethodFieldTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    // ── the comment field, whose three intents are distinguished by shape ────────────────────────────
+
+    @Test
+    void anObjectCommentIsRejectedRatherThanCoercedToAnErase() {
+        // Review finding 12, and the dangerous one. `asText()` returns the *empty string* for an object or an
+        // array -- and an empty comment is not "no comment", it is the specification's deliberate erase form
+        // (OPC 10000-9 §5.7.3: "To reset the comment, an empty text with a locale shall be provided"). So
+        // {"comment": {}}, which nobody means, silently wiped the condition's existing comment.
+        //
+        // Not a local mistake either: §5.5.2 fires a fresh event on any comment change, so the erase is
+        // broadcast to every other client watching that alarm, and the previous operator's note is gone from
+        // the audit trail with no way to recover it.
+        assertThatThrownBy(() -> ConditionUpdate.fromJson(
+                        json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", " + "\"comment\": {}}")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("comment")
+                .hasMessageContaining("must be a string");
+    }
+
+    @Test
+    void anArrayCommentIsRejected() {
+        assertThatThrownBy(() -> ConditionUpdate.fromJson(
+                        json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", " + "\"comment\": [\"a\"]}")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aNumericCommentIsRejected() {
+        // Jackson would render this as "42". Harmless-looking, but the parser is documented as rejecting a
+        // command it cannot understand rather than guessing, and a number is not a note.
+        assertThatThrownBy(() -> ConditionUpdate.fromJson(
+                        json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", " + "\"comment\": 42}")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aBooleanCommentIsRejected() {
+        assertThatThrownBy(() -> ConditionUpdate.fromJson(
+                        json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", " + "\"comment\": true}")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void anAbsentCommentMeansLeaveTheExistingOneAlone() {
+        final ConditionUpdate update =
+                ConditionUpdate.fromJson(json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\"}"));
+
+        assertThat(update.comment()).isNull();
+    }
+
+    @Test
+    void anExplicitNullCommentAlsoMeansLeaveItAlone() {
+        // Serialisers that emit nulls for unset fields are common, so reading this as an erase would surprise
+        // a caller who never thought about the field.
+        final ConditionUpdate update = ConditionUpdate.fromJson(
+                json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", \"comment\": null}"));
+
+        assertThat(update.comment()).isNull();
+    }
+
+    @Test
+    void anEmptyStringCommentIsStillTheDeliberateErase() {
+        // The distinction the strictness exists to protect. An empty string is the only way to clear a stale
+        // comment, so it must keep working -- narrowing the field must not collapse the three intents into
+        // two.
+        final ConditionUpdate update = ConditionUpdate.fromJson(
+                json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", \"comment\": \"\"}"));
+
+        assertThat(update.comment()).isEmpty();
+    }
+
+    @Test
+    void anOrdinaryCommentIsCarriedThrough() {
+        final ConditionUpdate update = ConditionUpdate.fromJson(
+                json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", \"comment\": \"Erwin has seen this\"}"));
+
+        assertThat(update.comment()).isEqualTo("Erwin has seen this");
+    }
+
     private static @NotNull JsonNode json(final @NotNull String text) {
         try {
             return MAPPER.readTree(text);
