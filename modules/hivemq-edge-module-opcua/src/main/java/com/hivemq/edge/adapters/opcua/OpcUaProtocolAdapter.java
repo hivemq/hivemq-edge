@@ -213,6 +213,20 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         log.info("Starting OPC UA protocol adapter {}", adapterId);
 
+        // Refused before anything is built, rather than after. start() is synchronized, so an adapter that
+        // already holds a connection cannot acquire a second one, and everything below this point either
+        // allocates a runtime resource or hands one to a background thread. The compareAndSet further down
+        // is still the authority -- a reconnect claims the same slot from another thread and does not hold
+        // this lock -- but that path is a race, whereas a second start() is simply a caller mistake and is
+        // better answered before two executors have been created for it.
+        if (opcUaClientConnection.get() != null) {
+            log.error("Cannot start OPC UA protocol adapter '{}' - adapter is already started", adapterId);
+            output.failStart(
+                    new IllegalStateException("Adapter already started"),
+                    "Cannot start already started adapter. Please stop the adapter first.");
+            return;
+        }
+
         // Reset stopped flag
         stopped = false;
 
@@ -257,9 +271,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
-        // The configuration is known to be usable from here, so runtime resources may be created.
-        startSchedulers();
-
         final OpcUaClientConnection conn = new OpcUaClientConnection(
                 adapterId,
                 tagList,
@@ -270,6 +281,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 config,
                 opcUaServiceFaultListener);
         if (opcUaClientConnection.compareAndSet(null, conn)) {
+            // Only now, with the connection slot owned. The configuration was validated above, so this is no
+            // longer about whether the resources are wanted -- it is about whether this call is the one
+            // entitled to create them. They used to be created before the swap and were therefore replaced
+            // wholesale by a duplicate start: the original pair went on running the retry and health-check
+            // work of the connection that was still live, with nothing left holding a reference to them, so
+            // no later stop() or destroy() could ever collect them.
+            startSchedulers();
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // Attempt initial connection asynchronously
@@ -531,8 +549,21 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
     /**
      * Initiates both retry and health check schedulers.
+     * <p>
+     * Shuts down whatever was there first. The caller is expected to have established that nothing is, and
+     * with the guards in {@link #start} nothing should be — but overwriting a live executor field loses the
+     * only reference to threads that are still running scheduled work against this adapter, and no later
+     * lifecycle call can collect what it cannot name. Closing them here costs nothing when the fields are
+     * null, which is every ordinary call.
      */
     private synchronized void startSchedulers() {
+        if (retryScheduler != null || healthCheckScheduler != null) {
+            log.warn(
+                    "Adapter '{}': schedulers already existed when starting; shutting them down rather than "
+                            + "losing the reference to them",
+                    adapterId);
+            shutdownSchedulers();
+        }
         retryScheduler = Executors.newSingleThreadScheduledExecutor();
         healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
     }
