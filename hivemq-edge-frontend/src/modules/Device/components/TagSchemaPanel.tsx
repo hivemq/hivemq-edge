@@ -30,9 +30,9 @@ interface TagSchemaPanelProps {
 }
 
 /**
- * The read document wraps the value in a fixed envelope (tagName, timestamp, metadata) while the write
- * document is value-only, so the two documents as wholes are never equal. "The same schema" to someone
- * looking at this panel means the value shape, so that is what is compared.
+ * The northbound document wraps the value in a fixed envelope (tagName, timestamp, metadata) while the
+ * southbound document is value-only, so the two documents as wholes are never equal. "The same schema" to
+ * someone looking at this panel means the value shape, so that is what is compared.
  */
 const valueShape = (schema: JsonNode): JsonNode => ((schema as JSONSchema7).properties?.value as JsonNode) ?? schema
 
@@ -65,25 +65,30 @@ const isSameShape = (a: JsonNode, b: JsonNode): boolean => isSameStructure(value
 
 export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
   // This panel is pure inspection, so it shows both directions. They are usually the same for a plain value
-  // tag; they differ when a tag's write shape is not a projection of its read shape (e.g. a condition tag).
-  const { data: readSchema, isLoading: isLoadingRead, isError: isErrorRead } = useGetSchema(adapterId, tag.name)
+  // tag; they differ when a tag's southbound shape is not a projection of its northbound shape (e.g. a
+  // condition tag).
   const {
-    data: writeSchema,
-    isLoading: isLoadingWrite,
-    isError: isErrorWrite,
+    data: northboundSchema,
+    isLoading: isLoadingNorthbound,
+    isError: isErrorNorthbound,
+  } = useGetSchema(adapterId, tag.name)
+  const {
+    data: southboundSchema,
+    isLoading: isLoadingSouthbound,
+    isError: isErrorSouthbound,
   } = useGetSchema(adapterId, tag.name, 'SOUTHBOUND')
   const { t } = useTranslation()
 
   const areIdentical = useMemo(
-    () => Boolean(readSchema && writeSchema && isSameShape(readSchema, writeSchema)),
-    [readSchema, writeSchema]
+    () => Boolean(northboundSchema && southboundSchema && isSameShape(northboundSchema, southboundSchema)),
+    [northboundSchema, southboundSchema]
   )
 
   const handleSchemaDownload = () => {
-    if (!readSchema) return
+    if (!northboundSchema) return
 
     // TODO[NVL] This should be transformed into an async method (react-query type) with error management and testing
-    downloadJSON<JSONSchema7>(readSchema.title || 'topic-untitled', readSchema)
+    downloadJSON<JSONSchema7>(northboundSchema.title || 'topic-untitled', northboundSchema)
   }
 
   return (
@@ -95,36 +100,36 @@ export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
         <PLCTag tagTitle={tag.name} mr={3} />
       </CardHeader>
       <CardBody>
-        {/* The two queries are independent: the read panel renders as soon as its own request settles. */}
-        {isLoadingRead && <LoaderSpinner />}
-        {isErrorRead && <ErrorMessage message={t('device.errors.noSchemaLoaded')} />}
-        {readSchema && (
+        {/* The two queries are independent: the northbound panel renders as soon as its own request settles. */}
+        {isLoadingNorthbound && <LoaderSpinner />}
+        {isErrorNorthbound && <ErrorMessage message={t('device.errors.noNorthboundSchemaLoaded')} />}
+        {northboundSchema && (
           <FormControl data-testid="tag-schema-panel" id="tag-schema-panel">
             <FormLabel>
-              {areIdentical ? t('device.drawer.schema.label') : t('device.drawer.schema.labelRead')}
+              {areIdentical ? t('device.drawer.schema.label') : t('device.drawer.schema.labelNorthbound')}
             </FormLabel>
-            <Box borderWidth={1} p={2} data-testid="tag-schema-read">
-              <JsonSchemaBrowser schema={readSchema} hasExamples />
+            <Box borderWidth={1} p={2} data-testid="tag-schema-northbound">
+              <JsonSchemaBrowser schema={northboundSchema} hasExamples />
             </Box>
             <FormHelperText>
-              {areIdentical ? t('device.drawer.schema.identical') : t('device.drawer.schema.helperRead')}
+              {areIdentical ? t('device.drawer.schema.identical') : t('device.drawer.schema.helperNorthbound')}
             </FormHelperText>
           </FormControl>
         )}
 
-        {isLoadingWrite && !isLoadingRead && <LoaderSpinner />}
-        {isErrorWrite && <ErrorMessage message={t('device.errors.noWriteSchemaLoaded')} />}
-        {!areIdentical && writeSchema && (
-          <FormControl mt={4} data-testid="tag-schema-panel-write" id="tag-schema-panel-write">
-            <FormLabel>{t('device.drawer.schema.labelWrite')}</FormLabel>
-            <Box borderWidth={1} p={2} data-testid="tag-schema-write">
-              <JsonSchemaBrowser schema={writeSchema} hasExamples />
+        {isLoadingSouthbound && !isLoadingNorthbound && <LoaderSpinner />}
+        {isErrorSouthbound && <ErrorMessage message={t('device.errors.noSouthboundSchemaLoaded')} />}
+        {!areIdentical && southboundSchema && (
+          <FormControl mt={4} data-testid="tag-schema-panel-southbound" id="tag-schema-panel-southbound">
+            <FormLabel>{t('device.drawer.schema.labelSouthbound')}</FormLabel>
+            <Box borderWidth={1} p={2} data-testid="tag-schema-southbound">
+              <JsonSchemaBrowser schema={southboundSchema} hasExamples />
             </Box>
-            <FormHelperText>{t('device.drawer.schema.helperWrite')}</FormHelperText>
+            <FormHelperText>{t('device.drawer.schema.helperSouthbound')}</FormHelperText>
           </FormControl>
         )}
       </CardBody>
-      {readSchema && (
+      {northboundSchema && (
         <CardFooter>
           <ButtonGroup>
             <Button data-testid="tag-schema-download" onClick={handleSchemaDownload}>

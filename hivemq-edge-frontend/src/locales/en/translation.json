@@ -712,7 +712,7 @@
           "edit": "Edit the tag",
           "delete": "Delete the tag",
           "add": "Add a new tag",
-          "schema": "View the WRITE schema",
+          "schema": "View the tag schemas",
           "submit": "Submit"
         }
       },
@@ -742,17 +742,17 @@
         "header": "Edit the tag"
       },
       "schema": {
-        "header": "Manage the schema for the tag",
+        "header": "Tag schemas",
         "action": {
           "download": "Download the schema",
           "close": "Close"
         },
         "label": "Current schema",
-        "labelRead": "Read schema",
-        "labelWrite": "Write schema",
-        "helperRead": "The data published for this tag. A valid source for data transformation.",
-        "helperWrite": "The shape of a write to this tag. Whether an individual field can be written is shown per field.",
-        "identical": "Reading and writing this tag use the same schema."
+        "labelNorthbound": "Northbound schema",
+        "labelSouthbound": "Southbound schema",
+        "helperNorthbound": "The data published for this tag. A valid source for data transformation.",
+        "helperSouthbound": "The shape of a southbound message to this tag. Whether an individual field can be written is shown per field.",
+        "identical": "Both directions use the same schema for this tag."
       }
     },
     "errors": {
@@ -760,8 +760,8 @@
       "noAdapter": "The protocol adapter for this device cannot be found",
       "noMetadataLoaded": "Uploading device metadata is not yet supported",
       "noTagLoaded": "Cannot load the tags",
-      "noSchemaLoaded": "Cannot load the schema",
-      "noWriteSchemaLoaded": "Cannot load the write schema",
+      "noNorthboundSchemaLoaded": "Cannot load the northbound schema",
+      "noSouthboundSchemaLoaded": "Cannot load the southbound schema",
       "noTagCreated": "There is no tag created yet",
       "invalidData": "Invalid data"
     },
