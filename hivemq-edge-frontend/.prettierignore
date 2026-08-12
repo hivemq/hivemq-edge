@@ -11,6 +11,9 @@ dist/
 /coverage-cypress/
 public/
 src/api/__generated__
+# Written by TlsSchemaArtifactTest in hivemq-edge-module-opcua from the schemas Edge serves.
+# Prettier would reformat it and the next regeneration would undo that, failing this check forever.
+src/__test-utils__/adapters/generated
 .gradle/
 
 # Agent working notes and Markdown docs (not product source)

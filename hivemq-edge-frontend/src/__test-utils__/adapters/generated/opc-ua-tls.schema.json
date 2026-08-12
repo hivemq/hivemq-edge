@@ -1,0 +1,141 @@
+{
+  "schema" : {
+    "type" : "object",
+    "properties" : {
+      "tls" : {
+        "type" : "object",
+        "properties" : {
+          "allowList" : {
+            "type" : "object",
+            "properties" : {
+              "path" : {
+                "type" : "string",
+                "title" : "Allow-list path",
+                "description" : "Path on the local file system to the server-certificate allow-list: one SHA-256 certificate fingerprint per line, hexadecimal, optional ':' separators, '#' for comments. Required when the effective trust mode is ALLOW_LIST."
+              }
+            },
+            "required" : [ "path" ],
+            "title" : "Certificate allow-list",
+            "description" : "Allow-list of permitted server-certificate SHA-256 fingerprints. Required when the effective trust mode is ALLOW_LIST (preset SELF_SIGNED, or tlsChecksFull.trustMode=ALLOW_LIST)."
+          },
+          "enabled" : {
+            "type" : "boolean",
+            "title" : "Enable TLS",
+            "description" : "Enables TLS encrypted connection",
+            "default" : false
+          },
+          "keystore" : {
+            "type" : "object",
+            "properties" : {
+              "password" : {
+                "type" : "string",
+                "title" : "Keystore password",
+                "description" : "Password to open the keystore."
+              },
+              "path" : {
+                "type" : "string",
+                "title" : "Keystore path",
+                "description" : "Path on the local file system to the keystore."
+              },
+              "privateKeyPassword" : {
+                "type" : "string",
+                "title" : "Private key password",
+                "description" : "Password to access the private key."
+              }
+            },
+            "title" : "Keystore",
+            "description" : "Keystore that contains the client certificate including the chain. Required whenever the security policy is not NONE, and for X509 authentication."
+          },
+          "tlsChecks" : {
+            "type" : "string",
+            "enum" : [ "NONE", "APPLICATION_URI", "STANDARD", "ALL", "SELF_SIGNED", "NO_VERIFICATION" ],
+            "title" : "Certificate validation preset",
+            "description" : "Named certificate-validation profile: STANDARD (default; chain + ApplicationUri + validity + revocation), ALL (STANDARD + hostname + key usage), APPLICATION_URI (chain + ApplicationUri), NONE (chain only - note that this still builds the trust chain), SELF_SIGNED (fingerprint allow-list + ApplicationUri + hostname + validity), or NO_VERIFICATION (accept any certificate; vulnerable to MITM). Leaving this unset means STANDARD. Mutually exclusive with tlsChecksFull."
+          },
+          "tlsChecksFull" : {
+            "type" : "object",
+            "properties" : {
+              "hostname" : {
+                "type" : "string",
+                "enum" : [ "NONE", "HOSTNAME" ],
+                "title" : "Hostname check",
+                "description" : "Whether the endpoint hostname must match a SubjectAltName DNS name or IP address in the certificate: NONE or HOSTNAME. Defaults to the strictest value, HOSTNAME, when omitted."
+              },
+              "keyUsage" : {
+                "type" : "string",
+                "enum" : [ "NONE", "KEY_USAGE", "SERVER_AUTH" ],
+                "title" : "Key usage check",
+                "description" : "How strictly the certificate's declared purpose is enforced: NONE, KEY_USAGE (KeyUsage extension present and appropriate), or SERVER_AUTH (additionally requires an ExtendedKeyUsage permitting server authentication). Defaults to the strictest value, SERVER_AUTH, when omitted."
+              },
+              "revocation" : {
+                "type" : "string",
+                "enum" : [ "NONE", "CHECK", "REQUIRE_CRLS" ],
+                "title" : "Revocation check",
+                "description" : "How hard revocation status is enforced: NONE, CHECK, or REQUIRE_CRLS. Only enforceable while a certification path is built, so any value other than NONE requires trustMode=CHAIN. Defaults to the strictest value, REQUIRE_CRLS, when omitted."
+              },
+              "sanUri" : {
+                "type" : "string",
+                "enum" : [ "NONE", "APPLICATION_URI" ],
+                "title" : "SubjectAltName URI check",
+                "description" : "Whether the OPC UA ApplicationUri announced by the server must match the SubjectAltName URI in its certificate: NONE or APPLICATION_URI. Defaults to the strictest value, APPLICATION_URI, when omitted."
+              },
+              "trustMode" : {
+                "type" : "string",
+                "enum" : [ "CHAIN", "ALLOW_LIST", "ANY_CERT" ],
+                "title" : "Trust mode",
+                "description" : "How the server certificate is established as trustworthy: CHAIN (must chain to a trust anchor in the truststore or the JVM cacerts), ALLOW_LIST (its SHA-256 fingerprint must appear in the configured allow-list file), or ANY_CERT (accept any certificate). WARNING: ANY_CERT establishes no trust at all and is vulnerable to MITM. Defaults to the strictest value, CHAIN, when omitted."
+              },
+              "validity" : {
+                "type" : "string",
+                "enum" : [ "NONE", "NOT_BEFORE_OR_AFTER" ],
+                "title" : "Validity period check",
+                "description" : "Whether the certificate's validity period is enforced: NONE or NOT_BEFORE_OR_AFTER. Defaults to the strictest value, NOT_BEFORE_OR_AFTER, when omitted."
+              }
+            },
+            "title" : "Certificate validation (full control)",
+            "description" : "The six independent validation axes, for configurations the presets do not cover. Every axis is optional and defaults to its strictest value when omitted, so an empty tlsChecksFull means maximum validation. Mutually exclusive with tlsChecks."
+          },
+          "truststore" : {
+            "type" : "object",
+            "properties" : {
+              "password" : {
+                "type" : "string",
+                "title" : "Truststore password",
+                "description" : "Password to open the truststore."
+              },
+              "path" : {
+                "type" : "string",
+                "title" : "Truststore path",
+                "description" : "Path on the local file system to the truststore."
+              }
+            },
+            "title" : "Truststore",
+            "description" : "Truststore which contains the trusted server certificates or trusted intermediates."
+          }
+        },
+        "title" : "TLS Configuration",
+        "description" : "Configure TLS for use with X509 or connecting to a TLS enabled OPC UA server."
+      }
+    }
+  },
+  "uiSchema" : {
+    "tls" : {
+      "ui:order" : [ "enabled", "tlsChecks", "tlsChecksFull", "allowList", "keystore", "truststore", "*" ],
+      "tlsChecks" : {
+        "ui:enumNames" : [ "NONE: Chain validation only - the trust chain is still built.", "APPLICATION_URI: Chain validation plus the Application URI check.", "STANDARD: Default - chain, Application URI, validity period and revocation.", "ALL: STANDARD plus hostname verification and key-usage enforcement.", "SELF_SIGNED: Fingerprint allow-list plus Application URI, hostname and validity - for servers without a CA.", "NO_VERIFICATION: Accept any certificate - vulnerable to MITM, prefer SELF_SIGNED." ]
+      },
+      "tlsChecksFull" : {
+        "ui:order" : [ "trustMode", "sanUri", "hostname", "validity", "revocation", "keyUsage", "*" ]
+      },
+      "allowList" : {
+        "ui:order" : [ "path", "*" ]
+      },
+      "keystore" : {
+        "ui:order" : [ "path", "password", "privateKeyPassword" ]
+      },
+      "truststore" : {
+        "ui:order" : [ "path", "password" ]
+      }
+    }
+  }
+}
