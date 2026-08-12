@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import ch.qos.logback.classic.Level;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
@@ -35,10 +36,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.slf4j.LoggerFactory;
 
 /**
  * Concurrency coverage for the reference-counted queue-ownership index (EDG-882).
@@ -63,6 +67,31 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
 
     private MessageForwarderImpl messageForwarder;
     private ExecutorService executor;
+    private static Level previousForwarderLogLevel;
+
+    /**
+     * Silences {@link MessageForwarderImpl}'s own logging for the duration of this class.
+     * <p>
+     * Not cosmetic. {@code addForwarder} and {@code removeForwarder} each log at INFO or WARN on every
+     * call, and these tests make hundreds of thousands of calls. Gradle captures that output into the
+     * JUnit XML, which produced a <b>155 MB result file</b> whose CDATA section exceeded libxml2's size
+     * limit — CI's test-result reporter could not parse it and failed the build even though every test
+     * passed. Leave this in place, or restore it if the logging here ever changes.
+     */
+    @BeforeAll
+    public static void silenceForwarderLogging() {
+        final ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(MessageForwarderImpl.class);
+        previousForwarderLogLevel = logger.getLevel();
+        logger.setLevel(Level.OFF);
+    }
+
+    /** Restores the level so this class cannot affect others sharing the JVM. */
+    @AfterAll
+    public static void restoreForwarderLogging() {
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(MessageForwarderImpl.class))
+                .setLevel(previousForwarderLogLevel);
+    }
 
     @BeforeEach
     public void setUp() {
