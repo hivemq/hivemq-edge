@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { MOCK_OPC_UA_TLS_SCHEMA, MOCK_OPC_UA_TLS_UI_SCHEMA } from '@/__test-utils__/adapters'
+import { MOCK_OPC_UA_TLS_SCHEMA, MOCK_OPC_UA_TLS_UI_SCHEMA } from '@/__test-utils__/adapters/opc-ua-tls'
 
 import ChakraRJSForm from './ChakraRJSForm.tsx'
 
