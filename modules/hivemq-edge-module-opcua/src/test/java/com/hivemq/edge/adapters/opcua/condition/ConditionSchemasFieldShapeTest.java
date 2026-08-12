@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,6 +27,7 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -368,100 +370,158 @@ class ConditionSchemasFieldShapeTest {
             final @NotNull JsonNode schemaShape) {
 
         final String where = type.browseName() + "." + field;
-        switch (shape) {
-            case LOCAL_TIME -> {
-                assertThat(emitted.isObject()).as("%s is an object", where).isTrue();
-                assertThat(emitted.has("offset"))
-                        .as("%s carries an offset", where)
-                        .isTrue();
-                assertThat(schemaShape.path("properties").has("offset")).isTrue();
-            }
-            case STATE_MACHINE, TWO_STATE -> {
-                assertThat(emitted.isObject()).as("%s is an object", where).isTrue();
-                assertThat(emitted.has("text"))
-                        .as("%s carries display text", where)
-                        .isTrue();
-                assertThat(emitted.has("id"))
-                        .as("%s carries a machine-readable id", where)
-                        .isTrue();
-                assertThat(schemaShape.path("properties").has("id")).isTrue();
-                // The difference between the two: a two-state id is a boolean, a state machine's is a node id.
-                if (shape == ConditionSchemas.Shape.TWO_STATE) {
-                    assertThat(emitted.get("id").isBoolean())
-                            .as("%s's id is a boolean", where)
-                            .isTrue();
-                } else {
-                    assertThat(emitted.get("id").isObject())
-                            .as("%s's id is a node id -- four states cannot be told apart by true/false", where)
-                            .isTrue();
-                }
-            }
-            case LOCALIZED_TEXT -> {
-                assertThat(emitted.isObject()).as("%s is an object", where).isTrue();
-                assertThat(emitted.has("text")).as("%s carries text", where).isTrue();
-                assertThat(schemaShape.path("properties").has("text")).isTrue();
-            }
-            case LOCALIZED_TEXT_ARRAY -> {
-                assertThat(emitted.isArray()).as("%s is an array", where).isTrue();
-                assertThat(emitted.get(0).has("text")).isTrue();
-                assertThat(schemaShape.path("items").path("properties").has("text"))
-                        .as("%s's schema must describe an array of localized texts", where)
-                        .isTrue();
-            }
-            case NODE_ID -> {
-                assertThat(emitted.isObject()).as("%s is an object", where).isTrue();
-                assertThat(emitted.has("idType"))
-                        .as("%s carries an idType", where)
-                        .isTrue();
-                assertThat(schemaShape.path("properties").has("idType")).isTrue();
-            }
-            case NODE_ID_ARRAY -> {
-                assertThat(emitted.isArray()).as("%s is an array", where).isTrue();
-                assertThat(emitted.get(0).has("idType")).isTrue();
-                assertThat(schemaShape.path("items").path("properties").has("idType"))
-                        .as("%s's schema must describe an array of node ids", where)
-                        .isTrue();
-            }
-            case ENGINEERING_UNITS -> {
-                assertThat(emitted.isObject()).as("%s is an object", where).isTrue();
-                assertThat(emitted.has("unitId"))
-                        .as("%s carries a unit id", where)
-                        .isTrue();
-                assertThat(schemaShape.path("properties").has("unitId")).isTrue();
-            }
-            case STATUS_CODE -> {
-                assertThat(emitted.isObject()).as("%s is an object", where).isTrue();
-                assertThat(emitted.has("code"))
-                        .as("%s carries a numeric code", where)
-                        .isTrue();
-                assertThat(schemaShape.path("properties").has("code")).isTrue();
-            }
-            case NUMBER -> {
-                assertThat(emitted.isNumber()).as("%s is a number", where).isTrue();
-                assertDeclaredType(where, schemaShape, "number");
-            }
-            case INTEGER -> {
-                assertThat(emitted.isIntegralNumber())
-                        .as("%s is an integer", where)
-                        .isTrue();
-                assertDeclaredType(where, schemaShape, "integer");
-            }
-            case BOOLEAN -> {
-                assertThat(emitted.isBoolean()).as("%s is a boolean", where).isTrue();
-                assertDeclaredType(where, schemaShape, "boolean");
-            }
-            case BYTE_STRING -> {
-                assertThat(emitted.isTextual()).as("%s is base64 text", where).isTrue();
-                assertDeclaredType(where, schemaShape, "string");
-                assertThat(schemaShape.path("contentEncoding").asText())
-                        .as("%s must be declared base64", where)
-                        .isEqualTo("base64");
-            }
-            case STRING -> {
-                assertThat(emitted.isTextual()).as("%s is a string", where).isTrue();
-                assertDeclaredType(where, schemaShape, "string");
-            }
-        }
+        final boolean checked =
+                switch (shape) {
+                    case LOCAL_TIME -> {
+                        assertThat(emitted.isObject())
+                                .as("%s is an object", where)
+                                .isTrue();
+                        assertThat(emitted.has("offset"))
+                                .as("%s carries an offset", where)
+                                .isTrue();
+                        assertThat(schemaShape.path("properties").has("offset")).isTrue();
+                        yield true;
+                    }
+                    case STATE_MACHINE, TWO_STATE -> {
+                        assertThat(emitted.isObject())
+                                .as("%s is an object", where)
+                                .isTrue();
+                        assertThat(emitted.has("text"))
+                                .as("%s carries display text", where)
+                                .isTrue();
+                        assertThat(emitted.has("id"))
+                                .as("%s carries a machine-readable id", where)
+                                .isTrue();
+                        assertThat(schemaShape.path("properties").has("id")).isTrue();
+                        // The difference between the two: a two-state id is a boolean, a state machine's is a node id.
+                        if (shape == ConditionSchemas.Shape.TWO_STATE) {
+                            assertThat(emitted.get("id").isBoolean())
+                                    .as("%s's id is a boolean", where)
+                                    .isTrue();
+                        } else {
+                            assertThat(emitted.get("id").isObject())
+                                    .as("%s's id is a node id -- four states cannot be told apart by true/false", where)
+                                    .isTrue();
+                        }
+                        yield true;
+                    }
+                    case LOCALIZED_TEXT -> {
+                        assertThat(emitted.isObject())
+                                .as("%s is an object", where)
+                                .isTrue();
+                        assertThat(emitted.has("text"))
+                                .as("%s carries text", where)
+                                .isTrue();
+                        assertThat(schemaShape.path("properties").has("text")).isTrue();
+                        yield true;
+                    }
+                    case LOCALIZED_TEXT_ARRAY -> {
+                        assertThat(emitted.isArray())
+                                .as("%s is an array", where)
+                                .isTrue();
+                        assertThat(emitted.get(0).has("text")).isTrue();
+                        assertThat(schemaShape.path("items").path("properties").has("text"))
+                                .as("%s's schema must describe an array of localized texts", where)
+                                .isTrue();
+                        yield true;
+                    }
+                    case NODE_ID -> {
+                        assertThat(emitted.isObject())
+                                .as("%s is an object", where)
+                                .isTrue();
+                        assertThat(emitted.has("idType"))
+                                .as("%s carries an idType", where)
+                                .isTrue();
+                        assertThat(schemaShape.path("properties").has("idType")).isTrue();
+                        yield true;
+                    }
+                    case NODE_ID_ARRAY -> {
+                        assertThat(emitted.isArray())
+                                .as("%s is an array", where)
+                                .isTrue();
+                        assertThat(emitted.get(0).has("idType")).isTrue();
+                        assertThat(schemaShape.path("items").path("properties").has("idType"))
+                                .as("%s's schema must describe an array of node ids", where)
+                                .isTrue();
+                        yield true;
+                    }
+                    case ENGINEERING_UNITS -> {
+                        assertThat(emitted.isObject())
+                                .as("%s is an object", where)
+                                .isTrue();
+                        assertThat(emitted.has("unitId"))
+                                .as("%s carries a unit id", where)
+                                .isTrue();
+                        assertThat(schemaShape.path("properties").has("unitId")).isTrue();
+                        yield true;
+                    }
+                    case STATUS_CODE -> {
+                        assertThat(emitted.isObject())
+                                .as("%s is an object", where)
+                                .isTrue();
+                        assertThat(emitted.has("code"))
+                                .as("%s carries a numeric code", where)
+                                .isTrue();
+                        assertThat(schemaShape.path("properties").has("code")).isTrue();
+                        yield true;
+                    }
+                    case NUMBER -> {
+                        assertThat(emitted.isNumber())
+                                .as("%s is a number", where)
+                                .isTrue();
+                        assertDeclaredType(where, schemaShape, "number");
+                        yield true;
+                    }
+                    case INTEGER -> {
+                        assertThat(emitted.isIntegralNumber())
+                                .as("%s is an integer", where)
+                                .isTrue();
+                        assertDeclaredType(where, schemaShape, "integer");
+                        yield true;
+                    }
+                    case BOOLEAN -> {
+                        assertThat(emitted.isBoolean())
+                                .as("%s is a boolean", where)
+                                .isTrue();
+                        assertDeclaredType(where, schemaShape, "boolean");
+                        yield true;
+                    }
+                    case BYTE_STRING -> {
+                        assertThat(emitted.isTextual())
+                                .as("%s is base64 text", where)
+                                .isTrue();
+                        assertDeclaredType(where, schemaShape, "string");
+                        assertThat(schemaShape.path("contentEncoding").asText())
+                                .as("%s must be declared base64", where)
+                                .isEqualTo("base64");
+                        yield true;
+                    }
+                    case STRING -> {
+                        assertThat(emitted.isTextual())
+                                .as("%s is a string", where)
+                                .isTrue();
+                        assertDeclaredType(where, schemaShape, "string");
+                        yield true;
+                    }
+                    case INSTANT -> {
+                        // Review-03 finding 9. This branch did not exist, and because the dispatch was a statement
+                        // switch its absence only warned -- so the four timestamp fields were converted and then not
+                        // asserted at all, by the test whose name says every field's output matches its schema. A
+                        // regression to an epoch number, an object, or malformed text would have passed.
+                        assertThat(emitted.isTextual())
+                                .as("%s is a timestamp, which travels as RFC 3339 text rather than a number", where)
+                                .isTrue();
+                        assertThatCode(() -> Instant.parse(emitted.textValue()))
+                                .as("%s must parse as an RFC 3339 instant: %s", where, emitted.textValue())
+                                .doesNotThrowAnyException();
+                        assertDeclaredType(where, schemaShape, "string");
+                        assertThat(schemaShape.path("format").asText())
+                                .as("%s must be declared date-time, or a generated client sees an opaque string", where)
+                                .isEqualTo("date-time");
+                        yield true;
+                    }
+                };
+        assertThat(checked).as("every shape must state what it asserts").isTrue();
     }
 
     /**
