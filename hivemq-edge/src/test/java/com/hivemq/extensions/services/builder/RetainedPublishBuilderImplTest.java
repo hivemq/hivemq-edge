@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
@@ -35,6 +36,7 @@ import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.extensions.services.publish.RetainedPublishImpl;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
@@ -272,6 +274,60 @@ public class RetainedPublishBuilderImplTest {
         assertEquals(
                 userProperties.asList().size(),
                 built.getUserProperties().asList().size());
+    }
+
+    @Test
+    public void test_from_retained_publish_without_expiry() {
+        // EDG-811: the same copy boundary as PublishBuilderImpl. A retained message stored while the maximum
+        // was the 2^32 default still carries that marker after the operator lowers the maximum, and copying it
+        // used to throw because the marker is above the new bound.
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(3_600);
+
+        for (final long storedInterval : new long[] {
+            PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET,
+            MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT,
+            1L << 40,
+            MqttConfigurationDefaults.TTL_DISABLED
+        }) {
+            final RetainedPublishImpl stored = new RetainedPublishImpl(
+                    Qos.AT_MOST_ONCE,
+                    "topic",
+                    PayloadFormatIndicator.UTF_8,
+                    storedInterval,
+                    null,
+                    null,
+                    null,
+                    ByteBuffer.wrap("payload".getBytes(UTF_8)),
+                    UserPropertiesImpl.of(ImmutableList.of()));
+
+            final RetainedPublish built = new RetainedPublishBuilderImpl(configurationService)
+                    .fromPublish(stored)
+                    .build();
+
+            assertEquals(
+                    3_600L,
+                    built.getMessageExpiryInterval().get().longValue(),
+                    "stored interval " + storedInterval + " should be treated as no expiry");
+        }
+    }
+
+    @Test
+    public void test_from_retained_publish_keeps_a_real_duration_bounded_by_the_configured_maximum() {
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(3_600);
+
+        final RetainedPublishImpl aboveMaximum = new RetainedPublishImpl(
+                Qos.AT_MOST_ONCE,
+                "topic",
+                PayloadFormatIndicator.UTF_8,
+                7_200L,
+                null,
+                null,
+                null,
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
+                UserPropertiesImpl.of(ImmutableList.of()));
+
+        assertThatThrownBy(() -> new RetainedPublishBuilderImpl(configurationService).fromPublish(aboveMaximum))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

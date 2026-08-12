@@ -59,13 +59,29 @@ final class Mqtt5MessageEncoderUtil {
     }
 
     /**
-     * EDG-811: must agree exactly with {@link #encodeIntProperty} on whether the property is emitted. This
-     * declares the property length; that writes the bytes. If they disagree the packet claims more property
-     * bytes than it carries, the receiver reads payload as if it were a property, and the connection dies with
-     * a protocol error — which is what happened when only the encoder learned to skip out-of-range values.
+     * EDG-811: the single decision on whether a four-byte integer property is emitted, shared by
+     * {@link #intPropertyEncodedLength} and {@link #encodeIntProperty}. One declares how many property bytes
+     * the packet claims, the other writes them; if they ever disagree the packet claims more property bytes
+     * than it carries, the receiver reads payload as if it were a property, and the connection dies with a
+     * protocol error. That is not hypothetical — it happened on this branch when only the encoder learned to
+     * skip out-of-range values. Hence one predicate rather than two conditions that have to be kept in sync.
+     * <p>
+     * {@code defaultValue} carries two different meanings across the call sites. For MAXIMUM_PACKET_SIZE it is
+     * a genuine default — a legal value the receiver reconstructs from the spec, so omitting it merely saves
+     * bytes. For MESSAGE_EXPIRY_INTERVAL and SESSION_EXPIRY_INTERVAL it is an out-of-range marker meaning
+     * "absent", where omission is the only correct encoding.
+     * <p>
+     * The range check is needed on top of the equality: the markers are not the only values outside the
+     * four-byte range, and anything else out there used to reach {@code writeInt} and be silently truncated to
+     * its low 32 bits — 2^40 encoding as 0, "expire immediately". A value that does not fit in an MQTT
+     * four-byte integer has no correct encoding, so the property is dropped rather than corrupted.
      */
+    private static boolean shouldEncodeIntProperty(final long value, final long defaultValue) {
+        return value != defaultValue && UnsignedDataTypes.isUnsignedInt(value);
+    }
+
     static int intPropertyEncodedLength(final long value, final long defaultValue) {
-        return (value == defaultValue || value > UnsignedDataTypes.UNSIGNED_INT_MAX_VALUE) ? 0 : 5;
+        return shouldEncodeIntProperty(value, defaultValue) ? 5 : 0;
     }
 
     static int variableByteIntegerPropertyEncodedLength(final int value) {
@@ -133,24 +149,10 @@ final class Mqtt5MessageEncoderUtil {
         }
     }
 
-    /**
-     * EDG-811: {@code defaultValue} carries two different meanings across the call sites. For
-     * MAXIMUM_PACKET_SIZE it is a genuine default — a legal value the receiver reconstructs from the spec, so
-     * omitting it merely saves bytes. For MESSAGE_EXPIRY_INTERVAL and SESSION_EXPIRY_INTERVAL it is an
-     * out-of-range marker meaning "absent", where omission is the only correct encoding.
-     * <p>
-     * The second case needs the range check as well as the equality: the markers are not the only values above
-     * the four-byte range, and anything else up there used to reach {@code writeInt} and be silently truncated
-     * to its low 32 bits — 2^40 encoding as 0, "expire immediately". Values at or above 2^32 all mean "no
-     * expiry", so the property is dropped rather than corrupted.
-     * <p>
-     * Keep this condition identical to {@link #intPropertyEncodedLength}. That function declares how many
-     * property bytes the packet claims; this one writes them. Any disagreement produces a malformed packet.
-     */
     static void encodeIntProperty(
             final int propertyIdentifier, final long value, final long defaultValue, final @NotNull ByteBuf out) {
 
-        if (value != defaultValue && value <= UnsignedDataTypes.UNSIGNED_INT_MAX_VALUE) {
+        if (shouldEncodeIntProperty(value, defaultValue)) {
             out.writeByte(propertyIdentifier);
             out.writeInt((int) value);
         }

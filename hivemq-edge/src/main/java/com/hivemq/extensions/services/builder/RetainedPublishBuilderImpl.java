@@ -151,7 +151,8 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
         this.qos(qos);
         this.topic(topic);
         this.payloadFormatIndicator(payloadFormatIndicator.orElse(null));
-        this.messageExpiryInterval(messageExpiryInterval.orElse(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET));
+        this.messageExpiryInterval(PluginBuilderUtil.normalizeCopiedMessageExpiryInterval(
+                messageExpiryInterval.orElse(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET)));
         this.responseTopic(responseTopic.orElse(null));
         this.correlationData(correlationData.orElse(null));
         this.contentType(contentType.orElse(null));

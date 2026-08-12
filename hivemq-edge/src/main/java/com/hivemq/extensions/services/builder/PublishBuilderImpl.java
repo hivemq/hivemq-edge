@@ -142,7 +142,8 @@ public class PublishBuilderImpl implements PublishBuilder {
         if (publish.getPayloadFormatIndicator() != null) {
             this.payloadFormatIndicator = publish.getPayloadFormatIndicator().toPayloadFormatIndicator();
         }
-        this.messageExpiryInterval(publish.getMessageExpiryInterval());
+        this.messageExpiryInterval(
+                PluginBuilderUtil.normalizeCopiedMessageExpiryInterval(publish.getMessageExpiryInterval()));
         this.responseTopic(publish.getResponseTopic());
         if (publish.getCorrelationData() != null) {
             this.correlationData(ByteBuffer.wrap(publish.getCorrelationData()));
@@ -174,7 +175,8 @@ public class PublishBuilderImpl implements PublishBuilder {
         this.retain(retain);
         this.topic(topic);
         this.payloadFormatIndicator(payloadFormatIndicator.orElse(null));
-        this.messageExpiryInterval(messageExpiryInterval.orElse(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET));
+        this.messageExpiryInterval(PluginBuilderUtil.normalizeCopiedMessageExpiryInterval(
+                messageExpiryInterval.orElse(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET)));
         this.responseTopic(responseTopic.orElse(null));
         this.correlationData(correlationData.orElse(null));
         this.contentType(contentType.orElse(null));
@@ -282,6 +284,12 @@ public class PublishBuilderImpl implements PublishBuilder {
         checkNotNull(topic, "Topic must never be null");
         checkNotNull(payload, "Payload must never be null");
 
+        // "No expiry configured" resolves to the operator's configured maximum, which is what
+        // <message-expiry> means: no message may outlive it. This is not a fallback that loses information,
+        // it is the same rule both PUBLISH decoders apply — an inbound publish whose Message Expiry Interval
+        // property is absent is clamped to maxMessageExpiryInterval() too, so a publish built here behaves
+        // exactly like the equivalent publish from a client. Left at the default 2^32 the encoder omits the
+        // property again, so the common case still goes out as a genuine "no expiry".
         if (messageExpiryInterval == MESSAGE_EXPIRY_INTERVAL_NOT_SET) {
             messageExpiryInterval = mqttConfigurationService.maxMessageExpiryInterval();
         }
