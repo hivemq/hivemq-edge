@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -52,8 +54,9 @@ import org.slf4j.LoggerFactory;
  * <ol>
  *   <li>the {@code notifierNode} declared on the tag — the escape hatch for servers whose references cannot
  *       be walked;</li>
- *   <li>the first notifier reachable from the condition by {@code HasCondition} to its ConditionSource, then
- *       {@code HasEventSource} / {@code HasNotifier} upward;</li>
+ *   <li>the <em>nearest</em> notifier reachable from the condition by {@code HasCondition} to its
+ *       ConditionSource, then {@code HasEventSource} / {@code HasNotifier} upward — nearest rather than
+ *       first-found, which is why the search is breadth-first; see {@link #nearestNotifier};</li>
  *   <li>nothing — the tag cannot be subscribed.</li>
  * </ol>
  * <p>
@@ -82,7 +85,11 @@ public final class NotifierResolver {
 
     private NotifierResolver() {}
 
-    /** How far to walk upward before giving up; deep enough for real hierarchies, bounded against cycles. */
+    /**
+     * How many levels of the hierarchy to examine before giving up — deep enough for real address spaces, and
+     * a backstop against one that is pathologically deep. Cycles are handled by the visited set rather than
+     * by this bound; see {@link #nearestNotifier}.
+     */
     private static final int MAX_WALK_DEPTH = 10;
 
     /**
@@ -153,7 +160,7 @@ public final class NotifierResolver {
                         // No ConditionSource, or none of them led anywhere. Servers do attach HasEventSource
                         // to the condition directly, which the specification does not describe but which
                         // costs one browse to accommodate -- and the alternative is refusing to subscribe.
-                        : walkUpwards(client, conditionNode, 0))
+                        : walkUpwardsFrom(client, conditionNode))
                 .thenApply(found -> found == null
                         ? new Result.NotFound("no notifier could be found by walking up from tag '" + tagName
                                 + "'. Set 'notifierNode' on the tag to name it explicitly")
@@ -348,12 +355,13 @@ public final class NotifierResolver {
     }
 
     /**
-     * Steps from the condition to its ConditionSource(s) by inverse {@code HasCondition}, then walks up from
-     * each until one reaches a notifier.
+     * Steps from the condition to its ConditionSource(s) by inverse {@code HasCondition}, then searches
+     * upward from all of them together.
      * <p>
      * Inverse because {@code HasCondition} points from the source <em>to</em> the condition (§5.12, Table 136:
-     * its inverse name is {@code IsConditionOf}). A condition may be referenced by more than one source, so
-     * each is tried in turn rather than only the first.
+     * its inverse name is {@code IsConditionOf}). A condition may be referenced by more than one source, and
+     * all of them are the first level of the search rather than one being exhausted before the next is looked
+     * at — see {@link #nearestNotifier}.
      * <p>
      * The node class mask admits Variables as well as Objects: §6.3's own example hangs conditions off a
      * Variable, {@code LevelMeasurement}, and §5.12 allows "an Object, Variable or Method Node" as the source
@@ -370,105 +378,149 @@ public final class NotifierResolver {
                 uint(NodeClass.Object.getValue() | NodeClass.Variable.getValue() | NodeClass.Method.getValue()),
                 uint(BrowseResultMask.All.getValue()));
 
-        return Browsing.browseAll(client, browse)
-                .thenCompose(references -> references.isEmpty()
-                        ? CompletableFuture.completedFuture(null)
-                        : firstNotifierAboveAny(client, references, 0));
-    }
-
-    /** Walks up from each ConditionSource in turn, taking the first notifier any of them reaches. */
-    private static @NotNull CompletableFuture<NodeId> firstNotifierAboveAny(
-            final @NotNull OpcUaClient client, final @NotNull List<ReferenceDescription> sources, final int index) {
-
-        if (index >= sources.size()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        final NodeId source = sources.get(index)
-                .getNodeId()
-                .toNodeId(client.getNamespaceTable())
-                .orElse(null);
-        if (source == null) {
-            return firstNotifierAboveAny(client, sources, index + 1);
-        }
-
-        // The source may itself be the notifier: HasNotifier is a subtype of HasEventSource, so a node can be
-        // both a ConditionSource and an event notifier (§6.2). Testing it before walking past it keeps the
-        // result the nearest notifier rather than the next one up.
-        return isNotifier(client, source)
-                .thenCompose(notifier -> notifier
-                        ? CompletableFuture.completedFuture(source)
-                        : walkUpwards(client, source, 0)
-                                .thenCompose(found -> found != null
-                                        ? CompletableFuture.completedFuture(found)
-                                        : firstNotifierAboveAny(client, sources, index + 1)));
+        return Browsing.browseAll(client, browse).thenCompose(references -> {
+            // The sources are the first level, tested before anything above them: HasNotifier is a subtype of
+            // HasEventSource, so a node can be both a ConditionSource and an event notifier (§6.2), and one
+            // that is needs no walking past.
+            final List<NodeId> sources = toNodeIds(client, references);
+            final Set<NodeId> visited = new LinkedHashSet<>(sources);
+            visited.add(conditionNode);
+            return nearestNotifier(client, sources, visited, 0);
+        });
     }
 
     /**
-     * Walks {@code HasEventSource} / {@code HasNotifier} inverse references upward, returning the first node
-     * that is genuinely a notifier.
+     * Searches upward from one node, which is <em>not</em> itself a candidate.
+     * <p>
+     * The compatibility path, for servers that attach {@code HasEventSource} to the condition directly. The
+     * condition is excluded from the search because {@code ConditionType} defines no {@code EventNotifier}
+     * attribute at all, so it can never be the answer — only its parents can.
+     */
+    private static @NotNull CompletableFuture<NodeId> walkUpwardsFrom(
+            final @NotNull OpcUaClient client, final @NotNull NodeId start) {
+
+        final Set<NodeId> visited = new LinkedHashSet<>();
+        visited.add(start);
+        return parentsOf(client, List.of(start), 0, new ArrayList<>(), visited)
+                .thenCompose(frontier -> nearestNotifier(client, frontier, visited, 0));
+    }
+
+    /**
+     * The nearest notifier at or above a level of the hierarchy, searched one whole level at a time.
+     * <p>
+     * <b>Breadth-first, because the resolver's promise is the</b> <em>nearest</em> <b>notifier and a server's
+     * reference order is not a distance ordering.</b> Depth-first — following one candidate's entire ancestry
+     * before looking at the candidate beside it — returns whichever branch the server happened to list first,
+     * so a topology like
+     *
+     * <pre>
+     *   condition --IsConditionOf--&gt; source A --up--&gt; area A (notifier)
+     *             \-IsConditionOf--&gt; source B (notifier)
+     * </pre>
+     *
+     * answers "area A" when the server lists A first and "source B" when it lists B first. Both are notifiers
+     * that can see the condition, so nothing fails and nothing is logged; the tag simply subscribes one level
+     * broader than it needed to, at the server's whim. That costs server-side filter work, and worse, it can
+     * pick a wide notifier the session is not permitted to subscribe to while a narrow permitted one was
+     * available — turning a valid topology into a failed tag on reference order alone.
+     * <p>
+     * {@code visited} is what makes the bound below a safeguard rather than the only thing standing between
+     * this and a cycle. Without it a diamond re-browses a shared ancestor once per path into it, and a genuine
+     * cycle costs a full branching-factor-to-the-tenth-power sweep before {@link #MAX_WALK_DEPTH} stops it.
+     * It also has to be a set of nodes already <em>enqueued</em> rather than already tested, or the two paths
+     * into a diamond would both add the ancestor to the same level.
+     * <p>
+     * A plain {@link LinkedHashSet} is safe despite the stages running on Milo's threads: every step here is
+     * chained with {@code thenCompose}, so no two touch it at once and each sees the last one's writes.
+     */
+    private static @NotNull CompletableFuture<NodeId> nearestNotifier(
+            final @NotNull OpcUaClient client,
+            final @NotNull List<NodeId> frontier,
+            final @NotNull Set<NodeId> visited,
+            final int depth) {
+
+        if (frontier.isEmpty() || depth >= MAX_WALK_DEPTH) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return firstNotifierIn(client, frontier, 0)
+                .thenCompose(found -> found != null
+                        ? CompletableFuture.completedFuture(found)
+                        : parentsOf(client, frontier, 0, new ArrayList<>(), visited)
+                                .thenCompose(next -> nearestNotifier(client, next, visited, depth + 1)));
+    }
+
+    /**
+     * The first node in a level that is itself a notifier, or null when none of them is.
+     * <p>
+     * Within one level the server's order is the only tiebreak there is, and any of them is equally near — so
+     * unlike the across-level case it carries no preference worth overriding.
+     */
+    private static @NotNull CompletableFuture<NodeId> firstNotifierIn(
+            final @NotNull OpcUaClient client, final @NotNull List<NodeId> frontier, final int index) {
+
+        if (index >= frontier.size()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        final NodeId candidate = frontier.get(index);
+        return isNotifier(client, candidate)
+                .thenCompose(notifier -> notifier
+                        ? CompletableFuture.completedFuture(candidate)
+                        : firstNotifierIn(client, frontier, index + 1));
+    }
+
+    /**
+     * Every not-yet-seen node one {@code HasEventSource} step above a level, in server order.
      * <p>
      * Inverse because the references point downward — a notifier <em>has</em> event sources beneath it — so
      * getting from a condition to its notifier means following them backwards.
      */
-    private static @NotNull CompletableFuture<NodeId> walkUpwards(
-            final @NotNull OpcUaClient client, final @NotNull NodeId from, final int depth) {
+    private static @NotNull CompletableFuture<List<NodeId>> parentsOf(
+            final @NotNull OpcUaClient client,
+            final @NotNull List<NodeId> frontier,
+            final int index,
+            final @NotNull List<NodeId> collected,
+            final @NotNull Set<NodeId> visited) {
 
-        if (depth >= MAX_WALK_DEPTH) {
-            return CompletableFuture.completedFuture(null);
+        if (index >= frontier.size()) {
+            return CompletableFuture.completedFuture(collected);
         }
 
         // Node class mask 0 means "all classes". A View can be an event notifier just as an Object can (OPC
         // 10000-3 §7.17: the source of a HasEventSource "shall be an Object or View"), so masking to Objects
-        // would drop a View-organised area before isNotifier() could test it. The EventNotifier read below is
-        // the authoritative test anyway, which makes filtering by class here redundant as well as wrong.
+        // would drop a View-organised area before isNotifier() could test it. The EventNotifier read is the
+        // authoritative test anyway, which makes filtering by class here redundant as well as wrong.
         final BrowseDescription browse = new BrowseDescription(
-                from,
+                frontier.get(index),
                 BrowseDirection.Inverse,
                 NodeIds.HasEventSource,
                 true, // include HasNotifier, which is a subtype of HasEventSource
                 uint(0),
                 uint(BrowseResultMask.All.getValue()));
 
-        return Browsing.browseAll(client, browse)
-                .thenCompose(references -> references.isEmpty()
-                        ? CompletableFuture.completedFuture(null)
-                        : firstNotifierAmong(client, references, 0, depth));
+        return Browsing.browseAll(client, browse).thenCompose(references -> {
+            for (final NodeId parent : toNodeIds(client, references)) {
+                if (visited.add(parent)) {
+                    collected.add(parent);
+                }
+            }
+            return parentsOf(client, frontier, index + 1, collected, visited);
+        });
     }
 
     /**
-     * Takes the first candidate that is a notifier; otherwise keeps walking up from it.
+     * The references that name a node this client can address, in server order.
      * <p>
-     * "First" is the nearest one, which is what a condition tag wants: the narrowest notifier that can see it,
-     * rather than the broadest.
+     * A reference whose {@code ExpandedNodeId} names a namespace absent from this session's table is dropped
+     * rather than reported: it identifies a node on another server, which cannot be subscribed to here.
      */
-    private static @NotNull CompletableFuture<NodeId> firstNotifierAmong(
-            final @NotNull OpcUaClient client,
-            final @NotNull List<ReferenceDescription> references,
-            final int index,
-            final int depth) {
+    private static @NotNull List<NodeId> toNodeIds(
+            final @NotNull OpcUaClient client, final @NotNull List<ReferenceDescription> references) {
 
-        if (index >= references.size()) {
-            return CompletableFuture.completedFuture(null);
+        final List<NodeId> nodeIds = new ArrayList<>(references.size());
+        for (final ReferenceDescription reference : references) {
+            reference.getNodeId().toNodeId(client.getNamespaceTable()).ifPresent(nodeIds::add);
         }
-        final NodeId candidate = references
-                .get(index)
-                .getNodeId()
-                .toNodeId(client.getNamespaceTable())
-                .orElse(null);
-        if (candidate == null) {
-            return firstNotifierAmong(client, references, index + 1, depth);
-        }
-
-        return isNotifier(client, candidate).thenCompose(notifier -> {
-            if (notifier) {
-                return CompletableFuture.completedFuture(candidate);
-            }
-            // Not a notifier itself: it may still sit beneath one, so keep going up through it.
-            return walkUpwards(client, candidate, depth + 1)
-                    .thenCompose(fromAbove -> fromAbove != null
-                            ? CompletableFuture.completedFuture(fromAbove)
-                            : firstNotifierAmong(client, references, index + 1, depth));
-        });
+        return nodeIds;
     }
 
     /**
