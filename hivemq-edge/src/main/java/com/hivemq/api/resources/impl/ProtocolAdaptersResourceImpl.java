@@ -94,6 +94,7 @@ import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
+import com.hivemq.protocols.tag.TagSchemaDirection;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
@@ -707,8 +708,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getSchema(final @NotNull String adapterId, final @NotNull String tagName) {
+    public @NotNull Response getSchema(
+            final @NotNull String adapterId, final @NotNull String tagName, final @Nullable String direction) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
+
+        // NORTHBOUND (read) is the default; SOUTHBOUND (write) drops the non-writable envelope. Anything else is
+        // a client error — silently falling back to NORTHBOUND would hand a typoed caller the wrong document.
+        final TagSchemaDirection schemaDirection;
+        if (direction == null) {
+            schemaDirection = TagSchemaDirection.NORTHBOUND;
+        } else {
+            try {
+                schemaDirection = TagSchemaDirection.valueOf(direction);
+            } catch (final IllegalArgumentException ignored) {
+                return errorResponse(new BadRequestError("Unknown schema direction: " + direction));
+            }
+        }
 
         final Optional<ProtocolAdapterWrapper> maybeWrapper =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -724,7 +739,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
 
         try {
-            return Response.ok(tagSchemaCreationOutput.getFuture().get()).build(); // JSON schema root node
+            return Response.ok(tagSchemaCreationOutput.getSchema(schemaDirection))
+                    .build(); // JSON schema root
         } catch (final @NotNull InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Creation of json schema for writing to PLCs were interrupted.");
@@ -758,7 +774,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
+        // This endpoint's name means "the schema for writing", so the redirect must carry the direction — without
+        // it the replacement endpoint defaults to the northbound (read) schema.
         final URI newLocation = UriBuilder.fromPath("/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}")
+                .queryParam("direction", TagSchemaDirection.SOUTHBOUND.name())
                 .build(adapterId, tagName);
         return Response.status(Response.Status.MOVED_PERMANENTLY)
                 .location(newLocation)

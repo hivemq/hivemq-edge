@@ -115,14 +115,14 @@ describe('TagTableField', () => {
       .within(() => {
         cy.get('button').eq(0).as('actEdit').should('have.attr', 'aria-label', 'Edit the tag')
         cy.get('button').eq(1).as('actDelete').should('have.attr', 'aria-label', 'Delete the tag')
-        cy.get('button').eq(2).as('actSchema').should('have.attr', 'aria-label', 'View the WRITE schema')
+        cy.get('button').eq(2).as('actSchema').should('have.attr', 'aria-label', 'View the tag schemas')
       })
 
     cy.get('[role="dialog"]').should('not.exist')
     cy.get('@actSchema').click()
     cy.get('[role="dialog"]').should('be.visible')
     cy.get('[role="dialog"]').within(() => {
-      cy.get('header').should('have.text', 'Manage the schema for the tag')
+      cy.get('header').should('have.text', 'Tag schemas')
 
       cy.getByAriaLabel('Close').click()
     })
@@ -176,7 +176,7 @@ describe('TagTableField', () => {
       .within(() => {
         cy.get('button').eq(0).should('have.attr', 'aria-label', 'Edit the tag')
         cy.get('button').eq(1).should('have.attr', 'aria-label', 'Delete the tag')
-        cy.getByAriaLabel('View the WRITE schema').should('not.exist')
+        cy.getByAriaLabel('View the tag schemas').should('not.exist')
       })
   })
 

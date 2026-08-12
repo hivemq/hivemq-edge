@@ -50,6 +50,7 @@ import com.hivemq.edge.modules.adapters.simulation.tag.SimulationValueType;
 import com.hivemq.edge.modules.adapters.simulation.tag.StaticValueConfig;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
+import com.hivemq.protocols.tag.TagSchemaDirection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -451,7 +452,8 @@ class SimulationProtocolAdapterTest {
         final TagSchemaCreationOutputImpl output = new TagSchemaCreationOutputImpl();
         simulationProtocolAdapter.createTagSchema(new TagSchemaCreationInputImpl("does-not-exist"), output);
 
-        assertThatThrownBy(() -> output.getFuture().get()).isInstanceOf(ExecutionException.class);
+        assertThatThrownBy(() -> output.getSchema(TagSchemaDirection.NORTHBOUND))
+                .isInstanceOf(ExecutionException.class);
         assertThat(output.getStatus()).isEqualTo(TagSchemaCreationOutputImpl.Status.UNSPECIFIED_FAILURE);
         assertThat(output.getMessage()).contains("does-not-exist");
     }
@@ -517,7 +519,7 @@ class SimulationProtocolAdapterTest {
     private @NotNull ObjectNode resolveSchema(final @NotNull String tagName) throws Exception {
         final TagSchemaCreationOutputImpl output = new TagSchemaCreationOutputImpl();
         simulationProtocolAdapter.createTagSchema(new TagSchemaCreationInputImpl(tagName), output);
-        return output.getFuture().get();
+        return output.getSchema(TagSchemaDirection.NORTHBOUND);
     }
 
     private static void assertValueScalarType(final @NotNull ObjectNode schema, final @NotNull String scalarType) {
