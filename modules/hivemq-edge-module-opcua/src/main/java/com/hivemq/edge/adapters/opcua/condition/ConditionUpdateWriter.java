@@ -70,7 +70,7 @@ public final class ConditionUpdateWriter {
      * only §5.5.4 and §5.5.5, for Enable and Disable, name one outright.
      * <p>
      * That silence used to be read here as a prohibition, and this table held those two methods alone. It is
-     * not one. The rule the other twelve inherit is stated once, generally, in OPC 10000-4 §5.12.2.2 Table 59:
+     * not one. The rule the other thirteen inherit is stated once, generally, in OPC 10000-4 §5.12.2.2 Table 59:
      * "If the objectId is the NodeId of an Object, the methodId is either the NodeId of the Method that is a
      * component of the Object instance <em>or the NodeId of the Method in the ObjectType that defines the
      * Method</em>." Part 9 does not repeat it per method because Part 4 already covers every method there is.
@@ -80,10 +80,11 @@ public final class ConditionUpdateWriter {
      * The ObjectId stays the ConditionId. Part 9 is explicit that it must: "The Method cannot be called with
      * an ObjectId of the ConditionType Node". Only the MethodId becomes type-level.
      * <p>
-     * Three types declare these fourteen operations, and each entry names the one that declares it:
+     * Four types declare these fifteen operations, and each entry names the one that declares it:
      * {@code ConditionType} for enable/disable/comment, {@code AcknowledgeableConditionType} for the two
-     * acknowledgement methods, {@code AlarmConditionType} for the alarm methods. Shelving is the exception —
-     * see {@link #SHELVED_STATE_MACHINE_METHODS}.
+     * acknowledgement methods, {@code AlarmConditionType} for the alarm methods, and
+     * {@code DialogConditionType} for {@code Respond}. Shelving is the exception — see
+     * {@link #SHELVED_STATE_MACHINE_METHODS}.
      */
     private static final @NotNull Map<String, NodeId> CONDITION_TYPE_METHODS = Map.ofEntries(
             // ConditionType (§5.5): the operations every condition has.
@@ -391,7 +392,7 @@ public final class ConditionUpdateWriter {
     /**
      * Reports a method Edge holds no id for at all — neither on the instance nor in the standard nodeset.
      * <p>
-     * Unreachable for the fourteen methods as they stand, since every one of them is declared by a standard
+     * Unreachable for the fifteen methods as they stand, since every one of them is declared by a standard
      * type and named in {@link #CONDITION_TYPE_METHODS}. It is the honest answer if a method is ever added
      * without its type-level entry, which is exactly when a silent failure would be hardest to trace.
      */
@@ -433,7 +434,7 @@ public final class ConditionUpdateWriter {
     /**
      * Builds the input arguments, in the order the specification defines them.
      * <p>
-     * Ten of the fourteen methods take none at all, so an empty array is the normal case rather than a
+     * Ten of the fifteen methods take none at all, so an empty array is the normal case rather than a
      * degenerate one. The command's optional fields exist for the minority that do take arguments.
      */
     private static @NotNull Variant[] argumentsFor(final @NotNull ConditionUpdate update) {

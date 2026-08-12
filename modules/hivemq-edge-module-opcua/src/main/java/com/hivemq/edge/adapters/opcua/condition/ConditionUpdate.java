@@ -108,7 +108,7 @@ public record ConditionUpdate(
         TIMED_SHELVE("TimedShelve", "TimedShelve2", Arguments.DURATION, Location.SHELVING_STATE);
 
         /**
-         * What the method takes. Ten of the fourteen take nothing at all, which is why the command's fields
+         * What the method takes. Ten of the fifteen take nothing at all, which is why the command's fields
          * are optional rather than the command being split into several shapes.
          */
         public enum Arguments {

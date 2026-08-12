@@ -42,9 +42,11 @@ public class OpcuaTagDefinition implements TagDefinition {
             description = "what the node is: an ordinary VALUE (default), a CONDITION (a single alarm), "
                     + "an EVENT_SUBSCRIPTION (a query against a notifier, delivering events from many "
                     + "conditions), or a REFRESH (the adapter's refresh channel — northbound it publishes the "
-                    + "server's control events, including the queue-overflow event that says transitions were "
-                    + "lost, and southbound it accepts {\"method\": \"REFRESH\"} to ask the server to "
-                    + "re-report every condition it currently retains). At most one REFRESH tag per adapter.",
+                    + "server's control events, and southbound it accepts {\"method\": \"REFRESH\"} to ask "
+                    + "the server to re-report every condition it currently retains). At most one REFRESH "
+                    + "tag per adapter. A queue-overflow event is not carried here: OPC UA delivers it only "
+                    + "to the monitored item whose queue filled, so it is reported against the tag that lost "
+                    + "the transitions.",
             defaultValue = "VALUE")
     private final @NotNull OpcuaTagKind kind;
 
@@ -56,8 +58,9 @@ public class OpcuaTagDefinition implements TagDefinition {
                     + "it is also verified against the device when the tag is subscribed, and declaring a "
                     + "supertype of what the device offers is allowed. For an EVENT_SUBSCRIPTION node nothing "
                     + "is verified — many conditions of differing types may pass the filter — so a field an "
-                    + "event does not carry is published as null. For a REFRESH node the field is ignored: "
-                    + "control events are BaseEventType events and always publish the ConditionType shape.",
+                    + "event does not carry is published as null. For a REFRESH node the field is accepted "
+                    + "and ignored: control events are BaseEventType events, so they always publish the "
+                    + "BaseEventType shape whatever type is declared.",
             defaultValue = "AlarmConditionType")
     private final @NotNull OpcuaConditionType type;
 
@@ -165,8 +168,8 @@ public class OpcuaTagDefinition implements TagDefinition {
      * The type whose fields this tag actually publishes — the one list the select clause, the event decoder,
      * the read schema and the rejected-field report must all derive from.
      * <p>
-     * The same as {@link #getType()} for every kind but {@code REFRESH}, where it is fixed at
-     * {@code ConditionType} whatever the configuration says. A refresh tag carries the server's control
+     * The same as {@link #getType()} for every kind but {@code REFRESH}, where it is fixed at the
+     * {@link BaseEventFieldSet} whatever the configuration says. A refresh tag carries the server's control
      * events, which are {@code BaseEventType} events — they have no alarm state, so the type a user declares
      * cannot describe them, and the filter does not ask the server for those fields either.
      * <p>
