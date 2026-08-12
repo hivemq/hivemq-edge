@@ -149,9 +149,9 @@ class OpcUaSessionActivityListenerTest {
 
     @Test
     void aReconnectRacingTheCallbackRegistrationIsNeverLost() throws Exception {
-        // Review finding 3. The handoff used to be a volatile callback plus a separate AtomicBoolean, which
-        // makes each field's value visible but does not make check-then-act atomic. That admits an
-        // interleaving where nobody is left responsible:
+        // Review-02 finding 3, and now supplemental rather than the oracle. The handoff used to be a
+        // volatile callback plus a separate AtomicBoolean, which makes each field's value visible but does
+        // not make check-then-act atomic. That admits an interleaving where nobody is left responsible:
         //
         //   1. the session thread reads onReconnect and finds it null
         //   2. the connection thread stores the callback
@@ -162,38 +162,28 @@ class OpcUaSessionActivityListenerTest {
         // Nothing runs it, and nothing notices until a later reconnect happens to consume the stale flag --
         // so the retained alarm picture stays as it was before the disconnect.
         //
-        // Driven as a race rather than by instrumenting the fields: there is no seam to pause the session
-        // thread between steps 1 and 4, and adding one would test the seam rather than the code.
+        // This used to run 250,000 rounds because racing was the only way to reach that interleaving. On the
+        // measured hit rate of the old defect -- one per 70,000 rounds -- that still left a run about a 3%
+        // chance of seeing nothing and passing against the bug it was written for, and cost fifteen seconds
+        // of every CI run. Review-03 finding 10. The decision now lives in ReconnectHandoff, where
+        // ReconnectHandoffTest enumerates both orderings and pauses one half mid-transition to prove they
+        // cannot interleave at all -- deterministically, every run.
         //
-        // The window is two instructions wide, so the shape of this matters. Both threads are parked on a
-        // spin over one volatile flag rather than on a barrier or a lock: a barrier's own wake-up jitter is
-        // microseconds, which is three orders of magnitude wider than the window, and the two threads then
-        // reliably miss each other. Spinning puts them into their critical sections within tens of
-        // nanoseconds. Both are pinned to the same pair of threads across all rounds so no round pays for
-        // thread creation.
+        // What remains here is worth keeping and is not the same assertion: this drives the *listener*, so
+        // it covers the wiring the extracted class cannot see -- that the first activation is consumed as
+        // the initial connect, that a reconnect reaches the handoff, and that the callback runs outside the
+        // lock. A few thousand rounds is enough for that, and the round count is no longer load-bearing.
         //
-        // Verified against the pre-fix implementation, which this fails on -- at round 66,777 of a 200,000
-        // round run, so roughly one hit per 70,000. A quarter of a million rounds therefore expects three or
-        // four, which is enough to catch a regression on most runs and certain to across a few, at about
-        // fifteen seconds. The asymmetry is what makes that trade acceptable: too few rounds risks a false
-        // negative and never a false positive, because correct code cannot fail this assertion however the
-        // threads interleave.
         // No Mockito anywhere in this loop, and that is a correctness point rather than a style one. A mock
-        // records every invocation it receives so it can be verified later, so a *shared* mock taking one and
-        // a half million calls grows without bound and slows to a crawl -- and a *per-round* mock costs more
-        // to construct than everything under test. Half a million rounds needs the collaborators to be plain
-        // no-ops; the listener does nothing with them that this test is about.
-        // And no logging either, for the same reason the collaborators are no-ops rather than mocks.
-        // onSessionActive logs the connection at INFO before it decides whether this is a reconnect, so each
-        // round emits two lines -- half a million of them across the loop. Gradle captures a test's output
-        // into its JUnit XML, which made this class's report 119,155,642 bytes over 500,689 lines, and
-        // GitHub's Test Results check fails parsing it with "CData section too big" before it reads a single
-        // assertion. Zero failures, red check.
+        // records every invocation it receives so it can be verified later, so a shared mock taking tens of
+        // thousands of calls grows without bound -- and a per-round mock costs more to construct than
+        // everything under test. The listener does nothing with these collaborators that this test is about.
         //
-        // Suppressed here rather than fixed in the production logger, which is doing nothing wrong: one line
-        // per connection is what an operator wants, and it is this test's round count that is unreasonable,
-        // not the logging. Scoped to this method and restored in the finally, so no other test loses it --
-        // and set to WARN rather than OFF, so a warning raised by the code under test would still be seen.
+        // The logger is still scoped down. onSessionActive logs the connection at INFO before it decides
+        // whether this is a reconnect, and Gradle captures test output into its JUnit XML -- at the old
+        // round count that produced a 119 MB report which GitHub's Test Results check refused to parse.
+        // Kept because the reasoning holds at any round count, and set to WARN rather than OFF so a warning
+        // raised by the code under test would still be seen.
         final Logger listenerLog = (Logger) LoggerFactory.getLogger(OpcUaSessionActivityListener.class);
         final Level previousLevel = listenerLog.getLevel();
         listenerLog.setLevel(Level.WARN);
@@ -202,7 +192,7 @@ class OpcUaSessionActivityListenerTest {
         final ProtocolAdapterMetricsService sharedMetrics = new NoOpMetrics();
         final FakeEventService sharedEvents = new FakeEventService();
 
-        final int rounds = 250_000;
+        final int rounds = 5_000;
         final ExecutorService threads = Executors.newFixedThreadPool(2);
         try {
             for (int round = 0; round < rounds; round++) {
