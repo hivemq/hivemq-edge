@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,11 +27,14 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
@@ -39,6 +43,8 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -101,7 +107,7 @@ class OpcUaDuplicateStartTest {
                 .isNotNull();
         assertThat(healthAfterFirst).isNotNull();
 
-        pinTheConnection(started);
+        awaitTheConnectionAttemptFailing(started);
         started.start(
                 ProtocolAdapterConnectionDirection.Northbound, startInput(), mock(ProtocolAdapterStartOutput.class));
 
@@ -120,7 +126,7 @@ class OpcUaDuplicateStartTest {
         final ExecutorService retry = scheduler(started, "retryScheduler");
         final ExecutorService health = scheduler(started, "healthCheckScheduler");
 
-        pinTheConnection(started);
+        awaitTheConnectionAttemptFailing(started);
         started.start(
                 ProtocolAdapterConnectionDirection.Northbound, startInput(), mock(ProtocolAdapterStartOutput.class));
         started.destroy();
@@ -139,10 +145,89 @@ class OpcUaDuplicateStartTest {
         final OpcUaProtocolAdapter started = startedAdapter();
         final ProtocolAdapterStartOutput output = mock(ProtocolAdapterStartOutput.class);
 
-        pinTheConnection(started);
+        awaitTheConnectionAttemptFailing(started);
         started.start(ProtocolAdapterConnectionDirection.Northbound, startInput(), output);
 
         verify(output).failStart(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.contains("already"));
+    }
+
+    // ── review-03 finding 5: the lifecycle is not the connection ────────────────────────────────────
+
+    @Test
+    void anAdapterWhoseConnectionAttemptFailedIsStillStarted() {
+        // The finding, stated directly. The guard used to read `opcUaClientConnection != null`, and that
+        // reference is the current connection *attempt* -- the failure path clears it while the adapter goes
+        // on being started, schedulers running and a retry queued. This is the ordinary "the hardware is not
+        // online yet" window, which is the whole reason start() reports success without a connection.
+        //
+        // No pinning and no reflection into the slot: the fix makes the losing ordering the *deterministic*
+        // one to test, by waiting for it rather than racing to get in before it.
+        final OpcUaProtocolAdapter started = startedAdapter();
+        awaitTheConnectionAttemptFailing(started);
+
+        final ProtocolAdapterStartOutput output = mock(ProtocolAdapterStartOutput.class);
+        started.start(ProtocolAdapterConnectionDirection.Northbound, startInput(), output);
+
+        verify(output)
+                .failStart(
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.contains("already started"));
+    }
+
+    @Test
+    void butStoppingItReleasesTheLifecycleSoItCanBeStartedAgain() {
+        // The other direction, and the reason a lifecycle flag has to be released somewhere. Refusing every
+        // start after the first would be a worse bug than the one being fixed: an adapter is stopped and
+        // started again on every configuration change.
+        final OpcUaProtocolAdapter started = startedAdapter();
+        awaitTheConnectionAttemptFailing(started);
+        started.stop(
+                ProtocolAdapterConnectionDirection.Northbound,
+                mock(ProtocolAdapterStopInput.class),
+                mock(ProtocolAdapterStopOutput.class));
+
+        final ProtocolAdapterStartOutput output = mock(ProtocolAdapterStartOutput.class);
+        started.start(ProtocolAdapterConnectionDirection.Northbound, startInput(), output);
+
+        verify(output).startedSuccessfully();
+        verify(output, org.mockito.Mockito.never())
+                .failStart(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void andDestroyingItDoesTooEvenWithoutAStop() {
+        // destroy() is reachable without a stop() -- the framework may discard an adapter it never stopped --
+        // and the same instance is reused across a configuration change, so a lifecycle left claimed here
+        // would make the object permanently unstartable.
+        final OpcUaProtocolAdapter started = startedAdapter();
+        awaitTheConnectionAttemptFailing(started);
+        started.destroy();
+
+        final ProtocolAdapterStartOutput output = mock(ProtocolAdapterStartOutput.class);
+        started.start(ProtocolAdapterConnectionDirection.Northbound, startInput(), output);
+
+        verify(output).startedSuccessfully();
+    }
+
+    @Test
+    void aStaleConnectionAttemptCannotClearANewerOne() {
+        // The second half of the finding. The failure path did an unconditional set(null), so a completion
+        // belonging to an attempt the adapter had already moved on from discarded whichever connection was
+        // current -- while that one was live and reachable by nothing else. The adapter would then believe it
+        // had no connection, and the live one would go on publishing with no way to stop it.
+        final OpcUaProtocolAdapter started = startedAdapter();
+        awaitTheConnectionAttemptFailing(started);
+
+        final OpcUaClientConnection current = newConnection();
+        connectionSlot(started).set(current);
+
+        // A completion for a different, older attempt, driven directly because it is the ordering that
+        // matters and it cannot be provoked by timing alone.
+        attemptConnectionOn(started, newConnection());
+
+        await().during(Duration.ofMillis(500)).atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertThat(
+                        connectionSlot(started).get())
+                .as("a stale attempt's failure must not discard the connection that replaced it")
+                .isSameAs(current));
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
@@ -197,24 +282,30 @@ class OpcUaDuplicateStartTest {
     }
 
     /**
-     * Guarantees the adapter is holding a connection, so the next {@code start()} is unambiguously a duplicate.
+     * Waits until the adapter's own connection attempt has failed and cleared the slot.
      * <p>
-     * Without this the test races the adapter's own connect. {@code attemptConnection} runs asynchronously
-     * against an address with no server behind it, and its failure path clears the connection slot — so on a
-     * slower machine the second {@code start()} finds an empty slot, which is a legitimate fresh start rather
-     * than the duplicate this is about, and creating new executors there is correct. It passed locally and
-     * failed on CI for exactly that reason: {@code to refer to the same object}, with two different
-     * executors, because the second call was never a duplicate at all.
+     * This is the state the whole finding is about, and it used to be the state these tests were <em>racing
+     * to get in front of</em>. {@code attemptConnection} runs asynchronously against an address with no
+     * server behind it, and its failure path clears the connection reference while the adapter stays started.
+     * The v02 tests pinned a connection into the slot to guarantee the second {@code start()} was a duplicate
+     * — which papered over the defect, because with the guard reading that slot the second call was a
+     * legitimate fresh start once it had been cleared, and CI proved it by failing on the losing ordering.
      * <p>
-     * A fresh connection object rather than the one the first start installed, because reading that one back
-     * is the same race one step earlier. Constructing it is cheap and does no I/O — the connect happens in
-     * {@code attemptConnection}, not here — and the package-private constructor is reachable because this
-     * test shares the adapter's package.
+     * Now the guard reads the lifecycle instead, so this window is simply waited for. The tests assert the
+     * previously-broken ordering rather than avoiding it, and there is nothing left to pin.
      */
-    private void pinTheConnection(final @NotNull OpcUaProtocolAdapter adapter) {
+    private static void awaitTheConnectionAttemptFailing(final @NotNull OpcUaProtocolAdapter adapter) {
+        await().atMost(Duration.ofSeconds(30))
+                .untilAsserted(() -> assertThat(connectionSlot(adapter).get())
+                        .as("the connection attempt should have failed against an address with no server")
+                        .isNull());
+    }
+
+    /** A connection object like the adapter's own, built without connecting anything. */
+    private @NotNull OpcUaClientConnection newConnection() {
         final OpcuaTag tag =
                 new OpcuaTag("boiler-temperature", "", new OpcuaTagDefinition("ns=2;s=Boiler1.Temperature"));
-        final OpcUaClientConnection connection = new OpcUaClientConnection(
+        return new OpcUaClientConnection(
                 "test-adapter-id",
                 List.of(tag),
                 protocolAdapterState,
@@ -223,7 +314,29 @@ class OpcUaDuplicateStartTest {
                 mock(ProtocolAdapterMetricsService.class),
                 adapterConfig(),
                 mock(OpcUaServiceFaultListener.class));
-        connectionSlot(adapter).set(connection);
+    }
+
+    /**
+     * Runs one connection attempt for a given connection, as the adapter does internally.
+     * <p>
+     * Driven by reflection because the ordering under test — an older attempt completing after a newer
+     * connection is in place — is decided by the scheduler and cannot be provoked by timing.
+     */
+    private void attemptConnectionOn(
+            final @NotNull OpcUaProtocolAdapter adapter, final @NotNull OpcUaClientConnection connection) {
+        try {
+            final Field parsed = OpcUaProtocolAdapter.class.getDeclaredField("parsedConfig");
+            parsed.setAccessible(true);
+            final Method attempt = OpcUaProtocolAdapter.class.getDeclaredMethod(
+                    "attemptConnection",
+                    OpcUaClientConnection.class,
+                    ParsedConfig.class,
+                    ProtocolAdapterStartInput.class);
+            attempt.setAccessible(true);
+            attempt.invoke(adapter, connection, parsed.get(adapter), startInput());
+        } catch (final ReflectiveOperationException e) {
+            throw new LinkageError("the adapter no longer connects through 'attemptConnection'", e);
+        }
     }
 
     @SuppressWarnings("unchecked")

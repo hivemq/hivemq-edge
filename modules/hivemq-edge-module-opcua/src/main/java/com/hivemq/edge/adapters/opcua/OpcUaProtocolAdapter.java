@@ -67,6 +67,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -143,6 +144,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
 
+    /**
+     * Whether this adapter owns its runtime resources — the lifecycle, as distinct from any one connection.
+     * <p>
+     * {@code opcUaClientConnection} used to stand in for this, and it cannot: that reference is the
+     * <em>current connection attempt</em>, and an attempt that fails clears it while the adapter is still
+     * very much started, with its retry and health-check schedulers running and a retry queued. A duplicate
+     * {@code start()} arriving in that window — which is the ordinary "hardware is not online yet" window,
+     * not an exotic one — passed both guards, installed a second connection and called
+     * {@link #startSchedulers()}, replacing the first pair. CI observed exactly that ordering.
+     * <p>
+     * Claimed once the start is committed and released only by {@link #stop} or {@link #destroy}, so it does
+     * not move when a connection comes and goes. Distinct from {@link #stopped}, which answers a different
+     * question — "should background work keep running" — and is false on a freshly constructed adapter that
+     * has never been started, precisely the state in which a first start must be allowed.
+     */
+    private final @NotNull AtomicBoolean started = new AtomicBoolean();
+
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
@@ -213,13 +231,18 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         log.info("Starting OPC UA protocol adapter {}", adapterId);
 
-        // Refused before anything is built, rather than after. start() is synchronized, so an adapter that
-        // already holds a connection cannot acquire a second one, and everything below this point either
-        // allocates a runtime resource or hands one to a background thread. The compareAndSet further down
-        // is still the authority -- a reconnect claims the same slot from another thread and does not hold
-        // this lock -- but that path is a race, whereas a second start() is simply a caller mistake and is
-        // better answered before two executors have been created for it.
-        if (opcUaClientConnection.get() != null) {
+        // Refused before anything is built, rather than after, and asked of the lifecycle rather than of the
+        // connection. Everything below this point either allocates a runtime resource or hands one to a
+        // background thread, so a caller's mistake is better answered before two executors exist for it.
+        //
+        // `started` rather than `opcUaClientConnection != null`, which is what this used to read. That
+        // reference is the current connection *attempt*: an attempt that fails clears it, and the adapter
+        // goes on being started with its schedulers running and a retry queued. A second start() in that
+        // window -- the ordinary "hardware is not online yet" window -- passed this guard and the
+        // compareAndSet below, then replaced both schedulers through startSchedulers(). The connection
+        // reference is still the authority for *connections*, which a reconnect claims from another thread
+        // without holding this lock; it was never the authority for the lifecycle.
+        if (started.get()) {
             log.error("Cannot start OPC UA protocol adapter '{}' - adapter is already started", adapterId);
             output.failStart(
                     new IllegalStateException("Adapter already started"),
@@ -281,6 +304,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 config,
                 opcUaServiceFaultListener);
         if (opcUaClientConnection.compareAndSet(null, conn)) {
+            // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
+            // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
+            // Released only by stop() or destroy(), never by a connection attempt ending.
+            started.set(true);
             // Only now, with the connection slot owned. The configuration was validated above, so this is no
             // longer about whether the resources are wanted -- it is about whether this call is the one
             // entitled to create them. They used to be created before the swap and were therefore replaced
@@ -322,6 +349,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         // Set stopped flag to prevent new scheduling
         stopped = true;
+        // And release the lifecycle, so a later start() is a first start rather than a duplicate.
+        started.set(false);
 
         // Acquire reconnect lock to ensure we don't stop while reconnecting
         reconnectLock.lock();
@@ -571,6 +600,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     @Override
     public void destroy() {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
+
+        // Released here as well as in stop(), because destroy() is reachable without one -- the framework may
+        // discard an adapter it never stopped. Leaving it claimed would make the object permanently
+        // unstartable, which matters because the same instance is reused across a configuration change.
+        started.set(false);
 
         // Cancel any pending retries and health checks
         cancelRetry();
@@ -1018,8 +1052,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         scheduleHealthCheck();
                         log.info("OPC UA adapter '{}' connected successfully", adapterId);
                     } else {
-                        // Connection failed - clean up and schedule retry with exponential backoff
-                        this.opcUaClientConnection.set(null);
+                        // Connection failed - clean up and schedule retry with exponential backoff.
+                        //
+                        // compareAndSet, not set: this completion is about one attempt, and by the time it
+                        // runs a reconnect may already have installed a newer one. An unconditional clear
+                        // discarded that newer connection while it was live and reachable by nothing else --
+                        // the adapter would then believe it had no connection, and the live one would go on
+                        // publishing with no way to stop it.
+                        this.opcUaClientConnection.compareAndSet(conn, null);
                         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
 
                         if (throwable != null) {
