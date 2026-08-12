@@ -342,7 +342,7 @@ class ProtocolAdapterWrapperTest {
         }
 
         @Test
-        void stop_whenIdleWithDestroy_stillDestroysTheAdapter() {
+        void stop_whenIdleAfterRunningWithDestroy_stillDestroysTheAdapter() {
             // The resource leak the Idle short-circuit exists to close, and the reason it is a fix
             // rather than tidying. Idle -> Stopping is not a permitted transition, so before the
             // short-circuit stop() returned false at the transition guard - which sits *above* the
@@ -350,6 +350,11 @@ class ProtocolAdapterWrapperTest {
             // then deletes, so deleting an adapter that was idle never released whatever destroy()
             // releases. It also turned a no-op stop into a CRITICAL "Error stopping adapter" event,
             // because stopWrapper is the sole consumer of this return value.
+            //
+            // Started first on purpose: this is the case that matters - an adapter that ran, was
+            // stopped by the operator, and is then deleted. It has resources, and it must release them.
+            assertThat(wrapper.start()).isTrue();
+            assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
             assertThat(wrapper.stop(true)).isTrue();
@@ -359,13 +364,48 @@ class ProtocolAdapterWrapperTest {
         }
 
         @Test
-        void stop_whenIdleWithDestroyTwice_destroysOnce() {
+        void stop_whenIdleAndNeverStartedWithDestroy_doesNotDestroy() {
+            // The other half of Idle. An adapter that never reached Working never acquired anything,
+            // and ProtocolAdapter#destroy() is a default no-op documented only as "called by the
+            // framework when the instance will be discarded" - nothing promises it tolerates being
+            // called on an instance that was never started. So it is not called.
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter, never()).destroy();
+        }
+
+        @Test
+        void stop_whenIdleAfterRunningWithDestroyTwice_destroysOnce() {
             // Destroy is now reachable from two places in stop() - the Idle short-circuit and the
             // full stop path - and the SDK makes no idempotence promise about it, which is what the
-            // wrapper's at-most-once guard is for.
+            // wrapper's at-most-once guard is for. The everStarted guard narrows *when* destroy is
+            // attempted; it does not replace the at-most-once latch, because a stopped adapter can
+            // still be stopped twice.
+            wrapper.start();
+            wrapper.stop(false);
+
             wrapper.stop(true);
             wrapper.stop(true);
 
+            verify(protocolAdapter, times(1)).destroy();
+        }
+
+        @Test
+        void start_afterDestroy_isRefused() {
+            // destroy() is one-way: the SDK offers no way back from it, so starting a destroyed adapter
+            // would hand work to an instance that has already released everything. Unreachable in
+            // production today - the only two stop(destroy=true) callers are the refresh delete path,
+            // which drops the wrapper from the manager's map straight after, and shutdown(), which does
+            // not restart - so this guard exists to stop the third caller from being wrong.
+            assertThat(wrapper.start()).isTrue();
+            assertThat(wrapper.stop(true)).isTrue();
+            verify(protocolAdapter).destroy();
+
+            assertThat(wrapper.start()).isFalse();
+
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             verify(protocolAdapter, times(1)).destroy();
         }
 
