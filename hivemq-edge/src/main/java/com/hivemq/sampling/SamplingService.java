@@ -88,13 +88,23 @@ public class SamplingService {
         if (!queueId.startsWith(SAMPLER_PREFIX)) {
             return null;
         }
-        final String topicTwice = queueId.substring(SAMPLER_PREFIX.length());
-        final int separator = topicTwice.length() / 2;
-        if (topicTwice.length() % 2 == 0 || topicTwice.charAt(separator) != '/') {
+        // What follows the prefix must be the topic, a '/', then the same topic again. Both halves
+        // have the same length, so the separator can only be at the exact midpoint -- which makes the
+        // shape decidable by three checks and no searching.
+        final int topicStart = SAMPLER_PREFIX.length();
+        final int remainingLength = queueId.length() - topicStart;
+        if (remainingLength % 2 == 0) {
+            return null; // topic + '/' + topic always has odd length
+        }
+        final int topicLength = remainingLength / 2;
+        final int separator = topicStart + topicLength;
+        if (queueId.charAt(separator) != '/') {
             return null;
         }
-        final String topic = topicTwice.substring(0, separator);
-        return topic.equals(topicTwice.substring(separator + 1)) ? topic : null;
+        if (!queueId.regionMatches(topicStart, queueId, separator + 1, topicLength)) {
+            return null; // the two halves differ, so this is not a sampler queue
+        }
+        return queueId.substring(topicStart, separator);
     }
 
     public @NotNull List<byte[]> getSamples(final @NotNull String topic) {

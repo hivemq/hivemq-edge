@@ -73,6 +73,13 @@ public class MessageForwarderImpl implements MessageForwarder {
     private final @NotNull Set<String> notEmptyQueues;
     private final @NotNull Map<String, MqttForwarder> forwarders;
     private final @NotNull Map<String, Set<String>> queueIdsForForwarder;
+    /**
+     * How many registered forwarders own each queue ID. Exactly the multiset union of the values of
+     * {@link #queueIdsForForwarder}, maintained so {@link #isForwarderQueue(String)} answers in
+     * constant time instead of scanning every forwarder.
+     */
+    private final @NotNull Map<String, Integer> forwarderQueueRefs;
+
     private final @NotNull ExecutorService executorService;
     private final @NotNull Lock pollLock;
     private volatile boolean polling;
@@ -92,6 +99,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         this.notEmptyQueues = new ConcurrentSkipListSet<>();
         this.forwarders = new ConcurrentHashMap<>(0);
         this.queueIdsForForwarder = new ConcurrentHashMap<>(0);
+        this.forwarderQueueRefs = new ConcurrentHashMap<>(0);
         this.pollLock = new ReentrantLock();
         final int threadCount = InternalConfigurations.BRIDGE_MESSAGE_FORWARDER_POOL_THREADS_COUNT.get();
         this.executorService =
@@ -137,6 +145,24 @@ public class MessageForwarderImpl implements MessageForwarder {
         return FORWARDER_PREFIX + forwarderId + "/" + topic;
     }
 
+    /**
+     * Claims one reference on each queue ID. Every {@code retain} is paired with exactly one
+     * {@link #release(Set)} of the same set — the value a {@code put} displaces, or the value the
+     * final {@code remove} returns — which is what keeps the counts exact under any interleaving.
+     */
+    private void retain(final @NotNull Set<String> queueIds) {
+        for (final String queueId : queueIds) {
+            forwarderQueueRefs.merge(queueId, 1, Integer::sum);
+        }
+    }
+
+    /** Drops one reference on each queue ID, removing the entry when the last owner lets go. */
+    private void release(final @NotNull Set<String> queueIds) {
+        for (final String queueId : queueIds) {
+            forwarderQueueRefs.computeIfPresent(queueId, (key, count) -> count == 1 ? null : count - 1);
+        }
+    }
+
     @Override
     public void addForwarder(final @NotNull MqttForwarder mqttForwarder) {
         final String forwarderId = mqttForwarder.getId();
@@ -156,10 +182,33 @@ public class MessageForwarderImpl implements MessageForwarder {
             queueIdsBuilder.add(createQueueId(forwarderId, topic));
         }
         final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
-        // register the queue IDs before anything else can observe the queues: the periodic clean-up
+        // Ownership is registered before anything else can observe the queues: the periodic clean-up
         // clears forwarder queues it finds unowned, so a pre-existing persisted queue must never be
-        // visible while its forwarder is mid-registration
-        queueIdsForForwarder.put(forwarderId, queueIds);
+        // visible while its forwarder is mid-registration.
+        //
+        // The statement order below is load-bearing. None of these four rules can be pinned by a test
+        // without a seam into this class -- they are intra-method orderings only observable from
+        // another thread -- so they are enforced here and in review. Getting any of them wrong loses
+        // customer messages silently.
+        //
+        //   O0  ownership is claimed before the topicTree.addTopic loop, or a persisted queue becomes
+        //       pollable while still reading as unowned.
+        //   O1  retain() runs before the put. forwarderQueueRefs -- not queueIdsForForwarder -- is the
+        //       map isForwarderQueue reads, so it, not the put, is the moment registration takes
+        //       effect. Publishing first opens a window in which the clean-up clears a live queue.
+        //   O2  retain(new) runs before release(superseded). For a queue in both sets the count would
+        //       otherwise go 1 -> absent -> 1, and a sweep landing in that instant clears a queue that
+        //       is live, registered and in the current sweep set.
+        //   O3  see removeForwarder.
+        //
+        // Re-registration takes the difference rather than skipping: one forwarder ID does not imply
+        // one queue set, because the ID embeds a digest over the filters joined with an empty
+        // separator, so {"ab","c"} and {"a","bc"} share an ID with different queue sets.
+        retain(queueIds);
+        final Set<String> superseded = queueIdsForForwarder.put(forwarderId, queueIds);
+        if (superseded != null) {
+            release(superseded);
+        }
         for (final String topic : mqttForwarder.getTopics()) {
             topicTree.addTopic(
                     clientId,
@@ -294,7 +343,14 @@ public class MessageForwarderImpl implements MessageForwarder {
                 }
             }
         }
-        queueIdsForForwarder.remove(forwarderId);
+        // O3: drop the registration first, release its queues second. The reverse order would let the
+        // reference count reach zero while the forwarder is still published and still polling, so a
+        // clean-up sweep in that window would clear a live queue. The set the map returns -- not
+        // mqttForwarder.getTopics() -- is what was actually registered, and is what must be released.
+        final Set<String> removedQueueIds = queueIdsForForwarder.remove(forwarderId);
+        if (removedQueueIds != null) {
+            release(removedQueueIds);
+        }
         final MqttForwarder removed = forwarders.remove(forwarderId);
         if (removed != null) {
             removed.stop();
@@ -368,14 +424,18 @@ public class MessageForwarderImpl implements MessageForwarder {
         });
     }
 
+    /**
+     * Whether any registered forwarder owns this queue.
+     * <p>
+     * A reference count rather than a queue-ID-to-owner map: a share name may contain '/', so
+     * concatenating it with the topic filter is not injective and two forwarders can in principle mint
+     * the same queue ID. A plain map would drop the entry when the first of them unregisters, and the
+     * periodic clean-up would then clear a queue the second still owns. Counting owners is exact for
+     * every input without depending on that argument.
+     */
     @Override
     public boolean isForwarderQueue(final @NotNull String queueId) {
-        for (final Set<String> queueIds : queueIdsForForwarder.values()) {
-            if (queueIds.contains(queueId)) {
-                return true;
-            }
-        }
-        return false;
+        return forwarderQueueRefs.containsKey(queueId);
     }
 
     @Override
