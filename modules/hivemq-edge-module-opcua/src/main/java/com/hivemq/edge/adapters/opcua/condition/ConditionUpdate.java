@@ -322,6 +322,16 @@ public record ConditionUpdate(
      * Rejected rather than defaulted when absent. There is no safe default for "which answer did you mean" —
      * zero is a valid option on every dialog that offers any, so guessing would answer a question on the
      * operator's behalf.
+     * <p>
+     * <b>The range is checked before the value is narrowed, and that order is the whole point.</b> OPC
+     * 10000-9 §5.6.3 declares {@code SelectedResponse} an Int32, while JSON has no such bound and the write
+     * schema declares the field a {@code LONG}. {@code asInt()} is a <em>narrowing cast</em>, not a
+     * conversion that can fail: it took {@code 4294967296} to {@code 0} and {@code 4294967297} to {@code 1},
+     * each of which is a perfectly valid index into some dialog's {@code ResponseOptionSet}. Large negative
+     * values wrapped to non-negative ones the same way and walked past the check below. So an out-of-range
+     * request did not fail — it answered a different question, and the server saw a well-formed Int32 with no
+     * way to know it was not what the caller sent. Responding to a dialog is a side-effecting industrial
+     * action; the only safe reading of a value the specification cannot represent is to refuse it.
      */
     private static @Nullable Integer readSelectedResponse(
             final @NotNull JsonNode payload, final @NotNull Method method) {
@@ -335,11 +345,17 @@ public record ConditionUpdate(
                     + FIELD_SELECTED_RESPONSE + "', the index of the chosen entry in the dialog's "
                     + "ResponseOptionSet");
         }
-        if (selectedResponse.asInt() < 0) {
+        if (!selectedResponse.canConvertToInt()) {
+            throw new IllegalArgumentException("'" + FIELD_SELECTED_RESPONSE + "' is an OPC UA Int32 (OPC "
+                    + "10000-9 §5.6.3), so it must be between 0 and " + Integer.MAX_VALUE
+                    + ". Received: " + selectedResponse.asText());
+        }
+        final int chosen = selectedResponse.intValue();
+        if (chosen < 0) {
             throw new IllegalArgumentException("'" + FIELD_SELECTED_RESPONSE
                     + "' is an index into the dialog's ResponseOptionSet, so it cannot be negative");
         }
-        return selectedResponse.asInt();
+        return chosen;
     }
 
     /**

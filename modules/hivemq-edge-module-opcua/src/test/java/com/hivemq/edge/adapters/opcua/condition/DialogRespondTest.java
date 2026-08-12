@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -128,6 +129,92 @@ class DialogRespondTest {
                         """))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cannot be negative");
+    }
+
+    // ── review-03 finding 2: the range the type does not carry ─────────────────────────────────────
+
+    @Test
+    void anAnswerTooLargeForAnInt32IsRefusedRatherThanWrapped() {
+        // The finding, and the reason it is High rather than cosmetic. asInt() is a narrowing cast: it took
+        // 4294967296 to 0, which is a valid index on every dialog that offers any options. The request did
+        // not fail -- it answered a different question, and the server received a well-formed Int32 with no
+        // way to know it was not what the caller sent. Responding to a dialog actuates plant.
+        assertThatThrownBy(() -> parse("""
+                        { "method": "RESPOND", "selectedResponse": 4294967296 }
+                        """))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Int32")
+                .hasMessageContaining("4294967296");
+    }
+
+    @Test
+    void andSoIsOneThatWouldWrapOntoADifferentValidAnswer() {
+        // The same cast one step along: 4294967297 became 1. Two adjacent out-of-range values selecting two
+        // adjacent real options is the shape of the defect, so both are pinned.
+        assertThatThrownBy(() -> parse("""
+                        { "method": "RESPOND", "selectedResponse": 4294967297 }
+                        """)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void andSoIsALargeNegativeOneThatWouldWrapPastTheNegativeCheck() {
+        // -4294967296 narrowed to 0 -- non-negative by the time the sign was checked, so the guard below it
+        // never saw the value the caller actually sent.
+        assertThatThrownBy(() -> parse("""
+                        { "method": "RESPOND", "selectedResponse": -4294967296 }
+                        """))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Int32");
+    }
+
+    @Test
+    void andAnIntegerFarBeyondALongToo() {
+        // Jackson parses this as a BigInteger rather than a LongNode, which is a different node type taking a
+        // different path to the same cast.
+        assertThatThrownBy(() -> parse("""
+                        { "method": "RESPOND", "selectedResponse": 99999999999999999999999999 }
+                        """))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Int32");
+    }
+
+    @Test
+    void theBoundsThemselvesAreAccepted() {
+        // The other half of a range check: it must not refuse the values that are in range. Int32's largest
+        // is a legitimate, if improbable, index, and zero is the first option of every dialog.
+        assertThat(parseQuietly("""
+                        { "method": "RESPOND", "selectedResponse": 0 }
+                        """).selectedResponse()).isZero();
+        assertThat(parseQuietly("""
+                        { "method": "RESPOND", "selectedResponse": 2147483647 }
+                        """).selectedResponse()).isEqualTo(Integer.MAX_VALUE);
+    }
+
+    @Test
+    void aRefusedAnswerSendsNoCallAtAll() {
+        // The consequence that matters. A rejection has to happen before the server is asked to do anything,
+        // or the range check is only a nicer error message on an action already taken.
+        assertThatThrownBy(() -> request("""
+                        { "method": "RESPOND", "selectedResponse": 4294967296 }
+                        """)).isInstanceOf(IllegalArgumentException.class);
+
+        verify(client, never()).callAsync(any());
+    }
+
+    @Test
+    void andTheSchemaBoundsTheFieldSoAGeneratedClientCannotBuildOne() {
+        // The runtime check stays mandatory -- nothing guarantees a caller validated against this schema --
+        // but a client generated from it should not be able to construct the bad request in the first place.
+        // The SDK has no scalar narrower than LONG, so the bounds are how Int32 is expressed at all.
+        final ObjectNode field = (ObjectNode) SchemaJsonRepresentation.INSTANCE
+                .toJsonSchemaDocument(ConditionSchemas.writeSchema())
+                .get("properties")
+                .get(ConditionUpdate.FIELD_SELECTED_RESPONSE);
+
+        assertThat(field.get("minimum").longValue()).isZero();
+        assertThat(field.get("maximum").longValue())
+                .as("JSON Schema's 'maximum' is inclusive, so the largest Int32 is itself allowed")
+                .isEqualTo(Integer.MAX_VALUE);
     }
 
     @Test

@@ -367,9 +367,17 @@ public final class ConditionSchemas {
                 .endProperty()
                 .property(ConditionUpdate.FIELD_SELECTED_RESPONSE)
                 .scalar(ScalarType.LONG)
+                // Bounded because the type is not. The specification makes SelectedResponse an Int32 and the
+                // SDK has no scalar narrower than LONG, so without these a schema-valid document could carry
+                // a value the protocol cannot express -- and the parser would have to be the only thing
+                // standing between it and a Call. It still is, since nothing guarantees a caller validated
+                // against this schema, but a generated client should not be able to build the bad request in
+                // the first place.
+                .minimum(0)
+                .maximum(Integer.MAX_VALUE)
                 .description("Which of a dialog's offered responses to give, as a zero-based index into the "
-                        + "ResponseOptionSet published on the event. Required for RESPOND, and meaningless "
-                        + "for every other method.")
+                        + "ResponseOptionSet published on the event, between 0 and " + Integer.MAX_VALUE
+                        + " (OPC UA Int32). Required for RESPOND, and meaningless for every other method.")
                 .writable()
                 .readable(false)
                 .endProperty()
