@@ -97,11 +97,14 @@ class ConditionSchemasFieldShapeTest {
         table.put("LocalTime", new Expected("TimeZoneDataType", ConditionSchemas.Shape.LOCAL_TIME));
         table.put("Message", new Expected("LocalizedText", ConditionSchemas.Shape.LOCALIZED_TEXT));
         table.put("Severity", new Expected("UInt16", ConditionSchemas.Shape.INTEGER));
-        // Not a member of any type: the event's own node id, selected with an empty browse path against the
-        // NodeId attribute. See OpcuaConditionType.CONDITION_ID.
-        table.put("ConditionId", new Expected("NodeId (the event node itself)", ConditionSchemas.Shape.NODE_ID));
 
         // ── ConditionType — §5.5.2 Table 8 ───────────────────────────────────────────────────────────
+        // ConditionId first, and under this heading rather than the one above. It is not a property beneath
+        // the event but the event's own node id, selected with an empty browse path against the NodeId
+        // attribute of ConditionType -- so it belongs to conditions, and a BaseEventType event has none.
+        // Listing it with the base fields is what review-03 finding 4 was about. See
+        // OpcuaConditionType.CONDITION_ID.
+        table.put("ConditionId", new Expected("NodeId (the event node itself)", ConditionSchemas.Shape.NODE_ID));
         table.put("BranchId", new Expected("NodeId", ConditionSchemas.Shape.NODE_ID));
         table.put("ClientUserId", new Expected("String", ConditionSchemas.Shape.STRING));
         table.put("Comment", new Expected("LocalizedText", ConditionSchemas.Shape.LOCALIZED_TEXT));

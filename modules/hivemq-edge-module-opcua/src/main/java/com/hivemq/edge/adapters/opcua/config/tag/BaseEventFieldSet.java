@@ -39,9 +39,18 @@ import org.jetbrains.annotations.NotNull;
  * selections to report as server failures, and a generated model no longer carries thirteen keys that are
  * permanently null.
  * <p>
- * <b>{@code ConditionId} stays.</b> It is one of {@link OpcuaConditionType#BASE_EVENT_FIELDS} rather than a
- * condition-type member — the event's own node id, selected with an empty browse path — and the positional
- * decoding depends on that list being the prefix of every select clause Edge builds, whatever the tag.
+ * <b>{@code ConditionId} went with them, and the v02 pass was wrong to keep it.</b> The argument then was that
+ * it is one of {@link OpcuaConditionType#BASE_EVENT_FIELDS} rather than a condition-type member — which was
+ * circular, because that list is a project constant and the same pass had put it there. In the OPC UA model
+ * {@code BaseEventType} defines no {@code ConditionId}; it is the virtual operand OPC 10000-9 defines on
+ * {@code ConditionType}, selected with an empty browse path, the {@code NodeId} attribute, and
+ * {@code TypeDefinitionId = ConditionType}. None of the four events a refresh tag publishes is a condition,
+ * so none of them has one — a strict server may refuse the operand outright, and a lenient one answers null
+ * for a key the schema promised.
+ * <p>
+ * The positional decoding still holds: {@code BASE_EVENT_FIELDS} remains the prefix of every select clause
+ * Edge builds, and a condition's own list simply continues with {@code ConditionId} as
+ * {@code ConditionType}'s first member.
  */
 public enum BaseEventFieldSet implements EventFieldSet {
 

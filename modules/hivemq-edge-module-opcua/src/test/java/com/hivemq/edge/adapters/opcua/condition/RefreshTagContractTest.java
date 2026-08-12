@@ -26,6 +26,9 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.eclipse.milo.opcua.stack.core.AttributeId;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.structured.SimpleAttributeOperand;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -126,8 +129,7 @@ class RefreshTagContractTest {
         // The constraint that makes the narrowing safe. The handler reads EventId and EventType out of a
         // notification by cached index, and OpcUaSubscriptionEventFieldPositionsTest requires
         // BASE_EVENT_FIELDS to be the prefix of every select clause. A refresh tag now selects exactly that
-        // list, so it is the one tag kind where prefix and whole are the same thing -- and ConditionId stays
-        // with it, being a base field rather than a ConditionType member.
+        // list, so it is the one tag kind where prefix and whole are the same thing.
         final List<String> selected =
                 refreshTag(OpcuaConditionType.CONDITION).getPublishedFields().selectedFields().stream()
                         .map(OpcuaConditionType.SelectedField::publishedAs)
@@ -135,7 +137,85 @@ class RefreshTagContractTest {
 
         assertThat(selected.subList(0, OpcuaConditionType.BASE_EVENT_FIELDS.size()))
                 .isEqualTo(OpcuaConditionType.BASE_EVENT_FIELDS);
-        assertThat(selected).contains(OpcuaConditionType.CONDITION_ID);
+    }
+
+    // ── review-03 finding 4: ConditionId is not a BaseEvent field ───────────────────────────────────
+
+    @Test
+    void aControlEventIsNotPromisedAConditionIdentity() {
+        // The v02 pass kept ConditionId here on the grounds that it is one of BASE_EVENT_FIELDS -- which was
+        // circular, because the same pass had put it in that list. BaseEventType defines no ConditionId. It
+        // is the virtual operand OPC 10000-9 defines on ConditionType, and none of RefreshStart, RefreshEnd,
+        // RefreshRequired or EventQueueOverflow is a condition.
+        assertThat(refreshTag(OpcuaConditionType.ALARM_CONDITION)
+                        .getPublishedFields()
+                        .allFields())
+                .as("a control event has no condition to identify")
+                .doesNotContain(OpcuaConditionType.CONDITION_ID);
+
+        assertThat(selectClauseFieldNames())
+                .as("and it must not be asked of the server either")
+                .doesNotContain(OpcuaConditionType.CONDITION_ID);
+    }
+
+    @Test
+    void andTheRefreshSchemaDoesNotAdvertiseOne() {
+        // The user-visible half: a schema-aware consumer was told to expect a condition identity on a stream
+        // that cannot carry one.
+        assertThat(schemaPropertyNames(
+                        refreshTag(OpcuaConditionType.ALARM_CONDITION).getPublishedFields()))
+                .doesNotContain(OpcuaConditionType.CONDITION_ID);
+    }
+
+    @Test
+    void butEveryConditionStillCarriesItInTheSamePlace() {
+        // Moved, not dropped. It is ConditionType's first own member, so it lands immediately after the base
+        // event fields in every condition's shape -- the position it held while it was wrongly one of them,
+        // which keeps the published key order of a condition event unchanged.
+        for (final OpcuaConditionType type : List.of(
+                OpcuaConditionType.CONDITION,
+                OpcuaConditionType.ALARM_CONDITION,
+                OpcuaConditionType.DIALOG_CONDITION)) {
+            assertThat(type.allFields())
+                    .as("%s publishes which condition the event is about", type.browseName())
+                    .containsSubsequence(
+                            OpcuaConditionType.BASE_EVENT_FIELDS.get(OpcuaConditionType.BASE_EVENT_FIELDS.size() - 1),
+                            OpcuaConditionType.CONDITION_ID);
+            assertThat(type.allFields().indexOf(OpcuaConditionType.CONDITION_ID))
+                    .as("directly after the base fields, as before")
+                    .isEqualTo(OpcuaConditionType.BASE_EVENT_FIELDS.size());
+        }
+    }
+
+    @Test
+    void andItIsSelectedAgainstTheTypeThatDefinesIt() {
+        // The second half of the finding, and an inconsistency inside one file: the where clause built this
+        // operand by hand with ConditionType, while the select clause hardcoded BaseEventType for every
+        // field. OPC 10000-9 defines the operand as TypeDefinitionId = ConditionType, an empty browse path
+        // and the NodeId attribute -- a strict server may refuse it written any other way.
+        final SimpleAttributeOperand[] clauses = ConditionEventFilters.forCondition(
+                        NodeId.parse("ns=2;s=Boiler1.HighTemp"), OpcuaConditionType.ALARM_CONDITION)
+                .getSelectClauses();
+        assertThat(clauses).isNotNull();
+
+        final SimpleAttributeOperand conditionId = java.util.Arrays.stream(clauses)
+                .filter(clause -> clause.getBrowsePath() == null || clause.getBrowsePath().length == 0)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no ConditionId operand in a condition's select clause"));
+
+        assertThat(conditionId.getTypeDefinitionId()).isEqualTo(NodeIds.ConditionType);
+        assertThat(conditionId.getAttributeId()).isEqualTo(AttributeId.NodeId.uid());
+
+        // The control: an ordinary field is still written against BaseEventType, whose browse paths resolve
+        // against any event type that has them.
+        final SimpleAttributeOperand ordinary = java.util.Arrays.stream(clauses)
+                .filter(clause -> clause.getBrowsePath() != null
+                        && clause.getBrowsePath().length == 1
+                        && "Severity".equals(clause.getBrowsePath()[0].getName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no Severity operand"));
+        assertThat(ordinary.getTypeDefinitionId()).isEqualTo(NodeIds.BaseEventType);
+        assertThat(ordinary.getAttributeId()).isEqualTo(AttributeId.Value.uid());
     }
 
     @Test

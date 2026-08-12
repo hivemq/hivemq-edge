@@ -67,6 +67,14 @@ public enum OpcuaConditionType implements EventFieldSet {
             "ConditionType",
             null,
             List.of(
+                    // First, so it sits immediately after the base event fields in every condition's shape --
+                    // the position it held while it was wrongly one of them, which keeps the published key
+                    // order of a condition event unchanged.
+                    //
+                    // Through Names because an enum constant cannot refer to a static field of its own class
+                    // declared below it, and enum constants have to come first. CONDITION_ID is that field,
+                    // and it is this same string.
+                    Names.CONDITION_ID,
                     "BranchId",
                     "ClientUserId",
                     "Comment",
@@ -197,27 +205,49 @@ public enum OpcuaConditionType implements EventFieldSet {
      * The field naming <em>which condition</em> an event is about.
      * <p>
      * Not a property beneath the event, unlike every other field: it is the event's own node id, so it is
-     * selected with an empty browse path against the {@code NodeId} attribute — exactly the operand the
-     * where clause uses to confine a condition tag to its own condition.
+     * selected with an empty browse path against the {@code NodeId} attribute of {@code ConditionType} —
+     * exactly the operand the where clause uses to confine a condition tag to its own condition.
      * <p>
      * That difference is why it was missing. The field table is a list of names, and this field has no name
      * to look up and a different attribute to read, so it had nowhere to sit until {@link SelectedField}
      * could carry an attribute. Meanwhile the filter built the same operand by hand, so the concept was
      * present on the subscribing side and absent on the publishing side.
      * <p>
-     * It belongs to <b>every</b> event, not just an event subscription's. The same transition must produce
-     * the same message however it was subscribed — a {@code CONDITION} tag and an
+     * It belongs to every <b>condition</b> event, whichever kind of tag delivered it. The same transition
+     * must produce the same message however it was subscribed — a {@code CONDITION} tag and an
      * {@code EVENT_SUBSCRIPTION} tag declaring one type publish one shape — and a message that can only be
      * understood by knowing which tag delivered it is not self-describing. For an event subscription it is
      * decisive rather than merely tidy: that tag carries many conditions by design, and without this field
      * nothing in the payload tells them apart.
+     * <p>
+     * <b>It is a member of {@code ConditionType}, not of {@code BaseEventType}</b>, and the v01 pass put it
+     * in the wrong list. That was invisible while only conditions were published, because every condition
+     * type inherits the base fields — but a {@code REFRESH} tag publishes {@code RefreshStart},
+     * {@code RefreshEnd}, {@code RefreshRequired} and {@code EventQueueOverflow}, which derive from
+     * {@code BaseEventType} directly and are not conditions. Those events were being asked for an operand
+     * their type does not define and promised a condition identity they cannot have. Declared here, on the
+     * type that defines it, both follow from the field list rather than needing to be remembered.
      */
-    public static final @NotNull String CONDITION_ID = "ConditionId";
+    public static final @NotNull String CONDITION_ID = Names.CONDITION_ID;
+
+    /**
+     * Field names the enum constants above need before this class declares them.
+     * <p>
+     * An enum constant's initializer cannot read a static field of its own class that is declared after it,
+     * and enum constants must come first — so {@code ConditionType} listing {@code ConditionId} among its own
+     * members has nowhere to read it from. A nested holder is initialized on first use, which is late enough.
+     * The public constants below delegate here, so there is still one spelling of each name.
+     */
+    private static final class Names {
+
+        private static final @NotNull String CONDITION_ID = "ConditionId";
+
+        private Names() {}
+    }
 
     public static final @NotNull List<String> BASE_EVENT_FIELDS = List.of(
             "EventId",
             "EventType",
-            CONDITION_ID,
             "SourceNode",
             "SourceName",
             "Time",
@@ -447,17 +477,29 @@ public enum OpcuaConditionType implements EventFieldSet {
      *                    beside it — {@code {"ActiveState": {"text": "Active", "id": true}}}.
      * @param role        what this entry contributes.
      * @param attribute   the attribute id to read, from {@code AttributeId}. {@code Value} for a property.
+     * @param typeDefinitionId the type the operand is written against. {@code BaseEventType} for an ordinary
+     *                    field, whose browse path resolves against any event that has it; {@code ConditionType}
+     *                    for {@code ConditionId}, which is defined there and nowhere else.
      */
     public record SelectedField(
             @NotNull List<String> path,
             @NotNull String publishedAs,
             @NotNull FieldRole role,
-            @NotNull UInteger attribute) {
+            @NotNull UInteger attribute,
+            @NotNull NodeId typeDefinitionId) {
 
-        /** A field read as its {@code Value}, which is every field but {@code ConditionId}. */
+        /**
+         * The root of the event type hierarchy, and the right operand type for an ordinary field.
+         * <p>
+         * Naming it means the browse paths resolve against any event type that has them, and a field a
+         * particular event lacks comes back null rather than failing the subscription.
+         */
+        public static final @NotNull NodeId BASE_EVENT_TYPE = NodeIds.BaseEventType;
+
+        /** A field read as its {@code Value} against {@code BaseEventType} — every field but {@code ConditionId}. */
         public SelectedField(
                 final @NotNull List<String> path, final @NotNull String publishedAs, final @NotNull FieldRole role) {
-            this(path, publishedAs, role, AttributeId.Value.uid());
+            this(path, publishedAs, role, AttributeId.Value.uid(), BASE_EVENT_TYPE);
         }
 
         /** Whether this selects an {@code Id} to be folded into the field before it. */
@@ -499,9 +541,14 @@ public enum OpcuaConditionType implements EventFieldSet {
         final List<SelectedField> selected = new ArrayList<>();
         for (final String field : fields) {
             if (CONDITION_ID.equals(field)) {
-                // The event node itself: no browse path to walk, and its NodeId attribute rather than a
-                // Value. See CONDITION_ID for why this one field is shaped differently from every other.
-                selected.add(new SelectedField(List.of(), field, FieldRole.VALUE, AttributeId.NodeId.uid()));
+                // The event node itself: no browse path to walk, its NodeId attribute rather than a Value,
+                // and -- the part that was wrong -- ConditionType rather than BaseEventType. All three
+                // together are what OPC 10000-9 defines this operand to be, and the type is not decoration:
+                // BaseEventType does not define ConditionId, so an operand naming it asks a strict server
+                // for something the type has never had. The where clause built the same operand by hand and
+                // got the type right, so the two halves of one concept disagreed. See CONDITION_ID.
+                selected.add(new SelectedField(
+                        List.of(), field, FieldRole.VALUE, AttributeId.NodeId.uid(), NodeIds.ConditionType));
                 continue;
             }
             if (STATE_MACHINE_FIELDS.contains(field)) {

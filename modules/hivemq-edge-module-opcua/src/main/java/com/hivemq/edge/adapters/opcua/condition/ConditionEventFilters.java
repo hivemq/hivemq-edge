@@ -56,13 +56,6 @@ public final class ConditionEventFilters {
     private ConditionEventFilters() {}
 
     /**
-     * The type whose fields are selected. {@code BaseEventType} (ns=0;i=2041) is the root of the event type
-     * hierarchy; naming it means the browse paths are resolved against any event type that has them, and
-     * fields that a particular event lacks come back null rather than failing the subscription.
-     */
-    private static final @NotNull NodeId BASE_EVENT_TYPE = NodeId.parse("ns=0;i=2041");
-
-    /**
      * The filter for a condition tag: the declared type's fields, narrowed to one condition.
      * <p>
      * The where clause is what makes the tag mean "this condition". The MonitoredItem is placed on a notifier
@@ -70,7 +63,7 @@ public final class ConditionEventFilters {
      * beneath it, so without this predicate a condition tag would publish every alarm in its area.
      *
      * @param conditionNodeId the condition the tag names.
-     * @param conditionType   the declared type, whose fields are selected.
+     * @param publishedFields the fields the tag publishes, which are the ones selected.
      */
     public static @NotNull EventFilter forCondition(
             final @NotNull NodeId conditionNodeId, final @NotNull EventFieldSet publishedFields) {
@@ -270,9 +263,12 @@ public final class ConditionEventFilters {
     private static @NotNull SimpleAttributeOperand selectField(final @NotNull OpcuaConditionType.SelectedField field) {
         final QualifiedName[] path =
                 field.path().stream().map(name -> new QualifiedName(0, name)).toArray(QualifiedName[]::new);
-        // The attribute comes from the field rather than being fixed at Value. Almost every field is a
-        // property and reads its Value; ConditionId is the event node itself, read as NodeId with an empty
-        // path -- the same operand shape conditionIdOperand() builds for the where clause.
-        return new SimpleAttributeOperand(BASE_EVENT_TYPE, path, field.attribute(), null);
+        // Both the attribute and the type come from the field rather than being fixed here. Almost every
+        // field is a property of any event, read as its Value against BaseEventType; ConditionId is the
+        // event's own node id, read as NodeId with an empty path against ConditionType -- which is the type
+        // that defines it. Fixing the type at BaseEventType made this select clause disagree with the where
+        // clause conditionIdOperand() builds for the same concept, and asked a server for an operand
+        // BaseEventType does not have.
+        return new SimpleAttributeOperand(field.typeDefinitionId(), path, field.attribute(), null);
     }
 }

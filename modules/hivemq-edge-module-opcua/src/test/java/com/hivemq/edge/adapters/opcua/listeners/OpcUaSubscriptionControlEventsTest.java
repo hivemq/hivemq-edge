@@ -547,10 +547,6 @@ class OpcUaSubscriptionControlEventsTest {
                 null);
     }
 
-    private static @NotNull OpcUaSubscription subscriptionWithId() {
-        return subscriptionWithId(4711);
-    }
-
     private static @NotNull OpcUaSubscription subscriptionWithId(final int id) {
         final OpcUaSubscription subscription = mock(OpcUaSubscription.class);
         when(subscription.getSubscriptionId()).thenReturn(Optional.of(uint(id)));
