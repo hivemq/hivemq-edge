@@ -29,10 +29,16 @@ import org.jetbrains.annotations.Nullable;
  * condition's methods to invoke, rather than one tag or schema per OPC UA method. Every method the condition
  * offers is available: Edge does not decide which of the server's own operations an operator may call.
  * <p>
- * The methods do <em>not</em> share a signature — three take {@code (EventId, Comment)}, ten take no arguments
- * at all, and {@code TimedShelve} takes a duration. That is why every field but {@code method} is optional:
- * which of them apply, and which are required, follows from the method. The check is made here rather than
- * left to the server, so a command that cannot be carried out is rejected before it becomes a call.
+ * The methods do <em>not</em> share a signature. There are four argument shapes, enumerated by
+ * {@link Method.Arguments}: {@code (EventId, Comment)} for the three that act on one transition,
+ * {@code (Duration)} for {@code TimedShelve}, {@code (SelectedResponse)} for {@code Respond}, and none at all
+ * for the rest. That is why every field but {@code method} is optional: which of them apply, and which are
+ * required, follows from the method. The check is made here rather than left to the server, so a command that
+ * cannot be carried out is rejected before it becomes a call.
+ * <p>
+ * The counts are deliberately not restated here. An earlier version of this comment said "three, ten, and
+ * TimedShelve", which was true until {@code Respond} was added and then silently was not — {@link Method} is
+ * the list, and the one place that can go stale is a prose copy of it.
  * <p>
  * {@code GetGroupMemberships} is deliberately absent: it returns data instead of requesting a transition, so a
  * southbound write is the wrong shape for it.

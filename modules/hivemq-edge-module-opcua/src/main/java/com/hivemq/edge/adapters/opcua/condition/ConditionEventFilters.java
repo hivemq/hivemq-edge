@@ -43,13 +43,15 @@ import org.jetbrains.annotations.Nullable;
  * Builds the {@link EventFilter} attached to an event-mode MonitoredItem.
  * <p>
  * An event filter has two clauses. The <em>SelectClause</em> names the fields each event should carry, by
- * browse path — there is no {@code SELECT *}, so the fields are enumerated ({@link ConditionFields#SELECTED}).
- * The <em>WhereClause</em> decides which events get through at all; it is what confines a condition tag to
- * its own condition.
+ * browse path — there is no {@code SELECT *}, so the fields are enumerated, from the tag's
+ * {@link com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition#getPublishedFields()}. The
+ * <em>WhereClause</em> decides which events get through at all; it is what confines a condition tag to its
+ * own condition.
  * <p>
  * For a condition tag the filter is fixed: select the declared type's fields, and accept only events from
- * that one condition. For an event subscription tag it is configurable — the select clause driven by a
- * projection type, and the where clause by up to three optional predicates.
+ * that one condition. For an event subscription tag it is configurable — the select clause driven by the
+ * declared type, and the where clause by up to three optional predicates. A refresh tag is the third case:
+ * see {@link #forRefresh()}.
  */
 public final class ConditionEventFilters {
 
@@ -149,9 +151,12 @@ public final class ConditionEventFilters {
      * {@code EventQueueOverflowEventType} for this item's own queue (OPC 10000-4 §7.22). Filtering
      * <em>for</em> them is impossible, so the honest construction is to filter everything else out.
      * <p>
-     * The select clause is the {@code ConditionType} field set rather than a narrower one: these events
-     * carry only {@code BaseEventType}'s fields, and asking for more costs nothing — an absent field comes
-     * back null. Using a type in the enum keeps one code path for building select clauses.
+     * The select clause is exactly {@link BaseEventFieldSet}, which is what these events carry — all four are
+     * {@code BaseEventType} subtypes with no members of their own. It was the {@code ConditionType} field set
+     * until review-03 finding 4: asking for more looks free, since an absent field comes back null, but
+     * {@code ConditionId} is not absent on a refresh event so much as meaningless — a control event reports
+     * on the subscription rather than on any condition, and a field named after one that is always null reads
+     * as a condition that could not be identified.
      */
     public static @NotNull EventFilter forRefresh() {
         final ExtensionObject alwaysFalseLeft =

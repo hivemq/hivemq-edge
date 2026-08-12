@@ -327,12 +327,15 @@ public final class ConditionSchemas {
     }
 
     /**
-     * The southbound shape, identical for every condition: {@code {method, eventId?, comment?, duration?}}.
+     * The southbound shape, identical for every condition:
+     * {@code {method, eventId?, comment?, duration?, selectedResponse?}}.
      * <p>
      * Only {@code method} is required. Which of the others apply follows from it — {@code eventId} for the
-     * three methods acting on a single transition, {@code duration} for {@code TimedShelve}, and neither for
-     * the ten that act on the condition as a whole. A static schema cannot express that dependency, so the
-     * fields are optional here and the adapter checks them per method before making the call.
+     * methods acting on a single transition, {@code duration} for {@code TimedShelve},
+     * {@code selectedResponse} for {@code Respond}, and none of them for the methods that act on the
+     * condition as a whole. {@link ConditionUpdate.Method.Arguments} is the list. A static schema cannot
+     * express that dependency, so the fields are optional here and the adapter checks them per method before
+     * making the call.
      */
     public static @NotNull Schema writeSchema() {
         return new SchemaBuilder()

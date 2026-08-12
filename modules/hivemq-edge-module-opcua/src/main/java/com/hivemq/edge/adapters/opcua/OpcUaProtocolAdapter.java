@@ -850,13 +850,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     /**
-     * Requests a state transition on a condition, as asked for by a southbound message.
-     * <p>
-     * A malformed command fails the write rather than being interpreted generously: the {@code eventId}
-     * identifies one specific transition, so guessing at a command risks acknowledging something other than
-     * what was intended.
-     */
-    /**
      * Handles a southbound write to a refresh tag: validate the command, then ask for a refresh.
      * <p>
      * Nothing from the payload reaches the server — the command carries no argument, and the subscription id
@@ -901,6 +894,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         () -> output.fail("Cannot refresh: no subscription is established yet"));
     }
 
+    /**
+     * Requests a state transition on a condition, as asked for by a southbound message.
+     * <p>
+     * A malformed command fails the write rather than being interpreted generously: the {@code eventId}
+     * identifies one specific transition, so guessing at a command risks acknowledging something other than
+     * what was intended.
+     */
     private void writeConditionUpdate(
             final @NotNull OpcUaClient client,
             final @NotNull NodeId conditionNodeId,

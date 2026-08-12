@@ -620,13 +620,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
-     * Checks if keep-alive messages are being received within the expected timeout.
-     * The timeout is computed dynamically from ConnectionOptions.
-     * Can be used for health monitoring to detect subscription issues.
-     *
-     * @return true if last keep-alive was received within the computed timeout, false otherwise
-     */
-    /**
      * The subscription currently established, or null if none is. Visible for tests that need to observe the
      * outcome of a rebuild, which happens on {@link #recoveryExecutor} and so cannot be awaited directly.
      */
@@ -655,6 +648,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         recoveryExecutor.shutdown();
     }
 
+    /**
+     * Whether keep-alive messages are arriving within the expected timeout, which is computed from
+     * {@code ConnectionOptions}. Used for health monitoring, to detect a subscription that has gone quiet.
+     *
+     * @return true if the last keep-alive was received within the computed timeout.
+     */
     public boolean isKeepAliveHealthy() {
         return (System.currentTimeMillis() - lastKeepAliveTimestamp) < getKeepAliveTimeoutMs();
     }

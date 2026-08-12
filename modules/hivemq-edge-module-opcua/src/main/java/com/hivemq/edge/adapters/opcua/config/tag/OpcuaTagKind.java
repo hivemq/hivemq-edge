@@ -20,11 +20,13 @@ package com.hivemq.edge.adapters.opcua.config.tag;
  * <p>
  * Distinct from the node's <em>type</em>, which names the structure of its northbound output and drives
  * schema generation. The kind decides how the node is observed at all — a monitored value, a condition's
- * transitions, or a query over a notifier's traffic — and therefore which schemas apply:
+ * transitions, a query over a notifier's traffic, or the adapter's refresh channel — and therefore which
+ * schemas apply:
  * <ul>
  *   <li>{@link #VALUE} — read and write schemas both derived from the device;</li>
  *   <li>{@link #CONDITION} — read schema from the type, write schema the fixed transition command;</li>
- *   <li>{@link #EVENT_SUBSCRIPTION} — read schema from the type, writing forbidden.</li>
+ *   <li>{@link #EVENT_SUBSCRIPTION} — read schema from the type, writing forbidden;</li>
+ *   <li>{@link #REFRESH} — read schema the base event fields, write schema the fixed refresh command.</li>
  * </ul>
  * The kind is stated explicitly rather than inferred from the server: inference is possible in principle
  * (NodeClass, HasTypeDefinition, the EventNotifier attribute) but the EventNotifier bit in particular is

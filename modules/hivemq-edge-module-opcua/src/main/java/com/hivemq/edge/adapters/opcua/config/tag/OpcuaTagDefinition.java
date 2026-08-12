@@ -149,7 +149,10 @@ public class OpcuaTagDefinition implements TagDefinition {
         return node;
     }
 
-    /** What the node is — an ordinary value, a single condition, or a query against a notifier. */
+    /**
+     * What the node is — an ordinary value, a single condition, a query against a notifier, or the adapter's
+     * refresh channel. See {@link OpcuaTagKind}, which is the list.
+     */
     public @NotNull OpcuaTagKind getKind() {
         return kind;
     }

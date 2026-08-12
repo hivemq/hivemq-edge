@@ -197,11 +197,6 @@ public enum OpcuaConditionType implements EventFieldSet {
             List.of("LastUpdateTime", "TrustListId", "UpdateFrequency"));
 
     /**
-     * Fields every event carries, from {@code BaseEventType} — the root above {@code ConditionType}. Selected
-     * for every condition regardless of its type, and listed first so the published shape reads in a stable
-     * order.
-     */
-    /**
      * The field naming <em>which condition</em> an event is about.
      * <p>
      * Not a property beneath the event, unlike every other field: it is the event's own node id, so it is
@@ -245,6 +240,11 @@ public enum OpcuaConditionType implements EventFieldSet {
         private Names() {}
     }
 
+    /**
+     * Fields every event carries, from {@code BaseEventType} — the root above {@code ConditionType}. Selected
+     * for every condition regardless of its type, and listed first so the published shape reads in a stable
+     * order.
+     */
     public static final @NotNull List<String> BASE_EVENT_FIELDS = List.of(
             "EventId",
             "EventType",
