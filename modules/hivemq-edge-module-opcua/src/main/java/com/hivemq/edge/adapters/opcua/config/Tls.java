@@ -201,19 +201,24 @@ public record Tls(
      *       the GET/PUT surface, where its serialized form is a clean {@code enabled=false} — and one
      *       routine save away from silently running without TLS.
      * </ul>
+     *
+     * <p>The collapsed text is deliberately <b>not</b> quoted back, and this is the worst of the three
+     * places that rule applies: the collapse takes the element's whole {@code textContent}, which is
+     * the concatenation of <em>every descendant's</em> text, so a collapsed {@code <tls>} carries the
+     * flattened contents of any nested {@link Keystore} and {@link Truststore} - store password and
+     * private-key password together. See {@link Truststore#fromText} for the disclosure path.
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     static @NotNull Tls fromText(final @Nullable String value) {
         if (value == null || value.isBlank()) {
             return defaultTls();
         }
-        throw new IllegalArgumentException(("The 'tls' configuration could not be read: it arrived as the text "
-                        + "'%s' rather than as a set of elements, which happens when the first child element is left "
-                        + "empty (for example <enabled></enabled>, or a misspelled empty element). Which element each "
-                        + "value belonged to cannot be recovered, so the adapter configuration has been rejected. "
-                        + "Give every element a value or remove it entirely. An empty <tls/> is valid and means TLS "
-                        + "is disabled.")
-                .formatted(value.trim()));
+        throw new IllegalArgumentException("The 'tls' configuration could not be read: it arrived as text rather "
+                + "than as a set of elements, which happens when the first child element is left empty (for example "
+                + "<enabled></enabled>, or a misspelled empty element). Which element each value belonged to cannot "
+                + "be recovered, so the adapter configuration has been rejected. The text is not repeated here "
+                + "because it can carry the keystore and truststore passwords. Give every element a value or remove "
+                + "it entirely. An empty <tls/> is valid and means TLS is disabled.");
     }
 
     /**

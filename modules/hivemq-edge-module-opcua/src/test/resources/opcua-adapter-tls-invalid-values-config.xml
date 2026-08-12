@@ -228,7 +228,7 @@
                     <enabled>true</enabled>
                     <truststore>
                         <path></path>
-                        <password>pw</password>
+                        <password>truststore-secret-sentinel</password>
                     </truststore>
                 </tls>
             </config>
@@ -249,7 +249,78 @@
             </northboundMappings>
         </protocol-adapter>
 
-        <!-- Nothing misspelled. This one must convert and project regardless of the eight above. -->
+        <!-- The same collapse on the keystore, which is the worse of the two: the text that survives is
+             the store password and the private-key password concatenated. -->
+        <protocol-adapter>
+            <adapterId>collapsed-keystore</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-10.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <keystore>
+                        <path></path>
+                        <password>keystore-secret-sentinel</password>
+                        <privateKeyPassword>private-key-secret-sentinel</privateKeyPassword>
+                    </keystore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-10</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/10</topic>
+                    <tagName>tag-10</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- The worst case: an empty FIRST child of <tls> collapses the whole element to its
+             textContent, which is every descendant's text concatenated - so both stores' passwords
+             arrive as one string. This is why the <tls> refusal cannot quote what it was given. -->
+        <protocol-adapter>
+            <adapterId>collapsed-tls-with-stores</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-11.factory.local:4840</uri>
+                <tls>
+                    <enabled></enabled>
+                    <truststore>
+                        <path>/opt/hivemq/truststore.jks</path>
+                        <password>truststore-secret-sentinel</password>
+                    </truststore>
+                    <keystore>
+                        <path>/opt/hivemq/keystore.jks</path>
+                        <password>keystore-secret-sentinel</password>
+                        <privateKeyPassword>private-key-secret-sentinel</privateKeyPassword>
+                    </keystore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-11</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/11</topic>
+                    <tagName>tag-11</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing misspelled. This one must convert and project regardless of the ten above. -->
         <protocol-adapter>
             <adapterId>healthy-neighbour</adapterId>
             <protocolId>opcua</protocolId>

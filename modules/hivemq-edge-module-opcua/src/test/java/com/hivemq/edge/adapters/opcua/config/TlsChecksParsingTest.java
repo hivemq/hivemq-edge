@@ -272,10 +272,13 @@ class TlsChecksParsingTest {
         // conversion succeed and put the unreadable configuration on the GET/PUT surface, where it
         // serializes as a clean enabled=false - one routine save away from silently running without
         // TLS.
+        // The collapsed text is not quoted back: a collapse takes the element's whole textContent, so a
+        // real <tls> collapse carries the flattened keystore and truststore passwords. Truststore
+        // documents the disclosure path; StoreParsingTest pins the absence with sentinels.
         assertThatThrownBy(() -> MAPPER.readValue("\"ALL\"", Tls.class))
                 .isInstanceOf(JsonMappingException.class)
                 .hasMessageContaining("could not be read")
-                .hasMessageContaining("'ALL'")
+                .hasMessageNotContaining("'ALL'")
                 .hasMessageContaining("<tls/> is valid");
     }
 

@@ -124,6 +124,15 @@ public record TlsChecksFull(
          * "these axes could not be read" survives deserialization as far as
          * {@link TlsChecksProjection#project(Tls)}, which is where the adapter is refused. Carrying the
          * text rather than a flag lets that refusal quote back what was actually found.
+         *
+         * <p>Quoting it is safe <em>here</em> and nowhere else on this surface. {@link Tls#fromText},
+         * {@link Keystore#fromText} and {@link Truststore#fromText} all refuse to repeat the text they
+         * collapsed, because a collapse takes the element's whole {@code textContent} and those
+         * elements have descendants holding passwords. This record has six components and all six are
+         * enums - {@code trustMode}, {@code sanUri}, {@code hostname}, {@code validity},
+         * {@code revocation}, {@code keyUsage} - with no nested object anywhere beneath it, so the
+         * only thing its collapsed text can contain is axis tokens the operator wrote. There the token
+         * <em>is</em> the fix, so it is quoted. The asymmetry is deliberate, not an oversight.
          */
         @JsonIgnore @Nullable String collapsedText,
 

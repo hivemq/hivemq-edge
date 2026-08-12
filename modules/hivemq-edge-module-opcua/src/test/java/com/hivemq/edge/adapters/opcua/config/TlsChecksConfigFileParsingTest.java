@@ -38,6 +38,8 @@ import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -47,6 +49,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -70,6 +74,12 @@ class TlsChecksConfigFileParsingTest {
 
     private static final @NotNull String COLLAPSED = "/opcua-adapter-tls-collapsed-elements-config.xml";
     private static final @NotNull String INVALID = "/opcua-adapter-tls-invalid-values-config.xml";
+
+    // Must match the passwords the collapsed-store adapters carry in the INVALID fixture. Conspicuous
+    // on purpose: re-introducing the interpolation these guard against would put one of them in a diff.
+    private static final @NotNull String TRUSTSTORE_SECRET = "truststore-secret-sentinel";
+    private static final @NotNull String KEYSTORE_SECRET = "keystore-secret-sentinel";
+    private static final @NotNull String PRIVATE_KEY_SECRET = "private-key-secret-sentinel";
 
     /** Every axis at its strictest value — what an unset axis resolves to. */
     private static final @NotNull EffectiveChecks MAXIMUM_VALIDATION = new EffectiveChecks(
@@ -122,7 +132,7 @@ class TlsChecksConfigFileParsingTest {
 
         assertThatThrownBy(() -> converter.fromEntity(entity))
                 .hasMessageContaining("could not be read")
-                .hasMessageContaining("'ALL'")
+                .hasMessageNotContaining("'ALL'")
                 .hasMessageContaining("<tls/> is valid");
     }
 
@@ -256,7 +266,9 @@ class TlsChecksConfigFileParsingTest {
                 "misspelled-tls-name",
                 "misspelled-policy-name",
                 "misspelled-message-security-mode",
-                "collapsed-truststore");
+                "collapsed-truststore",
+                "collapsed-keystore",
+                "collapsed-tls-with-stores");
 
         for (final ProtocolAdapterEntity entity : entitiesOf(INVALID)) {
             if ("misspelled-preset-value".equals(entity.getAdapterId())) {
@@ -392,9 +404,9 @@ class TlsChecksConfigFileParsingTest {
     }
 
     @Test
-    void aCollapsedStoreElementIsRejectedAtConversionQuotingTheText() {
-        // The other order: `<truststore><path></path><password>pw</password></truststore>` collapses
-        // to the text "pw". Which element that belonged to cannot be recovered, so the adapter is
+    void aCollapsedStoreElementIsRejectedAtConversionWithoutQuotingTheText() {
+        // The other order: `<truststore><path></path><password>...</password></truststore>` collapses
+        // to the password's text. Which element that belonged to cannot be recovered, so the adapter is
         // refused - naming the element, in place of the raw "Cannot construct instance of Truststore"
         // coercion error the same input used to produce.
         final ProtocolAdapterConfigConverter converter = createConverter();
@@ -406,8 +418,38 @@ class TlsChecksConfigFileParsingTest {
         assertThatThrownBy(() -> converter.fromEntity(entity))
                 .hasMessageContaining("'truststore'")
                 .hasMessageContaining("could not be read")
-                .hasMessageContaining("'pw'")
                 .hasMessageContaining("<truststore/> is valid");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"collapsed-truststore", "collapsed-keystore", "collapsed-tls-with-stores"})
+    void aCollapsedStoreLeaksNoSecretIntoTheExceptionTheRefreshLogs(final @NotNull String adapterId) {
+        // The production path, end to end: this is the converter ProtocolAdapterManager calls, and the
+        // throwable asserted on is the one it hands to LOGGER.error(msg, id, e) - which prints the
+        // whole chain. A collapsed store's remaining text IS its password, so a refusal that quotes it
+        // copies credential material into broker logs, log aggregation and support bundles.
+        //
+        // Asserting on the rendered chain rather than on getMessage(): Jackson wraps the
+        // IllegalArgumentException, and the wrapper, the cause and every message below it all reach the
+        // log. The equivalent assertion cannot be written against ProtocolAdapterManager itself - that
+        // test lives in hivemq-edge, which this module depends on and not the reverse, so it cannot see
+        // Truststore. This is the closest the dependency direction allows, and it covers the same text.
+        final ProtocolAdapterConfigConverter converter = createConverter();
+        final ProtocolAdapterEntity entity = entitiesOf(INVALID).stream()
+                .filter(candidate -> adapterId.equals(candidate.getAdapterId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThatThrownBy(() -> converter.fromEntity(entity))
+                .hasMessageContaining("could not be read")
+                .satisfies(thrown -> {
+                    final StringWriter rendered = new StringWriter();
+                    thrown.printStackTrace(new PrintWriter(rendered));
+                    assertThat(rendered.toString())
+                            .doesNotContain(TRUSTSTORE_SECRET)
+                            .doesNotContain(KEYSTORE_SECRET)
+                            .doesNotContain(PRIVATE_KEY_SECRET);
+                });
     }
 
     @Test

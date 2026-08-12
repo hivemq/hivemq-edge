@@ -53,19 +53,28 @@ public record Truststore(
      *       same input failed with a raw {@code Cannot construct instance of Truststore} coercion
      *       error, which names neither the element nor the fix.
      * </ul>
+     *
+     * <p>The collapsed text is deliberately <b>not</b> quoted back. It is the concatenated text of
+     * whatever elements remain, and for a store the surviving element is routinely the password -
+     * {@code <truststore><path></path><password>pw</password></truststore>} arrives here as exactly
+     * {@code "pw"}. {@link com.hivemq.protocols.ProtocolAdapterManager} logs this exception with its
+     * stack trace, so quoting the text copies credential material out of the configuration file and
+     * into broker logs, log aggregation and support bundles. Naming the element and the mistake is
+     * everything the operator can act on anyway: the collapse has already destroyed which element the
+     * text belonged to, so the value was never actionable, only informative - and not at that price.
+     * {@link TlsChecksFull} quotes its collapsed text on purpose; see there for why that one is safe.
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     static @Nullable Truststore fromText(final @Nullable String value) {
         if (value == null || value.isBlank()) {
             return null;
         }
-        throw new IllegalArgumentException(("The 'truststore' configuration could not be read: it arrived as the "
-                        + "text '%s' rather than as a set of elements, which happens when its first child element "
-                        + "is left empty (for example <path></path>). Which element each value belonged to cannot "
-                        + "be recovered, so the adapter configuration has been rejected. Give every element a value "
-                        + "or remove it entirely. An empty <truststore/> is valid and means the JVM cacerts are "
-                        + "trusted.")
-                .formatted(value.trim()));
+        throw new IllegalArgumentException("The 'truststore' configuration could not be read: it arrived as text "
+                + "rather than as a set of elements, which happens when its first child element is left empty (for "
+                + "example <path></path>). Which element each value belonged to cannot be recovered, so the adapter "
+                + "configuration has been rejected. The text is not repeated here because it can be the truststore "
+                + "password. Give every element a value or remove it entirely. An empty <truststore/> is valid and "
+                + "means the JVM cacerts are trusted.");
     }
 
     @Override
