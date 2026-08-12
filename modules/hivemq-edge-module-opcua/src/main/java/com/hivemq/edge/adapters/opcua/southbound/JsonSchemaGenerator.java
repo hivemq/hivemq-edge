@@ -389,7 +389,8 @@ public class JsonSchemaGenerator {
             final @NotNull SchemaBuilder schema, final @NotNull FieldInformation info) {
         schema.readable(info.readable()).writable(info.writable());
         if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-            applyArrayType(schema.startArray(), info.dataType(), info.arrayDimensions(), 0);
+            applyArrayType(
+                    schema.startArray(), info.dataType(), info.arrayDimensions(), 0, info.readable(), info.writable());
         } else if (!info.nestedFields().isEmpty()) {
             applyObjectProperties(schema.startObject(), info);
         } else if (info.dataType() != null) {
@@ -406,7 +407,9 @@ public class JsonSchemaGenerator {
                     prop.startArray().readable(info.readable()).writable(info.writable()),
                     info.dataType(),
                     info.arrayDimensions(),
-                    0);
+                    0,
+                    info.readable(),
+                    info.writable());
         } else if (!info.nestedFields().isEmpty()) {
             applyObjectProperties(prop.startObject(), info);
         } else if (info.dataType() != null) {
@@ -416,11 +419,23 @@ public class JsonSchemaGenerator {
         }
     }
 
+    /**
+     * Builds the item schema for an array-valued node.
+     * <p>
+     * The elements carry the node's own access flags. A writable node is written by supplying its elements, so
+     * elements that claim to be read-only describe a shape nothing can be written to — the degenerate
+     * "array of read-only items admits only {@code []}" case. Without this the elements fell back to
+     * {@link com.hivemq.adapter.sdk.api.schema.SchemaBuilder}'s {@code writable = false} default and every
+     * writable array node advertised read-only elements. Applies at every nesting depth, so a
+     * multi-dimensional array is writable all the way down.
+     */
     private static <P> void applyArrayType(
             final @NotNull ItemSchemaBuilder<P> items,
             final @Nullable OpcUaDataType opcUaType,
             final @NotNull UInteger @NotNull [] dimensions,
-            final int depth) {
+            final int depth,
+            final boolean readable,
+            final boolean writable) {
         if (depth == dimensions.length - 1) {
             if (opcUaType != null) {
                 applyScalarType(items, opcUaType);
@@ -428,8 +443,9 @@ public class JsonSchemaGenerator {
                 items.any();
             }
         } else {
-            applyArrayType(items.startArray(), opcUaType, dimensions, depth + 1);
+            applyArrayType(items.startArray(), opcUaType, dimensions, depth + 1, readable, writable);
         }
+        items.readable(readable).writable(writable);
         final long maxSize = dimensions[depth].longValue();
         if (maxSize > 0) {
             items.minContains((int) maxSize).maxContains((int) maxSize);

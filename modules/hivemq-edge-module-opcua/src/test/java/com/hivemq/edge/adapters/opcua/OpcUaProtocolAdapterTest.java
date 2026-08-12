@@ -23,6 +23,9 @@ import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.discovery.NodeTree;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -42,6 +45,8 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -141,6 +146,104 @@ public class OpcUaProtocolAdapterTest {
         assertThat(eventService.readEvents(null, null))
                 .as("No error events should be recorded on successful connection")
                 .noneMatch(event -> "ERROR".equals(event.getSeverity().name()));
+    }
+
+    /** Starts an adapter against the embedded server and waits until its client is usable. */
+    private @NotNull OpcUaProtocolAdapter startAdapterAgainstEmbeddedServer() {
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final OpcuaTag tag = new OpcuaTag(
+                "testTag",
+                "Test tag",
+                new OpcuaTagDefinition(
+                        "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
+
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
+
+        adapter = new OpcUaProtocolAdapter(adapterInformation, createMockedInput(config, List.of(tag)));
+
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(eventService);
+        when(moduleServices.protocolAdapterTagStreamingService())
+                .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
+        final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
+        when(startInput.moduleServices()).thenReturn(moduleServices);
+
+        adapter.start(
+                ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+        return adapter;
+    }
+
+    /**
+     * A browse that names no root means "start from the top", which for OPC-UA is the Objects folder (i=85).
+     * It used to fail outright, so the plain "show me this server" call returned a 500 with nothing to indicate
+     * that a root was the missing ingredient — every caller had to know to pass i=85 itself.
+     */
+    @Test
+    @Timeout(120)
+    void whenDiscoveryHasNoRootNode_thenItBrowsesFromTheObjectsFolder() throws Exception {
+        final OpcUaProtocolAdapter startedAdapter = startAdapterAgainstEmbeddedServer();
+
+        final List<String> failures = new ArrayList<>();
+        final AtomicBoolean finished = new AtomicBoolean();
+        final List<String> discovered = new CopyOnWriteArrayList<>();
+        final NodeTree nodeTree = (id, name, value, description, parentId, nodeType, selectable) -> discovered.add(id);
+
+        startedAdapter.discoverValues(
+                new ProtocolAdapterDiscoveryInput() {
+                    @Override
+                    public @Nullable String getRootNode() {
+                        return null; // the case under test
+                    }
+
+                    @Override
+                    public int getDepth() {
+                        return 1;
+                    }
+                },
+                new ProtocolAdapterDiscoveryOutput() {
+                    @Override
+                    public @NotNull NodeTree getNodeTree() {
+                        return nodeTree;
+                    }
+
+                    @Override
+                    public void finish() {
+                        finished.set(true);
+                    }
+
+                    @Override
+                    public void fail(final @NotNull Throwable t, final @Nullable String errorMessage) {
+                        failures.add(String.valueOf(errorMessage));
+                    }
+
+                    @Override
+                    public void fail(final @NotNull String errorMessage) {
+                        failures.add(errorMessage);
+                    }
+                });
+
+        await().untilAsserted(() -> assertThat(finished.get() || !failures.isEmpty())
+                .as("discovery must complete one way or the other")
+                .isTrue());
+
+        assertThat(failures)
+                .as("a browse with no root must not fail — it defaults to the Objects folder")
+                .isEmpty();
+        assertThat(discovered)
+                .as("browsing from the Objects folder must return the server's top-level objects")
+                .isNotEmpty();
     }
 
     @Test

@@ -29,7 +29,7 @@ describe('TagSchemaDrawer', () => {
 
     cy.getByTestId('dev-trigger').click()
     cy.get('[role="dialog"]#chakra-modal-tag-schema').within(() => {
-      cy.get('header').should('have.text', 'Manage the schema for the tag')
+      cy.get('header').should('have.text', 'Tag schemas')
       cy.get('footer').within(() => {
         cy.get('button').as('close').should('have.text', 'Close')
       })

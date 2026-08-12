@@ -187,6 +187,47 @@ describe('getPropertyListFrom', () => {
     expect(nameProperty).toBeDefined()
     expect(nameProperty?.required).toBeUndefined()
   })
+
+  it('should inherit readOnly from a read-only ancestor', () => {
+    // A read-only container cannot be written, so nothing beneath it can be either. JSON Schema does not
+    // require the flag to be repeated on every leaf, and uploaded/inferred combiner schemas rarely do.
+    const properties = getPropertyListFrom({
+      type: 'object',
+      properties: {
+        deviceInfo: {
+          type: 'object',
+          readOnly: true,
+          properties: {
+            serial: { type: 'string' },
+            nested: { type: 'object', properties: { deep: { type: 'string' } } },
+          },
+        },
+        setpoint: { type: 'number' },
+      },
+    })
+
+    expect(properties.find((p) => p.key === 'deviceInfo')?.readOnly).toBe(true)
+    expect(properties.find((p) => p.key === 'serial')?.readOnly).toBe(true)
+    // Inheritance must survive more than one level.
+    expect(properties.find((p) => p.key === 'deep')?.readOnly).toBe(true)
+    // ...and must not leak to a sibling of the read-only container.
+    expect(properties.find((p) => p.key === 'setpoint')?.readOnly).toBeUndefined()
+  })
+
+  it('should not override an own readOnly:false under a writable ancestor', () => {
+    const properties = getPropertyListFrom({
+      type: 'object',
+      properties: {
+        container: {
+          type: 'object',
+          properties: { writableChild: { type: 'string' } },
+        },
+      },
+    })
+
+    expect(properties.find((p) => p.key === 'container')?.readOnly).toBeUndefined()
+    expect(properties.find((p) => p.key === 'writableChild')?.readOnly).toBeUndefined()
+  })
 })
 
 describe('reducerSchemaExamples', () => {

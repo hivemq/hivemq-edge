@@ -630,7 +630,7 @@ export class ProtocolAdaptersService {
     /**
      * @deprecated
      * Deprecated. Redirects to the replacement schema endpoint.
-     * **Deprecated:** Use `GET /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}` instead. This endpoint now returns a 301 redirect to the replacement.
+     * **Deprecated:** Use `GET /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND` instead. This endpoint now returns a 301 redirect to the replacement.
      * @param adapterId The id of the adapter for which the Json Schema for writing to a PLC gets created.
      * @param tagName The tag name (urlencoded) for which the Json Schema for writing to a PLC gets created.
      * @returns void
@@ -648,7 +648,7 @@ export class ProtocolAdaptersService {
                 'tagName': tagName,
             },
             errors: {
-                301: `Moved Permanently. The schema endpoint has moved to \`/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}\`.`,
+                301: `Moved Permanently. The schema endpoint has moved to \`/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND\`.`,
             },
         });
     }
@@ -658,12 +658,14 @@ export class ProtocolAdaptersService {
      * Get a json schema that explains the json schema that represents the tag with the provided name."
      * @param adapterId The id of the adapter for which the Json Schema should be retrieved.
      * @param tagName The tag name (urlencoded) for which the Json Schema should be retrieved.
+     * @param direction The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that a write targets. Fields inside the value that the device does not accept a write for are marked readOnly. That flag is descriptive metadata only - it is a JSON Schema annotation rather than an assertion, and it is not currently enforced when a write is validated; use it to decide what to offer as a write destination, not as a safety boundary. When omitted, the NORTHBOUND schema describing the full data shape published for the tag is returned. Any other value is rejected with a 400.
      * @returns JsonNode Success
      * @throws ApiError
      */
     public getSchema(
         adapterId: string,
         tagName: string,
+        direction?: 'NORTHBOUND' | 'SOUTHBOUND',
     ): CancelablePromise<JsonNode> {
         return this.httpRequest.request({
             method: 'GET',
@@ -672,7 +674,11 @@ export class ProtocolAdaptersService {
                 'adapterId': adapterId,
                 'tagName': tagName,
             },
+            query: {
+                'direction': direction,
+            },
             errors: {
+                400: `Unknown schema direction`,
                 404: `Adapter not found`,
                 500: `Internal Server Error`,
             },
