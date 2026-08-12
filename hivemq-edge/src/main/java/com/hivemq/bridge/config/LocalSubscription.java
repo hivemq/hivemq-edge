@@ -90,6 +90,21 @@ public class LocalSubscription {
         return queueLimit;
     }
 
+    /**
+     * Compares the configured state only.
+     * <p>
+     * {@code uniqueId} is deliberately excluded: it is derived data — a digest over {@link #filters}
+     * and {@link #destination}, both of which are compared here — and it is computed lazily by
+     * {@link #calculateUniqueId()} rather than at construction. A running bridge has therefore had it
+     * filled in, while a subscription freshly read from the configuration file has not, so including
+     * it made two identical configurations compare as different (EDG-882's sibling defect, EDG-884).
+     * The config-reload path takes that as "the bridge changed", restarts the bridge in the mode that
+     * discards its queue, and destroys every message waiting to be forwarded — under an identity that
+     * recomputes to exactly the same value.
+     * <p>
+     * Excluding it is behaviour-preserving for genuine configuration changes: any change that would
+     * alter the digest necessarily alters {@code filters} or {@code destination} first.
+     */
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -101,10 +116,11 @@ public class LocalSubscription {
         if (!Objects.equals(destination, that.destination)) return false;
         if (!excludes.equals(that.excludes)) return false;
         if (!customUserProperties.equals(that.customUserProperties)) return false;
-        if (!Objects.equals(uniqueId, that.uniqueId)) return false;
         return Objects.equals(queueLimit, that.queueLimit);
     }
 
+    /** Mirrors {@link #equals(Object)}: {@code uniqueId} is excluded, so the hash is stable over the
+     * object's lifetime rather than changing the first time the digest is memoised. */
     @Override
     public int hashCode() {
         int result = filters.hashCode();
@@ -113,7 +129,6 @@ public class LocalSubscription {
         result = 31 * result + customUserProperties.hashCode();
         result = 31 * result + (preserveRetain ? 1 : 0);
         result = 31 * result + maxQoS;
-        result = 31 * result + (uniqueId != null ? uniqueId.hashCode() : 0);
         result = 31 * result + (queueLimit != null ? queueLimit.hashCode() : 0);
         return result;
     }
