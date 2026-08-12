@@ -50,6 +50,7 @@ import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -499,6 +500,87 @@ class OpcUaSubscriptionControlEventsTest {
         assertThat(refreshedSubscriptionIds()).containsExactly(uint(4711), uint(4712));
     }
 
+    // ── review-04 finding 1: the same guard on the other two callbacks ──────────────────────────────
+
+    @Test
+    void aValueFromAReplacedSubscriptionIsNotPublished() {
+        // The guard above went on the event callback and not on the value one, which is where it matters
+        // more. An event from a superseded subscription is a duplicate of one the replacement also reports;
+        // a *value* is not a transition but a state, so the stale delivery is an older reading published
+        // after a newer one. Nothing downstream can tell: a data point carries no generation, and the
+        // sample's own source timestamp is not what an arrival-ordered consumer reads.
+        final OpcuaTag tag = valueTag("boiler-temperature");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription old = subscriptionWithId(4711);
+        established(handler, 4712);
+        final long healthBefore = handler.lastKeepAliveTimestampForTesting();
+
+        handler.onDataReceived(old, List.of(itemFor(tag)), List.of(sample("stale")));
+
+        verify(publisher, never()).addDataPoint(any());
+        verify(publisher, never()).publish();
+        verify(metrics, never()).increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
+        assertThat(events.readEvents(null, null))
+                .as("nor may a subscription this handler has abandoned claim the tag's first sample")
+                .noneSatisfy(event -> assertThat(event.getMessage()).contains("first sample"));
+        assertThat(handler.lastKeepAliveTimestampForTesting())
+                .as("and a dead generation's traffic is not evidence that the live one is alive")
+                .isEqualTo(healthBefore);
+    }
+
+    @Test
+    void butAValueArrivingBeforeTheSubscriptionIsRecordedIsStillPublished() throws Exception {
+        // The allowance the guard must not cost, on the value path. Same window as its event counterpart:
+        // established() records the subscription after monitored-item synchronization, so there is a real
+        // interval in which the server publishes and the handler has not stored it yet.
+        final OpcuaTag tag = valueTag("boiler-temperature");
+        final var handler = handlerFor(tag);
+        when(client.getDynamicEncodingContext()).thenReturn(DefaultEncodingContext.INSTANCE);
+        when(publisher.addDataPoint(any()))
+                .thenReturn(mock(
+                        DataPointBuilder.class, withSettings().defaultAnswer(org.mockito.Answers.RETURNS_DEEP_STUBS)));
+
+        handler.onDataReceived(subscriptionWithId(4711), List.of(itemFor(tag)), List.of(sample("at-startup")));
+
+        verify(publisher).addDataPoint(any());
+        verify(publisher).publish();
+    }
+
+    @Test
+    void aKeepAliveFromAReplacedSubscriptionIsIgnored() {
+        // The third callback that mutates something, and the one whose something is the health answer
+        // itself. A keep-alive says a subscription is alive; a superseded one being alive says nothing
+        // about the one that replaced it, so accepting it reports the live subscription as healthy on the
+        // strength of the wrong one -- exactly when the replacement may have stopped delivering.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription old = subscriptionWithId(4711);
+        established(handler, 4712);
+        final long healthBefore = handler.lastKeepAliveTimestampForTesting();
+
+        handler.onKeepAliveReceived(old);
+
+        verify(metrics, never()).increment(Constants.METRIC_SUBSCRIPTION_KEEPALIVE_COUNT);
+        assertThat(handler.lastKeepAliveTimestampForTesting()).isEqualTo(healthBefore);
+    }
+
+    @Test
+    void butAKeepAliveArrivingBeforeTheSubscriptionIsRecordedIsAccepted() throws Exception {
+        // Same startup allowance again. A subscription keeps itself alive from the moment the server
+        // accepts it, which is before this handler records it, so rejecting these would make the handler
+        // call its own connection unhealthy for the length of the establishment it is in the middle of.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final long healthBefore = handler.lastKeepAliveTimestampForTesting();
+        // The clock this reads has millisecond resolution, and the handler stamps it in its constructor.
+        Thread.sleep(2);
+
+        handler.onKeepAliveReceived(subscriptionWithId(4711));
+
+        verify(metrics).increment(Constants.METRIC_SUBSCRIPTION_KEEPALIVE_COUNT);
+        assertThat(handler.lastKeepAliveTimestampForTesting()).isGreaterThan(healthBefore);
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     private static void refreshRequired(
@@ -586,6 +668,15 @@ class OpcUaSubscriptionControlEventsTest {
                 name,
                 "a condition tag",
                 new OpcuaTagDefinition("ns=2;s=" + name, OpcuaTagKind.CONDITION, OpcuaConditionType.ALARM_CONDITION));
+    }
+
+    private static @NotNull OpcuaTag valueTag(final @NotNull String name) {
+        return new OpcuaTag(name, "an ordinary variable", new OpcuaTagDefinition("ns=2;s=" + name));
+    }
+
+    /** A value the handler can decode, so a dropped one is the guard's doing and not a decoding failure. */
+    private static @NotNull DataValue sample(final @NotNull String value) {
+        return new DataValue(new Variant(value), StatusCode.GOOD, null);
     }
 
     private static @NotNull OpcuaTag refreshTag() {

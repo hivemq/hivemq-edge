@@ -599,8 +599,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         installSubscription(subscription);
     }
 
+    /**
+     * Receives the server's "nothing has changed" notification.
+     * <p>
+     * Guarded like the two delivery callbacks, because it writes the one field {@link #isKeepAliveHealthy()}
+     * answers from. A keep-alive is evidence that <em>a</em> subscription is alive, and a superseded one being
+     * alive says nothing about the one that replaced it — so letting a dead generation's queued keep-alive
+     * through would report the live subscription as healthy on the strength of the wrong one.
+     */
     @Override
     public void onKeepAliveReceived(final @NotNull OpcUaSubscription subscription) {
+        if (hasBeenReplaced(subscription)) {
+            return;
+        }
         lastKeepAliveTimestamp = System.currentTimeMillis();
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_KEEPALIVE_COUNT);
         subscription
@@ -646,6 +657,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     public boolean isKeepAliveHealthy() {
         return (System.currentTimeMillis() - lastKeepAliveTimestamp) < getKeepAliveTimeoutMs();
+    }
+
+    /**
+     * When a notification was last accepted. Visible for the tests that pin which notifications may move it,
+     * because {@link #isKeepAliveHealthy()} cannot stand in for it: the timeout has a fixed five-second floor
+     * in {@link #KEEP_ALIVE_SAFETY_MARGIN_MS}, so asking the health question instead would cost five seconds
+     * of wall clock per assertion about one field.
+     */
+    long lastKeepAliveTimestampForTesting() {
+        return lastKeepAliveTimestamp;
     }
 
     /**
@@ -853,11 +874,23 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 .fire();
     }
 
+    /**
+     * Receives value samples.
+     * <p>
+     * The generation guard matters more here than on the event path, and for a reason events do not have: a
+     * value is a state rather than a transition, so a sample from a superseded subscription is not a duplicate
+     * of something the replacement also reports — it is an <em>older</em> reading published after a newer one.
+     * A data point carries no generation, and its own source timestamp is not what an arrival-ordered
+     * consumer reads, so downstream state moves backwards with nothing in the payload saying why.
+     */
     @Override
     public void onDataReceived(
             final @NotNull OpcUaSubscription subscription,
             final @NotNull List<OpcUaMonitoredItem> items,
             final @NotNull List<DataValue> values) {
+        if (hasBeenReplaced(subscription)) {
+            return;
+        }
         lastKeepAliveTimestamp = System.currentTimeMillis();
         final var dataPointsPublisher = tagStreamingService.dataPointsPublisher();
         for (int i = 0; i < items.size(); i++) {
@@ -1002,6 +1035,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * so anything still arriving on it is a transition the new generation reports as well — published twice,
      * from a subscription nothing here can delete. Its {@code RefreshRequired} is likewise about a
      * subscription the server has already refused to transfer.
+     * <p>
+     * Asked by every callback that mutates health, metrics, or output — {@link #onDataReceived},
+     * {@link #onEventReceived} and {@link #onKeepAliveReceived}. That is deliberately all of them rather than
+     * the ones with a known symptom: they are three deliveries of the same fact, and the reason the value path
+     * went unguarded for a review cycle is that guarding "the path where it was noticed" is a rule about one
+     * bug rather than about generations. {@link #onTransferFailed} is the fourth and needs nothing — its
+     * {@code compareAndSet} already discriminates by generation, and has to be atomic besides.
      * <p>
      * <b>Only when a different subscription is current, never merely when none is.</b> The two are not the
      * same window and the distinction decides whether this is safe: {@link #established} records the
