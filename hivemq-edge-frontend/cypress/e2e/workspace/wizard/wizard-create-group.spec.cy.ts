@@ -125,6 +125,11 @@ describe('Wizard: Create Group', () => {
       workspacePage.bridgeNode(mockBridge.id).click()
       wizardPage.selectionPanel.selectedCount.should('contain', '2')
 
+      // Re-fit before every click made once the selection panel has grown. The panel is a
+      // top-right React Flow <Panel> whose list gains an entry per selected node, and it sits over
+      // the canvas: without re-fitting, the node this clicks can be underneath it and the click
+      // silently lands on the panel instead.
+      workspacePage.toolbox.fit.click()
       // Select another adapter
       workspacePage.adapterNode(MOCK_ADAPTER_ID3).click()
       wizardPage.selectionPanel.selectedCount.should('contain', '3')
@@ -214,12 +219,14 @@ describe('Wizard: Create Group', () => {
       wizardPage.selectionPanel.selectedCount.should('contain', '2')
       wizardPage.selectionPanel.nextButton.should('not.be.disabled')
 
-      // Deselect first node by clicking it again
+      // Deselect first node by clicking it again (re-fit first; see above)
+      workspacePage.toolbox.fit.click()
       workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
       wizardPage.selectionPanel.selectedCount.should('contain', '1')
       wizardPage.selectionPanel.nextButton.should('be.disabled')
 
       // Re-select to test remove button
+      workspacePage.toolbox.fit.click()
       workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
       wizardPage.selectionPanel.selectedCount.should('contain', '2')
 
@@ -427,12 +434,14 @@ describe('Wizard: Create Group', () => {
       // Next button should still be enabled since we have 2 nodes
       wizardPage.selectionPanel.nextButton.should('not.be.disabled')
 
-      // Modify selection - deselect one node
+      // Modify selection - deselect one node (re-fit first; see above)
+      workspacePage.toolbox.fit.click()
       workspacePage.adapterNode(MOCK_ADAPTER_ID2).click()
       wizardPage.selectionPanel.selectedCount.should('contain', '1')
       wizardPage.selectionPanel.nextButton.should('be.disabled')
 
       // Add different node
+      workspacePage.toolbox.fit.click()
       workspacePage.adapterNode(MOCK_ADAPTER_ID3).click()
       wizardPage.selectionPanel.selectedCount.should('contain', '2')
       wizardPage.selectionPanel.nextButton.should('not.be.disabled')
