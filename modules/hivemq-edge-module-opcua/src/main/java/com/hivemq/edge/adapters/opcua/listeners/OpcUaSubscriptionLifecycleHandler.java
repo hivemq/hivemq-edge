@@ -562,9 +562,41 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private boolean established(final @NotNull OpcUaSubscription subscription) {
         reportRevisedEventQueueSizes(subscription);
         reportRejectedSelectClauses(subscription);
-        currentSubscription.set(subscription);
+        installSubscription(subscription);
         requestConditionRefresh(subscription);
         return true;
+    }
+
+    /**
+     * Makes a subscription the current generation, and resets what belonged to the previous one.
+     * <p>
+     * The remembered {@code EventId}s are the state that has to move with it. They are a per-generation fact:
+     * a new subscription is a new conversation with the server, which may well re-report a
+     * {@code RefreshRequired} the old one already handled, and suppressing that as a duplicate would be
+     * answering on behalf of a subscription that no longer exists. Carrying them across also let the set act
+     * as a memory of the whole connection rather than of one subscription.
+     * <p>
+     * Separate from {@link #established} so that the two facts — "this is now the current subscription" and
+     * "the previous generation's memory is gone" — cannot come apart, and so that a test can install a
+     * subscription without also having to fake revised queue sizes and rejected select clauses.
+     */
+    private void installSubscription(final @NotNull OpcUaSubscription subscription) {
+        synchronized (handledRefreshRequests) {
+            handledRefreshRequests.clear();
+        }
+        currentSubscription.set(subscription);
+    }
+
+    /**
+     * Installs a subscription as the current generation, for tests that need one without a server.
+     * <p>
+     * The counterpart of {@link #currentSubscriptionForTesting()}, and it exists for the same reason: the
+     * generation is what several behaviours here are <em>about</em> — which subscription a refresh is sent
+     * to, and which notifications are stale — and none of that is observable on a handler that has never
+     * established one.
+     */
+    void installSubscriptionForTesting(final @NotNull OpcUaSubscription subscription) {
+        installSubscription(subscription);
     }
 
     @Override
@@ -882,6 +914,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull OpcUaSubscription subscription,
             final @NotNull List<OpcUaMonitoredItem> items,
             final @NotNull List<Variant[]> events) {
+        if (hasBeenReplaced(subscription)) {
+            return;
+        }
         lastKeepAliveTimestamp = System.currentTimeMillis();
         final var dataPointsPublisher = tagStreamingService.dataPointsPublisher();
         for (int i = 0; i < items.size(); i++) {
@@ -905,7 +940,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // drop it. Whether a user chose to see the event is unrelated to whether our alarm picture is
             // stale.
             if (isRefreshRequired(eventType)) {
-                onRefreshRequired(subscription, eventIdOf(eventFields));
+                onRefreshRequired(eventIdOf(eventFields));
             }
             // Queue overflow is likewise acted on before the publish decision, and for a sharper reason: it
             // arrives on the tag whose data was lost and on no other, so the publish decision below is the
@@ -958,6 +993,31 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             }
         }
         dataPointsPublisher.publish();
+    }
+
+    /**
+     * Whether a notification belongs to a subscription that a <em>different</em> one has since replaced.
+     * <p>
+     * A superseded subscription has no business publishing: its items were re-established on the replacement,
+     * so anything still arriving on it is a transition the new generation reports as well — published twice,
+     * from a subscription nothing here can delete. Its {@code RefreshRequired} is likewise about a
+     * subscription the server has already refused to transfer.
+     * <p>
+     * <b>Only when a different subscription is current, never merely when none is.</b> The two are not the
+     * same window and the distinction decides whether this is safe: {@link #established} records the
+     * subscription <em>after</em> monitored-item synchronization, so between the server accepting an item and
+     * that call there is a legitimate interval in which notifications arrive and {@link #currentSubscription}
+     * is still null. Dropping those would lose real alarms at connect time — a worse failure than the
+     * duplicate this prevents, and one with no symptom at all. Null therefore means "not yet known", which is
+     * not evidence of anything, while a different object means this one has been superseded.
+     */
+    private boolean hasBeenReplaced(final @NotNull OpcUaSubscription subscription) {
+        final OpcUaSubscription current = currentSubscription.get();
+        if (current == null || current == subscription) {
+            return false;
+        }
+        log.debug("Adapter '{}': ignoring a notification from a subscription that has been replaced", adapterId);
+        return true;
     }
 
     /**
@@ -1125,7 +1185,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * asks for once the current one settles. This used to fall through a bare {@code return}: the id was
      * already in {@link #isFirstSightOf}'s memory by then, so nothing could retry it and nothing said so.
      */
-    private void onRefreshRequired(final @NotNull OpcUaSubscription subscription, final @Nullable ByteString eventId) {
+    private void onRefreshRequired(final @Nullable ByteString eventId) {
         // Identity first, duration second. The two guards answer different questions: this one asks "have I
         // already handled this occurrence", the in-flight flag below asks "is a call already outstanding".
         // Only the first is a correct answer to a duplicate, because nothing bounds the copies of one
@@ -1141,7 +1201,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // it after a failed attempt would leave the window where the completion checks for pending work,
         // finds none, releases the guard, and only then does this flag go up -- with nobody left to drain it.
         refreshRequiredPending.set(true);
-        drainRefreshRequests(subscription);
+        drainRefreshRequests();
     }
 
     /**
@@ -1156,15 +1216,25 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * and a producer that arrived in between would have seen that guard held and returned. Releasing and
      * re-reading covers that producer. Each pass either starts a call or observes the flag settled, so it runs
      * at most twice in practice and cannot spin.
+     * <p>
+     * <b>No subscription is carried through here, and that is the fix rather than a simplification.</b> Both
+     * flags are handler-global while a subscription is not: a transfer failure clears the current one and a
+     * rebuild installs a replacement, so the object that delivered a {@code RefreshRequired} need not be the
+     * one a refresh should be sent to by the time the guard frees. It was carried, and that made this
+     * reachable — the old generation's completion claimed the new generation's pending work and called
+     * {@code ConditionRefresh} with an id the server had already refused to transfer, consuming the flag on
+     * the way. The new subscription then had a refresh asked of it, answered {@code Bad_SubscriptionIdInvalid}
+     * against the dead one, and nothing left to retry it. Which subscription to refresh is decided where the
+     * call is made, from {@link #currentSubscription}, so it is always the generation that is live now.
      */
-    private void drainRefreshRequests(final @NotNull OpcUaSubscription subscription) {
+    private void drainRefreshRequests() {
         while (refreshRequiredPending.get()) {
             if (!refreshRequiredInFlight.compareAndSet(false, true)) {
                 // A call is running. It drains on completion, and it will see this flag.
                 return;
             }
             if (refreshRequiredPending.compareAndSet(true, false)) {
-                requestRefreshTheServerAskedFor(subscription);
+                requestRefreshTheServerAskedFor();
                 return;
             }
             refreshRequiredInFlight.set(false);
@@ -1180,11 +1250,25 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * covered, a stuck guard silently drops every {@code RefreshRequired} the server sends for the rest of the
      * connection. Silent because the skip is a bare return: no log, no event, and the alarm picture simply
      * stops being resynchronised.
+     * <p>
+     * The subscription is read here, at the moment of the call, rather than carried from the notification that
+     * asked for the refresh — see {@link #drainRefreshRequests}. Finding none is not a lost request: the only
+     * way to be here without one is with a replacement being built, and {@link #established} refreshes every
+     * subscription it installs. So the reason this occurrence was raised for is answered by the rebuild's own
+     * refresh, which is a fuller answer than this call would have been.
      */
-    private void requestRefreshTheServerAskedFor(final @NotNull OpcUaSubscription subscription) {
+    private void requestRefreshTheServerAskedFor() {
+        final OpcUaSubscription subscription = currentSubscription.get();
+        if (subscription == null) {
+            log.debug(
+                    "Adapter '{}': the server asked for a condition refresh while no subscription is established; the replacement being built will refresh as it is established",
+                    adapterId);
+            releaseAndDrain();
+            return;
+        }
         final Optional<UInteger> subscriptionId = subscription.getSubscriptionId();
         if (subscriptionId.isEmpty()) {
-            releaseAndDrain(subscription);
+            releaseAndDrain();
             return;
         }
         log.info(
@@ -1205,14 +1289,14 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                                     adapterId,
                                     statusCode);
                         }
-                        releaseAndDrain(subscription);
+                        releaseAndDrain();
                     });
         } catch (final Exception e) {
             log.warn(
                     "Adapter '{}': the server asked for a condition refresh but the request could not be sent, so the alarm picture may stay incomplete until each alarm next changes",
                     adapterId,
                     e);
-            releaseAndDrain(subscription);
+            releaseAndDrain();
         }
     }
 
@@ -1222,9 +1306,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * A failed call still drains. The occurrence that is waiting asked the server to be re-read, not for this
      * particular attempt to succeed, and the reason it was raised for outlives the attempt.
      */
-    private void releaseAndDrain(final @NotNull OpcUaSubscription subscription) {
+    private void releaseAndDrain() {
         refreshRequiredInFlight.set(false);
-        drainRefreshRequests(subscription);
+        drainRefreshRequests();
     }
 
     /**

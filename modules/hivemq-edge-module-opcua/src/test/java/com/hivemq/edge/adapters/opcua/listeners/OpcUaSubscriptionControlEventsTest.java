@@ -47,17 +47,21 @@ import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallResponse;
 import org.eclipse.milo.opcua.stack.core.types.structured.ResponseHeader;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 /**
  * The four control events, which reach a monitored item whether or not its filter admits them.
@@ -200,7 +204,7 @@ class OpcUaSubscriptionControlEventsTest {
         // exactly what a stubbed client produces.
         final OpcuaTag tag = conditionTag("boiler-high-temp");
         final var handler = handlerFor(tag);
-        final OpcUaSubscription subscription = subscriptionWithId();
+        final OpcUaSubscription subscription = established(handler, 4711);
         stubRefreshCallCompletingImmediately();
 
         handler.onEventReceived(
@@ -228,7 +232,7 @@ class OpcUaSubscriptionControlEventsTest {
         stubRefreshCallCompletingImmediately();
 
         handler.onEventReceived(
-                subscriptionWithId(),
+                established(handler, 4711),
                 List.of(itemFor(first), itemFor(second)),
                 List.<Variant[]>of(
                         controlEvent(NodeIds.RefreshRequiredEventType, "occurrence-B"),
@@ -243,7 +247,7 @@ class OpcUaSubscriptionControlEventsTest {
         // must not be swallowed by the memory of the previous one.
         final OpcuaTag tag = conditionTag("boiler-high-temp");
         final var handler = handlerFor(tag);
-        final OpcUaSubscription subscription = subscriptionWithId();
+        final OpcUaSubscription subscription = established(handler, 4711);
         stubRefreshCallCompletingImmediately();
 
         handler.onEventReceived(
@@ -271,7 +275,7 @@ class OpcUaSubscriptionControlEventsTest {
         // call settles before the next notification is delivered, and the overlap never happens.
         final OpcuaTag tag = conditionTag("boiler-high-temp");
         final var handler = handlerFor(tag);
-        final OpcUaSubscription subscription = subscriptionWithId();
+        final OpcUaSubscription subscription = established(handler, 4711);
         final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
         when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
 
@@ -294,7 +298,7 @@ class OpcUaSubscriptionControlEventsTest {
         // for, only later.
         final OpcuaTag tag = conditionTag("boiler-high-temp");
         final var handler = handlerFor(tag);
-        final OpcUaSubscription subscription = subscriptionWithId();
+        final OpcUaSubscription subscription = established(handler, 4711);
         final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
         when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
 
@@ -315,7 +319,7 @@ class OpcUaSubscriptionControlEventsTest {
         // collide with the first.
         final OpcuaTag tag = conditionTag("boiler-high-temp");
         final var handler = handlerFor(tag);
-        final OpcUaSubscription subscription = subscriptionWithId();
+        final OpcUaSubscription subscription = established(handler, 4711);
         final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
         when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
 
@@ -335,7 +339,7 @@ class OpcUaSubscriptionControlEventsTest {
         // succeed. Draining only on success would make a transient failure swallow a reason that outlives it.
         final OpcuaTag tag = conditionTag("boiler-high-temp");
         final var handler = handlerFor(tag);
-        final OpcUaSubscription subscription = subscriptionWithId();
+        final OpcUaSubscription subscription = established(handler, 4711);
         final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
         when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
 
@@ -354,7 +358,7 @@ class OpcUaSubscriptionControlEventsTest {
         // has already been and gone.
         final OpcuaTag tag = conditionTag("boiler-high-temp");
         final var handler = handlerFor(tag);
-        final OpcUaSubscription subscription = subscriptionWithId();
+        final OpcUaSubscription subscription = established(handler, 4711);
         stubRefreshCallCompletingImmediately();
 
         refreshRequired(handler, subscription, tag, "occurrence-N");
@@ -362,6 +366,137 @@ class OpcUaSubscriptionControlEventsTest {
         refreshRequired(handler, subscription, tag, "occurrence-P");
 
         verify(client, times(3)).callAsync(any());
+    }
+
+    // ── review-03 finding 3: the coordinator outlives the subscription ──────────────────────────────
+
+    @Test
+    void aPendingRefreshIsSentToTheSubscriptionThatIsCurrentWhenTheCallIsMade() {
+        // The defect. Both coalescing flags are handler-global while a subscription is not, and every drain
+        // carried the subscription that happened to deliver the notification. So an old generation's
+        // completion claimed the new generation's pending work and called ConditionRefresh with the id the
+        // server had already refused to transfer -- consuming the flag on the way, which left the new
+        // subscription with a refresh asked of it, a Bad_SubscriptionIdInvalid against the dead one, and
+        // nothing to retry it. Exactly the window in which the retained alarm picture matters most.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription old = established(handler, 4711);
+        final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
+
+        refreshRequired(handler, old, tag, "occurrence-old");
+        verify(client, times(1)).callAsync(any());
+
+        // The transfer fails and a replacement is established, as onTransferFailed then recreateSubscription
+        // would do -- while the first refresh is still outstanding.
+        final OpcUaSubscription replacement = established(handler, 4712);
+        refreshRequired(handler, replacement, tag, "occurrence-new");
+
+        // Still one call: the in-flight guard is held by the old generation's request.
+        verify(client, times(1)).callAsync(any());
+
+        outstanding.complete(goodCallResponse());
+
+        assertThat(refreshedSubscriptionIds())
+                .as("the second refresh must name the subscription that is live, not the one that died")
+                .containsExactly(uint(4711), uint(4712));
+    }
+
+    @Test
+    void aPendingRefreshWithNoSubscriptionLeftDoesNotCallAgainstTheDeadOne() {
+        // The other half of the same window: the replacement is not established yet. There is nothing to
+        // refresh, and calling with the old id would be a request against a subscription the server has
+        // already refused to transfer. established() refreshes every subscription it installs, so the reason
+        // this occurrence was raised for is answered by the rebuild rather than dropped.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription old = established(handler, 4711);
+        final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
+
+        refreshRequired(handler, old, tag, "occurrence-old");
+        refreshRequired(handler, old, tag, "occurrence-new");
+
+        handler.onTransferFailed(old, new StatusCode(StatusCodes.Bad_SubscriptionIdInvalid));
+        outstanding.complete(goodCallResponse());
+
+        assertThat(refreshedSubscriptionIds())
+                .as("no second call, rather than a second call against 4711")
+                .containsExactly(uint(4711));
+    }
+
+    @Test
+    void andTheGuardIsReleasedSoALaterOccurrenceStillRefreshes() {
+        // The property the branch above must not cost. Skipping the call while no subscription exists has to
+        // hand the in-flight guard back, or the first RefreshRequired after a transfer failure would wedge it
+        // for the rest of the connection -- and the skip is a bare return, so nothing would say so.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription old = established(handler, 4711);
+        final CompletableFuture<CallResponse> outstanding = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(outstanding, completedRefreshCall());
+
+        refreshRequired(handler, old, tag, "occurrence-old");
+        refreshRequired(handler, old, tag, "occurrence-new");
+        handler.onTransferFailed(old, new StatusCode(StatusCodes.Bad_SubscriptionIdInvalid));
+        outstanding.complete(goodCallResponse());
+
+        final OpcUaSubscription replacement = established(handler, 4712);
+        refreshRequired(handler, replacement, tag, "occurrence-later");
+
+        assertThat(refreshedSubscriptionIds()).containsExactly(uint(4711), uint(4712));
+    }
+
+    @Test
+    void aNotificationFromAReplacedSubscriptionIsIgnored() {
+        // A superseded subscription has no business publishing: its items were re-established on the
+        // replacement, so anything still arriving on it is a transition the new generation reports as well.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription old = subscriptionWithId(4711);
+        established(handler, 4712);
+        stubRefreshCallCompletingImmediately();
+
+        refreshRequired(handler, old, tag, "occurrence-stale");
+
+        verify(client, never()).callAsync(any());
+        verify(publisher, never()).addDataPoint(any());
+    }
+
+    @Test
+    void butOneArrivingBeforeTheSubscriptionIsRecordedIsStillDelivered() throws Exception {
+        // The distinction that makes the guard above safe, and the reason it tests for a *different*
+        // subscription rather than for the absence of one. established() records the subscription after
+        // monitored-item synchronization, so there is a real interval in which the server publishes and the
+        // handler has not stored it yet. Dropping those would lose alarms at connect time, with no symptom.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        when(client.getDynamicEncodingContext()).thenReturn(DefaultEncodingContext.INSTANCE);
+        when(publisher.addDataPoint(any()))
+                .thenReturn(mock(
+                        DataPointBuilder.class, withSettings().defaultAnswer(org.mockito.Answers.RETURNS_DEEP_STUBS)));
+
+        handler.onEventReceived(
+                subscriptionWithId(4711),
+                List.of(itemFor(tag)),
+                List.<Variant[]>of(controlEvent(NodeIds.AlarmConditionType, "an-alarm-during-startup")));
+
+        verify(publisher).addDataPoint(any());
+    }
+
+    @Test
+    void aRefreshRequiredTheOldGenerationHandledIsActedOnAgainOnTheNewOne() {
+        // The deduplication memory is a per-generation fact. A new subscription is a new conversation, and a
+        // server re-reporting the same RefreshRequired to it is asking this subscription to resynchronise --
+        // suppressing that as a duplicate would be answering on behalf of one that no longer exists.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        stubRefreshCallCompletingImmediately();
+
+        refreshRequired(handler, established(handler, 4711), tag, "occurrence-repeated");
+        refreshRequired(handler, established(handler, 4712), tag, "occurrence-repeated");
+
+        assertThat(refreshedSubscriptionIds()).containsExactly(uint(4711), uint(4712));
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
@@ -413,9 +548,41 @@ class OpcUaSubscriptionControlEventsTest {
     }
 
     private static @NotNull OpcUaSubscription subscriptionWithId() {
+        return subscriptionWithId(4711);
+    }
+
+    private static @NotNull OpcUaSubscription subscriptionWithId(final int id) {
         final OpcUaSubscription subscription = mock(OpcUaSubscription.class);
-        when(subscription.getSubscriptionId()).thenReturn(Optional.of(uint(4711)));
+        when(subscription.getSubscriptionId()).thenReturn(Optional.of(uint(id)));
         return subscription;
+    }
+
+    /**
+     * A subscription the handler has been told is the current generation.
+     * <p>
+     * Installing it is not scaffolding: a refresh is sent to whichever subscription is current when the call
+     * is made, not to the one that delivered the notification asking for it, so a handler that has never
+     * established one has nothing to refresh. That is the review-03 finding 3 fix, and a test driving
+     * {@code onEventReceived} against a subscription the handler has never heard of would be modelling a
+     * situation that cannot arise — notifications only arrive on a subscription that was established.
+     */
+    private static @NotNull OpcUaSubscription established(
+            final @NotNull OpcUaSubscriptionLifecycleHandler handler, final int id) {
+
+        final OpcUaSubscription subscription = subscriptionWithId(id);
+        handler.installSubscriptionForTesting(subscription);
+        return subscription;
+    }
+
+    /** The subscription id each {@code ConditionRefresh} named, in call order. */
+    @SuppressWarnings("unchecked")
+    private @NotNull List<UInteger> refreshedSubscriptionIds() {
+        final ArgumentCaptor<List<CallMethodRequest>> captor = ArgumentCaptor.forClass(List.class);
+        verify(client, org.mockito.Mockito.atLeastOnce()).callAsync(captor.capture());
+        return captor.getAllValues().stream()
+                .flatMap(List::stream)
+                .map(request -> (UInteger) request.getInputArguments()[0].value())
+                .toList();
     }
 
     private static @NotNull OpcuaTag conditionTag(final @NotNull String name) {
