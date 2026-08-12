@@ -20,7 +20,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -60,6 +62,9 @@ final class Browsing {
      */
     private static final int MAX_PAGES = 50;
 
+    /** How many async wrappers to look through for the real cause. Nothing here nests more than two deep. */
+    private static final int MAX_UNWRAP_DEPTH = 8;
+
     private Browsing() {}
 
     /**
@@ -76,13 +81,78 @@ final class Browsing {
         @java.io.Serial
         private static final long serialVersionUID = 1L;
 
+        /**
+         * The operation status the server answered the browse with, when it answered one at all.
+         * <p>
+         * Null for a transport failure, a timeout, or an incomplete continuation — cases where no server
+         * verdict about the node exists to record. Carried rather than only rendered into the message
+         * because one of these statuses is load-bearing: see {@link #nodeNotInAddressSpace}.
+         */
+        private final transient @Nullable StatusCode status;
+
         BrowseFailedException(final @NotNull String message) {
+            this(message, (StatusCode) null);
+        }
+
+        BrowseFailedException(final @NotNull String message, final @Nullable StatusCode status) {
             super(message);
+            this.status = status;
         }
 
         BrowseFailedException(final @NotNull String message, final @NotNull Throwable cause) {
             super(message, cause);
+            this.status = null;
         }
+
+        @Nullable
+        StatusCode status() {
+            return status;
+        }
+    }
+
+    /**
+     * Whether a browse failure is the server stating that the node is not in its AddressSpace at all.
+     * <p>
+     * This is the one distinction that must survive the trip out of {@link #browseAll}, because OPC 10000-9
+     * builds a whole server model on it: §5.7.3, §5.5.6 and §5.8.17.2 each note that "some Servers do not
+     * expose Condition instances in the AddressSpace" and require every server to accept the ConditionId as
+     * the ObjectId regardless. On such a server a browse of the condition is <em>supposed</em> to come back
+     * {@code Bad_NodeIdUnknown} — that answer is the model working, not the connection failing, and a caller
+     * that treats it like a transport error refuses a command the specification says must work.
+     * <p>
+     * <b>{@code Bad_NodeIdUnknown} alone.</b> {@code Bad_NodeIdInvalid} is deliberately excluded even though
+     * the two sit together in {@code NotifierResolver}'s equivalent set: it means the id is not well formed,
+     * which is a fact about the tag's configuration rather than about the server's exposure model, and
+     * reading it as "hidden instance" would take a typo as licence to call a method with it. Everything else
+     * — authorization, transport, timeouts, a truncated continuation — keeps propagating, since none of them
+     * is evidence about whether the node exists.
+     */
+    static boolean nodeNotInAddressSpace(final @Nullable Throwable throwable) {
+        return throwable != null
+                && rootOf(throwable) instanceof final BrowseFailedException failure
+                && failure.status() != null
+                && failure.status().value() == StatusCodes.Bad_NodeIdUnknown;
+    }
+
+    /**
+     * The throwable underneath the async plumbing's wrappers.
+     * <p>
+     * Bounded rather than a {@code while (true)}: a self-referential cause would otherwise hang the caller,
+     * and nothing here nests more than a couple of stages deep.
+     */
+    private static @NotNull Throwable rootOf(final @NotNull Throwable throwable) {
+        Throwable current = throwable;
+        for (int depth = 0; depth < MAX_UNWRAP_DEPTH; depth++) {
+            if (!(current instanceof CompletionException || current instanceof ExecutionException)) {
+                return current;
+            }
+            final Throwable cause = current.getCause();
+            if (cause == null || cause == current) {
+                return current;
+            }
+            current = cause;
+        }
+        return current;
     }
 
     /**
@@ -122,8 +192,13 @@ final class Browsing {
                     // Bad_NodeIdUnknown -- or a permissions refusal -- for a node with no references.
                     final StatusCode status = result.getStatusCode();
                     if (status != null && status.isBad()) {
+                        // The status is carried, not just printed. This is the one place a server answers
+                        // "that node is not here", and callers that browse a Condition need to tell it apart
+                        // from every other bad outcome -- see nodeNotInAddressSpace. Only this status is
+                        // carried: a BrowseNext refusal below is about a continuation point rather than
+                        // about the node, so attaching it would let a paging failure read as a hidden node.
                         return CompletableFuture.failedFuture(new BrowseFailedException(
-                                "browsing " + browse.getNodeId() + " was refused by the server: " + status));
+                                "browsing " + browse.getNodeId() + " was refused by the server: " + status, status));
                     }
                     return collect(client, result, new ArrayList<>(), 1);
                 });

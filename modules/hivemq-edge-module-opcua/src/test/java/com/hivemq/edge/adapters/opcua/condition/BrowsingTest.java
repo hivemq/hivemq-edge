@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -259,6 +260,88 @@ class BrowsingTest {
         assertThatThrownBy(() -> Browsing.browseAll(client, BROWSE).join())
                 .cause()
                 .hasMessageContaining("refused");
+    }
+
+    @Test
+    void whenTheServerSaysTheNodeIsUnknown_thenTheFailureCarriesThatStatusForCallersToRecognise() {
+        // Review-03 finding 1. This status is not interchangeable with the other bad ones: OPC 10000-9 lets a
+        // server keep its Condition instances out of the AddressSpace, and this is how such a server answers
+        // a browse of one. Rendering it into the message alone left callers with a string to match on, so
+        // the type-level MethodId fallback could never be selected.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(
+                        new BrowseResult(new StatusCode(StatusCodes.Bad_NodeIdUnknown), ByteString.NULL_VALUE, null)));
+
+        final Throwable thrown =
+                catchThrowable(() -> Browsing.browseAll(client, BROWSE).join());
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown))
+                .as("the caller must be able to tell this apart from every other browse failure")
+                .isTrue();
+    }
+
+    @Test
+    void whenTheServerRefusesForAnyOtherReason_thenItIsNotReportedAsAnAbsentNode() {
+        // The boundary. Bad_UserAccessDenied is the server declining to answer, which says nothing about
+        // whether the node exists -- and acting on it as if it did would send a side-effecting Call.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(new BrowseResult(
+                        new StatusCode(StatusCodes.Bad_UserAccessDenied), ByteString.NULL_VALUE, null)));
+
+        final Throwable thrown =
+                catchThrowable(() -> Browsing.browseAll(client, BROWSE).join());
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
+    }
+
+    @Test
+    void andNeitherIsABadlyFormedNodeId() {
+        // Bad_NodeIdInvalid sits with Bad_NodeIdUnknown in NotifierResolver's set and is deliberately not in
+        // this one: it means the id is malformed, which is a fact about the tag rather than about the
+        // server's exposure model. Reading it as "hidden instance" would take a typo as licence to call a
+        // method with it.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(
+                        new BrowseResult(new StatusCode(StatusCodes.Bad_NodeIdInvalid), ByteString.NULL_VALUE, null)));
+
+        final Throwable thrown =
+                catchThrowable(() -> Browsing.browseAll(client, BROWSE).join());
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
+    }
+
+    @Test
+    void andNeitherIsATransportFailureThatCarriesNoStatusAtAll() {
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("not connected")));
+
+        final Throwable thrown =
+                catchThrowable(() -> Browsing.browseAll(client, BROWSE).join());
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
+        assertThat(Browsing.nodeNotInAddressSpace(null)).isFalse();
+    }
+
+    @Test
+    void andNeitherIsAPagingFailureThatHappensToNameTheSameStatus() {
+        // The status is carried from the first page's operation result only. A BrowseNext answers about a
+        // continuation point, not about the node, so a bad status there must not read as a hidden instance --
+        // the node was browsable enough to return a first page.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(page(token("cp-1"), "Acknowledge")));
+        when(client.browseNextAsync(eq(false), any()))
+                .thenReturn(CompletableFuture.completedFuture(nextResponse(
+                        new BrowseResult(new StatusCode(StatusCodes.Bad_NodeIdUnknown), ByteString.NULL_VALUE, null))));
+
+        final Throwable thrown =
+                catchThrowable(() -> Browsing.browseAll(client, BROWSE).join());
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
     }
 
     @Test

@@ -1589,6 +1589,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     /**
      * Verifies a condition tag: the device's condition must satisfy the declared type, and a notifier to
      * receive its events from must be found.
+     * <p>
+     * A condition the server does not expose at all is the one case that is neither verified nor rejected on
+     * the verifier's word alone — see {@link #acceptsUnverified}.
      */
     private @NotNull Optional<VerifiedTag> verifyCondition(
             final @NotNull OpcuaTag opcuaTag, final @NotNull NodeId node, final @NotNull String tagName)
@@ -1601,6 +1604,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
         if (result instanceof final ConditionTypeVerifier.Result.Rejected rejected) {
             reportUnsubscribableTag(tagName, rejected.reason());
+            return Optional.empty();
+        }
+        if (result instanceof final ConditionTypeVerifier.Result.Unverifiable unverifiable
+                && !acceptsUnverified(definition, tagName, unverifiable)) {
             return Optional.empty();
         }
 
@@ -1639,6 +1646,50 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 found.notifier(),
                 found.how());
         return Optional.of(new VerifiedTag(opcuaTag, node, found.notifier(), null, null));
+    }
+
+    /**
+     * Whether to subscribe a condition the server does not expose, and therefore could not be checked.
+     * <p>
+     * OPC 10000-9 §4.3 permits a server to keep its Condition instances out of the AddressSpace and deliver
+     * them through events alone, and the rest of Edge now supports that server: the writer calls the standard
+     * type's MethodId with the ConditionId as ObjectId, and the tag's events arrive through a notifier rather
+     * than through the condition node. Refusing the tag here made all of that unreachable.
+     * <p>
+     * <b>The gate is {@code notifierNode}, and it is not a formality.</b> A typo in {@code node} produces the
+     * identical {@code Bad_NodeIdUnknown}, and waiving verification for it would trade a clear rejection at
+     * start for a tag that subscribes cleanly and stays silent forever — the failure mode this module works
+     * hardest to avoid, because nothing distinguishes it from an alarm that has not fired. Requiring the
+     * notifier to be named means an operator on such a server states both halves of what they know, and an
+     * ordinary misconfiguration — which has no reason to name a notifier — still fails loudly. It is also
+     * exactly the field a hidden-instance server forces anyway: the notifier walk starts at the condition, so
+     * it cannot run when the condition is not there to walk from.
+     *
+     * @return true when the tag may proceed unverified; false when it was reported and must be dropped.
+     */
+    private boolean acceptsUnverified(
+            final @NotNull OpcuaTagDefinition definition,
+            final @NotNull String tagName,
+            final @NotNull ConditionTypeVerifier.Result.Unverifiable unverifiable) {
+
+        if (definition.getNotifierNode() == null) {
+            reportUnsubscribableTag(
+                    tagName,
+                    unverifiable.reason()
+                            + ". If this server is one of those, set 'notifierNode' on the tag to name the "
+                            + "node its events arrive from: Edge cannot walk to one from a condition that is "
+                            + "not in the address space, and naming it is how you confirm the node id is "
+                            + "meant to be unbrowsable rather than mistyped. Otherwise check 'node' — a "
+                            + "wrong node id is refused with the same status");
+            return false;
+        }
+        log.warn(
+                "Adapter '{}': {}. Subscribing it unverified because the tag names its notifier explicitly. "
+                        + "Edge cannot confirm the node is a condition, that it is of the declared type, or "
+                        + "that it exists at all — if this tag never publishes, check 'node' first.",
+                adapterId,
+                unverifiable.reason());
+        return true;
     }
 
     /**

@@ -16,17 +16,21 @@
 package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
@@ -48,6 +52,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.CallResponse;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.ResponseHeader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -70,6 +75,12 @@ import org.mockito.ArgumentCaptor;
  * <p>
  * Stubbed rather than run against the embedded server for the same reason the sibling resolution test is:
  * Milo's namespace always exposes the instance, so the case under test is one it cannot model.
+ * <p>
+ * <b>Review-03 finding 1 corrected the stub itself.</b> Its first version answered every browse with
+ * {@code Good} and an empty reference array, which is a node that exists and has no children — not a node the
+ * server keeps out of its AddressSpace. The tests passed, and the case they were written for did not work:
+ * a conforming server refuses the browse with {@code Bad_NodeIdUnknown}, and that failure propagated past the
+ * fallback. The default here is now the real status, with the childless-but-present case kept as its own test.
  */
 class ConditionUpdateWriterHiddenInstanceTest {
 
@@ -79,8 +90,25 @@ class ConditionUpdateWriterHiddenInstanceTest {
 
     private static final @NotNull ByteString EVENT_ID = ByteString.of(new byte[] {1, 2, 3, 4});
 
-    /** What each node exposes as components. Absent means the node cannot be browsed at all. */
+    /**
+     * What each node exposes as components. A node in neither this map nor {@link #exposedWithNoComponents}
+     * is <b>not in the AddressSpace at all</b>, and the stub answers a browse of it the way a conforming
+     * server does: {@code Bad_NodeIdUnknown}.
+     * <p>
+     * That status is the point of this fixture and was the flaw in its first version, which answered
+     * {@code Good} with an empty reference array. Those are two different servers. {@code Good} with nothing
+     * in it describes a node that is present and childless — so it exercised the type-level fallback under
+     * the one status that let control reach it, and the genuinely hidden instance the fallback exists for
+     * still failed: {@code Browsing.browseAll} turns a bad operation status into a failed future, which
+     * propagated straight past the {@code resolved == null} branch.
+     */
     private final @NotNull Map<NodeId, List<String>> components = new HashMap<>();
+
+    /** Nodes the server does expose, but which carry no components — the other, weaker case. */
+    private final @NotNull Set<NodeId> exposedWithNoComponents = new HashSet<>();
+
+    /** When set, every browse is refused with this status instead — for failures that are not about existence. */
+    private @Nullable StatusCode browseRefusal;
 
     private @NotNull OpcUaClient client;
 
@@ -90,8 +118,17 @@ class ConditionUpdateWriterHiddenInstanceTest {
         when(client.getNamespaceTable()).thenReturn(new NamespaceTable());
         when(client.browseAsync(any(BrowseDescription.class))).thenAnswer(invocation -> {
             final BrowseDescription browse = invocation.getArgument(0);
-            final List<String> exposed = components.getOrDefault(browse.getNodeId(), List.of());
-            final ReferenceDescription[] references = exposed.stream()
+            if (browseRefusal != null) {
+                return CompletableFuture.completedFuture(new BrowseResult(browseRefusal, ByteString.NULL_VALUE, null));
+            }
+            final NodeId node = browse.getNodeId();
+            if (!components.containsKey(node) && !exposedWithNoComponents.contains(node)) {
+                // The server model this whole class is about: the instance is not in the AddressSpace, so
+                // there is no node to browse and the server says exactly that.
+                return CompletableFuture.completedFuture(
+                        new BrowseResult(new StatusCode(StatusCodes.Bad_NodeIdUnknown), ByteString.NULL_VALUE, null));
+            }
+            final ReferenceDescription[] references = components.getOrDefault(node, List.of()).stream()
                     .map(ConditionUpdateWriterHiddenInstanceTest::componentReference)
                     .toArray(ReferenceDescription[]::new);
             return CompletableFuture.completedFuture(
@@ -172,6 +209,7 @@ class ConditionUpdateWriterHiddenInstanceTest {
         // The server exposes ShelvingState but not the method beneath it. The Call names the state machine
         // object, so the type that defines the method is ShelvedStateMachineType.
         components.put(CONDITION, List.of("ShelvingState"));
+        exposedWithNoComponents.add(SHELVING_STATE);
 
         request(ConditionUpdate.Method.UNSHELVE, null, null, null);
 
@@ -265,6 +303,48 @@ class ConditionUpdateWriterHiddenInstanceTest {
 
         assertThat(status).isEqualTo(new StatusCode(StatusCodes.Bad_UserAccessDenied));
         verify(client, times(1)).callAsync(any());
+    }
+
+    @Test
+    void aNodeThatIsExposedButChildlessReachesTheSameFallback() {
+        // The weaker case, and the one this fixture used to model exclusively. A server that answers the
+        // browse with Good and no references has told us the node is there and has no Acknowledge beneath
+        // it; the type-level MethodId is the right answer for that too. Kept as a distinct test rather than
+        // as the default so neither case can be lost behind the other again.
+        exposedWithNoComponents.add(CONDITION);
+
+        request(ConditionUpdate.Method.ACKNOWLEDGE, EVENT_ID, null, null);
+
+        final CallMethodRequest call = onlyCall();
+        assertThat(call.getObjectId()).isEqualTo(CONDITION);
+        assertThat(call.getMethodId()).isEqualTo(NodeIds.AcknowledgeableConditionType_Acknowledge);
+    }
+
+    @Test
+    void aRefusalThatIsNotAboutTheNodesExistenceIsNotTakenForAHiddenInstance() {
+        // The boundary of the fallback, and the reason it keys on one status rather than on "the browse
+        // failed". Bad_UserAccessDenied says the session may not browse the node -- it says nothing about
+        // whether the node is there -- so guessing that the condition is hidden and calling the standard
+        // MethodId anyway would send a side-effecting Call after the server declined to answer.
+        browseRefusal = new StatusCode(StatusCodes.Bad_UserAccessDenied);
+
+        assertThatThrownBy(() -> request(ConditionUpdate.Method.ACKNOWLEDGE, EVENT_ID, null, null))
+                .hasRootCauseInstanceOf(Browsing.BrowseFailedException.class);
+
+        verify(client, never()).callAsync(any());
+    }
+
+    @Test
+    void neitherIsATransportFailure() {
+        // The same rule for a failure that carries no status at all. Nothing about a dropped connection
+        // implies the condition is absent from the AddressSpace.
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("not connected")));
+
+        assertThatThrownBy(() -> request(ConditionUpdate.Method.ACKNOWLEDGE, EVENT_ID, null, null))
+                .hasRootCauseInstanceOf(IllegalStateException.class);
+
+        verify(client, never()).callAsync(any());
     }
 
     @Test

@@ -68,6 +68,23 @@ public final class ConditionTypeVerifier {
          * operator needs to know which tag, what was declared and what was found.
          */
         record Rejected(@NotNull String reason) implements Result {}
+
+        /**
+         * The server does not expose this Condition instance, so there was nothing to check the declaration
+         * against — <em>not</em> a statement that the declaration is wrong.
+         * <p>
+         * A third answer because the two that existed both misreport this case. "Verified" would claim a
+         * check happened, and "Rejected" makes the tag impossible on a server model OPC 10000-9 §4.3
+         * explicitly permits: a server may keep Condition instances out of the AddressSpace and deliver them
+         * through events alone. That server answers a browse of the condition with {@code Bad_NodeIdUnknown},
+         * which is the model working rather than the device failing.
+         * <p>
+         * What to do about it is the caller's to decide, and deliberately not decided here. Waiving
+         * verification is only safe when the operator has said they meant it — a typo in {@code node}
+         * produces this very same status — so the policy lives with the code that can see the rest of the
+         * tag. See {@code OpcUaSubscriptionLifecycleHandler.verifyCondition}.
+         */
+        record Unverifiable(@NotNull String reason) implements Result {}
     }
 
     /**
@@ -76,6 +93,9 @@ public final class ConditionTypeVerifier {
      * Never completes exceptionally: a browse that fails, a node with no type definition, and a vendor type
      * outside the standard tree are all reported as {@link Result.Rejected} rather than thrown. A condition
      * tag that cannot be verified must fail alone, not take the adapter's start with it.
+     * <p>
+     * The one failure that is not a rejection is a server saying the node is not in its address space, which
+     * is a supported model rather than a fault — see {@link Result.Unverifiable}.
      *
      * @param client        the connected client.
      * @param conditionNode the node the tag points at.
@@ -103,8 +123,25 @@ public final class ConditionTypeVerifier {
         // server did not answer.
         return Browsing.browseAll(client, browse)
                 .thenCompose(references -> compare(client, references, declaredType, tagName))
-                .exceptionally(throwable -> new Result.Rejected("could not read the type of '" + tagName
-                        + "' from the device: " + Browsing.describeException(throwable)));
+                .exceptionally(throwable -> {
+                    // One failure among these is not a failure at all. A server that keeps its Condition
+                    // instances out of the AddressSpace answers this browse with Bad_NodeIdUnknown by
+                    // design, and folding that in with transport errors made the tag unsubscribable on
+                    // exactly the servers OPC 10000-9 §4.3 describes -- the writer's type-level fallback
+                    // could never be exercised, because the tag never got as far as being subscribed.
+                    if (Browsing.nodeNotInAddressSpace(throwable)) {
+                        return new Result.Unverifiable("the server does not expose node "
+                                + conditionNode
+                                + " in its address space, so tag '"
+                                + tagName
+                                + "' could not be checked against the '"
+                                + declaredType.browseName()
+                                + "' it declares. OPC 10000-9 §4.3 permits a server to keep its condition "
+                                + "instances out of the address space and deliver them through events alone");
+                    }
+                    return new Result.Rejected("could not read the type of '" + tagName + "' from the device: "
+                            + Browsing.describeException(throwable));
+                });
     }
 
     private static @NotNull CompletableFuture<Result> compare(

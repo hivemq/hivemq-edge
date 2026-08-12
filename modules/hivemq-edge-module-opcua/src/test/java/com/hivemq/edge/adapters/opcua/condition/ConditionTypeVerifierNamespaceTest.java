@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -156,6 +157,39 @@ class ConditionTypeVerifierNamespaceTest {
         assertThat(((ConditionTypeVerifier.Result.Rejected) result).reason())
                 .contains("could not read the type")
                 .contains("not connected");
+    }
+
+    @Test
+    void aConditionTheServerDoesNotExposeIsUnverifiableRatherThanRejected() {
+        // Review-03 finding 1, at the subscription boundary. OPC 10000-9 §4.3 permits a server to keep its
+        // condition instances out of the address space, and such a server answers this browse with
+        // Bad_NodeIdUnknown by design. Folding that in with transport errors made the tag impossible to
+        // subscribe -- so the writer's type-level fallback, added for the same finding one review earlier,
+        // could never be reached: the tag never got as far as being subscribed.
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(
+                        new BrowseResult(new StatusCode(StatusCodes.Bad_NodeIdUnknown), ByteString.NULL_VALUE, null)));
+
+        final ConditionTypeVerifier.Result result = verify(OpcuaConditionType.ALARM_CONDITION);
+
+        assertThat(result).isInstanceOf(ConditionTypeVerifier.Result.Unverifiable.class);
+        assertThat(((ConditionTypeVerifier.Result.Unverifiable) result).reason())
+                .as("the operator needs the node id and the reason, not a verdict about the declaration")
+                .contains("does not expose node")
+                .contains("§4.3");
+    }
+
+    @Test
+    void anyOtherRefusalIsStillARejection() {
+        // The boundary. A server that will not let this session browse the node has said nothing about
+        // whether the node exists, so the tag is dropped rather than waved through unverified.
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(new BrowseResult(
+                        new StatusCode(StatusCodes.Bad_UserAccessDenied), ByteString.NULL_VALUE, null)));
+
+        final ConditionTypeVerifier.Result result = verify(OpcuaConditionType.ALARM_CONDITION);
+
+        assertThat(result).isInstanceOf(ConditionTypeVerifier.Result.Rejected.class);
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────

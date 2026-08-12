@@ -510,8 +510,20 @@ public final class ConditionUpdateWriter {
      * <p>
      * Used for both lookups this class needs — the method on an object, and the {@code ShelvingState} object
      * on a condition — because they are the same operation over a different node class.
+     * <p>
+     * <b>A node the server does not expose answers {@code null} too</b>, and that is the whole hidden-instance
+     * path rather than a convenience. Both callers ask this the same question — "is there a node here to
+     * name in the Call?" — and both have the same correct answer when there is not: {@link #callTypeLevel}
+     * for a method, the ConditionId itself for {@code ShelvingState}. A server that keeps its Condition
+     * instances out of the AddressSpace reports that by refusing the browse with {@code Bad_NodeIdUnknown},
+     * which {@link Browsing#browseAll} turns into a failed future — so before this, the exception propagated
+     * past the {@code resolved == null} branch and the type-level fallback added for review-02 finding 1 was
+     * unreachable on the very servers it was written for. Every other failure still propagates: an
+     * authorization refusal or a dropped connection is not evidence that a node is absent, and treating it
+     * as such would send a Call after the server declined to answer.
      *
-     * @return the matching node, or {@code null} when the node has no such component.
+     * @return the matching node, or {@code null} when the node has no such component — or is not in the
+     *         server's AddressSpace at all.
      */
     private static @NotNull CompletableFuture<NodeId> browseComponent(
             final @NotNull OpcUaClient client,
@@ -530,17 +542,32 @@ public final class ConditionUpdateWriter {
         // browseAll, not browseAsync: a condition can carry a great many components -- both forms of every
         // method, the state machines, vendor extensions -- and a server that pages its answer would
         // otherwise make a present method look absent.
-        return Browsing.browseAll(client, browse).thenApply(references -> {
-            for (final ReferenceDescription reference : references) {
-                if (Browsing.isStandardName(reference.getBrowseName(), browseName)) {
-                    return reference
-                            .getNodeId()
-                            .toNodeId(client.getNamespaceTable())
-                            .orElse(null);
-                }
-            }
-            return null;
-        });
+        return Browsing.browseAll(client, browse)
+                .thenApply(references -> {
+                    for (final ReferenceDescription reference : references) {
+                        if (Browsing.isStandardName(reference.getBrowseName(), browseName)) {
+                            return reference
+                                    .getNodeId()
+                                    .toNodeId(client.getNamespaceTable())
+                                    .orElse(null);
+                        }
+                    }
+                    return null;
+                })
+                .exceptionallyCompose(throwable -> {
+                    if (!Browsing.nodeNotInAddressSpace(throwable)) {
+                        return CompletableFuture.failedFuture(throwable);
+                    }
+                    log.debug(
+                            "Node {} is not in the server's AddressSpace, so it exposes no {} to name in the "
+                                    + "Call. OPC 10000-9 permits a server to keep its Condition instances out "
+                                    + "of the AddressSpace and requires it to accept the ConditionId as the "
+                                    + "ObjectId regardless, so this is the standard-nodeset path rather than a "
+                                    + "failure.",
+                            parentNodeId,
+                            browseName);
+                    return CompletableFuture.<NodeId>completedFuture(null);
+                });
     }
 
     /**
