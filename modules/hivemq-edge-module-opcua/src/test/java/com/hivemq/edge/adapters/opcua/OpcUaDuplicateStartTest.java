@@ -36,11 +36,13 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -99,6 +101,7 @@ class OpcUaDuplicateStartTest {
                 .isNotNull();
         assertThat(healthAfterFirst).isNotNull();
 
+        pinTheConnection(started);
         started.start(
                 ProtocolAdapterConnectionDirection.Northbound, startInput(), mock(ProtocolAdapterStartOutput.class));
 
@@ -117,6 +120,7 @@ class OpcUaDuplicateStartTest {
         final ExecutorService retry = scheduler(started, "retryScheduler");
         final ExecutorService health = scheduler(started, "healthCheckScheduler");
 
+        pinTheConnection(started);
         started.start(
                 ProtocolAdapterConnectionDirection.Northbound, startInput(), mock(ProtocolAdapterStartOutput.class));
         started.destroy();
@@ -135,6 +139,7 @@ class OpcUaDuplicateStartTest {
         final OpcUaProtocolAdapter started = startedAdapter();
         final ProtocolAdapterStartOutput output = mock(ProtocolAdapterStartOutput.class);
 
+        pinTheConnection(started);
         started.start(ProtocolAdapterConnectionDirection.Northbound, startInput(), output);
 
         verify(output).failStart(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.contains("already"));
@@ -160,16 +165,7 @@ class OpcUaDuplicateStartTest {
         final ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
         when(input.getAdapterId()).thenReturn("test-adapter-id");
         when(input.getProtocolAdapterState()).thenReturn(protocolAdapterState);
-        when(input.getConfig())
-                .thenReturn(new OpcUaSpecificAdapterConfig(
-                        "opc.tcp://127.0.0.1:4840",
-                        false,
-                        null,
-                        null,
-                        null,
-                        OpcUaToMqttConfig.defaultOpcUaToMqttConfig(),
-                        null,
-                        ConnectionOptions.defaultConnectionOptions()));
+        when(input.getConfig()).thenReturn(adapterConfig());
         when(input.getTags()).thenReturn(new ArrayList<Tag>(List.of(tag)));
         when(input.adapterFactories()).thenReturn(mock(AdapterFactories.class));
         when(input.getProtocolAdapterMetricsHelper()).thenReturn(mock(ProtocolAdapterMetricsService.class));
@@ -186,6 +182,60 @@ class OpcUaDuplicateStartTest {
         final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
         when(startInput.moduleServices()).thenReturn(moduleServices);
         return startInput;
+    }
+
+    private static @NotNull OpcUaSpecificAdapterConfig adapterConfig() {
+        return new OpcUaSpecificAdapterConfig(
+                "opc.tcp://127.0.0.1:4840",
+                false,
+                null,
+                null,
+                null,
+                OpcUaToMqttConfig.defaultOpcUaToMqttConfig(),
+                null,
+                ConnectionOptions.defaultConnectionOptions());
+    }
+
+    /**
+     * Guarantees the adapter is holding a connection, so the next {@code start()} is unambiguously a duplicate.
+     * <p>
+     * Without this the test races the adapter's own connect. {@code attemptConnection} runs asynchronously
+     * against an address with no server behind it, and its failure path clears the connection slot — so on a
+     * slower machine the second {@code start()} finds an empty slot, which is a legitimate fresh start rather
+     * than the duplicate this is about, and creating new executors there is correct. It passed locally and
+     * failed on CI for exactly that reason: {@code to refer to the same object}, with two different
+     * executors, because the second call was never a duplicate at all.
+     * <p>
+     * A fresh connection object rather than the one the first start installed, because reading that one back
+     * is the same race one step earlier. Constructing it is cheap and does no I/O — the connect happens in
+     * {@code attemptConnection}, not here — and the package-private constructor is reachable because this
+     * test shares the adapter's package.
+     */
+    private void pinTheConnection(final @NotNull OpcUaProtocolAdapter adapter) {
+        final OpcuaTag tag =
+                new OpcuaTag("boiler-temperature", "", new OpcuaTagDefinition("ns=2;s=Boiler1.Temperature"));
+        final OpcUaClientConnection connection = new OpcUaClientConnection(
+                "test-adapter-id",
+                List.of(tag),
+                protocolAdapterState,
+                mock(ProtocolAdapterTagStreamingService.class),
+                new FakeEventService(),
+                mock(ProtocolAdapterMetricsService.class),
+                adapterConfig(),
+                mock(OpcUaServiceFaultListener.class));
+        connectionSlot(adapter).set(connection);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static @NotNull AtomicReference<OpcUaClientConnection> connectionSlot(
+            final @NotNull OpcUaProtocolAdapter adapter) {
+        try {
+            final Field field = OpcUaProtocolAdapter.class.getDeclaredField("opcUaClientConnection");
+            field.setAccessible(true);
+            return (AtomicReference<OpcUaClientConnection>) field.get(adapter);
+        } catch (final ReflectiveOperationException e) {
+            throw new LinkageError("the adapter no longer holds its connection in 'opcUaClientConnection'", e);
+        }
     }
 
     private static @NotNull ExecutorService scheduler(
