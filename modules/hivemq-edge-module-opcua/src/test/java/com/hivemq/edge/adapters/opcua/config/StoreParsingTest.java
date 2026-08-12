@@ -78,8 +78,8 @@ class StoreParsingTest {
         // anchors the operator did not write - so the adapter is refused. The text itself is the
         // truststore password, and ProtocolAdapterManager logs this exception with its stack trace,
         // so refusing must not become a way of copying it into the logs.
-        assertThatThrownBy(() -> MAPPER.readValue(
-                        "{\"enabled\":true,\"truststore\":\"" + TRUSTSTORE_SECRET + "\"}", Tls.class))
+        assertThatThrownBy(() ->
+                        MAPPER.readValue("{\"enabled\":true,\"truststore\":\"" + TRUSTSTORE_SECRET + "\"}", Tls.class))
                 .hasMessageContaining("'truststore'")
                 .hasMessageContaining("could not be read")
                 .hasMessageContaining("<truststore/> is valid")

@@ -859,11 +859,7 @@ public class ProtocolAdapterManager {
         if (tracedConversionFailures.add(adapterId)) {
             LOGGER.error("Failed reading the configuration of adapter '{}'. {}", adapterId, outcome, thrown);
         } else {
-            LOGGER.error(
-                    "Failed reading the configuration of adapter '{}', again: {}. {}",
-                    adapterId,
-                    thrown,
-                    outcome);
+            LOGGER.error("Failed reading the configuration of adapter '{}', again: {}. {}", adapterId, thrown, outcome);
         }
     }
 

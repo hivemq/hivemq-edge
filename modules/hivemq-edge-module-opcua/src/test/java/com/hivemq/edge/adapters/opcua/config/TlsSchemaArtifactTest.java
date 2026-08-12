@@ -88,7 +88,8 @@ class TlsSchemaArtifactTest {
     }
 
     private static @NotNull ObjectNode generateArtifact() {
-        final JsonNode dataSchema = new CustomConfigSchemaGenerator().generateJsonSchema(OpcUaSpecificAdapterConfig.class);
+        final JsonNode dataSchema =
+                new CustomConfigSchemaGenerator().generateJsonSchema(OpcUaSpecificAdapterConfig.class);
 
         // Wrapped in a root object holding only `tls`, because that is what RJSF is handed: the form
         // under test renders this one section, not the whole adapter.
@@ -131,6 +132,7 @@ class TlsSchemaArtifactTest {
             }
             candidate = candidate.getParent();
         }
-        throw new AssertionError("could not locate the repository root above " + Path.of("").toAbsolutePath());
+        throw new AssertionError(
+                "could not locate the repository root above " + Path.of("").toAbsolutePath());
     }
 }
