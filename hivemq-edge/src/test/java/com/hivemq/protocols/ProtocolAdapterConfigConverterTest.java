@@ -89,6 +89,43 @@ class ProtocolAdapterConfigConverterTest {
                 });
     }
 
+    @Test
+    void theConvertedConfigCarriesTheEntitysOwnAdapterId() {
+        // ProtocolAdapterManager.convertConfigs keys its duplicate-id arithmetic on two different
+        // sources: the catch branch has only the entity's id, because the converted config is what
+        // failed to materialise, while the success branch uses the converted config's id. Reviewers
+        // read that as two id spaces. It is one, and this single line in fromEntity is what makes it
+        // one - if it ever stops being the entity's id, the duplicate arithmetic develops a hole that
+        // nothing else would catch, because both branches would keep looking correct in isolation.
+        final ProtocolAdapterFactory<?> factory = mock(ProtocolAdapterFactory.class);
+        final ProtocolAdapterFactoryManager manager = mock(ProtocolAdapterFactoryManager.class);
+        when(manager.get("test-protocol")).thenReturn(Optional.of(factory));
+
+        final ProtocolAdapterConfigConverter converter =
+                new ProtocolAdapterConfigConverter(manager, new ObjectMapper());
+
+        final ProtocolAdapterEntity entity = mock(ProtocolAdapterEntity.class);
+        when(entity.getAdapterId()).thenReturn("adapter-1");
+        when(entity.getProtocolId()).thenReturn("test-protocol");
+        when(entity.getConfig()).thenReturn(Map.of("hostname", "machine-1"));
+        when(entity.getTags()).thenReturn(List.of());
+        when(entity.getNorthboundMappings()).thenReturn(List.of());
+        when(entity.getSouthboundMappings()).thenReturn(List.of());
+        when(factory.convertConfigObject(
+                        org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.anyBoolean()))
+                .thenAnswer(invocation -> {
+                    final ObjectMapper mapper = invocation.getArgument(0);
+                    final Map<String, Object> config = invocation.getArgument(1);
+                    return mapper.convertValue(config, ExampleAdapterConfig.class);
+                });
+
+        final ProtocolAdapterConfig converted = converter.fromEntity(entity);
+
+        assertThat(converted.getAdapterId()).isEqualTo(entity.getAdapterId());
+    }
+
     static class ExampleAdapterConfig implements ProtocolSpecificAdapterConfig {
         public @org.jetbrains.annotations.Nullable String hostname;
     }

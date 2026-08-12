@@ -123,6 +123,15 @@ public class ProtocolAdapterManager {
     private final @NotNull AtomicInteger refreshTasksInProgress = new AtomicInteger(0);
     private final @NotNull AtomicReference<ProtocolAdapterManagerState> managerState =
             new AtomicReference<>(ProtocolAdapterManagerState.Idle);
+    /**
+     * Adapter ids whose conversion failure has already been logged with a stack trace, so a
+     * configuration nobody corrects does not repeat the trace on every reload. Entries are dropped as
+     * soon as the id converts, so a fixed-then-rebroken adapter is traced again, and ids the
+     * configuration no longer names are dropped at the end of each conversion pass - so the set never
+     * outgrows the current configuration. Accessed only from the single-threaded refresh executor; see
+     * {@link #logConversionFailure}.
+     */
+    private final @NotNull Set<String> tracedConversionFailures = new HashSet<>();
 
     @Inject
     public ProtocolAdapterManager(
@@ -752,9 +761,11 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterConfig config;
             try {
                 config = configConverter.fromEntity(entity);
-            } catch (final Exception | LinkageError e) {
-                // LinkageError included: a broken adapter-module classloader surfaces as
-                // NoClassDefFoundError from the converter, and that is still this one adapter's problem.
+            } catch (final Throwable t) {
+                rethrowIfVirtualMachineError(t);
+                // Everything else is this one adapter's problem, whatever its type. Enumerating the
+                // hierarchy is a losing game: the converter runs adapter-module code, and a module whose
+                // classloader is broken or whose static initialiser throws can produce anything at all.
                 // The entity's own id is the only one available here, the converted config being what
                 // failed to materialise. It still has to join the set: an adapter that is named in
                 // the configuration file has not been deleted from it, however unreadable it is.
@@ -769,12 +780,7 @@ public class ProtocolAdapterManager {
                 // Outcome-neutral on purpose: the entity may describe an adapter that exists (whose
                 // instance keeps running on its previous configuration) or one that does not (which
                 // is simply not created) - and which of the two it is is not knowable here.
-                LOGGER.error(
-                        "Failed reading the configuration of adapter '{}'. An existing instance, if any, was left "
-                                + "unchanged; a new adapter was not created. Every other adapter has been refreshed "
-                                + "as usual; correct the configuration and it will be applied on the next reload.",
-                        adapterId,
-                        e);
+                logConversionFailure(adapterId, t);
                 // The log is per entity - each unreadable entity is its own mistake - but the
                 // adapter-scoped event fires once per id, so duplicated unreadable entities do not
                 // show the same complaint twice in one reload.
@@ -803,8 +809,62 @@ public class ProtocolAdapterManager {
                 continue;
             }
             protocolAdapterConfigs.put(adapterId, config);
+            // The id converted, so the next failure under it is a new one and earns a full trace again.
+            tracedConversionFailures.remove(adapterId);
         }
+        // An id the configuration no longer names cannot fail again, and keeping it would let the set
+        // grow for as long as the JVM lives across enough add-break-remove cycles.
+        tracedConversionFailures.retainAll(configuredAdapterIds);
         return configuredAdapterIds;
+    }
+
+    /**
+     * Rethrows the errors that mean the JVM itself is broken - {@link OutOfMemoryError},
+     * {@link StackOverflowError}, {@code InternalError} and {@code UnknownError}.
+     * <p>
+     * The refresh loops contain everything else per adapter, which is the whole point of them. These
+     * four are the exception: continuing to the next adapter in a JVM that cannot allocate turns one
+     * unreadable configuration into a reload that limps through every remaining adapter and reports
+     * "Reloading of configuration failed", instead of letting the error reach the uncaught handler.
+     * <p>
+     * Binding the pattern variable rather than rethrowing the {@code Throwable} parameter is required,
+     * not stylistic: Java's precise-rethrow analysis infers the rethrown type from everything the
+     * {@code try} block can throw, and these blocks call methods declaring checked exceptions, so
+     * {@code throw t} would force {@code throws Throwable} onto the caller. {@link VirtualMachineError}
+     * is unchecked, so this compiles anywhere.
+     */
+    private static void rethrowIfVirtualMachineError(final @NotNull Throwable thrown) {
+        if (thrown instanceof final VirtualMachineError vme) {
+            throw vme;
+        }
+    }
+
+    /**
+     * Reports a configuration that could not be read, with the stack trace only the first time an id
+     * fails.
+     * <p>
+     * A typo nobody corrects is re-read on every reload, and logging the full trace each time buries
+     * the reload that matters under repetitions of the one before it. The repeat line still carries
+     * {@link Throwable#toString()}, so an operator who changed one mistake for another still sees
+     * <em>what</em> changed without the trace.
+     * <p>
+     * {@code tracedConversionFailures} is deliberately unsynchronised: {@code refresh} is serialized on
+     * a dedicated single-thread executor, so every read and write happens on that one thread. If that
+     * executor ever becomes multi-threaded this becomes a race.
+     */
+    private void logConversionFailure(final @NotNull String adapterId, final @NotNull Throwable thrown) {
+        final String outcome = "An existing instance, if any, was left unchanged; a new adapter was not created. "
+                + "Every other adapter has been refreshed as usual; correct the configuration and it will be "
+                + "applied on the next reload.";
+        if (tracedConversionFailures.add(adapterId)) {
+            LOGGER.error("Failed reading the configuration of adapter '{}'. {}", adapterId, outcome, thrown);
+        } else {
+            LOGGER.error(
+                    "Failed reading the configuration of adapter '{}', again: {}. {}",
+                    adapterId,
+                    thrown,
+                    outcome);
+        }
     }
 
     private void reportDuplicatedAdapterId(
@@ -849,13 +909,14 @@ public class ProtocolAdapterManager {
                 }
                 stop(adapterId, true);
                 deleteProtocolAdapterByAdapterId(adapterId);
-            } catch (final Exception e) {
+            } catch (final Throwable t) {
+                rethrowIfVirtualMachineError(t);
                 failedAdapterSet.add(adapterId);
-                if (e.getCause() instanceof InterruptedException) {
+                if (t.getCause() instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
-                    LOGGER.error("Interrupted while deleting adapter {}", adapterId, e);
+                    LOGGER.error("Interrupted while deleting adapter {}", adapterId, t);
                 } else {
-                    LOGGER.error("Failed deleting adapter {}", adapterId, e);
+                    LOGGER.error("Failed deleting adapter {}", adapterId, t);
                 }
             }
         }
@@ -879,13 +940,14 @@ public class ProtocolAdapterManager {
                 }
                 createProtocolAdapter(protocolAdapterConfig, versionProvider.getVersion());
                 start(adapterId);
-            } catch (final Exception e) {
+            } catch (final Throwable t) {
+                rethrowIfVirtualMachineError(t);
                 failedAdapterSet.add(adapterId);
-                if (e.getCause() instanceof InterruptedException) {
+                if (t.getCause() instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
-                    LOGGER.error("Interrupted while adding adapter {}", adapterId, e);
+                    LOGGER.error("Interrupted while adding adapter {}", adapterId, t);
                 } else {
-                    LOGGER.error("Failed adding adapter {}", adapterId, e);
+                    LOGGER.error("Failed adding adapter {}", adapterId, t);
                 }
             }
         }
@@ -925,13 +987,14 @@ public class ProtocolAdapterManager {
                 // the displaced instance. The adapter id stays resolvable throughout, so a concurrent REST read
                 // never observes the transient 404 the old delete-then-recreate sequence could expose (EDG-602).
                 updateProtocolAdapterAtomically(adapterId, protocolAdapterConfig, versionProvider.getVersion());
-            } catch (final Exception e) {
+            } catch (final Throwable t) {
+                rethrowIfVirtualMachineError(t);
                 failedAdapterSet.add(adapterId);
-                if (e.getCause() instanceof InterruptedException) {
+                if (t.getCause() instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
-                    LOGGER.error("Interrupted while updating adapter {}", adapterId, e);
+                    LOGGER.error("Interrupted while updating adapter {}", adapterId, t);
                 } else {
-                    LOGGER.error("Failed updating adapter {}", adapterId, e);
+                    LOGGER.error("Failed updating adapter {}", adapterId, t);
                 }
             }
         }
