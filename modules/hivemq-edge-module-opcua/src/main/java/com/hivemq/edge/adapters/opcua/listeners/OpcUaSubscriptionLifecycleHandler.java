@@ -51,6 +51,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -60,6 +61,7 @@ import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizat
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaSerializationException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -73,6 +75,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EventFilterResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,6 +94,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * occurrence. See {@link #isFirstSightOf} for why this is bounded by count rather than by age.
      */
     private static final int MAX_REMEMBERED_REFRESH_REQUESTS = 64;
+
+    /**
+     * How many times in a row a refresh may be retried before the reason is dropped.
+     * <p>
+     * Only failures a retry could actually answer are counted — see {@link #requeueIfWorthRetrying} — so this
+     * bounds a collision with a concurrent refresh, which resolves within a round trip. Three is enough for
+     * that and small enough that a server refusing indefinitely costs three calls rather than a hot loop.
+     */
+    @VisibleForTesting
+    static final int MAX_REFRESH_RETRIES = 3;
 
     // Verification is one browse against an already-connected session. The bound only exists so a server that
     // never answers cannot stall adapter start indefinitely.
@@ -140,30 +153,55 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private final @NotNull ExecutorService recoveryExecutor;
 
     /**
-     * Whether a refresh requested by the <em>server</em> is still outstanding.
+     * Whether a {@code ConditionRefresh} call is outstanding, for any reason at all.
      * <p>
-     * One {@code RefreshRequired} occurrence is delivered to every notifier item in the subscription, so this
-     * collapses the copies into the single call the specification says they warrant. Only this path is
-     * guarded: the connect-time and reconnect refreshes fire once by construction.
+     * <b>Every</b> mandatory refresh takes this guard — the connect-time one, the one after a reconnect, and
+     * the one the server asks for. It used to guard only the server-requested path, on the reasoning that the
+     * other two "fire once by construction". Each does fire once; what that argument misses is that they can
+     * fire while <em>another</em> reason's call is still outstanding, and OPC 10000-9 §5.5.7 defines
+     * {@code Bad_RefreshInProgress} for precisely that overlap. A reconnect landing on top of a
+     * {@code RefreshRequired} still in flight had one of the two refused, and the automatic path had no
+     * pending flag to leave set and no retry — so the reconnect could complete with no successful refresh,
+     * against a requirement that says one follows <em>every</em> reconnect.
+     * <p>
+     * The southbound manual refresh is deliberately outside this: the caller asked, so a refusal is theirs to
+     * see rather than something to queue behind work they did not ask for. It can still collide, which is
+     * what {@link #consecutiveRefreshFailures} is for.
      */
-    private final @NotNull AtomicBoolean refreshRequiredInFlight = new AtomicBoolean();
+    private final @NotNull AtomicBoolean refreshInFlight = new AtomicBoolean();
 
     /**
-     * Whether a {@code RefreshRequired} has arrived that no call has covered yet.
+     * Why a refresh is owed that no call has covered yet, or null when none is.
      * <p>
-     * The in-flight guard alone cannot express this. It answers "is a call outstanding", and a distinct
-     * occurrence arriving while one is has to be remembered rather than dropped: the call already running was
-     * started for an earlier reason and may well have been answered by the server before the later reason
-     * existed. Without somewhere to record it, the second occurrence was marked handled by
-     * {@link #isFirstSightOf} and then discarded by the in-flight guard, so nothing was left to retry it and
-     * the alarm picture could stay stale for the rest of the connection.
+     * The in-flight guard alone cannot express this. It answers "is a call outstanding", and a distinct reason
+     * arriving while one is has to be remembered rather than dropped: the call already running was started for
+     * an earlier reason and may well have been answered by the server before the later reason existed. Without
+     * somewhere to record it, a second {@code RefreshRequired} was marked handled by {@link #isFirstSightOf}
+     * and then discarded by the in-flight guard, so nothing was left to retry it and the alarm picture could
+     * stay stale for the rest of the connection.
      * <p>
-     * One flag rather than a queue of ids, because §4.5 makes a {@code ConditionRefresh} subscription-wide:
-     * one call covers every reason outstanding at the moment it starts, so several pending occurrences
-     * genuinely do collapse into one. What must not collapse is a reason that arrived <em>after</em> the
-     * covering call began, and that is exactly what the flag being set again expresses.
+     * One slot rather than a queue, because §4.5 makes a {@code ConditionRefresh} subscription-wide: one call
+     * covers every reason outstanding at the moment it starts, so several pending reasons genuinely do
+     * collapse into one. What must not collapse is a reason that arrived <em>after</em> the covering call
+     * began, and that is exactly what the slot being filled again expresses. The reason itself is carried only
+     * so the log can say which; the call it produces is identical either way.
      */
-    private final @NotNull AtomicBoolean refreshRequiredPending = new AtomicBoolean();
+    private final @NotNull AtomicReference<RefreshReason> pendingRefresh = new AtomicReference<>();
+
+    /**
+     * How many refresh attempts have failed in a row without one succeeding in between.
+     * <p>
+     * A refused or failed call consumed its reason and left nothing to retry it. That is wrong for the one
+     * status a retry actually answers: {@code Bad_RefreshInProgress} says another refresh is running <em>right
+     * now</em>, which is a transient fact — the colliding call is one round trip from finishing. Requeueing
+     * costs one more call and gets the mandatory refresh the reconnect contract promises.
+     * <p>
+     * Bounded, because the alternative is a hot loop. A server that answers {@code Bad_RefreshInProgress}
+     * indefinitely would otherwise be asked again the instant each refusal arrives, for the life of the
+     * connection. Reset whenever a fresh reason is recorded or a call succeeds, so the bound applies to one
+     * unbroken run of failures rather than to the connection.
+     */
+    private final @NotNull AtomicInteger consecutiveRefreshFailures = new AtomicInteger();
 
     /**
      * The {@code EventId}s of {@code RefreshRequired} occurrences already acted on, most recent last.
@@ -562,8 +600,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private boolean established(final @NotNull OpcUaSubscription subscription) {
         reportRevisedEventQueueSizes(subscription);
         reportRejectedSelectClauses(subscription);
+        // Before the refresh, and it has to stay that way: the refresh reads the current subscription at the
+        // moment it makes its call rather than being handed one, so the generation must already be installed.
         installSubscription(subscription);
-        requestConditionRefresh(subscription);
+        requestConditionRefresh(RefreshReason.ESTABLISHED);
         return true;
     }
 
@@ -1098,25 +1138,26 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * the burst has somewhere to go.
      */
     public void onSessionReactivated() {
-        final OpcUaSubscription subscription = currentSubscription.get();
-        if (subscription != null) {
-            requestConditionRefresh(subscription);
+        if (currentSubscription.get() != null) {
+            requestConditionRefresh(RefreshReason.RECONNECTED);
         }
     }
 
     /**
-     * Asks the server to re-report every retained condition, once the monitored items are in place.
+     * Records that a refresh is owed and starts one unless a call is already covering it.
      * <p>
-     * This is the seam the refresh has to hang on. It runs on both paths that establish monitored items —
-     * the initial subscribe and the recreation after a failed subscription transfer — so a refresh follows
-     * every connect and every reconnect. {@code onSessionActive} would be too early: the session activates
-     * before the items exist, and a refresh burst with nothing subscribed to receive it is wasted.
+     * The single entry point for all three mandatory reasons — a subscription established, a session
+     * re-established, and the server asking. They used to be two separate mechanisms: the server-requested
+     * path had the pending/in-flight coordinator below, and the two automatic ones called
+     * {@code ConditionRefresh} directly and swallowed the outcome. Independent, they could overlap, and
+     * §5.5.7's {@code Bad_RefreshInProgress} is what a server says about that — refusing one of the two, with
+     * the automatic path having nowhere to record that its refresh had not happened.
      * <p>
      * Fire and forget, and deliberately never fatal. A server that does not implement
      * {@code ConditionRefresh}, or refuses it, still delivers live transitions perfectly well — losing the
      * initial picture is a degradation, not a reason to fail the subscription that was just established.
      */
-    private void requestConditionRefresh(final @NotNull OpcUaSubscription subscription) {
+    private void requestConditionRefresh(final @NotNull RefreshReason reason) {
         // Any event item is worth refreshing, not only a condition tag: an event subscription tag monitors
         // conditions too, so a query-only adapter needs the refresh just as much. The call itself names no
         // node of ours -- both the object and the method are fixed by the specification -- so there is no
@@ -1126,29 +1167,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         if (!hasEventItems) {
             return;
         }
-
-        subscription.getSubscriptionId().ifPresent(subscriptionId -> {
-            @SuppressWarnings("unused")
-            final var unused = ConditionRefresh.request(client, subscriptionId)
-                    .whenComplete((statusCode, throwable) -> {
-                        if (throwable != null) {
-                            log.warn(
-                                    "Adapter '{}': could not refresh conditions, so the current alarm picture may be incomplete until each alarm next changes",
-                                    adapterId,
-                                    throwable);
-                        } else if (statusCode.isBad()) {
-                            log.warn(
-                                    "Adapter '{}': the server refused a condition refresh ({}), so the current alarm picture may be incomplete until each alarm next changes",
-                                    adapterId,
-                                    statusCode);
-                        } else {
-                            log.debug(
-                                    "Adapter '{}': requested a condition refresh on subscription {}",
-                                    adapterId,
-                                    subscriptionId);
-                        }
-                    });
-        });
+        // A reason from outside starts a fresh run of attempts. The bound exists to stop one unanswerable
+        // request being retried forever, not to ration refreshes over the life of the connection.
+        consecutiveRefreshFailures.set(0);
+        // Recorded as outstanding work before any attempt to start it, and that order is the whole
+        // correctness argument: a completion racing this can then only ever see the slot already filled.
+        // Filling it after a failed attempt would leave the window where the completion checks for pending
+        // work, finds none, releases the guard, and only then does this reason go in -- with nobody left to
+        // drain it.
+        pendingRefresh.set(reason);
+        drainRefreshRequests();
     }
 
     /**
@@ -1261,12 +1289,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         if (eventId != null && !isFirstSightOf(eventId)) {
             return;
         }
-        // Recorded as outstanding work before any attempt to start it, and that order is the whole
-        // correctness argument: a completion racing this can then only ever see the flag already set. Setting
-        // it after a failed attempt would leave the window where the completion checks for pending work,
-        // finds none, releases the guard, and only then does this flag go up -- with nobody left to drain it.
-        refreshRequiredPending.set(true);
-        drainRefreshRequests();
+        requestConditionRefresh(RefreshReason.SERVER_REQUESTED);
     }
 
     /**
@@ -1293,16 +1316,17 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * call is made, from {@link #currentSubscription}, so it is always the generation that is live now.
      */
     private void drainRefreshRequests() {
-        while (refreshRequiredPending.get()) {
-            if (!refreshRequiredInFlight.compareAndSet(false, true)) {
-                // A call is running. It drains on completion, and it will see this flag.
+        while (pendingRefresh.get() != null) {
+            if (!refreshInFlight.compareAndSet(false, true)) {
+                // A call is running. It drains on completion, and it will see this reason.
                 return;
             }
-            if (refreshRequiredPending.compareAndSet(true, false)) {
-                requestRefreshTheServerAskedFor();
+            final RefreshReason claimed = pendingRefresh.getAndSet(null);
+            if (claimed != null) {
+                sendConditionRefresh(claimed);
                 return;
             }
-            refreshRequiredInFlight.set(false);
+            refreshInFlight.set(false);
         }
     }
 
@@ -1322,12 +1346,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * subscription it installs. So the reason this occurrence was raised for is answered by the rebuild's own
      * refresh, which is a fuller answer than this call would have been.
      */
-    private void requestRefreshTheServerAskedFor() {
+    private void sendConditionRefresh(final @NotNull RefreshReason reason) {
         final OpcUaSubscription subscription = currentSubscription.get();
         if (subscription == null) {
             log.debug(
-                    "Adapter '{}': the server asked for a condition refresh while no subscription is established; the replacement being built will refresh as it is established",
-                    adapterId);
+                    "Adapter '{}': a condition refresh is owed because {}, but no subscription is established; the replacement being built will refresh as it is established",
+                    adapterId,
+                    reason.why());
             releaseAndDrain();
             return;
         }
@@ -1336,44 +1361,114 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             releaseAndDrain();
             return;
         }
-        log.info(
-                "Adapter '{}': the server reported that a condition refresh is required, so the current alarm picture is being re-requested",
-                adapterId);
+        log.info("Adapter '{}': re-requesting the current alarm picture because {}", adapterId, reason.why());
         try {
             @SuppressWarnings("unused")
             final var unused = ConditionRefresh.request(client, subscriptionId.get())
                     .whenComplete((statusCode, throwable) -> {
                         if (throwable != null) {
                             log.warn(
-                                    "Adapter '{}': the server asked for a condition refresh but the request failed, so the alarm picture may stay incomplete until each alarm next changes",
+                                    "Adapter '{}': the condition refresh owed because {} failed, so the alarm picture may stay incomplete until each alarm next changes",
                                     adapterId,
+                                    reason.why(),
                                     throwable);
+                            requeueIfWorthRetrying(reason, true);
                         } else if (statusCode.isBad()) {
                             log.warn(
-                                    "Adapter '{}': the server asked for a condition refresh and then refused it ({}), so the alarm picture may stay incomplete until each alarm next changes",
+                                    "Adapter '{}': the server refused the condition refresh owed because {} ({}), so the alarm picture may stay incomplete until each alarm next changes",
                                     adapterId,
+                                    reason.why(),
                                     statusCode);
+                            requeueIfWorthRetrying(reason, isRefreshAlreadyRunning(statusCode));
+                        } else {
+                            consecutiveRefreshFailures.set(0);
                         }
                         releaseAndDrain();
                     });
         } catch (final Exception e) {
             log.warn(
-                    "Adapter '{}': the server asked for a condition refresh but the request could not be sent, so the alarm picture may stay incomplete until each alarm next changes",
+                    "Adapter '{}': the condition refresh owed because {} could not be sent, so the alarm picture may stay incomplete until each alarm next changes",
                     adapterId,
+                    reason.why(),
                     e);
+            requeueIfWorthRetrying(reason, true);
             releaseAndDrain();
         }
     }
 
     /**
-     * Hands the in-flight guard back and picks up whatever arrived while it was held.
+     * Whether the server refused because a refresh is already running on this subscription.
      * <p>
-     * A failed call still drains. The occurrence that is waiting asked the server to be re-read, not for this
-     * particular attempt to succeed, and the reason it was raised for outlives the attempt.
+     * OPC 10000-9 §5.5.7. The one refusal that says nothing about whether the request was reasonable — only
+     * that it arrived while another was outstanding, which stops being true within a round trip.
+     */
+    private static boolean isRefreshAlreadyRunning(final @NotNull StatusCode statusCode) {
+        return statusCode.getValue() == StatusCodes.Bad_RefreshInProgress;
+    }
+
+    /**
+     * Puts a failed reason back so the drain tries it again, unless a retry cannot help or too many have
+     * already failed in a row.
+     * <p>
+     * Failing consumed the reason, and for most failures that is right: a server that does not implement
+     * {@code ConditionRefresh} will not implement it on the second ask either, and retrying would spend
+     * calls to learn the same thing. The exceptions are a transport failure and
+     * {@code Bad_RefreshInProgress}, both of which describe the moment rather than the request.
+     * <p>
+     * {@code compareAndSet(null, …)} rather than {@code set}: a newer reason may have arrived while this call
+     * was outstanding, and it is the fresher description of why a refresh is owed. Either way one call
+     * follows, since §4.5 makes the refresh subscription-wide — so the two reasons genuinely do collapse.
+     */
+    private void requeueIfWorthRetrying(final @NotNull RefreshReason reason, final boolean retryCouldHelp) {
+        if (!retryCouldHelp) {
+            return;
+        }
+        if (consecutiveRefreshFailures.incrementAndGet() > MAX_REFRESH_RETRIES) {
+            log.warn(
+                    "Adapter '{}': giving up on the condition refresh owed because {} after {} consecutive failures; the alarm picture may stay incomplete until each alarm next changes",
+                    adapterId,
+                    reason.why(),
+                    MAX_REFRESH_RETRIES);
+            return;
+        }
+        pendingRefresh.compareAndSet(null, reason);
+    }
+
+    /**
+     * Hands the in-flight guard back and picks up whatever is owed, including anything this call requeued.
+     * <p>
+     * A failed call still drains. The reason that is waiting asked the server to be re-read, not for this
+     * particular attempt to succeed, and it outlives the attempt.
      */
     private void releaseAndDrain() {
-        refreshRequiredInFlight.set(false);
+        refreshInFlight.set(false);
         drainRefreshRequests();
+    }
+
+    /**
+     * Why a {@code ConditionRefresh} is owed.
+     * <p>
+     * Carried through the coordinator for the log alone — the call the three produce is identical, because
+     * §4.5 makes a refresh subscription-wide rather than something aimed at a particular reason. Worth
+     * carrying anyway: "the server asked and then refused" and "we reconnected and the refresh was refused"
+     * are very different things to find in a log, and before these paths were merged the message said which
+     * by virtue of there being two separate methods.
+     */
+    private enum RefreshReason {
+        ESTABLISHED("a subscription was established"),
+        RECONNECTED("the session was re-established"),
+        SERVER_REQUESTED("the server reported that a refresh is required");
+
+        private final @NotNull String why;
+
+        RefreshReason(final @NotNull String why) {
+            this.why = why;
+        }
+
+        @NotNull
+        String why() {
+            return why;
+        }
     }
 
     /**
