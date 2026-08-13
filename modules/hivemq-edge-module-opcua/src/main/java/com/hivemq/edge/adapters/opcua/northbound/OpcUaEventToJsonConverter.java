@@ -130,6 +130,22 @@ public final class OpcUaEventToJsonConverter {
      * <p>
      * {@code Quality} is deliberately not exempted even though its declared type <em>is</em> a StatusCode:
      * see {@link #isSubstituted}.
+     * <p>
+     * <b>Keyed by the member, not by the field, wherever the two differ.</b> A two-state field is two
+     * selected entries publishing under one key — {@code ActiveState} and {@code ActiveState/Id} both land
+     * under {@code ActiveState} — and naming that shared key was ambiguous in a way that mattered. Since the
+     * two halves are made available independently, a server may withhold one and give the other, and the
+     * result was a payload saying {@code "unavailableFields": {"ActiveState": "Bad_UserAccessDenied"}} beside
+     * an {@code ActiveState} carrying a perfectly good {@code "Active"}. A consumer treating the map as a
+     * list of null fields threw that away. Worse, two halves withheld for <em>different</em> reasons
+     * collapsed under {@code putIfAbsent} and only the first survived.
+     * <p>
+     * So a composite's halves are named {@code ActiveState.text} and {@code ActiveState.id}. That is not a
+     * key the payload has — the earlier reasoning against {@code ActiveState/Id} was right about that — but
+     * this map was never a set of payload keys: it is Edge's own diagnostic, marked as such by being the one
+     * camel-case key in a payload of browse names. Naming the half is the only way to answer the question a
+     * consumer actually has, which is whether the {@code id} they were told to branch on is the one that is
+     * missing.
      */
     private static @NotNull Map<String, String> unavailableFields(
             final @NotNull List<OpcuaConditionType.SelectedField> fields, final @NotNull Variant[] values) {
@@ -143,10 +159,30 @@ public final class OpcUaEventToJsonConverter {
             if (!isSubstituted(field)) {
                 continue;
             }
-            // A state and its Id are two entries publishing under one key; naming that key once is enough.
-            unavailable.putIfAbsent(field.publishedAs(), describe(status));
+            unavailable.put(diagnosticKeyFor(fields, i), describe(status));
         }
         return unavailable;
+    }
+
+    /**
+     * What to call the entry at {@code index} when reporting it as unavailable.
+     * <p>
+     * The look-ahead matches the one in {@link #convertPayload}, and has to: a field is a composite exactly
+     * when the next selected entry is its {@code Id}, so the two must agree about which entries pair up or a
+     * diagnostic would name a member the payload does not have.
+     */
+    private static @NotNull String diagnosticKeyFor(
+            final @NotNull List<OpcuaConditionType.SelectedField> fields, final int index) {
+
+        final OpcuaConditionType.SelectedField field = fields.get(index);
+        if (field.isStateId()) {
+            return field.publishedAs() + ".id";
+        }
+        final boolean hasStateId =
+                index + 1 < fields.size() && fields.get(index + 1).isStateId();
+        // `.text` rather than the bare name even though `locale` sits beside it: `text` is the half a
+        // consumer reads, and the two are one value the server either gave or did not.
+        return hasStateId ? field.publishedAs() + ".text" : field.publishedAs();
     }
 
     /**

@@ -263,17 +263,25 @@ public final class ConditionSchemas {
      * because this session may not read it" are different facts, and only the second is a configuration
      * problem someone can fix. Absent entirely when nothing was withheld, which is the ordinary case.
      * <p>
-     * Left open rather than enumerating the type's fields as properties: the keys are exactly the fields of
-     * the enclosing payload, and repeating fifty of them to describe a rare diagnostic would double the
-     * schema for no gain a consumer can use.
+     * Left open rather than enumerating the type's fields as properties: the keys are <em>almost</em> the
+     * fields of the enclosing payload, and repeating fifty of them to describe a rare diagnostic would double
+     * the schema for no gain a consumer can use.
+     * <p>
+     * Almost, because a two-state field's two halves can be withheld independently, and the key names the
+     * half — {@code ActiveState.id} rather than {@code ActiveState}. The description says so, and says the
+     * thing it used to get wrong: a field named here is <em>not</em> necessarily published as null, because a
+     * state whose {@code id} was withheld still carries its display text.
      */
     private static void appendUnavailableFields(final @NotNull ObjectSchemaBuilder<SchemaBuilder> object) {
         object.property(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS)
                 .startObject()
                 .endObject()
-                .description("Fields the server declined to give a value for, keyed by field name, with the "
-                        + "OPC-UA status code saying why (for example 'Bad_UserAccessDenied'). Those fields "
-                        + "are published as null. Absent when nothing was withheld.")
+                .description("Fields the server declined to give a value for, with the OPC-UA status code "
+                        + "saying why (for example 'Bad_UserAccessDenied'). Keyed by field name, except for "
+                        + "a two-state field whose halves can be withheld separately — there the key names "
+                        + "the half, as in 'ActiveState.id' or 'ActiveState.text'. A field named here is "
+                        + "published as null unless only one half was withheld, in which case the other half "
+                        + "is still present and usable. Absent when nothing was withheld.")
                 .nullable()
                 .readable()
                 .writable(false)

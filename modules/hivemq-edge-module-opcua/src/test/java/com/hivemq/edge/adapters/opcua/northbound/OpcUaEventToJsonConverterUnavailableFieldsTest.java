@@ -87,24 +87,87 @@ class OpcUaEventToJsonConverterUnavailableFieldsTest {
                 .as("a status code must never be published under 'text'")
                 .isTrue();
         assertThat(value.get(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS)
-                        .get("ActiveState")
+                        .get("ActiveState.text")
+                        .textValue())
+                .isEqualTo("Bad_UserAccessDenied");
+    }
+
+    // ── review-05 finding 7: which half of a two-state field was withheld ───────────────────────────
+
+    @Test
+    void whenOnlyTheIdIsWithheld_thenTheDiagnosticNamesTheIdAndTheTextSurvives() {
+        // The finding, and the case that makes the shared key wrong rather than merely imprecise. The two
+        // halves are made available independently, so a server may give the display text and withhold the
+        // boolean. Named "ActiveState", the diagnostic said a field was unavailable while that field carried
+        // a perfectly good "Active" -- and a consumer treating the map as a list of null fields threw it away.
+        final Variant[] values = allNull();
+        setField(values, "ActiveState", new Variant(new LocalizedText("en", "Active")));
+        setStateId(values, "ActiveState", new Variant(ACCESS_DENIED));
+
+        final JsonNode value = convert(values);
+
+        assertThat(value.get("ActiveState").get("text").textValue())
+                .as("the half the server did give must survive")
+                .isEqualTo("Active");
+        assertThat(value.get("ActiveState").has("id"))
+                .as("and the half it withheld must not be invented")
+                .isFalse();
+        assertThat(value.get(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS)
+                        .get("ActiveState.id")
+                        .textValue())
+                .as("the diagnostic must name the half that is missing, which is the one to branch on")
+                .isEqualTo("Bad_UserAccessDenied");
+    }
+
+    @Test
+    void whenOnlyTheTextIsWithheld_thenTheDiagnosticNamesTheTextAndTheIdSurvives() {
+        // The mirror image, and the one that matters less operationally but has to be named correctly all
+        // the same: `id` is what the documentation tells consumers to branch on, so a payload keeping it is
+        // still usable and must not be reported as though it were not.
+        final Variant[] values = allNull();
+        setField(values, "ActiveState", new Variant(ACCESS_DENIED));
+        setStateId(values, "ActiveState", new Variant(true));
+
+        final JsonNode value = convert(values);
+
+        assertThat(value.get("ActiveState").get("id").booleanValue()).isTrue();
+        assertThat(value.get("ActiveState").has("text")).isFalse();
+        assertThat(value.get(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS)
+                        .get("ActiveState.text")
                         .textValue())
                 .isEqualTo("Bad_UserAccessDenied");
     }
 
     @Test
-    void aStateAndItsIdAreNamedOnceUnderTheirCommonKey() {
-        // ActiveState and ActiveState/Id are two selected entries publishing under one key. Naming that key
-        // twice would be noise, and naming it "ActiveState/Id" would name something the payload has no key
-        // for.
+    void whenBothHalvesAreWithheldForDifferentReasons_thenBothReasonsSurvive() {
+        // The second half of the defect. Under one key, `putIfAbsent` kept whichever arrived first and
+        // discarded the other -- so a field withheld for two different reasons reported one of them, chosen
+        // by select-clause order rather than by anything meaningful.
         final Variant[] values = allNull();
         setField(values, "ActiveState", new Variant(ACCESS_DENIED));
-        setStateId(values, "ActiveState", new Variant(ACCESS_DENIED));
+        setStateId(values, "ActiveState", new Variant(new StatusCode(StatusCodes.Bad_NotReadable)));
 
-        final JsonNode unavailable = convert(values).get(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS);
+        final JsonNode value = convert(values);
+        final JsonNode unavailable = value.get(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS);
 
-        assertThat(unavailable.size()).isEqualTo(1);
-        assertThat(unavailable.has("ActiveState")).isTrue();
+        assertThat(value.get("ActiveState").isNull())
+                .as("with neither half given, the field really is null")
+                .isTrue();
+        assertThat(unavailable.get("ActiveState.text").textValue()).isEqualTo("Bad_UserAccessDenied");
+        assertThat(unavailable.get("ActiveState.id").textValue()).isEqualTo("Bad_NotReadable");
+    }
+
+    @Test
+    void anOrdinaryFieldIsStillNamedWithoutAMember() {
+        // The property the change must not cost. Only a composite has halves to distinguish, so every other
+        // field keeps the key it always had -- a suffix on Severity would name a member it does not have.
+        final JsonNode unavailable = convert(withField("Severity", new Variant(ACCESS_DENIED)))
+                .get(OpcUaEventToJsonConverter.UNAVAILABLE_FIELDS);
+
+        assertThat(unavailable.has("Severity")).isTrue();
+        assertThat(unavailable.properties())
+                .as("no member suffix may appear on a field that is not a composite")
+                .noneSatisfy(entry -> assertThat(entry.getKey()).startsWith("Severity."));
     }
 
     @Test
