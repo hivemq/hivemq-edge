@@ -43,6 +43,13 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
      * @param publish     to be queued
      * @param max         maximum amount of messages queued for the client
      * @param strategy    how to discard messages in case the queue is full
+     * @param applyMaxToQos0 whether {@code max} also bounds QoS 0 messages. Normally false: QoS 0 queues
+     *                       are held only by the node-wide QoS 0 memory budget, and imposing a count
+     *                       limit on them would change long-standing behaviour for bridges and client
+     *                       queues. Sampler queues pass true — they are ring buffers of the most recent
+     *                       {@code SamplingService.SAMPLE_SIZE} payloads, and without this one sampled
+     *                       QoS 0 topic can consume the whole shared budget and starve every other QoS 0
+     *                       consumer on the node (EDG-885).
      * @param retained    true if this message was sent in response to a subscribe. Retained messages are not dropped
      *                    when the queue reached the maximum queue size.
      * @param bucketIndex provided by the single writer
@@ -54,7 +61,20 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
             long max,
             @NotNull QueuedMessagesStrategy strategy,
             boolean retained,
+            boolean applyMaxToQos0,
             int bucketIndex);
+
+    /** Equivalent to the overload above with {@code applyMaxToQos0 = false}, which is the historical behaviour. */
+    default void add(
+            final @NotNull String queueId,
+            final boolean shared,
+            final @NotNull PUBLISH publish,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final int bucketIndex) {
+        add(queueId, shared, publish, max, strategy, retained, false, bucketIndex);
+    }
 
     /**
      * Adds a list of PUBLISHes to a client or shared subscription queue. If the size exceeds the queue limit, the given
@@ -66,6 +86,13 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
      * @param publishes   to be queued
      * @param max         maximum amount of messages queued for the client
      * @param strategy    how to discard messages in case the queue is full
+     * @param applyMaxToQos0 whether {@code max} also bounds QoS 0 messages. Normally false: QoS 0 queues
+     *                       are held only by the node-wide QoS 0 memory budget, and imposing a count
+     *                       limit on them would change long-standing behaviour for bridges and client
+     *                       queues. Sampler queues pass true — they are ring buffers of the most recent
+     *                       {@code SamplingService.SAMPLE_SIZE} payloads, and without this one sampled
+     *                       QoS 0 topic can consume the whole shared budget and starve every other QoS 0
+     *                       consumer on the node (EDG-885).
      * @param retained    true if this messages are sent in response to a subscribe. Retained messages are not dropped
      *                    when the queue reached the maximum queue size. It is not necessarily the same as the retain
      *                    flag of the publish.
@@ -78,7 +105,20 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
             long max,
             @NotNull QueuedMessagesStrategy strategy,
             boolean retained,
+            boolean applyMaxToQos0,
             int bucketIndex);
+
+    /** Equivalent to the overload above with {@code applyMaxToQos0 = false}, which is the historical behaviour. */
+    default void add(
+            final @NotNull String queueId,
+            final boolean shared,
+            final @NotNull List<PUBLISH> publishes,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final int bucketIndex) {
+        add(queueId, shared, publishes, max, strategy, retained, false, bucketIndex);
+    }
 
     /**
      * Returns a batch of PUBLISHes and marks them by setting packet identifiers. The size of the batch is limited by 2

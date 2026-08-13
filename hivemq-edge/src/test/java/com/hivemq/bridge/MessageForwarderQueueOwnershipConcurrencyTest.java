@@ -60,6 +60,7 @@ import org.slf4j.LoggerFactory;
  * Answering {@code true} for a queue that has just become unowned is harmless — it is reclaimed on
  * the next sweep.
  */
+@SuppressWarnings("FutureReturnValueIgnored") // submitted work reports failures through the shared list
 public class MessageForwarderQueueOwnershipConcurrencyTest {
 
     private static final int WRITER_ITERATIONS = 20_000;
@@ -174,8 +175,8 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
 
         if (!failures.isEmpty()) {
             final Throwable first = failures.get(0);
-            if (first instanceof Error) {
-                throw (Error) first;
+            if (first instanceof Error error) {
+                throw error;
             }
             throw new AssertionError("concurrent failure: " + first, first);
         }

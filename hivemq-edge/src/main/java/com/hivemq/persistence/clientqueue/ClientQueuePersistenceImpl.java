@@ -111,11 +111,25 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         return singleWriter.submit(queueId, (bucketIndex) -> {
             MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
                     mqttConfigurationService.getQueuedMessagesStrategy();
+            // A sampler queue is a ring buffer of the most recent SamplingService.SAMPLE_SIZE payloads,
+            // so it discards the oldest -- and, unlike every other queue, that bound applies to QoS 0
+            // too. Without it a sampled topic whose publishers use QoS 0 is held only by the node-wide
+            // QoS 0 memory budget and can starve every other QoS 0 consumer on the node (EDG-885).
+            boolean applyMaxToQos0 = false;
             if (queueId.startsWith(SAMPLER_PREFIX)) {
                 queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
+                applyMaxToQos0 = true;
             }
 
-            localPersistence.add(queueId, shared, publish, queueLimit, queuedMessagesStrategy, retained, bucketIndex);
+            localPersistence.add(
+                    queueId,
+                    shared,
+                    publish,
+                    queueLimit,
+                    queuedMessagesStrategy,
+                    retained,
+                    applyMaxToQos0,
+                    bucketIndex);
             final int queueSize = localPersistence.size(queueId, shared, bucketIndex);
             if (queueSize == 1) {
                 if (shared) {
@@ -147,11 +161,25 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final boolean queueWasEmpty = localPersistence.size(queueId, shared, bucketIndex) == 0;
             MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
                     mqttConfigurationService.getQueuedMessagesStrategy();
+            // A sampler queue is a ring buffer of the most recent SamplingService.SAMPLE_SIZE payloads,
+            // so it discards the oldest -- and, unlike every other queue, that bound applies to QoS 0
+            // too. Without it a sampled topic whose publishers use QoS 0 is held only by the node-wide
+            // QoS 0 memory budget and can starve every other QoS 0 consumer on the node (EDG-885).
+            boolean applyMaxToQos0 = false;
             if (queueId.startsWith(SAMPLER_PREFIX)) {
                 queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
+                applyMaxToQos0 = true;
             }
 
-            localPersistence.add(queueId, shared, publishes, queueLimit, queuedMessagesStrategy, retained, bucketIndex);
+            localPersistence.add(
+                    queueId,
+                    shared,
+                    publishes,
+                    queueLimit,
+                    queuedMessagesStrategy,
+                    retained,
+                    applyMaxToQos0,
+                    bucketIndex);
             if (queueWasEmpty) {
                 if (shared) {
                     sharedPublishAvailable(queueId);
