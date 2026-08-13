@@ -206,7 +206,74 @@ class NotifierResolverWalkTest {
         assertThat(server.totalBrowses()).isZero();
     }
 
+    // ── review-05 finding 8: the depth bound, at the boundary and on both paths ──────────────────────
+
+    @Test
+    void aNotifierExactlyAtTheBoundIsFoundOnTheConditionSourcePath() {
+        // The regression. The bound was applied to a frontier *before* testing it, with the ConditionSources
+        // seeded at zero -- so a notifier ten hops above a source was enqueued and discarded without its
+        // EventNotifier attribute ever being read. The operator was told to configure notifierNode for a
+        // topology the documented ten-step bound admits, while the compatibility path at the same depth
+        // still succeeded.
+        server.conditionSourcesOf(CONDITION, List.of("ns=2;s=Source"));
+        chainUpward("ns=2;s=Source", 10);
+        server.notifiers("ns=2;s=Up10");
+
+        assertThat(found()).isEqualTo(NodeId.parse("ns=2;s=Up10"));
+    }
+
+    @Test
+    void andOneBeyondItIsNot() {
+        // The other side of the boundary, which is what makes the test above a boundary test rather than a
+        // test that the bound is merely large. Eleven hops is out of reach and says so per tag.
+        server.conditionSourcesOf(CONDITION, List.of("ns=2;s=Source"));
+        chainUpward("ns=2;s=Source", 11);
+        server.notifiers("ns=2;s=Up11");
+
+        assertThat(resolve())
+                .asInstanceOf(
+                        org.assertj.core.api.InstanceOfAssertFactories.type(NotifierResolver.Result.NotFound.class))
+                .satisfies(notFound -> assertThat(notFound.reason()).contains("notifierNode"));
+    }
+
+    @Test
+    void theCompatibilityPathHasTheSameBound() {
+        // The asymmetry the fix removes. This path reaches its first level through a parentsOf call made
+        // before the recursion starts, so it counted its hops differently and admitted ten where the
+        // ConditionSource path admitted nine. Two resolution paths disagreeing about their own limit is
+        // worse than either answer, because which one a tag gets depends on how the server models its
+        // references rather than on anything the operator can see.
+        //
+        // No HasCondition reference, so the resolver falls back to walking upward from the condition itself.
+        chainUpward(CONDITION.toParseableString(), 10);
+        server.notifiers("ns=2;s=Up10");
+
+        assertThat(found()).isEqualTo(NodeId.parse("ns=2;s=Up10"));
+    }
+
+    @Test
+    void andTheCompatibilityPathStopsAtTheSamePlaceToo() {
+        chainUpward(CONDITION.toParseableString(), 11);
+        server.notifiers("ns=2;s=Up11");
+
+        assertThat(resolve()).isInstanceOf(NotifierResolver.Result.NotFound.class);
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * A straight line of {@code hops} parents above {@code start}, named {@code Up1}…{@code Up<hops>}.
+     * <p>
+     * Named by distance so a failure says how far the walk got rather than which node it stopped at.
+     */
+    private void chainUpward(final @NotNull String start, final int hops) {
+        String below = start;
+        for (int hop = 1; hop <= hops; hop++) {
+            final String above = "ns=2;s=Up" + hop;
+            server.parentOf(below, above);
+            below = above;
+        }
+    }
 
     /** The same two nodes in both the orders a server might list them in. */
     private static @NotNull List<List<String>> bothOrders(final @NotNull String first, final @NotNull String second) {

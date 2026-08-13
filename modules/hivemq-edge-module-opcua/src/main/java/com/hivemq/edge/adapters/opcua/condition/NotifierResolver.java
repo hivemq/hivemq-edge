@@ -401,8 +401,11 @@ public final class NotifierResolver {
 
         final Set<NodeId> visited = new LinkedHashSet<>();
         visited.add(start);
+        // Seeded at one, not zero: the parentsOf below has already taken the first upward hop, so the
+        // frontier handed on is a level above the start rather than the start itself. Seeding zero would
+        // give this path an eleventh hop that the ConditionSource path does not have.
         return parentsOf(client, List.of(start), 0, new ArrayList<>(), visited)
-                .thenCompose(frontier -> nearestNotifier(client, frontier, visited, 0));
+                .thenCompose(frontier -> nearestNotifier(client, frontier, visited, 1));
     }
 
     /**
@@ -432,6 +435,21 @@ public final class NotifierResolver {
      * <p>
      * A plain {@link LinkedHashSet} is safe despite the stages running on Milo's threads: every step here is
      * chained with {@code thenCompose}, so no two touch it at once and each sees the last one's writes.
+     * <p>
+     * <b>{@code depth} counts upward hops already taken to reach this frontier, and the bound is tested
+     * against the frontier rather than applied before it.</b> The distinction is the whole of review-05
+     * finding 8. Written {@code depth >= MAX_WALK_DEPTH}, with the ConditionSources seeded at zero, a frontier
+     * arriving at depth ten was discarded <em>without its {@code EventNotifier} attribute ever being read</em>
+     * — so a notifier exactly ten hops above a ConditionSource was rejected, and the resolver told the
+     * operator to configure {@code notifierNode} for a topology the documented bound admits. The compatibility
+     * path did not have the defect, because its first level is reached by a {@code parentsOf} call made
+     * before this method is entered; the two therefore disagreed about their own limit by one, which is worse
+     * than either answer.
+     * <p>
+     * So each caller states how far its frontier already is: {@link #walkFromConditionSources} seeds zero,
+     * since the sources are the search's origin rather than a step above it, and {@link #walkUpwardsFrom}
+     * seeds one, having already taken a step to build its frontier. Both then test ten upward hops, which is
+     * what {@link #MAX_WALK_DEPTH} has always been documented to mean.
      */
     private static @NotNull CompletableFuture<NodeId> nearestNotifier(
             final @NotNull OpcUaClient client,
@@ -439,7 +457,7 @@ public final class NotifierResolver {
             final @NotNull Set<NodeId> visited,
             final int depth) {
 
-        if (frontier.isEmpty() || depth >= MAX_WALK_DEPTH) {
+        if (frontier.isEmpty() || depth > MAX_WALK_DEPTH) {
             return CompletableFuture.completedFuture(null);
         }
         return firstNotifierIn(client, frontier, 0)
