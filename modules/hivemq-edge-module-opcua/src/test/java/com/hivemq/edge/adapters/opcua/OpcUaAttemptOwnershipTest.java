@@ -29,6 +29,8 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -207,6 +209,49 @@ class OpcUaAttemptOwnershipTest {
                 .isSameAs(liveBrowseClient);
     }
 
+    // ── review-06 finding 1: who reports a lifecycle status ─────────────────────────────────────────
+
+    @Test
+    @Timeout(60)
+    void destroyReportsTheDisconnectionItself() {
+        // The other half of making status publication ownership-aware. A connection may report a status only
+        // while it is the one the adapter holds, and destroy() releases the slot *before* closing the
+        // connection -- so the DISCONNECTED that the close used to publish is now correctly refused as coming
+        // from a connection the adapter has let go of. It is still true and still has to be reported, and the
+        // adapter is the only party left that can report it.
+        //
+        // Synchronously, before destroy() returns. Published from inside the asynchronous close it could land
+        // after the framework had restarted this same instance -- a configuration change is exactly a destroy
+        // followed by a start -- and describe the replacement as disconnected, which is the finding.
+        final OpcUaProtocolAdapter started = startedAdapter();
+        awaitTheConnectionAttemptFailing(started);
+
+        started.destroy();
+
+        assertThat(protocolAdapterState.getConnectionStatus())
+                .as("a destroyed adapter must report itself disconnected")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+    }
+
+    @Test
+    @Timeout(60)
+    void stopReportsTheDisconnectionItself() {
+        // Same reasoning on the stop path, which releases the slot before calling conn.stop() for the same
+        // reason. Asserted separately because the two paths clear the slot at different points and one being
+        // right says nothing about the other.
+        final OpcUaProtocolAdapter started = startedAdapter();
+        awaitTheConnectionAttemptFailing(started);
+
+        started.stop(
+                ProtocolAdapterConnectionDirection.Northbound,
+                mock(ProtocolAdapterStopInput.class),
+                mock(ProtocolAdapterStopOutput.class));
+
+        assertThat(protocolAdapterState.getConnectionStatus())
+                .as("a stopped adapter must report itself disconnected")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     private @NotNull OpcUaProtocolAdapter startedAdapter() {
@@ -271,7 +316,8 @@ class OpcUaAttemptOwnershipTest {
                 new FakeEventService(),
                 mock(ProtocolAdapterMetricsService.class),
                 adapterConfig(),
-                mock(OpcUaServiceFaultListener.class));
+                mock(OpcUaServiceFaultListener.class),
+                ConnectionOwnership.alwaysCurrent());
     }
 
     /** A connection that will actually reach the embedded server, so its attempt succeeds. */
@@ -294,7 +340,8 @@ class OpcUaAttemptOwnershipTest {
                         new FakeEventService(),
                         "test-adapter-id",
                         () -> {},
-                        true));
+                        true),
+                ConnectionOwnership.alwaysCurrent());
     }
 
     private @NotNull OpcUaSpecificAdapterConfig serverConfig() {

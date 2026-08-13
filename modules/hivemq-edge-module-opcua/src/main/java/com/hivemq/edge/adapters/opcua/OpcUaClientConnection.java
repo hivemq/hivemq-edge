@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
@@ -66,6 +67,29 @@ public class OpcUaClientConnection {
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
     private final @NotNull OpcUaServiceFaultListener serviceFaultListener;
+
+    /**
+     * Whether the adapter still speaks through this connection, asked of the adapter rather than answered here.
+     * <p>
+     * {@link ProtocolAdapterState} is one slot per adapter, and every attempt the adapter makes — first start,
+     * retry, reconnect — is a fresh {@code OpcUaClientConnection} writing into that same slot. A connection is
+     * therefore never entitled to describe the adapter on its own authority; it is entitled to do so only while
+     * it is the connection the adapter holds.
+     * <p>
+     * Without that distinction a teardown could report the wrong thing about a healthy replacement.
+     * {@link OpcUaProtocolAdapter#destroy()} hands the slot over and closes the old connection on the common
+     * pool, so the close outlives the call: the framework can install and connect a replacement while it runs,
+     * and the old connection's {@link #closeContext} then wrote {@code DISCONNECTED} over the replacement's
+     * {@code CONNECTED}. The next health check reads that status, judges the healthy replacement unhealthy and
+     * reconnects it — a monitoring gap and a rebuild, both caused by a connection that no longer existed.
+     * Setting a status also notifies the framework's connection-status listener, so the damage is not confined
+     * to the health check.
+     * <p>
+     * A predicate over the connection rather than a plain {@code BooleanSupplier} so the adapter can answer it
+     * with a bare identity comparison against its own slot, without either side having to be constructed first.
+     * Required rather than defaulted: a call site that forgets it would silently reintroduce exactly this.
+     */
+    private final @NotNull Predicate<OpcUaClientConnection> stillOwned;
 
     /**
      * The subscription handler, reachable from the moment it is constructed rather than from the moment the
@@ -107,7 +131,8 @@ public class OpcUaClientConnection {
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull OpcUaSpecificAdapterConfig config,
-            final @NotNull OpcUaServiceFaultListener serviceFaultListener) {
+            final @NotNull OpcUaServiceFaultListener serviceFaultListener,
+            final @NotNull Predicate<OpcUaClientConnection> stillOwned) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.eventService = eventService;
@@ -116,6 +141,32 @@ public class OpcUaClientConnection {
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
         this.serviceFaultListener = serviceFaultListener;
+        this.stillOwned = stillOwned;
+    }
+
+    /**
+     * Publishes a connection status, unless the adapter has already moved on to another connection.
+     * <p>
+     * Every status this class reports goes through here, not only the ones a teardown writes. The question
+     * "may this object describe the adapter" has the same answer whichever status is being reported, and a
+     * superseded attempt announcing {@code ERROR} because it could not connect is as wrong as one announcing
+     * {@code DISCONNECTED} because it has been closed — in both cases the adapter is being described by an
+     * object it no longer holds.
+     * <p>
+     * Silently dropping the status is the right outcome rather than a lossy one: the adapter's own lifecycle
+     * paths publish what is true of the adapter at the moment they run — see {@link OpcUaProtocolAdapter#stop}
+     * and {@link OpcUaProtocolAdapter#destroy}, which say {@code DISCONNECTED} themselves rather than leaving
+     * it to a close that may complete long afterwards.
+     */
+    private void publishStatus(final ProtocolAdapterState.@NotNull ConnectionStatus status) {
+        if (!stillOwned.test(this)) {
+            log.debug(
+                    "OPC UA adapter '{}': not reporting {} from a connection the adapter has already replaced",
+                    adapterId,
+                    status);
+            return;
+        }
+        protocolAdapterState.setConnectionStatus(status);
     }
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
@@ -127,8 +178,16 @@ public class OpcUaClientConnection {
             return false;
         }
         final OpcUaClient client;
+        // Given the same ownership question this connection asks of itself. The listener is the other writer
+        // of the adapter's status, and a superseded connection's session is still a live session: it can go
+        // inactive -- or reactivate -- long after the adapter has moved on, and either report would describe
+        // the replacement rather than the object it actually happened to.
         final var activityListener = new OpcUaSessionActivityListener(
-                protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                protocolAdapterState,
+                () -> stillOwned.test(this));
 
         // Determine preferred MessageSecurityMode with intelligent defaults
         final MessageSecurityMode preferredMode;
@@ -189,7 +248,7 @@ public class OpcUaClientConnection {
                                 + " milliseconds for adapter '" + adapterId + "'")
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
-                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                 quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             } catch (final InterruptedException e) {
@@ -200,7 +259,7 @@ public class OpcUaClientConnection {
                         .withMessage("Connection interrupted for adapter '" + adapterId + "'")
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
-                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                 quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             } catch (final ExecutionException e) {
@@ -212,7 +271,7 @@ public class OpcUaClientConnection {
                         .withMessage("Connection failed for adapter '" + adapterId + "': " + causeMessage)
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
-                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                 quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             }
@@ -223,7 +282,7 @@ public class OpcUaClientConnection {
                     .withMessage("Unable to create OPC UA client for adapter '" + adapterId + "'")
                     .withSeverity(Event.SEVERITY.ERROR)
                     .fire();
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             return false;
         }
 
@@ -250,7 +309,7 @@ public class OpcUaClientConnection {
 
         if (subscriptionOptional.isEmpty()) {
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             eventService
                     .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                     .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
@@ -284,13 +343,13 @@ public class OpcUaClientConnection {
             // activates the session, long before there is a subscription -- so without this the adapter would
             // go on reporting a connection that has just been thrown away. The teardown that set `closed`
             // could not correct it either: it ran against a null context and set nothing.
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            publishStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             return false;
         }
 
         context.set(new ConnectionContext(
                 subscription.getClient(), serviceFaultListener, activityListener, subscriptionLifecycleHandler));
-        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        publishStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         log.info("Client created and connected successfully");
         return true;
@@ -348,7 +407,7 @@ public class OpcUaClientConnection {
         final ConnectionContext ctx = context.getAndSet(null);
         if (ctx != null) {
             quietlyCloseClient(ctx.client(), keepSubscription, ctx.faultListener(), ctx.activityListener());
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            publishStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
     }
 

@@ -111,7 +111,8 @@ public class OpcUaClientConnectionTest {
                         eventService,
                         "test-adapter-id",
                         () -> reconnectionCallbackInvoked.set(true),
-                        true));
+                        true),
+                ConnectionOwnership.alwaysCurrent());
 
         // Parse config
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
@@ -193,7 +194,8 @@ public class OpcUaClientConnectionTest {
                 eventService,
                 metricsService,
                 config,
-                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true));
+                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true),
+                ConnectionOwnership.alwaysCurrent());
 
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
         assertThat(result).isInstanceOf(Success.class);
@@ -244,7 +246,8 @@ public class OpcUaClientConnectionTest {
                 eventService,
                 metricsService,
                 config,
-                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true));
+                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true),
+                ConnectionOwnership.alwaysCurrent());
 
         // Act
         final boolean healthy = opcUaClientConnection.isHealthy();
@@ -285,7 +288,8 @@ public class OpcUaClientConnectionTest {
                 eventService,
                 metricsService,
                 config,
-                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true));
+                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true),
+                ConnectionOwnership.alwaysCurrent());
 
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
         assertThat(result).isInstanceOf(Success.class);
@@ -356,7 +360,8 @@ public class OpcUaClientConnectionTest {
                         eventService,
                         "test-adapter-id",
                         () -> reconnectionCallbackInvoked.set(true),
-                        true));
+                        true),
+                ConnectionOwnership.alwaysCurrent());
 
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
         assertThat(result).isInstanceOf(Success.class);

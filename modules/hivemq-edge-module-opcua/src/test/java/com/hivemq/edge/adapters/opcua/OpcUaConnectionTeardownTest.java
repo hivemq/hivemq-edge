@@ -243,7 +243,8 @@ class OpcUaConnectionTeardownTest {
                 mock(ProtocolAdapterMetricsService.class),
                 config(),
                 new OpcUaServiceFaultListener(
-                        mock(ProtocolAdapterMetricsService.class), eventService, "test-adapter-id", () -> {}, true));
+                        mock(ProtocolAdapterMetricsService.class), eventService, "test-adapter-id", () -> {}, true),
+                ConnectionOwnership.alwaysCurrent());
     }
 
     private @NotNull OpcUaSpecificAdapterConfig config() {

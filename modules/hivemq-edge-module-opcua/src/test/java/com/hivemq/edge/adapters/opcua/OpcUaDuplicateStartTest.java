@@ -313,7 +313,8 @@ class OpcUaDuplicateStartTest {
                 new FakeEventService(),
                 mock(ProtocolAdapterMetricsService.class),
                 adapterConfig(),
-                mock(OpcUaServiceFaultListener.class));
+                mock(OpcUaServiceFaultListener.class),
+                ConnectionOwnership.alwaysCurrent());
     }
 
     /**

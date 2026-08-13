@@ -54,7 +54,8 @@ class OpcUaSessionActivityListenerTest {
     @BeforeEach
     void setUp() {
         final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
-        listener = new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state);
+        listener =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
         reconnects = new AtomicInteger();
         listener.setOnReconnect(reconnects::incrementAndGet);
     }
@@ -196,8 +197,8 @@ class OpcUaSessionActivityListenerTest {
         final ExecutorService threads = Executors.newFixedThreadPool(2);
         try {
             for (int round = 0; round < rounds; round++) {
-                final OpcUaSessionActivityListener racing =
-                        new OpcUaSessionActivityListener(sharedMetrics, sharedEvents, "test-adapter-id", sharedState);
+                final OpcUaSessionActivityListener racing = new OpcUaSessionActivityListener(
+                        sharedMetrics, sharedEvents, "test-adapter-id", sharedState, () -> true);
                 final AtomicInteger refreshes = new AtomicInteger();
                 // Consume the initial connect, so the activation below counts as a reconnect.
                 racing.onSessionActive(SESSION);
@@ -232,6 +233,65 @@ class OpcUaSessionActivityListenerTest {
             // rather than pinning it to whatever this test found.
             listenerLog.setLevel(previousLevel);
         }
+    }
+
+    // ── review-06 finding 1: whose session is this reporting about ──────────────────────────────────
+
+    @Test
+    void aSupersededConnectionsSessionMustNotReportIntoTheAdaptersStatus() {
+        // The listener belongs to one client; the status belongs to the adapter. A superseded connection's
+        // session stays live until its close completes and Milo goes on reporting its activity throughout, so
+        // an ungated listener describes whichever connection is current -- by then, a different one. A stale
+        // DISCONNECTED makes a healthy replacement look failed to the health check; a stale CONNECTED hides a
+        // genuine failure of it.
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        final OpcUaSessionActivityListener superseded =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> false);
+        // The replacement, connected.
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+        superseded.onSessionInactive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("a replaced connection's session must not disconnect the connection that replaced it")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+    }
+
+    @Test
+    void butTheCurrentConnectionsSessionStillReportsBothWays() {
+        // The counterpart. This is the adapter's ordinary connect/disconnect reporting and it has to keep
+        // working -- a gate that never opens would pass every assertion above and cost the adapter its status.
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        final OpcUaSessionActivityListener current =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
+
+        current.onSessionActive(mock(UaSession.class));
+        assertThat(state.getConnectionStatus())
+                .as("an active session on the current connection is the adapter being connected")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+        current.onSessionInactive(mock(UaSession.class));
+        assertThat(state.getConnectionStatus())
+                .as("and an inactive one is the adapter being disconnected")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+    }
+
+    @Test
+    void theEventAndTheMetricAreStillReportedByASupersededSession() {
+        // Deliberately not gated, and the distinction is the reason the gate is around the status alone. An
+        // event records that something happened, and the session really did go inactive; the status is a
+        // single slot describing the adapter now. Suppressing the record as well would lose the only trace
+        // that a superseded connection was ever torn down.
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        final FakeEventService events = new FakeEventService();
+        final OpcUaSessionActivityListener superseded =
+                new OpcUaSessionActivityListener(mock(), events, "test-adapter-id", state, () -> false);
+
+        superseded.onSessionInactive(mock(UaSession.class));
+
+        assertThat(events.readEvents(null, null))
+                .as("the disconnection still happened and must still be recorded")
+                .anySatisfy(event -> assertThat(event.getMessage()).contains("session has been disconnected"));
     }
 
     /** A state that records nothing, for the half-million-round race loop. See that test for why. */
@@ -301,6 +361,6 @@ class OpcUaSessionActivityListenerTest {
 
     private static @NotNull OpcUaSessionActivityListener unwiredListener() {
         final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
-        return new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state);
+        return new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
     }
 }

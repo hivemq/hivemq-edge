@@ -24,6 +24,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.Constants;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.UaSession;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +42,21 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull AtomicBoolean seenFirstActivation = new AtomicBoolean(false);
 
     /**
+     * Whether the connection this listener belongs to is still the one the adapter speaks through.
+     * <p>
+     * A listener belongs to one client, but {@link ProtocolAdapterState} belongs to the adapter, and the two
+     * do not have the same lifetime: a superseded connection's session stays live until its close completes,
+     * and Milo goes on reporting that session's activity throughout. Reporting it into the adapter's status
+     * describes whichever connection is current, which by then is a different one — a stale
+     * {@code DISCONNECTED} makes a healthy replacement look failed, and a stale {@code CONNECTED} hides a
+     * genuine failure of it.
+     * <p>
+     * The event and the metric are not gated. Those record that something happened, and it did happen; the
+     * status is a single slot describing the adapter now, and only its owner may set it.
+     */
+    private final @NotNull BooleanSupplier stillOwned;
+
+    /**
      * Who is going to run the refresh a reconnect owes. See {@link ReconnectHandoff} for why the two facts
      * involved cannot be two independent atomics, and why both of its methods answer with what to run
      * instead of running it.
@@ -51,8 +67,15 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
-            @NotNull final ProtocolAdapterState protocolAdapterState) {
-        this(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState, new ReconnectHandoff());
+            @NotNull final ProtocolAdapterState protocolAdapterState,
+            @NotNull final BooleanSupplier stillOwned) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                protocolAdapterState,
+                stillOwned,
+                new ReconnectHandoff());
     }
 
     /** Takes the handoff, so the test that pins mutual exclusion can supply one it can pause. */
@@ -61,12 +84,31 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
             @NotNull final ProtocolAdapterState protocolAdapterState,
+            @NotNull final BooleanSupplier stillOwned,
             @NotNull final ReconnectHandoff handoff) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
+        this.stillOwned = stillOwned;
         this.handoff = handoff;
+    }
+
+    /**
+     * Reports a status, unless the connection this listener belongs to has already been replaced.
+     * <p>
+     * See {@link #stillOwned}. The adapter's own lifecycle paths report what is true of the adapter when they
+     * run, so a dropped status here is never the last word on anything.
+     */
+    private void publishStatus(final ProtocolAdapterState.@NotNull ConnectionStatus status) {
+        if (!stillOwned.getAsBoolean()) {
+            log.debug(
+                    "OPC UA adapter '{}': not reporting {} from a session whose connection the adapter has already replaced",
+                    adapterId,
+                    status);
+            return;
+        }
+        protocolAdapterState.setConnectionStatus(status);
     }
 
     @Override
@@ -78,7 +120,7 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
                 .withPayload(session.getSessionName() + '/' + session.getSessionId())
                 .withMessage("Adapter '" + adapterId + "' session has been disconnected.")
                 .fire();
-        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        publishStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
     }
 
@@ -114,7 +156,7 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     @Override
     public void onSessionActive(final @NotNull UaSession session) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
-        protocolAdapterState.setConnectionStatus(CONNECTED);
+        publishStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
 
         // A reconnect whose subscription transferred cleanly recreates nothing, so nothing else would ask the

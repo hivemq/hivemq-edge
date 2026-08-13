@@ -317,7 +317,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 input.moduleServices().eventService(),
                 protocolAdapterMetricsService,
                 config,
-                opcUaServiceFaultListener);
+                opcUaServiceFaultListener,
+                this::isCurrentConnection);
         if (opcUaClientConnection.compareAndSet(null, conn)) {
             // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
             // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
@@ -389,6 +390,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             } else {
                 log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
             }
+            // Said by the adapter, because the connection is no longer entitled to say it: the slot was
+            // released a moment ago, so the DISCONNECTED that conn.stop() used to publish is now correctly
+            // suppressed as coming from a connection the adapter no longer holds. The status is still true and
+            // still has to be reported -- what changed is who reports it. Inside the lock and before the call
+            // returns, so a stop is DISCONNECTED by the time it says it has stopped.
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         } finally {
             reconnectLock.unlock();
         }
@@ -467,7 +474,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     moduleServices.eventService(),
                     protocolAdapterMetricsService,
                     config,
-                    opcUaServiceFaultListener);
+                    opcUaServiceFaultListener,
+                    this::isCurrentConnection);
 
             // Set as current connection and attempt connection with retry logic
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
@@ -640,6 +648,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         this.browseClient.set(null);
 
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
+        // Here rather than in the close below, and that ordering is the point. The close is asynchronous and
+        // may still be running when the framework starts this same instance again -- a configuration change is
+        // exactly a destroy followed by a start -- so a status published from inside it can land after the
+        // replacement has connected and describe the replacement as disconnected. Published synchronously it
+        // is ordered before any restart, and the connection's own attempt to publish it later is refused by
+        // the ownership check the slot above has just invalidated.
+        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         if (conn != null) {
             @SuppressWarnings("unused")
             final var unused = CompletableFuture.runAsync(() -> {
@@ -1045,6 +1060,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     /**
+     * Whether a connection is still the one this adapter speaks through.
+     * <p>
+     * The authority for status publication, handed to every connection this adapter builds. A connection is
+     * one attempt among several an adapter makes over its life, while {@link ProtocolAdapterState} is a single
+     * slot describing the adapter; so the question "may this object set that status" is the adapter's to
+     * answer, and the answer is this identity comparison.
+     * <p>
+     * It has to be a live question rather than a flag handed over once, because the whole difficulty is that a
+     * connection outlives the moment it stops being current: {@link #destroy()} releases the slot and closes
+     * the old connection asynchronously, so the close runs against an adapter that may already have started
+     * and connected a replacement.
+     */
+    private boolean isCurrentConnection(final @NotNull OpcUaClientConnection connection) {
+        return opcUaClientConnection.get() == connection;
+    }
+
+    /**
      * Attempts to establish connection to OPC UA server.
      * On failure, schedules automatic retry after configured retry interval.
      */
@@ -1212,7 +1244,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 this.moduleServices.eventService(),
                                 protocolAdapterMetricsService,
                                 config,
-                                opcUaServiceFaultListener);
+                                opcUaServiceFaultListener,
+                                this::isCurrentConnection);
 
                         // Set as current connection and attempt
                         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
