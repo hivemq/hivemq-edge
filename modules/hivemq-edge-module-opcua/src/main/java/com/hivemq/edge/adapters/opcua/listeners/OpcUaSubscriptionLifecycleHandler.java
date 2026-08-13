@@ -98,12 +98,26 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     /**
      * How many times in a row a refresh may be retried before the reason is dropped.
      * <p>
-     * Only failures a retry could actually answer are counted — see {@link #requeueIfWorthRetrying} — so this
-     * bounds a collision with a concurrent refresh, which resolves within a round trip. Three is enough for
-     * that and small enough that a server refusing indefinitely costs three calls rather than a hot loop.
+     * Only failures a retry could actually answer are counted — see {@link #requeueIfWorthRetrying}. Three is
+     * small enough that a server refusing indefinitely costs three calls rather than a hot loop, and it is
+     * enough only because each retry <em>waits</em>: see {@link #refreshRetryDelayMs}, and
+     * {@link #releaseDeferredRefresh} for the signal that usually makes the first retry the successful one.
+     * Spent immediately, three retries buy nothing at all — they are three refusals in the same millisecond.
      */
     @VisibleForTesting
     static final int MAX_REFRESH_RETRIES = 3;
+
+    /**
+     * The floor and ceiling on how long a refresh retry waits.
+     * <p>
+     * The delay is derived from the publishing interval, which is the rate at which the server delivers the
+     * refresh it is busy with — a refresh is reported through publishes like anything else, so one interval is
+     * the natural unit of "give it a moment". The bounds keep a pathological configuration from turning that
+     * into either a busy loop or a wait longer than the reason for refreshing stays interesting.
+     */
+    private static final long REFRESH_RETRY_MIN_DELAY_MS = 500L;
+
+    private static final long REFRESH_RETRY_MAX_DELAY_MS = 10_000L;
 
     // Verification is one browse against an already-connected session. The bound only exists so a server that
     // never answers cannot stall adapter start indefinitely.
@@ -204,6 +218,35 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private final @NotNull AtomicInteger consecutiveRefreshFailures = new AtomicInteger();
 
     /**
+     * A refresh that failed for a reason worth retrying, waiting for the moment to try it again.
+     * <p>
+     * Separate from {@link #pendingRefresh}, which means "owed and ready to go": the drain empties that slot
+     * the instant the in-flight guard frees, and a completion frees the guard on its own stack. Putting a
+     * retry there was therefore not a retry at all — the refusal produced the next call in the same
+     * millisecond, and three retries were three refusals inside one round trip.
+     * <p>
+     * That is exactly wrong for the refusal it exists to answer. {@code Bad_RefreshInProgress} says another
+     * refresh <em>is running now</em>; a server that refuses quickly while that other refresh is slow can
+     * therefore reject the original and every retry long before the collision ends, and the mandatory refresh
+     * a reconnect owes is then dropped while the log says only that it gave up. Held here instead, a retry is
+     * released by {@link #releaseDeferredRefresh} — from a timer, or as soon as the colliding refresh actually
+     * ends.
+     * <p>
+     * One slot, for the same reason {@link #pendingRefresh} is one: §4.5 makes a refresh subscription-wide.
+     */
+    private final @NotNull AtomicReference<RefreshReason> deferredRefresh = new AtomicReference<>();
+
+    /**
+     * Where a deferred retry waits, so a test can hold and release its own clock.
+     * <p>
+     * Production hands this to {@link CompletableFuture#delayedExecutor}, whose timer is shared across the JVM
+     * — a handler that is only ever waiting costs no thread of its own, and there is nothing to shut down when
+     * the connection goes. What replaces shutdown is the {@link #abandoned} check the released task makes:
+     * a retry that comes due on a closed handler finds the flag set and returns without touching the server.
+     */
+    private final @NotNull RefreshRetryScheduler refreshRetryScheduler;
+
+    /**
      * The {@code EventId}s of {@code RefreshRequired} occurrences already acted on, most recent last.
      * <p>
      * The in-flight guard above collapses copies only while a call is outstanding, which is not the same
@@ -228,6 +271,37 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull List<OpcuaTag> tags,
             final @NotNull OpcUaClient client,
             final @NotNull OpcUaSpecificAdapterConfig config) {
+        this(
+                protocolAdapterMetricsService,
+                tagStreamingService,
+                eventService,
+                adapterId,
+                tags,
+                client,
+                config,
+                (task, delayMs) -> CompletableFuture.delayedExecutor(delayMs, TimeUnit.MILLISECONDS)
+                        .execute(task));
+    }
+
+    /**
+     * Takes the retry scheduler, so a test can decide when a deferred refresh comes due.
+     * <p>
+     * The delay is the whole of the fix it belongs to, and a test that had to wait it out in real time would
+     * be both slow and timing-dependent — the two properties worth pinning are that the retry does <em>not</em>
+     * happen before the wait and that it does happen after, and neither can be asserted honestly against a
+     * clock the test does not control.
+     */
+    @VisibleForTesting
+    OpcUaSubscriptionLifecycleHandler(
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
+            final @NotNull EventService eventService,
+            final @NotNull String adapterId,
+            final @NotNull List<OpcuaTag> tags,
+            final @NotNull OpcUaClient client,
+            final @NotNull OpcUaSpecificAdapterConfig config,
+            final @NotNull RefreshRetryScheduler refreshRetryScheduler) {
+        this.refreshRetryScheduler = refreshRetryScheduler;
         this.config = config;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.tagStreamingService = tagStreamingService;
@@ -1027,6 +1101,14 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             if (isRefreshRequired(eventType)) {
                 onRefreshRequired(eventIdOf(eventFields));
             }
+            // The end of somebody's refresh, which is the moment Bad_RefreshInProgress stops being true. If a
+            // refusal deferred a retry, this is the signal it is waiting for -- the alternative is a timer
+            // guessing at how long a refresh of an unknown number of retained conditions takes. Acted on
+            // before the publish decision for the same reason as the two above: whether a user asked to see
+            // the event has nothing to do with whether a refresh we owe can now proceed.
+            if (isRefreshEnd(eventType)) {
+                releaseDeferredRefresh("the refresh that was already running has ended");
+            }
             // Queue overflow is likewise acted on before the publish decision, and for a sharper reason: it
             // arrives on the tag whose data was lost and on no other, so the publish decision below is the
             // last place it exists. See onQueueOverflow.
@@ -1170,6 +1252,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // A reason from outside starts a fresh run of attempts. The bound exists to stop one unanswerable
         // request being retried forever, not to ration refreshes over the life of the connection.
         consecutiveRefreshFailures.set(0);
+        // And it supersedes any retry still waiting: one call covers every reason outstanding when it starts,
+        // so letting a deferred one survive would buy a second call that answers nothing the first did not.
+        deferredRefresh.set(null);
         // Recorded as outstanding work before any attempt to start it, and that order is the whole
         // correctness argument: a completion racing this can then only ever see the slot already filled.
         // Filling it after a failed attempt would leave the window where the completion checks for pending
@@ -1407,23 +1492,29 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
-     * Puts a failed reason back so the drain tries it again, unless a retry cannot help or too many have
-     * already failed in a row.
+     * Holds a failed reason back for a later attempt, unless a retry cannot help or too many have already
+     * failed in a row.
      * <p>
      * Failing consumed the reason, and for most failures that is right: a server that does not implement
      * {@code ConditionRefresh} will not implement it on the second ask either, and retrying would spend
      * calls to learn the same thing. The exceptions are a transport failure and
      * {@code Bad_RefreshInProgress}, both of which describe the moment rather than the request.
      * <p>
-     * {@code compareAndSet(null, …)} rather than {@code set}: a newer reason may have arrived while this call
-     * was outstanding, and it is the fresher description of why a refresh is owed. Either way one call
-     * follows, since §4.5 makes the refresh subscription-wide — so the two reasons genuinely do collapse.
+     * <b>Held rather than requeued, and that is the fix.</b> This used to put the reason straight into
+     * {@link #pendingRefresh}, which {@link #releaseAndDrain} then consumed on the completion's own stack —
+     * the retry left before the refusal had finished being logged. Against the one status it exists for that
+     * is not merely inefficient but wrong: {@code Bad_RefreshInProgress} means a refresh is running <em>right
+     * now</em>, and a server that refuses in a millisecond while the colliding refresh takes seconds answered
+     * the original and all three retries before anything could have changed. The reconnect then completed
+     * with no successful refresh — the exact outcome the coordinator was built to prevent, reached by a
+     * different route.
      */
     private void requeueIfWorthRetrying(final @NotNull RefreshReason reason, final boolean retryCouldHelp) {
         if (!retryCouldHelp) {
             return;
         }
-        if (consecutiveRefreshFailures.incrementAndGet() > MAX_REFRESH_RETRIES) {
+        final int attempt = consecutiveRefreshFailures.incrementAndGet();
+        if (attempt > MAX_REFRESH_RETRIES) {
             log.warn(
                     "Adapter '{}': giving up on the condition refresh owed because {} after {} consecutive failures; the alarm picture may stay incomplete until each alarm next changes",
                     adapterId,
@@ -1431,7 +1522,77 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                     MAX_REFRESH_RETRIES);
             return;
         }
-        pendingRefresh.compareAndSet(null, reason);
+        final long delayMs = refreshRetryDelayMs(attempt);
+        log.debug(
+                "Adapter '{}': retrying in {}ms the condition refresh owed because {} (attempt {} of {})",
+                adapterId,
+                delayMs,
+                reason.why(),
+                attempt,
+                MAX_REFRESH_RETRIES);
+        // set, not compareAndSet: the slot holds at most one deferred retry and a later reason describes the
+        // same single call -- §4.5 makes a refresh subscription-wide, so reasons collapse rather than queue.
+        deferredRefresh.set(reason);
+        refreshRetryScheduler.schedule(() -> releaseDeferredRefresh("the retry delay elapsed"), delayMs);
+    }
+
+    /**
+     * How long the {@code n}th consecutive retry waits.
+     * <p>
+     * One publishing interval for the first, doubling after that, within fixed bounds. The interval is the
+     * unit because a refresh is delivered through publishes like everything else, so it is roughly the
+     * granularity at which "the other refresh has moved on" becomes true; doubling covers a transport failure,
+     * where the useful wait is however long the disturbance lasts and there is nothing to measure it with.
+     * <p>
+     * The exponent is clamped rather than trusted to {@link #MAX_REFRESH_RETRIES}, so raising that bound can
+     * only cost more attempts and never overflow the shift.
+     */
+    private long refreshRetryDelayMs(final int attempt) {
+        final long base = Math.min(
+                REFRESH_RETRY_MAX_DELAY_MS,
+                Math.max(
+                        REFRESH_RETRY_MIN_DELAY_MS,
+                        config.getOpcuaToMqttConfig().publishingInterval()));
+        final int doublings = Math.min(Math.max(attempt - 1, 0), 8);
+        return Math.min(REFRESH_RETRY_MAX_DELAY_MS, base << doublings);
+    }
+
+    /**
+     * Moves a deferred retry into the pending slot and starts it, if one is still waiting.
+     * <p>
+     * Called from two places, which is the point of the slot existing. The timer set by
+     * {@link #requeueIfWorthRetrying} is the backstop; the other caller is a {@code RefreshEnd} notification,
+     * which is the server saying that the refresh it was busy with has finished — the precise moment
+     * {@code Bad_RefreshInProgress} stops being true. Waiting for it rather than for a guessed interval is
+     * what makes a budget of three enough however long the colliding refresh takes.
+     * <p>
+     * {@code getAndSet(null)} so exactly one of the two wins; whichever arrives second finds the slot empty
+     * and does nothing. A {@code RefreshEnd} for a refresh of <em>ours</em> that succeeded can also land here
+     * and release a retry deferred by some later failure a little early — that costs at most one call from a
+     * budget that is being spent anyway, and it is the honest reading of the signal.
+     */
+    private void releaseDeferredRefresh(final @NotNull String why) {
+        final RefreshReason deferred = deferredRefresh.getAndSet(null);
+        if (deferred == null) {
+            return;
+        }
+        if (abandoned.get()) {
+            // What stands in for cancelling the timer. The scheduler is shared and holds no handle worth
+            // keeping, so a retry that comes due on a closed connection is stopped here instead -- before it
+            // can call a client that has been disconnected and report the failure as a tag problem.
+            log.debug(
+                    "Adapter '{}': dropping the condition refresh owed because {}, the connection has been closed",
+                    adapterId,
+                    deferred.why());
+            return;
+        }
+        log.debug(
+                "Adapter '{}': retrying the condition refresh owed because {} now that {}",
+                adapterId,
+                deferred.why(),
+                why);
+        pendingRefresh.compareAndSet(null, deferred);
+        drainRefreshRequests();
     }
 
     /**
@@ -1454,6 +1615,18 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * are very different things to find in a log, and before these paths were merged the message said which
      * by virtue of there being two separate methods.
      */
+    @FunctionalInterface
+    interface RefreshRetryScheduler {
+
+        /**
+         * Runs a task after a delay.
+         *
+         * @param task    what to run — already written to do nothing if the handler has been abandoned by then.
+         * @param delayMs how long to wait.
+         */
+        void schedule(@NotNull Runnable task, long delayMs);
+    }
+
     private enum RefreshReason {
         ESTABLISHED("a subscription was established"),
         RECONNECTED("the session was re-established"),
@@ -1526,6 +1699,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      */
     private static boolean isRefreshRequired(final @Nullable NodeId eventType) {
         return NodeIds.RefreshRequiredEventType.equals(eventType);
+    }
+
+    /**
+     * Whether a notification is the server reporting that a refresh has finished.
+     * <p>
+     * OPC 10000-9 §5.5.7 brackets the re-reported conditions between {@code RefreshStart} and
+     * {@code RefreshEnd}, and the bracket is copied to every notifier item in the subscription — so this
+     * arrives whoever asked for the refresh, including a southbound caller whose manual request is
+     * deliberately outside the coordinator. That is what makes it usable as the end of a collision rather
+     * than merely as the end of our own call.
+     */
+    private static boolean isRefreshEnd(final @Nullable NodeId eventType) {
+        return NodeIds.RefreshEndEventType.equals(eventType);
     }
 
     /**

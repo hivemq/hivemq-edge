@@ -35,7 +35,11 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -90,9 +94,11 @@ class RefreshCoordinationTest {
     private @NotNull ProtocolAdapterTagStreamingService streaming;
     private @NotNull FakeEventService events;
     private @NotNull OpcUaClient client;
+    private @NotNull ManualRetryClock clock;
 
     @BeforeEach
     void setUp() {
+        clock = new ManualRetryClock();
         metrics = mock(ProtocolAdapterMetricsService.class);
         streaming = mock(ProtocolAdapterTagStreamingService.class);
         events = new FakeEventService();
@@ -176,6 +182,29 @@ class RefreshCoordinationTest {
     // ── the refusal that a retry answers ─────────────────────────────────────────────────────────────
 
     @Test
+    void aRefusalDoesNotProduceTheNextCallOnItsOwnStack() {
+        // Review-06 finding 2, stated as the one thing that was wrong. A refused call used to requeue its
+        // reason into the pending slot, and the completion then released the in-flight guard and drained it --
+        // so the "retry" went out from inside the refusal's own callback, before anything could have changed.
+        //
+        // Against Bad_RefreshInProgress that is not a retry at all. The status means another refresh is
+        // running *now*; a server that refuses in a millisecond while the colliding refresh takes seconds
+        // answered the original and all three retries inside one round trip, and the mandatory refresh a
+        // reconnect owes was then dropped with nothing but a log line saying it gave up.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        established(handler, 4711);
+        when(client.callAsync(any())).thenReturn(refusedAsInProgress(), completedRefreshCall());
+
+        handler.onSessionReactivated();
+
+        verify(client, times(1)).callAsync(any());
+        assertThat(clock.isWaiting())
+                .as("the retry must be waiting for something rather than already spent")
+                .isTrue();
+    }
+
+    @Test
     void aRefreshRefusedAsAlreadyInProgressIsTriedAgain() {
         // The other half of the finding. Coordinating our own two paths removes the collision we cause, but
         // the southbound manual refresh is deliberately outside the coordinator -- the caller asked, so a
@@ -192,6 +221,7 @@ class RefreshCoordinationTest {
         when(client.callAsync(any())).thenReturn(refusedAsInProgress(), completedRefreshCall());
 
         handler.onSessionReactivated();
+        clock.advance();
 
         verify(client, times(2)).callAsync(any());
     }
@@ -221,9 +251,13 @@ class RefreshCoordinationTest {
         when(client.callAsync(any())).thenReturn(refusedAsInProgress());
 
         handler.onSessionReactivated();
+        clock.advance();
 
         verify(client, times(1 + OpcUaSubscriptionLifecycleHandler.MAX_REFRESH_RETRIES))
                 .callAsync(any());
+        assertThat(clock.isWaiting())
+                .as("and once the budget is spent nothing is left waiting to spend more")
+                .isFalse();
     }
 
     @Test
@@ -238,6 +272,7 @@ class RefreshCoordinationTest {
 
         handler.onSessionReactivated();
         failing.completeExceptionally(new IllegalStateException("the session went away"));
+        clock.advance();
 
         verify(client, times(2)).callAsync(any());
     }
@@ -260,18 +295,189 @@ class RefreshCoordinationTest {
                         completedRefreshCall());
 
         handler.onSessionReactivated();
+        clock.advance();
         assertThat(refreshCallCount())
                 .as("three refusals then a success, all within one run")
                 .isEqualTo(4);
 
         handler.onSessionReactivated();
+        clock.advance();
 
         assertThat(refreshCallCount())
                 .as("the budget must have been handed back, so this run can retry as well")
                 .isEqualTo(6);
     }
 
+    // ── review-06 finding 2: a retry has to outlast the thing it is retrying against ────────────────
+
+    @Test
+    void aMandatoryRefreshDoesNotSpendItsBudgetWhileAManualOneIsStillRunning() {
+        // The scenario the finding describes, end to end. The southbound manual refresh is deliberately
+        // outside the coordinator -- the caller asked, so a refusal is theirs to see rather than something to
+        // queue behind work they did not ask for -- so it is the one collision the adapter can still cause,
+        // and it is the one the retry budget exists for.
+        //
+        // Before the fix this ended with the reconnect's refresh dropped: the server refused it, the refusal's
+        // own callback sent all three retries in the same millisecond, each was refused for the same reason,
+        // and the manual refresh was still collecting conditions throughout.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        final OpcUaSubscription subscription = established(handler, 4711);
+        final CompletableFuture<CallResponse> manual = new CompletableFuture<>();
+        when(client.callAsync(any())).thenReturn(manual, refusedAsInProgress(), completedRefreshCall());
+
+        handler.requestConditionRefreshNow();
+        handler.onSessionReactivated();
+
+        assertThat(refreshCallCount())
+                .as("the manual refresh, and one mandatory one refused because of it")
+                .isEqualTo(2);
+        assertThat(clock.isWaiting())
+                .as("the mandatory refresh must still have a retry in hand, not have spent them all")
+                .isTrue();
+
+        // The server says the refresh it was busy with has finished, which is the moment
+        // Bad_RefreshInProgress stops being true. RefreshEnd is copied to every notifier item in the
+        // subscription (§5.5.7), so it arrives whoever asked for the refresh -- which is what makes it usable
+        // as the end of somebody else's.
+        refreshEnd(handler, subscription, tag);
+
+        verify(client, times(3)).callAsync(any());
+
+        // The timer that would also have released this retry is still queued -- it is never cancelled,
+        // because the shared scheduler hands back nothing to cancel with. It has to be harmless when it
+        // arrives, and it is: exactly one of the two releases claims the deferred reason, and the loser finds
+        // the slot empty. Advancing here proves the retry cannot be sent twice.
+        clock.advance();
+
+        verify(client, times(3)).callAsync(any());
+    }
+
+    @Test
+    void aDeferredRetryStillFiresWhenNoRefreshEndEverArrives() {
+        // The backstop, and why the timer is not redundant given the signal above. A server may never send
+        // RefreshEnd -- the refusal can come from a refresh started before this subscription existed, or from
+        // an implementation that brackets nothing -- and a retry that waited for it alone would wait forever.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        established(handler, 4711);
+        when(client.callAsync(any())).thenReturn(refusedAsInProgress(), completedRefreshCall());
+
+        handler.onSessionReactivated();
+        verify(client, times(1)).callAsync(any());
+
+        clock.advance();
+
+        verify(client, times(2)).callAsync(any());
+    }
+
+    @Test
+    void eachRetryWaitsLongerThanTheLast() {
+        // Why the delay grows. The first retry is one publishing interval, which is about the granularity at
+        // which the server's own refresh delivery moves on; a collision that survives that is evidence the
+        // wait was too short rather than a reason to keep asking at the same rate. Transport failures have no
+        // measurable duration at all, so backing off is the only honest policy for them.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        established(handler, 4711);
+        when(client.callAsync(any())).thenReturn(refusedAsInProgress());
+
+        handler.onSessionReactivated();
+        clock.advance();
+
+        assertThat(clock.delays())
+                .as("one interval, then two, then four -- the default publishing interval being 1000ms")
+                .containsExactly(1_000L, 2_000L, 4_000L);
+    }
+
+    @Test
+    void aRetryComingDueOnAClosedConnectionTouchesNothing() {
+        // What replaces cancelling the timer. The scheduler is shared across the JVM and holds no handle
+        // worth keeping, so a retry that comes due after the connection has gone is stopped by the same
+        // abandonment flag everything else here reads -- before it can call a disconnected client and report
+        // the resulting failure as a tag problem.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        established(handler, 4711);
+        when(client.callAsync(any())).thenReturn(refusedAsInProgress(), completedRefreshCall());
+
+        handler.onSessionReactivated();
+        assertThat(clock.isWaiting()).as("precondition: a retry is waiting").isTrue();
+
+        handler.abandon();
+        clock.advance();
+
+        verify(client, times(1)).callAsync(any());
+    }
+
+    @Test
+    void aFreshReasonSupersedesARetryStillWaiting() {
+        // One call answers every reason outstanding when it starts, so a reason arriving from outside makes a
+        // deferred retry redundant rather than additional. Letting both survive would buy a second call that
+        // answers nothing the first did not -- and would do it against a server that has just been refusing.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        established(handler, 4711);
+        when(client.callAsync(any())).thenReturn(refusedAsInProgress(), completedRefreshCall());
+
+        handler.onSessionReactivated();
+        handler.onSessionReactivated();
+        clock.advance();
+
+        verify(client, times(2)).callAsync(any());
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * A scheduler that runs nothing until the test says so, and remembers how long it was asked to wait.
+     * <p>
+     * The two properties worth pinning are that a retry does <em>not</em> happen before its delay and that it
+     * does happen after, and neither can be asserted honestly against a clock the test does not control —
+     * waiting the delay out in real time would make the suite slow and the assertions timing-dependent.
+     * <p>
+     * {@link #advance()} drains what a retry schedules while it runs, so a run of refusals plays out to its
+     * end in one call. That models time passing rather than a single tick; where the distinction matters,
+     * {@link #isWaiting()} is asked before advancing.
+     */
+    private static final class ManualRetryClock implements OpcUaSubscriptionLifecycleHandler.RefreshRetryScheduler {
+
+        private final @NotNull List<Long> delays = new ArrayList<>();
+        private final @NotNull Deque<Runnable> waiting = new ArrayDeque<>();
+
+        @Override
+        public void schedule(final @NotNull Runnable task, final long delayMs) {
+            delays.add(delayMs);
+            waiting.add(task);
+        }
+
+        /** Runs everything due, including whatever those runs schedule in turn. */
+        void advance() {
+            while (!waiting.isEmpty()) {
+                Objects.requireNonNull(waiting.poll()).run();
+            }
+        }
+
+        boolean isWaiting() {
+            return !waiting.isEmpty();
+        }
+
+        @NotNull
+        List<Long> delays() {
+            return delays;
+        }
+    }
+
+    private static void refreshEnd(
+            final @NotNull OpcUaSubscriptionLifecycleHandler handler,
+            final @NotNull OpcUaSubscription subscription,
+            final @NotNull OpcuaTag tag) {
+
+        handler.onEventReceived(
+                subscription,
+                List.of(itemFor(tag)),
+                List.<Variant[]>of(controlEvent(NodeIds.RefreshEndEventType, "refresh-end")));
+    }
 
     private static void refreshRequired(
             final @NotNull OpcUaSubscriptionLifecycleHandler handler,
@@ -301,7 +507,8 @@ class RefreshCoordinationTest {
                         null,
                         OpcUaToMqttConfig.defaultOpcUaToMqttConfig(),
                         null,
-                        ConnectionOptions.defaultConnectionOptions()));
+                        ConnectionOptions.defaultConnectionOptions()),
+                clock);
     }
 
     private static @NotNull OpcUaSubscription established(
