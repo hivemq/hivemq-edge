@@ -649,6 +649,19 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
+     * Whether {@link #abandon()} has been called — that is, whether the connection underneath this handler is
+     * being torn down.
+     * <p>
+     * The counterpart of {@code abandon()} rather than a test accessor: the flag is what several behaviours
+     * here are <em>about</em>, and a caller that can set it can reasonably ask what it is. Used by the
+     * connection to answer whether a teardown reached its handler, which is the whole property of
+     * publishing the handler before the verification it has to be able to interrupt.
+     */
+    public boolean isAbandoned() {
+        return abandoned.get();
+    }
+
+    /**
      * Whether keep-alive messages are arriving within the expected timeout, which is computed from
      * {@code ConnectionOptions}. Used for health monitoring, to detect a subscription that has gone quiet.
      *
@@ -1028,7 +1041,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
-     * Whether a notification belongs to a subscription that a <em>different</em> one has since replaced.
+     * Whether a notification arrived on a subscription this handler no longer speaks for — either because a
+     * different one has replaced it, or because the connection underneath it is gone.
+     * <p>
+     * <b>The abandoned half.</b> {@link #abandon()} is called at the start of a stop or a destroy, before the
+     * client is disconnected, and Milo delivers a subscription's notifications through a queue. Whatever is
+     * already on that queue is still delivered while the teardown runs, so without this check a connection
+     * the adapter has let go of goes on publishing to MQTT — including, after a destroy, through a tag
+     * streaming service the adapter is finished with. The generation check below cannot cover it: the
+     * subscription being torn down <em>is</em> still the current one, which is exactly why nothing replaced
+     * it.
      * <p>
      * A superseded subscription has no business publishing: its items were re-established on the replacement,
      * so anything still arriving on it is a transition the new generation reports as well — published twice,
@@ -1051,6 +1073,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * not evidence of anything, while a different object means this one has been superseded.
      */
     private boolean hasBeenReplaced(final @NotNull OpcUaSubscription subscription) {
+        if (abandoned.get()) {
+            log.debug("Adapter '{}': ignoring a notification, the connection it arrived on is closing", adapterId);
+            return true;
+        }
         final OpcUaSubscription current = currentSubscription.get();
         if (current == null || current == subscription) {
             return false;

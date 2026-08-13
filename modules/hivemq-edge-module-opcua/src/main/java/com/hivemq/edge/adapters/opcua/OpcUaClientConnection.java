@@ -38,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
@@ -48,6 +49,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +66,38 @@ public class OpcUaClientConnection {
 
     private final @NotNull AtomicReference<ConnectionContext> context = new AtomicReference<>();
     private final @NotNull OpcUaServiceFaultListener serviceFaultListener;
+
+    /**
+     * The subscription handler, reachable from the moment it is constructed rather than from the moment the
+     * connection is fully established.
+     * <p>
+     * {@link ConnectionContext} also holds it, and that is the reference everything else uses. This one exists
+     * for the window the context cannot cover: {@code context} is installed at the very end of {@link #start},
+     * after {@code subscribe()} has verified every tag, and verification is where a start spends its time —
+     * up to three blocking round trips per condition tag, each with a ten-second ceiling. For all of that
+     * window the handler existed but nothing outside {@code start()} could name it, so
+     * {@link OpcUaSubscriptionLifecycleHandler#abandon()} could not be called on the one path where the wait
+     * is longest. {@link #stop} blocked on the monitor {@code start()} holds, and {@link #destroy} got through
+     * but found a null context and returned having done nothing.
+     * <p>
+     * An additional path to the same object, not a replacement for the context's field.
+     */
+    private final @NotNull AtomicReference<OpcUaSubscriptionLifecycleHandler> subscriptionHandler =
+            new AtomicReference<>();
+
+    /**
+     * Whether {@link #stop} or {@link #destroy} has been called on this connection.
+     * <p>
+     * One-way, and per connection object rather than per adapter: every attempt — first start, retry and
+     * reconnect alike — builds a fresh {@code OpcUaClientConnection}, so a closed one is never started again
+     * and the flag never has to be cleared.
+     * <p>
+     * Read by {@link #start} immediately before it installs its context, which is the point at which an
+     * attempt stops being private to itself and becomes the adapter's live connection. Without it a teardown
+     * that runs during verification completes against a null context and returns, and the attempt then
+     * publishes a live client and session into an object the adapter has already discarded.
+     */
+    private final @NotNull AtomicBoolean closed = new AtomicBoolean();
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
@@ -86,6 +120,12 @@ public class OpcUaClientConnection {
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
+        // A connection that was torn down before its attempt ever ran. Cheap, and it keeps the expensive part
+        // -- creating a client and connecting it -- from happening on behalf of an adapter that is gone.
+        if (closed.get()) {
+            log.debug("Not connecting OPC UA adapter '{}': the connection was closed before it started", adapterId);
+            return false;
+        }
         final OpcUaClient client;
         final var activityListener = new OpcUaSessionActivityListener(
                 protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
@@ -190,6 +230,18 @@ public class OpcUaClientConnection {
         final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(
                 protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, config);
 
+        // Reachable before the work it has to be able to interrupt, not after. subscribe() below verifies
+        // every tag against the server, and abandon() is what stops that loop between tags -- so publishing
+        // the handler only with the context, once subscribe() has already returned, meant the flag could not
+        // be set during the one window in which it earns its keep.
+        subscriptionHandler.set(subscriptionLifecycleHandler);
+        // Ordered against the close paths, which set `closed` before they look for a handler to abandon. A
+        // teardown that read a null handler a moment ago has already published the flag this re-reads, so
+        // between the two of them the abandonment cannot be dropped by either interleaving.
+        if (closed.get()) {
+            subscriptionLifecycleHandler.abandon();
+        }
+
         // A reconnect that transfers the subscription successfully recreates nothing, so the refresh that
         // rides on re-establishing monitored items never happens. This is the only signal for that case.
         activityListener.setOnReconnect(subscriptionLifecycleHandler::onSessionReactivated);
@@ -211,6 +263,31 @@ public class OpcUaClientConnection {
         final var subscription = subscriptionOptional.get();
         log.trace("Creating Subscription for OPC UA client");
 
+        // The last chance to notice that this attempt has been overtaken, and the only one that matters:
+        // installing the context is what turns a private attempt into the adapter's live connection, and
+        // until it happens a teardown finds nothing to close. A stop() or destroy() that ran while this
+        // attempt was connecting and verifying has already completed against a null context and returned, so
+        // publishing now would hand the adapter a session and subscription it has no reference to and can
+        // never close -- one that goes on publishing events after the adapter that owned it is gone.
+        //
+        // Closed here rather than left for the caller, for the same reason establishInitial() deletes a
+        // subscription it cannot establish: `false` is the last anyone sees of this client.
+        if (closed.get()) {
+            log.info(
+                    "OPC UA adapter '{}': the connection was closed while it was being established; "
+                            + "discarding the client rather than publishing it",
+                    adapterId);
+            quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+            // Said here rather than left to the activity listener, which cannot say it: quietlyCloseClient
+            // removes that listener before disconnecting, precisely so a teardown does not announce itself as
+            // a fault. The status is CONNECTED at this point -- onSessionActive reports it the moment Milo
+            // activates the session, long before there is a subscription -- so without this the adapter would
+            // go on reporting a connection that has just been thrown away. The teardown that set `closed`
+            // could not correct it either: it ran against a null context and set nothing.
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            return false;
+        }
+
         context.set(new ConnectionContext(
                 subscription.getClient(), serviceFaultListener, activityListener, subscriptionLifecycleHandler));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
@@ -219,27 +296,58 @@ public class OpcUaClientConnection {
         return true;
     }
 
-    synchronized void stop() {
+    void stop() {
         log.info("Stopping OPC UA client");
-
-        final ConnectionContext ctx = context.getAndSet(null);
-        if (ctx != null) {
-            // Told before the client is closed, not after: a recovery may be part way through verifying
-            // tags, and this is what lets it stop rather than spend a round trip per remaining tag on a
-            // client that is about to be disconnected.
-            ctx.subscriptionHandler().abandon();
-            quietlyCloseClient(ctx.client(), true, ctx.faultListener(), ctx.activityListener());
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-        }
+        // Before the monitor, not behind it. A start() in progress holds this instance's lock for the whole
+        // of its verification, so a synchronized stop() could not reach the flag that shortens the very wait
+        // it was queueing behind: it blocked for up to three ten-second round trips per condition tag,
+        // reported to the operator as a hang. Abandoning first turns that into one outstanding call.
+        markClosed();
+        closeContext(true);
     }
 
     void destroy() {
         log.info("Destroying OPC UA client");
+        markClosed();
+        closeContext(false);
+    }
 
+    /**
+     * Records that this connection is finished with and tells the handler to stop verifying tags.
+     * <p>
+     * Deliberately unsynchronized and idempotent, so it can run while {@link #start} holds the monitor — that
+     * is the whole point of it. The ordering is what makes it safe: {@code closed} is published before the
+     * handler is read, and {@code start()} publishes the handler before it re-reads {@code closed}, so
+     * whichever of the two goes second sees the other's write and the abandonment cannot fall between them.
+     */
+    private void markClosed() {
+        closed.set(true);
+        final OpcUaSubscriptionLifecycleHandler handler = subscriptionHandler.get();
+        if (handler != null) {
+            // Told before the client is closed, not after: a start or a recovery may be part way through
+            // verifying tags, and this is what lets it stop rather than spend a round trip per remaining tag
+            // on a client that is about to be disconnected.
+            handler.abandon();
+        }
+    }
+
+    /**
+     * Closes whatever this connection actually established, if it got that far.
+     * <p>
+     * Synchronized, and that is intentional even though {@link #markClosed} is not: a teardown that overlaps
+     * a start has to wait for the start to finish before it can decide there is nothing to close, or it would
+     * race the {@code context.set(...)} at the end of {@link #start}. Because {@code closed} is already set by
+     * the time this waits, the start it is waiting for will abandon its verification and then refuse to
+     * install its context, so the wait is bounded by one outstanding server call rather than by every
+     * remaining tag.
+     *
+     * @param keepSubscription whether to leave the subscription on the server — true for a stop, which may be
+     *                         followed by a reconnect that transfers it, false for a destroy.
+     */
+    private synchronized void closeContext(final boolean keepSubscription) {
         final ConnectionContext ctx = context.getAndSet(null);
         if (ctx != null) {
-            ctx.subscriptionHandler().abandon();
-            quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
+            quietlyCloseClient(ctx.client(), keepSubscription, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
     }
@@ -303,6 +411,19 @@ public class OpcUaClientConnection {
             return Optional.empty();
         }
         return ctx.subscriptionHandler().requestConditionRefreshNow();
+    }
+
+    /**
+     * Whether a teardown has reached this connection's subscription handler.
+     * <p>
+     * Visible for the tests that pin the ordering this fix is about: that {@link #stop} and {@link #destroy}
+     * can set the flag while {@link #start} holds the monitor, which is the window in which it is worth
+     * anything and the one in which it previously could not be set at all.
+     */
+    @VisibleForTesting
+    boolean handlerWasAbandoned() {
+        final OpcUaSubscriptionLifecycleHandler handler = subscriptionHandler.get();
+        return handler != null && handler.isAbandoned();
     }
 
     private static void quietlyDeleteSubscription(

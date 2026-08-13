@@ -605,6 +605,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // discard an adapter it never stopped. Leaving it claimed would make the object permanently
         // unstartable, which matters because the same instance is reused across a configuration change.
         started.set(false);
+        // For the same reason, and this one had teeth. destroy() used to clear only `started`, so a start
+        // still connecting went on believing background work was wanted: its completion callback tests
+        // `stopped`, found it false, and called scheduleHealthCheck() -- against the scheduler field that
+        // shutdownSchedulers() had just set to null, three lines below. Cleared again by start(), which is
+        // what makes this safe on an instance the framework reuses after a configuration change.
+        stopped = true;
 
         // Cancel any pending retries and health checks
         cancelRetry();
@@ -612,6 +618,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         // Shutdown schedulers (if not already shutdown in stop())
         shutdownSchedulers();
+
+        // The client it names is being disconnected below, so keeping it would only offer browse callers a
+        // dead session. stop() has always cleared it; destroy() not doing so was an omission rather than a
+        // distinction, and it is the more final of the two.
+        this.browseClient.set(null);
 
         final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
         if (conn != null) {
@@ -1033,10 +1044,27 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         @SuppressWarnings("unused")
         final var unused = CompletableFuture.supplyAsync(() -> conn.start(parsedConfig))
                 .whenComplete((success, throwable) -> {
-                    if (stopped) {
+                    // Two questions, not one. `stopped` asks whether the adapter still wants background work
+                    // at all; the identity check asks whether *this* attempt is still the one that speaks for
+                    // it. An attempt is slow -- a connect plus up to three round trips per condition tag --
+                    // and a reconnect or a retry can install a newer connection while it runs, at which point
+                    // everything below is about the wrong object: it would overwrite the live browse client
+                    // with a superseded one and schedule health checks on the new lifecycle's executor.
+                    //
+                    // Ignoring the result is not enough on its own. A superseded attempt that *succeeded*
+                    // holds a live session and subscription that nothing else can reach, so dropping the
+                    // result on the floor leaves it publishing for the lifetime of the process. It has to be
+                    // destroyed here, because this is the last reference to it. Done inline rather than
+                    // posted: this callback already runs off the caller's thread, and doing it here means the
+                    // future does not complete until the orphan is actually closed.
+                    if (stopped || opcUaClientConnection.get() != conn) {
                         log.debug(
-                                "Connection attempt completed after adapter '{}' was stopped, ignoring result",
+                                "Connection attempt for adapter '{}' completed after it was superseded or "
+                                        + "stopped, discarding the result",
                                 adapterId);
+                        if (Boolean.TRUE.equals(success) && throwable == null) {
+                            conn.destroy();
+                        }
                         return;
                     }
                     lastReconnectTimestamp.set(System.currentTimeMillis());
