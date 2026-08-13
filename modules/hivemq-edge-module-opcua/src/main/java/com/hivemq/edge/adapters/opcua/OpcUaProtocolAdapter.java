@@ -260,8 +260,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         //
         // At most one refresh tag. A second would place a second item on the Server object, and since the
         // refresh bracket is copied to every notifier item in the subscription, both would publish the same
-        // event -- a duplicate that looks like two refreshes. Rejected at start rather than tolerated,
-        // because the config is almost certainly a mistake and the symptom would be puzzling.
+        // event -- a duplicate that looks like two refreshes.
+        //
+        // Failing the whole adapter rather than dropping the extra tag, and the rule is firmer than "this is
+        // probably a mistake". Two things can be wrong with a tag and they deserve opposite treatments. A
+        // configuration that is not *valid* is a defect in what the user wrote, decidable by reading the
+        // configuration alone: no device is involved and connecting could not produce a different answer.
+        // That stops the adapter. A tag in a valid configuration that cannot be *verified against the device*
+        // is a reasonable statement about the world that turns out to be false -- it was sensible to assume
+        // this node is a condition of that type, and the server says otherwise. That is handled locally: drop
+        // the tag, name it, keep going.
+        //
+        // Two REFRESH tags fall on the first side. No browse, no session, no round trip could decide it
+        // differently, which is why this check sits here -- before ParsedConfig.fromConfig and before any
+        // connection object exists. It is part of validating the configuration, not part of subscribing.
+        // NotifierResolver.resolve is the second kind by construction, since the answer depends on what the
+        // server exposes, and it is right to be per-tag; the two are different rules rather than an
+        // inconsistency.
         final List<String> refreshTagNames = tagList.stream()
                 .filter(tag -> tag.getDefinition().getKind() == OpcuaTagKind.REFRESH)
                 .map(OpcuaTag::getName)

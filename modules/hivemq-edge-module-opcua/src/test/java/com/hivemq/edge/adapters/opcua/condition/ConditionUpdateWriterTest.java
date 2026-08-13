@@ -88,8 +88,10 @@ class ConditionUpdateWriterTest {
     @Test
     void theIdsAreTheOnesTheDeclaringStandardTypeDefines() throws Exception {
         // Not "an id Milo happens to define" but "the id of the type that declares the operation", which is
-        // what Part 4's rule points at. Three types declare the fourteen methods, and one representative of
-        // each is pinned by name.
+        // what Part 4's rule points at. Four standard types declare the operations between them --
+        // ConditionType, AcknowledgeableConditionType, AlarmConditionType and DialogConditionType -- and one
+        // representative of each is pinned by name. Named rather than counted: the two tests above already
+        // assert the extent over Method.values(), and a count written out here is one more thing to forget.
         assertThat(conditionTypeMethods().get("Enable"))
                 .as("Enable is declared by ConditionType (§5.5.4)")
                 .isEqualTo(NodeIds.ConditionType_Enable);

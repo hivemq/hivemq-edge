@@ -141,8 +141,13 @@ public final class NotifierResolver {
 
         if (declaredNotifier != null) {
             try {
-                // Taken at its word, not verified against the device: a declaration exists precisely because
-                // the device could not be relied on to answer. A wrong one surfaces as a failed subscription.
+                // Taken at its word *here*, and only here: resolution does not browse to check a node the
+                // operator named, because a declaration exists precisely for the server whose references
+                // could not be walked. That is the whole of this step's claim, and the qualification matters
+                // -- the tag is not subscribed unverified. verifyCondition() preflights the same node with
+                // checkSubscribable() straight afterwards, and drops the tag when the server says definitely
+                // not a notifier, so a typo no longer subscribes cleanly and then stays silent forever.
+                // Read without that qualification, this comment says what the user guide wrongly says.
                 return CompletableFuture.completedFuture(
                         new Result.Found(NodeId.parse(declaredNotifier), "declared on the tag"));
             } catch (final Exception e) {

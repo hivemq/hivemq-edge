@@ -180,7 +180,10 @@ class OpcuaConditionTypeTest {
         final OpcuaConditionType levelAlarm =
                 OpcuaConditionType.fromBrowseName("ExclusiveLevelAlarmType").orElseThrow();
 
-        // Declaring the supertype is a valid widening: every declared field exists on the device.
+        // Declaring the supertype is a valid widening, so verification checks assignability rather than
+        // equality. Not because every declared field exists on the device -- most members are Optional, so a
+        // conformant server may omit them whatever type it claims. What makes it safe is that an unmatched
+        // select clause returns null (OPC 10000-4 §7.22.3) rather than failing the monitored item.
         assertThat(alarm.isSatisfiedBy(levelAlarm)).isTrue();
         assertThat(alarm.isSatisfiedBy(alarm)).isTrue();
 

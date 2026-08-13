@@ -165,7 +165,10 @@ class SourceDocumentationContractTest {
     }
 
     /**
-     * The {@code {@code {...}}} literal in a comment — the one-line shape a caller copies.
+     * The braced literal a comment uses to state a command's shape — the one line a caller copies.
+     * <p>
+     * Described rather than quoted: writing the tag out nested inside a {@code @code} tag is what the
+     * compiler was warning about, and a Javadoc example of malformed Javadoc is not worth the warning.
      * <p>
      * Whitespace is collapsed because the literal may be wrapped across lines, and a line break inside it is
      * a formatting decision rather than a change to what it says.

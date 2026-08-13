@@ -63,8 +63,8 @@ import org.mockito.ArgumentCaptor;
  * Review-02 finding 1. OPC 10000-9 permits this server model explicitly and accommodates it repeatedly —
  * §5.7.3, §5.5.6 and §5.8.17.2 all note that "some Servers do not expose Condition instances in the
  * AddressSpace" and require every server to accept the ConditionId as the ObjectId instead. Edge used to
- * answer twelve of its fourteen commands, {@code ACKNOWLEDGE} among them, with a client-minted
- * {@code Bad_NotSupported} <b>without sending a Call at all</b>, because it read Part 9's silence about which
+ * answer every command but {@code ENABLE} and {@code DISABLE} — {@code ACKNOWLEDGE} among them — with a
+ * client-minted {@code Bad_NotSupported} <b>without sending a Call at all</b>, because it read Part 9's silence about which
  * MethodId accompanies that ObjectId as a prohibition. The rule is stated once and generally, in OPC 10000-4
  * §5.12.2.2 Table 59: the methodId may be "the NodeId of the Method in the ObjectType that defines the
  * Method".

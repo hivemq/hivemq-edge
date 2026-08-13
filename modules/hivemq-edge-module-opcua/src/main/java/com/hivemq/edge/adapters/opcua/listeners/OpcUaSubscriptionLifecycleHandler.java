@@ -1274,7 +1274,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * <b>Coalescing is not suppression, though.</b> A distinct occurrence arriving while a call is outstanding
      * is a fresh reason to resynchronise, and the call already running was started for an earlier one — the
      * server may have answered it before the later reason existed. So the occurrence is recorded as
-     * {@link #refreshRequiredPending} rather than dropped, and {@link #drainRefreshRequests} starts the call it
+     * {@link #pendingRefresh} rather than dropped, and {@link #drainRefreshRequests} starts the call it
      * asks for once the current one settles. This used to fall through a bare {@code return}: the id was
      * already in {@link #isFirstSightOf}'s memory by then, so nothing could retry it and nothing said so.
      */

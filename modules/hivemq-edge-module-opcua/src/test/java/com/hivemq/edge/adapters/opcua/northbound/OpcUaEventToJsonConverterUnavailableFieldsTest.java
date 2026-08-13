@@ -232,7 +232,7 @@ class OpcUaEventToJsonConverterUnavailableFieldsTest {
         throw new AssertionError("no field selected at path " + path);
     }
 
-    /** Runs one event's field values through the converter and returns the emitted {@code value} node. */
+    /** Runs one event's field values through the converter and returns the data point's emitted value. */
     private static @NotNull JsonNode convert(final @NotNull Variant[] values) {
         final var builder = (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(
                 new OpcuaTag("test-tag", "", new OpcuaTagDefinition("ns=2;i=1001")), b -> null);

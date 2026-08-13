@@ -307,8 +307,9 @@ class ConditionSchemasTest {
 
     @Test
     void onlyTheMethodIsRequiredToWrite() {
-        // Ten of the fourteen methods take no arguments, so requiring eventId or duration would describe a
-        // command most callers cannot send. The per-method check happens at call time instead.
+        // Most methods take no arguments at all, so requiring eventId or duration would describe a command
+        // most callers cannot send. The per-method check happens at call time instead, and
+        // CommandSurfaceContractTest counts the argument-less ones against the enum rather than here.
         final ObjectNode write = render(ConditionSchemas.writeSchema());
 
         assertThat(write.get("required")).isNotNull();

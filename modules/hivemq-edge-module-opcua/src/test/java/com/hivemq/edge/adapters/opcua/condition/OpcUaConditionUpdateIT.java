@@ -47,6 +47,7 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -104,9 +105,9 @@ public class OpcUaConditionUpdateIT {
 
         // The eventId is echoed back exactly as it was published north — base64 of the bytes the server
         // minted. Acknowledging is against a transition, so this token is what makes the request meaningful.
-        final String eventId = Base64.getEncoder().encodeToString("transition-42".getBytes());
+        final String eventId = Base64.getEncoder().encodeToString("transition-42".getBytes(StandardCharsets.UTF_8));
 
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"eventId": "%s", "method": "ACKNOWLEDGE", "comment": "Checked - reducing setpoint"}
                 """.formatted(eventId));
 
@@ -118,7 +119,7 @@ public class OpcUaConditionUpdateIT {
         assertThat(calls.get(0).methodName())
                 .as("method 0 must dispatch to Acknowledge")
                 .isEqualTo("Acknowledge");
-        assertThat(new String(calls.get(0).eventId().bytesOrEmpty()))
+        assertThat(new String(calls.get(0).eventId().bytesOrEmpty(), StandardCharsets.UTF_8))
                 .as("the server must receive the transition token it issued, not the base64 text of it")
                 .isEqualTo("transition-42");
         assertThat(calls.get(0).comment()).isEqualTo("Checked - reducing setpoint");
@@ -138,8 +139,8 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final String eventId = Base64.getEncoder().encodeToString("transition-nc".getBytes());
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final String eventId = Base64.getEncoder().encodeToString("transition-nc".getBytes(StandardCharsets.UTF_8));
+        final WritingOutput output = writeToCondition("""
                 {"eventId": "%s", "method": "ACKNOWLEDGE"}
                 """.formatted(eventId));
 
@@ -169,8 +170,8 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final String eventId = Base64.getEncoder().encodeToString("transition-erase".getBytes());
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final String eventId = Base64.getEncoder().encodeToString("transition-erase".getBytes(StandardCharsets.UTF_8));
+        final WritingOutput output = writeToCondition("""
                 {"eventId": "%s", "method": "ACKNOWLEDGE", "comment": ""}
                 """.formatted(eventId));
 
@@ -204,7 +205,7 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "SUPPRESS", "comment": "suppressed during maintenance"}
                 """);
 
@@ -230,7 +231,7 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "SUPPRESS"}
                 """);
 
@@ -255,7 +256,7 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "SUPPRESS", "comment": "this server cannot record me"}
                 """);
 
@@ -282,7 +283,7 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "SUPPRESS"}
                 """);
 
@@ -314,7 +315,7 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "ONE_SHOT_SHELVE"}
                 """);
 
@@ -337,8 +338,8 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final String eventId = Base64.getEncoder().encodeToString("transition-7".getBytes());
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final String eventId = Base64.getEncoder().encodeToString("transition-7".getBytes(StandardCharsets.UTF_8));
+        final WritingOutput output = writeToCondition("""
                 {"eventId": "%s", "method": "CONFIRM", "comment": ""}
                 """.formatted(eventId));
 
@@ -360,8 +361,8 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        final String eventId = Base64.getEncoder().encodeToString("transition-9".getBytes());
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final String eventId = Base64.getEncoder().encodeToString("transition-9".getBytes(StandardCharsets.UTF_8));
+        final WritingOutput output = writeToCondition("""
                 {"eventId": "%s", "method": "ACKNOWLEDGE", "comment": "by name"}
                 """.formatted(eventId));
 
@@ -382,7 +383,7 @@ public class OpcUaConditionUpdateIT {
 
         // No eventId: there is no way to know which transition this refers to, and guessing at one risks
         // acknowledging something the operator did not intend.
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "ACKNOWLEDGE", "comment": "no event id"}
                 """);
 
@@ -407,7 +408,7 @@ public class OpcUaConditionUpdateIT {
         // An EventId is base64 of the bytes the server issued, and the schema says so. There is deliberately
         // no fallback that reads an undecodable value as literal text: base64 and arbitrary text cannot be
         // told apart by inspection, so a guess would silently acknowledge a transition nobody named.
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "ACKNOWLEDGE", "eventId": "not base64!", "comment": "typed by hand"}
                 """);
 
@@ -427,9 +428,9 @@ public class OpcUaConditionUpdateIT {
 
         startAdapterWith(conditionNodeId);
 
-        // Ten of the fourteen methods act on the condition as a whole rather than on one transition, so
-        // requiring an eventId here would make them impossible to call.
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        // Most methods act on the condition as a whole rather than on one transition, so requiring an
+        // eventId here would make them impossible to call.
+        final WritingOutput output = writeToCondition("""
                 {"method": "SUPPRESS"}
                 """);
 
@@ -450,7 +451,7 @@ public class OpcUaConditionUpdateIT {
 
         // TimedShelve is the one method taking a duration, and it lives on the condition's ShelvingState
         // object rather than on the condition -- so this exercises the descent as well as the argument.
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "TIMED_SHELVE", "duration": 5000}
                 """);
 
@@ -474,7 +475,7 @@ public class OpcUaConditionUpdateIT {
 
         // Which fields are required follows from the method, so this is the same class of rejection as a
         // missing eventId on an acknowledge -- checked per method, not per field.
-        final WritingOutput output = writeToCondition(conditionNodeId, """
+        final WritingOutput output = writeToCondition("""
                 {"method": "TIMED_SHELVE"}
                 """);
 
@@ -483,8 +484,7 @@ public class OpcUaConditionUpdateIT {
                 .isEmpty();
     }
 
-    private @NotNull WritingOutput writeToCondition(final @NotNull String conditionNodeId, final @NotNull String json)
-            throws Exception {
+    private @NotNull WritingOutput writeToCondition(final @NotNull String json) throws Exception {
         final JsonNode value = mapper.readTree(json);
 
         final WritingContext writingContext = mock(WritingContext.class);
