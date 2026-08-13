@@ -140,8 +140,34 @@ public class ClientQueuePersistenceImplTest {
                         eq(1000L),
                         eq(QueuedMessagesStrategy.DISCARD),
                         anyBoolean(),
+                        eq(false), // applyMaxToQos0: only sampler queues opt in (EDG-885)
                         anyInt());
         verify(messageDroppedService, never()).queueFull("client", "topic", 1);
+    }
+
+    /**
+     * EDG-885: a sampler queue is a ring buffer of the most recent samples, so it alone asks the
+     * persistence to apply the count limit to QoS 0 as well. Without it, a sampled topic whose
+     * publishers use QoS 0 is bounded only by the node-wide QoS 0 memory budget and can starve every
+     * other QoS 0 consumer on the node.
+     */
+    @Test
+    @Timeout(5)
+    public void test_add_sampler_queue_opts_into_the_qos0_count_limit()
+            throws ExecutionException, InterruptedException {
+        clientQueuePersistence
+                .add("$SAMPLER::topic/topic", true, createPublish(1, QoS.AT_MOST_ONCE, "topic"), false, 10L)
+                .get();
+        verify(localPersistence)
+                .add(
+                        eq("$SAMPLER::topic/topic"),
+                        eq(true),
+                        any(PUBLISH.class),
+                        eq(10L),
+                        eq(QueuedMessagesStrategy.DISCARD_OLDEST),
+                        anyBoolean(),
+                        eq(true),
+                        anyInt());
     }
 
     @Test
@@ -158,6 +184,7 @@ public class ClientQueuePersistenceImplTest {
                         eq(1000L),
                         eq(QueuedMessagesStrategy.DISCARD),
                         anyBoolean(),
+                        eq(false), // applyMaxToQos0: only sampler queues opt in (EDG-885)
                         anyInt());
     }
 
@@ -421,6 +448,7 @@ public class ClientQueuePersistenceImplTest {
                         eq(1000L),
                         eq(QueuedMessagesStrategy.DISCARD),
                         anyBoolean(),
+                        eq(false), // applyMaxToQos0: only sampler queues opt in (EDG-885)
                         anyInt());
         verify(clientSessionLocalPersistence, never())
                 .getSession("client"); // Get session because new publishes are available
@@ -442,6 +470,7 @@ public class ClientQueuePersistenceImplTest {
                         eq(1000L),
                         eq(QueuedMessagesStrategy.DISCARD),
                         anyBoolean(),
+                        eq(false), // applyMaxToQos0: only sampler queues opt in (EDG-885)
                         anyInt());
         verify(clientSessionLocalPersistence).getSession("client"); // Get session because new publishes are available
         verify(messageDroppedService, never()).queueFull("client", "topic", 1);

@@ -145,6 +145,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final long max,
             final @NotNull QueuedMessagesStrategy strategy,
             final boolean retained,
+            final boolean applyMaxToQos0,
             final int bucketIndex) {
 
         checkNotNull(queueId, "Queue ID must not be null");
@@ -152,7 +153,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         checkNotNull(strategy, "Strategy must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
-        add(queueId, shared, List.of(publish), max, strategy, retained, bucketIndex);
+        add(queueId, shared, List.of(publish), max, strategy, retained, applyMaxToQos0, bucketIndex);
     }
 
     /**
@@ -167,6 +168,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final long max,
             final @NotNull QueuedMessagesStrategy strategy,
             final boolean retained,
+            final boolean applyMaxToQos0,
             final int bucketIndex) {
 
         checkNotNull(queueId, "Queue ID must not be null");
@@ -180,7 +182,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         for (final PUBLISH publish : publishes) {
             final PublishWithRetained publishWithRetained = new PublishWithRetained(publish, retained);
             if (publish.getQoS() == QoS.AT_MOST_ONCE) {
-                addQos0Publish(queueId, shared, messages, publishWithRetained);
+                addQos0Publish(queueId, shared, messages, publishWithRetained, max, applyMaxToQos0);
             } else {
                 final int qos1And2QueueSize = messages.qos1Or2Messages.size() - messages.retainedQos1Or2Messages;
                 if ((qos1And2QueueSize >= max) && !retained) {
@@ -224,7 +226,31 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final @NotNull String queueId,
             final boolean shared,
             final @NotNull Messages messages,
-            final @NotNull PublishWithRetained publishWithRetained) {
+            final @NotNull PublishWithRetained publishWithRetained,
+            final long max,
+            final boolean applyMaxToQos0) {
+
+        // Only callers that asked for it (sampler queues today) bound QoS 0 by count. Everything else
+        // keeps the historical behaviour of being held solely by the node-wide QoS 0 memory budget --
+        // imposing a count limit here would silently shrink the outage buffer of every persist=false
+        // bridge, which is a separate decision from EDG-885.
+        //
+        // Trimming before the memory guards below is deliberate: it releases the space the incoming
+        // message needs, so a ring buffer keeps rotating even on a node already at the QoS 0 ceiling
+        // rather than freezing at whatever it happened to hold when the ceiling was reached.
+        if (applyMaxToQos0) {
+            while (max > 0 && messages.qos0Messages.size() >= max) {
+                final PublishWithRetained oldest = messages.qos0Messages.pollFirst();
+                if (oldest == null) {
+                    break;
+                }
+                final int freed = -oldest.getEstimatedSize();
+                increaseQos0MessagesMemory(freed);
+                increaseClientQos0MessagesMemory(messages, freed);
+                increaseMessagesMemory(freed);
+                logAndDecrementPayloadReference(oldest, shared, queueId);
+            }
+        }
 
         final long currentQos0MessagesMemory = qos0MessagesMemory.get();
         if (currentQos0MessagesMemory >= qos0MemoryLimit) {
