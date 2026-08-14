@@ -185,41 +185,55 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
     /**
      * O2 under contention, and the single most valuable test in this class.
      * <p>
-     * A forwarder is re-registered over and over with two topic sets that <b>overlap</b> in one topic.
-     * The overlapping queue is continuously owned throughout — its reference count goes 1 → 2 → 1 and
-     * must never reach zero. Reversing {@code retain(new)} and {@code release(superseded)} makes it dip
-     * to zero for an instant, and a clean-up sweep landing in that instant would clear a live queue.
+     * A registration is attempted over and over under an ID that is already taken (EDG-882 F-01: two
+     * local subscriptions of one bridge can derive the same ID while owning different queues), with a
+     * topic set that <b>overlaps</b> the incumbent's in one topic. Every attempt is refused, and the
+     * overlapping queue is continuously owned throughout — its reference count goes 1 → 2 → 1 and must
+     * never reach zero. Undoing the refused claim by releasing the incumbent's set instead of the one
+     * just taken makes it dip to zero for an instant, and a clean-up sweep landing in that instant
+     * clears a live queue.
      * <p>
      * Probabilistic detector for the reader assertion; the post-join assertion is deterministic.
      */
     @Test
     @Timeout(120)
-    public void test_reregistration_never_exposes_a_topic_present_in_both_sets() throws Exception {
+    public void test_refused_registrations_never_expose_a_topic_present_in_both_sets() throws Exception {
         final String id = "bridge-Bt80p78iNo/w7W1W7bGwcg==";
         final String keptTopic = "plant/line1/from-plc";
         final String queue = queueId(id, keptTopic);
 
-        final MqttForwarder registrationA = forwarder(id, keptTopic, "plant/line1/alpha");
-        final MqttForwarder registrationB = forwarder(id, keptTopic, "plant/line1/beta");
-        messageForwarder.addForwarder(registrationA);
+        final MqttForwarder incumbent = forwarder(id, keptTopic, "plant/line1/alpha");
+        final MqttForwarder refused = forwarder(id, keptTopic, "plant/line1/beta");
+        messageForwarder.addForwarder(incumbent);
 
         final AtomicLong reads = new AtomicLong();
+        final AtomicLong refusals = new AtomicLong();
         final Runnable reader = () -> {
             reads.incrementAndGet();
             assertTrue(
                     messageForwarder.isForwarderQueue(queue),
-                    "a topic kept across a re-registration read as unowned; a sweep here deletes live messages");
+                    "a topic held by the incumbent read as unowned; a sweep here deletes live messages");
         };
         final Runnable writer = () -> {
             for (int i = 0; i < WRITER_ITERATIONS; i++) {
-                messageForwarder.addForwarder(i % 2 == 0 ? registrationB : registrationA);
+                try {
+                    messageForwarder.addForwarder(refused);
+                    throw new AssertionError("a registration under a taken ID was accepted");
+                } catch (final IllegalStateException expected) {
+                    refusals.incrementAndGet();
+                }
             }
         };
 
         runConcurrently(reader, List.of(writer));
 
         assertTrue(reads.get() > 0, "the reader never ran");
+        assertEquals(WRITER_ITERATIONS, refusals.get(), "not every attempt was refused");
         assertTrue(messageForwarder.isForwarderQueue(queue));
+        // the incumbent's own queues are intact, and the refusals leaked nothing
+        messageForwarder.removeForwarder(incumbent, false);
+        assertFalse(messageForwarder.isForwarderQueue(queue), "the refusals leaked references on the shared queue");
+        assertFalse(messageForwarder.isForwarderQueue(queueId(id, "plant/line1/beta")));
     }
 
     /**
@@ -289,11 +303,11 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
 
     /**
      * Reference-count pairing under contention: many threads register the <b>same</b> forwarder
-     * concurrently, so many {@code retain}s race a single winning {@code put}. Each must still be
-     * paired with exactly one {@code release}, or a single removal leaves the queue permanently
-     * claimed and it is never reclaimed.
+     * concurrently, so many {@code retain}s race a single winning {@code putIfAbsent}. Exactly one
+     * may win; every loser must undo precisely the references it took, or a single removal leaves the
+     * queue permanently claimed and it is never reclaimed.
      * <p>
-     * Fully deterministic — the assertion is made after every thread has joined.
+     * Fully deterministic — the assertions are made after every thread has joined.
      */
     @Test
     @Timeout(120)
@@ -302,6 +316,7 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
         final String topic = "shared/topic";
         final String queue = queueId(id, topic);
         final MqttForwarder subject = forwarder(id, topic);
+        final AtomicLong accepted = new AtomicLong();
 
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch done = new CountDownLatch(CHURN_THREADS);
@@ -310,7 +325,12 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
                 try {
                     start.await();
                     for (int i = 0; i < WRITER_ITERATIONS; i++) {
-                        messageForwarder.addForwarder(subject);
+                        try {
+                            messageForwarder.addForwarder(subject);
+                            accepted.incrementAndGet();
+                        } catch (final IllegalStateException alreadyRegistered) {
+                            // exactly what every attempt but the first must do
+                        }
                     }
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -322,6 +342,7 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
         start.countDown();
         assertTrue(done.await(120, TimeUnit.SECONDS), "registration threads did not finish");
 
+        assertEquals(1L, accepted.get(), "an ID was registered more than once");
         assertTrue(messageForwarder.isForwarderQueue(queue), "the forwarder is registered");
 
         // one removal must fully deregister, however many concurrent adds preceded it

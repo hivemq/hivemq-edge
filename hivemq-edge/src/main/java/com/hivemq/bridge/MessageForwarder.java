@@ -15,6 +15,8 @@
  */
 package com.hivemq.bridge;
 
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 public interface MessageForwarder {
@@ -46,6 +48,31 @@ public interface MessageForwarder {
      * Check if new messages need to be polled for the buffer.
      */
     void checkBuffers();
+
+    /**
+     * Claims the queues of a bridge that could not register its forwarders, so that the periodic
+     * clean-up leaves them alone.
+     * <p>
+     * The clean-up clears every forwarder queue no registered forwarder owns, which is right for a
+     * queue whose bridge is gone and fatal for one whose bridge merely failed to start: the messages
+     * waiting in it are deleted within seconds, and the operator's chance to correct the configuration
+     * with them still there is lost. A reservation is ownership without a forwarder — it makes
+     * {@link #isForwarderQueue(String)} answer true, and nothing else. Messages are neither polled nor
+     * forwarded while it stands.
+     *
+     * @param reservationId         identifies the reservation, so it can be released again; the bridge id
+     * @param topicsByForwarderId   the topics each forwarder of the bridge would have registered. Passed
+     *                              rather than the queue ids themselves so that the one place that
+     *                              knows how a queue is named stays the one place that builds them.
+     */
+    void reserveQueues(@NotNull String reservationId, @NotNull Map<String, List<String>> topicsByForwarderId);
+
+    /**
+     * Drops a reservation made by {@link #reserveQueues}, either because the bridge has started and its
+     * forwarders now own the queues, or because it is gone and they may be reclaimed. A no-op when
+     * there is no reservation under this id.
+     */
+    void releaseReservedQueues(@NotNull String reservationId);
 
     /**
      * Check whether a queue belongs to a currently registered forwarder.

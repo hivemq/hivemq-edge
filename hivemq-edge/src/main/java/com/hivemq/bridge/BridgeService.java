@@ -16,8 +16,10 @@
 package com.hivemq.bridge;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
@@ -29,6 +31,7 @@ import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +157,11 @@ public class BridgeService {
             } else {
                 log.debug("Bridge {} not active", bridgeId);
             }
+            // The bridge is gone from the configuration, so any queues held for it while it could not
+            // start may be reclaimed. Deliberately not done when a bridge merely stops: a node shutting
+            // down would otherwise drop the hold on the way out and let a last clean-up pass delete the
+            // messages the operator is about to come back for.
+            messageForwarder.releaseReservedQueues(bridgeId);
         });
 
         toUpdate.forEach(bridgeId -> {
@@ -209,6 +217,9 @@ public class BridgeService {
 
     public void stopBridgeAndRemoveQueues(final @NotNull String bridgeName) {
         stopBridge(bridgeName, true, List.of());
+        // "and remove queues" is the operator asking for them to go, which for a bridge that never
+        // started means dropping the hold that keeps the clean-up off them.
+        messageForwarder.releaseReservedQueues(bridgeName);
     }
 
     public synchronized void stopBridge(
@@ -265,11 +276,41 @@ public class BridgeService {
                     bridge.getRemoteSubscriptions().size());
         }
         final BridgeMqttClient bridgeMqttClient = bridgeMqttClientFactory.createRemoteClient(bridge);
-        final var forwarders = bridgeMqttClient.createForwarders();
-        if (log.isDebugEnabled()) {
-            log.debug("Created {} forwarder(s) for bridge '{}'", forwarders.size(), bridgeId);
+        try {
+            final var forwarders = bridgeMqttClient.createForwarders();
+            if (log.isDebugEnabled()) {
+                log.debug("Created {} forwarder(s) for bridge '{}'", forwarders.size(), bridgeId);
+            }
+            forwarders.forEach(messageForwarder::addForwarder);
+            // The forwarders own the queues now, so any hold taken by an earlier failed start can go.
+            // After the registrations, never before: releasing first would leave the queues unowned for
+            // an instant, which is all a clean-up sweep needs to clear them.
+            messageForwarder.releaseReservedQueues(bridgeId);
+        } catch (final Exception e) {
+            // A bridge that cannot register its forwarders must not take the rest of the
+            // synchronization down with it: updateBridges iterates over every configured bridge, so an
+            // exception escaping here would leave the bridges after this one unstarted. Reported the
+            // same way an unsuccessful connect is, which is what surfaces it in the API and the UI.
+            //
+            // Nothing is cleared on this path, and the queues are held so that nothing else clears them
+            // either: with no forwarder registered they read as unowned, and the periodic clean-up
+            // deletes unowned forwarder queues within seconds. Without the hold, refusing to start a
+            // bridge would destroy the very messages the refusal exists to protect. The hold is dropped
+            // when the bridge starts or is removed.
+            messageForwarder.reserveQueues(bridgeId, topicsByForwarderId(bridge));
+            log.error("Bridge '{}' could not be started: {}", bridgeId, e.getMessage());
+            log.debug("Forwarder registration failure details", e);
+            bridgeNameToLastError.put(bridgeId, e);
+            final HiveMQEdgeRemoteEvent errorEvent =
+                    new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_ERROR);
+            errorEvent.addUserData(
+                    "cloudBridge", String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
+            errorEvent.addUserData("cause", e.getMessage());
+            errorEvent.addUserData("name", bridgeId);
+            remoteService.fireUsageEvent(errorEvent);
+            Checkpoints.checkpoint("mqtt-bridge-forwarder-start-failed");
+            return bridgeMqttClient;
         }
-        forwarders.forEach(messageForwarder::addForwarder);
         Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
         return internalStartBridgeMqttClient(bridge, bridgeMqttClient);
     }
@@ -395,6 +436,27 @@ public class BridgeService {
                 log.debug("Forwarder removal exception details", e);
             }
         }
+    }
+
+    /**
+     * The topics each of a bridge's forwarders would register, keyed by forwarder id.
+     * <p>
+     * Merged rather than overwritten on a repeated key: two local subscriptions of one bridge can
+     * derive the same forwarder id — that collision is why the bridge is being refused in the first
+     * place — and the queues of both must be held, not just those of whichever came last.
+     */
+    private static @NotNull Map<String, List<String>> topicsByForwarderId(final @NotNull MqttBridge bridge) {
+        final Map<String, List<String>> topicsByForwarderId = new HashMap<>();
+        for (final LocalSubscription subscription : bridge.getLocalSubscriptions()) {
+            topicsByForwarderId.merge(
+                    BridgeMqttClient.createForwarderId(bridge.getId(), subscription),
+                    List.copyOf(subscription.getFilters()),
+                    (existing, added) -> ImmutableList.<String>builder()
+                            .addAll(existing)
+                            .addAll(added)
+                            .build());
+        }
+        return topicsByForwarderId;
     }
 
     private @NotNull List<String> newForwarderIds(final @Nullable MqttBridge newBridgeConfig) {
