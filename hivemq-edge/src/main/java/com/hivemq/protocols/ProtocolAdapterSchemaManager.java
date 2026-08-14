@@ -82,9 +82,13 @@ public class ProtocolAdapterSchemaManager {
     }
 
     static ProtocolAdapterValidationFailure convertMessage(final @NotNull ValidationMessage validationMessage) {
+        // The instance location, not the evaluation path: the evaluation path walks the *schema*, so a
+        // rejected enum surfaced as "$.properties.tls.properties.tlsChecksFull.properties.trustMode.enum"
+        // — a path that does not exist in anything the operator wrote. The instance location is the path
+        // through their own payload, "$.tls.tlsChecksFull.trustMode".
         return new ProtocolAdapterValidationFailureImpl(
                 validationMessage.getMessage(),
-                validationMessage.getEvaluationPath().toString(),
+                validationMessage.getInstanceLocation().toString(),
                 validationMessage.getClass());
     }
 }

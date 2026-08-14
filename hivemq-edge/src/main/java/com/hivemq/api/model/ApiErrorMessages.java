@@ -57,7 +57,24 @@ public class ApiErrorMessages {
     @JsonIgnore
     public List<Error> toErrorList() {
         return errors.stream()
-                .map(error -> new Error(Objects.requireNonNullElse(error.getTitle(), ""), error.getFieldName()))
+                .map(error -> new Error(describe(error), error.getFieldName()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * The specific message where there is one, the category otherwise.
+     *
+     * <p>Only the title used to reach the caller, so every schema-validation failure arrived as the
+     * constant {@code "Invalid user supplied data"} while the message that said what was actually wrong
+     * — for an enum, the permitted values — was built, carried this far, and then dropped. The category
+     * is not lost by preferring the detail: it is already on the enclosing problem-details body as its
+     * {@code title}.
+     */
+    private static @NotNull String describe(final @NotNull ApiErrorMessage error) {
+        final String detail = error.getDetail();
+        if (detail != null && !detail.isBlank()) {
+            return detail;
+        }
+        return Objects.requireNonNullElse(error.getTitle(), "");
     }
 }
