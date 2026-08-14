@@ -65,8 +65,10 @@ import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaSerializationException;
+import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -689,13 +691,42 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @return always {@code true}, so a caller can {@code return established(subscription)}.
      */
     private boolean established(final @NotNull OpcUaSubscription subscription) {
-        reportRevisedEventQueueSizes(subscription);
-        reportRejectedSelectClauses(subscription);
+        reportServerDiagnostics(subscription);
         // Before the refresh, and it has to stay that way: the refresh reads the current subscription at the
         // moment it makes its call rather than being handed one, so the generation must already be installed.
         installSubscription(subscription);
         requestConditionRefresh(RefreshReason.ESTABLISHED);
         return true;
+    }
+
+    /**
+     * Says what the server said about the items it accepted, and cannot fail the subscription for it.
+     * <p>
+     * The fence is the point. Everything in here is commentary on a subscription the server has already
+     * created and is already serving — a shallower queue than we asked for, a select clause it would not
+     * honour. None of it decides whether the subscription exists, so none of it may decide whether we keep
+     * it. Without the fence the two are the same decision, because {@link #established} runs on the startup
+     * future: anything thrown here propagates out through {@code syncTagsAndMonitoredItems} and
+     * {@code establishInitial}, fails the whole connection attempt, reports {@code ERROR}, and hands the
+     * adapter to the exponential-backoff retry — which reconnects, subscribes, reaches this method again and
+     * throws again. One unreadable diagnostic then costs the customer the adapter, including its value
+     * subscriptions, its browse endpoint and its southbound writes, none of which it has anything to do with.
+     * <p>
+     * That is not hypothetical: it is what the OPC Foundation reference server did (EDG-894 P1/P2). The
+     * individual known cause is guarded where it arises, in {@link #reportRejectedSelectClauses}; this catch
+     * is here so that the next one costs a log line instead of the adapter. Both reporters are inside it, and
+     * anything added to it later inherits the guarantee without having to know to ask for it.
+     */
+    private void reportServerDiagnostics(final @NotNull OpcUaSubscription subscription) {
+        try {
+            reportRevisedEventQueueSizes(subscription);
+            reportRejectedSelectClauses(subscription);
+        } catch (final RuntimeException e) {
+            log.warn(
+                    "Adapter '{}': could not report what the server said about the monitored items it accepted. The subscription is established and streaming regardless -- this is a failure to describe it, not a failure of it.",
+                    adapterId,
+                    e);
+        }
     }
 
     /**
@@ -728,6 +759,18 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      */
     void installSubscriptionForTesting(final @NotNull OpcUaSubscription subscription) {
         installSubscription(subscription);
+    }
+
+    /**
+     * Runs the whole "the server accepted this subscription" step, for tests about what that step may fail on.
+     * <p>
+     * Distinct from {@link #installSubscriptionForTesting} on purpose. That one installs a generation and
+     * nothing else, which is what a test about refresh routing wants. This one runs the diagnostics as well,
+     * because the thing being tested is precisely whether reading the server's optional commentary can stop
+     * the subscription being installed at all — a question that {@code installSubscription} alone cannot ask.
+     */
+    boolean establishedForTesting(final @NotNull OpcUaSubscription subscription) {
+        return established(subscription);
     }
 
     /**
@@ -1904,12 +1947,61 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             if (tag == null || tag.getDefinition().getKind() == OpcuaTagKind.VALUE) {
                 return;
             }
-            item.getFilterResult()
-                    .map(encoded -> encoded.decode(client.getStaticEncodingContext()))
-                    .filter(EventFilterResult.class::isInstance)
-                    .map(EventFilterResult.class::cast)
-                    .ifPresent(result -> reportRejectedFields(tag, result.getSelectClauseResults()));
+            item.getFilterResult().ifPresent(encoded -> reportRejectedSelectClauses(tag, encoded));
         });
+    }
+
+    /**
+     * Reads one item's filter result, if it says anything, and gives up quietly if it does not.
+     * <p>
+     * {@code filterResult} is optional twice over and Java only models one of them. {@link Optional} says
+     * whether the field is a null <em>reference</em>; it says nothing about whether the {@link
+     * ExtensionObject} it holds carries an encoded body. A server with no diagnostics to report may answer
+     * either way, and the OPC Foundation reference server answers the second: present, with no body and a
+     * null encoding id. {@code decode()} resolves its codec from that id before it ever looks at the body, so
+     * it throws {@code no codec registered for encodingId=i=0} — reporting the absence of a problem as a
+     * problem. {@link #carriesNoDiagnostic} is the missing half of the emptiness check.
+     * <p>
+     * The {@code catch} covers what that check cannot: a body encoded against a type this client has no codec
+     * for, or a malformed one. Neither is a reason to doubt the monitored item — the server accepted it, and
+     * this method's whole purpose is to make a log line better. DEBUG rather than WARN because there is
+     * nothing an operator could do about it and it would repeat on every reconnect; the WARN that matters is
+     * the one in {@link #reportRejectedFields}, which fires when the server does name rejected fields.
+     */
+    private void reportRejectedSelectClauses(final @NotNull OpcuaTag tag, final @NotNull ExtensionObject encoded) {
+        if (carriesNoDiagnostic(encoded)) {
+            return;
+        }
+        final UaStructuredType decoded;
+        try {
+            decoded = encoded.decode(client.getStaticEncodingContext());
+        } catch (final RuntimeException e) {
+            log.debug(
+                    "Adapter '{}': the server's filter result for tag '{}' could not be decoded ({}), so any fields it rejected are not named below. The tag is subscribed and unaffected.",
+                    adapterId,
+                    tag.getName(),
+                    encoded.getEncodingOrTypeId(),
+                    e);
+            return;
+        }
+        if (decoded instanceof final EventFilterResult result) {
+            reportRejectedFields(tag, result.getSelectClauseResults());
+        }
+    }
+
+    /**
+     * Whether an {@link ExtensionObject} is the protocol's way of saying "nothing to report".
+     * <p>
+     * Either half is enough on its own. A null body is an empty answer whatever the id claims, and a null
+     * encoding id leaves any body unidentifiable — there is no type to decode it as, so it cannot be a
+     * diagnostic we could read. Both are ordinary and neither deserves a log line.
+     */
+    private static boolean carriesNoDiagnostic(final @NotNull ExtensionObject encoded) {
+        if (encoded.isNull()) {
+            return true;
+        }
+        final NodeId encodingId = encoded.getEncodingOrTypeId();
+        return encodingId == null || encodingId.isNull();
     }
 
     /** Names the rejected entries of one tag's select clause, matched positionally against its fields. */
