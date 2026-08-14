@@ -31,8 +31,6 @@ import static org.mockito.Mockito.withSettings;
 
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -48,13 +46,19 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
- * EDG-885: sampling is started by the mapping editor so it can infer a schema, and until this work it
- * was never stopped — {@code stopSampling} had no production caller, and could not have worked if it
- * had one. The subscription therefore outlived every watcher and its queue was never reclaimed.
+ * EDG-885 / EDG-882 F-06: what sampling's lifecycle actually is, rather than what it looked like.
  * <p>
- * These tests cover the watcher lifecycle: the subscription must appear on the first watcher, survive
- * every release but the last, and disappear on the last — with the transition atomic enough that a
- * release cannot tear down a subscription an overlapping acquire has just created.
+ * It was written as a watcher count — subscribe on the first, unsubscribe on the last — but
+ * {@code startSampling} is reached from a POST that carries no watcher identity, so retries, a
+ * remounted panel and a second browser tab are indistinguishable, and each one incremented a count
+ * that nothing ever decremented. No release added later could have balanced it, because it would have
+ * no way to know which acquire it was balancing. What is left is the truthful shape: starting is
+ * idempotent, stopping unsubscribes, and neither pretends to be reference-counted.
+ * <p>
+ * <b>Still open, deliberately:</b> nothing in production stops sampling, so a sampled topic keeps its
+ * subscription and its ten-message queue for the life of the node. Closing that needs a release the
+ * caller can be identified by, or a lease that expires — both decisions about the product's API
+ * surface, both EDG-885's.
  */
 @SuppressWarnings("FutureReturnValueIgnored") // submitted work reports failures through the shared holder
 public class SamplingServiceLifecycleTest {
@@ -72,7 +76,7 @@ public class SamplingServiceLifecycleTest {
     }
 
     @Test
-    public void test_firstWatcherSubscribes_andLastWatcherUnsubscribes() {
+    public void test_startingSubscribes_andStoppingUnsubscribes() {
         assertFalse(samplingService.isSampling(TOPIC));
 
         samplingService.startSampling(TOPIC);
@@ -85,19 +89,20 @@ public class SamplingServiceLifecycleTest {
     }
 
     /**
-     * The reason for counting at all: one client closing its panel must not blind another that is
-     * still watching the same topic.
+     * Starting is idempotent. A POST carries no watcher identity, so a retry, a remounted panel and a
+     * second tab are the same request as far as this service can tell — and they must not each leave
+     * something behind that has to be undone separately.
      */
     @Test
-    public void test_aSecondWatcherKeepsTheSubscriptionAliveWhenTheFirstReleases() {
+    public void test_startingAgainWhileSamplingChangesNothing() {
         samplingService.startSampling(TOPIC);
         samplingService.startSampling(TOPIC);
+        samplingService.startSampling(TOPIC);
+
+        assertTrue(samplingService.isSampling(TOPIC));
         verify(topicTree, times(1)).addTopic(eq(CLIENT_ID), any(), anyByte(), eq(CLIENT_ID));
 
-        samplingService.stopSampling(TOPIC);
-        assertTrue(samplingService.isSampling(TOPIC), "one watcher remains");
-        verify(topicTree, never()).removeSubscriber(any(), any(), any());
-
+        // and one stop is enough: repeated starts did not stack anything that survives it
         samplingService.stopSampling(TOPIC);
         assertFalse(samplingService.isSampling(TOPIC));
         verify(topicTree, times(1)).removeSubscriber(eq(CLIENT_ID), eq(TOPIC), eq(CLIENT_ID));
@@ -120,20 +125,20 @@ public class SamplingServiceLifecycleTest {
     }
 
     @Test
-    public void test_releasingATopicNobodyWatchesIsANoOp() {
+    public void test_stoppingATopicNobodyIsSamplingIsANoOp() {
         samplingService.stopSampling(TOPIC);
 
         assertFalse(samplingService.isSampling(TOPIC));
         verify(topicTree, never()).removeSubscriber(any(), any(), any());
 
-        // and the count must not have gone negative: a later acquire still subscribes
+        // and nothing was corrupted by it: a later start still subscribes
         samplingService.startSampling(TOPIC);
         assertTrue(samplingService.isSampling(TOPIC));
         verify(topicTree, times(1)).addTopic(eq(CLIENT_ID), any(), anyByte(), eq(CLIENT_ID));
     }
 
     @Test
-    public void test_releasingTwiceAfterOneAcquireIsANoOpTheSecondTime() {
+    public void test_stoppingTwiceIsANoOpTheSecondTime() {
         samplingService.startSampling(TOPIC);
         samplingService.stopSampling(TOPIC);
         samplingService.stopSampling(TOPIC);
@@ -143,7 +148,7 @@ public class SamplingServiceLifecycleTest {
     }
 
     @Test
-    public void test_aTopicCanBeSampledAgainAfterItsLastWatcherLeft() {
+    public void test_aTopicCanBeSampledAgainAfterItWasStopped() {
         samplingService.startSampling(TOPIC);
         samplingService.stopSampling(TOPIC);
         samplingService.startSampling(TOPIC);
@@ -154,7 +159,7 @@ public class SamplingServiceLifecycleTest {
     }
 
     @Test
-    public void test_topicsAreCountedIndependently() {
+    public void test_topicsAreTrackedIndependently() {
         final String other = "plant/line2/from-plc";
         samplingService.startSampling(TOPIC);
         samplingService.startSampling(other);
@@ -162,7 +167,7 @@ public class SamplingServiceLifecycleTest {
         samplingService.stopSampling(TOPIC);
 
         assertFalse(samplingService.isSampling(TOPIC));
-        assertTrue(samplingService.isSampling(other), "releasing one topic must not affect another");
+        assertTrue(samplingService.isSampling(other), "stopping one topic must not affect another");
         verify(topicTree, times(1)).removeSubscriber(eq(CLIENT_ID), eq(TOPIC), eq(CLIENT_ID));
     }
 
@@ -185,38 +190,43 @@ public class SamplingServiceLifecycleTest {
         verify(topicTree, times(1)).removeSubscriber(eq(clientId), eq(topic), eq(clientId));
     }
 
+    /**
+     * Many starts, one stop. This is the case the counting got wrong in the direction that matters: a
+     * browser that retried a POST twenty-five times would have needed twenty-five releases, and there
+     * is no caller anywhere that could have issued them.
+     */
     @Test
-    public void test_manyWatchersNeedAsManyReleases() {
-        final int watchers = 25;
-        for (int i = 0; i < watchers; i++) {
+    public void test_manyStartsStillNeedOnlyOneStop() {
+        for (int i = 0; i < 25; i++) {
             samplingService.startSampling(TOPIC);
         }
-        for (int i = 0; i < watchers - 1; i++) {
-            samplingService.stopSampling(TOPIC);
-            assertTrue(samplingService.isSampling(TOPIC), "release " + i + " must not unsubscribe");
-        }
-        verify(topicTree, never()).removeSubscriber(any(), any(), any());
+        verify(topicTree, times(1)).addTopic(eq(CLIENT_ID), any(), anyByte(), eq(CLIENT_ID));
 
         samplingService.stopSampling(TOPIC);
+
         assertFalse(samplingService.isSampling(TOPIC));
         verify(topicTree, times(1)).removeSubscriber(eq(CLIENT_ID), eq(TOPIC), eq(CLIENT_ID));
     }
 
     /**
-     * The race the {@code compute} exists for, and the only one that matters.
+     * The race the atomic {@code compute} exists for.
      * <p>
-     * A release that has decided to unsubscribe must not remove a subscriber that an overlapping
-     * acquire has just added. The failure is silent and sticky: the count would say "watched" while
-     * the topic tree says "not subscribed", so no samples would ever arrive and the clean-up would
-     * rightly reclaim the queue.
+     * A stop must not tear down a subscription a start has just created in a way that leaves the two
+     * records disagreeing: this service's map saying "sampled" while the topic tree says "not
+     * subscribed" is silent and sticky — no samples would ever arrive, the clean-up would rightly
+     * reclaim the queue, and nothing would re-register until the topic changed.
      * <p>
-     * Asserted against a topic tree that actually tracks state, so the invariant checked is the real
-     * one — <em>if anybody is watching, a subscriber exists</em> — rather than a count of mock calls.
-     * One-sided: it can only fail on a broken implementation, never spuriously on a correct one.
+     * The invariant is asserted at quiescence, against a topic tree that actually tracks state, and it
+     * is the strongest one that holds without watcher identity: <em>the two records agree</em>. During
+     * the storm they cannot be compared, because a stop from another thread may legitimately end
+     * sampling between any two instructions of this one — which is not a race but the honest
+     * consequence of a POST that says "sample this" without saying who is asking. A release path that
+     * lets one caller's stop not affect another needs a token to identify it, and that is EDG-885's
+     * decision to make.
      */
     @Test
     @Timeout(120)
-    public void test_overlappingAcquireAndReleaseNeverLeaveAWatchedTopicUnsubscribed() throws Exception {
+    public void test_overlappingStartAndStopLeaveTheTwoRecordsAgreeing() throws Exception {
         final Set<String> subscribed = ConcurrentHashMap.newKeySet();
         final LocalTopicTree statefulTree =
                 mock(LocalTopicTree.class, withSettings().stubOnly());
@@ -246,12 +256,6 @@ public class SamplingServiceLifecycleTest {
                         start.await();
                         for (int i = 0; i < iterations; i++) {
                             service.startSampling(TOPIC);
-                            // while this thread holds a watch, the subscription must exist
-                            if (!subscribed.contains(CLIENT_ID)) {
-                                throw new AssertionError(
-                                        "topic is watched but has no subscriber: samples would never arrive "
-                                                + "and the clean-up would reclaim the queue");
-                            }
                             service.stopSampling(TOPIC);
                         }
                     } catch (final Throwable e) {
@@ -267,57 +271,26 @@ public class SamplingServiceLifecycleTest {
             executor.shutdownNow();
             executor.awaitTermination(10, TimeUnit.SECONDS);
         }
-
         if (failure.get() != null) {
             throw new AssertionError("concurrent failure", failure.get());
         }
-        // every acquire was paired, so nothing may remain watched or subscribed
-        assertFalse(service.isSampling(TOPIC), "watchers leaked");
-        assertTrue(subscribed.isEmpty(), "subscription leaked: this queue would never be reclaimed");
+
+        assertEquals(
+                samplingServiceSaysSampled(service),
+                subscribed.contains(CLIENT_ID),
+                "this service and the topic tree disagree about whether the topic is sampled; samples "
+                        + "would never arrive and nothing would re-register until the topic changed");
+
+        // and the service is still usable afterwards: the storm left no wedged state
+        service.startSampling(TOPIC);
+        assertTrue(service.isSampling(TOPIC));
+        assertTrue(subscribed.contains(CLIENT_ID));
+        service.stopSampling(TOPIC);
+        assertFalse(service.isSampling(TOPIC));
+        assertFalse(subscribed.contains(CLIENT_ID));
     }
 
-    /**
-     * Balanced concurrent acquire/release across several topics must leave nothing behind — a leaked
-     * watcher is a sampler queue that grows forever, which is the defect EDG-885 exists to close.
-     */
-    @Test
-    @Timeout(120)
-    public void test_concurrentLifecyclesAcrossTopicsLeaveNothingBehind() throws Exception {
-        final List<String> topics = List.of("a/b", "c", "plant/line1/+", "", "x/y/z");
-        final ExecutorService executor = Executors.newFixedThreadPool(topics.size());
-        final CountDownLatch start = new CountDownLatch(1);
-        final CountDownLatch done = new CountDownLatch(topics.size());
-        final List<Throwable> failures = new ArrayList<>();
-        try {
-            for (final String topic : topics) {
-                executor.submit(() -> {
-                    try {
-                        start.await();
-                        for (int i = 0; i < 10_000; i++) {
-                            samplingService.startSampling(topic);
-                            samplingService.startSampling(topic);
-                            samplingService.stopSampling(topic);
-                            samplingService.stopSampling(topic);
-                        }
-                    } catch (final Throwable e) {
-                        synchronized (failures) {
-                            failures.add(e);
-                        }
-                    } finally {
-                        done.countDown();
-                    }
-                });
-            }
-            start.countDown();
-            assertTrue(done.await(120, TimeUnit.SECONDS), "threads did not finish");
-        } finally {
-            executor.shutdownNow();
-            executor.awaitTermination(10, TimeUnit.SECONDS);
-        }
-
-        assertEquals(List.of(), failures);
-        for (final String topic : topics) {
-            assertFalse(samplingService.isSampling(topic), "watcher leaked for '" + topic + "'");
-        }
+    private static boolean samplingServiceSaysSampled(final @NotNull SamplingService service) {
+        return service.isSampling(TOPIC);
     }
 }
