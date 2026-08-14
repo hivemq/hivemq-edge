@@ -60,6 +60,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.security.ssl.SslUtil;
+import com.hivemq.util.Checkpoints;
 import com.hivemq.util.StoreTypeUtil;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,6 +82,9 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BridgeMqttClient {
+
+    /** Checkpoint visited when the bridge has connected to its remote broker, before it forwards. */
+    public static final @NotNull String REMOTE_CONNECTED = "mqtt-bridge-remote-connected";
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeMqttClient.class);
 
@@ -520,6 +524,12 @@ public class BridgeMqttClient {
             }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
             connected.set(true);
+            // Visited before anything is forwarded, on every connect rather than only the first, so
+            // that a test can attach its oracle to the remote broker while the bridge is held here.
+            // Without it a regression that asserts which messages arrived has to subscribe after the
+            // remote comes up and race the reconnect, and loses the messages forwarded in between --
+            // the assertion then fails with nothing wrong in the product (EDG-882 F-08).
+            Checkpoints.checkpoint(REMOTE_CONNECTED);
 
             // Check if this is a reconnection (not the initial connection)
             // On initial connection, we only flush buffered messages without resetting persistence state.
