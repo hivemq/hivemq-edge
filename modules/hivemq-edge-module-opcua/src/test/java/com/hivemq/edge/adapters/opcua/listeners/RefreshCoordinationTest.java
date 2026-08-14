@@ -427,6 +427,73 @@ class RefreshCoordinationTest {
         verify(client, times(2)).callAsync(any());
     }
 
+    // ── review-07 finding 4: a retry timer may release only the entry it created ────────────────────
+
+    @Test
+    void aSupersededTimerCannotConsumeTheRetryDeferredByANewerReason() {
+        // A's timer remains queued after the fresh reason clears A and sends B. B is refused as well, so the
+        // shared deferred slot now contains B when timer A fires. The former unbound timer used getAndSet and
+        // stole B, sending it before B's own delay elapsed.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        established(handler, 4711);
+        when(client.callAsync(any())).thenReturn(refusedAsInProgress(), refusedAsInProgress(), completedRefreshCall());
+
+        handler.onSessionReactivated(); // call A is refused and schedules timer A
+        handler.onSessionReactivated(); // fresh B supersedes A, is refused, and schedules timer B
+
+        assertThat(refreshCallCount()).isEqualTo(2);
+        assertThat(clock.waitingCount()).isEqualTo(2);
+
+        clock.advanceOne(); // timer A
+
+        assertThat(refreshCallCount())
+                .as("timer A cannot steal and prematurely release B")
+                .isEqualTo(2);
+        assertThat(clock.waitingCount())
+                .as("B must remain deferred behind its own timer")
+                .isOne();
+
+        clock.advanceOne(); // timer B
+
+        assertThat(refreshCallCount())
+                .as("B's own timer releases exactly one successful retry")
+                .isEqualTo(3);
+        assertThat(clock.isWaiting()).isFalse();
+    }
+
+    @Test
+    void severalSupersededTimersCannotDrainTheCurrentRetryBudget() {
+        // Three fresh reasons produce three deferred entries and leave all three timers queued. Only the last
+        // entry is current. Running both obsolete timers first must spend neither a call nor the current
+        // entry; otherwise a series of stale timers can run the retry budget down before the collision ends.
+        final OpcuaTag tag = conditionTag("boiler-high-temp");
+        final var handler = handlerFor(tag);
+        established(handler, 4711);
+        when(client.callAsync(any()))
+                .thenReturn(
+                        refusedAsInProgress(), refusedAsInProgress(), refusedAsInProgress(), completedRefreshCall());
+
+        handler.onSessionReactivated(); // A and timer A
+        handler.onSessionReactivated(); // B and timer B
+        handler.onSessionReactivated(); // C and timer C
+        assertThat(refreshCallCount()).isEqualTo(3);
+        assertThat(clock.waitingCount()).isEqualTo(3);
+
+        clock.advanceOne(); // stale timer A
+        clock.advanceOne(); // stale timer B
+
+        assertThat(refreshCallCount())
+                .as("obsolete timers cannot spend C's retry budget")
+                .isEqualTo(3);
+        assertThat(clock.waitingCount()).isOne();
+
+        clock.advanceOne(); // current timer C
+
+        assertThat(refreshCallCount()).isEqualTo(4);
+        assertThat(clock.isWaiting()).isFalse();
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     /**
@@ -458,8 +525,17 @@ class RefreshCoordinationTest {
             }
         }
 
+        /** Runs one scheduled timer, so stale and current entries can be asserted independently. */
+        void advanceOne() {
+            Objects.requireNonNull(waiting.poll(), "no retry timer is waiting").run();
+        }
+
         boolean isWaiting() {
             return !waiting.isEmpty();
+        }
+
+        int waitingCount() {
+            return waiting.size();
         }
 
         @NotNull

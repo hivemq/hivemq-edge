@@ -101,7 +101,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * Only failures a retry could actually answer are counted — see {@link #requeueIfWorthRetrying}. Three is
      * small enough that a server refusing indefinitely costs three calls rather than a hot loop, and it is
      * enough only because each retry <em>waits</em>: see {@link #refreshRetryDelayMs}, and
-     * {@link #releaseDeferredRefresh} for the signal that usually makes the first retry the successful one.
+     * {@link #releaseCurrentDeferredRefresh} for the signal that usually makes the first retry the successful
+     * one.
      * Spent immediately, three retries buy nothing at all — they are three refusals in the same millisecond.
      */
     @VisibleForTesting
@@ -229,12 +230,17 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * refresh <em>is running now</em>; a server that refuses quickly while that other refresh is slow can
      * therefore reject the original and every retry long before the collision ends, and the mandatory refresh
      * a reconnect owes is then dropped while the log says only that it gave up. Held here instead, a retry is
-     * released by {@link #releaseDeferredRefresh} — from a timer, or as soon as the colliding refresh actually
-     * ends.
+     * released by its token-bound timer, or by {@link #releaseCurrentDeferredRefresh} as soon as the colliding
+     * refresh actually ends.
      * <p>
-     * One slot, for the same reason {@link #pendingRefresh} is one: §4.5 makes a refresh subscription-wide.
+     * One slot, for the same reason {@link #pendingRefresh} is one: §4.5 makes a refresh subscription-wide. A
+     * timer may release only the immutable entry it created; a {@code RefreshEnd} deliberately releases the
+     * current entry because it signals that the current collision has ended.
      */
-    private final @NotNull AtomicReference<RefreshReason> deferredRefresh = new AtomicReference<>();
+    private final @NotNull AtomicReference<DeferredRefresh> deferredRefresh = new AtomicReference<>();
+
+    /** Gives every deferred entry an immutable identity that its own timer can validate. */
+    private final @NotNull AtomicLong deferredRefreshSequence = new AtomicLong();
 
     /**
      * Where a deferred retry waits, so a test can hold and release its own clock.
@@ -1107,7 +1113,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // before the publish decision for the same reason as the two above: whether a user asked to see
             // the event has nothing to do with whether a refresh we owe can now proceed.
             if (isRefreshEnd(eventType)) {
-                releaseDeferredRefresh("the refresh that was already running has ended");
+                releaseCurrentDeferredRefresh("the refresh that was already running has ended");
             }
             // Queue overflow is likewise acted on before the publish decision, and for a sharper reason: it
             // arrives on the tag whose data was lost and on no other, so the publish decision below is the
@@ -1254,6 +1260,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         consecutiveRefreshFailures.set(0);
         // And it supersedes any retry still waiting: one call covers every reason outstanding when it starts,
         // so letting a deferred one survive would buy a second call that answers nothing the first did not.
+        // Its timer remains queued, but the immutable token it carries no longer matches this slot and cannot
+        // consume a retry deferred by a later failure.
         deferredRefresh.set(null);
         // Recorded as outstanding work before any attempt to start it, and that order is the whole
         // correctness argument: a completion racing this can then only ever see the slot already filled.
@@ -1532,8 +1540,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 MAX_REFRESH_RETRIES);
         // set, not compareAndSet: the slot holds at most one deferred retry and a later reason describes the
         // same single call -- §4.5 makes a refresh subscription-wide, so reasons collapse rather than queue.
-        deferredRefresh.set(reason);
-        refreshRetryScheduler.schedule(() -> releaseDeferredRefresh("the retry delay elapsed"), delayMs);
+        // The immutable entry is also the timer's token. A timer whose entry was superseded must not consume
+        // whichever newer retry happens to occupy this shared slot when it eventually fires.
+        final DeferredRefresh deferred = new DeferredRefresh(deferredRefreshSequence.incrementAndGet(), reason);
+        deferredRefresh.set(deferred);
+        refreshRetryScheduler.schedule(
+                () -> releaseScheduledDeferredRefresh(deferred, "the retry delay elapsed"), delayMs);
     }
 
     /**
@@ -1558,24 +1570,40 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
-     * Moves a deferred retry into the pending slot and starts it, if one is still waiting.
+     * Releases the currently deferred retry in response to a {@code RefreshEnd} signal.
      * <p>
-     * Called from two places, which is the point of the slot existing. The timer set by
-     * {@link #requeueIfWorthRetrying} is the backstop; the other caller is a {@code RefreshEnd} notification,
-     * which is the server saying that the refresh it was busy with has finished — the precise moment
-     * {@code Bad_RefreshInProgress} stops being true. Waiting for it rather than for a guessed interval is
-     * what makes a budget of three enough however long the colliding refresh takes.
+     * This is the server saying that the refresh it was busy with has finished — the precise moment
+     * {@code Bad_RefreshInProgress} stops being true. Waiting for it rather than only for a guessed interval
+     * is what makes a budget of three enough however long the colliding refresh takes. The timer backstop uses
+     * {@link #releaseScheduledDeferredRefresh} instead, because it may release only the entry it scheduled.
      * <p>
-     * {@code getAndSet(null)} so exactly one of the two wins; whichever arrives second finds the slot empty
-     * and does nothing. A {@code RefreshEnd} for a refresh of <em>ours</em> that succeeded can also land here
-     * and release a retry deferred by some later failure a little early — that costs at most one call from a
+     * {@code getAndSet(null)} so exactly one signal wins; whichever arrives second finds the slot empty and
+     * does nothing. A {@code RefreshEnd} for a refresh of <em>ours</em> that succeeded can also land here and
+     * release a retry deferred by some later failure a little early — that costs at most one call from a
      * budget that is being spent anyway, and it is the honest reading of the signal.
      */
-    private void releaseDeferredRefresh(final @NotNull String why) {
-        final RefreshReason deferred = deferredRefresh.getAndSet(null);
+    private void releaseCurrentDeferredRefresh(final @NotNull String why) {
+        final DeferredRefresh deferred = deferredRefresh.getAndSet(null);
         if (deferred == null) {
             return;
         }
+        enqueueDeferredRefresh(deferred, why);
+    }
+
+    /** Releases a timer's own entry only; a superseded timer cannot consume a newer retry. */
+    private void releaseScheduledDeferredRefresh(final @NotNull DeferredRefresh expected, final @NotNull String why) {
+        if (!deferredRefresh.compareAndSet(expected, null)) {
+            log.debug(
+                    "Adapter '{}': ignoring superseded condition-refresh retry timer {}",
+                    adapterId,
+                    expected.sequence());
+            return;
+        }
+        enqueueDeferredRefresh(expected, why);
+    }
+
+    /** Moves an entry already claimed by either its timer or a current RefreshEnd signal into pending work. */
+    private void enqueueDeferredRefresh(final @NotNull DeferredRefresh deferred, final @NotNull String why) {
         if (abandoned.get()) {
             // What stands in for cancelling the timer. The scheduler is shared and holds no handle worth
             // keeping, so a retry that comes due on a closed connection is stopped here instead -- before it
@@ -1583,15 +1611,15 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             log.debug(
                     "Adapter '{}': dropping the condition refresh owed because {}, the connection has been closed",
                     adapterId,
-                    deferred.why());
+                    deferred.reason().why());
             return;
         }
         log.debug(
                 "Adapter '{}': retrying the condition refresh owed because {} now that {}",
                 adapterId,
-                deferred.why(),
+                deferred.reason().why(),
                 why);
-        pendingRefresh.compareAndSet(null, deferred);
+        pendingRefresh.compareAndSet(null, deferred.reason());
         drainRefreshRequests();
     }
 
@@ -1626,6 +1654,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
          */
         void schedule(@NotNull Runnable task, long delayMs);
     }
+
+    /** One deferred retry and the unique token its scheduled release must still own. */
+    private record DeferredRefresh(long sequence, @NotNull RefreshReason reason) {}
 
     private enum RefreshReason {
         ESTABLISHED("a subscription was established"),
