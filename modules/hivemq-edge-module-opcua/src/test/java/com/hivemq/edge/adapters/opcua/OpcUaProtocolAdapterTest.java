@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -121,6 +122,15 @@ public class OpcUaProtocolAdapterTest {
         // Create adapter
         adapter = new OpcUaProtocolAdapter(adapterInformation, input);
 
+        final List<ProtocolAdapterState.ConnectionStatus> statusTransitions = new CopyOnWriteArrayList<>();
+        final AtomicReference<Boolean> browseReadyAtConnected = new AtomicReference<>();
+        ((ProtocolAdapterStateImpl) protocolAdapterState).setConnectionStatusListener(status -> {
+            statusTransitions.add(status);
+            if (status == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
+                browseReadyAtConnected.set(adapter != null && adapter.isBrowseReady());
+            }
+        });
+
         // Mock module services for start
         final ModuleServices moduleServices = mock(ModuleServices.class);
         when(moduleServices.eventService()).thenReturn(eventService);
@@ -141,6 +151,15 @@ public class OpcUaProtocolAdapterTest {
                     .as("Adapter should be connected")
                     .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         });
+        assertThat(statusTransitions)
+                .as("an asynchronous start must remain CONNECTING until its client is usable")
+                .containsSubsequence(
+                        ProtocolAdapterState.ConnectionStatus.DISCONNECTED,
+                        ProtocolAdapterState.ConnectionStatus.CONNECTING,
+                        ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        assertThat(browseReadyAtConnected)
+                .as("CONNECTED and browse readiness must be one public boundary")
+                .hasValue(true);
 
         // Verify no error events were fired
         assertThat(eventService.readEvents(null, null))

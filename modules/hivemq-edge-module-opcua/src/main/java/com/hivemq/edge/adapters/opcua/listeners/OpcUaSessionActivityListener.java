@@ -56,6 +56,9 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
      */
     private final @NotNull BooleanSupplier stillOwned;
 
+    /** Whether this session belongs to a connection whose context has finished initial setup. */
+    private final @NotNull BooleanSupplier connectionReady;
+
     /**
      * Who is going to run the refresh a reconnect owes. See {@link ReconnectHandoff} for why the two facts
      * involved cannot be two independent atomics, and why both of its methods answer with what to run
@@ -75,6 +78,24 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
                 adapterId,
                 protocolAdapterState,
                 stillOwned,
+                () -> true,
+                new ReconnectHandoff());
+    }
+
+    public OpcUaSessionActivityListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @NotNull final ProtocolAdapterState protocolAdapterState,
+            @NotNull final BooleanSupplier stillOwned,
+            @NotNull final BooleanSupplier connectionReady) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                protocolAdapterState,
+                stillOwned,
+                connectionReady,
                 new ReconnectHandoff());
     }
 
@@ -85,12 +106,14 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
             @NotNull final String adapterId,
             @NotNull final ProtocolAdapterState protocolAdapterState,
             @NotNull final BooleanSupplier stillOwned,
+            @NotNull final BooleanSupplier connectionReady,
             @NotNull final ReconnectHandoff handoff) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.stillOwned = stillOwned;
+        this.connectionReady = connectionReady;
         this.handoff = handoff;
     }
 
@@ -156,13 +179,23 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     @Override
     public void onSessionActive(final @NotNull UaSession session) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
-        publishStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
 
         // A reconnect whose subscription transferred cleanly recreates nothing, so nothing else would ask the
         // server to re-report its retained conditions. Skipping the first activation avoids refreshing twice
-        // on the initial connect, where creating the subscription already does it.
+        // on the initial connect, where creating the subscription already does it. The initial activation
+        // also cannot publish CONNECTED: Milo calls it before verification, monitored-item creation, browse
+        // preparation and context installation have finished. The connection itself owns that first
+        // transition. Later activations may restore CONNECTED only after that initial setup was completed.
         if (!seenFirstActivation.compareAndSet(false, true)) {
+            if (connectionReady.getAsBoolean()) {
+                publishStatus(CONNECTED);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': session reactivated before initial connection setup completed; "
+                                + "leaving the public status unchanged",
+                        adapterId);
+            }
             // Null means there was nothing to call yet, and the handoff has remembered the debt rather than
             // dropping it: the next setOnReconnect runs it on arrival.
             final Runnable reconnected = handoff.reconnected();

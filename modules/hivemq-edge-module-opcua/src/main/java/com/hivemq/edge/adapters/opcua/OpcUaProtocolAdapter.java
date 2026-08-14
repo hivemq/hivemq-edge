@@ -129,10 +129,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     static final int MAX_CONCURRENT_BROWSES = 1;
     private final @NotNull Semaphore browseConcurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
 
-    // EDG-577: browse-readiness is tracked separately from CONNECTED. The Milo session reports CONNECTED the
-    // moment it activates, before the namespace table and data-type tree are hydrated; a browse in that window
-    // is non-deterministic. Kept OPC-UA-local (not on the shared SDK ConnectionStatus enum). Reset to WARMING_UP
-    // on every (re)connect attempt and flipped to BROWSE_READY once the warm-up has loaded the metadata.
+    // EDG-577: browse-readiness remains an OPC-UA-local detail used by the REST browse endpoint, but it is now
+    // ordered with public connection readiness. Milo activates the session before the namespace table and
+    // data-type tree are hydrated; a browse in that window is non-deterministic. Every attempt resets this to
+    // WARMING_UP, and the connection publishes CONNECTED only after the warm-up flips it to BROWSE_READY.
     private enum ReadinessStatus {
         WARMING_UP,
         BROWSE_READY
@@ -318,7 +318,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 protocolAdapterMetricsService,
                 config,
                 opcUaServiceFaultListener,
-                this::isCurrentConnection);
+                this::isCurrentConnection,
+                this::warmUpBrowseMetadata,
+                this::markBrowseReady);
         if (opcUaClientConnection.compareAndSet(null, conn)) {
             // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
             // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
@@ -332,7 +334,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // no later stop() or destroy() could ever collect them.
             startSchedulers();
 
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
             // Attempt initial connection asynchronously
             attemptConnection(conn, newlyParsedConfig, input);
 
@@ -475,10 +477,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     protocolAdapterMetricsService,
                     config,
                     opcUaServiceFaultListener,
-                    this::isCurrentConnection);
+                    this::isCurrentConnection,
+                    this::warmUpBrowseMetadata,
+                    this::markBrowseReady);
 
             // Set as current connection and attempt connection with retry logic
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
             if (opcUaClientConnection.compareAndSet(null, newConn)) {
                 // Create a minimal ProtocolAdapterStartInput for attemptConnection
                 final ModuleServices ms = Objects.requireNonNull(moduleServices);
@@ -1119,9 +1123,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         reconnectAttempts.set(0);
                         // Update browse client snapshot so browse works during future restarts
                         conn.client().ifPresent(browseClient::set);
-                        // EDG-577: CONNECTED has fired, but the address-space metadata still needs hydrating
-                        // before a deterministic browse — warm it up, then flip to BROWSE_READY.
-                        conn.client().ifPresent(this::warmUpBrowseReadiness);
+                        // The connection has already hydrated browse metadata and installed its context before
+                        // publishing CONNECTED, so every public operation is usable at this point.
                         // Connection succeeded - cancel any pending retries and start health check
                         cancelRetry();
                         scheduleHealthCheck();
@@ -1156,31 +1159,26 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     /**
-     * EDG-577: one-shot async warm-up run after a successful (re)connect. The Milo session reports CONNECTED as
-     * soon as it activates, but the namespace table and data-type tree a deterministic browse depends on may not
-     * be populated yet. Force-load them off the connection thread, then flip the adapter to BROWSE_READY so the
-     * REST browse endpoint stops answering 503. A failure leaves the adapter not-ready; the next reconnect (or a
-     * later browse) re-warms.
+     * EDG-577: one-shot warm-up during a successful (re)connect. The Milo session activates before the namespace
+     * table and data-type tree a deterministic browse depends on are populated. The connection invokes this
+     * preparation before installing its public context and publishing CONNECTED, so REST browse and southbound
+     * operations share one readiness boundary. A failure fails the attempt and enters the ordinary retry path.
      */
-    private void warmUpBrowseReadiness(final @NotNull OpcUaClient client) {
-        @SuppressWarnings("unused")
-        final var unused = CompletableFuture.runAsync(() -> {
-            try {
-                client.getNamespaceTable(); // ensure the namespace table is read from the server
-                client.getDataTypeTree(); // build the data-type tree (feeds the EDG-488 cache when that lands)
-                if (!stopped) {
-                    browseReadiness.set(ReadinessStatus.BROWSE_READY);
-                    log.info(
-                            "OPC UA adapter '{}' is browse-ready (namespace table and data-type tree hydrated)",
-                            adapterId);
-                }
-            } catch (final @NotNull Exception e) {
-                log.warn(
-                        "OPC UA adapter '{}' browse warm-up failed; adapter stays not browse-ready until the next reconnect",
-                        adapterId,
-                        e);
-            }
-        });
+    private void warmUpBrowseMetadata(final @NotNull OpcUaClient client) {
+        try {
+            client.getNamespaceTable(); // ensure the namespace table is read from the server
+            client.getDataTypeTree(); // build the data-type tree (feeds the EDG-488 cache when that lands)
+        } catch (final @NotNull Exception e) {
+            throw new IllegalStateException("OPC UA browse metadata warm-up failed", e);
+        }
+    }
+
+    /** Called by the connection after the hydrated client has been installed as its public context. */
+    private void markBrowseReady() {
+        if (!stopped) {
+            browseReadiness.set(ReadinessStatus.BROWSE_READY);
+            log.info("OPC UA adapter '{}' is browse-ready (namespace table and data-type tree hydrated)", adapterId);
+        }
     }
 
     /**
@@ -1245,10 +1243,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 protocolAdapterMetricsService,
                                 config,
                                 opcUaServiceFaultListener,
-                                this::isCurrentConnection);
+                                this::isCurrentConnection,
+                                this::warmUpBrowseMetadata,
+                                this::markBrowseReady);
 
                         // Set as current connection and attempt
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
                         if (opcUaClientConnection.compareAndSet(null, newConn)) {
                             attemptConnection(newConn, this.parsedConfig, input);
                         } else {

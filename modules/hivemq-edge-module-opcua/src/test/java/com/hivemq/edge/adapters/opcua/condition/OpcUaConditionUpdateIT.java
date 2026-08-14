@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.condition;
 
-import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
@@ -550,39 +549,5 @@ public class OpcUaConditionUpdateIT {
 
         await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
-        awaitClientUsable();
-    }
-
-    /**
-     * Waits past the window in which the adapter reports {@code CONNECTED} but cannot yet be used.
-     * <p>
-     * {@code CONNECTED} is published the instant the Milo session activates — before the namespace table and
-     * data-type tree are hydrated, and before {@code conn.client()} returns a present {@code Optional}. Every
-     * write in this class needs a live client, so a test that awaits only {@code CONNECTED} and then writes
-     * is asserting a guarantee the adapter does not make. It fails as
-     * {@code "Discovery failed: Client not connected or not initialized"}, and the {@code timeout(10_000)} on
-     * the verification does not help: the write has already called {@code fail(...)}, so {@code finish()}
-     * never comes and the verification waits out its full ten seconds before reporting the wrong thing.
-     * <p>
-     * {@code isBrowseReady()} is the adapter's own answer to this (EDG-577): it flips only after the
-     * post-connect warm-up has loaded exactly that metadata. Waiting on it here fixes every write in the
-     * class at once, rather than retrying at sixteen call sites — three of which legitimately assert
-     * {@code fail(...)} and would be broken by a blanket retry.
-     * <p>
-     * <b>The wait announces itself.</b> The window measures 0.0ms on a developer machine, so a green local
-     * run says nothing about whether this was ever exercised. Printing the elapsed time turns a passing CI
-     * build into a measurement — the technique that confirmed the 302ms adapter-registration window in
-     * EDG-868 rather than leaving it a guess.
-     */
-    private void awaitClientUsable() {
-        final long startedAt = System.nanoTime();
-        await().untilAsserted(() ->
-                assertThat(requireNonNull(adapter).isBrowseReady()).isTrue());
-        final double waitedMillis = (System.nanoTime() - startedAt) / 1_000_000.0;
-        if (waitedMillis >= 1.0) {
-            System.err.printf(
-                    "EDG835-WAITED client became usable %.1fms after CONNECTED — the window is real on this machine%n",
-                    waitedMillis);
-        }
     }
 }

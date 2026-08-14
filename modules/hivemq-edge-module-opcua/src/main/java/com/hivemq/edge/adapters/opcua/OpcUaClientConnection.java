@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
@@ -92,6 +93,18 @@ public class OpcUaClientConnection {
     private final @NotNull Predicate<OpcUaClientConnection> stillOwned;
 
     /**
+     * The last connection-specific preparation that must finish before {@code CONNECTED} is truthful.
+     * <p>
+     * The adapter uses this to hydrate Milo's namespace table and data-type tree. Keeping it on the
+     * connection's start path makes the readiness transition ordered: the subscription exists, preparation
+     * succeeds, the context is installed, and only then is {@code CONNECTED} published.
+     */
+    private final @NotNull Consumer<OpcUaClient> prepareForUse;
+
+    /** Marks adapter-owned readiness after the usable context has been installed. */
+    private final @NotNull Runnable markReady;
+
+    /**
      * The subscription handler, reachable from the moment it is constructed rather than from the moment the
      * connection is fully established.
      * <p>
@@ -133,6 +146,32 @@ public class OpcUaClientConnection {
             final @NotNull OpcUaSpecificAdapterConfig config,
             final @NotNull OpcUaServiceFaultListener serviceFaultListener,
             final @NotNull Predicate<OpcUaClientConnection> stillOwned) {
+        this(
+                adapterId,
+                tags,
+                protocolAdapterState,
+                tagStreamingService,
+                eventService,
+                protocolAdapterMetricsService,
+                config,
+                serviceFaultListener,
+                stillOwned,
+                ignored -> {},
+                () -> {});
+    }
+
+    OpcUaClientConnection(
+            final @NotNull String adapterId,
+            final @NotNull List<OpcuaTag> tags,
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
+            final @NotNull EventService eventService,
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            final @NotNull OpcUaSpecificAdapterConfig config,
+            final @NotNull OpcUaServiceFaultListener serviceFaultListener,
+            final @NotNull Predicate<OpcUaClientConnection> stillOwned,
+            final @NotNull Consumer<OpcUaClient> prepareForUse,
+            final @NotNull Runnable markReady) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.eventService = eventService;
@@ -142,6 +181,8 @@ public class OpcUaClientConnection {
         this.tags = tags;
         this.serviceFaultListener = serviceFaultListener;
         this.stillOwned = stillOwned;
+        this.prepareForUse = prepareForUse;
+        this.markReady = markReady;
     }
 
     /**
@@ -187,7 +228,8 @@ public class OpcUaClientConnection {
                 eventService,
                 adapterId,
                 protocolAdapterState,
-                () -> stillOwned.test(this));
+                () -> stillOwned.test(this),
+                () -> context.get() != null);
 
         // Determine preferred MessageSecurityMode with intelligent defaults
         final MessageSecurityMode preferredMode;
@@ -322,6 +364,20 @@ public class OpcUaClientConnection {
         final var subscription = subscriptionOptional.get();
         log.trace("Creating Subscription for OPC UA client");
 
+        try {
+            prepareForUse.accept(client);
+        } catch (final RuntimeException e) {
+            log.error("Failed to prepare OPC UA client for use by adapter '{}'", adapterId, e);
+            publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            eventService
+                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                    .withMessage("Failed to prepare OPC UA client for use by adapter '" + adapterId + "'.")
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .fire();
+            quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+            return false;
+        }
+
         // The last chance to notice that this attempt has been overtaken, and the only one that matters:
         // installing the context is what turns a private attempt into the adapter's live connection, and
         // until it happens a teardown finds nothing to close. A stop() or destroy() that ran while this
@@ -339,16 +395,15 @@ public class OpcUaClientConnection {
             quietlyCloseClient(client, false, serviceFaultListener, activityListener);
             // Said here rather than left to the activity listener, which cannot say it: quietlyCloseClient
             // removes that listener before disconnecting, precisely so a teardown does not announce itself as
-            // a fault. The status is CONNECTED at this point -- onSessionActive reports it the moment Milo
-            // activates the session, long before there is a subscription -- so without this the adapter would
-            // go on reporting a connection that has just been thrown away. The teardown that set `closed`
-            // could not correct it either: it ran against a null context and set nothing.
+            // a fault. The initial onSessionActive deliberately does not report CONNECTED; the connection
+            // owns that transition and publishes it only after installing the usable context below.
             publishStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             return false;
         }
 
         context.set(new ConnectionContext(
                 subscription.getClient(), serviceFaultListener, activityListener, subscriptionLifecycleHandler));
+        markReady.run();
         publishStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         log.info("Client created and connected successfully");

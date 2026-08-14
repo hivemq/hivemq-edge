@@ -70,6 +70,43 @@ class OpcUaSessionActivityListenerTest {
     }
 
     @Test
+    void theFirstActivationDoesNotPublishConnectedBeforeInitialSetupFinishes() {
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+        final OpcUaSessionActivityListener initial =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
+
+        initial.onSessionActive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("the connection publishes CONNECTED only after subscriptions and its context are usable")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+    }
+
+    @Test
+    void aReactivationBeforeInitialSetupFinishesDoesNotPublishConnectedEither() {
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+        final AtomicBoolean ready = new AtomicBoolean();
+        final OpcUaSessionActivityListener initial = new OpcUaSessionActivityListener(
+                mock(), new FakeEventService(), "test-adapter-id", state, () -> true, ready::get);
+
+        initial.onSessionActive(mock(UaSession.class));
+        initial.onSessionActive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("an early reconnect still has no usable connection context")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+
+        ready.set(true);
+        initial.onSessionActive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("a later activation of an established connection restores CONNECTED")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+    }
+
+    @Test
     void everyLaterActivationIsAReconnect() {
         listener.onSessionActive(mock(UaSession.class));
         listener.onSessionActive(mock(UaSession.class));
@@ -267,13 +304,21 @@ class OpcUaSessionActivityListenerTest {
 
         current.onSessionActive(mock(UaSession.class));
         assertThat(state.getConnectionStatus())
-                .as("an active session on the current connection is the adapter being connected")
-                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+                .as("the initial activation is not the readiness boundary")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
 
+        // The connection publishes its own initial readiness after installing the context. From then on the
+        // session listener owns the inactive/reactivated transitions for that established connection.
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         current.onSessionInactive(mock(UaSession.class));
         assertThat(state.getConnectionStatus())
-                .as("and an inactive one is the adapter being disconnected")
+                .as("an inactive session on the current connection is the adapter being disconnected")
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+
+        current.onSessionActive(mock(UaSession.class));
+        assertThat(state.getConnectionStatus())
+                .as("and a reactivated established session is connected again")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
     }
 
     @Test

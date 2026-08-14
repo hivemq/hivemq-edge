@@ -153,6 +153,54 @@ public class OpcUaClientConnectionTest {
 
     @Test
     @Timeout(60)
+    void whenReadinessPreparationFails_thenTheConnectionNeverPublishesConnected() {
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final OpcuaTag tag = new OpcuaTag(
+                "testTag",
+                "Test tag",
+                new OpcuaTagDefinition(
+                        "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
+
+        final AtomicBoolean markedReady = new AtomicBoolean();
+        opcUaClientConnection = new OpcUaClientConnection(
+                "test-adapter-id",
+                List.of(tag),
+                protocolAdapterState,
+                mock(ProtocolAdapterTagStreamingService.class),
+                eventService,
+                metricsService,
+                config,
+                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true),
+                ConnectionOwnership.alwaysCurrent(),
+                ignored -> {
+                    throw new IllegalStateException("metadata unavailable");
+                },
+                () -> markedReady.set(true));
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+
+        assertThat(opcUaClientConnection.start(parsedConfig)).isFalse();
+        assertThat(protocolAdapterState.getConnectionStatus())
+                .as("a client without its required metadata is not publicly usable")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
+        assertThat(markedReady).isFalse();
+        assertThat(opcUaClientConnection.client()).isEmpty();
+        assertThat(eventService.readEvents(null, null))
+                .anySatisfy(event -> assertThat(event.getMessage()).contains("Failed to prepare OPC UA client"));
+    }
+
+    @Test
+    @Timeout(60)
     void whenMultipleTagsSubscribed_thenKeepAliveMessagesAreReceived() throws Exception {
         // Arrange
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
