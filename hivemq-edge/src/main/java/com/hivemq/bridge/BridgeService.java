@@ -172,10 +172,13 @@ public class BridgeService {
                     log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
                 } else {
                     log.info("Restarting bridge {} because config has changed", bridgeId);
-                    allKnownBridgeConfigs.put(bridgeId, newBridge);
-                    internalStopBridge(active, true, List.of());
-                    activeBridgeNamesToClient.put(
-                            bridgeId, new MqttBridgeAndClient(newBridge, internalStartBridge(newBridge)));
+                    // Through restartBridge rather than stop-with-an-empty-retain-list, which cleared
+                    // every queue of the bridge whatever had changed: editing one subscription's filter
+                    // threw away the messages queued for all the others, and a bridge with one busy
+                    // subscription and one being tuned lost the busy one's backlog on every save
+                    // (EDG-882 F-07). restartBridge keeps the queues of the forwarders that survive
+                    // into the new configuration, and holds them across the hand-over.
+                    restartBridge(bridgeId, newBridge);
                 }
             }
         });

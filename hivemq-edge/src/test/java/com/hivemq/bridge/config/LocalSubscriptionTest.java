@@ -230,6 +230,101 @@ class LocalSubscriptionTest {
     }
 
     /**
+     * EDG-882 F-07. Order is not part of a subscription's identity: the filters are what the forwarder
+     * subscribes to and the excludes are a match-any test, so a configuration edited only to reorder
+     * them is the same configuration. It did not compare that way — {@code equals} was positional while
+     * the fingerprint sorted — so a formatting change read as "the bridge changed", and the reload path
+     * answers that by restarting the bridge in the mode that clears its queues.
+     */
+    @Test
+    void equals_whenOnlyTheOrderOfFiltersOrExcludesDiffers_thenEqual() {
+        final LocalSubscription written = new LocalSubscription(
+                List.of("factory/+/temperature", "factory/+/pressure"),
+                "destinationTopic",
+                List.of("factory/ignored/temperature", "factory/ignored/pressure"),
+                List.of(),
+                false,
+                1,
+                null);
+        final LocalSubscription reordered = new LocalSubscription(
+                List.of("factory/+/pressure", "factory/+/temperature"),
+                "destinationTopic",
+                List.of("factory/ignored/pressure", "factory/ignored/temperature"),
+                List.of(),
+                false,
+                1,
+                null);
+
+        assertEquals(written, reordered, "a reorder-only edit compared as a changed bridge");
+        assertEquals(written.hashCode(), reordered.hashCode());
+        assertEquals(written.calculateUniqueId(), reordered.calculateUniqueId(), "and it always owned the same queues");
+    }
+
+    /**
+     * The bridge-level comparison is what {@code updateBridges} actually asks, so the property has to
+     * survive being folded into {@link MqttBridge}: an unchanged bridge whose filters were reordered
+     * must not be restarted at all.
+     */
+    @Test
+    void mqttBridgeEquals_whenFiltersAreReordered_thenEqual() {
+        assertEquals(
+                bridge(new LocalSubscription(List.of("a/1", "b/2"), "destinationTopic")),
+                bridge(new LocalSubscription(List.of("b/2", "a/1"), "destinationTopic")));
+    }
+
+    /**
+     * Sorted, not de-duplicated. The fingerprint is taken over the sorted filters including repeats and
+     * it names every persisted queue, so collapsing a repeat would rename that queue on upgrade and
+     * strand the messages in it — the trade this ticket refused for the encoding itself.
+     */
+    @Test
+    void calculateUniqueId_whenAFilterIsRepeated_thenStillItsOwnIdentity() {
+        final LocalSubscription repeated = new LocalSubscription(List.of("a/1", "a/1"), "destinationTopic");
+        final LocalSubscription once = new LocalSubscription(List.of("a/1"), "destinationTopic");
+
+        assertNotEquals(once, repeated, "a repeated filter is a different configuration");
+        assertNotEquals(
+                once.calculateUniqueId(),
+                repeated.calculateUniqueId(),
+                "de-duplicating would rename this subscription's queues on upgrade");
+        assertEquals(List.of("a/1", "a/1"), repeated.getFilters(), "and the repeat survives canonicalisation");
+    }
+
+    /**
+     * User properties are left ordered on purpose: MQTT user properties are an ordered list and two
+     * entries may share a key, so their order is configuration rather than formatting.
+     */
+    @Test
+    void equals_whenOnlyTheOrderOfUserPropertiesDiffers_thenNotEqual() {
+        final LocalSubscription first = new LocalSubscription(
+                List.of("a/1"),
+                "destinationTopic",
+                List.of(),
+                List.of(CustomUserProperty.of("k1", "v1"), CustomUserProperty.of("k2", "v2")),
+                false,
+                1,
+                null);
+        final LocalSubscription swapped = new LocalSubscription(
+                List.of("a/1"),
+                "destinationTopic",
+                List.of(),
+                List.of(CustomUserProperty.of("k2", "v2"), CustomUserProperty.of("k1", "v1")),
+                false,
+                1,
+                null);
+
+        assertNotEquals(first, swapped);
+    }
+
+    /** Canonicalisation must not lose or invent filters, whatever it is handed. */
+    @Test
+    void getFilters_returnsTheSameFiltersInCanonicalOrder() {
+        assertEquals(List.of("a", "b", "c"), new LocalSubscription(List.of("c", "a", "b"), "d").getFilters());
+        assertEquals(List.of(), new LocalSubscription(List.of(), "d").getFilters());
+        assertEquals(List.of("only"), new LocalSubscription(List.of("only"), "d").getFilters());
+    }
+
+    /**
      * EDG-882 F-01, pinned as known and deliberate. The filters are joined with an <b>empty</b>
      * separator before being digested, so any two filter lists with the same sorted concatenation
      * produce the same fingerprint — and the fingerprint names every persisted queue the subscription

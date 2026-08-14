@@ -35,7 +35,7 @@ public class LocalSubscription {
     private final @Nullable Long queueLimit;
 
     public LocalSubscription(final @NotNull List<String> filters, final @Nullable String destination) {
-        this.filters = filters;
+        this.filters = canonical(filters);
         this.destination = destination;
         this.excludes = List.of();
         this.customUserProperties = List.of();
@@ -53,13 +53,38 @@ public class LocalSubscription {
             final int maxQoS,
             final @Nullable Long queueLimit) {
 
-        this.filters = filters;
+        this.filters = canonical(filters);
         this.destination = destination;
-        this.excludes = excludes;
+        this.excludes = canonical(excludes);
         this.customUserProperties = customUserProperties;
         this.maxQoS = maxQoS;
         this.preserveRetain = preserveRetain;
         this.queueLimit = queueLimit;
+    }
+
+    /**
+     * Sorts a list of topic filters, so that two subscriptions differing only in the order they were
+     * written in are one subscription (EDG-882 F-05's sibling, F-07).
+     * <p>
+     * Order carries no meaning for either list: the filters are what the forwarder subscribes to, and
+     * the excludes are a match-any test. But {@link #equals(Object)} compared them positionally while
+     * {@link #calculateUniqueId()} sorted them, so reordering a filter in the configuration file
+     * produced a subscription that was "changed" for the reload path and identical for the queue
+     * naming — and the reload path answers a change by restarting the bridge in the mode that clears
+     * its queues. A formatting edit destroyed every message waiting to be forwarded.
+     * <p>
+     * <b>Sorted, not de-duplicated.</b> The digest that names every persisted queue is taken over the
+     * sorted filters <i>including</i> repeats, so collapsing {@code ["a", "a"]} to {@code ["a"]} would
+     * change that name and strand the messages already queued under the old one on upgrade — the same
+     * trade this ticket refused for the encoding itself. Repeats stay, and two configurations that
+     * differ by one are still different.
+     * <p>
+     * {@code customUserProperties} is deliberately left alone: MQTT user properties are ordered, and
+     * two properties with the same key are legal, so their order is part of the configuration rather
+     * than an accident of how it was written.
+     */
+    private static @NotNull List<String> canonical(final @NotNull List<String> topicFilters) {
+        return topicFilters.stream().sorted().toList();
     }
 
     public @NotNull List<String> getFilters() {
@@ -164,7 +189,10 @@ public class LocalSubscription {
         final byte[] digestOverAll = new byte[digestSize];
 
         if (!filters.isEmpty()) {
-            // input list is immutable, need mutable list
+            // Sorted again rather than trusting the constructor's canonical order: this digest names
+            // every persisted queue of the subscription, so it must not become sensitive to how the
+            // list arrived here if a future path ever bypasses canonicalisation. Sorting a sorted list
+            // costs nothing and the digest is unchanged either way.
             final ArrayList<String> strings = new ArrayList<>(filters);
             strings.sort(String::compareTo);
             final byte[] filtersAsBytes = String.join("", strings).getBytes(StandardCharsets.UTF_8);
