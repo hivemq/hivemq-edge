@@ -442,7 +442,8 @@ public class OpcUaClientConnection {
         // Before the monitor, not behind it. A start() in progress holds this instance's lock for the whole
         // of its verification, so a synchronized stop() could not reach the flag that shortens the very wait
         // it was queueing behind: it blocked for up to three ten-second round trips per condition tag,
-        // reported to the operator as a hang. Abandoning first turns that into one outstanding call.
+        // reported to the operator as a hang. Abandoning first turns that into the one verification phase
+        // already in progress, whose ceiling is ten seconds.
         markClosed();
         closeContext(true);
     }
@@ -479,8 +480,9 @@ public class OpcUaClientConnection {
      * a start has to wait for the start to finish before it can decide there is nothing to close, or it would
      * race the {@code context.set(...)} at the end of {@link #start}. Because {@code closed} is already set by
      * the time this waits, the start it is waiting for will abandon its verification and then refuse to
-     * install its context, so the wait is bounded by one outstanding server call rather than by every
-     * remaining tag.
+     * install its context. Verification rechecks abandonment after each timed phase, so this wait is bounded
+     * by the phase already in progress (currently a ten-second ceiling) rather than by the rest of that tag
+     * or every remaining tag.
      *
      * @param keepSubscription whether to leave the subscription on the server — true for a stop, which may be
      *                         followed by a reconnect that transfers it, false for a destroy.

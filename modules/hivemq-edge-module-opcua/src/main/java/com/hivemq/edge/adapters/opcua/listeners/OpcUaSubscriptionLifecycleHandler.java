@@ -149,11 +149,11 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * call fails, and each failure is reported to the operator as a tag that cannot be subscribed, for tags
      * that are perfectly fine.
      * <p>
-     * Checked between tags rather than inside the calls themselves. Most of the time the disconnected client
+     * Checked between tags and after every timed verification phase. Most of the time the disconnected client
      * fails each call immediately, so the cost is spurious events rather than delay; but against a server
      * that is reachable and simply not answering — the state that produces a transfer failure in the first
-     * place — each call waits its full timeout, and that is the case this bounds to one wait instead of one
-     * per tag.
+     * place — each phase waits its full timeout. Rechecking between phases bounds teardown to the one already
+     * in progress instead of allowing the rest of the current tag and every later tag to start.
      */
     private final @NotNull AtomicBoolean abandoned = new AtomicBoolean();
 
@@ -528,9 +528,11 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // cannot stop the others -- or the adapter -- from starting.
             final List<VerifiedTag> verifiedTags = new ArrayList<>();
             for (int i = 0; i < monitoredItemsToAdd.size(); i++) {
-                // Between tags rather than inside verify(): each tag costs up to two server round trips, so
-                // a connection closed underneath us should not buy the remaining ones. Reported as a plain
-                // failure, not as a tag problem -- these tags were never judged.
+                // Checked here before the first phase, inside verifyCondition() between each of its timed
+                // phases, and again afterwards before any monitored item is built. A connection closed
+                // underneath us should pay only for the phase already in progress, never the rest of the tag
+                // or the remaining tags. Reported as a plain failure, not as a tag problem -- these tags were
+                // never judged.
                 if (abandoned.get()) {
                     log.info(
                             "Adapter '{}': abandoning monitored item sync, the connection was closed with {} of {} tags still to verify",
@@ -539,7 +541,15 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                             monitoredItemsToAdd.size());
                     return false;
                 }
-                verify(monitoredItemsToAdd.get(i)).ifPresent(verifiedTags::add);
+                final Optional<VerifiedTag> verified = verify(monitoredItemsToAdd.get(i));
+                if (abandoned.get()) {
+                    log.info(
+                            "Adapter '{}': abandoning monitored item sync after verification of tag '{}', the connection was closed",
+                            adapterId,
+                            monitoredItemsToAdd.get(i).getName());
+                    return false;
+                }
+                verified.ifPresent(verifiedTags::add);
             }
 
             verifiedTags.forEach(verified -> {
@@ -2063,6 +2073,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                         client, node, definition.getType(), tagName)
                 .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
+        if (verificationWasAbandoned(tagName, "type verification")) {
+            return Optional.empty();
+        }
+
         if (result instanceof final ConditionTypeVerifier.Result.Rejected rejected) {
             reportUnsubscribableTag(tagName, rejected.reason());
             return Optional.empty();
@@ -2077,6 +2091,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         final NotifierResolver.Result notifier = NotifierResolver.resolve(
                         client, node, definition.getNotifierNode(), tagName)
                 .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        if (verificationWasAbandoned(tagName, "notifier resolution")) {
+            return Optional.empty();
+        }
 
         if (notifier instanceof final NotifierResolver.Result.NotFound notFound) {
             reportUnsubscribableTag(tagName, notFound.reason());
@@ -2095,6 +2113,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
                             client, found.notifier(), tagName, "notifierNode")
                     .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            if (verificationWasAbandoned(tagName, "declared-notifier preflight")) {
+                return Optional.empty();
+            }
             if (optionalUnsubscribableTag.isPresent()) {
                 reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
                 return Optional.empty();
@@ -2107,6 +2128,25 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 found.notifier(),
                 found.how());
         return Optional.of(new VerifiedTag(opcuaTag, node, found.notifier(), null, null));
+    }
+
+    /**
+     * Whether teardown overtook one of a condition tag's timed verification phases.
+     * <p>
+     * Read immediately after each blocking {@code get(...)} and before the next phase can be started. The
+     * completed answer is deliberately ignored: the connection it described is being closed, so reporting a
+     * tag problem or spending another server call would both be stale work.
+     */
+    private boolean verificationWasAbandoned(final @NotNull String tagName, final @NotNull String completedPhase) {
+        if (!abandoned.get()) {
+            return false;
+        }
+        log.info(
+                "Adapter '{}': abandoning verification of tag '{}' after {}, the connection was closed",
+                adapterId,
+                tagName,
+                completedPhase);
+        return true;
     }
 
     /**
