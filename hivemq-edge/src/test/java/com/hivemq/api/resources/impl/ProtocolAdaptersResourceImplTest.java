@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
@@ -45,6 +46,7 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
+import com.hivemq.edge.api.model.Adapter;
 import com.hivemq.edge.api.model.DomainTagList;
 import com.hivemq.edge.api.model.DomainTagOwnerList;
 import com.hivemq.edge.api.model.FieldMapping;
@@ -52,6 +54,7 @@ import com.hivemq.edge.api.model.NorthboundMappingOwner;
 import com.hivemq.edge.api.model.NorthboundMappingOwnerList;
 import com.hivemq.edge.api.model.SouthboundMappingOwner;
 import com.hivemq.edge.api.model.SouthboundMappingOwnerList;
+import com.hivemq.http.error.ProblemDetails;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
@@ -97,6 +100,33 @@ class ProtocolAdaptersResourceImplTest {
     @BeforeEach
     public void setUp() {
         when(systemInformation.isConfigWriteable()).thenReturn(true);
+    }
+
+    /**
+     * EDG-891 P5. The duplicate-id guard was reported as unreachable over REST, on the evidence that a
+     * second create returned only {@code "Invalid user supplied data"}. The guard does fire — the
+     * finding shares its root cause with P2: the friendly text was carried as the error's *detail*, and
+     * only the *title* was mapped onto the wire model, so the message was built and then dropped at the
+     * boundary. Fixed with P2; pinned here against the resource so the two cannot drift apart again.
+     */
+    @Test
+    void addAdapter_whenTheIdIsAlreadyTaken_thenTheCallerIsToldItMustBeUnique() {
+        when(protocolAdapterManager.getAdapterTypeById("opcua"))
+                .thenReturn(Optional.of(mock(ProtocolAdapterInformation.class)));
+        when(protocolAdapterExtractor.getAdapterByAdapterId("taken"))
+                .thenReturn(Optional.of(mock(ProtocolAdapterEntity.class)));
+
+        final Response response = protocolAdaptersResource.addAdapter("opcua", new Adapter("taken"));
+
+        assertEquals(400, response.getStatus());
+        final ProblemDetails problem = assertInstanceOf(ProblemDetails.class, response.getEntity());
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getDetail)
+                .as("the caller must be told why the id was refused, not merely that something was invalid")
+                .containsExactly("Adapter ID must be unique in system");
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getParameter)
+                .containsExactly("id");
     }
 
     @Test
