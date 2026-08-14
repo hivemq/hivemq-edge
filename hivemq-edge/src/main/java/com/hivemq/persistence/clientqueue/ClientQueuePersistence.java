@@ -29,6 +29,18 @@ import org.jetbrains.annotations.NotNull;
 public interface ClientQueuePersistence {
 
     /**
+     * Checkpoint visited when the client-queue clean-up has finished a bucket.
+     * <p>
+     * Declared here rather than on the implementation because the integration tests that wait for it
+     * cannot reference the implementation class: reading its class file needs types that are not on
+     * their compile classpath. Tests wait for a number of these instead of sleeping — the sleeps they
+     * replace passed just as green on a node where the clean-up had stopped being scheduled at all
+     * (EDG-882 F-09).
+     */
+    @NotNull
+    String CLIENT_QUEUE_CLEAN_UP_FINISHED = "client-queue-clean-up-finished";
+
+    /**
      * Add a publish to the queue.
      * The publish will be queued without a packet ID
      *

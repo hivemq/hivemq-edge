@@ -43,6 +43,7 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.payload.PayloadPersistenceException;
 import com.hivemq.sampling.SamplingService;
+import com.hivemq.util.Checkpoints;
 import dagger.Lazy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -374,6 +375,12 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                     localPersistence.clear(sharedQueue, true, bucketIndex);
                 }
             }
+            // Visited once per bucket, after the sweep has finished, so that a test can wait for the
+            // thing it means to observe. Regressions for the queues this clean-up used to delete had to
+            // sleep for long enough that a pass had "probably" happened, which passes just as green on a
+            // node where the job stopped being scheduled at all -- the one failure the sleep was there
+            // to catch (EDG-882 F-09). A checkpoint is inert unless a test enables it.
+            Checkpoints.checkpoint(ClientQueuePersistence.CLIENT_QUEUE_CLEAN_UP_FINISHED);
             return null;
         });
     }
