@@ -51,14 +51,23 @@ public class SamplingService {
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
 
     /**
-     * How many callers currently want samples for each topic.
+     * The topics currently sampled. A set, not a count of watchers.
      * <p>
-     * Sampling is a diagnostic collection started so the mapping editor can infer a schema, not a
-     * durable subscription: several clients may ask for the same topic at once, and the subscription
-     * must live exactly as long as the last of them. Counting watchers is what makes one client
-     * closing its panel harmless to another that is still looking.
+     * Counting was the wrong shape while nothing releases: {@link #startSampling(String)} is reached
+     * from an HTTP POST that carries no watcher identity, so retries, a remounted panel and a second
+     * browser tab are indistinguishable and each one incremented a count that nothing ever decremented.
+     * A count like that cannot be balanced by any release added later — it would have no way to know
+     * which acquire it was balancing — and it read as a lifecycle that was being managed when it was
+     * not (EDG-882 F-06).
+     * <p>
+     * <b>What this does not fix:</b> nothing in production stops sampling, so a sampled topic keeps its
+     * subscription, and its ten-message queue, for the life of the node. Making that finite needs
+     * either a release the caller can be identified by — a DELETE endpoint with a watcher token — or a
+     * lease that expires unless refreshed, and the second changes what an idle-but-open editor panel
+     * sees. Both are decisions about the product's API surface rather than repairs to this class, and
+     * they belong to EDG-885.
      */
-    private final @NotNull Map<String, Integer> watchers = new ConcurrentHashMap<>(0);
+    private final @NotNull Map<String, Boolean> sampledTopics = new ConcurrentHashMap<>(0);
 
     @Inject
     public SamplingService(
@@ -69,59 +78,55 @@ public class SamplingService {
     }
 
     /**
-     * Registers interest in samples for a topic, subscribing on the first watcher.
+     * Starts sampling a topic, subscribing the first time it is asked for.
      * <p>
-     * Every call must be paired with exactly one {@link #stopSampling(String)}, or the subscription
-     * outlives its last watcher and its queue is never reclaimed.
+     * Idempotent: asking again while the topic is already sampled changes nothing. That is the honest
+     * shape for a call reached from a POST with no watcher identity — retries, a remounted panel and a
+     * second tab all mean the same thing here, "somebody wants samples of this topic".
      * <p>
-     * The subscribe happens <b>inside</b> the map update rather than after it. {@code compute} is
-     * atomic for a key, so a concurrent {@link #stopSampling(String)} cannot interleave between the
-     * count reaching zero and the subscriber being removed. Without that, a release that had decided
-     * to stop could remove the subscriber an acquire had just added, leaving the count saying
-     * "watched" while the topic tree says "not subscribed" — no samples would ever arrive, the
-     * clean-up would rightly reclaim the queue, and nothing would re-register until the topic changed.
-     * Silent, sticky, and invisible to any single-threaded test.
+     * The subscribe happens <b>inside</b> the map update rather than after it. {@code computeIfAbsent}
+     * is atomic for a key, so a concurrent {@link #stopSampling(String)} cannot interleave between the
+     * entry appearing and the subscriber being added. Without that, a stop could remove the subscriber
+     * a start had just added, leaving this map saying "sampled" while the topic tree says "not
+     * subscribed" — no samples would ever arrive, the clean-up would rightly reclaim the queue, and
+     * nothing would re-register until the topic changed. Silent, sticky, and invisible to any
+     * single-threaded test.
      */
     public void startSampling(final @NotNull String topic) {
-        watchers.compute(topic, (sampledTopic, count) -> {
-            if (count == null) {
-                subscribe(sampledTopic);
-                return 1;
-            }
-            return count + 1;
+        sampledTopics.computeIfAbsent(topic, sampledTopic -> {
+            subscribe(sampledTopic);
+            return Boolean.TRUE;
         });
     }
 
     /**
-     * Releases one watcher's interest, unsubscribing when the last one lets go.
+     * Stops sampling a topic and unsubscribes.
      * <p>
-     * A release for a topic nobody is watching is a no-op: the count never goes negative, so a
-     * duplicate stop cannot make a later {@link #startSampling(String)} fail to subscribe.
+     * <b>Nothing in production calls this yet</b>; it is the entry point a release path will use, and
+     * what the tests drive. Stopping a topic nobody is sampling is a no-op, so a duplicate stop cannot
+     * make a later {@link #startSampling(String)} fail to subscribe.
      * <p>
      * Once the subscriber is gone the periodic clean-up reclaims the queue on its next sweep with no
-     * further help — {@code ClientQueuePersistenceImpl.isOrphaned} stops finding an owner for it. If a
-     * new watcher arrives after that, it starts from an empty queue and waits a moment for fresh
+     * further help — {@code ClientQueuePersistenceImpl.isOrphaned} stops finding an owner for it. If
+     * sampling starts again after that, it starts from an empty queue and waits a moment for fresh
      * samples. That is the intended behaviour and not a race worth defending against: samples are
-     * ephemeral diagnostics that regenerate in seconds, unlike a bridge queue, whose loss is
-     * unbounded and unrecoverable.
+     * ephemeral diagnostics that regenerate in seconds, unlike a bridge queue, whose loss is unbounded
+     * and unrecoverable.
      */
     public void stopSampling(final @NotNull String topic) {
-        watchers.computeIfPresent(topic, (sampledTopic, count) -> {
-            if (count > 1) {
-                return count - 1;
-            }
+        sampledTopics.computeIfPresent(topic, (sampledTopic, sampling) -> {
             unsubscribe(sampledTopic);
             return null;
         });
     }
 
     /**
-     * Whether any caller is currently watching this topic. Exposed for tests and diagnostics; the
-     * authoritative record of a live sampler remains the topic tree.
+     * Whether this topic is currently sampled. Exposed for tests and diagnostics; the authoritative
+     * record of a live sampler remains the topic tree.
      */
     @VisibleForTesting
     public boolean isSampling(final @NotNull String topic) {
-        return watchers.containsKey(topic);
+        return sampledTopics.containsKey(topic);
     }
 
     /**
@@ -135,13 +140,13 @@ public class SamplingService {
      * contrives the doubled shape fails the second, so neither has an eviction policy applied to its
      * messages that it did not ask for (EDG-882 F-05).
      * <p>
-     * The watchers map, not the topic tree: it is the record of who asked for samples, and it is the
-     * same map {@link #startSampling(String)} maintains, so this cannot disagree with whether a
+     * The sampled-topics map, not the topic tree: it is the record of what was asked for, and it is
+     * the same map {@link #startSampling(String)} maintains, so this cannot disagree with whether a
      * subscription exists.
      */
     public boolean isSamplerQueue(final @NotNull String queueId) {
         final String sampledTopic = extractSampledTopic(queueId);
-        return sampledTopic != null && watchers.containsKey(sampledTopic);
+        return sampledTopic != null && sampledTopics.containsKey(sampledTopic);
     }
 
     private void subscribe(final @NotNull String topic) {

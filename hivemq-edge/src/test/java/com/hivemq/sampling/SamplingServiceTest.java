@@ -287,19 +287,22 @@ public class SamplingServiceTest {
         assertFalse(samplingService.isSamplerQueue(""));
     }
 
-    /** A second watcher keeps the queue a sampler until the last one lets go. */
+    /**
+     * Starting again while the topic is already sampled changes nothing, and one stop ends it. The
+     * POST behind this carries no watcher identity, so a retry and a second panel are the same
+     * request — counting them would build an obligation no caller could ever discharge (F-06).
+     */
     @Test
     @Timeout(5)
-    public void test_isSamplerQueue_follows_the_watcher_count() {
+    public void test_isSamplerQueue_isIndifferentToRepeatedStarts() {
         final SamplingService samplingService = samplingService();
         final String queueId = SamplingService.createQueueId("plant/line1");
         samplingService.startSampling("plant/line1");
         samplingService.startSampling("plant/line1");
 
-        samplingService.stopSampling("plant/line1");
-        assertTrue(samplingService.isSamplerQueue(queueId), "one watcher is still looking");
+        assertTrue(samplingService.isSamplerQueue(queueId));
 
         samplingService.stopSampling("plant/line1");
-        assertFalse(samplingService.isSamplerQueue(queueId));
+        assertFalse(samplingService.isSamplerQueue(queueId), "one stop ends it, however many starts there were");
     }
 }
