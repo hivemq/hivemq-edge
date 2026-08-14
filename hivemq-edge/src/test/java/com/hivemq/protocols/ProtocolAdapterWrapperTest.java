@@ -198,8 +198,7 @@ class ProtocolAdapterWrapperTest {
 
             assertThat(wrapper.start()).isTrue();
 
-            verify(protocolAdapterState, never())
-                    .setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            verify(protocolAdapterState, never()).setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         }
 
         @Test
@@ -854,7 +853,6 @@ class ProtocolAdapterWrapperTest {
             assertThat(wrapper.stop(false)).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
-
     }
 
     @Nested
@@ -1157,6 +1155,9 @@ class ProtocolAdapterWrapperTest {
 
             wrapperWithRealState.stop(false);
 
+            assertThat(wrapperWithRealState.getConnectionStatus())
+                    .as("an ordinary completed stop has a wrapper-owned terminal status")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // After stop, status changes should be blocked by the shutdown flag
             final boolean changed = realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             assertThat(changed).isFalse();

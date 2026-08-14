@@ -25,12 +25,12 @@ import static org.mockito.Mockito.when;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
@@ -39,7 +39,13 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.ProtocolAdapterConfig;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,15 +82,17 @@ class DuplicateRefreshTagTest {
 
     private static final @NotNull String ADAPTER_ID = "boiler-house";
 
-    private @NotNull ProtocolAdapterState protocolAdapterState;
+    private @NotNull ProtocolAdapterStateImpl protocolAdapterState;
+    private @NotNull FakeEventService eventService;
     private @NotNull ModuleServices moduleServices;
     private @Nullable OpcUaProtocolAdapter adapter;
 
     @BeforeEach
     void setUp() {
-        protocolAdapterState = new ProtocolAdapterStateImpl(mock(), ADAPTER_ID, "opcua");
+        eventService = new FakeEventService();
+        protocolAdapterState = new ProtocolAdapterStateImpl(eventService, ADAPTER_ID, "opcua");
         moduleServices = mock(ModuleServices.class);
-        when(moduleServices.eventService()).thenReturn(new FakeEventService());
+        when(moduleServices.eventService()).thenReturn(eventService);
         when(moduleServices.protocolAdapterTagStreamingService())
                 .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
     }
@@ -117,6 +125,19 @@ class DuplicateRefreshTagTest {
                 .as("the condition tag is not at fault and must not be named")
                 .doesNotContain("boiler-high-temp");
         verify(output, never()).startedSuccessfully();
+    }
+
+    @Test
+    @Timeout(60)
+    void wrapperPreservesTheConfigurationErrorWhileCleaningUpTheFailedStart() {
+        final ProtocolAdapterWrapper wrapper =
+                wrapperFor(refreshTag("plant-wide-refresh"), refreshTag("copied-by-mistake"));
+
+        assertThat(wrapper.start()).isFalse();
+        assertThat(wrapper.getConnectionStatus())
+                .as("failed-start cleanup must not turn an actionable configuration error into an offline state")
+                .isEqualTo(com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR);
+        assertThat(wrapper.getErrorMessage()).contains("at most one REFRESH tag");
     }
 
     @Test
@@ -189,6 +210,25 @@ class DuplicateRefreshTagTest {
         final ProtocolAdapterStartOutput output = mock(ProtocolAdapterStartOutput.class);
         adapterFor(tags).start(ProtocolAdapterConnectionDirection.Northbound, startInput(), output);
         return output;
+    }
+
+    private @NotNull ProtocolAdapterWrapper wrapperFor(final @NotNull OpcuaTag... tags) {
+        final OpcUaProtocolAdapter created = adapterFor(tags);
+        final ProtocolAdapterFactory<?> adapterFactory = mock();
+        return new ProtocolAdapterWrapper(
+                created,
+                mock(ProtocolAdapterConfig.class),
+                adapterFactory,
+                created.getProtocolAdapterInformation(),
+                mock(ProtocolAdapterMetricsService.class),
+                protocolAdapterState,
+                mock(ProtocolAdapterPollingService.class),
+                eventService,
+                moduleServices,
+                mock(TagManager.class),
+                mock(NorthboundConsumerFactory.class),
+                mock(InternalProtocolAdapterWritingService.class),
+                Runnable::run);
     }
 
     private @NotNull OpcUaProtocolAdapter adapterFor(final @NotNull OpcuaTag... tags) {

@@ -235,10 +235,10 @@ class OpcUaAttemptOwnershipTest {
 
     @Test
     @Timeout(60)
-    void stopReportsTheDisconnectionItself() {
-        // Same reasoning on the stop path, which releases the slot before calling conn.stop() for the same
-        // reason. Asserted separately because the two paths clear the slot at different points and one being
-        // right says nothing about the other.
+    void directStopDoesNotOverwriteTheExistingLifecycleStatus() {
+        // Unlike destroy(), stop() is also invoked by ProtocolAdapterWrapper to clean up a failed start. The
+        // adapter therefore cannot choose the final shared status: doing so would overwrite the wrapper's
+        // actionable ERROR with DISCONNECTED. The production wrapper completes an ordinary stop explicitly.
         final OpcUaProtocolAdapter started = startedAdapter();
         awaitTheConnectionAttemptFailing(started);
 
@@ -248,8 +248,8 @@ class OpcUaAttemptOwnershipTest {
                 mock(ProtocolAdapterStopOutput.class));
 
         assertThat(protocolAdapterState.getConnectionStatus())
-                .as("a stopped adapter must report itself disconnected")
-                .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                .as("adapter teardown must not erase a wrapper-owned failure status")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────

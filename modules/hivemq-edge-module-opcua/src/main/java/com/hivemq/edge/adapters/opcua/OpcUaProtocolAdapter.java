@@ -392,12 +392,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             } else {
                 log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
             }
-            // Said by the adapter, because the connection is no longer entitled to say it: the slot was
-            // released a moment ago, so the DISCONNECTED that conn.stop() used to publish is now correctly
-            // suppressed as coming from a connection the adapter no longer holds. The status is still true and
-            // still has to be reported -- what changed is who reports it. Inside the lock and before the call
-            // returns, so a stop is DISCONNECTED by the time it says it has stopped.
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            // The wrapper owns the final lifecycle status. In particular, this stop may be failed-start
+            // cleanup: the wrapper deliberately preserves ERROR while draining its connection FSM back to
+            // Disconnected. Publishing here would erase that actionable configuration failure. An ordinary
+            // wrapper stop completes the shared status after the adapter teardown has finished.
         } finally {
             reconnectLock.unlock();
         }
