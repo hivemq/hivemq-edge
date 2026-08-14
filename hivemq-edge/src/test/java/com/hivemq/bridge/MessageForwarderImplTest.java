@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -435,6 +437,33 @@ public class MessageForwarderImplTest {
         assertFalse(
                 messageForwarder.isForwarderQueue(QUEUE_ID),
                 "the originally registered queue leaked a reference and can never be reclaimed");
+    }
+
+    /**
+     * EDG-882 F-02, the half of the hand-over that lives in this class. Ownership is what the periodic
+     * clean-up reads, so it may not be dropped while the forwarder is still published and still
+     * polling: a sweep landing in that window clears a queue that is being filled and drained as it
+     * does so. The queue must therefore still read as owned at the moment the forwarder is stopped.
+     */
+    @Test
+    @Timeout(5)
+    public void test_ownership_outlives_the_forwarder_it_belongs_to() {
+        final AtomicBoolean ownedWhenStopped = new AtomicBoolean();
+        doAnswer(invocation -> {
+                    ownedWhenStopped.set(messageForwarder.isForwarderQueue(QUEUE_ID));
+                    return null;
+                })
+                .when(mqttForwarder)
+                .stop();
+
+        messageForwarder.addForwarder(mqttForwarder);
+        messageForwarder.removeForwarder(mqttForwarder, false);
+
+        assertTrue(
+                ownedWhenStopped.get(),
+                "the queue read as unowned while its forwarder was still running; a sweep here clears a live queue");
+        assertFalse(
+                messageForwarder.isForwarderQueue(QUEUE_ID), "and it must be reclaimable once the forwarder is gone");
     }
 
     /**

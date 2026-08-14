@@ -235,11 +235,34 @@ public class BridgeService {
         }
     }
 
+    /**
+     * Stops a bridge and starts it again, keeping the queues of every forwarder that survives into
+     * {@code newBridgeConfig}.
+     * <p>
+     * Those queues change hands here, and between the two generations nothing owns them: the old
+     * forwarders are removed and released by the stop, and the replacements are not registered until
+     * the start. The periodic clean-up runs on its own schedule and clears forwarder queues it finds
+     * unowned, so a sweep landing in that gap deletes exactly the messages this restart was careful
+     * not to clear — and the bridge comes back to an empty queue with nothing logged. The gap is
+     * short, the sweep is every few seconds, and the customer this ticket came from restarts bridges
+     * to change a filter.
+     * <p>
+     * So the queues are held across the hand-over: claimed before the old generation lets go, dropped
+     * by {@link #internalStartBridge} once the replacements have registered — and if the start fails,
+     * the hold simply stays in place, which is what a bridge that cannot start needs anyway.
+     */
     public synchronized boolean restartBridge(
             final @NotNull String bridgeId, final @Nullable MqttBridge newBridgeConfig) {
         final var client = activeBridgeNamesToClient.get(bridgeId);
         if (client != null) {
             log.info("Restarting bridge '{}'", bridgeId);
+            // Exactly the retained set: the forwarder ids of the replacement configuration are the ones
+            // stopBridge is told not to clear, and an id determines its topics because it is a digest
+            // over them. Nothing is held when there is no replacement, which is the case in which the
+            // stop clears every queue anyway.
+            if (newBridgeConfig != null) {
+                messageForwarder.reserveQueues(bridgeId, topicsByForwarderId(newBridgeConfig));
+            }
             stopBridge(bridgeId, true, newForwarderIds(newBridgeConfig));
             final MqttBridge effectiveBridge = newBridgeConfig != null ? newBridgeConfig : client.bridge();
             activeBridgeNamesToClient.put(
@@ -275,6 +298,14 @@ public class BridgeService {
                     bridge.getLocalSubscriptions().size(),
                     bridge.getRemoteSubscriptions().size());
         }
+        // Hold this bridge's queues for the length of the start. The clean-up service is scheduled
+        // during persistence bootstrap, before any bridge has registered a forwarder, so at node start
+        // its persisted queues are visible and unowned — and the clean-up deletes forwarder queues
+        // nobody owns. The hold covers the rest of that window and is dropped the moment the forwarders
+        // take over below; a start that fails replaces it with one that stands until the configuration
+        // is corrected. Superseding an existing hold is exactly right on the restart path, which took
+        // one before it stopped the previous generation.
+        messageForwarder.reserveQueues(bridgeId, topicsByForwarderId(bridge));
         final BridgeMqttClient bridgeMqttClient = bridgeMqttClientFactory.createRemoteClient(bridge);
         try {
             final var forwarders = bridgeMqttClient.createForwarders();
@@ -292,12 +323,10 @@ public class BridgeService {
             // exception escaping here would leave the bridges after this one unstarted. Reported the
             // same way an unsuccessful connect is, which is what surfaces it in the API and the UI.
             //
-            // Nothing is cleared on this path, and the queues are held so that nothing else clears them
-            // either: with no forwarder registered they read as unowned, and the periodic clean-up
-            // deletes unowned forwarder queues within seconds. Without the hold, refusing to start a
-            // bridge would destroy the very messages the refusal exists to protect. The hold is dropped
-            // when the bridge starts or is removed.
-            messageForwarder.reserveQueues(bridgeId, topicsByForwarderId(bridge));
+            // Nothing is cleared on this path, and the hold taken above simply stays: with no forwarder
+            // registered the queues read as unowned, and the periodic clean-up deletes unowned forwarder
+            // queues within seconds. Without it, refusing to start a bridge would destroy the very
+            // messages the refusal exists to protect. It is dropped when the bridge starts or is removed.
             log.error("Bridge '{}' could not be started: {}", bridgeId, e.getMessage());
             log.debug("Forwarder registration failure details", e);
             bridgeNameToLastError.put(bridgeId, e);
