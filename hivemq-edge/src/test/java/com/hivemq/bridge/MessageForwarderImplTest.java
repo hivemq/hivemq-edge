@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -550,6 +552,80 @@ public class MessageForwarderImplTest {
         assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
         messageForwarder.removeForwarder(mqttForwarder, false);
         assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
+    }
+
+    /**
+     * EDG-882 F-10. A registration that throws part way must leave nothing behind. Ownership is what
+     * the periodic clean-up reads, so a claim held by an object that never ran preserves a queue
+     * nobody will ever drain — for the life of the node, since the ID cannot be registered again
+     * either.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_registration_that_fails_in_the_topic_tree_leaves_nothing_behind() {
+        final MqttForwarder failing = forwarder(FORWARDER_ID, TOPIC, OTHER_TOPIC);
+        doThrow(new IllegalStateException("topic tree said no"))
+                .when(topicTree)
+                .addTopic(any(), argThat(topic -> topic.getTopic().equals(OTHER_TOPIC)), anyByte(), any());
+
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(failing));
+
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID), "ownership survived a failed registration");
+        assertFalse(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, OTHER_TOPIC)));
+        // the subscription that did get added must have been taken back out again
+        verify(topicTree).removeSubscriber(any(), eq(TOPIC), any());
+        verify(failing, never()).start();
+    }
+
+    /** The same, one step later: the object was published and started before it threw. */
+    @Test
+    @Timeout(5)
+    public void test_a_registration_that_fails_on_start_leaves_nothing_behind() {
+        final MqttForwarder failing = forwarder(FORWARDER_ID, TOPIC);
+        doThrow(new IllegalStateException("start said no")).when(failing).start();
+
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(failing));
+
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID), "ownership survived a failed start");
+        verify(failing).stop();
+        verify(topicTree).removeSubscriber(any(), eq(TOPIC), any());
+    }
+
+    /** And the ID is free afterwards: a failed registration must not block the retry. */
+    @Test
+    @Timeout(5)
+    public void test_the_id_is_registerable_again_after_a_failed_registration() {
+        final MqttForwarder failing = forwarder(FORWARDER_ID, TOPIC);
+        doThrow(new IllegalStateException("start said no")).when(failing).start();
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(failing));
+
+        messageForwarder.addForwarder(forwarder(FORWARDER_ID, TOPIC));
+
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+    }
+
+    /**
+     * The rollback must undo its own claim and nothing else. Another forwarder holding the same queue
+     * ID — reachable because a share name may contain '/' — must still own it afterwards, or one
+     * forwarder's failure deletes another's messages.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_failed_registration_does_not_disturb_another_owner_of_the_same_queue() {
+        final MqttForwarder incumbent = forwarder("a/b", "c");
+        messageForwarder.addForwarder(incumbent);
+        final String sharedQueue = queueId("a/b", "c");
+        assertEquals(sharedQueue, queueId("a", "b/c"), "the two registrations must collide");
+
+        final MqttForwarder failing = forwarder("a", "b/c");
+        doThrow(new IllegalStateException("start said no")).when(failing).start();
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(failing));
+
+        assertTrue(
+                messageForwarder.isForwarderQueue(sharedQueue),
+                "the incumbent still owns this queue; clearing it would destroy its messages");
+        messageForwarder.removeForwarder(incumbent, false);
+        assertFalse(messageForwarder.isForwarderQueue(sharedQueue), "the failed registration leaked a reference");
     }
 
     /**

@@ -40,6 +40,7 @@ import com.hivemq.util.ThreadFactoryUtil;
 import dagger.Lazy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -233,111 +234,169 @@ public class MessageForwarderImpl implements MessageForwarder {
                     + " unique among registered forwarders, and a forwarder must be removed before an"
                     + " object with the same ID is added.");
         }
-        for (final String topic : mqttForwarder.getTopics()) {
-            topicTree.addTopic(
-                    clientId,
-                    new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
-                    SubscriptionFlag.getDefaultFlags(true, true, false),
-                    shareName);
-        }
-        mqttForwarder.setExecutorService(executorService);
-        mqttForwarder.setAfterForwardCallback(
-                (qos, uniqueId, queueId, cancelled) -> messageProcessed(qos, uniqueId, forwarderId, queueId));
-        mqttForwarder.setResetInflightMarkerCallback((sharedSubscriptionId, uniqueId) -> {
-            final var qPersistence = queuePersistence.get();
-            try {
-                if (qPersistence != null) {
-                    qPersistence
-                            .removeInFlightMarker(sharedSubscriptionId, uniqueId)
-                            .get();
-                }
-            } catch (final InterruptedException | ExecutionException e) {
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-                log.error(
-                        "Failed to remove inflight marker for forwarder '{}', queue '{}', messageId '{}'",
-                        forwarderId,
-                        sharedSubscriptionId,
-                        uniqueId,
-                        e);
-                throw new RuntimeException(e);
+        // Everything from here to the start() below is fallible, and a registration that fails part way
+        // used to stay claimed for ever: ownership held by an object that never ran, so the periodic
+        // clean-up preserved a queue nobody would ever drain, and the ID could not be registered again
+        // (EDG-882 F-10). The rollback undoes exactly the steps that were taken, in the reverse of the
+        // order they were taken in -- unpublish and stop before releasing ownership, as removeForwarder
+        // does -- and only for this instance and this claim, so a concurrent registration of the same
+        // ID cannot be torn down by another's failure.
+        final List<String> subscribedTopics = new ArrayList<>();
+        boolean registered = false;
+        try {
+            for (final String topic : mqttForwarder.getTopics()) {
+                topicTree.addTopic(
+                        clientId,
+                        new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
+                        SubscriptionFlag.getDefaultFlags(true, true, false),
+                        shareName);
+                subscribedTopics.add(topic);
             }
-        });
-        mqttForwarder.setResetAllInflightMarkersCallback((fwdId) -> {
-            // Reset ALL inflight markers for all queues associated with this forwarder.
-            // This is called on reconnection to handle messages that were read from persistence
-            // but never made it to the forwarder's local queues.
-            //
-            // IMPORTANT: We collect all futures and wait for them using Futures.allAsList to
-            // ensure all inflight markers are reset before onReconnect triggers checkBuffers().
-            // This is safe because the persistence operations are submitted to SingleWriter
-            // and don't hold any locks that could cause deadlock.
-            final Set<String> forwarderQueueIds = queueIdsForForwarder.get(fwdId);
-            if (forwarderQueueIds != null && !forwarderQueueIds.isEmpty()) {
-                if (log.isDebugEnabled()) {
-                    log.debug(
-                            "Resetting inflight markers for forwarder '{}', {} queue(s)",
-                            fwdId,
-                            forwarderQueueIds.size());
-                }
-                final ImmutableList.Builder<ListenableFuture<Void>> futuresBuilder = ImmutableList.builder();
+            mqttForwarder.setExecutorService(executorService);
+            mqttForwarder.setAfterForwardCallback(
+                    (qos, uniqueId, queueId, cancelled) -> messageProcessed(qos, uniqueId, forwarderId, queueId));
+            mqttForwarder.setResetInflightMarkerCallback((sharedSubscriptionId, uniqueId) -> {
                 final var qPersistence = queuePersistence.get();
-                if (qPersistence != null) {
-                    for (final String queueIdToReset : forwarderQueueIds) {
-                        futuresBuilder.add(qPersistence.removeAllInFlightMarkers(queueIdToReset));
-                    }
-                }
                 try {
-                    // Wait for all inflight markers to be reset before returning
-                    // This ensures onReconnect() will see clean queues when it triggers checkBuffers()
-                    Futures.allAsList(futuresBuilder.build())
-                            .get(RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+                    if (qPersistence != null) {
+                        qPersistence
+                                .removeInFlightMarker(sharedSubscriptionId, uniqueId)
+                                .get();
+                    }
+                } catch (final InterruptedException | ExecutionException e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                    log.error(
+                            "Failed to remove inflight marker for forwarder '{}', queue '{}', messageId '{}'",
+                            forwarderId,
+                            sharedSubscriptionId,
+                            uniqueId,
+                            e);
+                    throw new RuntimeException(e);
+                }
+            });
+            mqttForwarder.setResetAllInflightMarkersCallback((fwdId) -> {
+                // Reset ALL inflight markers for all queues associated with this forwarder.
+                // This is called on reconnection to handle messages that were read from persistence
+                // but never made it to the forwarder's local queues.
+                //
+                // IMPORTANT: We collect all futures and wait for them using Futures.allAsList to
+                // ensure all inflight markers are reset before onReconnect triggers checkBuffers().
+                // This is safe because the persistence operations are submitted to SingleWriter
+                // and don't hold any locks that could cause deadlock.
+                final Set<String> forwarderQueueIds = queueIdsForForwarder.get(fwdId);
+                if (forwarderQueueIds != null && !forwarderQueueIds.isEmpty()) {
                     if (log.isDebugEnabled()) {
                         log.debug(
-                                "Reset all inflight markers for forwarder '{}', {} queue(s)",
+                                "Resetting inflight markers for forwarder '{}', {} queue(s)",
                                 fwdId,
                                 forwarderQueueIds.size());
                     }
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("Interrupted while resetting inflight markers for forwarder '{}'", fwdId, e);
-                } catch (final ExecutionException e) {
-                    log.error("Failed to reset inflight markers for forwarder '{}'", fwdId, e);
-                } catch (final TimeoutException e) {
-                    log.warn(
-                            "Timeout resetting inflight markers for forwarder '{}' - forcing reconnect to retry",
-                            fwdId,
-                            e);
-                    final MqttForwarder forwarder = forwarders.get(fwdId);
-                    if (forwarder != null) {
-                        forwarder.forceReconnect();
+                    final ImmutableList.Builder<ListenableFuture<Void>> futuresBuilder = ImmutableList.builder();
+                    final var qPersistence = queuePersistence.get();
+                    if (qPersistence != null) {
+                        for (final String queueIdToReset : forwarderQueueIds) {
+                            futuresBuilder.add(qPersistence.removeAllInFlightMarkers(queueIdToReset));
+                        }
+                    }
+                    try {
+                        // Wait for all inflight markers to be reset before returning
+                        // This ensures onReconnect() will see clean queues when it triggers checkBuffers()
+                        Futures.allAsList(futuresBuilder.build())
+                                .get(RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+                        if (log.isDebugEnabled()) {
+                            log.debug(
+                                    "Reset all inflight markers for forwarder '{}', {} queue(s)",
+                                    fwdId,
+                                    forwarderQueueIds.size());
+                        }
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        log.error("Interrupted while resetting inflight markers for forwarder '{}'", fwdId, e);
+                    } catch (final ExecutionException e) {
+                        log.error("Failed to reset inflight markers for forwarder '{}'", fwdId, e);
+                    } catch (final TimeoutException e) {
+                        log.warn(
+                                "Timeout resetting inflight markers for forwarder '{}' - forcing reconnect to retry",
+                                fwdId,
+                                e);
+                        final MqttForwarder forwarder = forwarders.get(fwdId);
+                        if (forwarder != null) {
+                            forwarder.forceReconnect();
+                        }
                     }
                 }
-            }
-        });
-        mqttForwarder.setOnReconnectCallback(() -> {
-            if (log.isDebugEnabled()) {
-                log.debug("OnReconnect callback triggered for forwarder '{}', checking buffers", forwarderId);
-            }
-            // Re-add all queue IDs to notEmptyQueues to ensure they get polled after reconnect
-            final Set<String> forwarderQueueIds = queueIdsForForwarder.get(forwarderId);
-            if (forwarderQueueIds != null) {
-                notEmptyQueues.addAll(forwarderQueueIds);
-            }
-            checkBuffers();
-        });
+            });
+            mqttForwarder.setOnReconnectCallback(() -> {
+                if (log.isDebugEnabled()) {
+                    log.debug("OnReconnect callback triggered for forwarder '{}', checking buffers", forwarderId);
+                }
+                // Re-add all queue IDs to notEmptyQueues to ensure they get polled after reconnect
+                final Set<String> forwarderQueueIds = queueIdsForForwarder.get(forwarderId);
+                if (forwarderQueueIds != null) {
+                    notEmptyQueues.addAll(forwarderQueueIds);
+                }
+                checkBuffers();
+            });
 
-        forwarders.put(forwarderId, mqttForwarder);
-        notEmptyQueues.addAll(queueIds);
-        mqttForwarder.start();
+            forwarders.put(forwarderId, mqttForwarder);
+            notEmptyQueues.addAll(queueIds);
+            mqttForwarder.start();
+            registered = true;
+        } finally {
+            if (!registered) {
+                rollbackRegistration(mqttForwarder, forwarderId, clientId, shareName, queueIds, subscribedTopics);
+            }
+        }
 
         if (log.isInfoEnabled()) {
             log.info(
                     "Forwarder '{}' started successfully, total active forwarders: {}", forwarderId, forwarders.size());
         }
 
+        // Outside the rollback on purpose: by now the forwarder is registered, started and owns its
+        // queues, so a failure to kick off a poll is a poll that did not happen, not a registration
+        // that did not happen. Undoing a live forwarder here would be the more destructive answer.
         checkBuffers();
+    }
+
+    /**
+     * Undoes a registration that threw part way, leaving the index exactly as it was before it started.
+     * <p>
+     * Every removal is conditional on this instance and this claim. A plain {@code remove(forwarderId)}
+     * would let one failed registration tear down a different forwarder that had since taken the same
+     * ID, which is the failure this whole ticket is about, arrived at from the other direction.
+     */
+    private void rollbackRegistration(
+            final @NotNull MqttForwarder mqttForwarder,
+            final @NotNull String forwarderId,
+            final @NotNull String clientId,
+            final @NotNull String shareName,
+            final @NotNull Set<String> queueIds,
+            final @NotNull List<String> subscribedTopics) {
+        log.error("Registration of forwarder '{}' failed, undoing it", forwarderId);
+        try {
+            if (forwarders.remove(forwarderId, mqttForwarder)) {
+                mqttForwarder.stop();
+            }
+            for (final String topic : subscribedTopics) {
+                topicTree.removeSubscriber(clientId, topic, shareName);
+            }
+            notEmptyQueues.removeAll(queueIds);
+        } catch (final Throwable rollbackFailure) {
+            // Reported, never rethrown: the caller must see why the registration failed, not why the
+            // clean-up after it did.
+            log.error(
+                    "Undoing the failed registration of forwarder '{}' did not complete", forwarderId, rollbackFailure);
+        } finally {
+            // Last, and unconditionally: ownership is what the periodic clean-up reads, so releasing it
+            // before the forwarder is unpublished would expose a live queue, and not releasing it at all
+            // would keep a queue nobody drains alive for the life of the node.
+            if (queueIdsForForwarder.remove(forwarderId, queueIds)) {
+                release(queueIds);
+            }
+        }
     }
 
     @Override
