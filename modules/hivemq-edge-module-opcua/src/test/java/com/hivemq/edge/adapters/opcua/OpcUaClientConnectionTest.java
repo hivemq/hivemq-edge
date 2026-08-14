@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.within;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
@@ -157,9 +158,19 @@ public class OpcUaClientConnectionTest {
                 .isFalse();
     }
 
+    /**
+     * Review-09 finding 2. The ordering assertions below are review-08's and are unchanged; what this test
+     * says differently is what happens when the build fails.
+     * <p>
+     * It used to assert {@code ERROR} and a discarded client. That made an ancillary metadata build fatal to
+     * every OPC UA adapter, including value-only ones — a server that denies browsing the type hierarchy to
+     * the configured identity would take a working adapter into permanent backoff after an upgrade. Nothing
+     * at connect time consumes the tree: its only users build themselves on demand and Milo rebuilds it
+     * lazily, so the honest cost is browse latency, and the honest report is connected-but-not-browse-ready.
+     */
     @Test
     @Timeout(60)
-    void whenReadinessPreparationFails_thenTheConnectionNeverPublishesConnected() {
+    void whenBrowseMetadataCannotBeBuilt_theAdapterStillConnectsButIsNotBrowseReady() {
         final var testNamespace = Objects.requireNonNull(opcUaServerExtension.getTestNamespace());
         testNamespace.observeRefreshEvents();
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
@@ -204,12 +215,20 @@ public class OpcUaClientConnectionTest {
         assertThat(result).isInstanceOf(Success.class);
         final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
 
-        assertThat(opcUaClientConnection.start(parsedConfig)).isFalse();
+        assertThat(opcUaClientConnection.start(parsedConfig))
+                .as("a metadata build the adapter does not need at connect time cannot fail the attempt")
+                .isTrue();
         assertThat(protocolAdapterState.getConnectionStatus())
-                .as("a client without its required metadata is not publicly usable")
-                .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
-        assertThat(markedReady).isFalse();
-        assertThat(opcUaClientConnection.client()).isEmpty();
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        assertThat(markedReady).isTrue();
+        assertThat(opcUaClientConnection.client())
+                .as("the session is kept: its tags are verified and subscribed, and events flow")
+                .isPresent();
+        assertThat(opcUaClientConnection.hasBrowseMetadata())
+                .as("but the connection says it did not manage the metadata, so browse is not claimed ready")
+                .isFalse();
+
+        // Review-08's ordering, unchanged. Preparation still runs before anything of the server's exists.
         assertThat(subscriptionExistedDuringPreparation)
                 .as("metadata preparation must run before subscription creation")
                 .isFalse();
@@ -219,8 +238,13 @@ public class OpcUaClientConnectionTest {
         assertThat(refreshStartedDuringPreparation)
                 .as("metadata preparation must run before the automatic condition refresh")
                 .isFalse();
-        assertThat(eventService.readEvents(null, null))
-                .anySatisfy(event -> assertThat(event.getMessage()).contains("Failed to prepare OPC UA client"));
+
+        assertThat(eventService.readEvents(null, null)).anySatisfy(event -> {
+            assertThat(event.getMessage()).contains("Failed to prepare OPC UA browse metadata");
+            assertThat(event.getSeverity())
+                    .as("a degraded capability, not a failed adapter")
+                    .isEqualTo(Event.SEVERITY.WARN);
+        });
     }
 
     @Test
@@ -270,9 +294,17 @@ public class OpcUaClientConnectionTest {
                 .isNotEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
     }
 
+    /**
+     * The deadline still bites — it just no longer costs the adapter.
+     * <p>
+     * Two things are being pinned. That the expired build is actually interrupted rather than left running,
+     * which is review-08's guarantee; and that expiry is survivable, because whoever next wants the tree will
+     * rebuild it. The bound is the smaller of {@code connectionTimeoutMs} and the connection's own ceiling,
+     * so the 2 s configured here is what applies.
+     */
     @Test
     @Timeout(30)
-    void metadataPreparationPastTheConnectionDeadline_failsBeforeSubscription() throws Exception {
+    void metadataPreparationPastItsDeadline_isInterruptedButLeavesTheAdapterConnected() throws Exception {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -299,20 +331,21 @@ public class OpcUaClientConnectionTest {
                 ignored -> awaitInterruption(preparationStarted, preparationInterrupted, neverReleased),
                 () -> markedReady.set(true));
 
-        assertThat(opcUaClientConnection.start(parsedConfig(config))).isFalse();
+        assertThat(opcUaClientConnection.start(parsedConfig(config))).isTrue();
 
         assertThat(preparationStarted.getCount()).isZero();
         assertThat(preparationInterrupted.await(5, TimeUnit.SECONDS))
-                .as("the expired build must be interrupted")
+                .as("the expired build must be interrupted, not abandoned to run on")
                 .isTrue();
-        assertThat(protocolAdapterState.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
-        assertThat(markedReady).isFalse();
-        assertThat(opcUaClientConnection.client()).isEmpty();
-        assertThat(Objects.requireNonNull(opcUaServerExtension.getOpcUaServer()).getSubscriptions())
-                .as("a metadata timeout must occur before subscription creation")
-                .isEmpty();
-        assertThat(eventService.readEvents(null, null))
-                .anySatisfy(event -> assertThat(event.getMessage()).contains("metadata preparation timed out"));
+        assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        assertThat(markedReady).isTrue();
+        assertThat(opcUaClientConnection.client()).isPresent();
+        assertThat(opcUaClientConnection.hasBrowseMetadata()).isFalse();
+        assertThat(eventService.readEvents(null, null)).anySatisfy(event -> {
+            assertThat(event.getMessage()).contains("did not finish within 2000 milliseconds");
+            assertThat(event.getSeverity()).isEqualTo(Event.SEVERITY.WARN);
+        });
     }
 
     @Test

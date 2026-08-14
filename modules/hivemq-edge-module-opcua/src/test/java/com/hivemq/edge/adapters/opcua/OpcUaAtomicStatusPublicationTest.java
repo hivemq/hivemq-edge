@@ -169,6 +169,7 @@ class OpcUaAtomicStatusPublicationTest {
         assertThat(currentAdapter).isNotNull();
         final OpcUaClientConnection superseded = mock(OpcUaClientConnection.class);
         final OpcUaClientConnection current = mock(OpcUaClientConnection.class);
+        when(current.hasBrowseMetadata()).thenReturn(true);
         assertThat(currentAdapter.claimConnection(current)).isTrue();
 
         currentAdapter.publishReadyFrom(superseded);
@@ -183,6 +184,32 @@ class OpcUaAtomicStatusPublicationTest {
         assertThat(protocolAdapterState.getConnectionStatus())
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         assertThat(currentAdapter.releaseCurrentConnection()).isSameAs(current);
+    }
+
+    /**
+     * Review-09 finding 2: connected and browse-ready are published together but are not the same fact.
+     * <p>
+     * A connection that could not build the data-type tree is fully connected — verified tags, live
+     * subscriptions, events and values — but a browse served from an unhydrated address space is
+     * non-deterministic, so the endpoint must keep answering 503. Claiming browse-ready here would be the
+     * same untruth as the optimistic {@code CONNECTED} this readiness model was added to remove.
+     */
+    @Test
+    void aConnectionThatCouldNotBuildItsMetadataIsConnectedButNotBrowseReady() {
+        final OpcUaProtocolAdapter currentAdapter = adapter;
+        assertThat(currentAdapter).isNotNull();
+        final OpcUaClientConnection withoutMetadata = mock(OpcUaClientConnection.class);
+        when(withoutMetadata.hasBrowseMetadata()).thenReturn(false);
+        assertThat(currentAdapter.claimConnection(withoutMetadata)).isTrue();
+
+        currentAdapter.publishReadyFrom(withoutMetadata);
+
+        assertThat(protocolAdapterState.getConnectionStatus())
+                .as("the data path is up and the adapter says so")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        assertThat(currentAdapter.isBrowseReady())
+                .as("but browse is not claimed on the strength of an attempt that did not hydrate it")
+                .isFalse();
     }
 
     private @NotNull OpcUaProtocolAdapter newAdapter() {

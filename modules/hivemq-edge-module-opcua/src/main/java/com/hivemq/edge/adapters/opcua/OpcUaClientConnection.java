@@ -61,6 +61,17 @@ import org.slf4j.LoggerFactory;
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
 
+    /**
+     * The longest a connection attempt will wait for browse metadata before going on without it.
+     * <p>
+     * A ceiling rather than the deadline itself: the wait is the smaller of this and {@code
+     * connectionTimeoutMs}, so an operator who shortened the connect timeout to fail fast still gets a short
+     * wait here, while one who raised it to 300 s for a slow WAN does not thereby agree to sit in {@code
+     * CONNECTING} for five minutes on every connect. Expiry costs nothing but latency — see {@link
+     * #prepareClientForUse}.
+     */
+    private static final long METADATA_PREPARATION_MAX_WAIT_MS = 30_000L;
+
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
@@ -96,6 +107,16 @@ public class OpcUaClientConnection {
      * it before waiting for the {@link #start} monitor.
      */
     private final @NotNull AtomicReference<FutureTask<Void>> preparationTask = new AtomicReference<>();
+
+    /**
+     * Whether this connection's browse metadata was hydrated during its start.
+     * <p>
+     * Read by the adapter when it publishes readiness, so that {@code CONNECTED} and browse-readiness can be
+     * two facts rather than one. They are not the same fact: the data-type tree is consumed only by the
+     * browse endpoint and the southbound write/schema paths, all of which build their consumers on demand,
+     * and none of which is on the northbound streaming path.
+     */
+    private final @NotNull AtomicBoolean browseMetadataPrepared = new AtomicBoolean();
 
     /** Atomically marks adapter-owned readiness and CONNECTED after the usable context has been installed. */
     private final @NotNull Consumer<OpcUaClientConnection> publishReady;
@@ -439,12 +460,35 @@ public class OpcUaClientConnection {
     }
 
     /**
-     * Hydrates all metadata needed by verification, event decoding, browse and writes before any tag is
-     * verified or subscribed.
+     * Hydrates browse metadata before any tag is verified or subscribed, and goes on without it if it cannot.
      * <p>
-     * {@code connectionTimeoutMs} is the deadline for this complete recursive build, rather than merely for
-     * each individual request it issues. The task is also published before its thread starts and {@link
-     * #markClosed()} rechecks it without the start monitor, so teardown can interrupt a build immediately.
+     * Ordering first, because that is what this being on the start path buys. Milo activates a session before
+     * the data-type tree exists, so a browse in that window is non-deterministic; doing the build here means
+     * that when it succeeds — the ordinary case — {@code CONNECTED} genuinely implies browse-ready, and no
+     * monitored item is live before it. That is review-08 finding 1 and it is unchanged.
+     * <p>
+     * What is different is the consequence of failing, and the reason is that nothing at connect time needs
+     * the result. Of the two calls, {@code getNamespaceTable()} is a field read that performs no I/O at all —
+     * Milo populates the table during session activation — so it can neither be slow nor be refused. The
+     * whole cost and the whole failure surface is {@code getDataTypeTree()}, a recursive browse whose only
+     * consumers are the browse endpoint, the southbound converter and the southbound schema generator. Each
+     * constructs itself at the point of use, and Milo's {@code NonBlockingLazy} clears its slot on failure
+     * rather than caching it, so a build that fails or is interrupted here is simply rebuilt by whoever needs
+     * it next. Northbound streaming and tag verification never touch it; verification needs only the
+     * namespace table.
+     * <p>
+     * So a failure costs browse and southbound latency, not correctness — which is what it cost before this
+     * PR, when the warm-up was fire-and-forget and a failure left the adapter connected and streaming with
+     * the browse endpoint answering 503. Failing the whole attempt instead took that from every OPC UA
+     * adapter, including value-only ones with no interest in any of it: a server that denies broad metadata
+     * browse to the configured identity, or is merely slow, would move a working adapter into permanent
+     * {@code ERROR}/backoff after an upgrade. The adapter is told what happened and reports browse as not
+     * ready; it does not lose its data path over it.
+     * <p>
+     * The wait is bounded by the smaller of {@code connectionTimeoutMs} and {@link
+     * #METADATA_PREPARATION_MAX_WAIT_MS}, and the task is published before its thread starts so {@link
+     * #markClosed()} can interrupt a build without the start monitor. A genuine teardown still returns
+     * {@code false}; a metadata failure does not.
      */
     private boolean prepareClientForUse(
             final @NotNull OpcUaClient client, final @NotNull SessionActivityListener activityListener) {
@@ -465,9 +509,11 @@ public class OpcUaClientConnection {
             }
         }
 
-        final long timeoutMs = config.getConnectionOptions().connectionTimeoutMs();
+        final long timeoutMs =
+                Math.min(config.getConnectionOptions().connectionTimeoutMs(), METADATA_PREPARATION_MAX_WAIT_MS);
         try {
             task.get(timeoutMs, TimeUnit.MILLISECONDS);
+            browseMetadataPrepared.set(true);
             return true;
         } catch (final CancellationException e) {
             if (closed.get()) {
@@ -475,14 +521,11 @@ public class OpcUaClientConnection {
                 quietlyCloseClient(client, false, serviceFaultListener, activityListener);
                 return false;
             }
-            return failPreparation(client, activityListener, "OPC UA metadata preparation was cancelled", e);
+            return continueWithoutBrowseMetadata("OPC UA metadata preparation was cancelled", e);
         } catch (final TimeoutException e) {
             task.cancel(true);
-            return failPreparation(
-                    client,
-                    activityListener,
-                    "OPC UA metadata preparation timed out after " + timeoutMs + " milliseconds",
-                    e);
+            return continueWithoutBrowseMetadata(
+                    "OPC UA metadata preparation did not finish within " + timeoutMs + " milliseconds", e);
         } catch (final InterruptedException e) {
             task.cancel(true);
             Thread.currentThread().interrupt();
@@ -490,30 +533,48 @@ public class OpcUaClientConnection {
                 quietlyCloseClient(client, false, serviceFaultListener, activityListener);
                 return false;
             }
-            return failPreparation(client, activityListener, "OPC UA metadata preparation was interrupted", e);
+            return continueWithoutBrowseMetadata("OPC UA metadata preparation was interrupted", e);
         } catch (final ExecutionException e) {
             final Throwable cause = e.getCause() != null ? e.getCause() : e;
-            return failPreparation(client, activityListener, "Failed to prepare OPC UA client for use", cause);
+            return continueWithoutBrowseMetadata("Failed to prepare OPC UA browse metadata", cause);
         } finally {
             preparationTask.compareAndSet(task, null);
         }
     }
 
-    /** Reports one failed metadata build and closes the client before a subscription can exist. */
-    private boolean failPreparation(
-            final @NotNull OpcUaClient client,
-            final @NotNull SessionActivityListener activityListener,
-            final @NotNull String message,
-            final @NotNull Throwable cause) {
-        log.error("{} for adapter '{}'", message, adapterId, cause);
-        publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+    /**
+     * Reports metadata the connection could not hydrate, and carries on connecting anyway.
+     * <p>
+     * WARN rather than ERROR, and no status change, because nothing has failed that the adapter cannot do:
+     * tags will still be verified and subscribed, events and values will still flow, and the tree will be
+     * rebuilt by the first browse or southbound write that wants it. What the operator loses is a browse
+     * endpoint that answers immediately, and the message says so — including the likeliest cause, since a
+     * recursive browse of the type hierarchy is exactly the sort of thing a locked-down server account is
+     * refused.
+     *
+     * @return always {@code true}: this is not a reason to abandon the attempt.
+     */
+    private boolean continueWithoutBrowseMetadata(final @NotNull String message, final @NotNull Throwable cause) {
+        log.warn(
+                "{} for adapter '{}'. The adapter stays connected and its tags are unaffected; the browse "
+                        + "endpoint reports not-ready until the metadata is built, which the next browse, "
+                        + "southbound write or reconnect will do. A server that denies browsing the data-type "
+                        + "hierarchy to the configured identity, or is slow to serve it, will keep reporting this.",
+                message,
+                adapterId,
+                cause);
         eventService
                 .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                .withMessage(message + " for adapter '" + adapterId + "'.")
-                .withSeverity(Event.SEVERITY.ERROR)
+                .withMessage(message + " for adapter '" + adapterId
+                        + "'. The adapter is connected; browse is not ready until the metadata is built.")
+                .withSeverity(Event.SEVERITY.WARN)
                 .fire();
-        quietlyCloseClient(client, false, serviceFaultListener, activityListener);
-        return false;
+        return true;
+    }
+
+    /** Whether this connection managed to hydrate its browse metadata during start. */
+    boolean hasBrowseMetadata() {
+        return browseMetadataPrepared.get();
     }
 
     void stop() {

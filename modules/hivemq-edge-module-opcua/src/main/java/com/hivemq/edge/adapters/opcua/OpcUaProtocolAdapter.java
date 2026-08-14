@@ -1139,18 +1139,36 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
     }
 
-    /** Installs OPC UA readiness and public CONNECTED as one generation-owned transition. */
+    /**
+     * Installs OPC UA readiness and public CONNECTED as one generation-owned transition.
+     * <p>
+     * The two are published together but are not the same fact, and the connection is asked which it earned.
+     * A connection whose data-type tree could not be built is still fully connected — its tags are verified
+     * and subscribed, and events and values flow — but a browse served from an unhydrated address space is
+     * non-deterministic, so browse stays not-ready and the endpoint keeps answering 503 until something
+     * rebuilds the tree. Reporting browse-ready on the strength of an attempt that did not manage it would be
+     * the same class of untruth as the optimistic {@code CONNECTED} this readiness model exists to remove.
+     */
     @VisibleForTesting
     void publishReadyFrom(final @NotNull OpcUaClientConnection source) {
         connectionOwnershipLock.lock();
         try {
             if (opcUaClientConnection.get() == source && !stopped) {
-                browseReadiness.set(ReadinessStatus.BROWSE_READY);
+                final boolean browseReady = source.hasBrowseMetadata();
+                browseReadiness.set(browseReady ? ReadinessStatus.BROWSE_READY : ReadinessStatus.WARMING_UP);
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-                log.info(
-                        "OPC UA adapter '{}' is connected and browse-ready "
-                                + "(namespace table and data-type tree hydrated)",
-                        adapterId);
+                if (browseReady) {
+                    log.info(
+                            "OPC UA adapter '{}' is connected and browse-ready "
+                                    + "(namespace table and data-type tree hydrated)",
+                            adapterId);
+                } else {
+                    log.info(
+                            "OPC UA adapter '{}' is connected; browse is not ready because the data-type tree "
+                                    + "could not be built during this connect. Tags, events and values are "
+                                    + "unaffected. See the preceding warning for the cause.",
+                            adapterId);
+                }
             } else {
                 log.debug(
                         "OPC UA adapter '{}': not publishing readiness from a connection the adapter no longer owns",
@@ -1275,16 +1293,26 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     /**
-     * EDG-577: one-shot warm-up during a successful connection. The Milo session activates before the namespace
-     * table and data-type tree a deterministic browse depends on are populated. The connection invokes this
-     * preparation before tag verification, subscription creation, automatic refresh, context installation and
-     * CONNECTED. A failure therefore fails the attempt without letting any tag become live and enters the
-     * ordinary retry path.
+     * EDG-577: one-shot warm-up during a successful connection, so that a browse served immediately after
+     * {@code CONNECTED} is deterministic rather than racing Milo's lazy hydration.
+     * <p>
+     * The connection runs this before tag verification, subscription creation, automatic refresh, context
+     * installation and {@code CONNECTED}. A failure does not fail the attempt — see {@code
+     * OpcUaClientConnection#prepareClientForUse} for why not — it leaves the adapter connected and not
+     * browse-ready.
+     * <p>
+     * Only the second call does any work. {@code getNamespaceTable()} is a field read in Milo 1.1.6: the
+     * table is populated by the client during session activation, so there is nothing here to force and
+     * nothing that can fail. It is kept because it is the pairing that makes the intent legible, and because
+     * a future Milo could make it lazy like the tree.
      */
     private void warmUpBrowseMetadata(final @NotNull OpcUaClient client) {
         try {
-            client.getNamespaceTable(); // ensure the namespace table is read from the server
-            client.getDataTypeTree(); // build the data-type tree (feeds the EDG-488 cache when that lands)
+            client.getNamespaceTable();
+            // The recursive browse of the DataType hierarchy, and the whole cost and failure surface of this
+            // method. Lazy in Milo, and its slot is cleared on failure rather than poisoned, so whoever needs
+            // it next -- a browse, a southbound write, a schema request -- rebuilds it.
+            client.getDataTypeTree(); // feeds the EDG-488 cache when that lands
         } catch (final @NotNull Exception e) {
             throw new IllegalStateException("OPC UA browse metadata warm-up failed", e);
         }
