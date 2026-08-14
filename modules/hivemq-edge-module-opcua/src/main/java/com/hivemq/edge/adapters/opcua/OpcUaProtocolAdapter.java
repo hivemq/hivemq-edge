@@ -250,7 +250,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // silently moving all future scheduling onto the replacements.
             startSchedulers();
 
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            // CONNECTING, not DISCONNECTED: the connection below is attempted asynchronously and this
+            // method returns startedSuccessfully() before it completes, so the certificate has not been
+            // validated yet. ProtocolAdapterWrapper#startNorthbound promotes a still-DISCONNECTED adapter
+            // to CONNECTED once start() returns, which would report a healthy adapter for a server whose
+            // certificate is about to be refused. CONNECTING is outside that promotion's guard, so the
+            // status stays truthful until OpcUaClientConnection#start reports CONNECTED or ERROR itself.
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
             // Attempt initial connection asynchronously
             attemptConnection(conn, newlyParsedConfig, input);
 
@@ -386,8 +392,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     config,
                     opcUaServiceFaultListener);
 
-            // Set as current connection and attempt connection with retry logic
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            // Set as current connection and attempt connection with retry logic.
+            // CONNECTING rather than DISCONNECTED for the same reason as in start(): the attempt below is
+            // asynchronous, so the status must not claim more than has actually been established.
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
             if (opcUaClientConnection.compareAndSet(null, newConn)) {
                 // Create a minimal ProtocolAdapterStartInput for attemptConnection
                 final ModuleServices ms = Objects.requireNonNull(moduleServices);
@@ -909,8 +917,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 config,
                                 opcUaServiceFaultListener);
 
-                        // Set as current connection and attempt
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                        // Set as current connection and attempt. CONNECTING, not DISCONNECTED: a retry is
+                        // still an unvalidated attempt, and a reader sampling between retries must not be
+                        // told the adapter is connected.
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
                         if (opcUaClientConnection.compareAndSet(null, newConn)) {
                             attemptConnection(newConn, this.parsedConfig, input);
                         } else {

@@ -53,6 +53,12 @@ public class AdapterStatusModelConversionUtils {
             case CONNECTED -> Status.ConnectionEnum.CONNECTED;
             case ERROR -> Status.ConnectionEnum.ERROR;
             case STATELESS -> Status.ConnectionEnum.STATELESS;
+            // An adapter that is still establishing its connection is reported as DISCONNECTED rather
+            // than UNKNOWN: the API enum has no CONNECTING member, and of the values it does have,
+            // DISCONNECTED is the accurate one — nothing is connected yet. UNKNOWN would claim the
+            // status cannot be determined, which is weaker than what is actually known and leaves a
+            // health check with nothing to act on.
+            case CONNECTING -> Status.ConnectionEnum.DISCONNECTED;
             default -> Status.ConnectionEnum.UNKNOWN;
         };
     }

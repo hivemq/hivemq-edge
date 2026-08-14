@@ -57,6 +57,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -1360,6 +1361,202 @@ class ProtocolAdapterWrapperTest {
 
             executor.shutdown();
             assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    /**
+     * {@link ProtocolAdapterWrapper#startNorthbound()} promotes an adapter to {@code CONNECTED} once
+     * {@code start()} returns, provided the adapter has not reported a status of its own.
+     *
+     * <p>That promotion is only sound for an adapter whose {@code start()} completes the connection.
+     * An adapter that connects asynchronously — OPC UA does, so hardware may come online later —
+     * returns {@code startedSuccessfully()} long before any handshake, and the promotion then reports
+     * a healthy adapter for a device that has not been reached and whose certificate may still be
+     * refused. That is EDG-891 P1.
+     *
+     * <p>Such an adapter reports {@code CONNECTING} instead, which sits outside the promotion's guard.
+     * These tests pin both halves: {@code CONNECTING} is never promoted, and the pre-existing
+     * promotion of a silent adapter is preserved.
+     */
+    @Nested
+    class ConnectionStatusPromotionOnStart {
+
+        private @NotNull ProtocolAdapterStateImpl realAdapterState;
+        private @NotNull ProtocolAdapterWrapper wrapperWithRealState;
+
+        @BeforeEach
+        void setUp() {
+            realAdapterState = new ProtocolAdapterStateImpl(eventService, "promotion-adapter", "test-protocol");
+            wrapperWithRealState = newWrapperWith(realAdapterState);
+        }
+
+        private @NotNull ProtocolAdapterWrapper newWrapperWith(final @NotNull ProtocolAdapterStateImpl state) {
+            return new ProtocolAdapterWrapper(
+                    protocolAdapter,
+                    config,
+                    adapterFactory,
+                    adapterInformation,
+                    metricsService,
+                    state,
+                    protocolAdapterPollingService,
+                    eventService,
+                    moduleServices,
+                    tagManager,
+                    northboundConsumerFactory,
+                    protocolAdapterWritingService,
+                    Runnable::run);
+        }
+
+        /** Makes the stubbed adapter report {@code status} from within {@code start()}, then succeed. */
+        private void adapterReportsOnStart(
+                final @NotNull ProtocolAdapterStateImpl state,
+                final @org.jetbrains.annotations.Nullable ProtocolAdapterState.ConnectionStatus status,
+                final @NotNull Runnable duringStart) {
+            doAnswer(invocation -> {
+                        if (status != null) {
+                            state.setConnectionStatus(status);
+                        }
+                        duringStart.run();
+                        final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                        output.startedSuccessfully();
+                        return null;
+                    })
+                    .when(protocolAdapter)
+                    .start(any(), any(), any());
+        }
+
+        @Test
+        void connectingAdapter_isNotPromotedToConnected() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.CONNECTING, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .as("an asynchronously connecting adapter must keep CONNECTING until it connects itself")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+        }
+
+        @Test
+        void silentAdapter_isStillPromotedToConnected() {
+            adapterReportsOnStart(realAdapterState, null, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .as("adapters that report nothing keep the pre-existing promotion")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        }
+
+        @Test
+        void statelessAdapter_isNotOverwritten() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.STATELESS, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.STATELESS);
+        }
+
+        @Test
+        void adapterThatFailedWhileStarting_isNotPromotedOverItsError() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.ERROR, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .as("a failure reported during start must survive the promotion")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
+        }
+
+        /**
+         * The status is read concurrently with the start that would promote it. A reader sampling
+         * throughout must never observe {@code CONNECTED}, because the adapter never reports it — the
+         * only writer that could is the promotion this fix removes for {@code CONNECTING}.
+         */
+        @Test
+        @Timeout(30)
+        void concurrentReaders_neverObserveConnected_whileAdapterIsConnecting() throws Exception {
+            final int iterations = 25;
+            final int readersPerIteration = 4;
+            final ExecutorService executor = Executors.newFixedThreadPool(readersPerIteration);
+            try {
+                for (int i = 0; i < iterations; i++) {
+                    final ProtocolAdapterStateImpl state =
+                            new ProtocolAdapterStateImpl(eventService, "promotion-adapter-" + i, "test-protocol");
+                    final ProtocolAdapterWrapper iterationWrapper = newWrapperWith(state);
+
+                    final AtomicBoolean sampling = new AtomicBoolean(true);
+                    final AtomicBoolean sawConnected = new AtomicBoolean(false);
+                    final CountDownLatch readersReady = new CountDownLatch(readersPerIteration);
+                    final CountDownLatch startEntered = new CountDownLatch(1);
+
+                    final List<CompletableFuture<Void>> readers = new ArrayList<>();
+                    for (int r = 0; r < readersPerIteration; r++) {
+                        readers.add(CompletableFuture.runAsync(
+                                () -> {
+                                    readersReady.countDown();
+                                    while (sampling.get()) {
+                                        if (state.getConnectionStatus()
+                                                == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
+                                            sawConnected.set(true);
+                                            return;
+                                        }
+                                        Thread.onSpinWait();
+                                    }
+                                },
+                                executor));
+                    }
+                    assertThat(readersReady.await(5, TimeUnit.SECONDS)).isTrue();
+
+                    // Hold start() open briefly so the readers are certain to sample the window in
+                    // which the promotion would previously have fired.
+                    adapterReportsOnStart(state, ProtocolAdapterState.ConnectionStatus.CONNECTING, () -> {
+                        startEntered.countDown();
+                        try {
+                            Thread.sleep(2);
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+
+                    iterationWrapper.start();
+
+                    assertThat(startEntered.await(5, TimeUnit.SECONDS)).isTrue();
+                    sampling.set(false);
+                    CompletableFuture.allOf(readers.toArray(new CompletableFuture[0]))
+                            .get(10, TimeUnit.SECONDS);
+
+                    assertThat(sawConnected)
+                            .as(
+                                    "iteration %s: CONNECTED was observed for an adapter that only ever "
+                                            + "reported CONNECTING",
+                                    i)
+                            .isFalse();
+                    assertThat(state.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+                }
+            } finally {
+                executor.shutdownNow();
+                assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+            }
+        }
+
+        /**
+         * Repeated start/stop cycles must not leave a stale {@code CONNECTED} behind: after a stop the
+         * status is {@code DISCONNECTED}, and the next start returns it to {@code CONNECTING} rather
+         * than promoting it.
+         */
+        @Test
+        @Timeout(30)
+        void repeatedStartStopCycles_neverSettleOnConnected() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.CONNECTING, () -> {});
+
+            for (int i = 0; i < 25; i++) {
+                wrapperWithRealState.start();
+                assertThat(realAdapterState.getConnectionStatus())
+                        .as("cycle %s after start", i)
+                        .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+                wrapperWithRealState.stop(false);
+            }
         }
     }
 }
