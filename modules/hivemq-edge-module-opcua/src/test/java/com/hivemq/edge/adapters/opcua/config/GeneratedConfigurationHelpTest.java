@@ -120,6 +120,18 @@ class GeneratedConfigurationHelpTest {
                 .contains("when the server does not publish the references that walk needs");
     }
 
+    @Test
+    void queryNarrowingFieldsExplainTheirNotifierHierarchyRequirement() {
+        assertThat(descriptionOf("conditionNode"))
+                .contains("event-notifier hierarchy")
+                .contains("rejects a browsable mismatch")
+                .contains("subscribes with a warning");
+        assertThat(descriptionOf("sourceNode"))
+                .contains("event-notifier hierarchy")
+                .contains("rejects a browsable mismatch")
+                .contains("subscribes with a warning");
+    }
+
     private static @NotNull String descriptionOf(final @NotNull String fieldName) {
         try {
             final Field field = OpcuaTagDefinition.class.getDeclaredField(fieldName);

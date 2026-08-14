@@ -194,6 +194,139 @@ public class OpcUaEventSubscriptionIT {
 
     @Test
     @Timeout(120)
+    void whenAConditionIsUnderASiblingNotifier_thenOnlyThatQueryIsDropped() throws Exception {
+        final var namespace = opcUaServerExtension.getTestNamespace();
+        final NodeId common = namespace.addEventNotifier("MismatchCommon", null);
+        final NodeId areaA = namespace.addEventNotifier("MismatchAreaA", common);
+        final NodeId areaB = namespace.addEventNotifier("MismatchAreaB", common);
+        final var alarm = namespace.addConditionNodeUnderNotifier("MismatchAlarm", CONDITION_NODE_ID + 100, areaA);
+
+        startAdapterWith(
+                queryTagOn("sibling-mismatch", areaB, null, alarm.conditionNode()),
+                queryTagOn("healthy-sibling", areaA, null, alarm.conditionNode()));
+        awaitConnected();
+
+        await().untilAsserted(() -> assertThat(namespace.eventItemCount())
+                .as("the mismatched tag is dropped while its valid sibling is subscribed")
+                .isEqualTo(1));
+        namespace.fireAlarm(NodeId.parse(alarm.conditionNode()), "one valid delivery", 700, true);
+        await().untilAsserted(() -> assertThat(tagStreamingService.publishedBatches())
+                .as("only the valid query publishes the transition")
+                .hasSize(1));
+
+        assertThat(eventService.readEvents(null, null))
+                .filteredOn(event -> event.getMessage().contains("sibling-mismatch"))
+                .singleElement()
+                .satisfies(event -> assertThat(event.getMessage())
+                        .contains("did not subscribe")
+                        .contains("conditionNode")
+                        .contains(alarm.conditionNode())
+                        .contains(areaB.toParseableString())
+                        .contains("propagation hierarchy"));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenAConditionIsUnderTheSelectedOrACommonNotifier_thenBothQueriesPublish() throws Exception {
+        final var namespace = opcUaServerExtension.getTestNamespace();
+        final NodeId common = namespace.addEventNotifier("AcceptedCommon", null);
+        final NodeId area = namespace.addEventNotifier("AcceptedArea", common);
+        final var alarm = namespace.addConditionNodeUnderNotifier("AcceptedAlarm", CONDITION_NODE_ID + 110, area);
+
+        startAdapterWith(
+                queryTagOn("selected-area", area, null, alarm.conditionNode()),
+                queryTagOn("selected-common", common, null, alarm.conditionNode()));
+        awaitConnected();
+
+        await().untilAsserted(() -> assertThat(namespace.eventItemCount()).isEqualTo(2));
+        namespace.fireAlarm(NodeId.parse(alarm.conditionNode()), "two valid deliveries", 700, true);
+        await().untilAsserted(() -> assertThat(tagStreamingService.published())
+                .as("both the nearest and broader legitimate notifier must carry the event")
+                .hasSize(2));
+
+        assertThat(eventService.readEvents(null, null)).noneSatisfy(event -> assertThat(event.getMessage())
+                .containsAnyOf("selected-area", "selected-common")
+                .contains("did not subscribe"));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenTheConditionIsAttachedDirectly_thenTheCompatibilityPathAcceptsTheQuery() throws Exception {
+        final var namespace = opcUaServerExtension.getTestNamespace();
+        final String alarm = namespace.addDirectlyAttachedConditionNode("DirectQueryAlarm", CONDITION_NODE_ID + 115);
+
+        startAdapterWith(queryTag("direct-query", null, alarm));
+        awaitConnected();
+
+        await().untilAsserted(() -> assertThat(namespace.eventItemCount()).isEqualTo(1));
+        namespace.fireAlarm(NodeId.parse(alarm), "compatibility delivery", 700, true);
+        await().untilAsserted(() -> assertThat(tagStreamingService.published()).hasSize(1));
+        assertThat(eventService.readEvents(null, null))
+                .noneSatisfy(event ->
+                        assertThat(event.getMessage()).contains("direct-query").contains("did not subscribe"));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenASourceIsUnderASiblingNotifier_thenOnlyThatQueryIsDropped() throws Exception {
+        final var namespace = opcUaServerExtension.getTestNamespace();
+        final NodeId common = namespace.addEventNotifier("SourceCommon", null);
+        final NodeId areaA = namespace.addEventNotifier("SourceAreaA", common);
+        final NodeId areaB = namespace.addEventNotifier("SourceAreaB", common);
+        final var alarm = namespace.addConditionNodeUnderNotifier("SourceAlarm", CONDITION_NODE_ID + 120, areaA);
+
+        startAdapterWith(
+                queryTagOn("source-mismatch", areaB, alarm.sourceNode(), null),
+                queryTagOn("source-valid", areaA, alarm.sourceNode(), null));
+        awaitConnected();
+
+        await().untilAsserted(() -> assertThat(namespace.eventItemCount()).isEqualTo(1));
+        namespace.fireAlarmFromSource(
+                NodeId.parse(alarm.conditionNode()),
+                NodeId.parse(alarm.sourceNode()),
+                "one source delivery",
+                700,
+                true);
+        await().untilAsserted(
+                        () -> assertThat(tagStreamingService.publishedBatches()).hasSize(1));
+
+        assertThat(eventService.readEvents(null, null))
+                .filteredOn(event -> event.getMessage().contains("source-mismatch"))
+                .singleElement()
+                .satisfies(event -> assertThat(event.getMessage())
+                        .contains("did not subscribe")
+                        .contains("sourceNode")
+                        .contains(alarm.sourceNode())
+                        .contains(areaB.toParseableString()));
+    }
+
+    @Test
+    @Timeout(120)
+    void whenAConditionIsHidden_thenTheQueryIsAcceptedWithAVisibleUnverifiedWarning() {
+        final var namespace = opcUaServerExtension.getTestNamespace();
+        final NodeId area = namespace.addEventNotifier("HiddenArea", null);
+        final String hiddenCondition =
+                new NodeId(namespace.getNamespaceIndex(), "HiddenConditionId").toParseableString();
+
+        startAdapterWith(queryTagOn("hidden-query", area, null, hiddenCondition));
+        awaitConnected();
+
+        await().untilAsserted(() -> assertThat(namespace.eventItemCount())
+                .as("an unbrowsable condition remains supported when the query names its notifier")
+                .isEqualTo(1));
+        assertThat(eventService.readEvents(null, null))
+                .filteredOn(event -> event.getMessage().contains("hidden-query"))
+                .singleElement()
+                .satisfies(event -> assertThat(event.getMessage())
+                        .contains("subscribed tag")
+                        .contains("without complete verification")
+                        .contains("conditionNode")
+                        .contains(hiddenCondition)
+                        .contains(area.toParseableString()));
+    }
+
+    @Test
+    @Timeout(120)
     void whenThePublishedTypeIsNarrowerThanTheFilter_thenOnlyItsFieldsAreSelected() throws Exception {
         // conditionType decides the published shape and filterType decides what passes — independently. Here
         // the filter is broad (any AlarmConditionType event) while the published shape is narrow (only the
@@ -237,11 +370,19 @@ public class OpcUaEventSubscriptionIT {
 
     private @NotNull OpcuaTag queryTag(
             final @NotNull String name, final @Nullable String sourceNode, final @Nullable String conditionNode) {
+        return queryTagOn(name, opcUaServerExtension.getTestNamespace().areaNotifier(), sourceNode, conditionNode);
+    }
+
+    private static @NotNull OpcuaTag queryTagOn(
+            final @NotNull String name,
+            final @NotNull NodeId notifier,
+            final @Nullable String sourceNode,
+            final @Nullable String conditionNode) {
         return new OpcuaTag(
                 name,
                 "",
                 new OpcuaTagDefinition(
-                        opcUaServerExtension.getTestNamespace().areaNotifier().toParseableString(),
+                        notifier.toParseableString(),
                         OpcuaTagKind.EVENT_SUBSCRIPTION,
                         OpcuaConditionType.ALARM_CONDITION,
                         null,

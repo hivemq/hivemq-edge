@@ -77,15 +77,19 @@ public class OpcuaTagDefinition implements TagDefinition {
     @ModuleConfigField(
             title = "Source node ID",
             description = "for an EVENT_SUBSCRIPTION tag, deliver only events about this source — the process "
-                    + "object a condition watches, such as a sensor. Leave empty for every source the "
-                    + "notifier covers.")
+                    + "object a condition watches, such as a sensor. The source must be the tag's node or "
+                    + "beneath it in the event-notifier hierarchy. Edge rejects a browsable mismatch; when "
+                    + "the server hides the relationship, it subscribes with a warning. Leave empty for every "
+                    + "source the notifier covers.")
     private final @Nullable String sourceNode;
 
     @JsonProperty(value = "conditionNode")
     @ModuleConfigField(
             title = "Condition node ID",
             description = "for an EVENT_SUBSCRIPTION tag, deliver only events from this one condition. Leave "
-                    + "empty for every condition the notifier covers.")
+                    + "empty for every condition the notifier covers. The condition must be the tag's node or "
+                    + "beneath it in the event-notifier hierarchy. Edge rejects a browsable mismatch; when "
+                    + "the server hides the relationship, it subscribes with a warning.")
     private final @Nullable String conditionNode;
 
     @JsonProperty(value = "filterType")

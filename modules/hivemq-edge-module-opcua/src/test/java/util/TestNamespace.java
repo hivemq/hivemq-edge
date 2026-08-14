@@ -372,6 +372,29 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      */
     public @NotNull String addConditionNode(
             final @NotNull String name, final long nodeIdPart, final @NotNull NodeId typeDefinition) {
+        return addConditionNodeUnderNotifier(name, nodeIdPart, typeDefinition, areaNotifier())
+                .conditionNode();
+    }
+
+    /** A condition and the real ConditionSource that places it in an event-notifier hierarchy. */
+    public record ConditionHierarchy(
+            @NotNull String conditionNode, @NotNull String sourceNode) {}
+
+    /**
+     * Adds a condition beneath a caller-selected notifier, for topology-sensitive subscription tests.
+     *
+     * @return both the condition and its ConditionSource, since query filters may narrow on either one.
+     */
+    public @NotNull ConditionHierarchy addConditionNodeUnderNotifier(
+            final @NotNull String name, final long nodeIdPart, final @NotNull NodeId notifier) {
+        return addConditionNodeUnderNotifier(name, nodeIdPart, NodeIds.AlarmConditionType, notifier);
+    }
+
+    private @NotNull ConditionHierarchy addConditionNodeUnderNotifier(
+            final @NotNull String name,
+            final long nodeIdPart,
+            final @NotNull NodeId typeDefinition,
+            final @NotNull NodeId notifier) {
         final NodeId nodeId = newNodeId(nodeIdPart);
         final UaObjectNode node = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
                 .setNodeId(nodeId)
@@ -390,14 +413,14 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         // by HasEventSource, and the condition hangs off that source by HasCondition. The condition itself is
         // NOT the target of HasEventSource -- an earlier version of this harness attached it there directly,
         // which made the adapter's walk look correct while it was skipping the source entirely.
-        final NodeId source = conditionSourceFor(name, nodeIdPart);
+        final NodeId source = conditionSourceFor(name, nodeIdPart, notifier);
         final UaNode sourceNode = getNodeManager().get(source);
         if (sourceNode != null) {
             sourceNode.addReference(new Reference(source, NodeIds.HasCondition, nodeId.expanded(), true));
         }
         node.addReference(new Reference(nodeId, NodeIds.HasCondition, source.expanded(), false));
 
-        return nodeId.toParseableString();
+        return new ConditionHierarchy(nodeId.toParseableString(), source.toParseableString());
     }
 
     /**
@@ -459,7 +482,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * @param name       the condition's name, used to derive the source's.
      * @param nodeIdPart the condition's identifier part; the source takes a distinct one derived from it.
      */
-    private synchronized @NotNull NodeId conditionSourceFor(final @NotNull String name, final long nodeIdPart) {
+    private synchronized @NotNull NodeId conditionSourceFor(
+            final @NotNull String name, final long nodeIdPart, final @NotNull NodeId notifier) {
         final NodeId sourceId = newNodeId(nodeIdPart + 100_000L);
         if (getNodeManager().get(sourceId) == null) {
             final UaVariableNode source = new UaVariableNode.UaVariableNodeBuilder(getNodeContext())
@@ -475,7 +499,6 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
             // area --HasEventSource--> source, which is the leg §5.12 requires the ConditionSource to be the
             // target of. The walk reverses it to get from the source up to the area.
-            final NodeId notifier = areaNotifier();
             final UaNode notifierNode = getNodeManager().get(notifier);
             if (notifierNode != null) {
                 notifierNode.addReference(new Reference(notifier, NodeIds.HasEventSource, sourceId.expanded(), true));
@@ -507,6 +530,36 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
             // Server --HasNotifier--> area, so a walk upward from the area reaches the Server object too.
             notifier.addReference(new Reference(notifierId, NodeIds.HasNotifier, NodeIds.Server.expanded(), false));
+        }
+        return notifierId;
+    }
+
+    /**
+     * Adds a subscribable event notifier, optionally beneath another notifier by {@code HasNotifier}.
+     * <p>
+     * Both directions are installed because clients verify the relationship by walking inverse references,
+     * while a server browsing downward should see the same topology.
+     */
+    public synchronized @NotNull NodeId addEventNotifier(final @NotNull String name, final @Nullable NodeId parent) {
+        final NodeId notifierId = newNodeId(name);
+        if (getNodeManager().get(notifierId) == null) {
+            final UaObjectNode notifier = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                    .setNodeId(notifierId)
+                    .setBrowseName(newQualifiedName(name))
+                    .setDisplayName(LocalizedText.english(name))
+                    .setTypeDefinition(NodeIds.BaseObjectType)
+                    .build();
+            notifier.setEventNotifier(ubyte(1));
+            getNodeManager().addNode(notifier);
+            requireNonNull(testFolder).addOrganizes(notifier);
+
+            if (parent != null) {
+                notifier.addReference(new Reference(notifierId, NodeIds.HasNotifier, parent.expanded(), false));
+                final UaNode parentNode = getNodeManager().get(parent);
+                if (parentNode != null) {
+                    parentNode.addReference(new Reference(parent, NodeIds.HasNotifier, notifierId.expanded(), true));
+                }
+            }
         }
         return notifierId;
     }
@@ -837,6 +890,32 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             final @NotNull String message,
             final int severity,
             final boolean active) {
+        return fireAlarm(
+                conditionNodeId,
+                sourceNodeFor(conditionNodeId),
+                "source-of-" + conditionNodeId.toParseableString(),
+                message,
+                severity,
+                active);
+    }
+
+    /** Fires an alarm whose {@code SourceNode} is a real node in the configured notifier hierarchy. */
+    public @NotNull ByteString fireAlarmFromSource(
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull NodeId sourceNodeId,
+            final @NotNull String message,
+            final int severity,
+            final boolean active) {
+        return fireAlarm(conditionNodeId, sourceNodeId, sourceNodeId.toParseableString(), message, severity, active);
+    }
+
+    private @NotNull ByteString fireAlarm(
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull NodeId sourceNodeId,
+            final @NotNull String sourceName,
+            final @NotNull String message,
+            final int severity,
+            final boolean active) {
         try {
             // The event node IS the condition instance: its NodeId is the ConditionId a client filters on.
             // Creating it with a fresh random id — as an earlier version did — leaves the event with no field
@@ -850,8 +929,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             event.setEventType(NodeIds.AlarmConditionType);
             // SourceNode is the ConditionSource — what the alarm is ABOUT — not the condition itself. Real
             // devices set a sensor or machine here, so the harness must not conflate the two.
-            event.setSourceNode(sourceNodeFor(conditionNodeId));
-            event.setSourceName("source-of-" + conditionNodeId.toParseableString());
+            event.setSourceNode(sourceNodeId);
+            event.setSourceName(sourceName);
             event.setTime(DateTime.now());
             event.setReceiveTime(DateTime.now());
             event.setMessage(LocalizedText.english(message));

@@ -27,6 +27,7 @@ import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.condition.ConditionEventFilters;
 import com.hivemq.edge.adapters.opcua.condition.ConditionRefresh;
 import com.hivemq.edge.adapters.opcua.condition.ConditionTypeVerifier;
+import com.hivemq.edge.adapters.opcua.condition.EventPropagationVerifier;
 import com.hivemq.edge.adapters.opcua.condition.NotifierResolver;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
@@ -2027,8 +2028,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
-     * Verifies an event subscription tag: its notifier must be a node this session may subscribe to, and its
-     * two narrowing predicates must be node ids.
+     * Verifies an event subscription tag: its notifier must be a node this session may subscribe to, and each
+     * narrowing predicate must be a node in that notifier's event-propagation hierarchy.
      * <p>
      * {@code sourceNode} and {@code conditionNode} are parsed <em>here</em> rather than alongside the tag's
      * own node, because this is the only kind that reads them — they become operands in the where clause and
@@ -2050,11 +2051,72 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         final Optional<String> optionalUnsubscribableTag = NotifierResolver.checkSubscribable(
                         client, Objects.requireNonNull(node), tagName, "node")
                 .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        if (verificationWasAbandoned(tagName, "query-notifier preflight")) {
+            return Optional.empty();
+        }
         if (optionalUnsubscribableTag.isPresent()) {
             reportUnsubscribableTag(tagName, optionalUnsubscribableTag.get());
             return Optional.empty();
         }
+
+        if (!verifyQueryNarrowingNode(tagName, node, sourceNode, "sourceNode", false)
+                || !verifyQueryNarrowingNode(tagName, node, conditionNode, "conditionNode", true)) {
+            return Optional.empty();
+        }
         return Optional.of(new VerifiedTag(opcuaTag, node, null, sourceNode, conditionNode));
+    }
+
+    /**
+     * Proves that one optional query operand can emit through the selected notifier.
+     * <p>
+     * A complete walk that ends outside the notifier's hierarchy is a configuration error and drops this tag.
+     * An incomplete walk is deliberately different: servers may hide condition instances or deny browse while
+     * still delivering their events, so the tag remains supported but the uncertainty is made visible in both
+     * the log and adapter event stream.
+     */
+    private boolean verifyQueryNarrowingNode(
+            final @NotNull String tagName,
+            final @NotNull NodeId notifier,
+            final @Nullable NodeId narrowingNode,
+            final @NotNull String field,
+            final boolean condition)
+            throws InterruptedException, ExecutionException, TimeoutException {
+
+        if (narrowingNode == null) {
+            return true;
+        }
+
+        final EventPropagationVerifier.Result result = (condition
+                        ? EventPropagationVerifier.conditionCanEmitThrough(client, narrowingNode, notifier)
+                        : EventPropagationVerifier.sourceCanEmitThrough(client, narrowingNode, notifier))
+                .get(CONDITION_TYPE_VERIFICATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        if (verificationWasAbandoned(tagName, field + " propagation verification")) {
+            return false;
+        }
+        if (result instanceof EventPropagationVerifier.Result.Reachable) {
+            return true;
+        }
+        if (result instanceof EventPropagationVerifier.Result.OutsideHierarchy) {
+            reportUnsubscribableTag(
+                    tagName,
+                    "its '" + field + "' " + narrowingNode.toParseableString()
+                            + " cannot emit through event notifier " + notifier.toParseableString()
+                            + " from 'node': that notifier is neither the node itself nor an ancestor in its "
+                            + "HasCondition/HasEventSource/HasNotifier propagation hierarchy");
+            return false;
+        }
+
+        final EventPropagationVerifier.Result.Unverified unverified =
+                (EventPropagationVerifier.Result.Unverified) result;
+        reportUnverifiedTag(
+                tagName,
+                "could not verify that its '" + field + "' " + narrowingNode.toParseableString()
+                        + " can emit through event notifier " + notifier.toParseableString() + " from 'node': "
+                        + unverified.reason()
+                        + ". Subscribing anyway because some servers legitimately hide event/condition nodes or "
+                        + "their hierarchy; if the tag stays silent, verify these two node ids on the server");
+        return true;
     }
 
     /**
@@ -2247,6 +2309,18 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                 .withSeverity(Event.SEVERITY.WARN)
                 .withMessage(String.format("Adapter '%s' did not subscribe tag '%s': %s", adapterId, tagName, reason))
+                .fire();
+    }
+
+    /** Makes a deliberately admitted but unverifiable tag visible without claiming it is invalid. */
+    private void reportUnverifiedTag(final @NotNull String tagName, final @NotNull String reason) {
+        log.warn("Adapter '{}': subscribing tag '{}' without complete verification — {}", adapterId, tagName, reason);
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withSeverity(Event.SEVERITY.WARN)
+                .withMessage(String.format(
+                        "Adapter '%s' subscribed tag '%s' without complete verification: %s",
+                        adapterId, tagName, reason))
                 .fire();
     }
 
