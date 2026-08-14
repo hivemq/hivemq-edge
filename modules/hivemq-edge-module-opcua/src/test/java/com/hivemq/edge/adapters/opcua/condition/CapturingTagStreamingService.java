@@ -34,16 +34,35 @@ import org.jetbrains.annotations.NotNull;
 public class CapturingTagStreamingService implements ProtocolAdapterTagStreamingService {
 
     private final @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+    private final @NotNull List<List<DataPoint>> publishedBatches = new CopyOnWriteArrayList<>();
 
     @Override
     public @NotNull DataPointListBuilder dataPointsPublisher() {
-        return new DataPointListBuilderImpl("test-adapter-id", builder -> {}, dataPoints::addAll);
+        return new DataPointListBuilderImpl("test-adapter-id", builder -> {}, this::capture);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public void feed(final @NotNull String tag, final @NotNull List<DataPoint> points) {
-        dataPoints.addAll(points);
+        capture(points);
+    }
+
+    /** Retains one immutable snapshot for every builder {@code publish()} or legacy {@code feed()} call. */
+    private void capture(final @NotNull List<DataPoint> points) {
+        final List<DataPoint> snapshot = List.copyOf(points);
+        publishedBatches.add(snapshot);
+        dataPoints.addAll(snapshot);
+    }
+
+    /**
+     * Every publication batch, in call order and with its data-point order intact.
+     * <p>
+     * Kept alongside {@link #published()} because flattening alone cannot distinguish one callback carrying
+     * several transitions from several callbacks carrying one each — a boundary the OPC UA message contract
+     * depends on downstream.
+     */
+    public @NotNull List<List<DataPoint>> publishedBatches() {
+        return List.copyOf(publishedBatches);
     }
 
     /**

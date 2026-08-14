@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -577,6 +578,17 @@ public class OpcUaConditionSubscriptionIT {
                     .as("every transition in a burst must be published: an event dropped from the server "
                             + "queue is never re-sent")
                     .hasSize(burst);
+            assertThat(tagStreamingService.publishedBatches())
+                    .as("the back-to-back transitions must arrive in one server publication batch; the "
+                            + "flattened payload view alone cannot prove that boundary")
+                    .anySatisfy(batch -> assertThat(batch.stream()
+                                    .map(DataPoint::getTagValue)
+                                    .filter(JsonNode.class::isInstance)
+                                    .map(JsonNode.class::cast)
+                                    .map(published -> published.get("Message").toString())
+                                    .filter(message -> message.contains("burst-"))
+                                    .distinct())
+                            .hasSize(burst));
         });
     }
 
