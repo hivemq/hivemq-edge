@@ -65,7 +65,8 @@ public final class CertificateFingerprints {
      * fingerprint would shrink the allow-list without telling anybody, and the operator would be left
      * debugging a rejected connection whose entry is visibly present in the file.
      *
-     * @throws IOException if the file cannot be read.
+     * @throws IOException if the file cannot be read. Its message is operator-facing and names which
+     *         of missing, a directory, or unreadable actually happened, since each has its own fix.
      * @throws IllegalArgumentException if a line is malformed, the file is not UTF-8, or the file
      *         holds no fingerprint.
      */
@@ -81,6 +82,12 @@ public final class CertificateFingerprints {
                                     + "(fingerprints are plain hexadecimal, so plain ASCII works too).")
                             .formatted(path),
                     e);
+        } catch (final IOException e) {
+            // A malformed *entry* already tells the operator the file, the line and what was expected.
+            // A file that cannot be opened used to surface the raw NoSuchFileException instead, which
+            // names a Java class and repeats the path rather than saying which of the three things went
+            // wrong. Each has a different fix, so each is named.
+            throw new IOException(describeUnreadable(path, e), e);
         }
         final Set<String> fingerprints = new LinkedHashSet<>();
 
@@ -102,6 +109,32 @@ public final class CertificateFingerprints {
                     .formatted(path));
         }
         return Set.copyOf(fingerprints);
+    }
+
+    /**
+     * Names which of the ways to be unreadable actually happened, because each has a different fix.
+     * Inspected after the read failed rather than before it: checking first and reading second would
+     * report on a state the read never saw.
+     */
+    private static @NotNull String describeUnreadable(final @NotNull Path path, final @NotNull IOException cause) {
+        if (!Files.exists(path)) {
+            return ("Certificate allow-list '%s' does not exist. Create it with one SHA-256 fingerprint "
+                            + "per line, or correct the path.")
+                    .formatted(path);
+        }
+        if (Files.isDirectory(path)) {
+            return "Certificate allow-list '%s' is a directory, not a file. Point the path at the file that holds the fingerprints."
+                    .formatted(path);
+        }
+        if (!Files.isReadable(path)) {
+            return ("Certificate allow-list '%s' is not readable by the HiveMQ Edge process. Grant it read "
+                            + "permission, or correct the path.")
+                    .formatted(path);
+        }
+        // The file is there and readable, so the failure is something else entirely - a mount that went
+        // away mid-read, a device error. The cause's own message is the only thing that can say more.
+        return "Certificate allow-list '%s' could not be read: %s"
+                .formatted(path, cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage());
     }
 
     private static @NotNull String stripBom(final @NotNull String line) {

@@ -17,10 +17,12 @@ package com.hivemq.edge.adapters.opcua.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
 import java.util.HexFormat;
@@ -168,6 +170,67 @@ class CertificateFingerprintsTest {
     void aMissingFileIsAnIoError() {
         assertThatThrownBy(() -> CertificateFingerprints.loadAllowList(tempDir.resolve("absent.txt")))
                 .isInstanceOf(IOException.class);
+    }
+
+    /**
+     * EDG-891 P4. A malformed *entry* names the file, the line and the expected format; a file that
+     * cannot be opened used to surface a raw {@code NoSuchFileException} instead. The three ways to be
+     * unreadable have three different fixes, so the message has to say which one happened — and must
+     * not spell it as a Java class name.
+     */
+    @Test
+    void aMissingFileSaysSo_andNamesThePath() {
+        final Path absent = tempDir.resolve("absent.txt");
+
+        assertThatThrownBy(() -> CertificateFingerprints.loadAllowList(absent))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("does not exist")
+                .hasMessageContaining(absent.toString())
+                .hasMessageContaining("correct the path")
+                .hasMessageNotContaining("NoSuchFileException")
+                .hasMessageNotContaining("java.nio");
+    }
+
+    @Test
+    void aDirectoryIsNamedAsSuch_notReportedAsMissing() throws Exception {
+        final Path directory = Files.createDirectory(tempDir.resolve("allow-list-dir"));
+
+        assertThatThrownBy(() -> CertificateFingerprints.loadAllowList(directory))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("is a directory")
+                .hasMessageContaining(directory.toString())
+                .hasMessageNotContaining("does not exist")
+                .hasMessageNotContaining("java.nio");
+    }
+
+    @Test
+    void anUnreadableFileNamesPermissions_notAMissingFile() throws Exception {
+        final Path file = write(VALID + "\n");
+        assumeTrue(
+                file.getFileSystem().supportedFileAttributeViews().contains("posix"),
+                "POSIX permissions are needed to make a file unreadable");
+        Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("-w--w----"));
+        assumeTrue(!Files.isReadable(file), "running as a user that can read regardless of permissions");
+
+        try {
+            assertThatThrownBy(() -> CertificateFingerprints.loadAllowList(file))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("not readable")
+                    .hasMessageContaining(file.toString())
+                    .hasMessageNotContaining("does not exist")
+                    .hasMessageNotContaining("AccessDeniedException");
+        } finally {
+            // Leave the file readable so the temp directory can be cleaned up.
+            Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("rw-------"));
+        }
+    }
+
+    /** The cause is kept so a genuinely unexpected I/O failure is still diagnosable in a stack trace. */
+    @Test
+    void theUnderlyingIoErrorIsRetainedAsTheCause() {
+        assertThatThrownBy(() -> CertificateFingerprints.loadAllowList(tempDir.resolve("absent.txt")))
+                .isInstanceOf(IOException.class)
+                .hasCauseInstanceOf(IOException.class);
     }
 
     @Test

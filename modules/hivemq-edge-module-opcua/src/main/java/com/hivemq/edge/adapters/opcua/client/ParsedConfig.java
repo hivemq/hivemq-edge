@@ -159,8 +159,10 @@ public record ParsedConfig(
                     try {
                         fingerprints = CertificateFingerprints.loadAllowList(Path.of(allowListPath));
                     } catch (final IOException e) {
-                        return Failure.of("Certificate allow-list '" + allowListPath + "' could not be read: " + e
-                                + ". Correct the path, or make the file readable by the Edge process.");
+                        // The message is already operator-facing and names the path and the specific
+                        // problem; interpolating the exception itself only added a Java class name and a
+                        // second copy of the path.
+                        return Failure.of(String.valueOf(e.getMessage()));
                     } catch (final IllegalArgumentException e) {
                         return Failure.of(String.valueOf(e.getMessage()));
                     }
