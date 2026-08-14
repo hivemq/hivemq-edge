@@ -107,6 +107,9 @@ public class ClientQueuePersistenceImplTest {
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         when(mqttConfigurationService.maxQueuedMessages()).thenReturn(1000L);
         when(mqttConfigurationService.getQueuedMessagesStrategy()).thenReturn(QueuedMessagesStrategy.DISCARD);
+        // the bridges have started in every test but the one that says otherwise: before that, forwarder
+        // queues are deliberately left alone (EDG-882)
+        when(messageForwarder.hasAppliedBridgeConfiguration()).thenReturn(true);
         clientQueuePersistence = new ClientQueuePersistenceImpl(
                 localPersistence,
                 singleWriterService,
@@ -432,6 +435,26 @@ public class ClientQueuePersistenceImplTest {
                 + "bridge-Bt80p78iNo/w7W1W7bGwcg==/miele/v1/production/sapdm/dev/+/+/from-plc-to-dm";
         when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
         when(messageForwarder.isForwarderQueue(queueId)).thenReturn(true);
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
+        verify(topicTree, never()).getSharedSubscriber(anyString(), anyString());
+    }
+
+    /**
+     * EDG-882: before any bridge configuration has been applied, a forwarder queue nobody owns is a
+     * bridge that has not started yet, not an abandoned queue. The clean-up service is scheduled
+     * during persistence bootstrap and the bridge subsystem is built after it, so a sweep in that
+     * window would delete the queues of every bridge on the node while they wait to be started.
+     */
+    @Test
+    @Timeout(5)
+    public void test_clean_up_before_any_bridge_configuration_leaves_forwarder_queues_alone()
+            throws ExecutionException, InterruptedException {
+        final String queueId = MessageForwarderImpl.FORWARDER_PREFIX + "bridge-Bt80p78iNo/w7W1W7bGwcg==/topic";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(queueId));
+        when(messageForwarder.hasAppliedBridgeConfiguration()).thenReturn(false);
 
         clientQueuePersistence.cleanUp(0).get();
 

@@ -194,6 +194,12 @@ public class BridgeService {
             activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(newBridge, internalStartBridge(newBridge)));
         });
 
+        // From here on, a forwarder queue nobody owns is genuinely orphaned. Before it, ownership had
+        // not been claimed yet -- the clean-up service is scheduled during persistence bootstrap, well
+        // before this runs -- and a sweep in that window deletes the queues of every bridge on the node
+        // while they wait to be started.
+        messageForwarder.markBridgeConfigurationApplied();
+
         final long durationMs = System.currentTimeMillis() - start;
         if (log.isInfoEnabled()) {
             log.info(
