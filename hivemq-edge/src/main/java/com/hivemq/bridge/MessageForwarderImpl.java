@@ -403,14 +403,15 @@ public class MessageForwarderImpl implements MessageForwarder {
                 }
             }
         }
-        // O3: drop the registration first, release its queues second. The reverse order would let the
-        // reference count reach zero while the forwarder is still published and still polling, so a
-        // clean-up sweep in that window would clear a live queue. The set the map returns -- not
-        // mqttForwarder.getTopics() -- is what was actually registered, and is what must be released.
-        final Set<String> removedQueueIds = queueIdsForForwarder.remove(forwarderId);
-        if (removedQueueIds != null) {
-            release(removedQueueIds);
-        }
+        // O3: unpublish and stop the forwarder first, drop its ownership second. Ownership is what the
+        // periodic clean-up reads, so releasing it while the object is still in `forwarders` and still
+        // polling leaves a live queue reading as unowned -- a sweep landing in that window clears a
+        // queue that is being filled and drained as it does so. The reverse order is safe: for the
+        // instant between the stop and the release the queue reads as owned by a forwarder that has
+        // gone, which costs one clean-up cycle and no messages.
+        //
+        // The set the map returns -- not mqttForwarder.getTopics() -- is what was actually registered,
+        // and is what must be released.
         final MqttForwarder removed = forwarders.remove(forwarderId);
         if (removed != null) {
             removed.stop();
@@ -422,6 +423,10 @@ public class MessageForwarderImpl implements MessageForwarder {
             }
         } else {
             log.warn("Attempted to remove forwarder '{}' but it was not found in active forwarders", forwarderId);
+        }
+        final Set<String> removedQueueIds = queueIdsForForwarder.remove(forwarderId);
+        if (removedQueueIds != null) {
+            release(removedQueueIds);
         }
     }
 

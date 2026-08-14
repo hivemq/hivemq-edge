@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -45,6 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 /**
  * EDG-882 F-01, at the level that has to survive the rejection.
@@ -159,17 +161,32 @@ class BridgeServiceForwarderRegistrationFailureTest {
                 "a queue of either subscription that is not held is a queue the clean-up will delete");
     }
 
-    /** A bridge that starts owns its queues through its forwarders; the hold must not outlive that. */
+    /**
+     * Even a bridge that starts normally has a window to cover. The clean-up service is scheduled
+     * during persistence bootstrap, before any bridge has registered a forwarder, so at node start a
+     * persisted bridge queue is visible and unowned — and the clean-up deletes forwarder queues nobody
+     * owns. The hold is therefore taken for every start and dropped the moment the forwarders take
+     * over: before the registration it would not cover the window, after it there would be an instant
+     * with no owner at all, and never dropping it would strand the queues for the life of the node.
+     */
     @Test
-    void updateBridges_whenTheBridgeStarts_thenNoQueuesAreHeldForIt() {
-        final MqttBridge healthy = bridge("healthy-bridge");
+    void updateBridges_whenTheBridgeStarts_thenItsQueuesAreHeldOnlyUntilTheForwardersOwnThem() {
+        final LocalSubscription subscription = new LocalSubscription(List.of("plant/line1"), "remote/dest");
+        final MqttBridge healthy = bridge("healthy-bridge", List.of(subscription));
         final BridgeMqttClient client = healthyClient(healthy);
+        final MqttForwarder forwarder = mock(MqttForwarder.class);
+        when(forwarder.getId()).thenReturn("healthy-bridge-" + subscription.calculateUniqueId());
+        when(forwarder.getTopics()).thenReturn(List.of("plant/line1"));
+        when(client.createForwarders()).thenReturn(List.of(forwarder));
+        when(client.getActiveForwarders()).thenReturn(List.of(forwarder));
         when(clientFactory.createRemoteClient(any())).thenReturn(client);
 
         bridgeService.updateBridges(List.of(healthy));
 
-        verify(messageForwarder, never()).reserveQueues(any(), any());
-        verify(messageForwarder).releaseReservedQueues("healthy-bridge");
+        final InOrder handover = inOrder(messageForwarder);
+        handover.verify(messageForwarder).reserveQueues(eq("healthy-bridge"), any());
+        handover.verify(messageForwarder).addForwarder(forwarder);
+        handover.verify(messageForwarder).releaseReservedQueues("healthy-bridge");
     }
 
     /**
