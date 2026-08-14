@@ -59,4 +59,46 @@ class TlsSchemaSurfaceTest {
                     .isEmpty();
         }
     }
+
+    /**
+     * EDG-891 P4's neighbour, and the same rule as the axes above — kept here because the concern is
+     * identical: what the schema advertises is what the form writes back.
+     *
+     * <p>{@code messageSecurityMode} advertised {@code "NONE"} while its runtime default is
+     * {@code IGNORED}, so a form save could write the one value the operator had not chosen. The two
+     * are not interchangeable: unset means the policy decides, and picks {@code SignAndEncrypt} for
+     * every policy other than {@code NONE}, whereas an explicit {@code NONE} against a secured policy
+     * matches no endpoint the server offers and stops the adapter connecting.
+     */
+    @Test
+    void messageSecurityModeCarriesNoSchemaDefault() {
+        final JsonNode security = new CustomConfigSchemaGenerator()
+                .generateJsonSchema(OpcUaSpecificAdapterConfig.class)
+                .at("/properties/security/properties");
+
+        assertThat(security.isMissingNode())
+                .as("security properties present in the schema")
+                .isFalse();
+        assertThat(security.at("/messageSecurityMode/default").isMissingNode())
+                .as("messageSecurityMode must advertise no default; its real default is IGNORED, "
+                        + "which is stated in the description")
+                .isTrue();
+        assertThat(security.at("/messageSecurityMode/enum"))
+                .as("IGNORED stays selectable, so an operator can still say it explicitly")
+                .isNotEmpty();
+    }
+
+    /**
+     * The neighbouring policy field keeps its default: there it is the truth ({@code SecPolicy.NONE}
+     * really is the runtime default), so materialising it writes a value identical to omitting it.
+     * Pinned so that removing it becomes a deliberate act rather than tidying.
+     */
+    @Test
+    void policyKeepsItsDefaultBecauseItMatchesTheRuntime() {
+        final JsonNode security = new CustomConfigSchemaGenerator()
+                .generateJsonSchema(OpcUaSpecificAdapterConfig.class)
+                .at("/properties/security/properties");
+
+        assertThat(security.at("/policy/default").asText()).isEqualTo("NONE");
+    }
 }

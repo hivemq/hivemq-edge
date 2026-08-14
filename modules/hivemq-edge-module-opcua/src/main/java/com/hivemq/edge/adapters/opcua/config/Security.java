@@ -44,11 +44,18 @@ public record Security(
 
         @JsonProperty("messageSecurityMode")
         @JsonInclude(JsonInclude.Include.NON_NULL)
+        // No defaultValue, deliberately - do not add one. It became a JSON-schema `default`, and React
+        // JSON Schema Form materializes schema defaults into the form data it submits, so saving an
+        // unrelated edit through the UI could write messageSecurityMode=NONE into an adapter that never
+        // set it. That is not the runtime default: unset resolves to IGNORED, which picks SignAndEncrypt
+        // for every policy other than NONE. An explicit NONE against a secured policy matches no
+        // endpoint the server offers, so the adapter stops connecting - measured, and it fails closed
+        // rather than downgrading. The real default is stated in the description instead, where it
+        // informs the operator without being submitted back. Same rule and same reason as TlsChecksFull.
         @ModuleConfigField(
                 title = "Message Security Mode",
                 description =
-                        "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on the select OPC UA Security Policy: None→None, others→SignAndEncrypt.",
-                defaultValue = "NONE")
+                        "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on the select OPC UA Security Policy: None→None, others→SignAndEncrypt.")
         @Nullable
         MsgSecurityMode messageSecurityMode) {
 
