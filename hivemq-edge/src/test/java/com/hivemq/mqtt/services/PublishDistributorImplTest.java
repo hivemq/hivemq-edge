@@ -41,8 +41,10 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientqueue.QueuePolicy;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
+import com.hivemq.sampling.SamplingService;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,6 +68,7 @@ public class PublishDistributorImplTest {
     private final @NotNull BridgeExtractor bridgeConfiguration = mock();
     private final @NotNull MqttBridge bridge = mock();
     private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
+    private final @NotNull SamplingService samplingService = mock();
 
     private @NotNull PublishDistributorImpl publishDistributor;
     private @NotNull SingleWriterService singleWriterService;
@@ -79,7 +82,7 @@ public class PublishDistributorImplTest {
         when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         publishDistributor = new PublishDistributorImpl(
-                clientQueuePersistence, () -> clientSessionPersistence, configurationService);
+                clientQueuePersistence, () -> clientSessionPersistence, configurationService, () -> samplingService);
         when(bridgeConfiguration.getBridges()).thenReturn(List.of(bridge));
     }
 
@@ -118,7 +121,7 @@ public class PublishDistributorImplTest {
     @Timeout(5)
     public void test_success() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(true, 1000L));
-        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
                 .thenReturn(Futures.immediateFuture(null));
 
         final PublishStatus status = publishDistributor
@@ -126,7 +129,7 @@ public class PublishDistributorImplTest {
                         createPublish(QoS.AT_LEAST_ONCE), "client", 0, false, false, ImmutableIntArray.of(1))
                 .get();
 
-        verify(clientQueuePersistence).add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
+        verify(clientQueuePersistence).add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any());
         assertEquals(PublishStatus.DELIVERED, status);
     }
 
@@ -134,7 +137,7 @@ public class PublishDistributorImplTest {
     @Timeout(5)
     public void test_failed() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(true, 1000L));
-        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
                 .thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
 
         final PublishStatus status = publishDistributor
@@ -142,14 +145,77 @@ public class PublishDistributorImplTest {
                         createPublish(QoS.AT_LEAST_ONCE), "client", 0, false, false, ImmutableIntArray.of(1))
                 .get();
 
-        verify(clientQueuePersistence).add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
+        verify(clientQueuePersistence).add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any());
         assertEquals(PublishStatus.FAILED, status);
+    }
+
+    /**
+     * EDG-882 F-05. A queue ID is built from a share name, and a share name is the client's to choose:
+     * {@code $share/$SAMPLER::customer/alerts} is a legal subscription that no part of Edge owns. It
+     * must be queued like any other shared subscription — the configured limit, the configured overflow
+     * strategy — and not turned into the ten-message ring that sampling uses, which would discard the
+     * client's own messages under a policy meant for diagnostics.
+     */
+    @Test
+    @Timeout(5)
+    public void test_client_shared_subscription_named_like_a_sampler_gets_the_ordinary_policy()
+            throws ExecutionException, InterruptedException {
+        when(samplingService.isSamplerQueue("$SAMPLER::customer/alerts")).thenReturn(false);
+        when(mqttConfigurationService.maxQueuedMessages()).thenReturn(1000L);
+        when(clientQueuePersistence.add(
+                        eq("$SAMPLER::customer/alerts"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
+                .thenReturn(Futures.immediateFuture(null));
+
+        publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_MOST_ONCE),
+                        "$SAMPLER::customer/alerts",
+                        0,
+                        true,
+                        false,
+                        ImmutableIntArray.of(1))
+                .get();
+
+        verify(clientQueuePersistence)
+                .add(
+                        eq("$SAMPLER::customer/alerts"),
+                        eq(true),
+                        any(PUBLISH.class),
+                        anyBoolean(),
+                        eq(1000L),
+                        eq(QueuePolicy.DEFAULT));
+    }
+
+    /** And a queue the sampling service does own still gets the ring: the fix must not disable it. */
+    @Test
+    @Timeout(5)
+    public void test_a_real_sampler_queue_gets_the_sample_ring_policy()
+            throws ExecutionException, InterruptedException {
+        final String queueId = SamplingService.createQueueId("plant/line1");
+        when(samplingService.isSamplerQueue(queueId)).thenReturn(true);
+        when(clientQueuePersistence.add(eq(queueId), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
+                .thenReturn(Futures.immediateFuture(null));
+
+        publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_MOST_ONCE), queueId, 0, true, false, ImmutableIntArray.of(1))
+                .get();
+
+        verify(clientQueuePersistence)
+                .add(
+                        eq(queueId),
+                        eq(true),
+                        any(PUBLISH.class),
+                        anyBoolean(),
+                        eq(SamplingService.SAMPLER_QUEUE_LIMIT),
+                        eq(QueuePolicy.SAMPLE_RING));
     }
 
     @Test
     @Timeout(5)
     public void test_success_shared() throws ExecutionException, InterruptedException {
-        when(clientQueuePersistence.add(eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
+        when(clientQueuePersistence.add(
+                        eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
                 .thenReturn(Futures.immediateFuture(null));
 
         final PublishStatus status = publishDistributor
@@ -157,7 +223,8 @@ public class PublishDistributorImplTest {
                         createPublish(QoS.AT_LEAST_ONCE), "group/topic", 0, true, false, ImmutableIntArray.of(1))
                 .get();
 
-        verify(clientQueuePersistence).add(eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong());
+        verify(clientQueuePersistence)
+                .add(eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any());
         assertEquals(PublishStatus.DELIVERED, status);
     }
 
@@ -166,9 +233,9 @@ public class PublishDistributorImplTest {
     public void test_distribute_to_non_shared() {
         when(clientSessionPersistence.getSession("client1", false)).thenReturn(new ClientSession(true, 1000L));
         when(clientSessionPersistence.getSession("client2", false)).thenReturn(new ClientSession(true, 1000L));
-        when(clientQueuePersistence.add(eq("client1"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+        when(clientQueuePersistence.add(eq("client1"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
                 .thenReturn(Futures.immediateFuture(null));
-        when(clientQueuePersistence.add(eq("client2"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+        when(clientQueuePersistence.add(eq("client2"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
                 .thenReturn(Futures.immediateFuture(null));
 
         final Map<String, SubscriberWithIdentifiers> subscribers = Map.of(
@@ -178,16 +245,20 @@ public class PublishDistributorImplTest {
         publishDistributor.distributeToNonSharedSubscribers(
                 subscribers, TestMessageUtil.createMqtt5Publish(), MoreExecutors.newDirectExecutorService());
 
-        verify(clientQueuePersistence).add(eq("client1"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
-        verify(clientQueuePersistence).add(eq("client2"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
+        verify(clientQueuePersistence)
+                .add(eq("client1"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any());
+        verify(clientQueuePersistence)
+                .add(eq("client2"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong(), any());
     }
 
     @Test
     @SuppressWarnings("FutureReturnValueIgnored")
     public void test_distribute_to_shared_subs() {
-        when(clientQueuePersistence.add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
+        when(clientQueuePersistence.add(
+                        eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
                 .thenReturn(Futures.immediateFuture(null));
-        when(clientQueuePersistence.add(eq("name/topic2"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
+        when(clientQueuePersistence.add(
+                        eq("name/topic2"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
                 .thenReturn(Futures.immediateFuture(null));
 
         final Set<String> subscribers = Set.of("name/topic1", "name/topic2");
@@ -195,8 +266,10 @@ public class PublishDistributorImplTest {
         publishDistributor.distributeToSharedSubscribers(
                 subscribers, TestMessageUtil.createMqtt5Publish("topic"), MoreExecutors.newDirectExecutorService());
 
-        verify(clientQueuePersistence).add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong());
-        verify(clientQueuePersistence).add(eq("name/topic2"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong());
+        verify(clientQueuePersistence)
+                .add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any());
+        verify(clientQueuePersistence)
+                .add(eq("name/topic2"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any());
     }
 
     private PUBLISH createPublish(final @NotNull QoS qos) {

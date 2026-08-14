@@ -42,9 +42,11 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientqueue.QueuePolicy;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.util.FutureUtils;
+import com.hivemq.sampling.SamplingService;
 import dagger.Lazy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -84,15 +86,24 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     private final BridgeExtractor bridgeConfiguration;
 
+    /**
+     * Lazy because sampling is built on top of the queue persistence this class also uses: asking for
+     * it eagerly closes a dependency cycle at construction time.
+     */
+    @NotNull
+    private final Lazy<SamplingService> samplingService;
+
     @Inject
     public PublishDistributorImpl(
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull ConfigurationService configurationService,
+            final @NotNull Lazy<SamplingService> samplingService) {
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionPersistence = clientSessionPersistence;
         this.mqttConfigurationService = configurationService.mqttConfiguration();
         this.bridgeConfiguration = configurationService.bridgeExtractor();
+        this.samplingService = samplingService;
     }
 
     @NotNull
@@ -181,7 +192,12 @@ public class PublishDistributorImpl implements PublishDistributor {
                         subscriptionIdentifier,
                         mqttConfigurationService.maxQueuedMessages(),
                         subscriptionQos);
-            } else if (client.startsWith(SAMPLER_PREFIX)) {
+            } else if (samplingService.get().isSamplerQueue(client)) {
+                // Asked of the service that creates samplers rather than read off the queue ID: the ID
+                // is built from a share name, and a share name is the client's to choose. A
+                // subscription to $share/$SAMPLER::customer/alerts is legal and belongs to that client,
+                // so it must keep the configured queue limit and the configured overflow strategy
+                // instead of being turned into a ten-message ring (EDG-882 F-05).
                 return queuePublish(
                         client,
                         publish,
@@ -189,7 +205,8 @@ public class PublishDistributorImpl implements PublishDistributor {
                         true,
                         retainAsPublished,
                         subscriptionIdentifier,
-                        SAMPLER_QUEUE_LIMIT);
+                        SAMPLER_QUEUE_LIMIT,
+                        QueuePolicy.SAMPLE_RING);
             } else {
                 return queuePublish(
                         client,
@@ -261,6 +278,27 @@ public class PublishDistributorImpl implements PublishDistributor {
             final boolean retainAsPublished,
             final @Nullable ImmutableIntArray subscriptionIdentifier,
             final @Nullable Long queueLimit) {
+        return queuePublish(
+                client,
+                publish,
+                subscriptionQos,
+                shared,
+                retainAsPublished,
+                subscriptionIdentifier,
+                queueLimit,
+                QueuePolicy.DEFAULT);
+    }
+
+    @NotNull
+    private SettableFuture<PublishStatus> queuePublish(
+            final @NotNull String client,
+            final @NotNull PUBLISH publish,
+            final int subscriptionQos,
+            final boolean shared,
+            final boolean retainAsPublished,
+            final @Nullable ImmutableIntArray subscriptionIdentifier,
+            final @Nullable Long queueLimit,
+            final @NotNull QueuePolicy policy) {
 
         final Long appliedQueueLimit =
                 Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages);
@@ -269,7 +307,8 @@ public class PublishDistributorImpl implements PublishDistributor {
                 shared,
                 createPublish(publish, subscriptionQos, retainAsPublished, subscriptionIdentifier),
                 false,
-                appliedQueueLimit);
+                appliedQueueLimit,
+                policy);
 
         final SettableFuture<PublishStatus> statusFuture = SettableFuture.create();
 

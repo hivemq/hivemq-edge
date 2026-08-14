@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
@@ -158,7 +159,7 @@ public class SendRetainedMessagesListenerTest {
         listener.operationComplete(channel.newSucceededFuture());
         channel.runPendingTasks();
 
-        verify(queuePersistence).add(eq("client"), eq(false), anyList(), eq(true), anyLong());
+        verify(queuePersistence).add(eq("client"), eq(false), anyList(), eq(true), anyLong(), any());
     }
 
     @Test
@@ -185,7 +186,7 @@ public class SendRetainedMessagesListenerTest {
         channel.runPendingTasks();
 
         final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
-        verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong());
+        verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong(), any());
 
         final PUBLISH publish = captor.getValue().get(0);
         assertEquals("topic", publish.getTopic());
@@ -263,7 +264,7 @@ public class SendRetainedMessagesListenerTest {
         channel.runPendingTasks();
 
         final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
-        verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong());
+        verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong(), any());
 
         final PUBLISH publish = captor.getValue().get(0);
         assertEquals("topic", publish.getTopic());
@@ -298,7 +299,7 @@ public class SendRetainedMessagesListenerTest {
         channel.runPendingTasks();
 
         final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
-        verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong());
+        verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong(), any());
 
         final PUBLISH publish = captor.getAllValues().get(0).get(0);
         assertEquals("topic", publish.getTopic());
@@ -441,7 +442,7 @@ public class SendRetainedMessagesListenerTest {
 
         final ImmutableSet<String> set = ImmutableSet.of("topic", "topic2");
         when(retainedMessagePersistence.getWithWildcards("#")).thenReturn(Futures.immediateFuture(set));
-        when(queuePersistence.add(eq("client"), eq(false), anyList(), eq(true), anyLong()))
+        when(queuePersistence.add(eq("client"), eq(false), anyList(), eq(true), anyLong(), any()))
                 .thenReturn(Futures.immediateFuture(null));
         final List<SubscriptionResult> subscriptions = newArrayList(
                 subResult(new Topic("topic", QoS.AT_LEAST_ONCE), false),
@@ -458,7 +459,7 @@ public class SendRetainedMessagesListenerTest {
 
         final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
         verify(queuePersistence, timeout(5000).times(2))
-                .add(eq("client"), eq(false), captor.capture(), eq(true), anyLong());
+                .add(eq("client"), eq(false), captor.capture(), eq(true), anyLong(), any());
 
         final PUBLISH publish = captor.getAllValues().get(0).get(0);
         assertEquals("topic", publish.getTopic());
