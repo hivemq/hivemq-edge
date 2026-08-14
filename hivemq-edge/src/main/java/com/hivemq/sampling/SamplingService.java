@@ -124,6 +124,26 @@ public class SamplingService {
         return watchers.containsKey(topic);
     }
 
+    /**
+     * Whether this queue belongs to a sampling subscription this service created.
+     * <p>
+     * Asked by the publish path to decide whether the queue is a sample ring — a policy that discards
+     * the oldest messages — so the answer has to be about what Edge owns, not about how the ID is
+     * spelled. Two things have to hold: the ID must have the shape {@link #createQueueId(String)}
+     * produces, and the topic it decodes to must actually be sampled right now. A client subscribing
+     * to {@code $share/$SAMPLER::customer/alerts} fails the first (the two halves differ) and one that
+     * contrives the doubled shape fails the second, so neither has an eviction policy applied to its
+     * messages that it did not ask for (EDG-882 F-05).
+     * <p>
+     * The watchers map, not the topic tree: it is the record of who asked for samples, and it is the
+     * same map {@link #startSampling(String)} maintains, so this cannot disagree with whether a
+     * subscription exists.
+     */
+    public boolean isSamplerQueue(final @NotNull String queueId) {
+        final String sampledTopic = extractSampledTopic(queueId);
+        return sampledTopic != null && watchers.containsKey(sampledTopic);
+    }
+
     private void subscribe(final @NotNull String topic) {
         log.debug("Starting sampling for topic: '{}'", topic);
         final String clientId = SAMPLER_PREFIX + topic;

@@ -100,7 +100,8 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final boolean shared,
             final @NotNull PUBLISH publish,
             final boolean retained,
-            final long queueLimit) {
+            final long queueLimit,
+            final @NotNull QueuePolicy policy) {
         try {
             checkNotNull(queueId, "Queue ID must not be null");
             checkNotNull(publish, "Publish must not be null");
@@ -109,17 +110,15 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         }
 
         return singleWriter.submit(queueId, (bucketIndex) -> {
-            MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
-                    mqttConfigurationService.getQueuedMessagesStrategy();
-            // A sampler queue is a ring buffer of the most recent SamplingService.SAMPLE_SIZE payloads,
-            // so it discards the oldest -- and, unlike every other queue, that bound applies to QoS 0
-            // too. Without it a sampled topic whose publishers use QoS 0 is held only by the node-wide
-            // QoS 0 memory budget and can starve every other QoS 0 consumer on the node (EDG-885).
-            boolean applyMaxToQos0 = false;
-            if (queueId.startsWith(SAMPLER_PREFIX)) {
-                queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
-                applyMaxToQos0 = true;
-            }
+            // What to do when the queue is full comes from the producer (see QueuePolicy). It used to be
+            // read off the queue ID -- a share name a client chooses -- so an ordinary subscription to
+            // $share/$SAMPLER::customer/alerts had its own messages discarded under a policy meant for
+            // diagnostics (EDG-882 F-05).
+            final MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
+                    policy == QueuePolicy.SAMPLE_RING
+                            ? MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST
+                            : mqttConfigurationService.getQueuedMessagesStrategy();
+            final boolean applyMaxToQos0 = policy == QueuePolicy.SAMPLE_RING;
 
             localPersistence.add(
                     queueId,
@@ -149,7 +148,8 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final boolean shared,
             final @NotNull List<PUBLISH> publishes,
             final boolean retained,
-            final long queueLimit) {
+            final long queueLimit,
+            final @NotNull QueuePolicy policy) {
         try {
             checkNotNull(queueId, "Queue ID must not be null");
             checkNotNull(publishes, "Publishes must not be null");
@@ -159,17 +159,15 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
         return singleWriter.submit(queueId, (bucketIndex) -> {
             final boolean queueWasEmpty = localPersistence.size(queueId, shared, bucketIndex) == 0;
-            MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
-                    mqttConfigurationService.getQueuedMessagesStrategy();
-            // A sampler queue is a ring buffer of the most recent SamplingService.SAMPLE_SIZE payloads,
-            // so it discards the oldest -- and, unlike every other queue, that bound applies to QoS 0
-            // too. Without it a sampled topic whose publishers use QoS 0 is held only by the node-wide
-            // QoS 0 memory budget and can starve every other QoS 0 consumer on the node (EDG-885).
-            boolean applyMaxToQos0 = false;
-            if (queueId.startsWith(SAMPLER_PREFIX)) {
-                queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
-                applyMaxToQos0 = true;
-            }
+            // What to do when the queue is full comes from the producer (see QueuePolicy). It used to be
+            // read off the queue ID -- a share name a client chooses -- so an ordinary subscription to
+            // $share/$SAMPLER::customer/alerts had its own messages discarded under a policy meant for
+            // diagnostics (EDG-882 F-05).
+            final MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
+                    policy == QueuePolicy.SAMPLE_RING
+                            ? MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST
+                            : mqttConfigurationService.getQueuedMessagesStrategy();
+            final boolean applyMaxToQos0 = policy == QueuePolicy.SAMPLE_RING;
 
             localPersistence.add(
                     queueId,

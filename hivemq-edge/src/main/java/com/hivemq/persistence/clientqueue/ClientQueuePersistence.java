@@ -38,10 +38,17 @@ public interface ClientQueuePersistence {
      * @param retained   true if this message was sent in response to a subscribe.
      *                   It is not necessarily the same as the retain flag of the publish.
      * @param queueLimit of the client session or the default configuration.
+     * @param policy     what to do when the queue is full, decided by the producer of the messages —
+     *                   see {@link QueuePolicy}, and EDG-882 F-05 for why it is not inferred here.
      */
     @NotNull
     ListenableFuture<Void> add(
-            @NotNull String queueId, boolean shared, @NotNull PUBLISH publish, boolean retained, long queueLimit);
+            @NotNull String queueId,
+            boolean shared,
+            @NotNull PUBLISH publish,
+            boolean retained,
+            long queueLimit,
+            @NotNull QueuePolicy policy);
 
     /**
      * Add a list of publishes to the queue.
@@ -53,6 +60,8 @@ public interface ClientQueuePersistence {
      * @param retained   true if this message was sent in response to a subscribe.
      *                   It is not necessarily the same as the retain flag of the publishes.
      * @param queueLimit of the client session or the default configuration.
+     * @param policy     what to do when the queue is full, decided by the producer of the messages —
+     *                   see {@link QueuePolicy}, and EDG-882 F-05 for why it is not inferred here.
      */
     @NotNull
     ListenableFuture<Void> add(
@@ -60,7 +69,8 @@ public interface ClientQueuePersistence {
             boolean shared,
             @NotNull List<PUBLISH> publishes,
             boolean retained,
-            final long queueLimit);
+            final long queueLimit,
+            @NotNull QueuePolicy policy);
 
     /**
      * Read publishes that are not yet in-flight.

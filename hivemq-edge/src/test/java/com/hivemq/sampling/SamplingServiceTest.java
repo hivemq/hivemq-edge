@@ -17,7 +17,9 @@ package com.hivemq.sampling;
 
 import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -28,6 +30,7 @@ import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -230,5 +233,73 @@ public class SamplingServiceTest {
         assertEquals(
                 shareName.getValue() + "/" + registeredTopic.getValue().getTopic(),
                 SamplingService.createQueueId(topic));
+    }
+
+    private static @NotNull SamplingService samplingService() {
+        return new SamplingService(mock(LocalTopicTree.class), mock(ClientQueuePersistence.class));
+    }
+
+    /**
+     * EDG-882 F-05. The publish path asks this before applying a policy that discards the oldest
+     * messages, so it must answer about what the service owns, not about how the ID is spelled.
+     */
+    @Test
+    @Timeout(5)
+    public void test_isSamplerQueue_only_while_the_topic_is_actually_sampled() {
+        final SamplingService samplingService = samplingService();
+        final String queueId = SamplingService.createQueueId("plant/line1");
+
+        assertFalse(samplingService.isSamplerQueue(queueId), "nothing is being sampled yet");
+
+        samplingService.startSampling("plant/line1");
+        assertTrue(samplingService.isSamplerQueue(queueId));
+
+        samplingService.stopSampling("plant/line1");
+        assertFalse(samplingService.isSamplerQueue(queueId), "the last watcher let go");
+    }
+
+    /**
+     * The case the ticket is about: a client subscribing to {@code $share/$SAMPLER::customer/alerts}
+     * produces this queue ID. Its messages are its own and must not be evicted under the sampler's
+     * policy — and the two halves differ, so the ID is not even the shape sampling produces.
+     */
+    @Test
+    @Timeout(5)
+    public void test_isSamplerQueue_rejects_a_client_shared_subscription_named_like_a_sampler() {
+        final SamplingService samplingService = samplingService();
+        samplingService.startSampling("customer");
+
+        assertFalse(samplingService.isSamplerQueue("$SAMPLER::customer/alerts"));
+    }
+
+    /**
+     * And a client that contrives the doubled shape is still not a sampler: nobody asked for samples
+     * of that topic, so the watchers map — the same one {@code startSampling} maintains — says no.
+     */
+    @Test
+    @Timeout(5)
+    public void test_isSamplerQueue_rejects_the_sampler_shape_when_nothing_is_sampled() {
+        final SamplingService samplingService = samplingService();
+        samplingService.startSampling("some/other/topic");
+
+        assertFalse(samplingService.isSamplerQueue(SamplingService.createQueueId("alerts/alerts")));
+        assertFalse(samplingService.isSamplerQueue("ordinary/queue"));
+        assertFalse(samplingService.isSamplerQueue(""));
+    }
+
+    /** A second watcher keeps the queue a sampler until the last one lets go. */
+    @Test
+    @Timeout(5)
+    public void test_isSamplerQueue_follows_the_watcher_count() {
+        final SamplingService samplingService = samplingService();
+        final String queueId = SamplingService.createQueueId("plant/line1");
+        samplingService.startSampling("plant/line1");
+        samplingService.startSampling("plant/line1");
+
+        samplingService.stopSampling("plant/line1");
+        assertTrue(samplingService.isSamplerQueue(queueId), "one watcher is still looking");
+
+        samplingService.stopSampling("plant/line1");
+        assertFalse(samplingService.isSamplerQueue(queueId));
     }
 }

@@ -130,7 +130,7 @@ public class ClientQueuePersistenceImplTest {
     @Timeout(5)
     public void test_add() throws ExecutionException, InterruptedException {
         clientQueuePersistence
-                .add("client", false, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L)
+                .add("client", false, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L, QueuePolicy.DEFAULT)
                 .get();
         verify(localPersistence)
                 .add(
@@ -146,17 +146,22 @@ public class ClientQueuePersistenceImplTest {
     }
 
     /**
-     * EDG-885: a sampler queue is a ring buffer of the most recent samples, so it alone asks the
+     * EDG-885: a sample ring is a ring buffer of the most recent samples, so it alone asks the
      * persistence to apply the count limit to QoS 0 as well. Without it, a sampled topic whose
      * publishers use QoS 0 is bounded only by the node-wide QoS 0 memory budget and can starve every
      * other QoS 0 consumer on the node.
      */
     @Test
     @Timeout(5)
-    public void test_add_sampler_queue_opts_into_the_qos0_count_limit()
-            throws ExecutionException, InterruptedException {
+    public void test_add_sample_ring_opts_into_the_qos0_count_limit() throws ExecutionException, InterruptedException {
         clientQueuePersistence
-                .add("$SAMPLER::topic/topic", true, createPublish(1, QoS.AT_MOST_ONCE, "topic"), false, 10L)
+                .add(
+                        "$SAMPLER::topic/topic",
+                        true,
+                        createPublish(1, QoS.AT_MOST_ONCE, "topic"),
+                        false,
+                        10L,
+                        QueuePolicy.SAMPLE_RING)
                 .get();
         verify(localPersistence)
                 .add(
@@ -170,11 +175,104 @@ public class ClientQueuePersistenceImplTest {
                         anyInt());
     }
 
+    /**
+     * EDG-882 F-05, the regression. The policy comes from the producer, so a queue ID that merely
+     * looks like a sampler's gets ordinary treatment: the configured overflow strategy, and QoS 0 left
+     * to the node-wide memory budget.
+     * <p>
+     * The ID here is what a client subscribing to {@code $share/$SAMPLER::customer/alerts} produces —
+     * a legal subscription, and the client's own messages. Deciding from the ID meant discarding them
+     * under a policy meant for diagnostics, and there was nothing the client could do about it but
+     * rename its subscription group.
+     */
+    @Test
+    @Timeout(5)
+    public void test_add_client_shared_queue_named_like_a_sampler_is_treated_normally()
+            throws ExecutionException, InterruptedException {
+        clientQueuePersistence
+                .add(
+                        "$SAMPLER::customer/alerts",
+                        true,
+                        createPublish(1, QoS.AT_MOST_ONCE, "alerts"),
+                        false,
+                        1000L,
+                        QueuePolicy.DEFAULT)
+                .get();
+        verify(localPersistence)
+                .add(
+                        eq("$SAMPLER::customer/alerts"),
+                        eq(true),
+                        any(PUBLISH.class),
+                        eq(1000L),
+                        eq(QueuedMessagesStrategy.DISCARD),
+                        anyBoolean(),
+                        eq(false),
+                        anyInt());
+    }
+
+    /** The batch path must read the policy the same way; it had its own copy of the inference. */
+    @Test
+    @Timeout(5)
+    public void test_add_batch_client_shared_queue_named_like_a_sampler_is_treated_normally()
+            throws ExecutionException, InterruptedException {
+        clientQueuePersistence
+                .add(
+                        "$SAMPLER::customer/alerts",
+                        true,
+                        ImmutableList.of(createPublish(1, QoS.AT_MOST_ONCE, "alerts")),
+                        false,
+                        1000L,
+                        QueuePolicy.DEFAULT)
+                .get();
+        verify(localPersistence)
+                .add(
+                        eq("$SAMPLER::customer/alerts"),
+                        eq(true),
+                        anyList(),
+                        eq(1000L),
+                        eq(QueuedMessagesStrategy.DISCARD),
+                        anyBoolean(),
+                        eq(false),
+                        anyInt());
+    }
+
+    /** And the batch path must still honour a sample ring when the producer asks for one. */
+    @Test
+    @Timeout(5)
+    public void test_add_batch_sample_ring_opts_into_the_qos0_count_limit()
+            throws ExecutionException, InterruptedException {
+        clientQueuePersistence
+                .add(
+                        "$SAMPLER::topic/topic",
+                        true,
+                        ImmutableList.of(createPublish(1, QoS.AT_MOST_ONCE, "topic")),
+                        false,
+                        10L,
+                        QueuePolicy.SAMPLE_RING)
+                .get();
+        verify(localPersistence)
+                .add(
+                        eq("$SAMPLER::topic/topic"),
+                        eq(true),
+                        anyList(),
+                        eq(10L),
+                        eq(QueuedMessagesStrategy.DISCARD_OLDEST),
+                        anyBoolean(),
+                        eq(true),
+                        anyInt());
+    }
+
     @Test
     @Timeout(5)
     public void test_add_shared() throws ExecutionException, InterruptedException {
         clientQueuePersistence
-                .add("name/topic", true, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L)
+                .add(
+                        "name/topic",
+                        true,
+                        createPublish(1, QoS.AT_LEAST_ONCE, "topic"),
+                        false,
+                        1000L,
+                        QueuePolicy.DEFAULT)
                 .get();
         verify(localPersistence)
                 .add(
@@ -439,7 +537,9 @@ public class ClientQueuePersistenceImplTest {
         when(localPersistence.size(eq("client"), anyBoolean(), anyInt())).thenReturn(1);
         final ImmutableList<PUBLISH> publishes = ImmutableList.of(
                 createPublish(1, QoS.AT_LEAST_ONCE, "topic1"), createPublish(2, QoS.AT_LEAST_ONCE, "topic2"));
-        clientQueuePersistence.add("client", false, publishes, false, 1000L).get();
+        clientQueuePersistence
+                .add("client", false, publishes, false, 1000L, QueuePolicy.DEFAULT)
+                .get();
         verify(localPersistence)
                 .add(
                         eq("client"),
@@ -461,7 +561,9 @@ public class ClientQueuePersistenceImplTest {
         when(localPersistence.size(eq("client"), anyBoolean(), anyInt())).thenReturn(0);
         final ImmutableList<PUBLISH> publishes = ImmutableList.of(
                 createPublish(1, QoS.AT_LEAST_ONCE, "topic1"), createPublish(2, QoS.AT_LEAST_ONCE, "topic2"));
-        clientQueuePersistence.add("client", false, publishes, false, 1000L).get();
+        clientQueuePersistence
+                .add("client", false, publishes, false, 1000L, QueuePolicy.DEFAULT)
+                .get();
         verify(localPersistence)
                 .add(
                         eq("client"),
