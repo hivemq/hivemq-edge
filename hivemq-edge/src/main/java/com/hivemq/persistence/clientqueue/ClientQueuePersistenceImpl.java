@@ -394,8 +394,17 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
      * declared orphaned when no reading of it finds an owner.
      */
     private boolean isOrphaned(final @NotNull String queueId) {
-        if (queueId.startsWith(MessageForwarderImpl.FORWARDER_PREFIX) && messageForwarder.isForwarderQueue(queueId)) {
-            return false;
+        if (queueId.startsWith(MessageForwarderImpl.FORWARDER_PREFIX)) {
+            // Before any bridge configuration has been applied, "no forwarder owns this" means the
+            // bridges have not started yet rather than that the queue is abandoned. This service is
+            // scheduled during persistence bootstrap and the bridge subsystem is built after it, so a
+            // sweep in between would delete the queues of every bridge on the node.
+            if (!messageForwarder.hasAppliedBridgeConfiguration()) {
+                return false;
+            }
+            if (messageForwarder.isForwarderQueue(queueId)) {
+                return false;
+            }
         }
         final SharedSubscription sharedSubscription = SharedSubscriptionServiceImpl.splitTopicAndGroup(queueId);
         if (!topicTree

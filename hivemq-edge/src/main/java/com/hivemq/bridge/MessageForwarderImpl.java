@@ -87,6 +87,12 @@ public class MessageForwarderImpl implements MessageForwarder {
      */
     private final @NotNull Map<String, Set<String>> reservedQueues;
 
+    /**
+     * Whether the bridge configuration has been applied at least once. Read by the periodic clean-up
+     * through {@link #hasAppliedBridgeConfiguration()}; see {@link MessageForwarder} for why.
+     */
+    private volatile boolean bridgeConfigurationApplied;
+
     private final @NotNull ExecutorService executorService;
     private final @NotNull Lock pollLock;
     private volatile boolean polling;
@@ -397,6 +403,16 @@ public class MessageForwarderImpl implements MessageForwarder {
                 release(queueIds);
             }
         }
+    }
+
+    @Override
+    public void markBridgeConfigurationApplied() {
+        bridgeConfigurationApplied = true;
+    }
+
+    @Override
+    public boolean hasAppliedBridgeConfiguration() {
+        return bridgeConfigurationApplied;
     }
 
     @Override

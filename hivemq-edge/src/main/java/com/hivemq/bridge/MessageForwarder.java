@@ -75,6 +75,23 @@ public interface MessageForwarder {
     void releaseReservedQueues(@NotNull String reservationId);
 
     /**
+     * Records that the bridge configuration has been applied at least once, so that forwarder
+     * ownership can be trusted from now on.
+     */
+    void markBridgeConfigurationApplied();
+
+    /**
+     * Whether any bridge configuration has been applied yet.
+     * <p>
+     * Until it has, {@link #isForwarderQueue(String)} answering false means "nobody has had the chance
+     * to claim this queue", not "nobody owns it" — and the periodic clean-up deletes what nobody owns.
+     * The clean-up service is scheduled during persistence bootstrap, before the bridge subsystem
+     * exists, so a sweep landing in between would delete the queues of every bridge on the node while
+     * they were waiting to be started (EDG-882, found while testing F-02).
+     */
+    boolean hasAppliedBridgeConfiguration();
+
+    /**
      * Check whether a queue belongs to a currently registered forwarder.
      * Forwarder queue IDs cannot be parsed positionally: the embedded subscription hash is standard
      * Base64 and may itself contain '/', so ownership must be resolved against the registry instead.
