@@ -241,6 +241,12 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
     // (2) look like a broken client.
 
     private final @NotNull AtomicInteger refreshBracketCount = new AtomicInteger();
+    private final @NotNull AtomicInteger eventItemCount = new AtomicInteger();
+
+    /** Number of event monitored items currently registered with this namespace. */
+    public int eventItemCount() {
+        return eventItemCount.get();
+    }
 
     /**
      * How many {@code RefreshStart}/{@code RefreshEnd} events the server has emitted.
@@ -272,11 +278,13 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         // fired — it notifies every registered listener and lets each one apply its own WhereClause — so
         // registering here is exactly what makes events reach a client subscribed to a node of ours.
         eventItems.forEach(item -> getServer().getEventNotifier().register(item));
+        eventItemCount.addAndGet(eventItems.size());
     }
 
     @Override
     public void onEventItemsDeleted(final @NotNull List<EventItem> eventItems) {
         eventItems.forEach(item -> getServer().getEventNotifier().unregister(item));
+        eventItemCount.addAndGet(-eventItems.size());
     }
 
     /**

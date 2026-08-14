@@ -26,13 +26,19 @@ import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Result;
 import com.hivemq.edge.adapters.opcua.client.Success;
+import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -154,6 +160,8 @@ public class OpcUaClientConnectionTest {
     @Test
     @Timeout(60)
     void whenReadinessPreparationFails_thenTheConnectionNeverPublishesConnected() {
+        final var testNamespace = Objects.requireNonNull(opcUaServerExtension.getTestNamespace());
+        testNamespace.observeRefreshEvents();
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
                 opcUaServerExtension.getServerUri(),
                 false,
@@ -163,13 +171,14 @@ public class OpcUaClientConnectionTest {
                 new OpcUaToMqttConfig(1, 1000),
                 null,
                 null);
-        final OpcuaTag tag = new OpcuaTag(
-                "testTag",
-                "Test tag",
-                new OpcuaTagDefinition(
-                        "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
+        final String conditionNode = testNamespace.addAcknowledgeableConditionNode("PreparationOrderAlarm", 9_800L);
+        final OpcuaTag tag =
+                new OpcuaTag("testTag", "Test tag", new OpcuaTagDefinition(conditionNode, OpcuaTagKind.CONDITION));
 
         final AtomicBoolean markedReady = new AtomicBoolean();
+        final AtomicBoolean subscriptionExistedDuringPreparation = new AtomicBoolean();
+        final AtomicBoolean eventItemExistedDuringPreparation = new AtomicBoolean();
+        final AtomicBoolean refreshStartedDuringPreparation = new AtomicBoolean();
         opcUaClientConnection = new OpcUaClientConnection(
                 "test-adapter-id",
                 List.of(tag),
@@ -181,6 +190,12 @@ public class OpcUaClientConnectionTest {
                 new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true),
                 ConnectionOwnership.alwaysCurrent(),
                 ignored -> {
+                    subscriptionExistedDuringPreparation.set(
+                            !Objects.requireNonNull(opcUaServerExtension.getOpcUaServer())
+                                    .getSubscriptions()
+                                    .isEmpty());
+                    eventItemExistedDuringPreparation.set(testNamespace.eventItemCount() > 0);
+                    refreshStartedDuringPreparation.set(testNamespace.refreshBracketCount() > 0);
                     throw new IllegalStateException("metadata unavailable");
                 },
                 () -> markedReady.set(true));
@@ -195,8 +210,109 @@ public class OpcUaClientConnectionTest {
                 .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
         assertThat(markedReady).isFalse();
         assertThat(opcUaClientConnection.client()).isEmpty();
+        assertThat(subscriptionExistedDuringPreparation)
+                .as("metadata preparation must run before subscription creation")
+                .isFalse();
+        assertThat(eventItemExistedDuringPreparation)
+                .as("metadata preparation must run before event monitored-item creation")
+                .isFalse();
+        assertThat(refreshStartedDuringPreparation)
+                .as("metadata preparation must run before the automatic condition refresh")
+                .isFalse();
         assertThat(eventService.readEvents(null, null))
                 .anySatisfy(event -> assertThat(event.getMessage()).contains("Failed to prepare OPC UA client"));
+    }
+
+    @Test
+    @Timeout(30)
+    void stopDuringMetadataPreparation_cancelsTheBuildAndCannotPublishALateContext() throws Exception {
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final CountDownLatch preparationStarted = new CountDownLatch(1);
+        final CountDownLatch preparationInterrupted = new CountDownLatch(1);
+        final CountDownLatch neverReleased = new CountDownLatch(1);
+        final AtomicBoolean markedReady = new AtomicBoolean();
+        opcUaClientConnection = new OpcUaClientConnection(
+                "test-adapter-id",
+                List.of(),
+                protocolAdapterState,
+                mock(ProtocolAdapterTagStreamingService.class),
+                eventService,
+                metricsService,
+                config,
+                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true),
+                ConnectionOwnership.alwaysCurrent(),
+                ignored -> awaitInterruption(preparationStarted, preparationInterrupted, neverReleased),
+                () -> markedReady.set(true));
+        final ParsedConfig parsedConfig = parsedConfig(config);
+
+        final CompletableFuture<Boolean> start =
+                CompletableFuture.supplyAsync(() -> opcUaClientConnection.start(parsedConfig));
+        assertThat(preparationStarted.await(10, TimeUnit.SECONDS)).isTrue();
+
+        CompletableFuture.runAsync(opcUaClientConnection::stop).get(5, TimeUnit.SECONDS);
+
+        assertThat(preparationInterrupted.await(5, TimeUnit.SECONDS))
+                .as("teardown must interrupt the metadata build rather than wait for its deadline")
+                .isTrue();
+        assertThat(start.get(5, TimeUnit.SECONDS)).isFalse();
+        assertThat(markedReady).isFalse();
+        assertThat(opcUaClientConnection.client()).isEmpty();
+        assertThat(protocolAdapterState.getConnectionStatus())
+                .as("a deliberate stop during startup is not a preparation failure")
+                .isNotEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
+    }
+
+    @Test
+    @Timeout(30)
+    void metadataPreparationPastTheConnectionDeadline_failsBeforeSubscription() throws Exception {
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                new ConnectionOptions(null, null, null, null, 2_000L, null, null, null, null));
+        final CountDownLatch preparationStarted = new CountDownLatch(1);
+        final CountDownLatch preparationInterrupted = new CountDownLatch(1);
+        final CountDownLatch neverReleased = new CountDownLatch(1);
+        final AtomicBoolean markedReady = new AtomicBoolean();
+        opcUaClientConnection = new OpcUaClientConnection(
+                "test-adapter-id",
+                List.of(),
+                protocolAdapterState,
+                mock(ProtocolAdapterTagStreamingService.class),
+                eventService,
+                metricsService,
+                config,
+                new OpcUaServiceFaultListener(metricsService, eventService, "test-adapter-id", () -> {}, true),
+                ConnectionOwnership.alwaysCurrent(),
+                ignored -> awaitInterruption(preparationStarted, preparationInterrupted, neverReleased),
+                () -> markedReady.set(true));
+
+        assertThat(opcUaClientConnection.start(parsedConfig(config))).isFalse();
+
+        assertThat(preparationStarted.getCount()).isZero();
+        assertThat(preparationInterrupted.await(5, TimeUnit.SECONDS))
+                .as("the expired build must be interrupted")
+                .isTrue();
+        assertThat(protocolAdapterState.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
+        assertThat(markedReady).isFalse();
+        assertThat(opcUaClientConnection.client()).isEmpty();
+        assertThat(Objects.requireNonNull(opcUaServerExtension.getOpcUaServer()).getSubscriptions())
+                .as("a metadata timeout must occur before subscription creation")
+                .isEmpty();
+        assertThat(eventService.readEvents(null, null))
+                .anySatisfy(event -> assertThat(event.getMessage()).contains("metadata preparation timed out"));
     }
 
     @Test
@@ -440,5 +556,24 @@ public class OpcUaClientConnectionTest {
                             "server-observed publishingInterval must equal the configured value, not Milo's 1000 ms default")
                     .isCloseTo(requestedPublishingIntervalMs, within(1.0));
         });
+    }
+
+    private static void awaitInterruption(
+            final @NotNull CountDownLatch started,
+            final @NotNull CountDownLatch interrupted,
+            final @NotNull CountDownLatch neverReleased) {
+        started.countDown();
+        try {
+            neverReleased.await();
+        } catch (final InterruptedException e) {
+            interrupted.countDown();
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static @NotNull ParsedConfig parsedConfig(final @NotNull OpcUaSpecificAdapterConfig config) {
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(config);
+        assertThat(result).isInstanceOf(Success.class);
+        return ((Success<ParsedConfig, String>) result).result();
     }
 }

@@ -34,8 +34,10 @@ import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -78,13 +80,22 @@ public class OpcUaClientConnection {
     private final @NotNull BiConsumer<OpcUaClientConnection, ProtocolAdapterState.ConnectionStatus> statusPublisher;
 
     /**
-     * The last connection-specific preparation that must finish before {@code CONNECTED} is truthful.
+     * Connection-specific metadata preparation that must finish before any tag reaches the server.
      * <p>
      * The adapter uses this to hydrate Milo's namespace table and data-type tree. Keeping it on the
-     * connection's start path makes the readiness transition ordered: the subscription exists, preparation
-     * succeeds, the context is installed, and only then is {@code CONNECTED} published.
+     * connection's start path makes the readiness transition ordered: preparation succeeds, tags are
+     * verified and subscribed, the context is installed, and only then is {@code CONNECTED} published.
      */
     private final @NotNull Consumer<OpcUaClient> prepareForUse;
+
+    /**
+     * The metadata task currently holding startup, if any.
+     * <p>
+     * Milo's eager data-type-tree build is synchronous and recursively issues browse/read requests. Running
+     * it in an interruptible task gives the complete build one configured deadline and lets teardown cancel
+     * it before waiting for the {@link #start} monitor.
+     */
+    private final @NotNull AtomicReference<FutureTask<Void>> preparationTask = new AtomicReference<>();
 
     /** Atomically marks adapter-owned readiness and CONNECTED after the usable context has been installed. */
     private final @NotNull Consumer<OpcUaClientConnection> publishReady;
@@ -356,6 +367,10 @@ public class OpcUaClientConnection {
             return false;
         }
 
+        if (!prepareClientForUse(client, activityListener)) {
+            return false;
+        }
+
         final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(
                 protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, config);
 
@@ -392,20 +407,6 @@ public class OpcUaClientConnection {
         final var subscription = subscriptionOptional.get();
         log.trace("Creating Subscription for OPC UA client");
 
-        try {
-            prepareForUse.accept(client);
-        } catch (final RuntimeException e) {
-            log.error("Failed to prepare OPC UA client for use by adapter '{}'", adapterId, e);
-            publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-            eventService
-                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage("Failed to prepare OPC UA client for use by adapter '" + adapterId + "'.")
-                    .withSeverity(Event.SEVERITY.ERROR)
-                    .fire();
-            quietlyCloseClient(client, false, serviceFaultListener, activityListener);
-            return false;
-        }
-
         // The last chance to notice that this attempt has been overtaken, and the only one that matters:
         // installing the context is what turns a private attempt into the adapter's live connection, and
         // until it happens a teardown finds nothing to close. A stop() or destroy() that ran while this
@@ -437,13 +438,90 @@ public class OpcUaClientConnection {
         return true;
     }
 
+    /**
+     * Hydrates all metadata needed by verification, event decoding, browse and writes before any tag is
+     * verified or subscribed.
+     * <p>
+     * {@code connectionTimeoutMs} is the deadline for this complete recursive build, rather than merely for
+     * each individual request it issues. The task is also published before its thread starts and {@link
+     * #markClosed()} rechecks it without the start monitor, so teardown can interrupt a build immediately.
+     */
+    private boolean prepareClientForUse(
+            final @NotNull OpcUaClient client, final @NotNull SessionActivityListener activityListener) {
+        final FutureTask<Void> task = new FutureTask<>(() -> {
+            prepareForUse.accept(client);
+            return null;
+        });
+        preparationTask.set(task);
+
+        // Ordered against markClosed() in the same two-sided shape as subscriptionHandler: if teardown read
+        // a null task just before this publication, its `closed` write is what this side observes.
+        if (closed.get()) {
+            task.cancel(true);
+        } else {
+            Thread.ofVirtual().name("opcua-metadata-preparation-" + adapterId).start(task);
+            if (closed.get()) {
+                task.cancel(true);
+            }
+        }
+
+        final long timeoutMs = config.getConnectionOptions().connectionTimeoutMs();
+        try {
+            task.get(timeoutMs, TimeUnit.MILLISECONDS);
+            return true;
+        } catch (final CancellationException e) {
+            if (closed.get()) {
+                log.debug("OPC UA metadata preparation was cancelled during teardown for adapter '{}'", adapterId);
+                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+                return false;
+            }
+            return failPreparation(client, activityListener, "OPC UA metadata preparation was cancelled", e);
+        } catch (final TimeoutException e) {
+            task.cancel(true);
+            return failPreparation(
+                    client,
+                    activityListener,
+                    "OPC UA metadata preparation timed out after " + timeoutMs + " milliseconds",
+                    e);
+        } catch (final InterruptedException e) {
+            task.cancel(true);
+            Thread.currentThread().interrupt();
+            if (closed.get()) {
+                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+                return false;
+            }
+            return failPreparation(client, activityListener, "OPC UA metadata preparation was interrupted", e);
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            return failPreparation(client, activityListener, "Failed to prepare OPC UA client for use", cause);
+        } finally {
+            preparationTask.compareAndSet(task, null);
+        }
+    }
+
+    /** Reports one failed metadata build and closes the client before a subscription can exist. */
+    private boolean failPreparation(
+            final @NotNull OpcUaClient client,
+            final @NotNull SessionActivityListener activityListener,
+            final @NotNull String message,
+            final @NotNull Throwable cause) {
+        log.error("{} for adapter '{}'", message, adapterId, cause);
+        publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withMessage(message + " for adapter '" + adapterId + "'.")
+                .withSeverity(Event.SEVERITY.ERROR)
+                .fire();
+        quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+        return false;
+    }
+
     void stop() {
         log.info("Stopping OPC UA client");
         // Before the monitor, not behind it. A start() in progress holds this instance's lock for the whole
-        // of its verification, so a synchronized stop() could not reach the flag that shortens the very wait
-        // it was queueing behind: it blocked for up to three ten-second round trips per condition tag,
-        // reported to the operator as a hang. Abandoning first turns that into the one verification phase
-        // already in progress, whose ceiling is ten seconds.
+        // startup sequence, so a synchronized stop() could not reach either cancellation seam. Metadata
+        // preparation is interrupted immediately; verification is reduced to the one timed phase already in
+        // progress, whose ceiling is ten seconds.
         markClosed();
         closeContext(true);
     }
@@ -455,15 +533,21 @@ public class OpcUaClientConnection {
     }
 
     /**
-     * Records that this connection is finished with and tells the handler to stop verifying tags.
+     * Records that this connection is finished with, cancels metadata preparation, and tells the handler to
+     * stop verifying tags.
      * <p>
      * Deliberately unsynchronized and idempotent, so it can run while {@link #start} holds the monitor — that
      * is the whole point of it. The ordering is what makes it safe: {@code closed} is published before the
-     * handler is read, and {@code start()} publishes the handler before it re-reads {@code closed}, so
-     * whichever of the two goes second sees the other's write and the abandonment cannot fall between them.
+     * preparation task and handler are read, while {@code start()} publishes each one before it re-reads
+     * {@code closed}. Whichever side goes second therefore sees the other's write, so neither cancellation
+     * seam can be missed.
      */
     private void markClosed() {
         closed.set(true);
+        final FutureTask<Void> preparation = preparationTask.get();
+        if (preparation != null) {
+            preparation.cancel(true);
+        }
         final OpcUaSubscriptionLifecycleHandler handler = subscriptionHandler.get();
         if (handler != null) {
             // Told before the client is closed, not after: a start or a recovery may be part way through
@@ -479,10 +563,11 @@ public class OpcUaClientConnection {
      * Synchronized, and that is intentional even though {@link #markClosed} is not: a teardown that overlaps
      * a start has to wait for the start to finish before it can decide there is nothing to close, or it would
      * race the {@code context.set(...)} at the end of {@link #start}. Because {@code closed} is already set by
-     * the time this waits, the start it is waiting for will abandon its verification and then refuse to
-     * install its context. Verification rechecks abandonment after each timed phase, so this wait is bounded
-     * by the phase already in progress (currently a ten-second ceiling) rather than by the rest of that tag
-     * or every remaining tag.
+     * the time this waits, the start it is waiting for will cancel metadata preparation or abandon its
+     * verification and then refuse to install its context. Metadata preparation is interrupted directly;
+     * verification rechecks abandonment after each timed phase, so the remaining wait is bounded by the
+     * phase already in progress (currently a ten-second ceiling) rather than by the rest of that tag or every
+     * remaining tag.
      *
      * @param keepSubscription whether to leave the subscription on the server — true for a stop, which may be
      *                         followed by a reconnect that transfers it, false for a destroy.

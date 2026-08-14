@@ -1243,7 +1243,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 .whenComplete((success, throwable) -> {
                     // Two questions, not one. `stopped` asks whether the adapter still wants background work
                     // at all; the identity check asks whether *this* attempt is still the one that speaks for
-                    // it. An attempt is slow -- a connect plus up to three round trips per condition tag --
+                    // it. An attempt includes a bounded metadata build plus up to three round trips per
+                    // condition tag,
                     // and a reconnect or a retry can install a newer connection while it runs, at which point
                     // everything below is about the wrong object: it would overwrite the live browse client
                     // with a superseded one and schedule health checks on the new lifecycle's executor.
@@ -1274,10 +1275,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     /**
-     * EDG-577: one-shot warm-up during a successful (re)connect. The Milo session activates before the namespace
+     * EDG-577: one-shot warm-up during a successful connection. The Milo session activates before the namespace
      * table and data-type tree a deterministic browse depends on are populated. The connection invokes this
-     * preparation before installing its public context and publishing CONNECTED, so REST browse and southbound
-     * operations share one readiness boundary. A failure fails the attempt and enters the ordinary retry path.
+     * preparation before tag verification, subscription creation, automatic refresh, context installation and
+     * CONNECTED. A failure therefore fails the attempt without letting any tag become live and enters the
+     * ordinary retry path.
      */
     private void warmUpBrowseMetadata(final @NotNull OpcUaClient client) {
         try {
