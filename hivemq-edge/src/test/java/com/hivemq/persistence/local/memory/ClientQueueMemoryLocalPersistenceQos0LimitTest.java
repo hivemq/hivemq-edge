@@ -195,6 +195,92 @@ public class ClientQueueMemoryLocalPersistenceQos0LimitTest {
     }
 
     /**
+     * EDG-882 F-03, mirrored from the file-native side, where the same scenario emptied the ring.
+     * <p>
+     * The node sits at its global QoS 0 ceiling — the budget is node-wide and shared with every other
+     * QoS 0 consumer, so this is the ordinary state of a busy node. The trim evicts the old sample and
+     * releases its memory, and that release is precisely the room the new one needs, so the ring must
+     * rotate rather than empty itself. This implementation reads the counter after the trim and gets it
+     * right; the assertion is here so that it cannot quietly stop doing so, and so that the two
+     * implementations of one contract are held to the same case.
+     * <p>
+     * Sized so that the sampler's own sample carries the node over the line, because that is the only
+     * case the trim can rescue: unrelated traffic that exceeds the budget on its own is over it before
+     * and after, and is meant to be rejected.
+     */
+    @Test
+    public void test_atTheGlobalCeiling_theRingStillRotates() {
+        withGlobalBudgetOfAbout(8 * 1024);
+
+        // unrelated QoS 0 traffic, comfortably inside the budget on its own
+        persistence.add(
+                "some/other/consumer",
+                true,
+                qos0("x".repeat(512)),
+                Long.MAX_VALUE,
+                QueuedMessagesStrategy.DISCARD_OLDEST,
+                false,
+                false,
+                BUCKET);
+        // and the sample that takes the node over it
+        add("x".repeat(32 * 1024), 1, true);
+        assertEquals(1, persistence.size(QUEUE_ID, true, BUCKET), "the ring must start with the sample it rotates out");
+
+        add("new", 1, true);
+
+        assertEquals(1, persistence.size(QUEUE_ID, true, BUCKET), "the ring emptied itself instead of rotating");
+        assertEquals(List.of("new"), payloadsInQueue(), "the newest sample must be the one that survived");
+    }
+
+    /**
+     * The ceiling still has to mean something: a queue that does no trimming frees nothing, and once
+     * the node is over the budget its messages must be dropped exactly as before.
+     */
+    @Test
+    public void test_atTheGlobalCeiling_aQueueThatFreesNothingIsStillBounded() {
+        withGlobalBudgetOfAbout(8 * 1024);
+
+        persistence.add(
+                "some/other/consumer",
+                true,
+                qos0("x".repeat(32 * 1024)),
+                Long.MAX_VALUE,
+                QueuedMessagesStrategy.DISCARD_OLDEST,
+                false,
+                false,
+                BUCKET);
+        final int sizeAtCeiling = persistence.size("some/other/consumer", true, BUCKET);
+
+        persistence.add(
+                "some/other/consumer",
+                true,
+                qos0("rejected"),
+                Long.MAX_VALUE,
+                QueuedMessagesStrategy.DISCARD_OLDEST,
+                false,
+                false,
+                BUCKET);
+
+        assertEquals(
+                sizeAtCeiling,
+                persistence.size("some/other/consumer", true, BUCKET),
+                "the node-wide QoS 0 budget must still reject what it cannot hold");
+    }
+
+    /**
+     * Rebuilds the persistence with a node-wide QoS 0 budget of roughly {@code bytes}. Derived from the
+     * heap rather than fixed, because the limit is {@code maxHeap / divisor} and the heap differs
+     * between a laptop and a CI agent; the tests using it work with messages an order of magnitude
+     * either side of the budget, so they never depend on the exact per-message overhead.
+     */
+    private void withGlobalBudgetOfAbout(final int bytes) {
+        InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR.set(
+                (int) Math.max(1, Runtime.getRuntime().maxMemory() / bytes));
+        persistence = new ClientQueueMemoryLocalPersistence(
+                payloadPersistence, messageDroppedService, new MetricRegistry(), internalConfigurationService);
+    }
+
+    /**
      * QoS 1 traffic on an opted-in queue must still take the ordinary path. Sampling subscribes at
      * {@code AT_LEAST_ONCE}, so a QoS 1 publisher produces QoS 1 samples, and those were never the
      * problem — they were always count-bounded.
