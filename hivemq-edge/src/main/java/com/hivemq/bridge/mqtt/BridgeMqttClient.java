@@ -63,7 +63,9 @@ import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -127,6 +129,48 @@ public class BridgeMqttClient {
     public static @NotNull String createForwarderId(
             final @NotNull String bridgeId, final @NotNull LocalSubscription sub) {
         return bridgeId + '-' + sub.calculateUniqueId();
+    }
+
+    /**
+     * Refuses a bridge whose local subscriptions do not resolve to distinct forwarder ids (EDG-882).
+     * <p>
+     * {@link LocalSubscription#calculateUniqueId()} joins the filters with an empty separator, so
+     * {@code ["ab", "c"]} and {@code ["a", "bc"]} — with the same destination — produce the same id.
+     * Both subscriptions are live at once: {@link #createForwarders()} builds one forwarder per local
+     * subscription and every one of them is registered. Under a shared id the second registration
+     * takes the first's queues out of the ownership index, the periodic clean-up then finds those live
+     * queues unowned, and it deletes the messages waiting in them. The digest itself commonly contains
+     * a '/', so the generic queue-name parser cannot recover the owner either.
+     * <p>
+     * Rejecting the configuration is the fix, rather than disambiguating the id: the id names every
+     * persisted queue of the bridge, so re-encoding it renames those queues on upgrade and strands the
+     * messages already in them. Failing at startup, loudly and naming both subscriptions, is the only
+     * outcome here that loses nothing. A collision needs two subscriptions whose sorted filters
+     * concatenate to the same string, so a configuration that has never collided cannot start
+     * colliding on upgrade.
+     *
+     * @throws IllegalStateException if two local subscriptions share a forwarder id
+     */
+    static void verifyForwarderIdsAreUnique(final @NotNull MqttBridge bridge) {
+        final Map<String, LocalSubscription> subscriptionByForwarderId = new HashMap<>();
+        for (final LocalSubscription sub : bridge.getLocalSubscriptions()) {
+            final String forwarderId = createForwarderId(bridge.getId(), sub);
+            final LocalSubscription previous = subscriptionByForwarderId.putIfAbsent(forwarderId, sub);
+            if (previous != null) {
+                throw new IllegalStateException(String.format(
+                        "Bridge '%s' cannot start: the local subscriptions with filters %s (destination '%s') and %s "
+                                + "(destination '%s') both resolve to the internal forwarder id '%s'. That id names "
+                                + "the internal queues of the subscription, so the two would share one set of queues "
+                                + "and the messages of one of them would be discarded. Change or remove one of the "
+                                + "two subscriptions; altering any topic filter or the destination is enough.",
+                        bridge.getId(),
+                        previous.getFilters(),
+                        previous.getDestination(),
+                        sub.getFilters(),
+                        sub.getDestination(),
+                        forwarderId));
+            }
+        }
     }
 
     public synchronized @NotNull ListenableFuture<Void> start() {
@@ -353,7 +397,13 @@ public class BridgeMqttClient {
         return mqtt5Client;
     }
 
+    /**
+     * @throws IllegalStateException if two local subscriptions of this bridge resolve to the same
+     *     forwarder id — see {@link #verifyForwarderIdsAreUnique(MqttBridge)}. Thrown before any
+     *     forwarder is built, so nothing is registered, started or cleared for a rejected bridge.
+     */
     public @NotNull List<MqttForwarder> createForwarders() {
+        verifyForwarderIdsAreUnique(bridge);
         final ImmutableList.Builder<@NotNull MqttForwarder> builder = ImmutableList.builder();
         final int localSubCount = bridge.getLocalSubscriptions().size();
         if (log.isDebugEnabled()) {

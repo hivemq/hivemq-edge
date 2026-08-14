@@ -133,6 +133,28 @@ public class LocalSubscription {
         return result;
     }
 
+    /**
+     * The identity a bridge forwarder — and therefore the name of every queue it owns — is derived
+     * from: an MD5 digest over the sorted filters and the destination, rendered in standard Base64.
+     * <p>
+     * <b>This function is not injective, deliberately so.</b> The filters are joined with an
+     * <em>empty</em> separator, so any two filter lists with the same sorted concatenation hash to the
+     * same value: {@code ["ab", "c"]} and {@code ["a", "bc"]} both digest the bytes {@code abc}. Two
+     * such subscriptions on one bridge would own queues under a single identity, and registering the
+     * second would take the first's queues out of the ownership index — leaving live queues looking
+     * orphaned to the periodic clean-up, which is exactly the EDG-882 message-loss path.
+     * <p>
+     * The ambiguity is <b>not</b> fixed here, and must not be: any change to this encoding — a
+     * separator, length prefixes, a URL-safe alphabet — changes the digest of <em>every</em>
+     * configuration, renaming every persisted bridge queue on upgrade and stranding the messages
+     * already sitting in them. Trading silent loss for loss-on-upgrade is not a fix; EDG-882 rejected
+     * re-encoding for that reason. Removing the ambiguity requires versioned identities with a
+     * migration or dual lookup, which is a change of its own.
+     * <p>
+     * What guards the defect instead is {@link com.hivemq.bridge.mqtt.BridgeMqttClient#createForwarders()},
+     * which refuses to start a bridge whose local subscriptions do not resolve to distinct forwarder
+     * ids. An operator sees a startup error naming both subscriptions; nothing is silently discarded.
+     */
     public @NotNull String calculateUniqueId() {
         if (uniqueId != null) {
             return uniqueId;

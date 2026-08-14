@@ -17,8 +17,14 @@ package com.hivemq.bridge;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyByte;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -51,17 +57,15 @@ public class MessageForwarderImplTest {
             MessageForwarderImpl.FORWARDER_PREFIX + OTHER_FORWARDER_ID + "/" + OTHER_TOPIC;
 
     private MessageForwarderImpl messageForwarder;
+    private LocalTopicTree topicTree;
     private MqttForwarder mqttForwarder;
     private MqttForwarder otherMqttForwarder;
 
     @BeforeEach
     public void setUp() {
+        topicTree = mock(LocalTopicTree.class);
         messageForwarder = new MessageForwarderImpl(
-                mock(LocalTopicTree.class),
-                new HivemqId(),
-                () -> null,
-                mock(SingleWriterService.class),
-                mock(ShutdownHooks.class));
+                topicTree, new HivemqId(), () -> null, mock(SingleWriterService.class), mock(ShutdownHooks.class));
         mqttForwarder = forwarder(FORWARDER_ID, TOPIC);
         otherMqttForwarder = forwarder(OTHER_FORWARDER_ID, OTHER_TOPIC);
     }
@@ -149,20 +153,85 @@ public class MessageForwarderImplTest {
     }
 
     /**
-     * EDG-882, the case that rules out an {@code if (put(...) == null)} skip guard. A forwarder ID does
-     * not determine its queue set: the ID embeds a digest over the filters joined with an <em>empty</em>
-     * separator, so {@code {"ab","c"}} and {@code {"a","bc"}} share an ID with different queue sets. A
-     * guard that skipped the re-registration would leave the index stale in the message-losing
-     * direction — reporting the new queue as unowned.
+     * EDG-882 F-01, the defect itself, at the level where it is decided.
+     * <p>
+     * A forwarder ID does not determine its queue set: the ID embeds a digest over the filters joined
+     * with an <em>empty</em> separator, so the subscriptions {@code {"ab","c"}} and {@code {"a","bc"}}
+     * — with the same destination — share an ID while owning different queues. Both are live at the
+     * same time, because a bridge builds and registers one forwarder per local subscription.
+     * <p>
+     * Letting the second registration displace the first is what loses messages: the first
+     * forwarder's queues stop reading as owned while it is still running and still filling them, and
+     * the next clean-up sweep deletes their contents. So the second registration is refused and the
+     * first keeps everything.
      */
     @Test
     @Timeout(5)
-    public void test_reregistration_with_a_changed_topic_set_updates_ownership() {
-        messageForwarder.addForwarder(forwarder(FORWARDER_ID, "ab", "c"));
-        assertTrue(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "ab")));
-        assertTrue(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "c")));
+    public void test_a_colliding_registration_is_refused_and_the_incumbent_keeps_its_queues() {
+        final MqttForwarder incumbent = forwarder(FORWARDER_ID, "ab", "c");
+        final MqttForwarder colliding = forwarder(FORWARDER_ID, "a", "bc");
+        messageForwarder.addForwarder(incumbent);
 
-        messageForwarder.addForwarder(forwarder(FORWARDER_ID, "a", "bc"));
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(colliding));
+
+        assertTrue(
+                messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "ab")),
+                "the incumbent is still live; un-owning its queue lets the clean-up delete its messages");
+        assertTrue(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "c")));
+        // and the refused registration claimed nothing of its own
+        assertFalse(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "a")));
+        assertFalse(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "bc")));
+    }
+
+    /** A refused registration must not have been started or subscribed — it was never registered. */
+    @Test
+    @Timeout(5)
+    public void test_a_refused_registration_is_never_started() {
+        final MqttForwarder colliding = forwarder(FORWARDER_ID, "a", "bc");
+        messageForwarder.addForwarder(forwarder(FORWARDER_ID, "ab", "c"));
+
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(colliding));
+
+        verify(colliding, never()).start();
+        verify(topicTree, never())
+                .addTopic(any(), argThat(topic -> topic.getTopic().equals("bc")), anyByte(), any());
+    }
+
+    /**
+     * The refusal must leave the reference counts exactly as it found them. A queue the two
+     * registrations have in common is the case that breaks a naive undo: releasing the incumbent's
+     * reference along with the refused one drops the count to zero for a queue that is still owned.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_refused_registration_leaves_the_reference_counts_untouched() {
+        final MqttForwarder incumbent = forwarder(FORWARDER_ID, TOPIC, "ab", "c");
+        messageForwarder.addForwarder(incumbent);
+
+        // overlaps the incumbent on TOPIC and differs elsewhere
+        assertThrows(
+                IllegalStateException.class,
+                () -> messageForwarder.addForwarder(forwarder(FORWARDER_ID, TOPIC, "a", "bc")));
+
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID), "the shared queue lost its owner");
+
+        // one removal must still fully deregister: the refusal may not have leaked or stacked a reference
+        messageForwarder.removeForwarder(incumbent, false);
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID), "the refusal leaked a reference on the shared queue");
+        assertFalse(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "ab")));
+    }
+
+    /** Refusing is not poisoning: once the incumbent is gone, the same ID registers normally. */
+    @Test
+    @Timeout(5)
+    public void test_the_id_is_reusable_after_the_incumbent_is_removed() {
+        final MqttForwarder incumbent = forwarder(FORWARDER_ID, "ab", "c");
+        final MqttForwarder replacement = forwarder(FORWARDER_ID, "a", "bc");
+        messageForwarder.addForwarder(incumbent);
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(replacement));
+
+        messageForwarder.removeForwarder(incumbent, false);
+        messageForwarder.addForwarder(replacement);
 
         assertTrue(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "a")));
         assertTrue(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "bc")));
@@ -170,27 +239,47 @@ public class MessageForwarderImplTest {
         assertFalse(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, "c")));
     }
 
-    /** A topic kept across a re-registration must never read as unowned, before or after. */
+    /** A topic kept across a remove-then-add must be owned before and after. */
     @Test
     @Timeout(5)
-    public void test_reregistration_keeps_ownership_of_an_unchanged_topic() {
-        messageForwarder.addForwarder(forwarder(FORWARDER_ID, TOPIC, OTHER_TOPIC));
+    public void test_reregistration_after_removal_keeps_ownership_of_an_unchanged_topic() {
+        final MqttForwarder first = forwarder(FORWARDER_ID, TOPIC, OTHER_TOPIC);
+        messageForwarder.addForwarder(first);
+        messageForwarder.removeForwarder(first, false);
         messageForwarder.addForwarder(forwarder(FORWARDER_ID, TOPIC));
 
         assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
         assertFalse(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, OTHER_TOPIC)));
     }
 
+    /**
+     * Even the same object twice is refused. Nothing in production does this — a bridge registers each
+     * forwarder once, and a restart removes before it adds — so tolerating it would only hide the case
+     * the refusal exists for: an ID that is registered twice while both owners are live.
+     */
     @Test
     @Timeout(5)
-    public void test_repeated_registration_of_the_same_forwarder_is_idempotent() {
+    public void test_registering_the_same_forwarder_object_twice_is_refused() {
         messageForwarder.addForwarder(mqttForwarder);
-        messageForwarder.addForwarder(mqttForwarder);
-        messageForwarder.addForwarder(mqttForwarder);
-        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
 
-        // a single removal must fully deregister: the repeated adds must not have stacked references
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(mqttForwarder));
+
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+        // a single removal must fully deregister: the refused add must not have stacked a reference
         messageForwarder.removeForwarder(mqttForwarder, false);
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
+    }
+
+    /**
+     * A forwarder without topics owns no queues, so its registration leaves no trace in the reference
+     * counts — the ID must still be taken, or the collision it exists to catch goes unnoticed.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_topicless_registration_still_takes_the_id() {
+        messageForwarder.addForwarder(forwarder(FORWARDER_ID));
+
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(forwarder(FORWARDER_ID, TOPIC)));
         assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
     }
 
@@ -349,9 +438,97 @@ public class MessageForwarderImplTest {
     }
 
     /**
+     * A reservation is ownership without a forwarder: it exists so that the periodic clean-up, which
+     * deletes every forwarder queue no registered forwarder owns, leaves the queues of a bridge that
+     * could not start alone until it can be corrected or removed.
+     */
+    @Test
+    @Timeout(5)
+    public void test_reserved_queues_read_as_owned_until_released() {
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
+
+        messageForwarder.reserveQueues("bridge", Map.of(FORWARDER_ID, List.of(TOPIC, OTHER_TOPIC)));
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+        assertTrue(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, OTHER_TOPIC)));
+        assertFalse(messageForwarder.isForwarderQueue(OTHER_QUEUE_ID), "only what was reserved is held");
+
+        messageForwarder.releaseReservedQueues("bridge");
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
+        assertFalse(messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, OTHER_TOPIC)));
+    }
+
+    /**
+     * The hand-over a corrected configuration makes: the forwarder registers, and only then is the
+     * reservation dropped. The queue is owned throughout — its count goes 1 → 2 → 1 and never reaches
+     * zero, because a single sweep landing on zero is all it takes to lose the messages.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_reserved_queue_stays_owned_across_the_hand_over_to_its_forwarder() {
+        messageForwarder.reserveQueues("bridge", Map.of(FORWARDER_ID, List.of(TOPIC)));
+
+        messageForwarder.addForwarder(mqttForwarder);
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+        messageForwarder.releaseReservedQueues("bridge");
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID), "the forwarder owns it now");
+
+        // and the reservation left no residual reference behind: one removal fully deregisters
+        messageForwarder.removeForwarder(mqttForwarder, false);
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID), "the reservation leaked a reference");
+    }
+
+    /** Re-reserving under the same id replaces the held set rather than stacking references on it. */
+    @Test
+    @Timeout(5)
+    public void test_reserving_twice_replaces_the_held_set() {
+        messageForwarder.reserveQueues("bridge", Map.of(FORWARDER_ID, List.of(TOPIC, OTHER_TOPIC)));
+        messageForwarder.reserveQueues("bridge", Map.of(FORWARDER_ID, List.of(TOPIC)));
+
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+        assertFalse(
+                messageForwarder.isForwarderQueue(queueId(FORWARDER_ID, OTHER_TOPIC)),
+                "a queue dropped from the configuration must stop being held");
+
+        messageForwarder.releaseReservedQueues("bridge");
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID), "re-reserving stacked a reference");
+    }
+
+    /** Two bridges may hold the same queue id; it is reclaimable only once both have let go. */
+    @Test
+    @Timeout(5)
+    public void test_queues_held_by_two_reservations_survive_the_first_release() {
+        messageForwarder.reserveQueues("bridge-a", Map.of(FORWARDER_ID, List.of(TOPIC)));
+        messageForwarder.reserveQueues("bridge-b", Map.of(FORWARDER_ID, List.of(TOPIC)));
+
+        messageForwarder.releaseReservedQueues("bridge-a");
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID), "the second reservation still holds it");
+        messageForwarder.releaseReservedQueues("bridge-b");
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
+    }
+
+    /** Degenerate inputs must not corrupt the counts: releasing an unknown id, or reserving nothing. */
+    @Test
+    @Timeout(5)
+    public void test_reserving_nothing_and_releasing_an_unknown_reservation_are_no_ops() {
+        messageForwarder.releaseReservedQueues("never-reserved");
+        messageForwarder.reserveQueues("empty", Map.of());
+        messageForwarder.reserveQueues("no-topics", Map.of(FORWARDER_ID, List.of()));
+        messageForwarder.releaseReservedQueues("empty");
+        messageForwarder.releaseReservedQueues("no-topics");
+
+        // the index must still work afterwards
+        messageForwarder.addForwarder(mqttForwarder);
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+        messageForwarder.removeForwarder(mqttForwarder, false);
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
+    }
+
+    /**
      * The equivalence property: for every queue ID, at every step of an arbitrary registration
      * sequence, the index must answer exactly what a full scan over the registered sets would answer.
-     * The ID and topic pools are chosen so that colliding queue IDs and shared topics occur often.
+     * The ID and topic pools are chosen so that colliding queue IDs and shared topics occur often, and
+     * the sequence deliberately attempts registrations under IDs that are already taken — each of
+     * those must be refused and must leave the index byte-for-byte as it was.
      * <p>
      * Deterministic by construction — a fixed seed, so a failure is reproducible from the report alone.
      */
@@ -370,6 +547,7 @@ public class MessageForwarderImplTest {
 
         final Map<String, Set<String>> oracle = new HashMap<>();
         final Random random = new Random(882L);
+        int refusals = 0;
 
         for (int step = 0; step < 400; step++) {
             final String id = ids.get(random.nextInt(ids.size()));
@@ -383,12 +561,19 @@ public class MessageForwarderImplTest {
                         chosen.add(topic);
                     }
                 }
-                messageForwarder.addForwarder(forwarder(id, chosen.toArray(new String[0])));
-                final Set<String> registered = new HashSet<>();
-                for (final String topic : chosen) {
-                    registered.add(queueId(id, topic));
+                final MqttForwarder candidate = forwarder(id, chosen.toArray(new String[0]));
+                if (oracle.containsKey(id)) {
+                    // the ID is taken: refused, and the index must be unchanged by the attempt
+                    assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(candidate));
+                    refusals++;
+                } else {
+                    messageForwarder.addForwarder(candidate);
+                    final Set<String> registered = new HashSet<>();
+                    for (final String topic : chosen) {
+                        registered.add(queueId(id, topic));
+                    }
+                    oracle.put(id, registered);
                 }
-                oracle.put(id, registered);
             }
 
             for (final String candidate : universe) {
@@ -398,6 +583,8 @@ public class MessageForwarderImplTest {
                         "step " + step + ", queue " + candidate);
             }
         }
+
+        assertTrue(refusals > 0, "the sequence never attempted a registration under a taken ID");
     }
 
     /** The pre-fix implementation, kept as the oracle the reference-counted index must match. */

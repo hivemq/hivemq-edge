@@ -79,6 +79,12 @@ public class MessageForwarderImpl implements MessageForwarder {
      * constant time instead of scanning every forwarder.
      */
     private final @NotNull Map<String, Integer> forwarderQueueRefs;
+    /**
+     * Queue sets held for bridges that could not register their forwarders, keyed by reservation id.
+     * Counted in {@link #forwarderQueueRefs} exactly as a forwarder's own set is, which is what keeps
+     * the periodic clean-up off them; see {@link MessageForwarder#reserveQueues}.
+     */
+    private final @NotNull Map<String, Set<String>> reservedQueues;
 
     private final @NotNull ExecutorService executorService;
     private final @NotNull Lock pollLock;
@@ -100,6 +106,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         this.forwarders = new ConcurrentHashMap<>(0);
         this.queueIdsForForwarder = new ConcurrentHashMap<>(0);
         this.forwarderQueueRefs = new ConcurrentHashMap<>(0);
+        this.reservedQueues = new ConcurrentHashMap<>(0);
         this.pollLock = new ReentrantLock();
         final int threadCount = InternalConfigurations.BRIDGE_MESSAGE_FORWARDER_POOL_THREADS_COUNT.get();
         this.executorService =
@@ -147,8 +154,8 @@ public class MessageForwarderImpl implements MessageForwarder {
 
     /**
      * Claims one reference on each queue ID. Every {@code retain} is paired with exactly one
-     * {@link #release(Set)} of the same set — the value a {@code put} displaces, or the value the
-     * final {@code remove} returns — which is what keeps the counts exact under any interleaving.
+     * {@link #release(Set)} of the same set — the set itself when the registration is refused, or the
+     * value the {@code remove} returns — which is what keeps the counts exact under any interleaving.
      */
     private void retain(final @NotNull Set<String> queueIds) {
         for (final String queueId : queueIds) {
@@ -201,13 +208,30 @@ public class MessageForwarderImpl implements MessageForwarder {
         //       is live, registered and in the current sweep set.
         //   O3  see removeForwarder.
         //
-        // Re-registration takes the difference rather than skipping: one forwarder ID does not imply
-        // one queue set, because the ID embeds a digest over the filters joined with an empty
-        // separator, so {"ab","c"} and {"a","bc"} share an ID with different queue sets.
+        // A forwarder ID does not imply one queue set -- the ID embeds a digest over the filters
+        // joined with an empty separator, so {"ab","c"} and {"a","bc"} share an ID with different
+        // queue sets -- which is why a registration may not displace an existing one under the same
+        // ID: the displaced queue set would be un-owned while its forwarder is still live and
+        // polling, and the next clean-up sweep would delete the messages in it. Distinct IDs are
+        // established one level up, by BridgeMqttClient.verifyForwarderIdsAreUnique; this is the
+        // invariant that makes the index sound on its own, and it is enforced rather than assumed.
+        //
+        // putIfAbsent is the claim, so two threads racing the same ID cannot both proceed; the loser
+        // undoes exactly the references it took, which for a queue ID it shares with the incumbent
+        // moves the count 1 -> 2 -> 1 and never through zero (O2 again).
         retain(queueIds);
-        final Set<String> superseded = queueIdsForForwarder.put(forwarderId, queueIds);
-        if (superseded != null) {
-            release(superseded);
+        final Set<String> incumbent = queueIdsForForwarder.putIfAbsent(forwarderId, queueIds);
+        if (incumbent != null) {
+            release(queueIds);
+            throw new IllegalStateException("Forwarder '"
+                    + forwarderId
+                    + "' is already registered with queues "
+                    + incumbent
+                    + "; registering it again with queues "
+                    + queueIds
+                    + " would leave the first set un-owned while it is still live. Forwarder IDs must be"
+                    + " unique among registered forwarders, and a forwarder must be removed before an"
+                    + " object with the same ID is added.");
         }
         for (final String topic : mqttForwarder.getTopics()) {
             topicTree.addTopic(
@@ -314,6 +338,42 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
 
         checkBuffers();
+    }
+
+    @Override
+    public void reserveQueues(
+            final @NotNull String reservationId, final @NotNull Map<String, List<String>> topicsByForwarderId) {
+        final ImmutableSet.Builder<@NotNull String> queueIdsBuilder = ImmutableSet.builder();
+        topicsByForwarderId.forEach((forwarderId, topics) -> {
+            for (final String topic : topics) {
+                queueIdsBuilder.add(createQueueId(forwarderId, topic));
+            }
+        });
+        final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
+        // Same ordering as addForwarder, for the same reason (O2): retain the new set before releasing
+        // the one it replaces, so a queue held by both never drops to zero references in between.
+        retain(queueIds);
+        final Set<String> superseded = reservedQueues.put(reservationId, queueIds);
+        if (superseded != null) {
+            release(superseded);
+        }
+        if (log.isInfoEnabled()) {
+            log.info(
+                    "Holding {} queue(s) of '{}' against the periodic clean-up until it can be started or is removed",
+                    queueIds.size(),
+                    reservationId);
+        }
+    }
+
+    @Override
+    public void releaseReservedQueues(final @NotNull String reservationId) {
+        final Set<String> released = reservedQueues.remove(reservationId);
+        if (released != null) {
+            release(released);
+            if (log.isDebugEnabled()) {
+                log.debug("Released {} held queue(s) of '{}'", released.size(), reservationId);
+            }
+        }
     }
 
     @Override

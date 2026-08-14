@@ -230,6 +230,34 @@ class LocalSubscriptionTest {
     }
 
     /**
+     * EDG-882 F-01, pinned as known and deliberate. The filters are joined with an <b>empty</b>
+     * separator before being digested, so any two filter lists with the same sorted concatenation
+     * produce the same fingerprint — and the fingerprint names every persisted queue the subscription
+     * owns.
+     * <p>
+     * This is not fixed here: changing the encoding changes the fingerprint of every configuration,
+     * renaming every persisted bridge queue on upgrade and stranding the messages in them, which is
+     * why EDG-882 rejected re-encoding. The ambiguity is contained instead by
+     * {@code BridgeMqttClient.verifyForwarderIdsAreUnique}, which refuses to start a bridge carrying
+     * two subscriptions that collide. This test exists so that anyone who "fixes" the join here sees
+     * that the collision is load-bearing and reads why.
+     */
+    @Test
+    void calculateUniqueId_whenFilterConcatenationsAreEqual_thenIdsCollide() {
+        final LocalSubscription first = new LocalSubscription(List.of("ab", "c"), "destinationTopic");
+        final LocalSubscription second = new LocalSubscription(List.of("a", "bc"), "destinationTopic");
+
+        assertEquals(
+                first.calculateUniqueId(),
+                second.calculateUniqueId(),
+                "the ambiguity documented on calculateUniqueId(); bridge startup is what rejects it");
+        assertNotEquals(first, second, "the two configurations are genuinely different");
+
+        // and the digest itself commonly carries a '/', which is what made the collision fatal
+        assertEquals("kAFQmDzST7DWlj99KOF/cg==", new LocalSubscription(List.of("abc"), null).calculateUniqueId());
+    }
+
+    /**
      * The whole point of EDG-884, one level up: {@code BridgeService.updateBridges} compares
      * {@link MqttBridge} objects, and that comparison walks into the subscription list. An unchanged
      * bridge must compare equal even after it has been running.
