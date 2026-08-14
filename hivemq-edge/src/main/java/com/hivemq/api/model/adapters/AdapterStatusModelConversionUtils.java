@@ -45,15 +45,27 @@ public class AdapterStatusModelConversionUtils {
                 .message(protocolAdapterWrapper.getErrorMessage());
     }
 
+    /**
+     * Translates an SDK connection status into the one the API publishes.
+     *
+     * <p>Every member is named rather than left to the default, and the default is kept only for a value the
+     * SDK might add after this is compiled. {@code CONNECTING} was previously unreachable in the product —
+     * nothing published it — so falling through cost nothing; once an adapter did publish it, the fall-through
+     * answered {@code UNKNOWN} for the whole connect window. That is not a smaller truth, it is a different
+     * one: {@code UNKNOWN} means the server cannot say, and consumers reasonably treat it as a fault, whereas
+     * an adapter that is connecting is doing exactly what it should. Enumerating the cases also makes the next
+     * addition a compile-time question instead of a silent downgrade discovered in the UI.
+     */
     public static @NotNull Status.ConnectionEnum convertConnectionStatus(
             final @NotNull ProtocolAdapterState.ConnectionStatus connectionStatus) {
         Preconditions.checkNotNull(connectionStatus);
         return switch (connectionStatus) {
             case DISCONNECTED -> Status.ConnectionEnum.DISCONNECTED;
             case CONNECTED -> Status.ConnectionEnum.CONNECTED;
+            case CONNECTING -> Status.ConnectionEnum.CONNECTING;
             case ERROR -> Status.ConnectionEnum.ERROR;
             case STATELESS -> Status.ConnectionEnum.STATELESS;
-            default -> Status.ConnectionEnum.UNKNOWN;
+            case UNKNOWN -> Status.ConnectionEnum.UNKNOWN;
         };
     }
 

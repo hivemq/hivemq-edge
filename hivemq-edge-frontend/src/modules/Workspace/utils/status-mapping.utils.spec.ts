@@ -52,6 +52,16 @@ describe('status-mapping.utils', () => {
       expect(mapAdapterStatusToRuntime(status)).toBe(RuntimeStatus.INACTIVE)
     })
 
+    // Review-09 finding 3: an adapter that is connecting is neither carrying data nor in error, and the
+    // thing that must not drift is the second half — INACTIVE is a resting state, ERROR raises alarms.
+    it('should return INACTIVE for STARTED + CONNECTING', () => {
+      const status: Status = {
+        runtime: 'STARTED' as Status['runtime'],
+        connection: 'CONNECTING' as Status['connection'],
+      }
+      expect(mapAdapterStatusToRuntime(status)).toBe(RuntimeStatus.INACTIVE)
+    })
+
     it('should return INACTIVE for STARTED + UNKNOWN', () => {
       const status: Status = {
         runtime: 'STARTED' as Status['runtime'],

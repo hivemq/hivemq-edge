@@ -31,6 +31,10 @@ export const getThemeForStatus = (theme: Partial<WithCSSVar<Dict>>, status: Stat
   if (status?.connection === Status.connection.CONNECTED) return theme.colors.status.connected[500]
   if (status?.connection === Status.connection.DISCONNECTED) return theme.colors.status.disconnected[500]
   if (status?.connection === Status.connection.STATELESS) return theme.colors.status.stateless[500]
+  // Named rather than left to fall through, because the fall-through is red. An adapter that is connecting
+  // is doing what it is supposed to, and painting a normal connect window as an error is what made the
+  // backend publishing CONNECTING look like a regression.
+  if (status?.connection === Status.connection.CONNECTING) return theme.colors.status.disconnected[500]
 
   return theme.colors.status.error[500]
 }

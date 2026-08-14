@@ -14,6 +14,7 @@ describe('ConnectionStatusBadge', () => {
     { runtime: Status.runtime.STOPPED },
     { connection: Status.connection.CONNECTED },
     { connection: Status.connection.DISCONNECTED },
+    { connection: Status.connection.CONNECTING },
     { connection: Status.connection.STATELESS },
     { connection: Status.connection.ERROR },
     { connection: Status.connection.UNKNOWN },
@@ -29,4 +30,16 @@ describe('ConnectionStatusBadge', () => {
       cy.checkAccessibility()
     }
   )
+
+  it('should render CONNECTING with its own label', () => {
+    cy.mountWithProviders(<ConnectionStatusBadge status={{ connection: Status.connection.CONNECTING }} />)
+    cy.getByTestId('connection-status').should('contain.text', 'Connecting')
+  })
+
+  it('should not break on a status this build does not know', () => {
+    // A frontend older than the Edge it talks to, which is ordinary during a rolling upgrade. The lookup
+    // returns undefined for an unmapped member, and before the fallback the next property access threw.
+    cy.mountWithProviders(<ConnectionStatusBadge status={{ connection: 'SOMETHING_NEWER' as Status.connection }} />)
+    cy.getByTestId('connection-status').should('contain.text', 'Unknown')
+  })
 })
