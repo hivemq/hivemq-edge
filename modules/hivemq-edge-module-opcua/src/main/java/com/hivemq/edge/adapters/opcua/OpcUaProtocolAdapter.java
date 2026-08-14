@@ -99,6 +99,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     private final @NotNull List<OpcuaTag> tagList;
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
 
+    /** Serializes connection-generation changes with every generation-owned status publication. */
+    private final @NotNull ReentrantLock connectionOwnershipLock = new ReentrantLock();
+
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
@@ -318,10 +321,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 protocolAdapterMetricsService,
                 config,
                 opcUaServiceFaultListener,
-                this::isCurrentConnection,
+                this::publishStatusFrom,
                 this::warmUpBrowseMetadata,
-                this::markBrowseReady);
-        if (opcUaClientConnection.compareAndSet(null, conn)) {
+                this::publishReadyFrom);
+        if (claimConnection(conn)) {
             // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
             // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
             // Released only by stop() or destroy(), never by a connection attempt ending.
@@ -334,7 +337,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // no later stop() or destroy() could ever collect them.
             startSchedulers();
 
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+            publishConnectingFrom(conn);
             // Attempt initial connection asynchronously
             attemptConnection(conn, newlyParsedConfig, input);
 
@@ -386,7 +389,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // Clear browse client on explicit stop
             this.browseClient.set(null);
 
-            final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
+            final OpcUaClientConnection conn = releaseCurrentConnection();
             if (conn != null) {
                 conn.stop();
             } else {
@@ -459,7 +462,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             cancelHealthCheck();
 
             // Stop and clean up current connection
-            final OpcUaClientConnection oldConn = opcUaClientConnection.getAndSet(null);
+            final OpcUaClientConnection oldConn = releaseCurrentConnection();
             if (oldConn != null) {
                 oldConn.stop();
                 log.debug("Stopped old connection for OPC UA adapter '{}'", adapterId);
@@ -475,13 +478,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     protocolAdapterMetricsService,
                     config,
                     opcUaServiceFaultListener,
-                    this::isCurrentConnection,
+                    this::publishStatusFrom,
                     this::warmUpBrowseMetadata,
-                    this::markBrowseReady);
+                    this::publishReadyFrom);
 
             // Set as current connection and attempt connection with retry logic
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
-            if (opcUaClientConnection.compareAndSet(null, newConn)) {
+            if (claimConnection(newConn)) {
+                publishConnectingFrom(newConn);
                 // Create a minimal ProtocolAdapterStartInput for attemptConnection
                 final ModuleServices ms = Objects.requireNonNull(moduleServices);
                 final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
@@ -537,8 +540,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     log.warn(
                                             "Health check failed for adapter '{}' - automatic reconnection is disabled",
                                             adapterId);
-                                    protocolAdapterState.setConnectionStatus(
-                                            ProtocolAdapterState.ConnectionStatus.ERROR);
+                                    publishStatusFrom(conn, ProtocolAdapterState.ConnectionStatus.ERROR);
                                 }
                             } else {
                                 log.debug("Health check passed for adapter '{}'", adapterId);
@@ -649,14 +651,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // distinction, and it is the more final of the two.
         this.browseClient.set(null);
 
-        final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
-        // Here rather than in the close below, and that ordering is the point. The close is asynchronous and
-        // may still be running when the framework starts this same instance again -- a configuration change is
-        // exactly a destroy followed by a start -- so a status published from inside it can land after the
-        // replacement has connected and describe the replacement as disconnected. Published synchronously it
-        // is ordered before any restart, and the connection's own attempt to publish it later is refused by
-        // the ownership check the slot above has just invalidated.
-        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        // Removing the generation and publishing the lifecycle-owned terminal status are one operation. A
+        // concurrent restart cannot install its replacement between them and then be described as disconnected.
+        final OpcUaClientConnection conn =
+                releaseCurrentConnectionAndPublish(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         if (conn != null) {
             @SuppressWarnings("unused")
             final var unused = CompletableFuture.runAsync(() -> {
@@ -1061,21 +1059,174 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         return protocolAdapterState;
     }
 
+    @VisibleForTesting
+    int consecutiveRetryAttempts() {
+        return consecutiveRetryAttempts.get();
+    }
+
+    /** Claims the empty connection slot as one operation serialized with generation-owned status writes. */
+    @VisibleForTesting
+    boolean claimConnection(final @NotNull OpcUaClientConnection connection) {
+        connectionOwnershipLock.lock();
+        try {
+            return opcUaClientConnection.compareAndSet(null, connection);
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Releases whichever generation is current without letting one of its status writes pass concurrently. */
+    @VisibleForTesting
+    @Nullable
+    OpcUaClientConnection releaseCurrentConnection() {
+        connectionOwnershipLock.lock();
+        try {
+            return opcUaClientConnection.getAndSet(null);
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Releases the current generation and publishes an adapter-lifecycle status under the same lock. */
+    private @Nullable OpcUaClientConnection releaseCurrentConnectionAndPublish(
+            final ProtocolAdapterState.@NotNull ConnectionStatus status) {
+        connectionOwnershipLock.lock();
+        try {
+            final OpcUaClientConnection connection = opcUaClientConnection.getAndSet(null);
+            protocolAdapterState.setConnectionStatus(status);
+            return connection;
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
     /**
-     * Whether a connection is still the one this adapter speaks through.
-     * <p>
-     * The authority for status publication, handed to every connection this adapter builds. A connection is
-     * one attempt among several an adapter makes over its life, while {@link ProtocolAdapterState} is a single
-     * slot describing the adapter; so the question "may this object set that status" is the adapter's to
-     * answer, and the answer is this identity comparison.
-     * <p>
-     * It has to be a live question rather than a flag handed over once, because the whole difficulty is that a
-     * connection outlives the moment it stops being current: {@link #destroy()} releases the slot and closes
-     * the old connection asynchronously, so the close runs against an adapter that may already have started
-     * and connected a replacement.
+     * Publishes a status only if its source is still current, with the check and write indivisible relative to
+     * every connection-generation change.
      */
-    private boolean isCurrentConnection(final @NotNull OpcUaClientConnection connection) {
-        return opcUaClientConnection.get() == connection;
+    @VisibleForTesting
+    void publishStatusFrom(
+            final @NotNull OpcUaClientConnection source, final ProtocolAdapterState.@NotNull ConnectionStatus status) {
+        connectionOwnershipLock.lock();
+        try {
+            if (opcUaClientConnection.get() == source) {
+                protocolAdapterState.setConnectionStatus(status);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': not reporting {} from a connection the adapter has already replaced",
+                        adapterId,
+                        status);
+            }
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Resets attempt-local readiness and publishes CONNECTING as one generation-owned transition. */
+    private void publishConnectingFrom(final @NotNull OpcUaClientConnection source) {
+        connectionOwnershipLock.lock();
+        try {
+            if (opcUaClientConnection.get() == source && !stopped) {
+                browseReadiness.set(ReadinessStatus.WARMING_UP);
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': not publishing CONNECTING from a connection the adapter no longer owns",
+                        adapterId);
+            }
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Installs OPC UA readiness and public CONNECTED as one generation-owned transition. */
+    @VisibleForTesting
+    void publishReadyFrom(final @NotNull OpcUaClientConnection source) {
+        connectionOwnershipLock.lock();
+        try {
+            if (opcUaClientConnection.get() == source && !stopped) {
+                browseReadiness.set(ReadinessStatus.BROWSE_READY);
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+                log.info(
+                        "OPC UA adapter '{}' is connected and browse-ready "
+                                + "(namespace table and data-type tree hydrated)",
+                        adapterId);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': not publishing readiness from a connection the adapter no longer owns",
+                        adapterId);
+            }
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * Removes and marks a failed attempt only while it is still current. A failed ownership transition has no
+     * status or retry side effects.
+     */
+    private boolean markCurrentConnectionFailed(final @NotNull OpcUaClientConnection connection) {
+        connectionOwnershipLock.lock();
+        try {
+            if (stopped || !opcUaClientConnection.compareAndSet(connection, null)) {
+                return false;
+            }
+            lastReconnectTimestamp.set(System.currentTimeMillis());
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            return true;
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Completes the current successful attempt without allowing its generation to change halfway through. */
+    private boolean completeCurrentConnection(final @NotNull OpcUaClientConnection connection) {
+        connectionOwnershipLock.lock();
+        try {
+            if (stopped || opcUaClientConnection.get() != connection) {
+                return false;
+            }
+            lastReconnectTimestamp.set(System.currentTimeMillis());
+            reconnectAttempts.set(0);
+            connection.client().ifPresent(browseClient::set);
+            cancelRetry();
+            scheduleHealthCheck();
+            return true;
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * Finishes a failed attempt after ownership has been atomically revoked. Visible so the failed-CAS
+     * regression can prove a superseded attempt performs neither the ERROR write nor retry scheduling.
+     */
+    @VisibleForTesting
+    boolean completeFailedAttempt(
+            final @NotNull OpcUaClientConnection connection,
+            final @NotNull ProtocolAdapterStartInput input,
+            final @Nullable Throwable throwable) {
+        if (!markCurrentConnectionFailed(connection)) {
+            log.debug(
+                    "Ignoring failed connection attempt for OPC UA adapter '{}' because its generation is no longer current",
+                    adapterId);
+            return false;
+        }
+
+        if (throwable != null) {
+            log.warn(
+                    "OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
+                    adapterId,
+                    throwable);
+        } else {
+            log.warn(
+                    "OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
+                    adapterId);
+        }
+
+        cancelHealthCheck();
+        scheduleRetry(input);
+        return true;
     }
 
     /**
@@ -1086,9 +1237,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull OpcUaClientConnection conn,
             final @NotNull ParsedConfig parsedConfig,
             final @NotNull ProtocolAdapterStartInput input) {
-
-        // EDG-577: a fresh (re)connect is not browse-ready until its warm-up completes.
-        browseReadiness.set(ReadinessStatus.WARMING_UP);
 
         @SuppressWarnings("unused")
         final var unused = CompletableFuture.supplyAsync(() -> conn.start(parsedConfig))
@@ -1106,52 +1254,21 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     // destroyed here, because this is the last reference to it. Done inline rather than
                     // posted: this callback already runs off the caller's thread, and doing it here means the
                     // future does not complete until the orphan is actually closed.
-                    if (stopped || opcUaClientConnection.get() != conn) {
-                        log.debug(
-                                "Connection attempt for adapter '{}' completed after it was superseded or "
-                                        + "stopped, discarding the result",
-                                adapterId);
-                        if (Boolean.TRUE.equals(success) && throwable == null) {
+                    if (Boolean.TRUE.equals(success) && throwable == null) {
+                        if (completeCurrentConnection(conn)) {
+                            // The connection has already hydrated browse metadata and installed its context
+                            // before publishing CONNECTED, so every public operation is usable at this point.
+                            log.info("OPC UA adapter '{}' connected successfully", adapterId);
+                        } else {
+                            log.debug(
+                                    "Connection attempt for adapter '{}' completed after it was superseded or "
+                                            + "stopped, discarding the successful result",
+                                    adapterId);
+                            // This completion owns the last reference to the live session and subscription.
                             conn.destroy();
                         }
-                        return;
-                    }
-                    lastReconnectTimestamp.set(System.currentTimeMillis());
-                    if (success && throwable == null) {
-                        reconnectAttempts.set(0);
-                        // Update browse client snapshot so browse works during future restarts
-                        conn.client().ifPresent(browseClient::set);
-                        // The connection has already hydrated browse metadata and installed its context before
-                        // publishing CONNECTED, so every public operation is usable at this point.
-                        // Connection succeeded - cancel any pending retries and start health check
-                        cancelRetry();
-                        scheduleHealthCheck();
-                        log.info("OPC UA adapter '{}' connected successfully", adapterId);
                     } else {
-                        // Connection failed - clean up and schedule retry with exponential backoff.
-                        //
-                        // compareAndSet, not set: this completion is about one attempt, and by the time it
-                        // runs a reconnect may already have installed a newer one. An unconditional clear
-                        // discarded that newer connection while it was live and reachable by nothing else --
-                        // the adapter would then believe it had no connection, and the live one would go on
-                        // publishing with no way to stop it.
-                        this.opcUaClientConnection.compareAndSet(conn, null);
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-
-                        if (throwable != null) {
-                            log.warn(
-                                    "OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
-                                    adapterId,
-                                    throwable);
-                        } else {
-                            log.warn(
-                                    "OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
-                                    adapterId);
-                        }
-
-                        cancelHealthCheck();
-                        // Schedule retry attempt with exponential backoff
-                        scheduleRetry(input);
+                        completeFailedAttempt(conn, input, throwable);
                     }
                 });
     }
@@ -1168,14 +1285,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             client.getDataTypeTree(); // build the data-type tree (feeds the EDG-488 cache when that lands)
         } catch (final @NotNull Exception e) {
             throw new IllegalStateException("OPC UA browse metadata warm-up failed", e);
-        }
-    }
-
-    /** Called by the connection after the hydrated client has been installed as its public context. */
-    private void markBrowseReady() {
-        if (!stopped) {
-            browseReadiness.set(ReadinessStatus.BROWSE_READY);
-            log.info("OPC UA adapter '{}' is browse-ready (namespace table and data-type tree hydrated)", adapterId);
         }
     }
 
@@ -1241,13 +1350,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 protocolAdapterMetricsService,
                                 config,
                                 opcUaServiceFaultListener,
-                                this::isCurrentConnection,
+                                this::publishStatusFrom,
                                 this::warmUpBrowseMetadata,
-                                this::markBrowseReady);
+                                this::publishReadyFrom);
 
                         // Set as current connection and attempt
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
-                        if (opcUaClientConnection.compareAndSet(null, newConn)) {
+                        if (claimConnection(newConn)) {
+                            publishConnectingFrom(newConn);
                             attemptConnection(newConn, this.parsedConfig, input);
                         } else {
                             log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);

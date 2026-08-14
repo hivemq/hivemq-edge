@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -70,27 +71,11 @@ public class OpcUaClientConnection {
     private final @NotNull OpcUaServiceFaultListener serviceFaultListener;
 
     /**
-     * Whether the adapter still speaks through this connection, asked of the adapter rather than answered here.
-     * <p>
-     * {@link ProtocolAdapterState} is one slot per adapter, and every attempt the adapter makes — first start,
-     * retry, reconnect — is a fresh {@code OpcUaClientConnection} writing into that same slot. A connection is
-     * therefore never entitled to describe the adapter on its own authority; it is entitled to do so only while
-     * it is the connection the adapter holds.
-     * <p>
-     * Without that distinction a teardown could report the wrong thing about a healthy replacement.
-     * {@link OpcUaProtocolAdapter#destroy()} hands the slot over and closes the old connection on the common
-     * pool, so the close outlives the call: the framework can install and connect a replacement while it runs,
-     * and the old connection's {@link #closeContext} then wrote {@code DISCONNECTED} over the replacement's
-     * {@code CONNECTED}. The next health check reads that status, judges the healthy replacement unhealthy and
-     * reconnects it — a monitoring gap and a rebuild, both caused by a connection that no longer existed.
-     * Setting a status also notifies the framework's connection-status listener, so the damage is not confined
-     * to the health check.
-     * <p>
-     * A predicate over the connection rather than a plain {@code BooleanSupplier} so the adapter can answer it
-     * with a bare identity comparison against its own slot, without either side having to be constructed first.
-     * Required rather than defaulted: a call site that forgets it would silently reintroduce exactly this.
+     * Publishes through the adapter, which atomically validates this connection's generation and writes the
+     * shared status. Keeping both operations on the owner side prevents a replacement from landing between a
+     * connection's ownership check and its write.
      */
-    private final @NotNull Predicate<OpcUaClientConnection> stillOwned;
+    private final @NotNull BiConsumer<OpcUaClientConnection, ProtocolAdapterState.ConnectionStatus> statusPublisher;
 
     /**
      * The last connection-specific preparation that must finish before {@code CONNECTED} is truthful.
@@ -101,8 +86,8 @@ public class OpcUaClientConnection {
      */
     private final @NotNull Consumer<OpcUaClient> prepareForUse;
 
-    /** Marks adapter-owned readiness after the usable context has been installed. */
-    private final @NotNull Runnable markReady;
+    /** Atomically marks adapter-owned readiness and CONNECTED after the usable context has been installed. */
+    private final @NotNull Consumer<OpcUaClientConnection> publishReady;
 
     /**
      * The subscription handler, reachable from the moment it is constructed rather than from the moment the
@@ -172,6 +157,32 @@ public class OpcUaClientConnection {
             final @NotNull Predicate<OpcUaClientConnection> stillOwned,
             final @NotNull Consumer<OpcUaClient> prepareForUse,
             final @NotNull Runnable markReady) {
+        this(
+                adapterId,
+                tags,
+                protocolAdapterState,
+                tagStreamingService,
+                eventService,
+                protocolAdapterMetricsService,
+                config,
+                serviceFaultListener,
+                legacyStatusPublisher(protocolAdapterState, stillOwned),
+                prepareForUse,
+                legacyReadyPublisher(protocolAdapterState, stillOwned, markReady));
+    }
+
+    OpcUaClientConnection(
+            final @NotNull String adapterId,
+            final @NotNull List<OpcuaTag> tags,
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
+            final @NotNull EventService eventService,
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            final @NotNull OpcUaSpecificAdapterConfig config,
+            final @NotNull OpcUaServiceFaultListener serviceFaultListener,
+            final @NotNull BiConsumer<OpcUaClientConnection, ProtocolAdapterState.ConnectionStatus> statusPublisher,
+            final @NotNull Consumer<OpcUaClient> prepareForUse,
+            final @NotNull Consumer<OpcUaClientConnection> publishReady) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.eventService = eventService;
@@ -180,9 +191,34 @@ public class OpcUaClientConnection {
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
         this.serviceFaultListener = serviceFaultListener;
-        this.stillOwned = stillOwned;
+        this.statusPublisher = statusPublisher;
         this.prepareForUse = prepareForUse;
-        this.markReady = markReady;
+        this.publishReady = publishReady;
+    }
+
+    /** Compatibility seam for direct connection tests; production delegates the whole operation to the adapter. */
+    private static @NotNull BiConsumer<OpcUaClientConnection, ProtocolAdapterState.ConnectionStatus>
+            legacyStatusPublisher(
+                    final @NotNull ProtocolAdapterState protocolAdapterState,
+                    final @NotNull Predicate<OpcUaClientConnection> stillOwned) {
+        return (source, status) -> {
+            if (stillOwned.test(source)) {
+                protocolAdapterState.setConnectionStatus(status);
+            }
+        };
+    }
+
+    /** Compatibility seam for tests written against the former separate readiness callback. */
+    private static @NotNull Consumer<OpcUaClientConnection> legacyReadyPublisher(
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull Predicate<OpcUaClientConnection> stillOwned,
+            final @NotNull Runnable markReady) {
+        return source -> {
+            if (stillOwned.test(source)) {
+                markReady.run();
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            }
+        };
     }
 
     /**
@@ -194,20 +230,13 @@ public class OpcUaClientConnection {
      * {@code DISCONNECTED} because it has been closed — in both cases the adapter is being described by an
      * object it no longer holds.
      * <p>
-     * Silently dropping the status is the right outcome rather than a lossy one: the adapter's own lifecycle
-     * paths publish what is true of the adapter at the moment they run — see {@link OpcUaProtocolAdapter#stop}
-     * and {@link OpcUaProtocolAdapter#destroy}, which say {@code DISCONNECTED} themselves rather than leaving
-     * it to a close that may complete long afterwards.
+     * Silently dropping the status is the right outcome rather than a lossy one: lifecycle-owned paths publish
+     * the state they are responsible for at a safely ordered point. The adapter does that synchronously in
+     * {@link OpcUaProtocolAdapter#destroy}; the wrapper owns the terminal state of an ordinary stop so failed-start
+     * cleanup can preserve {@code ERROR}.
      */
     private void publishStatus(final ProtocolAdapterState.@NotNull ConnectionStatus status) {
-        if (!stillOwned.test(this)) {
-            log.debug(
-                    "OPC UA adapter '{}': not reporting {} from a connection the adapter has already replaced",
-                    adapterId,
-                    status);
-            return;
-        }
-        protocolAdapterState.setConnectionStatus(status);
+        statusPublisher.accept(this, status);
     }
 
     synchronized boolean start(final ParsedConfig parsedConfig) {
@@ -219,16 +248,15 @@ public class OpcUaClientConnection {
             return false;
         }
         final OpcUaClient client;
-        // Given the same ownership question this connection asks of itself. The listener is the other writer
-        // of the adapter's status, and a superseded connection's session is still a live session: it can go
+        // Given the same adapter-owned publisher this connection uses. The listener is the other source of
+        // adapter status changes, and a superseded connection's session is still a live session: it can go
         // inactive -- or reactivate -- long after the adapter has moved on, and either report would describe
         // the replacement rather than the object it actually happened to.
         final var activityListener = new OpcUaSessionActivityListener(
                 protocolAdapterMetricsService,
                 eventService,
                 adapterId,
-                protocolAdapterState,
-                () -> stillOwned.test(this),
+                this::publishStatus,
                 () -> context.get() != null);
 
         // Determine preferred MessageSecurityMode with intelligent defaults
@@ -403,8 +431,7 @@ public class OpcUaClientConnection {
 
         context.set(new ConnectionContext(
                 subscription.getClient(), serviceFaultListener, activityListener, subscriptionLifecycleHandler));
-        markReady.run();
-        publishStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        publishReady.accept(this);
 
         log.info("Client created and connected successfully");
         return true;
