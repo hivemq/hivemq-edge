@@ -41,6 +41,8 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -298,6 +300,53 @@ public class OpcUaEventSubscriptionIT {
                         .contains("sourceNode")
                         .contains(alarm.sourceNode())
                         .contains(areaB.toParseableString()));
+    }
+
+    /**
+     * Review-09 finding 4: a query rooted at the Server object survives an address space that models nothing.
+     * <p>
+     * Both narrowing nodes here are real and browsable and have no inverse {@code HasEventSource} references
+     * at all — the shape a sparse or permission-filtered server presents, and the shape that produced a
+     * confident {@code OutsideHierarchy}. Against any named area notifier that verdict is correct and the
+     * sibling tests above keep it. Against the Server object it cannot be, because OPC 10000-5 §8.3.2 makes
+     * every event of the server accessible there; the walk was contradicting a {@code shall} on the strength
+     * of references the server was never obliged to model.
+     * <p>
+     * Asserted against the server's own monitored items rather than the namespace's counter or a published
+     * message, and that is a limitation of the harness rather than a softer claim. The fixture registers
+     * event items from its namespace's {@code onEventItemsCreated}; an item on {@code ns=0;i=2253} belongs to
+     * Milo's namespace, which does no such registration, so nothing is delivered to it here — the same gap
+     * {@code whenARefreshTagIsSubscribed_thenItsItemIsPlacedOnTheServerObject} already documents. What is
+     * being fixed is the tag being dropped <em>before</em> subscription, and the server accepting both items
+     * is exactly the fact that distinguishes fixed from broken. Delivery through the Server object is
+     * covered against real servers by the EDG-894 matrix.
+     */
+    @Test
+    @Timeout(120)
+    void whenAQueryIsRootedAtTheServerObject_thenUnmodelledAncestryDoesNotDropIt() {
+        final var namespace = opcUaServerExtension.getTestNamespace();
+        final String orphanCondition = namespace.addOrphanConditionNode("ServerRootAlarm", CONDITION_NODE_ID + 130);
+        final String orphanSource = namespace.addOrphanConditionNode("ServerRootSource", CONDITION_NODE_ID + 131);
+
+        startAdapterWith(
+                queryTagOn("server-root-condition", NodeIds.Server, null, orphanCondition),
+                queryTagOn("server-root-source", NodeIds.Server, orphanSource, null));
+        awaitConnected();
+
+        await().untilAsserted(() -> assertThat(serverMonitoredItemCount())
+                .as("neither query may be dropped for want of a modelled path to the root notifier")
+                .isEqualTo(2));
+
+        assertThat(eventService.readEvents(null, null))
+                .as("and nothing may tell the operator these are outside a hierarchy that contains everything")
+                .noneSatisfy(event -> assertThat(event.getMessage()).contains("did not subscribe"));
+    }
+
+    /** Monitored items the embedded server has accepted, across every namespace including Milo's own. */
+    private int serverMonitoredItemCount() {
+        return Objects.requireNonNull(opcUaServerExtension.getOpcUaServer()).getSubscriptions().values().stream()
+                .mapToInt(subscription -> subscription.getMonitoredItems().size())
+                .sum();
     }
 
     @Test

@@ -49,6 +49,10 @@ import org.jetbrains.annotations.Nullable;
  * Only a complete negative answer is {@link Result.OutsideHierarchy}. A hidden node, denied browse, transport
  * failure, unmappable continuation, or hierarchy deeper than the safety bound is {@link Result.Unverified};
  * callers retain compatibility for those servers but must make that uncertainty visible to the operator.
+ * <p>
+ * The Server object is the one notifier the walk is not asked about at all: the specification guarantees
+ * every event of the server is accessible there, so no answer the walk could give would be worth having.
+ * See {@link #isRootNotifier}.
  */
 public final class EventPropagationVerifier {
 
@@ -56,6 +60,32 @@ public final class EventPropagationVerifier {
     private static final int MAX_WALK_DEPTH = 10;
 
     private EventPropagationVerifier() {}
+
+    /**
+     * Whether the selected notifier is one nothing can be outside of.
+     * <p>
+     * The Server object is not merely a notifier that happens to sit high up; it is the one node the
+     * specification guarantees can see everything. OPC 10000-5 §8.3.2: "The Server Object serves as root
+     * notifier, that is, its EventNotifier Attribute shall be set providing Events. <em>All Events of the
+     * Server shall be accessible subscribing to the Events of the Server Object.</em>" A {@code shall} that
+     * broad makes {@link Result.OutsideHierarchy} unreachable here by definition — there is no node in the
+     * address space whose events are not accessible at the Server object.
+     * <p>
+     * So the walk must not be allowed to answer. It infers from modelled references, and a server is free to
+     * deliver an event to the Server object while modelling none of the inverse {@code HasNotifier} chain
+     * that would let the walk find its way back up — sparse address spaces and browse views filtered by user
+     * permission both produce exactly that. The walk would then browse a clean zero-parent answer, conclude
+     * {@code OutsideHierarchy}, and drop a tag that would have published, telling the operator their source
+     * is outside a hierarchy that by construction contains everything.
+     * <p>
+     * Distinct from {@code NotifierResolver}'s deliberate refusal to <em>fall back</em> to the Server object,
+     * which is a scope argument: choosing Server on an operator's behalf silently widens a tag from one area
+     * to the whole plant. Nothing is being chosen here. The operator named this notifier, and the only
+     * question is whether to believe the specification about what it can carry.
+     */
+    private static boolean isRootNotifier(final @NotNull NodeId notifier) {
+        return NodeIds.Server.equals(notifier);
+    }
 
     /** Outcome of checking one narrowing node against one selected notifier. */
     public sealed interface Result {
@@ -80,7 +110,7 @@ public final class EventPropagationVerifier {
     public static @NotNull CompletableFuture<Result> conditionCanEmitThrough(
             final @NotNull OpcUaClient client, final @NotNull NodeId conditionNode, final @NotNull NodeId notifier) {
 
-        if (conditionNode.equals(notifier)) {
+        if (conditionNode.equals(notifier) || isRootNotifier(notifier)) {
             return CompletableFuture.completedFuture(new Result.Reachable());
         }
 
@@ -104,6 +134,9 @@ public final class EventPropagationVerifier {
     /** Checks a {@code SourceNode} operand against its selected notifier. */
     public static @NotNull CompletableFuture<Result> sourceCanEmitThrough(
             final @NotNull OpcUaClient client, final @NotNull NodeId sourceNode, final @NotNull NodeId notifier) {
+        if (isRootNotifier(notifier)) {
+            return CompletableFuture.completedFuture(new Result.Reachable());
+        }
         return walkUpwards(client, List.of(sourceNode), notifier);
     }
 

@@ -59,6 +59,58 @@ class EventPropagationVerifierTest {
         verifyNoInteractions(client);
     }
 
+    /**
+     * Review-09 finding 4: the Server object is not a notifier the walk gets an opinion about.
+     * <p>
+     * OPC 10000-5 §8.3.2 makes every event of the server accessible there, so {@code OutsideHierarchy} is
+     * unreachable by definition — but the walk cannot know that, because it reasons from modelled inverse
+     * references and a server may deliver to Server while modelling none of the chain back up. On a sparse
+     * or permission-filtered address space it would browse a clean zero-parent answer, conclude the source
+     * is outside the hierarchy, and drop a tag that would have published.
+     * <p>
+     * {@code verifyNoInteractions} is the assertion that matters: the answer must come from the
+     * specification, not from whatever the address space happens to model.
+     */
+    @Test
+    void theServerObjectCarriesEverythingSoNothingIsOutsideIt() {
+        final OpcUaClient client = mock(OpcUaClient.class);
+
+        assertThat(EventPropagationVerifier.sourceCanEmitThrough(client, NODE, NodeIds.Server)
+                        .join())
+                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+        assertThat(EventPropagationVerifier.conditionCanEmitThrough(client, NODE, NodeIds.Server)
+                        .join())
+                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+        verifyNoInteractions(client);
+    }
+
+    @Test
+    void andThatHoldsEvenWhenTheServerModelsNoAncestryAtAll() {
+        // The same case driven through a real browse fixture rather than an unstubbed mock: the node exists,
+        // the browse succeeds, and it returns no parents. That is precisely the shape that used to produce a
+        // confident OutsideHierarchy, so it is worth pinning separately from the short-circuit above.
+        final OpcUaClient client = client(Map.of(NODE, List.of()), Map.of(), Set.of());
+
+        assertThat(EventPropagationVerifier.sourceCanEmitThrough(client, NODE, NodeIds.Server)
+                        .join())
+                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+        assertThat(EventPropagationVerifier.conditionCanEmitThrough(client, NODE, NodeIds.Server)
+                        .join())
+                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+    }
+
+    @Test
+    void butAnOrdinaryNotifierWithNoAncestryIsStillARejection() {
+        // The other half of the rule, and the reason it is scoped to Server alone. A named area notifier
+        // carries no such guarantee, so a complete browse proving no path to it still rejects the tag --
+        // which is the sibling-mismatch behaviour review 08 added and this must not weaken.
+        final OpcUaClient client = client(Map.of(NODE, List.of()), Map.of(), Set.of());
+
+        assertThat(EventPropagationVerifier.sourceCanEmitThrough(client, NODE, NodeId.parse("ns=2;s=SiblingArea"))
+                        .join())
+                .isEqualTo(new EventPropagationVerifier.Result.OutsideHierarchy());
+    }
+
     @Test
     void aNotifierAtTheBoundIsReachableAndOneBeyondItIsUnverified() {
         final Map<NodeId, List<NodeId>> parents = new LinkedHashMap<>();
