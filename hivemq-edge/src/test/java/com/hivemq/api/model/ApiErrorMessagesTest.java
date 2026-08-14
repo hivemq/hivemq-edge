@@ -50,6 +50,36 @@ class ApiErrorMessagesTest {
         assertThat(errors.get(0).getParameter()).isEqualTo("$.tls.tlsChecksFull.trustMode");
     }
 
+    /**
+     * The first cut of the fix above substituted the detail for the title instead of appending it, which
+     * silently changed the wire contract of every endpoint that reports errors this way — three
+     * authentication ITs asserting on the category went red in CI.
+     */
+    @Test
+    void theCategoryIsKeptAlongsideTheDetail() {
+        final ApiErrorMessages messages = new ApiErrorMessages();
+        messages.addError(new ApiErrorMessage("userName", "Invalid user supplied data", "Supplied field was empty"));
+
+        assertThat(messages.toErrorList().get(0).getDetail())
+                .isEqualTo("Invalid user supplied data: Supplied field was empty");
+    }
+
+    @Test
+    void theDetailStandsAloneWhenThereIsNoTitle() {
+        final ApiErrorMessages messages = new ApiErrorMessages();
+        messages.addError(new ApiErrorMessage("id", null, "Supplied field was null"));
+
+        assertThat(messages.toErrorList().get(0).getDetail()).isEqualTo("Supplied field was null");
+    }
+
+    @Test
+    void aBlankTitleDoesNotProduceALeadingSeparator() {
+        final ApiErrorMessages messages = new ApiErrorMessages();
+        messages.addError(new ApiErrorMessage("id", "  ", "Supplied field was null"));
+
+        assertThat(messages.toErrorList().get(0).getDetail()).isEqualTo("Supplied field was null");
+    }
+
     @Test
     void theTitleIsUsedWhenThereIsNoDetail() {
         final ApiErrorMessages messages = new ApiErrorMessages();
@@ -83,7 +113,7 @@ class ApiErrorMessagesTest {
         assertThat(messages.toErrorList())
                 .extracting(Error::getDetail, Error::getParameter)
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("detail-a", "a"),
+                        org.assertj.core.groups.Tuple.tuple("title-a: detail-a", "a"),
                         org.assertj.core.groups.Tuple.tuple("title-b", "b"));
     }
 }

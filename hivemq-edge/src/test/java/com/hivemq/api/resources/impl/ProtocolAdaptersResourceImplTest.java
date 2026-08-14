@@ -123,7 +123,7 @@ class ProtocolAdaptersResourceImplTest {
         assertThat(problem.getErrors())
                 .extracting(com.hivemq.http.error.Error::getDetail)
                 .as("the caller must be told why the id was refused, not merely that something was invalid")
-                .containsExactly("Adapter ID must be unique in system");
+                .containsExactly("Invalid user supplied data: Adapter ID must be unique in system");
         assertThat(problem.getErrors())
                 .extracting(com.hivemq.http.error.Error::getParameter)
                 .containsExactly("id");
