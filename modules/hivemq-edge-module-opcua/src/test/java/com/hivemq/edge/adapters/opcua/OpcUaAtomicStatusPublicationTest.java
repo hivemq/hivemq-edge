@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -210,6 +212,65 @@ class OpcUaAtomicStatusPublicationTest {
         assertThat(currentAdapter.isBrowseReady())
                 .as("but browse is not claimed on the strength of an attempt that did not hydrate it")
                 .isFalse();
+    }
+
+    /**
+     * PR review 2026-08-15: and that state has to be able to end.
+     * <p>
+     * Readiness was written once, at {@code CONNECTED}, from a flag latched once during start. Nothing
+     * promoted it afterwards, so a metadata build the server refused or was too slow to serve cost browse for
+     * the life of the connection — while the REST layer answered {@code Retry-After: 2}, describing as
+     * momentary a condition only a reconnect could clear. Retrying the browse could not help: it is refused
+     * before it reaches the code that would rebuild the tree.
+     */
+    @Test
+    void andBrowseReopensWhenALaterAttemptGetsTheMetadata() {
+        final OpcUaProtocolAdapter currentAdapter = adapter;
+        assertThat(currentAdapter).isNotNull();
+        final OpcUaClientConnection connection = mock(OpcUaClientConnection.class);
+        when(connection.hasBrowseMetadata()).thenReturn(false);
+        assertThat(currentAdapter.claimConnection(connection)).isTrue();
+        currentAdapter.publishReadyFrom(connection);
+        assertThat(currentAdapter.isBrowseReady()).isFalse();
+
+        // The health check's periodic nudge, with the connection reporting a build that finally succeeded.
+        doAnswer(invocation -> {
+                    invocation.getArgument(0, Runnable.class).run();
+                    return null;
+                })
+                .when(connection)
+                .retryBrowseMetadata(any());
+
+        currentAdapter.rehydrateBrowseMetadataIfMissing(connection);
+
+        assertThat(currentAdapter.isBrowseReady())
+                .as("the endpoint has to come back without a reconnect, which is what the WARN promises")
+                .isTrue();
+    }
+
+    @Test
+    void butNotOnBehalfOfAConnectionTheAdapterHasReplaced() {
+        // A rehydration is a background build that can finish at any time, including after the adapter has
+        // moved on. Reopening browse then would advertise the address space of a session nobody holds.
+        final OpcUaProtocolAdapter currentAdapter = adapter;
+        assertThat(currentAdapter).isNotNull();
+        final OpcUaClientConnection superseded = mock(OpcUaClientConnection.class);
+        when(superseded.hasBrowseMetadata()).thenReturn(false);
+        assertThat(currentAdapter.claimConnection(superseded)).isTrue();
+        currentAdapter.publishReadyFrom(superseded);
+
+        // The build completes only after the adapter has taken a different connection.
+        doAnswer(invocation -> {
+                    assertThat(currentAdapter.releaseCurrentConnection()).isSameAs(superseded);
+                    invocation.getArgument(0, Runnable.class).run();
+                    return null;
+                })
+                .when(superseded)
+                .retryBrowseMetadata(any());
+
+        currentAdapter.rehydrateBrowseMetadataIfMissing(superseded);
+
+        assertThat(currentAdapter.isBrowseReady()).isFalse();
     }
 
     private @NotNull OpcUaProtocolAdapter newAdapter() {

@@ -38,9 +38,12 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -71,6 +74,11 @@ public class OpcUaClientConnection {
      * #prepareClientForUse}.
      */
     private static final long METADATA_PREPARATION_MAX_WAIT_MS = 30_000L;
+
+    /** First backoff step after a rehydration failure, and the ceiling it doubles towards. */
+    private static final long METADATA_RETRY_BASE_DELAY_MS = 60_000L;
+
+    private static final long METADATA_RETRY_MAX_DELAY_MS = 30 * 60_000L;
 
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
@@ -117,6 +125,20 @@ public class OpcUaClientConnection {
      * and none of which is on the northbound streaming path.
      */
     private final @NotNull AtomicBoolean browseMetadataPrepared = new AtomicBoolean();
+
+    /**
+     * The rehydration worker currently alive, or null. Its presence is the guard against a second one.
+     * <p>
+     * A thread reference rather than a flag because the question is whether a worker still exists, and only
+     * the worker can answer it. See {@link #retryBrowseMetadata}.
+     */
+    private final @NotNull AtomicReference<Thread> metadataRetryWorker = new AtomicReference<>();
+
+    /** Consecutive failed rehydration attempts, which is what the backoff is computed from. */
+    private final @NotNull AtomicInteger metadataRetryFailures = new AtomicInteger();
+
+    /** The earliest a further rehydration may start. Seeded to now, so the first one is not delayed. */
+    private final @NotNull AtomicLong nextMetadataRetryNanos = new AtomicLong(System.nanoTime());
 
     /** Atomically marks adapter-owned readiness and CONNECTED after the usable context has been installed. */
     private final @NotNull Consumer<OpcUaClientConnection> publishReady;
@@ -492,6 +514,108 @@ public class OpcUaClientConnection {
      */
     private boolean prepareClientForUse(
             final @NotNull OpcUaClient client, final @NotNull SessionActivityListener activityListener) {
+        final long timeoutMs = preparationTimeoutMs();
+        try {
+            awaitBoundedPreparation(client);
+            browseMetadataPrepared.set(true);
+            return true;
+        } catch (final CancellationException e) {
+            if (closed.get()) {
+                log.debug("OPC UA metadata preparation was cancelled during teardown for adapter '{}'", adapterId);
+                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+                return false;
+            }
+            return continueWithoutBrowseMetadata("OPC UA metadata preparation was cancelled", e);
+        } catch (final TimeoutException e) {
+            return continueWithoutBrowseMetadata(
+                    "OPC UA metadata preparation did not finish within " + timeoutMs + " milliseconds", e);
+        } catch (final InterruptedException e) {
+            // The one arm that abandons the attempt rather than continuing without the metadata, and the
+            // difference is what the exception is about. Cancellation, timeout and execution failure are all
+            // statements about the metadata build, which the connection does not need. An interrupt is a
+            // statement about this thread -- so carrying on would run the rest of the connect sequence with
+            // the flag re-set, and every blocking step after it (verification's futures, subscription
+            // creation, a lock acquisition) would throw at once. The attempt fails either way; this way it
+            // fails at the point that knows why.
+            if (!closed.get()) {
+                log.warn(
+                        "OPC UA metadata preparation was interrupted for adapter '{}'; abandoning the attempt",
+                        adapterId,
+                        e);
+            }
+            // Cleanup first, interrupt flag restored after, and the order is load-bearing.
+            // quietlyCloseClient ends in OpcUaClient.disconnect(), which is disconnectAsync().get() -- so with
+            // the flag already set the get() throws InterruptedException at once, Milo wraps it as a
+            // UaException, and this class logs "Failed to disconnect" over a teardown that never happened.
+            // The session would then still be closing while the attempt returned and a retry was scheduled.
+            // Catching InterruptedException cleared the flag for us, so the window to do the work is now.
+            try {
+                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+            } finally {
+                Thread.currentThread().interrupt();
+            }
+            return false;
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            return continueWithoutBrowseMetadata("Failed to prepare OPC UA browse metadata", cause);
+        }
+    }
+
+    /**
+     * Pushes the next rehydration out, further each time this one keeps failing.
+     * <p>
+     * Without a schedule the trigger is the health check, so a permanently restricted account would buy a
+     * complete recursive browse of the data-type hierarchy every interval — as often as every ten seconds,
+     * for the life of the connection, against a server that has already refused it. That is real traffic on
+     * the device for an answer nobody expects to change soon.
+     * <p>
+     * The first failure is free: a build that timed out on a slow server is worth trying again promptly,
+     * which also keeps the common transient case recovering within one interval. After that it doubles from
+     * a minute to a half-hour cap. It does not stop, because the conditions that cause this — a permission
+     * not yet granted, a server still starting up — are exactly the ones that come good later, and giving up
+     * would restore the never-recovers behaviour this whole mechanism exists to remove.
+     * <p>
+     * Jitter because every adapter against one server would otherwise line up on the same schedule after a
+     * shared outage and rebuild their trees in step.
+     *
+     * @return the delay applied, for logging.
+     */
+    private long scheduleNextRetry() {
+        final int failures = metadataRetryFailures.incrementAndGet();
+        long delayMs = 0L;
+        if (failures > 1) {
+            final int doublings = Math.min(failures - 2, 5);
+            delayMs = Math.min(METADATA_RETRY_BASE_DELAY_MS << doublings, METADATA_RETRY_MAX_DELAY_MS);
+            final long jitter = delayMs / 5;
+            // Clamped after the jitter, not before. Applying it to an already-capped delay pushed the actual
+            // maximum 20% past the ceiling this constant is named for -- a half-hour cap that could wait
+            // thirty-six minutes, which is the sort of thing that is only ever discovered while chasing
+            // something else.
+            delayMs = Math.min(
+                    delayMs + ThreadLocalRandom.current().nextLong(-jitter, jitter + 1), METADATA_RETRY_MAX_DELAY_MS);
+        }
+        nextMetadataRetryNanos.set(System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(delayMs));
+        return delayMs;
+    }
+
+    /** The deadline for one metadata build. See {@link #METADATA_PREPARATION_MAX_WAIT_MS}. */
+    private long preparationTimeoutMs() {
+        return Math.min(config.getConnectionOptions().connectionTimeoutMs(), METADATA_PREPARATION_MAX_WAIT_MS);
+    }
+
+    /**
+     * Runs one metadata build under a deadline, on a thread teardown can interrupt.
+     * <p>
+     * For the connect path only. The connecting thread has to get on with the rest of the attempt, so it
+     * needs a bounded wait on a worker it can cancel — which is what the second thread and {@link
+     * #preparationTask} are for, the latter also being how {@link #markClosed()} reaches an in-progress build.
+     * <p>
+     * Rehydration deliberately does not come through here. It is already off the caller's thread, so a
+     * waiter would buy it nothing, and it needs the opposite guarantee: its worker's own liveness is the
+     * guard against a second one, which a bounded wait cannot express. See {@link #retryBrowseMetadata}.
+     */
+    private void awaitBoundedPreparation(final @NotNull OpcUaClient client)
+            throws InterruptedException, ExecutionException, TimeoutException {
         final FutureTask<Void> task = new FutureTask<>(() -> {
             prepareForUse.accept(client);
             return null;
@@ -509,34 +633,13 @@ public class OpcUaClientConnection {
             }
         }
 
-        final long timeoutMs =
-                Math.min(config.getConnectionOptions().connectionTimeoutMs(), METADATA_PREPARATION_MAX_WAIT_MS);
         try {
-            task.get(timeoutMs, TimeUnit.MILLISECONDS);
-            browseMetadataPrepared.set(true);
-            return true;
-        } catch (final CancellationException e) {
-            if (closed.get()) {
-                log.debug("OPC UA metadata preparation was cancelled during teardown for adapter '{}'", adapterId);
-                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
-                return false;
-            }
-            return continueWithoutBrowseMetadata("OPC UA metadata preparation was cancelled", e);
-        } catch (final TimeoutException e) {
+            task.get(preparationTimeoutMs(), TimeUnit.MILLISECONDS);
+        } catch (final TimeoutException | InterruptedException e) {
+            // Interrupting the build is what makes the deadline real: without it the request loop carries on
+            // against a server nobody is waiting for any more.
             task.cancel(true);
-            return continueWithoutBrowseMetadata(
-                    "OPC UA metadata preparation did not finish within " + timeoutMs + " milliseconds", e);
-        } catch (final InterruptedException e) {
-            task.cancel(true);
-            Thread.currentThread().interrupt();
-            if (closed.get()) {
-                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
-                return false;
-            }
-            return continueWithoutBrowseMetadata("OPC UA metadata preparation was interrupted", e);
-        } catch (final ExecutionException e) {
-            final Throwable cause = e.getCause() != null ? e.getCause() : e;
-            return continueWithoutBrowseMetadata("Failed to prepare OPC UA browse metadata", cause);
+            throw e;
         } finally {
             preparationTask.compareAndSet(task, null);
         }
@@ -546,27 +649,34 @@ public class OpcUaClientConnection {
      * Reports metadata the connection could not hydrate, and carries on connecting anyway.
      * <p>
      * WARN rather than ERROR, and no status change, because nothing has failed that the adapter cannot do:
-     * tags will still be verified and subscribed, events and values will still flow, and the tree will be
-     * rebuilt by the first browse or southbound write that wants it. What the operator loses is a browse
-     * endpoint that answers immediately, and the message says so — including the likeliest cause, since a
-     * recursive browse of the type hierarchy is exactly the sort of thing a locked-down server account is
-     * refused.
+     * the attempt goes on to verify and subscribe its tags, and events and values will flow.
+     * <p>
+     * Two things the wording has to get right, both learned by getting them wrong. It runs <em>before</em>
+     * the subscription, the context and {@code CONNECTED}, so it cannot say the adapter is connected — the
+     * attempt may still fail, or be stopped, and an event asserting a healthy connection next to an
+     * {@code ERROR} status is worse than no event. It is conditional for that reason. And it must not
+     * suggest retrying the browse: the REST layer refuses that before it reaches the browser, so the one
+     * action an operator would naturally take is the one that cannot help. {@link #retryBrowseMetadata} is
+     * what reopens browse, on the health-check interval and with backoff.
      *
      * @return always {@code true}: this is not a reason to abandon the attempt.
      */
     private boolean continueWithoutBrowseMetadata(final @NotNull String message, final @NotNull Throwable cause) {
         log.warn(
-                "{} for adapter '{}'. The adapter stays connected and its tags are unaffected; the browse "
-                        + "endpoint reports not-ready until the metadata is built, which the next browse, "
-                        + "southbound write or reconnect will do. A server that denies browsing the data-type "
-                        + "hierarchy to the configured identity, or is slow to serve it, will keep reporting this.",
+                "{} for adapter '{}'. The connection attempt continues and its tags are unaffected; if it "
+                        + "succeeds, the browse endpoint will report not-ready until the metadata is built. The "
+                        + "adapter retries the build on later health checks, backing off while it keeps failing, "
+                        + "and reopens browse when one succeeds -- retrying the browse itself does not, because "
+                        + "it is refused before it runs. A server that denies browsing the data-type hierarchy "
+                        + "to the configured identity, or is slow to serve it, will keep reporting this.",
                 message,
                 adapterId,
                 cause);
         eventService
                 .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                 .withMessage(message + " for adapter '" + adapterId
-                        + "'. The adapter is connected; browse is not ready until the metadata is built.")
+                        + "'. The connection attempt continues; if it succeeds, browse stays not-ready until a "
+                        + "later health check rebuilds the metadata.")
                 .withSeverity(Event.SEVERITY.WARN)
                 .fire();
         return true;
@@ -575,6 +685,130 @@ public class OpcUaClientConnection {
     /** Whether this connection managed to hydrate its browse metadata during start. */
     boolean hasBrowseMetadata() {
         return browseMetadataPrepared.get();
+    }
+
+    /**
+     * Tries once more to build the browse metadata on a connection that is otherwise healthy.
+     * <p>
+     * Without this the degraded state is permanent, and says otherwise. Browse readiness is decided once, at
+     * {@code CONNECTED}, from {@link #hasBrowseMetadata()}; the REST layer refuses a browse with 503 and
+     * {@code Retry-After} <em>before</em> it reaches the browser, so retrying a browse — the one action the
+     * operator is invited to take — cannot be what rebuilds the tree. A southbound write does rebuild Milo's
+     * tree, but nothing tells the adapter, so browse stays shut. The result was a connection reporting a
+     * transient failure that only a reconnect could clear, on an adapter with no reason to reconnect.
+     * <p>
+     * Driven from the health check because that is already the periodic "is this connection still all right"
+     * pass, and a metadata build the server refused at connect time is exactly the sort of thing that comes
+     * good later — a permission granted, a slow server that has finished starting.
+     * <p>
+     * One worker, and its liveness <em>is</em> the guard: {@link #metadataRetryWorker} is set before it
+     * starts and cleared by the worker itself, so "a retry is running" cannot be true of a thread that has
+     * already gone or false of one that has not. An earlier version bounded the build on a second thread and
+     * released the guard when that <em>wait</em> expired, which is not the same event. Milo's {@code
+     * NonBlockingLazy} makes the difference concrete: a worker arriving while a southbound write is already
+     * building the tree waits in {@code CompletableFuture.join()}, which ignores interruption — so cancelling
+     * the wait left the worker alive, released the guard, and let the next interval start a second one
+     * against the same server, with the first no longer reachable by teardown.
+     * <p>
+     * The deadline belongs to the build, so it is timed from when the build starts rather than checked when
+     * the caller next happens to run. Tying it to the caller looked equivalent and is not: the health-check
+     * interval is configurable up to five minutes while this deadline can be as short as two seconds, so a
+     * stalled worker could hold the guard for a hundred and fifty times its allowance. The one-shot timer
+     * only interrupts, and only the worker it was created for — clearing the guard stays with the worker,
+     * because that is the event the guard is about.
+     *
+     * @param onHydrated run only if this attempt succeeds while the connection is still open.
+     */
+    void retryBrowseMetadata(final @NotNull Runnable onHydrated) {
+        if (browseMetadataPrepared.get() || closed.get() || metadataRetryWorker.get() != null) {
+            return;
+        }
+        // Subtraction rather than a bare comparison, because nanoTime() has no epoch and may be negative.
+        if (System.nanoTime() - nextMetadataRetryNanos.get() < 0) {
+            return;
+        }
+        final OpcUaClient client = client().orElse(null);
+        if (client == null) {
+            return;
+        }
+
+        final Thread worker = Thread.ofVirtual()
+                .name("opcua-metadata-rehydration-" + adapterId)
+                .unstarted(() -> runRehydration(client, onHydrated));
+        // Created unstarted so the slot can be claimed before the body can run and clear it.
+        if (!metadataRetryWorker.compareAndSet(null, worker)) {
+            return;
+        }
+        // Re-read after claiming, because the checks at the top are a look and this is the commit. Between
+        // the two, a worker that was running can succeed -- publishing the metadata and releasing the slot --
+        // and this caller would then find an empty slot and start a build for something already done.
+        if (browseMetadataPrepared.get() || closed.get()) {
+            metadataRetryWorker.compareAndSet(worker, null);
+            return;
+        }
+        worker.start();
+        // The shared JVM delayer rather than a scheduler of this class's own: one task per attempt, no
+        // lifecycle to own, and the same mechanism the refresh coordinator already uses for its retries.
+        CompletableFuture.delayedExecutor(preparationTimeoutMs(), TimeUnit.MILLISECONDS)
+                .execute(() -> interruptIfStillBuilding(worker));
+    }
+
+    /**
+     * Interrupts one rehydration worker at its deadline, and no other.
+     * <p>
+     * The identity check is the whole of the condition, and deliberately so. It is what makes a late timer
+     * harmless — by the time it fires, the attempt it was created for may have finished and a later one may
+     * be running, and interrupting that one would cut short a build that has had no time at all — and it is
+     * sufficient on its own, because exactly one of these is scheduled per worker.
+     * <p>
+     * An earlier version also required a shared "not yet interrupted" flag, reset by each new attempt. That
+     * made one worker's timer able to consume the next worker's: an old timer passing its identity check,
+     * then the old worker finishing and a new one resetting the flag, then the old timer setting it — after
+     * which the new timer found the flag taken and the new worker was never interrupted at all.
+     */
+    private void interruptIfStillBuilding(final @NotNull Thread worker) {
+        if (metadataRetryWorker.get() == worker) {
+            log.debug(
+                    "OPC UA adapter '{}': the browse-metadata build has passed its deadline; interrupting it.",
+                    adapterId);
+            worker.interrupt();
+        }
+    }
+
+    /** One rehydration attempt, on its own thread. Owns the guard it was started under. */
+    private void runRehydration(final @NotNull OpcUaClient client, final @NotNull Runnable onHydrated) {
+        try {
+            try {
+                prepareForUse.accept(client);
+            } catch (final RuntimeException e) {
+                final long delayMs = scheduleNextRetry();
+                log.debug(
+                        "OPC UA adapter '{}': browse metadata is still unavailable; the next attempt is in about "
+                                + "{} ms.",
+                        adapterId,
+                        delayMs,
+                        e);
+                return;
+            }
+            // Checked after the build, not only before it: a teardown that ran while this was in flight has
+            // already discarded the connection, and promoting readiness for it would reopen browse against a
+            // session nobody holds.
+            if (closed.get()) {
+                return;
+            }
+            browseMetadataPrepared.set(true);
+            metadataRetryFailures.set(0);
+            log.info(
+                    "OPC UA adapter '{}': browse metadata is now available; the browse endpoint is ready again.",
+                    adapterId);
+            onHydrated.run();
+        } finally {
+            // After everything this worker does, not merely after the build. Releasing it before publishing
+            // success left a window in which the metadata was not yet marked present and the slot was already
+            // free, so a health check landing there would start a second worker -- and both would announce
+            // the recovery and run the callback.
+            metadataRetryWorker.compareAndSet(Thread.currentThread(), null);
+        }
     }
 
     void stop() {
@@ -608,6 +842,13 @@ public class OpcUaClientConnection {
         final FutureTask<Void> preparation = preparationTask.get();
         if (preparation != null) {
             preparation.cancel(true);
+        }
+        // A rehydration is not reachable through preparationTask -- it owns its own thread precisely so its
+        // liveness can be the guard -- so teardown has to name it separately or a build started by the health
+        // check would run on past the connection it belongs to.
+        final Thread rehydration = metadataRetryWorker.get();
+        if (rehydration != null) {
+            rehydration.interrupt();
         }
         final OpcUaSubscriptionLifecycleHandler handler = subscriptionHandler.get();
         if (handler != null) {

@@ -544,6 +544,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 }
                             } else {
                                 log.debug("Health check passed for adapter '{}'", adapterId);
+                                // A healthy connection that never got its browse metadata is the one case
+                                // that cannot fix itself: the browse endpoint is refused before it runs, so
+                                // the operator's natural retry never reaches the code that would rebuild the
+                                // tree. This is the periodic pass that does reach it.
+                                rehydrateBrowseMetadataIfMissing(conn);
                             }
                         },
                         healthCheckIntervalMs,
@@ -560,6 +565,36 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 "Scheduled connection health check every {} milliseconds for adapter '{}'",
                 healthCheckIntervalMs,
                 adapterId);
+    }
+
+    /**
+     * Reopens browse on a healthy connection whose metadata build failed at connect time.
+     * <p>
+     * Browse readiness is otherwise decided once and never revisited, which made a transient metadata
+     * failure permanent for the life of the connection while the REST layer answered {@code Retry-After: 2}
+     * — advertising as momentary a condition that only a reconnect could clear. The promotion goes through
+     * the same ownership lock as every other readiness write, so a build that finishes just after the
+     * adapter has moved to a new connection cannot reopen browse on the strength of the old one.
+     */
+    @VisibleForTesting
+    void rehydrateBrowseMetadataIfMissing(final @NotNull OpcUaClientConnection conn) {
+        if (browseReadiness.get() == ReadinessStatus.BROWSE_READY || stopped) {
+            return;
+        }
+        conn.retryBrowseMetadata(() -> {
+            connectionOwnershipLock.lock();
+            try {
+                if (opcUaClientConnection.get() == conn && !stopped) {
+                    browseReadiness.set(ReadinessStatus.BROWSE_READY);
+                } else {
+                    log.debug(
+                            "OPC UA adapter '{}': not reopening browse from a connection the adapter no longer owns",
+                            adapterId);
+                }
+            } finally {
+                connectionOwnershipLock.unlock();
+            }
+        });
     }
 
     /**
@@ -1166,7 +1201,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     log.info(
                             "OPC UA adapter '{}' is connected; browse is not ready because the data-type tree "
                                     + "could not be built during this connect. Tags, events and values are "
-                                    + "unaffected. See the preceding warning for the cause.",
+                                    + "unaffected, and later health checks retry the build with backoff. See "
+                                    + "the preceding warning for the cause.",
                             adapterId);
                 }
             } else {
