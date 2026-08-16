@@ -108,6 +108,12 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
             assertThat(mapping.publishingInterval()).isEqualTo(12);
             assertThat(mapping.serverQueueSize()).isEqualTo(13);
+            // Review-02 finding 6. This is the case every deployed configuration is in: an opcuaToMqtt
+            // element that exists and names the two fields that predate condition tags, but not the one
+            // added with them. The sibling test below covers an *absent* element, which takes a different
+            // path entirely -- the outer requireNonNullElse that substitutes a whole default object -- so it
+            // never exercised this and the defect sat behind a green suite.
+            assertThat(mapping.eventQueueSize()).isEqualTo(OpcUaToMqttConfig.DEFAULT_EVENT_QUEUE_SIZE);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings())
@@ -152,6 +158,10 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
             assertThat(mapping.publishingInterval()).isEqualTo(1000);
             assertThat(mapping.serverQueueSize()).isEqualTo(1);
+            // A config written before event subscriptions existed names no event queue size. It must read
+            // back as the default rather than as zero, which would ask the server for its own default and
+            // make the depth vendor-dependent.
+            assertThat(mapping.eventQueueSize()).isEqualTo(OpcUaToMqttConfig.DEFAULT_EVENT_QUEUE_SIZE);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {

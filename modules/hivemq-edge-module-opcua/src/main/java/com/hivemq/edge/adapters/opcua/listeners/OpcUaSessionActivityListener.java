@@ -23,6 +23,9 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.Constants;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.UaSession;
 import org.jetbrains.annotations.NotNull;
@@ -36,17 +39,126 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
-    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull AtomicBoolean seenFirstActivation = new AtomicBoolean(false);
+
+    /**
+     * Delegates the whole generation validation and shared-state write to the owning connection and adapter.
+     * The event and metric remain ungated because they record that this particular session changed state.
+     */
+    private final @NotNull Consumer<ProtocolAdapterState.ConnectionStatus> statusPublisher;
+
+    /** Whether this session belongs to a connection whose context has finished initial setup. */
+    private final @NotNull BooleanSupplier connectionReady;
+
+    /**
+     * Who is going to run the refresh a reconnect owes. See {@link ReconnectHandoff} for why the two facts
+     * involved cannot be two independent atomics, and why both of its methods answer with what to run
+     * instead of running it.
+     */
+    private final @NotNull ReconnectHandoff handoff;
 
     public OpcUaSessionActivityListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
-            @NotNull final ProtocolAdapterState protocolAdapterState) {
+            @NotNull final ProtocolAdapterState protocolAdapterState,
+            @NotNull final BooleanSupplier stillOwned) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                legacyStatusPublisher(adapterId, protocolAdapterState, stillOwned),
+                () -> true,
+                new ReconnectHandoff());
+    }
+
+    public OpcUaSessionActivityListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @NotNull final ProtocolAdapterState protocolAdapterState,
+            @NotNull final BooleanSupplier stillOwned,
+            @NotNull final BooleanSupplier connectionReady) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                legacyStatusPublisher(adapterId, protocolAdapterState, stillOwned),
+                connectionReady,
+                new ReconnectHandoff());
+    }
+
+    public OpcUaSessionActivityListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @NotNull final Consumer<ProtocolAdapterState.ConnectionStatus> statusPublisher,
+            @NotNull final BooleanSupplier connectionReady) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                statusPublisher,
+                connectionReady,
+                new ReconnectHandoff());
+    }
+
+    /** Takes the handoff, so the test that pins mutual exclusion can supply one it can pause. */
+    OpcUaSessionActivityListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @NotNull final ProtocolAdapterState protocolAdapterState,
+            @NotNull final BooleanSupplier stillOwned,
+            @NotNull final BooleanSupplier connectionReady,
+            @NotNull final ReconnectHandoff handoff) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                legacyStatusPublisher(adapterId, protocolAdapterState, stillOwned),
+                connectionReady,
+                handoff);
+    }
+
+    private OpcUaSessionActivityListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @NotNull final Consumer<ProtocolAdapterState.ConnectionStatus> statusPublisher,
+            @NotNull final BooleanSupplier connectionReady,
+            @NotNull final ReconnectHandoff handoff) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
-        this.protocolAdapterState = protocolAdapterState;
+        this.statusPublisher = statusPublisher;
+        this.connectionReady = connectionReady;
+        this.handoff = handoff;
+    }
+
+    private static @NotNull Consumer<ProtocolAdapterState.ConnectionStatus> legacyStatusPublisher(
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull BooleanSupplier stillOwned) {
+        return status -> {
+            if (stillOwned.getAsBoolean()) {
+                protocolAdapterState.setConnectionStatus(status);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': not reporting {} from a session whose connection the adapter has already replaced",
+                        adapterId,
+                        status);
+            }
+        };
+    }
+
+    /**
+     * Reports a status, unless the connection this listener belongs to has already been replaced.
+     * <p>
+     * Production publication reaches the adapter-owned generation lock through the connection callback.
+     */
+    private void publishStatus(final ProtocolAdapterState.@NotNull ConnectionStatus status) {
+        statusPublisher.accept(status);
     }
 
     @Override
@@ -58,14 +170,66 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
                 .withPayload(session.getSessionName() + '/' + session.getSessionId())
                 .withMessage("Adapter '" + adapterId + "' session has been disconnected.")
                 .fire();
-        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        publishStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         log.info("OPC UA client of protocol adapter '{}' disconnected: {}", adapterId, session);
+    }
+
+    /**
+     * Called when a session becomes active again after this listener has already seen one.
+     * <p>
+     * Set by the connection once the subscription handler exists. Only reconnects are reported: the first
+     * activation is the initial connect, where the subscription is created and already refreshes itself.
+     * <p>
+     * A reconnect can land <em>before</em> this is wired: the listener is registered as soon as the client
+     * exists, while the handler it delegates to is built only after the subscription has been established —
+     * and for condition tags that step makes blocking round trips per tag, so the window is not small. Such
+     * a reconnect is remembered here and honoured now, rather than dropped for having arrived early. Without
+     * that the refresh is lost twice over: no hook to run, and the activation still consumes
+     * {@code seenFirstActivation}, so it is miscounted as the initial connect.
+     * <p>
+     * Installing the callback and claiming any pending reconnect happen as one transition — see
+     * {@link ReconnectHandoff} for the interleaving that made two separate atomics wrong. The callback runs
+     * <em>after</em> that transition, which is why the handoff returns it rather than running it: a refresh
+     * is a server round trip, and holding the lock across it would block the session thread's next
+     * activation for no benefit.
+     */
+    public void setOnReconnect(final @NotNull Runnable onReconnect) {
+        final Runnable owed = handoff.install(onReconnect);
+        if (owed != null) {
+            log.debug(
+                    "Adapter '{}': a reconnect arrived before the subscription handler was ready, requesting its condition refresh now",
+                    adapterId);
+            owed.run();
+        }
     }
 
     @Override
     public void onSessionActive(final @NotNull UaSession session) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
-        protocolAdapterState.setConnectionStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
+
+        // A reconnect whose subscription transferred cleanly recreates nothing, so nothing else would ask the
+        // server to re-report its retained conditions. Skipping the first activation avoids refreshing twice
+        // on the initial connect, where creating the subscription already does it. The initial activation
+        // also cannot publish CONNECTED: Milo calls it before verification, monitored-item creation, browse
+        // preparation and context installation have finished. The connection itself owns that first
+        // transition. Later activations may restore CONNECTED only after that initial setup was completed.
+        if (!seenFirstActivation.compareAndSet(false, true)) {
+            if (connectionReady.getAsBoolean()) {
+                publishStatus(CONNECTED);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': session reactivated before initial connection setup completed; "
+                                + "leaving the public status unchanged",
+                        adapterId);
+            }
+            // Null means there was nothing to call yet, and the handoff has remembered the debt rather than
+            // dropping it: the next setOnReconnect runs it on arrival.
+            final Runnable reconnected = handoff.reconnected();
+            if (reconnected != null) {
+                // Outside the handoff's lock, because this is a server round trip.
+                reconnected.run();
+            }
+        }
     }
 }

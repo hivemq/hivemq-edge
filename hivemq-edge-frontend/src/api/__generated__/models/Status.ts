@@ -48,6 +48,7 @@ export namespace Status {
         STATELESS = 'STATELESS',
         UNKNOWN = 'UNKNOWN',
         ERROR = 'ERROR',
+        CONNECTING = 'CONNECTING',
     }
 
     /**

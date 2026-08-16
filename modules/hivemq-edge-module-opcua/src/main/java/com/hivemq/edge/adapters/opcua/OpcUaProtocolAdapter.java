@@ -25,6 +25,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
@@ -42,9 +43,15 @@ import com.hivemq.edge.adapters.opcua.browse.OpcUaNodeBrowser;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
+import com.hivemq.edge.adapters.opcua.condition.ConditionSchemas;
+import com.hivemq.edge.adapters.opcua.condition.ConditionUpdate;
+import com.hivemq.edge.adapters.opcua.condition.ConditionUpdateWriter;
+import com.hivemq.edge.adapters.opcua.condition.RefreshCommand;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
@@ -60,6 +67,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -91,6 +99,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     private final @NotNull List<OpcuaTag> tagList;
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
 
+    /** Serializes connection-generation changes with every generation-owned status publication. */
+    private final @NotNull ReentrantLock connectionOwnershipLock = new ReentrantLock();
+
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
@@ -121,10 +132,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     static final int MAX_CONCURRENT_BROWSES = 1;
     private final @NotNull Semaphore browseConcurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
 
-    // EDG-577: browse-readiness is tracked separately from CONNECTED. The Milo session reports CONNECTED the
-    // moment it activates, before the namespace table and data-type tree are hydrated; a browse in that window
-    // is non-deterministic. Kept OPC-UA-local (not on the shared SDK ConnectionStatus enum). Reset to WARMING_UP
-    // on every (re)connect attempt and flipped to BROWSE_READY once the warm-up has loaded the metadata.
+    // EDG-577: browse-readiness remains an OPC-UA-local detail used by the REST browse endpoint, but it is now
+    // ordered with public connection readiness. Milo activates the session before the namespace table and
+    // data-type tree are hydrated; a browse in that window is non-deterministic. Every attempt resets this to
+    // WARMING_UP, and the connection publishes CONNECTED only after the warm-up flips it to BROWSE_READY.
     private enum ReadinessStatus {
         WARMING_UP,
         BROWSE_READY
@@ -135,6 +146,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
+
+    /**
+     * Whether this adapter owns its runtime resources — the lifecycle, as distinct from any one connection.
+     * <p>
+     * {@code opcUaClientConnection} used to stand in for this, and it cannot: that reference is the
+     * <em>current connection attempt</em>, and an attempt that fails clears it while the adapter is still
+     * very much started, with its retry and health-check schedulers running and a retry queued. A duplicate
+     * {@code start()} arriving in that window — which is the ordinary "hardware is not online yet" window,
+     * not an exotic one — passed both guards, installed a second connection and called
+     * {@link #startSchedulers()}, replacing the first pair. CI observed exactly that ordering.
+     * <p>
+     * Claimed once the start is committed and released only by {@link #stop} or {@link #destroy}, so it does
+     * not move when a connection comes and goes. Distinct from {@link #stopped}, which answers a different
+     * question — "should background work keep running" — and is false on a freshly constructed adapter that
+     * has never been started, precisely the state in which a first start must be allowed.
+     */
+    private final @NotNull AtomicBoolean started = new AtomicBoolean();
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -206,10 +234,64 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         log.info("Starting OPC UA protocol adapter {}", adapterId);
 
+        // Refused before anything is built, rather than after, and asked of the lifecycle rather than of the
+        // connection. Everything below this point either allocates a runtime resource or hands one to a
+        // background thread, so a caller's mistake is better answered before two executors exist for it.
+        //
+        // `started` rather than `opcUaClientConnection != null`, which is what this used to read. That
+        // reference is the current connection *attempt*: an attempt that fails clears it, and the adapter
+        // goes on being started with its schedulers running and a retry queued. A second start() in that
+        // window -- the ordinary "hardware is not online yet" window -- passed this guard and the
+        // compareAndSet below, then replaced both schedulers through startSchedulers(). The connection
+        // reference is still the authority for *connections*, which a reconnect claims from another thread
+        // without holding this lock; it was never the authority for the lifecycle.
+        if (started.get()) {
+            log.error("Cannot start OPC UA protocol adapter '{}' - adapter is already started", adapterId);
+            output.failStart(
+                    new IllegalStateException("Adapter already started"),
+                    "Cannot start already started adapter. Please stop the adapter first.");
+            return;
+        }
+
         // Reset stopped flag
         stopped = false;
 
-        startSchedulers();
+        // Every synchronous check the configuration can fail happens before any runtime resource exists.
+        // The schedulers used to start first, and neither failure path below shut them down again -- so a
+        // rejected start left two executor threads running until some later lifecycle call happened to
+        // collect them, and repeated invalid starts accumulated them.
+        //
+        // At most one refresh tag. A second would place a second item on the Server object, and since the
+        // refresh bracket is copied to every notifier item in the subscription, both would publish the same
+        // event -- a duplicate that looks like two refreshes.
+        //
+        // Failing the whole adapter rather than dropping the extra tag, and the rule is firmer than "this is
+        // probably a mistake". Two things can be wrong with a tag and they deserve opposite treatments. A
+        // configuration that is not *valid* is a defect in what the user wrote, decidable by reading the
+        // configuration alone: no device is involved and connecting could not produce a different answer.
+        // That stops the adapter. A tag in a valid configuration that cannot be *verified against the device*
+        // is a reasonable statement about the world that turns out to be false -- it was sensible to assume
+        // this node is a condition of that type, and the server says otherwise. That is handled locally: drop
+        // the tag, name it, keep going.
+        //
+        // Two REFRESH tags fall on the first side. No browse, no session, no round trip could decide it
+        // differently, which is why this check sits here -- before ParsedConfig.fromConfig and before any
+        // connection object exists. It is part of validating the configuration, not part of subscribing.
+        // NotifierResolver.resolve is the second kind by construction, since the answer depends on what the
+        // server exposes, and it is right to be per-tag; the two are different rules rather than an
+        // inconsistency.
+        final List<String> refreshTagNames = tagList.stream()
+                .filter(tag -> tag.getDefinition().getKind() == OpcuaTagKind.REFRESH)
+                .map(OpcuaTag::getName)
+                .toList();
+        if (refreshTagNames.size() > 1) {
+            final String message = "An OPC UA adapter may have at most one REFRESH tag, but '" + adapterId
+                    + "' has " + refreshTagNames.size() + ": " + String.join(", ", refreshTagNames)
+                    + ". They would each publish the same refresh events.";
+            log.error(message);
+            output.failStart(new IllegalStateException(message), message);
+            return;
+        }
 
         final ParsedConfig newlyParsedConfig;
         final var result = ParsedConfig.fromConfig(config);
@@ -238,10 +320,24 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 input.moduleServices().eventService(),
                 protocolAdapterMetricsService,
                 config,
-                opcUaServiceFaultListener);
-        if (opcUaClientConnection.compareAndSet(null, conn)) {
+                opcUaServiceFaultListener,
+                this::publishStatusFrom,
+                this::warmUpBrowseMetadata,
+                this::publishReadyFrom);
+        if (claimConnection(conn)) {
+            // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
+            // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
+            // Released only by stop() or destroy(), never by a connection attempt ending.
+            started.set(true);
+            // Only now, with the connection slot owned. The configuration was validated above, so this is no
+            // longer about whether the resources are wanted -- it is about whether this call is the one
+            // entitled to create them. They used to be created before the swap and were therefore replaced
+            // wholesale by a duplicate start: the original pair went on running the retry and health-check
+            // work of the connection that was still live, with nothing left holding a reference to them, so
+            // no later stop() or destroy() could ever collect them.
+            startSchedulers();
 
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            publishConnectingFrom(conn);
             // Attempt initial connection asynchronously
             attemptConnection(conn, newlyParsedConfig, input);
 
@@ -274,6 +370,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         // Set stopped flag to prevent new scheduling
         stopped = true;
+        // And release the lifecycle, so a later start() is a first start rather than a duplicate.
+        started.set(false);
 
         // Acquire reconnect lock to ensure we don't stop while reconnecting
         reconnectLock.lock();
@@ -291,12 +389,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // Clear browse client on explicit stop
             this.browseClient.set(null);
 
-            final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
+            final OpcUaClientConnection conn = releaseCurrentConnection();
             if (conn != null) {
                 conn.stop();
             } else {
                 log.info("Tried stopping stopped OPC UA protocol adapter {}", adapterId);
             }
+            // The wrapper owns the final lifecycle status. In particular, this stop may be failed-start
+            // cleanup: the wrapper deliberately preserves ERROR while draining its connection FSM back to
+            // Disconnected. Publishing here would erase that actionable configuration failure. An ordinary
+            // wrapper stop completes the shared status after the adapter teardown has finished.
         } finally {
             reconnectLock.unlock();
         }
@@ -360,7 +462,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             cancelHealthCheck();
 
             // Stop and clean up current connection
-            final OpcUaClientConnection oldConn = opcUaClientConnection.getAndSet(null);
+            final OpcUaClientConnection oldConn = releaseCurrentConnection();
             if (oldConn != null) {
                 oldConn.stop();
                 log.debug("Stopped old connection for OPC UA adapter '{}'", adapterId);
@@ -375,11 +477,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     moduleServices.eventService(),
                     protocolAdapterMetricsService,
                     config,
-                    opcUaServiceFaultListener);
+                    opcUaServiceFaultListener,
+                    this::publishStatusFrom,
+                    this::warmUpBrowseMetadata,
+                    this::publishReadyFrom);
 
             // Set as current connection and attempt connection with retry logic
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-            if (opcUaClientConnection.compareAndSet(null, newConn)) {
+            if (claimConnection(newConn)) {
+                publishConnectingFrom(newConn);
                 // Create a minimal ProtocolAdapterStartInput for attemptConnection
                 final ModuleServices ms = Objects.requireNonNull(moduleServices);
                 final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
@@ -435,11 +540,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     log.warn(
                                             "Health check failed for adapter '{}' - automatic reconnection is disabled",
                                             adapterId);
-                                    protocolAdapterState.setConnectionStatus(
-                                            ProtocolAdapterState.ConnectionStatus.ERROR);
+                                    publishStatusFrom(conn, ProtocolAdapterState.ConnectionStatus.ERROR);
                                 }
                             } else {
                                 log.debug("Health check passed for adapter '{}'", adapterId);
+                                // A healthy connection that never got its browse metadata is the one case
+                                // that cannot fix itself: the browse endpoint is refused before it runs, so
+                                // the operator's natural retry never reaches the code that would rebuild the
+                                // tree. This is the periodic pass that does reach it.
+                                rehydrateBrowseMetadataIfMissing(conn);
                             }
                         },
                         healthCheckIntervalMs,
@@ -456,6 +565,36 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 "Scheduled connection health check every {} milliseconds for adapter '{}'",
                 healthCheckIntervalMs,
                 adapterId);
+    }
+
+    /**
+     * Reopens browse on a healthy connection whose metadata build failed at connect time.
+     * <p>
+     * Browse readiness is otherwise decided once and never revisited, which made a transient metadata
+     * failure permanent for the life of the connection while the REST layer answered {@code Retry-After: 2}
+     * — advertising as momentary a condition that only a reconnect could clear. The promotion goes through
+     * the same ownership lock as every other readiness write, so a build that finishes just after the
+     * adapter has moved to a new connection cannot reopen browse on the strength of the old one.
+     */
+    @VisibleForTesting
+    void rehydrateBrowseMetadataIfMissing(final @NotNull OpcUaClientConnection conn) {
+        if (browseReadiness.get() == ReadinessStatus.BROWSE_READY || stopped) {
+            return;
+        }
+        conn.retryBrowseMetadata(() -> {
+            connectionOwnershipLock.lock();
+            try {
+                if (opcUaClientConnection.get() == conn && !stopped) {
+                    browseReadiness.set(ReadinessStatus.BROWSE_READY);
+                } else {
+                    log.debug(
+                            "OPC UA adapter '{}': not reopening browse from a connection the adapter no longer owns",
+                            adapterId);
+                }
+            } finally {
+                connectionOwnershipLock.unlock();
+            }
+        });
     }
 
     /**
@@ -501,8 +640,21 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
     /**
      * Initiates both retry and health check schedulers.
+     * <p>
+     * Shuts down whatever was there first. The caller is expected to have established that nothing is, and
+     * with the guards in {@link #start} nothing should be — but overwriting a live executor field loses the
+     * only reference to threads that are still running scheduled work against this adapter, and no later
+     * lifecycle call can collect what it cannot name. Closing them here costs nothing when the fields are
+     * null, which is every ordinary call.
      */
     private synchronized void startSchedulers() {
+        if (retryScheduler != null || healthCheckScheduler != null) {
+            log.warn(
+                    "Adapter '{}': schedulers already existed when starting; shutting them down rather than "
+                            + "losing the reference to them",
+                    adapterId);
+            shutdownSchedulers();
+        }
         retryScheduler = Executors.newSingleThreadScheduledExecutor();
         healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
     }
@@ -511,6 +663,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     public void destroy() {
         log.info("Destroying OPC UA protocol adapter {}", adapterId);
 
+        // Released here as well as in stop(), because destroy() is reachable without one -- the framework may
+        // discard an adapter it never stopped. Leaving it claimed would make the object permanently
+        // unstartable, which matters because the same instance is reused across a configuration change.
+        started.set(false);
+        // For the same reason, and this one had teeth. destroy() used to clear only `started`, so a start
+        // still connecting went on believing background work was wanted: its completion callback tests
+        // `stopped`, found it false, and called scheduleHealthCheck() -- against the scheduler field that
+        // shutdownSchedulers() had just set to null, three lines below. Cleared again by start(), which is
+        // what makes this safe on an instance the framework reuses after a configuration change.
+        stopped = true;
+
         // Cancel any pending retries and health checks
         cancelRetry();
         cancelHealthCheck();
@@ -518,7 +681,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // Shutdown schedulers (if not already shutdown in stop())
         shutdownSchedulers();
 
-        final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
+        // The client it names is being disconnected below, so keeping it would only offer browse callers a
+        // dead session. stop() has always cleared it; destroy() not doing so was an omission rather than a
+        // distinction, and it is the more final of the two.
+        this.browseClient.set(null);
+
+        // Removing the generation and publishing the lifecycle-owned terminal status are one operation. A
+        // concurrent restart cannot install its replacement between them and then be described as disconnected.
+        final OpcUaClientConnection conn =
+                releaseCurrentConnectionAndPublish(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         if (conn != null) {
             @SuppressWarnings("unused")
             final var unused = CompletableFuture.runAsync(() -> {
@@ -652,6 +823,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
+        // Second line of defence. The tag's write schema already describes a shape that accepts nothing, but
+        // a schema is a description and this is the refusal: an event subscription names a notifier, and
+        // writing a value to a notifier is meaningless rather than merely unsupported.
+        if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.EVENT_SUBSCRIPTION) {
+            log.error("Attempted to write to event subscription tag '{}', which is northbound only", tagName);
+            output.fail("Tag '" + tagName + "' is an event subscription and cannot be written: it is a query "
+                    + "against a notifier, not a node. To acknowledge an alarm, write to a CONDITION tag.");
+            return;
+        }
+
         final OpcUaClientConnection conn = opcUaClientConnection.get();
         if (conn == null) {
             output.fail("Discovery failed: ClientConnection not connected or not initialized");
@@ -669,8 +850,34 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                         opcuaTag.getName());
                             }
 
-                            final NodeId nodeId =
-                                    NodeId.parse(opcuaTag.getDefinition().getNode());
+                            // A refresh tag is written to ask for the current alarm picture. Its node plays
+                            // no part: the call is made on the well-known ConditionType, and the only
+                            // argument is the subscription id, which is ours rather than the caller's.
+                            //
+                            // Dispatched before anything parses that node, which is the whole of the fix
+                            // here. Subscription verification deliberately does not parse a refresh tag's
+                            // node either -- it passes null and says why -- so a tag with a placeholder
+                            // there starts, subscribes and publishes control events perfectly well, and
+                            // then threw on the one command it exists to accept. Worse than a failed write:
+                            // the throw happened inside this consumer, where nothing maps it to a failure,
+                            // so the WritingOutput was never completed at all.
+                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.REFRESH) {
+                                requestRefresh(opcUAWritePayload, tagName, output);
+                                return;
+                            }
+
+                            final NodeId nodeId = parseNodeOrFail(opcuaTag, tagName, output);
+                            if (nodeId == null) {
+                                return;
+                            }
+
+                            // A condition is moved by calling a method on it, not by assigning to it: the
+                            // server owns the state machine. Everything else is an ordinary value write.
+                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.CONDITION) {
+                                writeConditionUpdate(client, nodeId, opcUAWritePayload, tagName, output);
+                                return;
+                            }
+
                             final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
                             @SuppressWarnings("unused")
@@ -696,6 +903,112 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         () -> output.fail("Discovery failed: Client not connected or not initialized"));
     }
 
+    /**
+     * Parses the node a write is aimed at, answering the write rather than throwing when it cannot.
+     * <p>
+     * {@code NodeId.parse} throws an unchecked exception, and this runs inside the consumer of an
+     * {@code ifPresentOrElse} — so a throw leaves the {@link WritingOutput} uncompleted rather than failed,
+     * which is the difference between a write that reports an error and one that never answers.
+     *
+     * @return the parsed node, or {@code null} when the write has already been failed.
+     */
+    private @Nullable NodeId parseNodeOrFail(
+            final @NotNull OpcuaTag opcuaTag, final @NotNull String tagName, final @NotNull WritingOutput output) {
+
+        final String node = opcuaTag.getDefinition().getNode();
+        try {
+            return NodeId.parse(node);
+        } catch (final Exception e) {
+            log.error("Cannot write to tag '{}': '{}' is not a node id", tagName, node, e);
+            output.fail("Cannot write to tag '" + tagName + "': '" + node + "' is not a node id");
+            return null;
+        }
+    }
+
+    /**
+     * Handles a southbound write to a refresh tag: validate the command, then ask for a refresh.
+     * <p>
+     * Nothing from the payload reaches the server — the command carries no argument, and the subscription id
+     * is the connection's. The payload exists to name the action, and validating it is what stops a write
+     * meant for a different tag from silently triggering a refresh.
+     */
+    private void requestRefresh(
+            final @NotNull OpcUaPayload payload, final @NotNull String tagName, final @NotNull WritingOutput output) {
+
+        try {
+            RefreshCommand.validate(payload.value());
+        } catch (final IllegalArgumentException e) {
+            log.error("Rejected refresh command for tag '{}': {}", tagName, e.getMessage());
+            output.fail("Rejected refresh command for tag '" + tagName + "': " + e.getMessage());
+            return;
+        }
+
+        final OpcUaClientConnection conn = opcUaClientConnection.get();
+        if (conn == null) {
+            output.fail("Cannot refresh: the OPC UA connection is not established");
+            return;
+        }
+
+        conn.requestConditionRefresh()
+                .ifPresentOrElse(
+                        pending -> {
+                            @SuppressWarnings("unused")
+                            final var unused = pending.whenComplete((statusCode, throwable) -> {
+                                if (throwable != null) {
+                                    log.error("Exception while refreshing conditions for tag '{}'", tagName, throwable);
+                                    output.fail(throwable, null);
+                                } else if (statusCode.isBad()) {
+                                    log.error(
+                                            "Server refused a condition refresh for tag '{}': {}", tagName, statusCode);
+                                    output.fail("The server refused the refresh: " + statusCode);
+                                } else {
+                                    log.debug("Requested a condition refresh via tag '{}'", tagName);
+                                    output.finish();
+                                }
+                            });
+                        },
+                        () -> output.fail("Cannot refresh: no subscription is established yet"));
+    }
+
+    /**
+     * Requests a state transition on a condition, as asked for by a southbound message.
+     * <p>
+     * A malformed command fails the write rather than being interpreted generously: the {@code eventId}
+     * identifies one specific transition, so guessing at a command risks acknowledging something other than
+     * what was intended.
+     */
+    private void writeConditionUpdate(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId conditionNodeId,
+            final @NotNull OpcUaPayload payload,
+            final @NotNull String tagName,
+            final @NotNull WritingOutput output) {
+
+        final ConditionUpdate update;
+        try {
+            update = ConditionUpdate.fromJson(payload.value());
+        } catch (final IllegalArgumentException e) {
+            log.error("Rejected condition update for tag '{}': {}", tagName, e.getMessage());
+            output.fail("Rejected condition update for tag '" + tagName + "': " + e.getMessage());
+            return;
+        }
+
+        @SuppressWarnings("unused")
+        final var unused = ConditionUpdateWriter.requestTransition(client, conditionNodeId, update)
+                .whenComplete((statusCode, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Exception while updating condition tag '{}'", tagName, throwable);
+                        output.fail(throwable, null);
+                    } else if (statusCode.isBad()) {
+                        log.error("Failed to {} condition tag '{}': {}", update.method(), tagName, statusCode);
+                        output.fail("Failed to " + update.method() + " condition tag '" + tagName + "': " + statusCode);
+                    } else {
+                        log.debug("Successfully requested {} on condition tag '{}'", update.method(), tagName);
+                        output.finish();
+                    }
+                });
+    }
+
     @Override
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
@@ -709,6 +1022,34 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (tag == null) {
             log.error("Cannot create schema for non-existent tag '{}'", tagName);
             output.tagNotFound("Tag '" + tagName + "' not found.");
+            return;
+        }
+
+        // An event tag's shape follows from its declared type, not from the device, so both schemas are known
+        // before a connection exists and this answers without one. It is also where read and write genuinely
+        // differ — a transition report northbound, and southbound either a command to move the state machine
+        // or nothing at all.
+        final OpcuaTagKind tagKind = tag.getDefinition().getKind();
+        if (tagKind != OpcuaTagKind.VALUE) {
+            // getPublishedFields(), the same accessor the select clause and the decoder use, so the schema
+            // cannot promise a field the server was never asked for. They differ only for a REFRESH tag.
+            final EventFieldSet publishedFields = tag.getDefinition().getPublishedFields();
+            log.debug(
+                    "Schema for {} tag='{}' derived from declared type '{}'",
+                    tagKind,
+                    tagName,
+                    publishedFields.browseName());
+            // Northbound is the same for all three: type names the published shape, whether the tag observes
+            // one condition, queries a notifier, or carries the refresh bracket. Southbound is where they
+            // differ -- a transition command, a refresh request, or nothing writable at all.
+            final Schema writeSchema =
+                    switch (tagKind) {
+                        case CONDITION -> ConditionSchemas.writeSchema();
+                        case REFRESH -> ConditionSchemas.refreshCommandSchema();
+                        case EVENT_SUBSCRIPTION, VALUE -> ConditionSchemas.unwritableSchema();
+                    };
+            output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                    ConditionSchemas.readSchema(publishedFields), null, null, writeSchema));
             return;
         }
 
@@ -753,6 +1094,195 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         return protocolAdapterState;
     }
 
+    @VisibleForTesting
+    int consecutiveRetryAttempts() {
+        return consecutiveRetryAttempts.get();
+    }
+
+    /** Claims the empty connection slot as one operation serialized with generation-owned status writes. */
+    @VisibleForTesting
+    boolean claimConnection(final @NotNull OpcUaClientConnection connection) {
+        connectionOwnershipLock.lock();
+        try {
+            return opcUaClientConnection.compareAndSet(null, connection);
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Releases whichever generation is current without letting one of its status writes pass concurrently. */
+    @VisibleForTesting
+    @Nullable
+    OpcUaClientConnection releaseCurrentConnection() {
+        connectionOwnershipLock.lock();
+        try {
+            return opcUaClientConnection.getAndSet(null);
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Releases the current generation and publishes an adapter-lifecycle status under the same lock. */
+    private @Nullable OpcUaClientConnection releaseCurrentConnectionAndPublish(
+            final ProtocolAdapterState.@NotNull ConnectionStatus status) {
+        connectionOwnershipLock.lock();
+        try {
+            final OpcUaClientConnection connection = opcUaClientConnection.getAndSet(null);
+            protocolAdapterState.setConnectionStatus(status);
+            return connection;
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * Publishes a status only if its source is still current, with the check and write indivisible relative to
+     * every connection-generation change.
+     */
+    @VisibleForTesting
+    void publishStatusFrom(
+            final @NotNull OpcUaClientConnection source, final ProtocolAdapterState.@NotNull ConnectionStatus status) {
+        connectionOwnershipLock.lock();
+        try {
+            if (opcUaClientConnection.get() == source) {
+                protocolAdapterState.setConnectionStatus(status);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': not reporting {} from a connection the adapter has already replaced",
+                        adapterId,
+                        status);
+            }
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Resets attempt-local readiness and publishes CONNECTING as one generation-owned transition. */
+    private void publishConnectingFrom(final @NotNull OpcUaClientConnection source) {
+        connectionOwnershipLock.lock();
+        try {
+            if (opcUaClientConnection.get() == source && !stopped) {
+                browseReadiness.set(ReadinessStatus.WARMING_UP);
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': not publishing CONNECTING from a connection the adapter no longer owns",
+                        adapterId);
+            }
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * Installs OPC UA readiness and public CONNECTED as one generation-owned transition.
+     * <p>
+     * The two are published together but are not the same fact, and the connection is asked which it earned.
+     * A connection whose data-type tree could not be built is still fully connected — its tags are verified
+     * and subscribed, and events and values flow — but a browse served from an unhydrated address space is
+     * non-deterministic, so browse stays not-ready and the endpoint keeps answering 503 until something
+     * rebuilds the tree. Reporting browse-ready on the strength of an attempt that did not manage it would be
+     * the same class of untruth as the optimistic {@code CONNECTED} this readiness model exists to remove.
+     */
+    @VisibleForTesting
+    void publishReadyFrom(final @NotNull OpcUaClientConnection source) {
+        connectionOwnershipLock.lock();
+        try {
+            if (opcUaClientConnection.get() == source && !stopped) {
+                final boolean browseReady = source.hasBrowseMetadata();
+                browseReadiness.set(browseReady ? ReadinessStatus.BROWSE_READY : ReadinessStatus.WARMING_UP);
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+                if (browseReady) {
+                    log.info(
+                            "OPC UA adapter '{}' is connected and browse-ready "
+                                    + "(namespace table and data-type tree hydrated)",
+                            adapterId);
+                } else {
+                    log.info(
+                            "OPC UA adapter '{}' is connected; browse is not ready because the data-type tree "
+                                    + "could not be built during this connect. Tags, events and values are "
+                                    + "unaffected, and later health checks retry the build with backoff. See "
+                                    + "the preceding warning for the cause.",
+                            adapterId);
+                }
+            } else {
+                log.debug(
+                        "OPC UA adapter '{}': not publishing readiness from a connection the adapter no longer owns",
+                        adapterId);
+            }
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * Removes and marks a failed attempt only while it is still current. A failed ownership transition has no
+     * status or retry side effects.
+     */
+    private boolean markCurrentConnectionFailed(final @NotNull OpcUaClientConnection connection) {
+        connectionOwnershipLock.lock();
+        try {
+            if (stopped || !opcUaClientConnection.compareAndSet(connection, null)) {
+                return false;
+            }
+            lastReconnectTimestamp.set(System.currentTimeMillis());
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            return true;
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /** Completes the current successful attempt without allowing its generation to change halfway through. */
+    private boolean completeCurrentConnection(final @NotNull OpcUaClientConnection connection) {
+        connectionOwnershipLock.lock();
+        try {
+            if (stopped || opcUaClientConnection.get() != connection) {
+                return false;
+            }
+            lastReconnectTimestamp.set(System.currentTimeMillis());
+            reconnectAttempts.set(0);
+            connection.client().ifPresent(browseClient::set);
+            cancelRetry();
+            scheduleHealthCheck();
+            return true;
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * Finishes a failed attempt after ownership has been atomically revoked. Visible so the failed-CAS
+     * regression can prove a superseded attempt performs neither the ERROR write nor retry scheduling.
+     */
+    @VisibleForTesting
+    boolean completeFailedAttempt(
+            final @NotNull OpcUaClientConnection connection,
+            final @NotNull ProtocolAdapterStartInput input,
+            final @Nullable Throwable throwable) {
+        if (!markCurrentConnectionFailed(connection)) {
+            log.debug(
+                    "Ignoring failed connection attempt for OPC UA adapter '{}' because its generation is no longer current",
+                    adapterId);
+            return false;
+        }
+
+        if (throwable != null) {
+            log.warn(
+                    "OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
+                    adapterId,
+                    throwable);
+        } else {
+            log.warn(
+                    "OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
+                    adapterId);
+        }
+
+        cancelHealthCheck();
+        scheduleRetry(input);
+        return true;
+    }
+
     /**
      * Attempts to establish connection to OPC UA server.
      * On failure, schedules automatic retry after configured retry interval.
@@ -762,79 +1292,66 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull ParsedConfig parsedConfig,
             final @NotNull ProtocolAdapterStartInput input) {
 
-        // EDG-577: a fresh (re)connect is not browse-ready until its warm-up completes.
-        browseReadiness.set(ReadinessStatus.WARMING_UP);
-
         @SuppressWarnings("unused")
         final var unused = CompletableFuture.supplyAsync(() -> conn.start(parsedConfig))
                 .whenComplete((success, throwable) -> {
-                    if (stopped) {
-                        log.debug(
-                                "Connection attempt completed after adapter '{}' was stopped, ignoring result",
-                                adapterId);
-                        return;
-                    }
-                    lastReconnectTimestamp.set(System.currentTimeMillis());
-                    if (success && throwable == null) {
-                        reconnectAttempts.set(0);
-                        // Update browse client snapshot so browse works during future restarts
-                        conn.client().ifPresent(browseClient::set);
-                        // EDG-577: CONNECTED has fired, but the address-space metadata still needs hydrating
-                        // before a deterministic browse — warm it up, then flip to BROWSE_READY.
-                        conn.client().ifPresent(this::warmUpBrowseReadiness);
-                        // Connection succeeded - cancel any pending retries and start health check
-                        cancelRetry();
-                        scheduleHealthCheck();
-                        log.info("OPC UA adapter '{}' connected successfully", adapterId);
-                    } else {
-                        // Connection failed - clean up and schedule retry with exponential backoff
-                        this.opcUaClientConnection.set(null);
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-
-                        if (throwable != null) {
-                            log.warn(
-                                    "OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
-                                    adapterId,
-                                    throwable);
+                    // Two questions, not one. `stopped` asks whether the adapter still wants background work
+                    // at all; the identity check asks whether *this* attempt is still the one that speaks for
+                    // it. An attempt includes a bounded metadata build plus up to three round trips per
+                    // condition tag,
+                    // and a reconnect or a retry can install a newer connection while it runs, at which point
+                    // everything below is about the wrong object: it would overwrite the live browse client
+                    // with a superseded one and schedule health checks on the new lifecycle's executor.
+                    //
+                    // Ignoring the result is not enough on its own. A superseded attempt that *succeeded*
+                    // holds a live session and subscription that nothing else can reach, so dropping the
+                    // result on the floor leaves it publishing for the lifetime of the process. It has to be
+                    // destroyed here, because this is the last reference to it. Done inline rather than
+                    // posted: this callback already runs off the caller's thread, and doing it here means the
+                    // future does not complete until the orphan is actually closed.
+                    if (Boolean.TRUE.equals(success) && throwable == null) {
+                        if (completeCurrentConnection(conn)) {
+                            // The connection has already hydrated browse metadata and installed its context
+                            // before publishing CONNECTED, so every public operation is usable at this point.
+                            log.info("OPC UA adapter '{}' connected successfully", adapterId);
                         } else {
-                            log.warn(
-                                    "OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
+                            log.debug(
+                                    "Connection attempt for adapter '{}' completed after it was superseded or "
+                                            + "stopped, discarding the successful result",
                                     adapterId);
+                            // This completion owns the last reference to the live session and subscription.
+                            conn.destroy();
                         }
-
-                        cancelHealthCheck();
-                        // Schedule retry attempt with exponential backoff
-                        scheduleRetry(input);
+                    } else {
+                        completeFailedAttempt(conn, input, throwable);
                     }
                 });
     }
 
     /**
-     * EDG-577: one-shot async warm-up run after a successful (re)connect. The Milo session reports CONNECTED as
-     * soon as it activates, but the namespace table and data-type tree a deterministic browse depends on may not
-     * be populated yet. Force-load them off the connection thread, then flip the adapter to BROWSE_READY so the
-     * REST browse endpoint stops answering 503. A failure leaves the adapter not-ready; the next reconnect (or a
-     * later browse) re-warms.
+     * EDG-577: one-shot warm-up during a successful connection, so that a browse served immediately after
+     * {@code CONNECTED} is deterministic rather than racing Milo's lazy hydration.
+     * <p>
+     * The connection runs this before tag verification, subscription creation, automatic refresh, context
+     * installation and {@code CONNECTED}. A failure does not fail the attempt — see {@code
+     * OpcUaClientConnection#prepareClientForUse} for why not — it leaves the adapter connected and not
+     * browse-ready.
+     * <p>
+     * Only the second call does any work. {@code getNamespaceTable()} is a field read in Milo 1.1.6: the
+     * table is populated by the client during session activation, so there is nothing here to force and
+     * nothing that can fail. It is kept because it is the pairing that makes the intent legible, and because
+     * a future Milo could make it lazy like the tree.
      */
-    private void warmUpBrowseReadiness(final @NotNull OpcUaClient client) {
-        @SuppressWarnings("unused")
-        final var unused = CompletableFuture.runAsync(() -> {
-            try {
-                client.getNamespaceTable(); // ensure the namespace table is read from the server
-                client.getDataTypeTree(); // build the data-type tree (feeds the EDG-488 cache when that lands)
-                if (!stopped) {
-                    browseReadiness.set(ReadinessStatus.BROWSE_READY);
-                    log.info(
-                            "OPC UA adapter '{}' is browse-ready (namespace table and data-type tree hydrated)",
-                            adapterId);
-                }
-            } catch (final @NotNull Exception e) {
-                log.warn(
-                        "OPC UA adapter '{}' browse warm-up failed; adapter stays not browse-ready until the next reconnect",
-                        adapterId,
-                        e);
-            }
-        });
+    private void warmUpBrowseMetadata(final @NotNull OpcUaClient client) {
+        try {
+            client.getNamespaceTable();
+            // The recursive browse of the DataType hierarchy, and the whole cost and failure surface of this
+            // method. Lazy in Milo, and its slot is cleared on failure rather than poisoned, so whoever needs
+            // it next -- a browse, a southbound write, a schema request -- rebuilds it.
+            client.getDataTypeTree(); // feeds the EDG-488 cache when that lands
+        } catch (final @NotNull Exception e) {
+            throw new IllegalStateException("OPC UA browse metadata warm-up failed", e);
+        }
     }
 
     /**
@@ -898,11 +1415,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 this.moduleServices.eventService(),
                                 protocolAdapterMetricsService,
                                 config,
-                                opcUaServiceFaultListener);
+                                opcUaServiceFaultListener,
+                                this::publishStatusFrom,
+                                this::warmUpBrowseMetadata,
+                                this::publishReadyFrom);
 
                         // Set as current connection and attempt
-                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-                        if (opcUaClientConnection.compareAndSet(null, newConn)) {
+                        if (claimConnection(newConn)) {
+                            publishConnectingFrom(newConn);
                             attemptConnection(newConn, this.parsedConfig, input);
                         } else {
                             log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);

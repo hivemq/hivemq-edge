@@ -8005,6 +8005,7 @@ components:
             - STATELESS
             - UNKNOWN
             - ERROR
+            - CONNECTING
         id:
           type: string
           description: The identifier of the object
