@@ -47,11 +47,19 @@ public record Security(
         // No defaultValue, deliberately - do not add one. It became a JSON-schema `default`, and React
         // JSON Schema Form materializes schema defaults into the form data it submits, so saving an
         // unrelated edit through the UI could write messageSecurityMode=NONE into an adapter that never
-        // set it. That is not the runtime default: unset resolves to IGNORED, which picks SignAndEncrypt
-        // for every policy other than NONE. An explicit NONE against a secured policy matches no
-        // endpoint the server offers, so the adapter stops connecting - measured, and it fails closed
-        // rather than downgrading. The real default is stated in the description instead, where it
-        // informs the operator without being submitted back. Same rule and same reason as TlsChecksFull.
+        // set it. That is not the runtime default: unset picks SignAndEncrypt for every policy other
+        // than NONE. An explicit NONE against a secured policy matches no endpoint the server offers,
+        // so the adapter stops connecting - measured, and it fails closed rather than downgrading. The
+        // real default is stated in the description instead, where it informs the operator without
+        // being submitted back. Same rule and same reason as TlsChecksFull.
+        //
+        // Null means unset, and nothing here resolves it to IGNORED - do not reinstate that either.
+        // The constructor used to, which left the record unable to tell "the operator did not set
+        // this" from "the operator set IGNORED", and NON_NULL above with nothing to suppress. GET
+        // serialises the parsed record, so every read handed the caller a messageSecurityMode it had
+        // never written, and a UI save wrote it into config.xml. IGNORED is still accepted and still
+        // means the same thing; it is only no longer invented. OpcUaClientConnection treats null and
+        // IGNORED identically, which is the whole of the resolution.
         @ModuleConfigField(
                 title = "Message Security Mode",
                 description =
@@ -63,12 +71,14 @@ public record Security(
             @JsonProperty("policy") final @Nullable SecPolicy policy,
             @JsonProperty("messageSecurityMode") final @Nullable MsgSecurityMode messageSecurityMode) {
         this.policy = Objects.requireNonNullElse(policy, Constants.DEFAULT_SECURITY_POLICY);
-        this.messageSecurityMode = Objects.requireNonNullElse(messageSecurityMode, MsgSecurityMode.IGNORED);
+        this.messageSecurityMode = messageSecurityMode;
     }
 
-    // Backwards compatibility constructor
+    // Backwards compatibility constructor. Unset, not IGNORED: this builds the configuration of an
+    // adapter whose XML carries no <security> element at all, and resolving it to IGNORED here would
+    // put the element into that adapter's config file on the first save through the API.
     public Security(final @Nullable SecPolicy policy) {
-        this(policy, MsgSecurityMode.IGNORED);
+        this(policy, null);
     }
 
     @Override
@@ -87,7 +97,7 @@ public record Security(
             final String text = parser.getText();
             if (text != null && text.isEmpty()) {
                 // <security/> collapses to the empty String and means the default policy.
-                return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.IGNORED);
+                return new Security(Constants.DEFAULT_SECURITY_POLICY, null);
             }
 
             final Map<String, Object> map;
@@ -103,7 +113,7 @@ public record Security(
                         e);
             }
             if (map == null || map.isEmpty()) {
-                return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.IGNORED);
+                return new Security(Constants.DEFAULT_SECURITY_POLICY, null);
             }
 
             // This deserializer reads a raw map, so the application-wide handling for unknown adapter
@@ -149,13 +159,13 @@ public record Security(
             final Object modeValue = map.get("messageSecurityMode");
             final MsgSecurityMode messageSecurityMode;
             if (modeValue == null) {
-                messageSecurityMode = MsgSecurityMode.IGNORED;
+                messageSecurityMode = null;
             } else if (modeValue instanceof String modeString) {
-                // Blank is "unset" and the constructor resolves it to IGNORED; a misspelling throws
-                // out of fromString. Defaulting instead is what made this the last fail-open value in
-                // the block: IGNORED hands the choice to the policy, so 'SING' under policy NONE
-                // connects with message security None where the correctly spelled 'SIGN' matches no
-                // endpoint at all.
+                // Blank is "unset" and fromString yields null for it; a misspelling throws out of
+                // fromString. Defaulting instead is what made this the last fail-open value in the
+                // block: unset hands the choice to the policy, so 'SING' under policy NONE connects
+                // with message security None where the correctly spelled 'SIGN' matches no endpoint
+                // at all.
                 messageSecurityMode = MsgSecurityMode.fromString(modeString);
             } else {
                 // A present-but-non-text value must not quietly become IGNORED either.

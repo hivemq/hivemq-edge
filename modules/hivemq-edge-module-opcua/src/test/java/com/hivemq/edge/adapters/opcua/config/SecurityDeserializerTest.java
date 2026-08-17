@@ -177,21 +177,24 @@ class SecurityDeserializerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"", "   "})
-    void deserialize_blankMode_isUnsetAndMeansIgnored(final @NotNull String written) throws Exception {
+    void deserialize_blankMode_isUnset(final @NotNull String written) throws Exception {
         // Blank stays "unset" - the compatibility case an empty element produces. Only a present,
         // non-blank, unrecognized value is a configuration error.
         final Security security = mapper.readValue("{\"messageSecurityMode\":\"" + written + "\"}", Security.class);
 
-        assertThat(security.messageSecurityMode()).isEqualTo(MsgSecurityMode.IGNORED);
+        assertThat(security.messageSecurityMode()).isNull();
     }
 
     @Test
-    void deserialize_absentOrNullMode_meansIgnored() throws Exception {
+    void deserialize_absentOrNullMode_staysUnset() throws Exception {
+        // Not IGNORED: the record has to keep "the operator did not write this" distinguishable from
+        // "the operator wrote IGNORED", or GET hands back a mode nobody configured and the next save
+        // writes it into config.xml. Both resolve the same way at connection time.
         assertThat(mapper.readValue("{\"policy\":\"NONE\"}", Security.class).messageSecurityMode())
-                .isEqualTo(MsgSecurityMode.IGNORED);
+                .isNull();
         assertThat(mapper.readValue("{\"messageSecurityMode\":null}", Security.class)
                         .messageSecurityMode())
-                .isEqualTo(MsgSecurityMode.IGNORED);
+                .isNull();
     }
 
     @Test

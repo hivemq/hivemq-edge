@@ -69,8 +69,9 @@ public enum MsgSecurityMode {
     }
 
     /**
-     * Jackson creator. Blank or absent yields {@code null}, which {@link Security} resolves to
-     * {@link #IGNORED}: the mode is unset and the security policy decides it.
+     * Jackson creator. Blank or absent yields {@code null}, which {@link Security} keeps as {@code
+     * null}: the mode is unset and the security policy decides it. {@link #IGNORED} says the same
+     * thing explicitly, and the two are treated identically wherever the mode is read.
      *
      * <p>An unrecognized value rejects the configuration rather than resolving to {@link #IGNORED} —
      * see {@link EnumParsing}. Returning {@code null} for a misspelling, which this used to do, made
