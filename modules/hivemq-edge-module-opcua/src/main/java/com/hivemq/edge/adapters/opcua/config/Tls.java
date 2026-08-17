@@ -115,6 +115,17 @@ public record Tls(
         @Nullable
         AllowList allowList,
 
+        @JsonProperty("revocationList")
+        @JsonInclude(NON_NULL)
+        @ModuleConfigField(
+                title = "Certificate revocation lists",
+                description = "Location of the certificate revocation lists used by revocation=CHECK and "
+                        + "revocation=REQUIRE_CRLS. A file or a directory of them, PEM or DER. Needed whenever the "
+                        + "certification path runs through a CA: without CRLs the issuer's revocation status is "
+                        + "unknown, and unknown fails closed.")
+        @Nullable
+        RevocationList revocationList,
+
         /**
          * The settings this element carried that the model does not know, or an empty map when every
          * setting was recognized.
@@ -162,7 +173,8 @@ public record Tls(
             @JsonProperty("tlsChecksFull") final @Nullable TlsChecksFull tlsChecksFull,
             @JsonProperty("keystore") final @Nullable Keystore keystore,
             @JsonProperty("truststore") final @Nullable Truststore truststore,
-            @JsonProperty("allowList") final @Nullable AllowList allowList) {
+            @JsonProperty("allowList") final @Nullable AllowList allowList,
+            @JsonProperty("revocationList") final @Nullable RevocationList revocationList) {
         this(
                 enabled,
                 tlsChecks,
@@ -170,10 +182,17 @@ public record Tls(
                 keystore,
                 truststore,
                 allowList,
+                revocationList,
                 unknownSettings == null ? Map.of() : unknownSettings);
     }
 
-    /** The shape configuration is built from in code; only deserialization can fill the trap. */
+    /**
+     * The shape configuration is built from in code; only deserialization can fill the trap.
+     *
+     * <p>Kept at six arguments when {@code revocationList} was added, rather than growing: it has
+     * forty-odd call sites that have nothing to say about revocation lists, and a configuration that
+     * does not mention one is exactly what {@code null} means here.
+     */
     public Tls(
             final boolean enabled,
             final @Nullable TlsChecks tlsChecks,
@@ -181,7 +200,19 @@ public record Tls(
             final @Nullable Keystore keystore,
             final @Nullable Truststore truststore,
             final @Nullable AllowList allowList) {
-        this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, Map.of());
+        this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, null, Map.of());
+    }
+
+    /** As above, for the configurations that do supply revocation lists. */
+    public Tls(
+            final boolean enabled,
+            final @Nullable TlsChecks tlsChecks,
+            final @Nullable TlsChecksFull tlsChecksFull,
+            final @Nullable Keystore keystore,
+            final @Nullable Truststore truststore,
+            final @Nullable AllowList allowList,
+            final @Nullable RevocationList revocationList) {
+        this(enabled, tlsChecks, tlsChecksFull, keystore, truststore, allowList, revocationList, Map.of());
     }
 
     /**

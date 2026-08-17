@@ -76,6 +76,9 @@ public final class TlsChecksProjection {
         if (tls.allowList() != null) {
             refuseUnknownSettings("allowList", tls.allowList().unknownSettings(), AllowList.class);
         }
+        if (tls.revocationList() != null) {
+            refuseUnknownSettings("revocationList", tls.revocationList().unknownSettings(), RevocationList.class);
+        }
 
         if (preset != null && axes != null) {
             throw new InvalidTlsChecksConfigException("Both 'tlsChecks' (preset " + preset
@@ -252,6 +255,19 @@ public final class TlsChecksProjection {
         return allowList != null
                 && allowList.path() != null
                 && !allowList.path().isBlank();
+    }
+
+    /**
+     * The single definition of "a revocation list is configured", for the same reason as
+     * {@link #hasAllowListPath}. Deliberately not turned into a start-up requirement when
+     * {@code revocation} is enforced: revocation is satisfied vacuously when no CA appears in the
+     * path, which is every direct-trust and self-signed deployment, so demanding a CRL there would
+     * refuse configurations that work today — including the default preset.
+     */
+    public static boolean hasRevocationListPath(final @Nullable RevocationList revocationList) {
+        return revocationList != null
+                && revocationList.path() != null
+                && !revocationList.path().isBlank();
     }
 
     /** Signals a TLS check configuration that is contradictory or cannot be honoured. */

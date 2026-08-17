@@ -46,6 +46,19 @@
             "title" : "Keystore",
             "description" : "Keystore that contains the client certificate including the chain. Required whenever the security policy is not NONE, and for X509 authentication."
           },
+          "revocationList" : {
+            "type" : "object",
+            "properties" : {
+              "path" : {
+                "type" : "string",
+                "title" : "Revocation list path",
+                "description" : "Path on the local file system to a certificate revocation list, or to a directory of them. PEM or DER. Required for revocation=CHECK or revocation=REQUIRE_CRLS whenever the certification path runs through a CA; a path that is trusted directly has no issuer to check and needs none."
+              }
+            },
+            "required" : [ "path" ],
+            "title" : "Certificate revocation lists",
+            "description" : "Location of the certificate revocation lists used by revocation=CHECK and revocation=REQUIRE_CRLS. A file or a directory of them, PEM or DER. Needed whenever the certification path runs through a CA: without CRLs the issuer's revocation status is unknown, and unknown fails closed."
+          },
           "tlsChecks" : {
             "type" : "string",
             "enum" : [ "NONE", "APPLICATION_URI", "STANDARD", "ALL", "SELF_SIGNED", "NO_VERIFICATION" ],
@@ -120,7 +133,7 @@
   },
   "uiSchema" : {
     "tls" : {
-      "ui:order" : [ "enabled", "tlsChecks", "tlsChecksFull", "allowList", "keystore", "truststore", "*" ],
+      "ui:order" : [ "enabled", "tlsChecks", "tlsChecksFull", "allowList", "revocationList", "keystore", "truststore", "*" ],
       "tlsChecks" : {
         "ui:enumNames" : [ "NONE: Chain validation only - the trust chain is still built.", "APPLICATION_URI: Chain validation plus the Application URI check.", "STANDARD: Default - chain, Application URI, validity period and revocation.", "ALL: STANDARD plus hostname verification and key-usage enforcement.", "SELF_SIGNED: Fingerprint allow-list plus Application URI, hostname and validity - for servers without a CA.", "NO_VERIFICATION: Accept any certificate - vulnerable to MITM, prefer SELF_SIGNED." ]
       },
@@ -128,6 +141,9 @@
         "ui:order" : [ "trustMode", "sanUri", "hostname", "validity", "revocation", "keyUsage", "*" ]
       },
       "allowList" : {
+        "ui:order" : [ "path", "*" ]
+      },
+      "revocationList" : {
         "ui:order" : [ "path", "*" ]
       },
       "keystore" : {

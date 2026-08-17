@@ -16,19 +16,26 @@
 package com.hivemq.edge.adapters.opcua.security;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
@@ -46,6 +53,9 @@ final class TestCertificates {
     static final @NotNull String APPLICATION_URI = "urn:hivemq:edge:test-server";
     static final @NotNull String HOSTNAME = "opcua.factory.local";
 
+    /** A well-formed certificate in PEM, for the tests that need something that is not a CRL. */
+    static final @NotNull String SOME_PEM_CERTIFICATE = pemCertificate();
+
     private TestCertificates() {}
 
     static @NotNull Builder builder() {
@@ -58,6 +68,49 @@ final class TestCertificates {
                 .withApplicationUri(APPLICATION_URI)
                 .withHostname(HOSTNAME)
                 .build();
+    }
+
+    /**
+     * Writes a CRL signed by a throwaway CA, revoking the given serial numbers.
+     *
+     * <p>The issuer name carries {@code EDG-585} so a test can tell the CRL it wrote from one it did
+     * not, without asserting on a whole distinguished name.
+     */
+    static @NotNull Path writeCrl(final @NotNull Path target, final @NotNull List<BigInteger> revokedSerials)
+            throws Exception {
+        final KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        final KeyPair caKeyPair = keyGen.generateKeyPair();
+        final X500Name issuer = new X500Name("CN=EDG-585 Test CA");
+
+        final Date now = Date.from(Instant.now());
+        final X509v2CRLBuilder crlBuilder = new X509v2CRLBuilder(issuer, now);
+        crlBuilder.setNextUpdate(Date.from(Instant.now().plus(30, ChronoUnit.DAYS)));
+        for (final BigInteger serial : revokedSerials) {
+            crlBuilder.addCRLEntry(serial, now, CRLReason.privilegeWithdrawn);
+        }
+        final ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSA").build(caKeyPair.getPrivate());
+        final byte[] der = crlBuilder.build(signer).getEncoded();
+
+        Files.writeString(
+                target,
+                "-----BEGIN X509 CRL-----\n"
+                        + Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII))
+                                .encodeToString(der)
+                        + "\n-----END X509 CRL-----\n");
+        return target;
+    }
+
+    private static @NotNull String pemCertificate() {
+        try {
+            final byte[] der = identityOnly().getEncoded();
+            return "-----BEGIN CERTIFICATE-----\n"
+                    + Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII))
+                            .encodeToString(der)
+                    + "\n-----END CERTIFICATE-----\n";
+        } catch (final Exception e) {
+            throw new IllegalStateException("could not build the sample certificate", e);
+        }
     }
 
     static final class Builder {

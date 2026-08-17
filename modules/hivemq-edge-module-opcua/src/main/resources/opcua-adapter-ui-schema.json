@@ -53,7 +53,7 @@
       "ui:order": ["policy", "messageSecurityMode", "*"]
   },
   "tls": {
-    "ui:order": ["enabled", "tlsChecks", "tlsChecksFull", "allowList", "keystore", "truststore", "*"],
+    "ui:order": ["enabled", "tlsChecks", "tlsChecksFull", "allowList", "revocationList", "keystore", "truststore", "*"],
     "tlsChecks": {
       "ui:enumNames": ["NONE: Chain validation only - the trust chain is still built.",
         "APPLICATION_URI: Chain validation plus the Application URI check.",
@@ -66,6 +66,9 @@
       "ui:order": ["trustMode", "sanUri", "hostname", "validity", "revocation", "keyUsage", "*"]
     },
     "allowList": {
+      "ui:order": ["path", "*"]
+    },
+    "revocationList": {
       "ui:order": ["path", "*"]
     },
     "keystore": {

@@ -21,6 +21,7 @@ import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.EffectiveChecks;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.RevocationList;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecksProjection;
@@ -29,17 +30,20 @@ import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.security.AllowListCertificateValidator;
 import com.hivemq.edge.adapters.opcua.security.CertificateFingerprints;
+import com.hivemq.edge.adapters.opcua.security.CertificateRevocationLists;
 import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
 import com.hivemq.edge.adapters.opcua.security.CheckOnlyCertificateValidator;
 import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
@@ -131,7 +135,24 @@ public record ParsedConfig(
                                 + "Either correct the path, leave the truststore unset to use the JVM cacerts, "
                                 + "or use trustMode=ALLOW_LIST to trust specific certificates by fingerprint.");
                     }
-                    certValidator = createServerCertificateValidator(trustedCertsOpt.get(), checks);
+                    final List<X509CRL> revocationLists;
+                    try {
+                        revocationLists = loadRevocationLists(tlsConfig.revocationList());
+                    } catch (final IOException | IllegalArgumentException e) {
+                        // Same posture as the allow-list: a revocation list the operator configured
+                        // but that cannot be read is a configuration error, not a reason to fall back
+                        // to checking nothing.
+                        return Failure.of(String.valueOf(e.getMessage()));
+                    }
+                    if (!revocationLists.isEmpty()) {
+                        final RevocationList configured = tlsConfig.revocationList();
+                        log.info(
+                                "OPC UA adapter endpoint '{}': {} certificate revocation list(s) loaded from '{}'.",
+                                endpointUri,
+                                revocationLists.size(),
+                                configured == null ? "" : configured.path());
+                    }
+                    certValidator = createServerCertificateValidator(trustedCertsOpt.get(), revocationLists, checks);
                     if (!checks.isHostname()) {
                         // Logged once at start (not per-connect): the certificate is trusted via its
                         // chain, but is not verified to belong to this endpoint's hostname, so a
@@ -313,11 +334,26 @@ public record ParsedConfig(
      * a change on one axis cannot disturb another.
      */
     private static @NotNull CertificateValidator createServerCertificateValidator(
-            final @NotNull List<X509Certificate> trustedCerts, final @NotNull EffectiveChecks checks) {
+            final @NotNull List<X509Certificate> trustedCerts,
+            final @NotNull List<X509CRL> revocationLists,
+            final @NotNull EffectiveChecks checks) {
         return new DefaultClientCertificateValidator(
-                new CertificateTrustListManager(trustedCerts),
+                new CertificateTrustListManager(trustedCerts, revocationLists),
                 toValidationChecks(checks),
                 new MemoryCertificateQuarantine());
+    }
+
+    /**
+     * The configured revocation lists, or none when the element is absent. Absence is legitimate:
+     * only a path through a CA needs them.
+     */
+    static @NotNull List<X509CRL> loadRevocationLists(final @Nullable RevocationList revocationList)
+            throws IOException {
+        if (!TlsChecksProjection.hasRevocationListPath(revocationList)) {
+            return List.of();
+        }
+        return CertificateRevocationLists.load(
+                Path.of(Objects.requireNonNull(revocationList).path()));
     }
 
     /**
