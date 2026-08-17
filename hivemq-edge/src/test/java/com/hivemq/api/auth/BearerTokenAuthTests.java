@@ -69,8 +69,12 @@ public class BearerTokenAuthTests {
     protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
 
     static final int TEST_HTTP_PORT = 8088;
-    static final int CONNECT_TIMEOUT = 1000;
-    static final int READ_TIMEOUT = 1000;
+    // The first request against the freshly started server pays the Jersey/Jackson bootstrap cost,
+    // which is orders of magnitude slower than every later request. A 1s budget is not enough for
+    // that on a loaded CI agent, so the first test to run would time out at random. Matches
+    // JaxrsResourceTests. These timeouts only exist to stop a hung test, not to assert latency.
+    static final int CONNECT_TIMEOUT = 5000;
+    static final int READ_TIMEOUT = 5000;
     static final String HTTP = "http";
 
     protected static JaxrsHttpServer server;

@@ -63,7 +63,14 @@ public class CustomConfigSchemaGenerator {
                 .with(new JacksonSchemaModule(
                         JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
                         JacksonOption.INCLUDE_ONLY_JSONPROPERTY_ANNOTATED_METHODS,
-                        JacksonOption.RESPECT_JSONPROPERTY_ORDER))
+                        JacksonOption.RESPECT_JSONPROPERTY_ORDER,
+                        // Without this, an enum is advertised by its Java constant names while Jackson
+                        // reads and writes the @JsonValue form, so every value the schema offers is
+                        // rejected on deserialization. OpcuaConditionType is the case in point: the
+                        // schema listed ALARM_CONDITION, the API only accepts AlarmConditionType, and
+                        // a tag saved from the UI was dropped when the adapter reloaded.
+                        // Enums without a @JsonValue accessor keep using their constant names.
+                        JacksonOption.FLATTENED_ENUMS_FROM_JSONVALUE))
                 .with(new ModuleConfigSchemaGeneratorModule());
         withEnumDisplayNameProvider(configBuilder);
         withMutuallyExclusiveFieldsMarker(configBuilder);
