@@ -19,10 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.annotations.MutuallyExclusiveFields;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -212,6 +215,80 @@ class CustomConfigSchemaGeneratorTest {
 
         public @Nullable String getBar() {
             return bar;
+        }
+    }
+
+    @Test
+    void enumWithJsonValue_emitsWireFormNotConstantNames() {
+        final JsonNode schema = generator.generateJsonSchema(EnumPojo.class);
+        final JsonNode field = schema.path("properties").path("flavour");
+
+        // Jackson reads and writes the @JsonValue form, so that is what the schema has to advertise.
+        // Emitting the constant names instead makes every offered value fail deserialization.
+        final List<String> values = new ArrayList<>();
+        field.path("enum").forEach(node -> values.add(node.asText()));
+        assertThat(values).containsExactly("plain-vanilla", "double-chocolate");
+
+        // A declared default has to be one of the values the same schema offers, or the form both
+        // pre-fills and rejects it.
+        assertThat(field.path("default").asText()).isEqualTo("plain-vanilla");
+        assertThat(values).contains(field.path("default").asText());
+    }
+
+    @Test
+    void enumWithoutJsonValue_keepsConstantNames() {
+        final JsonNode schema = generator.generateJsonSchema(EnumPojo.class);
+
+        final List<String> values = new ArrayList<>();
+        schema.path("properties").path("size").path("enum").forEach(node -> values.add(node.asText()));
+        assertThat(values).containsExactly("SMALL", "LARGE");
+    }
+
+    public enum Flavour {
+        VANILLA("plain-vanilla"),
+        CHOCOLATE("double-chocolate");
+
+        private final @NotNull String wireName;
+
+        Flavour(final @NotNull String wireName) {
+            this.wireName = wireName;
+        }
+
+        @JsonValue
+        public @NotNull String wireName() {
+            return wireName;
+        }
+    }
+
+    public enum Size {
+        SMALL,
+        LARGE
+    }
+
+    public static final class EnumPojo {
+
+        @JsonProperty("flavour")
+        @ModuleConfigField(title = "Flavour", defaultValue = "plain-vanilla")
+        private final @Nullable Flavour flavour;
+
+        @JsonProperty("size")
+        @ModuleConfigField(title = "Size")
+        private final @Nullable Size size;
+
+        @JsonCreator
+        public EnumPojo(
+                @JsonProperty("flavour") final @Nullable Flavour flavour,
+                @JsonProperty("size") final @Nullable Size size) {
+            this.flavour = flavour;
+            this.size = size;
+        }
+
+        public @Nullable Flavour getFlavour() {
+            return flavour;
+        }
+
+        public @Nullable Size getSize() {
+            return size;
         }
     }
 }
