@@ -58,6 +58,10 @@ dependencies {
     testImplementation(libs.milo.server)
     testImplementation(libs.assertj)
     testImplementation(libs.awaitility)
+    // Test-only, and for one purpose: OpcUaSessionActivityListenerTest's race loop turns down the listener's
+    // own logger for the duration of the loop. See that test for why -- half a million INFO lines is a
+    // hundred-megabyte JUnit XML that GitHub's result parser refuses. Nothing in main uses Logback directly;
+    // the adapter logs through SLF4J and the binding is the runtime's business.
     testImplementation(libs.logback.classic)
 }
 

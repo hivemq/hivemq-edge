@@ -190,6 +190,19 @@ class ProtocolAdapterWrapperTest {
         }
 
         @Test
+        void asynchronousStartLeavesTheAdaptersConnectingStatusAlone() throws ProtocolAdapterException {
+            // OPC UA completes the runtime start before its asynchronous device connection is usable. The
+            // adapter publishes CONNECTING during that interval; the wrapper's legacy fallback is only for
+            // adapters that leave the initial DISCONNECTED value untouched.
+            when(protocolAdapterState.getConnectionStatus())
+                    .thenReturn(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+
+            assertThat(wrapper.start()).isTrue();
+
+            verify(protocolAdapterState, never()).setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        }
+
+        @Test
         void stop_withDestroy_callsAdapterDestroy() throws ProtocolAdapterException {
             wrapper.start();
             wrapper.stop(true);
@@ -1240,6 +1253,9 @@ class ProtocolAdapterWrapperTest {
 
             wrapperWithRealState.stop(false);
 
+            assertThat(wrapperWithRealState.getConnectionStatus())
+                    .as("an ordinary completed stop has a wrapper-owned terminal status")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // After stop, status changes should be blocked by the shutdown flag
             final boolean changed = realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             assertThat(changed).isFalse();

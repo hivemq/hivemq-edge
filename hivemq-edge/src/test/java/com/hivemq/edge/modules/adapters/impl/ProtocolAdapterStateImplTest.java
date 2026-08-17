@@ -116,6 +116,19 @@ class ProtocolAdapterStateImplTest {
     }
 
     @Test
+    void test_completeShutdown_setsDisconnectedWhileLaterChangesRemainBlocked() {
+        adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        adapterState.markShuttingDown();
+
+        adapterState.completeShutdown();
+
+        assertThat(adapterState.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        assertThat(adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR))
+                .isFalse();
+        assertThat(adapterState.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+    }
+
+    @Test
     void test_markShuttingDown_clearsListener() {
         final AtomicInteger callCount = new AtomicInteger(0);
 

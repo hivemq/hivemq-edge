@@ -40,6 +40,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
+import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
+import org.eclipse.milo.opcua.stack.core.types.structured.TimeZoneDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -197,6 +199,10 @@ public class OpcUaToJsonConverter {
             final var obj = builder.startObjectValue();
             struct.getMembers().forEach((k, v) -> addValueToObject(obj, k, v, ctx));
             obj.endObject();
+        } else if (value instanceof final TimeZoneDataType timeZone) {
+            populateTimeZone(builder.startObjectValue(), timeZone).endObject();
+        } else if (value instanceof final EUInformation engineeringUnits) {
+            populateEuInformation(builder.startObjectValue(), engineeringUnits).endObject();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
@@ -205,7 +211,11 @@ public class OpcUaToJsonConverter {
         }
     }
 
-    private static void addValueToObject(
+    /**
+     * Adds one OPC-UA value under {@code key}, mapping any builtin, array or structure to the builder. Shared
+     * with the event path, which maps each selected event field the same way.
+     */
+    static void addValueToObject(
             final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
             final @NotNull String key,
             final @Nullable Object value,
@@ -306,6 +316,10 @@ public class OpcUaToJsonConverter {
             final var nested = obj.startObject(key);
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
             nested.endObject();
+        } else if (value instanceof final TimeZoneDataType timeZone) {
+            populateTimeZone(obj.startObject(key), timeZone).endObject();
+        } else if (value instanceof final EUInformation engineeringUnits) {
+            populateEuInformation(obj.startObject(key), engineeringUnits).endObject();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
@@ -410,6 +424,10 @@ public class OpcUaToJsonConverter {
             final var nested = arr.startObject();
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
             nested.endObject();
+        } else if (value instanceof final TimeZoneDataType timeZone) {
+            populateTimeZone(arr.startObject(), timeZone).endObject();
+        } else if (value instanceof final EUInformation engineeringUnits) {
+            populateEuInformation(arr.startObject(), engineeringUnits).endObject();
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             for (final Object elem : values) {
@@ -444,13 +462,103 @@ public class OpcUaToJsonConverter {
             }
         }
 
-        final int namespaceIndex = nodeId.getNamespaceIndex().intValue();
-        if (namespaceIndex == 1) { // 1 is always encoded as a number
-            obj.put("namespaceIndex", namespaceIndex);
-        } else {
-            obj.put("namespaceIndex", nodeId.toParseableString());
+        // The namespace index, always, as the small integer it is. It needs no branching: unlike the
+        // identifier, whose Java type varies and so decides how `id` is written, a namespace index is a
+        // UShort with one representation.
+        //
+        // It used to be written as nodeId.toParseableString() for every index except 1 -- so the field named
+        // for the index held "ns=2;s=Boiler1.Temperature", the whole node id, duplicating idType and id
+        // beside it, and for namespace 0 held "i=9482", a string mentioning no namespace at all. That is a
+        // survival from a 2023 reversible/non-reversible distinction (OPC 10000-6 Annex H, now deprecated)
+        // whose flag was dropped in 2025, leaving only the display-oriented branch under a machine-readable
+        // name.
+        //
+        // Note what this deliberately does NOT do. A namespace index is meaningful only within one server
+        // session: the index-to-URI table is per-server and may be renumbered, so a consumer cannot recover
+        // what "2" means, and it may mean something else tomorrow. OPC 10000-6 §5.4.2.10 accordingly prefers
+        // the namespace URI form and reserves the index form for when a URI cannot be resolved. Publishing
+        // `namespaceUri` alongside would make a node id outlive its session; that is a payload addition, and
+        // a separate decision from correcting this field.
+        obj.put("namespaceIndex", nodeId.getNamespaceIndex().intValue());
+        return obj;
+    }
+
+    /**
+     * Writes a {@code TimeZoneDataType} as {@code {offset, daylightSavingInOffset}}.
+     * <p>
+     * OPC 10000-5: the offset is "the time difference (in minutes) between the Time Property and the time at
+     * the location in which the event was issued", and the flag says whether that offset already includes
+     * the daylight-saving correction — so a consumer reconstructing local time adds the offset, and a
+     * consumer reasoning about DST needs the flag to know what it has been told.
+     * <p>
+     * Named explicitly rather than left to the generic structure path: Milo decodes this one into its own
+     * generated class rather than a {@code DynamicStructType}, so without this it would fall through to the
+     * {@code toString()} branch and publish a Java object rendering.
+     */
+    private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateTimeZone(
+            final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull TimeZoneDataType timeZone) {
+
+        final Short offset = timeZone.getOffset();
+        if (offset != null) {
+            obj.put("offset", offset.intValue());
+        }
+        final Boolean daylightSaving = timeZone.getDaylightSavingInOffset();
+        if (daylightSaving != null) {
+            obj.put("daylightSavingInOffset", daylightSaving);
         }
         return obj;
+    }
+
+    /**
+     * Writes an {@code EUInformation} as {@code {namespaceUri, unitId, displayName, description}}.
+     * <p>
+     * OPC 10000-8 §5.6.3: {@code namespaceUri} identifies the authority that defines the unit — by default
+     * the UNECE Recommendation 20 code list — and {@code unitId} identifies the unit within it, so the pair
+     * is what makes an engineering unit machine-readable. {@code displayName} is the symbol ({@code "°C"})
+     * and {@code description} the full name ({@code "degree Celsius"}), both localised texts.
+     * <p>
+     * Named explicitly for the same reason as {@link #populateTimeZone}: Milo decodes this one into its own
+     * generated class rather than a {@code DynamicStructType}, so without this branch it fell through to
+     * {@code toString()}. That published a Java object rendering — a format defined by Milo's implementation
+     * rather than by any contract — and collapsed the four members into one opaque string, so a consumer
+     * could neither compare two units nor resolve either against the code list. It reaches every
+     * rate-of-change alarm, whose {@code EngineeringUnits} member is what says what the rate is measured in.
+     */
+    private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateEuInformation(
+            final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull EUInformation engineeringUnits) {
+
+        final String namespaceUri = engineeringUnits.getNamespaceUri();
+        if (namespaceUri != null) {
+            obj.put("namespaceUri", namespaceUri);
+        }
+        final Integer unitId = engineeringUnits.getUnitId();
+        if (unitId != null) {
+            obj.put("unitId", unitId);
+        }
+        putLocalizedText(obj, "displayName", engineeringUnits.getDisplayName());
+        putLocalizedText(obj, "description", engineeringUnits.getDescription());
+        return obj;
+    }
+
+    /** Writes a {@code LocalizedText} member as {@code {locale, text}}, omitting it entirely when null. */
+    private static void putLocalizedText(
+            final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
+            final @NotNull String key,
+            final @Nullable LocalizedText text) {
+
+        if (text == null) {
+            return;
+        }
+        final var nested = obj.startObject(key);
+        final String locale = text.getLocale();
+        if (locale != null) {
+            nested.put("locale", locale);
+        }
+        final String value = text.getText();
+        if (value != null) {
+            nested.put("text", value);
+        }
+        nested.endObject();
     }
 
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateDiagnosticInfo(

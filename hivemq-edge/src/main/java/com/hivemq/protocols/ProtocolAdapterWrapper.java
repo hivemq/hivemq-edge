@@ -582,6 +582,9 @@ public class ProtocolAdapterWrapper {
         // Step 3 & 4: Stop connections (southbound first, then northbound)
         final boolean southboundSuccess = stopSouthbound();
         final boolean northboundSuccess = stopNorthbound();
+        // Adapter callbacks are blocked from the moment shutdown starts. Publish the wrapper-owned terminal
+        // status explicitly after teardown; failed-start cleanup does not take this path and keeps ERROR.
+        protocolAdapterState.completeShutdown();
 
         // Step 5: Transition to Idle
         final boolean stateTransitionSuccess =

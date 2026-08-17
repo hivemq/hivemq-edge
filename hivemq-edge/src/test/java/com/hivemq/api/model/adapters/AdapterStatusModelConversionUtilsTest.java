@@ -19,89 +19,63 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.api.model.Status;
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 /**
- * The API projection of {@link ProtocolAdapterState.ConnectionStatus}.
- *
- * <p>The interesting case is {@code CONNECTING}: the API enum has no such member, and an adapter that
- * is still establishing its connection must not be reported as {@code CONNECTED}. That is the defect
- * behind EDG-891 P1 — a consumer sampling adapter status could observe a healthy adapter for a server
- * whose certificate was about to be refused.
+ * Review-09 finding 3: what the API says an adapter's connection is doing.
+ * <p>
+ * The conversion used to enumerate four members and send everything else to {@code UNKNOWN}. That was
+ * harmless for as long as nothing published the fifth: {@code CONNECTING} existed in the SDK enum and no
+ * adapter ever set it. When the OPC UA adapter began publishing it truthfully at the start of every attempt,
+ * the fall-through turned a normal connect window into {@code UNKNOWN} — which is not a vaguer version of
+ * the truth but a different claim, one consumers reasonably read as a fault and the workspace painted red.
+ * <p>
+ * These tests are about the shape of the mapping rather than any one member, because the defect was never
+ * really about {@code CONNECTING}: it was about a {@code default} arm quietly absorbing whatever the SDK
+ * added next.
  */
 class AdapterStatusModelConversionUtilsTest {
 
-    @Test
-    void connecting_isReportedAsDisconnected_notConnectedAndNotUnknown() {
-        final Status.ConnectionEnum converted = AdapterStatusModelConversionUtils.convertConnectionStatus(
-                ProtocolAdapterState.ConnectionStatus.CONNECTING);
-
-        assertThat(converted)
-                .as("an adapter that has not finished connecting is not connected")
-                .isNotEqualTo(Status.ConnectionEnum.CONNECTED);
-        assertThat(converted)
-                .as("DISCONNECTED is accurate and actionable; UNKNOWN would claim less than is known")
-                .isEqualTo(Status.ConnectionEnum.DISCONNECTED);
-    }
-
-    @Test
-    void directStates_mapOneToOne() {
-        assertThat(AdapterStatusModelConversionUtils.convertConnectionStatus(
-                        ProtocolAdapterState.ConnectionStatus.CONNECTED))
-                .isEqualTo(Status.ConnectionEnum.CONNECTED);
-        assertThat(AdapterStatusModelConversionUtils.convertConnectionStatus(
-                        ProtocolAdapterState.ConnectionStatus.DISCONNECTED))
-                .isEqualTo(Status.ConnectionEnum.DISCONNECTED);
-        assertThat(AdapterStatusModelConversionUtils.convertConnectionStatus(
-                        ProtocolAdapterState.ConnectionStatus.ERROR))
-                .isEqualTo(Status.ConnectionEnum.ERROR);
-        assertThat(AdapterStatusModelConversionUtils.convertConnectionStatus(
-                        ProtocolAdapterState.ConnectionStatus.STATELESS))
-                .isEqualTo(Status.ConnectionEnum.STATELESS);
-        assertThat(AdapterStatusModelConversionUtils.convertConnectionStatus(
-                        ProtocolAdapterState.ConnectionStatus.UNKNOWN))
-                .isEqualTo(Status.ConnectionEnum.UNKNOWN);
-    }
-
-    /**
-     * Only a state that genuinely means "connected" may project to {@code CONNECTED}. Written over the
-     * whole enum so that a value added to the SDK later cannot quietly acquire a connected projection.
-     */
     @ParameterizedTest
     @EnumSource(ProtocolAdapterState.ConnectionStatus.class)
-    void onlyConnected_projectsToConnected(final ProtocolAdapterState.ConnectionStatus status) {
-        final Status.ConnectionEnum converted = AdapterStatusModelConversionUtils.convertConnectionStatus(status);
+    void everySdkConnectionStatusHasAnApiMemberOfTheSameName(
+            final ProtocolAdapterState.ConnectionStatus connectionStatus) {
 
-        if (status == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
-            assertThat(converted).isEqualTo(Status.ConnectionEnum.CONNECTED);
-        } else {
-            assertThat(converted)
-                    .as("%s must not be reported to API consumers as CONNECTED", status)
-                    .isNotEqualTo(Status.ConnectionEnum.CONNECTED);
-        }
+        // Name equality rather than a hand-written table, so that adding a member to either side without the
+        // other fails here. A table would have to be edited by the same person who forgot the switch arm.
+        assertThat(AdapterStatusModelConversionUtils.convertConnectionStatus(connectionStatus)
+                        .name())
+                .isEqualTo(connectionStatus.name());
     }
 
-    /**
-     * A new SDK connection state falling through to {@code default} is safe (it becomes
-     * {@code UNKNOWN}), but it is still a silent decision. This pins the set that is deliberately
-     * mapped, so adding a state to the SDK fails here and forces the projection to be chosen.
-     */
     @Test
-    void everyKnownState_isMappedDeliberately() {
-        final Set<ProtocolAdapterState.ConnectionStatus> deliberatelyMapped = EnumSet.of(
-                ProtocolAdapterState.ConnectionStatus.CONNECTED,
-                ProtocolAdapterState.ConnectionStatus.DISCONNECTED,
-                ProtocolAdapterState.ConnectionStatus.ERROR,
-                ProtocolAdapterState.ConnectionStatus.STATELESS,
-                ProtocolAdapterState.ConnectionStatus.CONNECTING,
-                ProtocolAdapterState.ConnectionStatus.UNKNOWN);
+    void connectingIsPublishedAsConnectingRatherThanUnknown() {
+        // The regression itself, named. Worth its own test beyond the sweep above because this is the one
+        // that shipped, and a reader of the finding should be able to find it by name.
+        assertThat(AdapterStatusModelConversionUtils.convertConnectionStatus(
+                        ProtocolAdapterState.ConnectionStatus.CONNECTING))
+                .isEqualTo(Status.ConnectionEnum.CONNECTING);
+    }
 
-        assertThat(EnumSet.allOf(ProtocolAdapterState.ConnectionStatus.class))
-                .as("a connection state added to the SDK needs an explicit API projection")
-                .containsExactlyInAnyOrderElementsOf(deliberatelyMapped);
+    @Test
+    void onlyTheGenuinelyUnknownStatusConvertsToUnknown() {
+        // The property that made the old default arm a lie: UNKNOWN has to mean the server cannot say. If any
+        // other status reaches it, consumers cannot tell "we do not know" from "we did not bother to map it".
+        assertThat(Arrays.stream(ProtocolAdapterState.ConnectionStatus.values())
+                        .filter(status -> AdapterStatusModelConversionUtils.convertConnectionStatus(status)
+                                == Status.ConnectionEnum.UNKNOWN)
+                        .toList())
+                .containsExactly(ProtocolAdapterState.ConnectionStatus.UNKNOWN);
+    }
+
+    @ParameterizedTest
+    @EnumSource(ProtocolAdapterState.RuntimeStatus.class)
+    void everyRuntimeStatusConverts(final ProtocolAdapterState.RuntimeStatus runtimeStatus) {
+        assertThat(AdapterStatusModelConversionUtils.convertRuntimeStatus(runtimeStatus)
+                        .name())
+                .isEqualTo(runtimeStatus.name());
     }
 }
