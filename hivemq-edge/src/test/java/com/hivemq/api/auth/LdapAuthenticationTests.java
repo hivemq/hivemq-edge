@@ -63,8 +63,10 @@ public class LdapAuthenticationTests {
     protected final Logger logger = LoggerFactory.getLogger(LdapAuthenticationTests.class);
 
     static final int TEST_HTTP_PORT = 8088;
-    static final int CONNECT_TIMEOUT = 1000;
-    static final int READ_TIMEOUT = 1000;
+    // See BearerTokenAuthTests: the first request pays the server bootstrap cost and a 1s budget
+    // makes whichever test runs first flaky on a loaded CI agent. Matches JaxrsResourceTests.
+    static final int CONNECT_TIMEOUT = 5000;
+    static final int READ_TIMEOUT = 5000;
     static final String HTTP = "http";
 
     protected static JaxrsHttpServer server;
