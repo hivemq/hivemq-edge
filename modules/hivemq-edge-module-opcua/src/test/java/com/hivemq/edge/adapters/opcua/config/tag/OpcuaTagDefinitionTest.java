@@ -107,4 +107,102 @@ class OpcuaTagDefinitionTest {
         assertThatThrownBy(() -> mapper.readValue("{\"type\":\"CONDITION\"}", OpcuaTagDefinition.class))
                 .isInstanceOf(Exception.class);
     }
+
+    // ── blank means unset, on every optional field (EDG-894 P8) ─────────────────────────────────────
+
+    /**
+     * The three node-id fields have always read blank as "no narrowing", through {@code blankToNull}. The three
+     * enum fields did not, and refused the tag instead — and because that refusal happens while converting the
+     * adapter's configuration, the running adapter was left untouched: the write was accepted, nothing was
+     * reported, and the tag was absent on read-back. A blank string is exactly what a cleared UI field and an
+     * unset optional in a config generator produce, so this was the ordinary path rather than an odd one.
+     */
+    @Test
+    void whenFilterTypeIsBlank_thenThereIsNoTypePredicate() throws Exception {
+        // The finding verbatim: a query tag whose filter box was cleared.
+        final OpcuaTagDefinition definition = mapper.readValue(
+                "{\"node\":\"ns=1;i=9100\",\"kind\":\"EVENT_SUBSCRIPTION\",\"filterType\":\"   \"}",
+                OpcuaTagDefinition.class);
+
+        assertThat(definition.getFilterType())
+                .as("a blank filterType is the documented 'every event type the notifier carries'")
+                .isNull();
+        assertThat(definition.getKind()).isEqualTo(OpcuaTagKind.EVENT_SUBSCRIPTION);
+    }
+
+    @Test
+    void andAnEmptyFilterTypeMeansTheSame() throws Exception {
+        assertThat(mapper.readValue("{\"node\":\"ns=1;i=9100\",\"filterType\":\"\"}", OpcuaTagDefinition.class)
+                        .getFilterType())
+                .isNull();
+    }
+
+    @Test
+    void whenTheNodeTypeIsBlank_thenItFallsBackToItsDocumentedDefault() throws Exception {
+        // The same defect on the sibling field, which the finding did not name: `type` reaches the same creator,
+        // so a cleared type box refused the tag too. Absent already meant AlarmConditionType, and blank now
+        // agrees with absent.
+        for (final String blank : new String[] {"\"   \"", "\"\"", "null"}) {
+            assertThat(mapper.readValue("{\"node\":\"ns=1;i=1\",\"type\":" + blank + "}", OpcuaTagDefinition.class)
+                            .getType())
+                    .as("type=%s must mean unset, like an omitted type", blank)
+                    .isEqualTo(OpcuaConditionType.ALARM_CONDITION);
+        }
+    }
+
+    @Test
+    void whenTheKindIsBlank_thenTheTagIsAValue() throws Exception {
+        // And the third, which failed by a different route -- no creator at all, so Jackson's own coercion
+        // refused with "Cannot coerce empty String to OpcuaTagKind value". Worth its own case because `kind`
+        // decides what the tag is: a silently dropped kind is a dropped tag.
+        for (final String blank : new String[] {"\"   \"", "\"\"", "null"}) {
+            assertThat(mapper.readValue("{\"node\":\"ns=1;i=1\",\"kind\":" + blank + "}", OpcuaTagDefinition.class)
+                            .getKind())
+                    .as("kind=%s must mean unset, like an omitted kind", blank)
+                    .isEqualTo(OpcuaTagKind.VALUE);
+        }
+    }
+
+    @Test
+    void whenEveryOptionalFieldIsBlank_thenTheTagEqualsOneThatOmitsThemAll() throws Exception {
+        // The round-trip the finding asks for, over all six optional fields at once: this is the document a UI
+        // submits when nothing optional was filled in, and it must mean the same as the minimal document.
+        final OpcuaTagDefinition allBlank = mapper.readValue("""
+                {"node":"ns=1;i=1","kind":"  ","type":"  ","notifierNode":"  ",
+                 "sourceNode":"  ","conditionNode":"  ","filterType":"  "}
+                """, OpcuaTagDefinition.class);
+        final OpcuaTagDefinition allOmitted = mapper.readValue("{\"node\":\"ns=1;i=1\"}", OpcuaTagDefinition.class);
+
+        assertThat(allBlank).isEqualTo(allOmitted);
+    }
+
+    @Test
+    void butANonBlankValueThatNamesNothingIsStillRefused() throws Exception {
+        // Blank-tolerance must not become anything-tolerance. A typo is a different thing from an empty box: an
+        // unset field resolves to a usable default, so quietly treating 'AlarmConditonType' as unset would
+        // publish a different shape than was written, and a mistyped kind would subscribe to an alarm node's
+        // Value attribute and publish nothing at all.
+        assertThatThrownBy(() -> mapper.readValue(
+                        "{\"node\":\"ns=1;i=1\",\"filterType\":\"AlarmConditonType\"}", OpcuaTagDefinition.class))
+                .hasMessageContaining("AlarmConditonType")
+                .hasMessageContaining("AlarmConditionType");
+        assertThatThrownBy(() ->
+                        mapper.readValue("{\"node\":\"ns=1;i=1\",\"kind\":\"CONDTION\"}", OpcuaTagDefinition.class))
+                .hasMessageContaining("CONDTION")
+                .hasMessageContaining("EVENT_SUBSCRIPTION");
+    }
+
+    @Test
+    void andSurroundingWhitespaceDoesNotHideAValidValue() throws Exception {
+        // Jackson trimmed before matching an enum, so taking that decision over in a creator had to keep it --
+        // otherwise adding the creator to `kind` would have turned " VALUE " from working into a dropped tag.
+        assertThat(mapper.readValue("{\"node\":\"ns=1;i=1\",\"kind\":\" CONDITION \"}", OpcuaTagDefinition.class)
+                        .getKind())
+                .isEqualTo(OpcuaTagKind.CONDITION);
+        assertThat(mapper.readValue(
+                                "{\"node\":\"ns=1;i=1\",\"type\":\" ExclusiveLevelAlarmType \"}",
+                                OpcuaTagDefinition.class)
+                        .getType())
+                .isEqualTo(OpcuaConditionType.EXCLUSIVE_LEVEL_ALARM);
+    }
 }

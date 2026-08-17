@@ -123,7 +123,17 @@ public class OpcuaTagDefinition implements TagDefinition {
         this.type = type == null ? OpcuaConditionType.ALARM_CONDITION : type;
     }
 
-    /** An omitted node id and one typed as whitespace mean the same thing: no narrowing on that dimension. */
+    /**
+     * An omitted node id and one typed as whitespace mean the same thing: no narrowing on that dimension.
+     * <p>
+     * The same rule holds for this tag's three <em>enum</em> fields — {@code kind}, {@code type} and
+     * {@code filterType} — but it cannot be applied here, and the asymmetry is worth explaining because this
+     * is where a reader will look for it. Those fields are typed as their enums, so Jackson must construct a
+     * value before this constructor is entered: a {@code blankToNull} call beside the three above would never
+     * run, and could not be written at all, since it would be handed an enum rather than the string the
+     * operator wrote. Blank is therefore decided in {@link OpcuaConditionType#fromConfig} and
+     * {@link OpcuaTagKind#fromConfig}, which return null for it so the defaults below apply.
+     */
     private static @Nullable String blankToNull(final @Nullable String value) {
         return value == null || value.isBlank() ? null : value;
     }

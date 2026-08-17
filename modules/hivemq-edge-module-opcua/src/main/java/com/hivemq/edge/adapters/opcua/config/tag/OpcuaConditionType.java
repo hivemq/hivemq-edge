@@ -581,14 +581,40 @@ public enum OpcuaConditionType implements EventFieldSet {
 
     /**
      * Reads the type from configuration by its address-space name.
+     * <p>
+     * <b>Blank means unset</b>, and yields null so the field's documented default applies — no type predicate
+     * at all for {@code filterType}, {@code AlarmConditionType} for {@code type}. That is the same rule
+     * {@code OpcuaTagDefinition} already applied to the three narrowing <em>node id</em> fields through its
+     * {@code blankToNull}, and the same rule {@code EnumParsing} applies to the security config enums: blank
+     * or absent input means the setting resolves to its default.
+     * <p>
+     * It has to be decided here rather than in the constructor, which is where it looks like it belongs. The
+     * fields are typed as this enum, so Jackson has to produce an instance <em>before</em> the constructor is
+     * invoked — a {@code blankToNull} beside the other three would never run, and could not be written anyway
+     * since it would be handed an enum rather than the string.
+     * <p>
+     * Getting this wrong lost configuration silently. A blank string is what a UI form submits when a box is
+     * cleared and what a config generator emits for an unset optional; the throw failed the conversion of the
+     * whole adapter configuration, which leaves the running adapter untouched — so the write was accepted,
+     * nothing was reported, and the tag was simply absent when read back. Found by QA as EDG-894 P8.
      *
-     * @throws IllegalArgumentException when the name is not a standard condition type — a typo in the config
-     *                                  is reported rather than silently becoming some default.
+     * @throws IllegalArgumentException when a non-blank name is not a standard condition type. A typo is still
+     *                                  reported rather than silently becoming some default: unset resolves to
+     *                                  a usable default, and quietly treating {@code AlarmConditonType} as
+     *                                  unset would publish a different shape than was written.
      */
     @JsonCreator
-    public static @NotNull OpcuaConditionType fromConfig(final @Nullable String browseName) {
-        return fromBrowseName(browseName)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown OPC UA condition type '" + browseName
+    public static @Nullable OpcuaConditionType fromConfig(final @Nullable String browseName) {
+        if (browseName == null || browseName.isBlank()) {
+            return null;
+        }
+        // Trimmed because surrounding whitespace is never part of a browse name, and because Jackson's own
+        // enum handling trims before matching -- so the two enums on this tag would otherwise disagree about
+        // " VALUE " versus " AlarmConditionType ". Case is not normalised: a browse name is a case-sensitive
+        // OPC UA identifier, and accepting a different casing would be a wider claim than this fix makes.
+        final String trimmed = browseName.trim();
+        return fromBrowseName(trimmed)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown OPC UA condition type '" + trimmed
                         + "'. Known types: "
                         + Arrays.stream(values())
                                 .map(OpcuaConditionType::browseName)
