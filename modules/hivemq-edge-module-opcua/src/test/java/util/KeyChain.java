@@ -18,6 +18,8 @@ package util;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -28,12 +30,15 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
@@ -146,6 +151,38 @@ public class KeyChain {
 
     public @NotNull X509Certificate getRootCertificate() {
         return root.certificate();
+    }
+
+    /**
+     * Writes a DER-encoded CRL <em>signed by this chain's root CA</em>, revoking the given serial
+     * numbers.
+     *
+     * <p>Signed by the root rather than by a throwaway CA on purpose: a CRL only answers for the issuer
+     * that signed it, so a path validator asked about this chain will only accept revocation
+     * information whose issuer name and signature match the root. A CRL from anywhere else leaves the
+     * status unknown, which is indistinguishable from supplying none at all.
+     */
+    public @NotNull Path writeRootCrl(final @NotNull Path target, final @NotNull List<BigInteger> revokedSerials)
+            throws Exception {
+        final Instant now = Instant.now();
+        final X500Name issuerName =
+                new X500Name(root.certificate().getSubjectX500Principal().getName());
+        // Backdated by an hour so the CRL is never "not yet current" on a machine whose clock differs
+        // slightly from the one that signed it.
+        final X509v2CRLBuilder builder = new X509v2CRLBuilder(issuerName, Date.from(now.minus(1, ChronoUnit.HOURS)));
+        builder.setNextUpdate(Date.from(now.plus(30, ChronoUnit.DAYS)));
+        for (final BigInteger serial : revokedSerials) {
+            builder.addCRLEntry(serial, Date.from(now.minus(1, ChronoUnit.HOURS)), CRLReason.privilegeWithdrawn);
+        }
+        final ContentSigner signer =
+                new JcaContentSignerBuilder(CERT_SIGN_ALGO).build(root.keyPair().getPrivate());
+        Files.write(target, builder.build(signer).getEncoded());
+        return target;
+    }
+
+    /** The serial number of a leaf certificate, for revoking exactly that certificate in a CRL. */
+    public @NotNull BigInteger getLeafSerial(final @NotNull String domain) {
+        return leafCerts.get(domain).certificate().getSerialNumber();
     }
 
     /**

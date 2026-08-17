@@ -151,6 +151,30 @@ public record ParsedConfig(
                                 endpointUri,
                                 revocationLists.size(),
                                 configured == null ? "" : configured.path());
+                    } else if (checks.isRevocation() && containsCaCertificate(trustedCertsOpt.get())) {
+                        // Logged once at start, not per connect. Revocation is decided while the path is
+                        // built, from the CRLs the trust-list manager offers; with none, the status of
+                        // every issuing CA is "unknown", and unknown fails closed. That refusal is
+                        // correct, but it arrives at connect time as Bad_CertificateRevocationUnknown
+                        // with nothing pointing at the missing input, which is how a correctly trusted
+                        // CA-signed server looks indistinguishable from an untrusted one.
+                        //
+                        // Deliberately a warning and not a start-up refusal, and deliberately conditional
+                        // on the truststore actually holding a CA: a truststore of end-entity
+                        // certificates is direct trust, where no issuer appears in the path and
+                        // revocation is satisfied vacuously. Warning there would fire on the majority of
+                        // working deployments and train operators to ignore it.
+                        log.warn(
+                                "OPC UA adapter endpoint '{}': revocation={} is enforced and the truststore contains "
+                                        + "a CA, but no certificate revocation list is configured. The issuer's "
+                                        + "revocation status is therefore unknown, and unknown fails closed - a "
+                                        + "server certificate signed by that CA will be refused with "
+                                        + "Bad_CertificateRevocationUnknown however correct the rest of the "
+                                        + "configuration is. Point <revocationList><path>...</path></revocationList> "
+                                        + "at the CA's CRL (a file, or a directory of them), or set "
+                                        + "tlsChecksFull.revocation=NONE to accept an unchecked revocation status.",
+                                endpointUri,
+                                checks.revocation());
                     }
                     certValidator = createServerCertificateValidator(trustedCertsOpt.get(), revocationLists, checks);
                     if (!checks.isHostname()) {
@@ -222,6 +246,24 @@ public record ParsedConfig(
                                 + "'allowList' element.",
                         endpointUri,
                         configuredAllowList.path(),
+                        checks.trustMode());
+            }
+
+            final RevocationList configuredRevocationList = tlsConfig.revocationList();
+            if (checks.trustMode() != TrustMode.CHAIN
+                    && TlsChecksProjection.hasRevocationListPath(configuredRevocationList)) {
+                // The same shape as the inert allow-list above, and inert for the same structural
+                // reason: CRLs are consulted only while a certification path is built, which only
+                // CHAIN does. An operator who supplied CRLs believes revocation is being enforced.
+                // Not an error - the projection already refuses revocation without CHAIN, so the
+                // effective configuration is exactly what was asked for, just not what was meant.
+                log.warn(
+                        "OPC UA adapter endpoint '{}': certificate revocation lists are configured ('{}') but the "
+                                + "effective trust mode is {}, which builds no certification path and never reads "
+                                + "them. No revocation status is checked. Set tlsChecksFull.trustMode=CHAIN to "
+                                + "enforce revocation, or remove the 'revocationList' element.",
+                        endpointUri,
+                        Objects.requireNonNull(configuredRevocationList).path(),
                         checks.trustMode());
             }
         }
@@ -341,6 +383,21 @@ public record ParsedConfig(
                 new CertificateTrustListManager(trustedCerts, revocationLists),
                 toValidationChecks(checks),
                 new MemoryCertificateQuarantine());
+    }
+
+    /**
+     * Whether any trust anchor is a CA, and so whether an issuer can appear in the certification path.
+     *
+     * <p>The discriminator between the two shapes of a CHAIN truststore: a CA to chain through, where
+     * revocation is a real question and needs CRLs to answer, and directly trusted end-entity
+     * certificates, where the server's own certificate is the anchor, no issuer is consulted and
+     * revocation is satisfied vacuously.
+     *
+     * <p>{@code getBasicConstraints()} returns the path-length constraint for a CA and {@code -1} for
+     * anything else, which is exactly this question.
+     */
+    private static boolean containsCaCertificate(final @NotNull List<X509Certificate> trustedCerts) {
+        return trustedCerts.stream().anyMatch(cert -> cert.getBasicConstraints() != -1);
     }
 
     /**

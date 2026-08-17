@@ -48,7 +48,7 @@ import org.jetbrains.annotations.Nullable;
  * so each axis can be exercised in isolation rather than inferred from a certificate that happens to
  * carry several attributes at once.
  */
-final class TestCertificates {
+public final class TestCertificates {
 
     static final @NotNull String APPLICATION_URI = "urn:hivemq:edge:test-server";
     static final @NotNull String HOSTNAME = "opcua.factory.local";
@@ -76,7 +76,7 @@ final class TestCertificates {
      * <p>The issuer name carries {@code EDG-585} so a test can tell the CRL it wrote from one it did
      * not, without asserting on a whole distinguished name.
      */
-    static @NotNull Path writeCrl(final @NotNull Path target, final @NotNull List<BigInteger> revokedSerials)
+    public static @NotNull Path writeCrl(final @NotNull Path target, final @NotNull List<BigInteger> revokedSerials)
             throws Exception {
         final KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048);

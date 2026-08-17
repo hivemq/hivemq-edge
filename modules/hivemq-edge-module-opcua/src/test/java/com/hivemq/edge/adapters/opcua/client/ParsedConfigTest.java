@@ -28,6 +28,7 @@ import com.hivemq.edge.adapters.opcua.config.KeyUsageCheck;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.RevocationCheck;
+import com.hivemq.edge.adapters.opcua.config.RevocationList;
 import com.hivemq.edge.adapters.opcua.config.SanUriCheck;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
@@ -41,9 +42,13 @@ import com.hivemq.edge.adapters.opcua.config.ValidityCheck;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.security.AllowListCertificateValidator;
 import com.hivemq.edge.adapters.opcua.security.CheckOnlyCertificateValidator;
+import com.hivemq.edge.adapters.opcua.security.TestCertificates;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
@@ -52,6 +57,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 import util.KeyChain;
@@ -1043,6 +1049,226 @@ class ParsedConfigTest {
         } finally {
             detachParsedConfigAppender(appender);
         }
+    }
+
+    // ----- EDG-891: revocation is enforced but no CRL can answer it (logged once at start) -----
+    //
+    // Estefania's finding: with a CA in the truststore and revocation on - which is the default,
+    // preset STANDARD - a correctly configured CA-signed server is refused with
+    // Bad_CertificateRevocationUnknown, because nothing supplies the CRLs revocation is decided
+    // from. The refusal is right (unknown must fail closed) and stays; what these tests pin is that
+    // it is no longer silent, and that the warning does not fire where revocation is satisfied
+    // vacuously.
+
+    @Test
+    void chainWithACaAndRevocationButNoCrl_warnsThatItCannotSucceed() throws Exception {
+        final KeyChain keyChain = KeyChain.createKeyChain("server");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-ca").toString(), "server", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(
+                    createAdapterConfig(true, null, truststoreFile.getAbsolutePath(), null, TlsChecks.STANDARD));
+
+            assertThat(result)
+                    .as("a warning, not a refusal: the configuration is honoured exactly as written")
+                    .isInstanceOf(Success.class);
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                        .as("names the failure the operator will actually see, and both ways out")
+                        .contains("no certificate revocation list is configured")
+                        .contains("Bad_CertificateRevocationUnknown")
+                        .contains("revocationList")
+                        .contains("revocation=NONE")
+                        .contains("REQUIRE_CRLS");
+            });
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void chainWithACaAndRevocationAndACrl_doesNotWarnAndSaysWhatItLoaded() throws Exception {
+        // The negative control that matters: once the operator supplies the missing input, the
+        // warning must go away, or it trains them to ignore it.
+        final KeyChain keyChain = KeyChain.createKeyChain("server");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-ca-crl").toString(), "server", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+        final String crl =
+                TestCertificates.writeCrl(tempDir.resolve("ca.crl"), List.of()).toString();
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(configWithRevocationList(
+                    TlsChecks.STANDARD, truststoreFile.getAbsolutePath(), new RevocationList(crl)));
+
+            assertThat(result).isInstanceOf(Success.class);
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("no certificate revocation list is configured"));
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel())
+                        .as("supplying CRLs is the correct configuration, not a warning")
+                        .isEqualTo(Level.INFO);
+                assertThat(event.getFormattedMessage())
+                        .contains("1 certificate revocation list(s) loaded")
+                        .contains(crl);
+            });
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void chainWithACaButRevocationOff_doesNotWarn() throws Exception {
+        // revocation=NONE asks no question, so there is nothing unanswerable about it.
+        final KeyChain keyChain = KeyChain.createKeyChain("server");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-ca-norev").toString(), "server", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(
+                    createAdapterConfig(true, null, truststoreFile.getAbsolutePath(), null, TlsChecks.APPLICATION_URI));
+
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("no certificate revocation list is configured"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void chainWithoutACaInTheTruststore_doesNotWarnBecauseRevocationIsVacuous() throws Exception {
+        // Direct trust: the server's own end-entity certificate is the anchor, so no issuer ever
+        // enters the path and there is no revocation status to look up. Warning here would fire on
+        // deployments that work, which is how a security warning becomes noise.
+        final KeyChain keyChain = KeyChain.createKeyChain("server");
+        final String truststore = writeTruststoreWithOnly(keyChain.getLeafCertificate("server"), "truststore-leaf");
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            final Result<ParsedConfig, String> result =
+                    ParsedConfig.fromConfig(createAdapterConfig(true, null, truststore, null, TlsChecks.STANDARD));
+
+            assertThat(result).isInstanceOf(Success.class);
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("no certificate revocation list is configured"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    // ----- EDG-891: a revocation list that will never be read -----
+
+    @ParameterizedTest
+    @EnumSource(
+            value = TlsChecks.class,
+            names = {"SELF_SIGNED", "NO_VERIFICATION"})
+    void aRevocationListUnderAChainlessTrustMode_warnsThatItIsNeverRead(final TlsChecks preset) throws Exception {
+        // CRLs are consulted only while a certification path is built, which only CHAIN does. Same
+        // inert-input shape as an allow-list configured under a mode that never opens it.
+        final String crl = TestCertificates.writeCrl(tempDir.resolve("inert.crl"), List.of())
+                .toString();
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(new OpcUaSpecificAdapterConfig(
+                    TEST_URI,
+                    false,
+                    null,
+                    null,
+                    new Tls(
+                            true,
+                            preset,
+                            null,
+                            null,
+                            null,
+                            preset == TlsChecks.SELF_SIGNED
+                                    ? new AllowList(writeAllowList("with-inert-crl.txt"))
+                                    : null,
+                            new RevocationList(crl)),
+                    new OpcUaToMqttConfig(1, 1000),
+                    new Security(SecPolicy.NONE),
+                    null));
+
+            assertThat(result).as("a warning, not a refusal").isInstanceOf(Success.class);
+            assertThat(appender.list).anySatisfy(event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                        .contains("never reads them")
+                        .contains("No revocation status is checked")
+                        .contains(crl);
+            });
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void chain_doesNotWarnAboutItsOwnRevocationList() throws Exception {
+        final KeyChain keyChain = KeyChain.createKeyChain("server");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-used-crl").toString(), "server", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+        final String crl = TestCertificates.writeCrl(tempDir.resolve("used.crl"), List.of())
+                .toString();
+        final ListAppender<ILoggingEvent> appender = attachParsedConfigAppender();
+        try {
+            ParsedConfig.fromConfig(configWithRevocationList(
+                    TlsChecks.STANDARD, truststoreFile.getAbsolutePath(), new RevocationList(crl)));
+
+            assertThat(appender.list).noneSatisfy(event -> assertThat(event.getFormattedMessage())
+                    .contains("never reads them"));
+        } finally {
+            detachParsedConfigAppender(appender);
+        }
+    }
+
+    @Test
+    void anUnreadableRevocationList_failsNamingTheFileAndTheWayOut() throws Exception {
+        final KeyChain keyChain = KeyChain.createKeyChain("server");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-bad-crl").toString(), "server", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+        final String missing = tempDir.resolve("absent.crl").toString();
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(configWithRevocationList(
+                TlsChecks.STANDARD, truststoreFile.getAbsolutePath(), new RevocationList(missing)));
+
+        assertThat(result)
+                .as("a configured input that cannot be read is a configuration error, not a silent fallback")
+                .isInstanceOf(Failure.class);
+        assertThat(((Failure<ParsedConfig, String>) result).failure())
+                .contains(missing)
+                .contains("does not exist")
+                .doesNotContain("java.nio");
+    }
+
+    private OpcUaSpecificAdapterConfig configWithRevocationList(
+            final TlsChecks preset, final String truststorePath, final RevocationList revocationList) {
+        return new OpcUaSpecificAdapterConfig(
+                TEST_URI,
+                false,
+                null,
+                null,
+                new Tls(
+                        true,
+                        preset,
+                        null,
+                        null,
+                        truststorePath == null ? null : new Truststore(truststorePath, KEYSTORE_PASSWORD),
+                        null,
+                        revocationList),
+                new OpcUaToMqttConfig(1, 1000),
+                new Security(SecPolicy.NONE),
+                null);
+    }
+
+    /** A truststore holding exactly one certificate, so a test can control whether a CA is in it. */
+    private String writeTruststoreWithOnly(final X509Certificate certificate, final String name) throws Exception {
+        final KeyStore keyStore = KeyStore.getInstance("JKS");
+        keyStore.load(null, null);
+        keyStore.setCertificateEntry("only", certificate);
+        final Path file = tempDir.resolve(name + ".jks");
+        try (var out = Files.newOutputStream(file)) {
+            keyStore.store(out, KEYSTORE_PASSWORD.toCharArray());
+        }
+        return file.toString();
     }
 
     private OpcUaSpecificAdapterConfig configWithAllowList(final TlsChecks preset, final AllowList allowList) {
