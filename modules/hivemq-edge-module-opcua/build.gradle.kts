@@ -63,6 +63,11 @@ dependencies {
     // hundred-megabyte JUnit XML that GitHub's result parser refuses. Nothing in main uses Logback directly;
     // the adapter logs through SLF4J and the binding is the runtime's business.
     testImplementation(libs.logback.classic)
+    // Test-only: the same validator Edge puts in front of a southbound write, so a published schema can be
+    // checked by running a payload through the gate rather than by reading the rendered type. hivemq-edge has
+    // it as an `implementation` dependency, so it reaches this module's test runtime but not its compile
+    // classpath. See ConditionSchemaNullableFieldsTest for the finding that needed it.
+    testImplementation(libs.json.schema.validator)
 }
 
 configurations {
