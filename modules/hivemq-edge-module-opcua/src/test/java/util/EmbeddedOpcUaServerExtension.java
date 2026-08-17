@@ -80,11 +80,15 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public static final @NotNull String NS_URI = "urn:hivemq:edge:opcua:test";
 
-    private static final @NotNull GeneralNames SUBJECT_ALTERNATIVE_NAME = new GeneralNames(new GeneralName[] {
-        new GeneralName(GeneralName.uniformResourceIdentifier, EmbeddedOpcUaServerExtension.NS_URI)
-    });
     private static final @NotNull String SERVER_PATH = "/opcua/test";
     private static final @NotNull String BIND_ADDRESS = "127.0.0.1";
+
+    // The bind address is part of the SubjectAltName so that clients configured to verify the endpoint
+    // hostname can be exercised against this server, as a real deployment would be.
+    private static final @NotNull GeneralNames SUBJECT_ALTERNATIVE_NAME = new GeneralNames(new GeneralName[] {
+        new GeneralName(GeneralName.uniformResourceIdentifier, EmbeddedOpcUaServerExtension.NS_URI),
+        new GeneralName(GeneralName.iPAddress, BIND_ADDRESS)
+    });
     private static final @NotNull String USERNAME = "testuser";
     private static final @NotNull String PASSWORD = "testpass";
     private static final @NotNull IdentityValidator IDENTITY_VALIDATOR = new CompositeValidator(
@@ -103,6 +107,8 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
     private int bindPort;
     private @Nullable OpcUaServer opcUaServer;
     private @Nullable TestNamespace testNamespace;
+    private @Nullable MemoryTrustListManager trustManager;
+    private @Nullable X509Certificate serverCertificate;
 
     private static @NotNull X509Certificate generateServerCertificate(final KeyPair keyPair) throws Exception {
         final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
@@ -148,8 +154,9 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         bindPort = RandomPortGenerator.get();
         final KeyPair keyPair = createServerKeyPair();
         final X509Certificate certificate = generateServerCertificate(keyPair);
+        this.serverCertificate = certificate;
 
-        final var trustManager = new MemoryTrustListManager();
+        trustManager = new MemoryTrustListManager();
         trustManager.addTrustedCertificate(certificate);
         final var quarantine = new MemoryCertificateQuarantine();
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
@@ -223,6 +230,28 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public @Nullable OpcUaServer getOpcUaServer() {
         return opcUaServer;
+    }
+
+    /**
+     * The self-signed certificate this server presents to clients. Needed by tests that trust the
+     * server by fingerprint.
+     */
+    public @NotNull X509Certificate getServerCertificate() {
+        if (serverCertificate == null) {
+            throw new IllegalStateException("Server has not been started; no certificate has been generated");
+        }
+        return serverCertificate;
+    }
+
+    /**
+     * Adds a certificate (typically a client root CA) to the server's trust list so the server
+     * will accept clients whose application instance certificate chains to this anchor.
+     */
+    public void addTrustedClientCertificate(final @NotNull X509Certificate clientTrustAnchor) {
+        if (trustManager == null) {
+            throw new IllegalStateException("Server has not been started; trustManager is not initialised");
+        }
+        trustManager.addTrustedCertificate(clientTrustAnchor);
     }
 
     private @NotNull Set<EndpointConfig> createEndpointConfigs(final @NotNull X509Certificate certificate) {

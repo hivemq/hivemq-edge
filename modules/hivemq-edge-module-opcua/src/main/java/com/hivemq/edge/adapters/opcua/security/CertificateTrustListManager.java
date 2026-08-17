@@ -26,16 +26,33 @@ import org.jetbrains.annotations.NotNull;
 public class CertificateTrustListManager implements TrustListManager {
 
     private final @NotNull List<X509Certificate> trustedCerts;
+    private final @NotNull List<X509CRL> trustedCrls;
     private final @NotNull DateTime dateTime;
 
     public CertificateTrustListManager(final @NotNull List<X509Certificate> trustedCerts) {
+        this(trustedCerts, List.of());
+    }
+
+    public CertificateTrustListManager(
+            final @NotNull List<X509Certificate> trustedCerts, final @NotNull List<X509CRL> trustedCrls) {
         this.trustedCerts = List.copyOf(trustedCerts);
+        this.trustedCrls = List.copyOf(trustedCrls);
         this.dateTime = DateTime.now();
     }
 
+    /**
+     * The configured CRLs, offered here as well as from {@link #getTrustedCrls()}.
+     *
+     * <p>Milo concatenates both lists before validating the path
+     * ({@code DefaultClientCertificateValidator}), and the split between "trusted" and "issuer" only
+     * mirrors the OPC UA PKI directory layout, which this adapter does not use: the operator gives
+     * one path and every CRL under it applies to whatever issuer it was signed by. Returning them
+     * from one list and an empty other would work identically; returning them from both makes the
+     * intent obvious at either call site and cannot depend on which one Milo consults.
+     */
     @Override
     public @NotNull List<X509CRL> getIssuerCrls() {
-        return List.of();
+        return trustedCrls;
     }
 
     @Override
@@ -45,7 +62,7 @@ public class CertificateTrustListManager implements TrustListManager {
 
     @Override
     public @NotNull List<X509CRL> getTrustedCrls() {
-        return List.of();
+        return trustedCrls;
     }
 
     @Override

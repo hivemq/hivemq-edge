@@ -167,6 +167,121 @@ public class OpcUaProtocolAdapterTest {
                 .noneMatch(event -> "ERROR".equals(event.getSeverity().name()));
     }
 
+    /**
+     * EDG-891 P1. {@code start()} returns before the connection has been attempted, so the status it
+     * leaves behind is what a status consumer sees during the whole handshake — including certificate
+     * validation. It must not be {@code DISCONNECTED}: {@code ProtocolAdapterWrapper#startNorthbound}
+     * promotes a still-{@code DISCONNECTED} adapter to {@code CONNECTED} the moment {@code start()}
+     * returns, which would report a healthy adapter for a server that has not been reached.
+     */
+    @Test
+    @Timeout(120)
+    void whenStartReturns_thenStatusIsConnecting_notDisconnected() {
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final OpcuaTag tag = new OpcuaTag(
+                "testTag",
+                "Test tag",
+                new OpcuaTagDefinition(
+                        "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
+
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
+        adapter = new OpcUaProtocolAdapter(adapterInformation, createMockedInput(config, List.of(tag)));
+
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(eventService);
+        when(moduleServices.protocolAdapterTagStreamingService())
+                .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
+        final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
+        when(startInput.moduleServices()).thenReturn(moduleServices);
+
+        // Asserted on the sequence of transitions rather than on a sample taken after start() returns:
+        // against a fast server the connection can complete before any sample is read, which would let
+        // this pass whatever start() published. The listener sees every change in order.
+        final List<ProtocolAdapterState.ConnectionStatus> transitions = new CopyOnWriteArrayList<>();
+        ((ProtocolAdapterStateImpl) protocolAdapterState).setConnectionStatusListener(transitions::add);
+        transitions.clear(); // registering the listener replays the current status
+
+        adapter.start(
+                ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
+
+        await().atMost(Duration.ofSeconds(60))
+                .untilAsserted(() -> assertThat(transitions).isNotEmpty());
+
+        assertThat(transitions.get(0))
+                .as("the first thing start() publishes must be CONNECTING; leaving the status at "
+                        + "DISCONNECTED is what ProtocolAdapterWrapper promotes to CONNECTED before "
+                        + "the handshake, and certificate validation, have happened")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+    }
+
+    /**
+     * Against a server that cannot be reached, the adapter must never report {@code CONNECTED}. Before
+     * the fix the wrapper's promotion produced exactly that, which is what made two of the EDG-883
+     * adversarial results false positives.
+     */
+    @Test
+    @Timeout(120)
+    void whenServerUnreachable_thenStatusNeverBecomesConnected() {
+        // Port 1 is reserved and never serves OPC UA, so the connection cannot succeed.
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                "opc.tcp://127.0.0.1:1/unreachable",
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final OpcuaTag tag = new OpcuaTag("testTag", "Test tag", new OpcuaTagDefinition("ns=1;i=10"));
+
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
+        adapter = new OpcUaProtocolAdapter(adapterInformation, createMockedInput(config, List.of(tag)));
+
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(eventService);
+        when(moduleServices.protocolAdapterTagStreamingService())
+                .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
+        final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
+        when(startInput.moduleServices()).thenReturn(moduleServices);
+
+        final List<ProtocolAdapterState.ConnectionStatus> observed = new CopyOnWriteArrayList<>();
+        final AtomicBoolean sampling = new AtomicBoolean(true);
+        final Thread sampler = new Thread(() -> {
+            while (sampling.get()) {
+                observed.add(protocolAdapterState.getConnectionStatus());
+                Thread.onSpinWait();
+            }
+        });
+        sampler.start();
+
+        adapter.start(
+                ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
+
+        await().atMost(Duration.ofSeconds(30))
+                .untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                        .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR));
+        sampling.set(false);
+        try {
+            sampler.join(Duration.ofSeconds(10).toMillis());
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        assertThat(observed)
+                .as("no sample may report CONNECTED for a server that was never reached")
+                .doesNotContain(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+    }
+
     /** Starts an adapter against the embedded server and waits until its client is usable. */
     private @NotNull OpcUaProtocolAdapter startAdapterAgainstEmbeddedServer() {
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(

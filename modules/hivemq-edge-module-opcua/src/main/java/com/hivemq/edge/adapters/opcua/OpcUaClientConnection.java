@@ -293,6 +293,20 @@ public class OpcUaClientConnection {
         statusPublisher.accept(this, status);
     }
 
+    /**
+     * Whether this connection should warn that any server certificate is accepted. True only when the
+     * any-certificate validator is actually installed ({@link ParsedConfig#anyCertificateValidatorActive()})
+     * <em>and</em> the configured security policy presents a certificate to accept: under SecurityPolicy
+     * {@code None} the secure-channel handshake never consults the validator, so "a certificate was
+     * accepted without trust" would be a false alarm -- and false security alarms teach operators to
+     * ignore the true ones.
+     */
+    static boolean warnsAnyCertificateAccepted(
+            final @NotNull ParsedConfig parsedConfig, final @NotNull OpcUaSpecificAdapterConfig config) {
+        return parsedConfig.anyCertificateValidatorActive()
+                && config.getSecurity().policy() != SecPolicy.NONE;
+    }
+
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
         // A connection that was torn down before its attempt ever ran. Cheap, and it keeps the expensive part
@@ -306,12 +320,22 @@ public class OpcUaClientConnection {
         // adapter status changes, and a superseded connection's session is still a live session: it can go
         // inactive -- or reactivate -- long after the adapter has moved on, and either report would describe
         // the replacement rather than the object it actually happened to.
+        final boolean warnAnyCertificateAccepted = warnsAnyCertificateAccepted(parsedConfig, config);
+        if (warnAnyCertificateAccepted) {
+            log.warn(
+                    "OPC UA adapter '{}' configured for endpoint '{}' with trust mode ANY_CERT: every server "
+                            + "certificate will be accepted, establishing no trust at all. Effective checks: {}.",
+                    adapterId,
+                    config.getUri(),
+                    parsedConfig.effectiveChecks().describe());
+        }
         final var activityListener = new OpcUaSessionActivityListener(
                 protocolAdapterMetricsService,
                 eventService,
                 adapterId,
                 this::publishStatus,
-                () -> context.get() != null);
+                () -> context.get() != null,
+                warnAnyCertificateAccepted ? config.getUri() : null);
 
         // Determine preferred MessageSecurityMode with intelligent defaults
         final MessageSecurityMode preferredMode;

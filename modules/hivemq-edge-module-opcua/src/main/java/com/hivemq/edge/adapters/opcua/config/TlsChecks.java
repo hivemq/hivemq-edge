@@ -20,47 +20,64 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Named presets for certificate validation — the "common cases" door, mutually exclusive with the
+ * {@link TlsChecksFull} axes.
+ *
+ * <p>Each preset is an exact combination of the six axes; see {@link TlsChecksProjection} for the
+ * mapping, which is the single source of truth. Presets are stored verbatim and expanded at read
+ * time, never rewritten into the configuration.
+ */
 public enum TlsChecks {
+
+    /**
+     * Chain validation only: the certificate must chain to a trust anchor, and nothing else is
+     * checked.
+     *
+     * <p>The name is a trap we are stuck with for backward compatibility: it does <b>not</b> mean "no
+     * validation" — the chain is still built. Reading it as "no validation" is the misunderstanding
+     * that originated EDG-585. Use {@link #NO_VERIFICATION} if that is what is actually wanted.
+     */
     @JsonProperty("NONE")
-    NONE("NONE"),
+    NONE,
 
+    /** Chain validation plus the ApplicationUri identity check. */
     @JsonProperty("APPLICATION_URI")
-    APPLICATION_URI("APPLICATION_URI"),
+    APPLICATION_URI,
 
+    /** The default. Chain validation, ApplicationUri, validity period and revocation including CRLs. */
     @JsonProperty("STANDARD")
-    STANDARD("STANDARD"),
+    STANDARD,
 
+    /** {@link #STANDARD} plus hostname verification and key-usage enforcement. */
     @JsonProperty("ALL")
-    ALL("ALL");
+    ALL,
 
-    private final @NotNull String tlsChecks;
+    /**
+     * For environments with no CA: trust is established from an offline-authored allow-list of
+     * certificate fingerprints, and the certificate must still assert the right application, host and
+     * validity period. Revocation and key-usage machinery, which such deployments typically cannot
+     * provide, is not required.
+     */
+    @JsonProperty("SELF_SIGNED")
+    SELF_SIGNED,
 
-    TlsChecks(final @NotNull String tlsChecks) {
-        this.tlsChecks = tlsChecks;
+    /**
+     * Accept anything: no trust, no identity, no hygiene. The honest spelling of "do not verify".
+     *
+     * <p>WARNING: a deployment running this is vulnerable to man-in-the-middle attacks. Prefer
+     * {@link #SELF_SIGNED}, which costs one fingerprint per server and closes that hole.
+     */
+    @JsonProperty("NO_VERIFICATION")
+    NO_VERIFICATION;
+
+    @JsonCreator
+    public static @Nullable TlsChecks fromString(final @Nullable String value) {
+        return EnumParsing.parse(TlsChecks.class, values(), value);
     }
 
     @Override
-    public String toString() {
-        return tlsChecks;
-    }
-
-    /**
-     * Jackson creator method for deserialization.
-     *
-     * @param value the string value from JSON
-     * @return the corresponding TlsChecks
-     */
-    @JsonCreator
-    public static @Nullable TlsChecks fromString(final @Nullable String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        for (final var mode : values()) {
-            if (mode.name().equalsIgnoreCase(value)
-                    || mode.name().replace("_", "").equalsIgnoreCase(value)) {
-                return mode;
-            }
-        }
-        return null;
+    public @NotNull String toString() {
+        return name();
     }
 }

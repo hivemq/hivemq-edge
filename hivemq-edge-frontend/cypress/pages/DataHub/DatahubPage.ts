@@ -155,8 +155,15 @@ export class DatahubPage extends Page {
     selectMessageType(messageType: string) {
       this.messageTypeField.should('exist')
       this.messageTypeField.scrollIntoView()
-      this.messageTypeField.click()
+      // Open on the select's own input rather than the container div. react-select opens from the
+      // input, and a container click can land on the wrapper while the drawer is still settling -
+      // which leaves the menu closed and the option assertion below timing out with nothing to say.
+      cy.get('#root_messageType').click()
       this.drawer.within(() => {
+        // Assert the menu is open before looking inside it, so a menu that never opened fails as
+        // "no listbox" instead of as "option not found". MessageTypeSelect only derives its options
+        // while the menu is open, so these are two genuinely different failures.
+        cy.get('[role="listbox"]').should('exist')
         cy.contains('[role="option"]', messageType).click()
       })
     },

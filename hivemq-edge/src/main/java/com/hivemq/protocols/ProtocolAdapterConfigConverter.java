@@ -38,7 +38,10 @@ public class ProtocolAdapterConfigConverter {
     public ProtocolAdapterConfigConverter(
             final @NotNull ProtocolAdapterFactoryManager factoryManager, final @NotNull ObjectMapper mapper) {
         this.factoryManager = factoryManager;
-        this.mapper = mapper;
+        // The application-wide mapper disables FAIL_ON_UNKNOWN_PROPERTIES, which meant a misspelled
+        // element in an adapter configuration was discarded in silence. Reported here rather than
+        // thrown, so a configuration carrying a setting this version does not know still starts.
+        this.mapper = ProtocolAdapterUtils.withUnknownPropertyReporting(mapper);
     }
 
     public @NotNull ProtocolAdapterConfig fromEntity(final @NotNull ProtocolAdapterEntity entity) {

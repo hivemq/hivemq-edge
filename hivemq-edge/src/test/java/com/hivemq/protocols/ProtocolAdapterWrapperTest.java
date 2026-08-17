@@ -57,6 +57,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -348,10 +349,78 @@ class ProtocolAdapterWrapperTest {
         }
 
         @Test
-        void stop_whenIdle_returnsFalse() {
-            // Idle -> Stopping is invalid, stop returns false
-            assertThat(wrapper.stop(false)).isFalse();
+        void stop_whenIdle_isIdempotent_returnsTrue() {
+            // stop() short-circuits when already Idle, treating the call as a no-op success.
+            assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+        }
+
+        @Test
+        void stop_whenIdleAfterRunningWithDestroy_stillDestroysTheAdapter() {
+            // The resource leak the Idle short-circuit exists to close, and the reason it is a fix
+            // rather than tidying. Idle -> Stopping is not a permitted transition, so before the
+            // short-circuit stop() returned false at the transition guard - which sits *above* the
+            // destroy block. ProtocolAdapterManager.refreshDeletedAdapters calls stop(id, true) and
+            // then deletes, so deleting an adapter that was idle never released whatever destroy()
+            // releases. It also turned a no-op stop into a CRITICAL "Error stopping adapter" event,
+            // because stopWrapper is the sole consumer of this return value.
+            //
+            // Started first on purpose: this is the case that matters - an adapter that ran, was
+            // stopped by the operator, and is then deleted. It has resources, and it must release them.
+            assertThat(wrapper.start()).isTrue();
+            assertThat(wrapper.stop(false)).isTrue();
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter).destroy();
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+        }
+
+        @Test
+        void stop_whenIdleAndNeverStartedWithDestroy_doesNotDestroy() {
+            // The other half of Idle. An adapter that never reached Working never acquired anything,
+            // and ProtocolAdapter#destroy() is a default no-op documented only as "called by the
+            // framework when the instance will be discarded" - nothing promises it tolerates being
+            // called on an instance that was never started. So it is not called.
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter, never()).destroy();
+        }
+
+        @Test
+        void stop_whenIdleAfterRunningWithDestroyTwice_destroysOnce() {
+            // Destroy is now reachable from two places in stop() - the Idle short-circuit and the
+            // full stop path - and the SDK makes no idempotence promise about it, which is what the
+            // wrapper's at-most-once guard is for. The everStarted guard narrows *when* destroy is
+            // attempted; it does not replace the at-most-once latch, because a stopped adapter can
+            // still be stopped twice.
+            wrapper.start();
+            wrapper.stop(false);
+
+            wrapper.stop(true);
+            wrapper.stop(true);
+
+            verify(protocolAdapter, times(1)).destroy();
+        }
+
+        @Test
+        void start_afterDestroy_isRefused() {
+            // destroy() is one-way: the SDK offers no way back from it, so starting a destroyed adapter
+            // would hand work to an instance that has already released everything. Unreachable in
+            // production today - the only two stop(destroy=true) callers are the refresh delete path,
+            // which drops the wrapper from the manager's map straight after, and shutdown(), which does
+            // not restart - so this guard exists to stop the third caller from being wrong.
+            assertThat(wrapper.start()).isTrue();
+            assertThat(wrapper.stop(true)).isTrue();
+            verify(protocolAdapter).destroy();
+
+            assertThat(wrapper.start()).isFalse();
+
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+            verify(protocolAdapter, times(1)).destroy();
         }
 
         @Test
@@ -472,8 +541,8 @@ class ProtocolAdapterWrapperTest {
             wrapper.start();
             assertThat(wrapper.stop(false)).isTrue();
 
-            // Northbound is already disconnected, stop again should handle gracefully
-            // (stop from Idle fails at FSM level, but the internal stopNorthbound handles it)
+            // Northbound is already disconnected, stop again should handle gracefully. A second stop
+            // never reaches the FSM at all now: stop() short-circuits on Idle and reports success.
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
     }
@@ -569,7 +638,9 @@ class ProtocolAdapterWrapperTest {
             final AtomicInteger callCount = new AtomicInteger(0);
             wrapper.addStateChangeListener((from, to) -> callCount.incrementAndGet());
 
-            // Idle->Stopping is invalid, should not notify
+            // Stopping an already-Idle wrapper short-circuits before any transition is attempted, so
+            // there is no state change to report. (It reaches the same outcome the old code did by
+            // failing the invalid Idle->Stopping transition, but for a different reason.)
             wrapper.stop(false);
             assertThat(callCount.get()).isEqualTo(0);
         }
@@ -844,14 +915,34 @@ class ProtocolAdapterWrapperTest {
     class StopIdempotency {
 
         @Test
-        void stop_calledTwice_secondReturnsFalse() {
+        void stop_calledTwice_isIdempotent() {
             wrapper.start();
             assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
-            // Second stop from Idle fails — Idle → Stopping is invalid
-            assertThat(wrapper.stop(false)).isFalse();
+            // Second stop from Idle short-circuits and reports success — no FSM transition attempted.
+            assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
+        }
+
+        @Test
+        void stop_withDestroy_calledTwice_destroysAdapterOnlyOnce() {
+            // The SDK does not promise destroy() is idempotent, and shutdown can race a queued
+            // refresh's stop(destroy=true) — the wrapper owns the at-most-once guarantee.
+            wrapper.start();
+            assertThat(wrapper.stop(true)).isTrue();
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter, times(1)).destroy();
+        }
+
+        @Test
+        void stop_withoutDestroy_thenWithDestroy_destroysAdapterOnlyOnce() {
+            wrapper.start();
+            assertThat(wrapper.stop(false)).isTrue();
+            assertThat(wrapper.stop(true)).isTrue();
+
+            verify(protocolAdapter, times(1)).destroy();
         }
     }
 
@@ -897,7 +988,14 @@ class ProtocolAdapterWrapperTest {
     class AsyncCompatibility {
 
         @Test
-        void stopAsync_whenStopFails_completesExceptionally() {
+        void stopAsync_whenStopFails_completesExceptionally() throws ProtocolAdapterException {
+            // Force the underlying stop() to report failure: start the wrapper, then make
+            // northbound disconnect throw. stop() returns false → stopAsync propagates as exception.
+            wrapper.start();
+            doThrow(new RuntimeException("disconnect error"))
+                    .when(protocolAdapter)
+                    .stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
+
             assertThatThrownBy(() -> wrapper.stopAsync(false).get(2, TimeUnit.SECONDS))
                     .isInstanceOf(java.util.concurrent.ExecutionException.class)
                     .hasCauseInstanceOf(RuntimeException.class)
@@ -1279,6 +1377,202 @@ class ProtocolAdapterWrapperTest {
 
             executor.shutdown();
             assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    /**
+     * {@link ProtocolAdapterWrapper#startNorthbound()} promotes an adapter to {@code CONNECTED} once
+     * {@code start()} returns, provided the adapter has not reported a status of its own.
+     *
+     * <p>That promotion is only sound for an adapter whose {@code start()} completes the connection.
+     * An adapter that connects asynchronously — OPC UA does, so hardware may come online later —
+     * returns {@code startedSuccessfully()} long before any handshake, and the promotion then reports
+     * a healthy adapter for a device that has not been reached and whose certificate may still be
+     * refused. That is EDG-891 P1.
+     *
+     * <p>Such an adapter reports {@code CONNECTING} instead, which sits outside the promotion's guard.
+     * These tests pin both halves: {@code CONNECTING} is never promoted, and the pre-existing
+     * promotion of a silent adapter is preserved.
+     */
+    @Nested
+    class ConnectionStatusPromotionOnStart {
+
+        private @NotNull ProtocolAdapterStateImpl realAdapterState;
+        private @NotNull ProtocolAdapterWrapper wrapperWithRealState;
+
+        @BeforeEach
+        void setUp() {
+            realAdapterState = new ProtocolAdapterStateImpl(eventService, "promotion-adapter", "test-protocol");
+            wrapperWithRealState = newWrapperWith(realAdapterState);
+        }
+
+        private @NotNull ProtocolAdapterWrapper newWrapperWith(final @NotNull ProtocolAdapterStateImpl state) {
+            return new ProtocolAdapterWrapper(
+                    protocolAdapter,
+                    config,
+                    adapterFactory,
+                    adapterInformation,
+                    metricsService,
+                    state,
+                    protocolAdapterPollingService,
+                    eventService,
+                    moduleServices,
+                    tagManager,
+                    northboundConsumerFactory,
+                    protocolAdapterWritingService,
+                    Runnable::run);
+        }
+
+        /** Makes the stubbed adapter report {@code status} from within {@code start()}, then succeed. */
+        private void adapterReportsOnStart(
+                final @NotNull ProtocolAdapterStateImpl state,
+                final @org.jetbrains.annotations.Nullable ProtocolAdapterState.ConnectionStatus status,
+                final @NotNull Runnable duringStart) {
+            doAnswer(invocation -> {
+                        if (status != null) {
+                            state.setConnectionStatus(status);
+                        }
+                        duringStart.run();
+                        final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                        output.startedSuccessfully();
+                        return null;
+                    })
+                    .when(protocolAdapter)
+                    .start(any(), any(), any());
+        }
+
+        @Test
+        void connectingAdapter_isNotPromotedToConnected() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.CONNECTING, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .as("an asynchronously connecting adapter must keep CONNECTING until it connects itself")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+        }
+
+        @Test
+        void silentAdapter_isStillPromotedToConnected() {
+            adapterReportsOnStart(realAdapterState, null, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .as("adapters that report nothing keep the pre-existing promotion")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        }
+
+        @Test
+        void statelessAdapter_isNotOverwritten() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.STATELESS, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.STATELESS);
+        }
+
+        @Test
+        void adapterThatFailedWhileStarting_isNotPromotedOverItsError() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.ERROR, () -> {});
+
+            wrapperWithRealState.start();
+
+            assertThat(realAdapterState.getConnectionStatus())
+                    .as("a failure reported during start must survive the promotion")
+                    .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
+        }
+
+        /**
+         * The status is read concurrently with the start that would promote it. A reader sampling
+         * throughout must never observe {@code CONNECTED}, because the adapter never reports it — the
+         * only writer that could is the promotion this fix removes for {@code CONNECTING}.
+         */
+        @Test
+        @Timeout(30)
+        void concurrentReaders_neverObserveConnected_whileAdapterIsConnecting() throws Exception {
+            final int iterations = 25;
+            final int readersPerIteration = 4;
+            final ExecutorService executor = Executors.newFixedThreadPool(readersPerIteration);
+            try {
+                for (int i = 0; i < iterations; i++) {
+                    final ProtocolAdapterStateImpl state =
+                            new ProtocolAdapterStateImpl(eventService, "promotion-adapter-" + i, "test-protocol");
+                    final ProtocolAdapterWrapper iterationWrapper = newWrapperWith(state);
+
+                    final AtomicBoolean sampling = new AtomicBoolean(true);
+                    final AtomicBoolean sawConnected = new AtomicBoolean(false);
+                    final CountDownLatch readersReady = new CountDownLatch(readersPerIteration);
+                    final CountDownLatch startEntered = new CountDownLatch(1);
+
+                    final List<CompletableFuture<Void>> readers = new ArrayList<>();
+                    for (int r = 0; r < readersPerIteration; r++) {
+                        readers.add(CompletableFuture.runAsync(
+                                () -> {
+                                    readersReady.countDown();
+                                    while (sampling.get()) {
+                                        if (state.getConnectionStatus()
+                                                == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
+                                            sawConnected.set(true);
+                                            return;
+                                        }
+                                        Thread.onSpinWait();
+                                    }
+                                },
+                                executor));
+                    }
+                    assertThat(readersReady.await(5, TimeUnit.SECONDS)).isTrue();
+
+                    // Hold start() open briefly so the readers are certain to sample the window in
+                    // which the promotion would previously have fired.
+                    adapterReportsOnStart(state, ProtocolAdapterState.ConnectionStatus.CONNECTING, () -> {
+                        startEntered.countDown();
+                        try {
+                            Thread.sleep(2);
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+
+                    iterationWrapper.start();
+
+                    assertThat(startEntered.await(5, TimeUnit.SECONDS)).isTrue();
+                    sampling.set(false);
+                    CompletableFuture.allOf(readers.toArray(new CompletableFuture[0]))
+                            .get(10, TimeUnit.SECONDS);
+
+                    assertThat(sawConnected)
+                            .as(
+                                    "iteration %s: CONNECTED was observed for an adapter that only ever "
+                                            + "reported CONNECTING",
+                                    i)
+                            .isFalse();
+                    assertThat(state.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+                }
+            } finally {
+                executor.shutdownNow();
+                assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+            }
+        }
+
+        /**
+         * Repeated start/stop cycles must not leave a stale {@code CONNECTED} behind: after a stop the
+         * status is {@code DISCONNECTED}, and the next start returns it to {@code CONNECTING} rather
+         * than promoting it.
+         */
+        @Test
+        @Timeout(30)
+        void repeatedStartStopCycles_neverSettleOnConnected() {
+            adapterReportsOnStart(realAdapterState, ProtocolAdapterState.ConnectionStatus.CONNECTING, () -> {});
+
+            for (int i = 0; i < 25; i++) {
+                wrapperWithRealState.start();
+                assertThat(realAdapterState.getConnectionStatus())
+                        .as("cycle %s after start", i)
+                        .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+                wrapperWithRealState.stop(false);
+            }
         }
     }
 }

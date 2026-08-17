@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.UaSession;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,15 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
      */
     private final @NotNull ReconnectHandoff handoff;
 
+    /**
+     * The endpoint to name when warning that this connection accepts any server certificate, or {@code null}
+     * when it does not. One nullable value rather than a flag beside a URI: the URI is only ever meaningful
+     * when the warning is due, and the pair could otherwise disagree. See EDG-883 row 3.3 -- the warning is
+     * repeated on every successful connect, not just once at start-up, because a single line at boot scrolls
+     * out of a production log and this is the one setting an operator must be able to see while triaging.
+     */
+    private final @Nullable String anyCertificateEndpoint;
+
     public OpcUaSessionActivityListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull final EventService eventService,
@@ -69,7 +79,8 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
                 adapterId,
                 legacyStatusPublisher(adapterId, protocolAdapterState, stillOwned),
                 () -> true,
-                new ReconnectHandoff());
+                new ReconnectHandoff(),
+                null);
     }
 
     public OpcUaSessionActivityListener(
@@ -85,7 +96,8 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
                 adapterId,
                 legacyStatusPublisher(adapterId, protocolAdapterState, stillOwned),
                 connectionReady,
-                new ReconnectHandoff());
+                new ReconnectHandoff(),
+                null);
     }
 
     public OpcUaSessionActivityListener(
@@ -100,7 +112,30 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
                 adapterId,
                 statusPublisher,
                 connectionReady,
-                new ReconnectHandoff());
+                new ReconnectHandoff(),
+                null);
+    }
+
+    /**
+     * The production overload. Separate rather than an extra parameter on the one above: that one is called
+     * with a lambda for {@code statusPublisher}, and a sixth parameter makes the five-argument form resolve
+     * against the {@link ProtocolAdapterState} overload instead, which a lambda cannot satisfy.
+     */
+    public OpcUaSessionActivityListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @NotNull final Consumer<ProtocolAdapterState.ConnectionStatus> statusPublisher,
+            @NotNull final BooleanSupplier connectionReady,
+            @Nullable final String anyCertificateEndpoint) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                statusPublisher,
+                connectionReady,
+                new ReconnectHandoff(),
+                anyCertificateEndpoint);
     }
 
     /** Takes the handoff, so the test that pins mutual exclusion can supply one it can pause. */
@@ -118,7 +153,8 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
                 adapterId,
                 legacyStatusPublisher(adapterId, protocolAdapterState, stillOwned),
                 connectionReady,
-                handoff);
+                handoff,
+                null);
     }
 
     private OpcUaSessionActivityListener(
@@ -127,13 +163,15 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
             @NotNull final String adapterId,
             @NotNull final Consumer<ProtocolAdapterState.ConnectionStatus> statusPublisher,
             @NotNull final BooleanSupplier connectionReady,
-            @NotNull final ReconnectHandoff handoff) {
+            @NotNull final ReconnectHandoff handoff,
+            @Nullable final String anyCertificateEndpoint) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.statusPublisher = statusPublisher;
         this.connectionReady = connectionReady;
         this.handoff = handoff;
+        this.anyCertificateEndpoint = anyCertificateEndpoint;
     }
 
     private static @NotNull Consumer<ProtocolAdapterState.ConnectionStatus> legacyStatusPublisher(
@@ -207,6 +245,18 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     public void onSessionActive(final @NotNull UaSession session) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
+
+        // Ahead of the first-activation gate below, deliberately: that gate decides whether to republish
+        // CONNECTED, and the first connect is the one an operator most needs to see this on.
+        if (anyCertificateEndpoint != null) {
+            log.warn(
+                    "OPC UA adapter '{}' connected to '{}' with trust mode ANY_CERT: the server certificate was "
+                            + "accepted without establishing any trust. This deployment is vulnerable to "
+                            + "man-in-the-middle attacks. Consider tlsChecks=SELF_SIGNED, which trusts specific "
+                            + "certificates by SHA-256 fingerprint.",
+                    adapterId,
+                    anyCertificateEndpoint);
+        }
 
         // A reconnect whose subscription transferred cleanly recreates nothing, so nothing else would ask the
         // server to re-report its retained conditions. Skipping the first activation avoids refreshing twice

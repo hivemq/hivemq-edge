@@ -53,18 +53,29 @@
       "ui:order": ["policy", "messageSecurityMode", "*"]
   },
   "tls": {
-    "ui:order": ["enabled", "tlsChecks", "keystore", "truststore"],
+    "ui:order": ["enabled", "tlsChecks", "tlsChecksFull", "allowList", "revocationList", "keystore", "truststore", "*"],
     "tlsChecks": {
-      "ui:enumNames": ["NONE: No checks are being performed on the TLS certificate.",
-        "APPLICATION_URI: Only the Application URI is validated.",
-        "STANDARD: The standard TLS checks are performed, including certificate",
-        "ALL: All available checks are performed"]
+      "ui:enumNames": ["NONE: Chain validation only - the trust chain is still built.",
+        "APPLICATION_URI: Chain validation plus the Application URI check.",
+        "STANDARD: Default - chain, Application URI, validity period and revocation.",
+        "ALL: STANDARD plus hostname verification and key-usage enforcement.",
+        "SELF_SIGNED: Fingerprint allow-list plus Application URI, hostname and validity - for servers without a CA.",
+        "NO_VERIFICATION: Accept any certificate - vulnerable to MITM, prefer SELF_SIGNED."]
+    },
+    "tlsChecksFull": {
+      "ui:order": ["trustMode", "sanUri", "hostname", "validity", "revocation", "keyUsage", "*"]
+    },
+    "allowList": {
+      "ui:order": ["path", "*"]
+    },
+    "revocationList": {
+      "ui:order": ["path", "*"]
     },
     "keystore": {
       "ui:order": ["path", "password", "privateKeyPassword"]
     },
     "truststore": {
-      "ui:order": ["enabled", "path", "password"]
+      "ui:order": ["path", "password"]
     }
   }
 }

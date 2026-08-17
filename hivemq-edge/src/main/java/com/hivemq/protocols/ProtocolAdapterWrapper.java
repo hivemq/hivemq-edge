@@ -52,6 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,7 +84,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ProtocolAdapterWrapper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
+    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
 
     private final @NotNull ProtocolAdapter adapter;
     private final @NotNull List<ProtocolAdapterStateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
@@ -111,6 +112,19 @@ public class ProtocolAdapterWrapper {
     // Executor used by startAsync/stopAsync. Injected so the wrapper does not silently fall back to
     // ForkJoinPool.commonPool() for blocking adapter lifecycle work — see fsm-patch-01.
     private final @NotNull Executor lifecycleExecutor;
+
+    // The SDK does not promise that ProtocolAdapter#destroy() is idempotent, and shutdown() can race a
+    // queued refresh's stop(destroy=true) on the manager's refresh executor — both paths reach stop(true)
+    // on this wrapper, so the wrapper owns the at-most-once guarantee for adapter.destroy().
+    private final @NotNull AtomicBoolean destroyed = new AtomicBoolean(false);
+
+    // Whether this adapter ever reached Working. The runtime state cannot answer that question: Idle
+    // means both "stopped after running" and "never started", and only the first of those has anything
+    // to release. stop(true) destroys from the Idle short-circuit, so without this the delete of an
+    // adapter that never started would call destroy() on an adapter that never acquired anything -
+    // which the SDK does not say is legal. ProtocolAdapter#destroy() is a default no-op whose javadoc
+    // says only "called by the framework when the instance will be discarded".
+    private final @NotNull AtomicBoolean everStarted = new AtomicBoolean(false);
 
     /**
      * Full constructor with all context needed for production use.
@@ -433,6 +447,15 @@ public class ProtocolAdapterWrapper {
      * @return {@code true} if started successfully, {@code false} if FSM rejected or error occurred
      */
     public synchronized boolean start() {
+        // A destroyed adapter is finished: the SDK gives no way back from destroy(), so starting one
+        // would hand work to an instance that has already released everything it had. No production
+        // call site reaches this today - the only two stop(destroy=true) callers are the refresh delete
+        // path, which removes the wrapper from the manager's map immediately after, and shutdown(),
+        // which does not restart. This guard is what keeps the third one from being wrong.
+        if (destroyed.get()) {
+            LOGGER.warn("Refusing to start protocol adapter '{}': it has already been destroyed.", getAdapterId());
+            return false;
+        }
         LOGGER.info("Starting protocol adapter '{}'.", getAdapterId());
         lastStartAttemptTime = System.currentTimeMillis();
         protocolAdapterState.clearShuttingDown();
@@ -455,6 +478,10 @@ public class ProtocolAdapterWrapper {
         if (!transitionTo(ProtocolAdapterRuntimeState.Working).status().isSuccess()) {
             return false;
         }
+        // Set here rather than on entry to start(): everything above this point is refusal or precheck,
+        // neither of which hands the adapter anything to release. From Working on, it can hold
+        // connections, pollers and writers, and destroy() is how they come back.
+        everStarted.set(true);
 
         // Update old state for backward compat
         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
@@ -524,6 +551,22 @@ public class ProtocolAdapterWrapper {
     public synchronized boolean stop(final boolean destroy) {
         LOGGER.info("Stopping protocol adapter '{}'.", getAdapterId());
 
+        if (state == ProtocolAdapterRuntimeState.Idle) {
+            // Idle conflates "stopped after running" with "never started", and only the first has
+            // anything to release. Destroying the second would call destroy() on an adapter that never
+            // acquired a thing, which the SDK does not say is legal - its destroy() is a default no-op
+            // documented only as "called by the framework when the instance will be discarded".
+            //
+            // This does NOT weaken delete-of-a-stopped-adapter: an adapter that ran and was then
+            // stopped has everStarted set and still destroys here. Nor does it affect the full stop
+            // path below, which destroys unconditionally - an adapter that failed partway through
+            // start() is in Error, not Idle, and must still release whatever it managed to take.
+            if (destroy && everStarted.get()) {
+                destroyAdapterOnce();
+            }
+            return true;
+        }
+
         // Step 1: Working → Stopping (or Error → Stopping)
         if (!transitionTo(ProtocolAdapterRuntimeState.Stopping).status().isSuccess()) {
             return false;
@@ -548,8 +591,7 @@ public class ProtocolAdapterWrapper {
                 transitionTo(ProtocolAdapterRuntimeState.Idle).status().isSuccess();
         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
         if (destroy) {
-            LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
-            adapter.destroy();
+            destroyAdapterOnce();
         }
         final boolean success = stateTransitionSuccess && southboundSuccess && northboundSuccess;
         if (success) {
@@ -558,6 +600,18 @@ public class ProtocolAdapterWrapper {
             LOGGER.error("Error stopping adapter with id {}", getAdapterId());
         }
         return success;
+    }
+
+    /**
+     * Invoke {@link ProtocolAdapter#destroy()} at most once for the lifetime of this wrapper.
+     * Both destroy call sites in {@link #stop(boolean)} — the Idle short-circuit and the full stop
+     * path — must go through here.
+     */
+    private void destroyAdapterOnce() {
+        if (destroyed.compareAndSet(false, true)) {
+            LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
+            adapter.destroy();
+        }
     }
 
     // ===== Connection Management =====
