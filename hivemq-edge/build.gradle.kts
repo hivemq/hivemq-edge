@@ -164,6 +164,11 @@ dependencies {
         implementation(libs.jackson3.databind)
     }
 
+    // victools 5 also pulls in classmate 1.7.2 transitively; take the latest patch (EDG-902)
+    constraints {
+        implementation(libs.classmate)
+    }
+
     // config
     implementation(libs.jaxb4.impl)
     implementation(libs.jaxb4.bind)
