@@ -486,6 +486,14 @@ hivemqLicense {
     projectName.set("HiveMQ Edge")
     thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
     ignoredGroupPrefixes.addAll("com.hivemq", "com.github.saasquatch")
+    // logback declares no <licenses> in its own POM, only in the logback-parent POM. CycloneDX has to
+    // resolve that parent as a separate module to discover them, and it swallows a failure of that
+    // secondary resolution: the component is emitted with no licenses at all and the BOM still looks
+    // valid, so the failure only surfaces later as "No license found for ch.qos.logback:logback-classic".
+    // Pin the license here so the report no longer depends on that lookup succeeding. logback is
+    // EPL-2.0 / LGPL-2.1-only dual licensed; EPL-2.0 is what the resolver already selects of the two.
+    overriddenLicenses.put("ch.qos.logback:logback-classic", "EPL-2.0")
+    overriddenLicenses.put("ch.qos.logback:logback-core", "EPL-2.0")
 }
 
 /*** artifacts ***/
