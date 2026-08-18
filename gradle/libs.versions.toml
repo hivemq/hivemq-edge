@@ -6,8 +6,9 @@ apache-commons-lang = "3.20.0"
 apache-plc4x = "0.13.1"
 assertj = "3.27.7"
 awaitility = "4.3.0"
-bouncycastle = "1.85"
+bouncycastle = "1.85.2"
 byteBuddy = "1.18.11"
+classmate = "1.7.3"
 concurrentunit = "0.4.6"
 dagger = "2.60.1"
 digitalpetri-modbus-tcp = "2.1.5"
@@ -42,7 +43,7 @@ json-smart = "2.6.0"
 junit-jupiter = "6.1.2"
 junit = "4.13.2"
 kotlin = "1.9.25"
-logback = "1.6.0"
+logback = "1.6.3"
 mariadb = "3.5.9"
 milo = "1.1.6"
 mockito = "5.23.0"
@@ -88,9 +89,11 @@ apache-commons-io = { module = "commons-io:commons-io", version.ref = "apache-co
 apache-commons-lang = { module = "org.apache.commons:commons-lang3", version.ref = "apache-commons-lang" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
-bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
-bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bom = { module = "org.bouncycastle:bc-jdk18on-bom", version.ref = "bouncycastle" }
+bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on" }
 bytebuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byteBuddy" }
+classmate = { module = "com.fasterxml:classmate", version.ref = "classmate" }
 concurrentunit = { module = "net.jodah:concurrentunit", version.ref = "concurrentunit" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }

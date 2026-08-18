@@ -151,6 +151,7 @@ dependencies {
     implementation(libs.logback.classic)
 
     // security
+    implementation(platform(libs.bouncycastle.bom))
     implementation(libs.bouncycastle.prov)
     implementation(libs.bouncycastle.pkix)
 
@@ -161,6 +162,11 @@ dependencies {
         // victools 5 pulls in Jackson 3 (tools.jackson) 3.0.3, which has known CVEs; force safe versions
         implementation(libs.jackson3.core)
         implementation(libs.jackson3.databind)
+    }
+
+    // victools 5 also pulls in classmate 1.7.2 transitively; take the latest patch (EDG-902)
+    constraints {
+        implementation(libs.classmate)
     }
 
     // config
