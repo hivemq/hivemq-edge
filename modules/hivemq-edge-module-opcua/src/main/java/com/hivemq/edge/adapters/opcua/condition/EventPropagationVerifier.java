@@ -50,9 +50,10 @@ import org.jetbrains.annotations.Nullable;
  * failure, unmappable continuation, or hierarchy deeper than the safety bound is {@link Result.Unverified};
  * callers retain compatibility for those servers but must make that uncertainty visible to the operator.
  * <p>
- * The Server object is the one notifier the walk is not asked about at all: the specification guarantees
- * every event of the server is accessible there, so no answer the walk could give would be worth having.
- * See {@link #isRootNotifier}.
+ * The Server object is the one notifier the <em>walk</em> is not asked about: the specification guarantees
+ * every event of the server is accessible there, so no answer the walk could give about the hierarchy would
+ * be worth having. It is still asked whether the narrowing node exists — see {@link #isRootNotifier} and
+ * {@link #presentInAddressSpace}.
  */
 public final class EventPropagationVerifier {
 
@@ -71,12 +72,12 @@ public final class EventPropagationVerifier {
      * broad makes {@link Result.OutsideHierarchy} unreachable here by definition — there is no node in the
      * address space whose events are not accessible at the Server object.
      * <p>
-     * So the walk must not be allowed to answer. It infers from modelled references, and a server is free to
-     * deliver an event to the Server object while modelling none of the inverse {@code HasNotifier} chain
-     * that would let the walk find its way back up — sparse address spaces and browse views filtered by user
-     * permission both produce exactly that. The walk would then browse a clean zero-parent answer, conclude
-     * {@code OutsideHierarchy}, and drop a tag that would have published, telling the operator their source
-     * is outside a hierarchy that by construction contains everything.
+     * So the walk must not be allowed to answer <em>that</em> question. It infers from modelled references,
+     * and a server is free to deliver an event to the Server object while modelling none of the inverse
+     * {@code HasNotifier} chain that would let the walk find its way back up — sparse address spaces and
+     * browse views filtered by user permission both produce exactly that. The walk would then browse a clean
+     * zero-parent answer, conclude {@code OutsideHierarchy}, and drop a tag that would have published,
+     * telling the operator their source is outside a hierarchy that by construction contains everything.
      * <p>
      * Distinct from {@code NotifierResolver}'s deliberate refusal to <em>fall back</em> to the Server object,
      * which is a scope argument: choosing Server on an operator's behalf silently widens a tag from one area
@@ -85,6 +86,59 @@ public final class EventPropagationVerifier {
      */
     private static boolean isRootNotifier(final @NotNull NodeId notifier) {
         return NodeIds.Server.equals(notifier);
+    }
+
+    /**
+     * The only question left to ask about a narrowing node once the notifier is the root: is it there?
+     * <p>
+     * <b>Why anything is asked at all.</b> {@link #isRootNotifier} settles the <em>hierarchy</em> question and
+     * nothing else, but the walk it replaces was answering two questions rather than one. Alongside "does this
+     * node's event path reach the selected notifier" it was incidentally answering "is this node something the
+     * server has", because a node the server does not hold produces a browse failure rather than a clean
+     * negative. Short-circuiting the walk dropped both, and §8.3.2 licenses dropping only the first: it
+     * promises that every event of the server is accessible at the Server object, which says nothing whatever
+     * about whether some node id the operator typed is an event source, or a node, or anything at all.
+     * <p>
+     * The gap that left is the one QA reported as EDG-894 P6. A query tag rooted at the Server object — the
+     * natural choice for a plant-wide subscription — narrowed by a {@code sourceNode} or {@code conditionNode}
+     * that is a typo, a stale id from a migrated configuration, or a plain variable was accepted without
+     * anything being looked at. It subscribes cleanly, its where clause matches nothing, and it stays silent
+     * for the life of the adapter with no event, log line or status naming it. That is indistinguishable from
+     * a quiet plant, which is the worst thing a tag can be.
+     * <p>
+     * <b>Why the answer is {@link Result.Unverified} and never {@link Result.OutsideHierarchy}.</b> Absence is
+     * not proof of a mistake: OPC 10000-9 §4.3 permits a server to keep its condition instances out of the
+     * address space entirely and deliver them through events alone, and §5.7.3 requires the ConditionId to be
+     * accepted regardless. So a missing node may be a working configuration on such a server. {@code Unverified}
+     * keeps the tag subscribed — which is the whole of review-09 finding 4, and must not be undone — while
+     * routing through the caller's {@code reportUnverifiedTag} so the operator is told which tag, which field
+     * and which node id, and what to check first if it never publishes.
+     */
+    private static @NotNull CompletableFuture<Result> presentInAddressSpace(
+            final @NotNull OpcUaClient client, final @NotNull NodeId node) {
+
+        // The same browse the walk's first hop makes, so a server that permits one permits the other and this
+        // check cannot fail for a reason the walk would not also have hit. What is read from it is different:
+        // not who the parents are -- under the root notifier that is settled -- but whether the server
+        // answered about this node at all. Good with zero references is a node that exists and simply has no
+        // modelled event source, which is the ordinary case here and is fine.
+        final BrowseDescription browse = new BrowseDescription(
+                node,
+                BrowseDirection.Inverse,
+                NodeIds.HasEventSource,
+                true,
+                uint(0),
+                uint(BrowseResultMask.All.getValue()));
+
+        return Browsing.browseAll(client, browse)
+                .<Result>thenApply(references -> new Result.Reachable())
+                .exceptionally(throwable -> {
+                    if (Browsing.nodeNotInAddressSpace(throwable)) {
+                        return new Result.Unverified("the server does not expose " + node.toParseableString()
+                                + " in its address space, so nothing can be confirmed to match this predicate");
+                    }
+                    return unverified(node, throwable);
+                });
     }
 
     /** Outcome of checking one narrowing node against one selected notifier. */
@@ -110,8 +164,11 @@ public final class EventPropagationVerifier {
     public static @NotNull CompletableFuture<Result> conditionCanEmitThrough(
             final @NotNull OpcUaClient client, final @NotNull NodeId conditionNode, final @NotNull NodeId notifier) {
 
-        if (conditionNode.equals(notifier) || isRootNotifier(notifier)) {
+        if (conditionNode.equals(notifier)) {
             return CompletableFuture.completedFuture(new Result.Reachable());
+        }
+        if (isRootNotifier(notifier)) {
+            return presentInAddressSpace(client, conditionNode);
         }
 
         final BrowseDescription conditionSources = new BrowseDescription(
@@ -134,8 +191,13 @@ public final class EventPropagationVerifier {
     /** Checks a {@code SourceNode} operand against its selected notifier. */
     public static @NotNull CompletableFuture<Result> sourceCanEmitThrough(
             final @NotNull OpcUaClient client, final @NotNull NodeId sourceNode, final @NotNull NodeId notifier) {
-        if (isRootNotifier(notifier)) {
+        // Named ahead of the root check rather than left to walkUpwards' own frontier test, which would
+        // otherwise browse the Server object to establish that the Server object exists.
+        if (sourceNode.equals(notifier)) {
             return CompletableFuture.completedFuture(new Result.Reachable());
+        }
+        if (isRootNotifier(notifier)) {
+            return presentInAddressSpace(client, sourceNode);
         }
         return walkUpwards(client, List.of(sourceNode), notifier);
     }
