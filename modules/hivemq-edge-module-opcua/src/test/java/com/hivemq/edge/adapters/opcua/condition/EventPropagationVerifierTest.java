@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -68,35 +69,78 @@ class EventPropagationVerifierTest {
      * or permission-filtered address space it would browse a clean zero-parent answer, conclude the source
      * is outside the hierarchy, and drop a tag that would have published.
      * <p>
-     * {@code verifyNoInteractions} is the assertion that matters: the answer must come from the
-     * specification, not from whatever the address space happens to model.
+     * The narrowing node here exists and has no modelled ancestry at all — precisely the shape that used to
+     * produce a confident {@code OutsideHierarchy}.
      */
     @Test
     void theServerObjectCarriesEverythingSoNothingIsOutsideIt() {
-        final OpcUaClient client = mock(OpcUaClient.class);
+        final OpcUaClient client = client(Map.of(NODE, List.of()), Map.of(), Set.of(), Set.of());
 
         assertThat(EventPropagationVerifier.sourceCanEmitThrough(client, NODE, NodeIds.Server)
                         .join())
                 .isEqualTo(new EventPropagationVerifier.Result.Reachable());
         assertThat(EventPropagationVerifier.conditionCanEmitThrough(client, NODE, NodeIds.Server)
+                        .join())
+                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+    }
+
+    /** A narrowing node that is the Server object itself needs no browse to settle either question. */
+    @Test
+    void andTheServerObjectNarrowedByItselfIsSettledWithoutAskingTheServer() {
+        final OpcUaClient client = mock(OpcUaClient.class);
+
+        assertThat(EventPropagationVerifier.sourceCanEmitThrough(client, NodeIds.Server, NodeIds.Server)
+                        .join())
+                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+        assertThat(EventPropagationVerifier.conditionCanEmitThrough(client, NodeIds.Server, NodeIds.Server)
                         .join())
                 .isEqualTo(new EventPropagationVerifier.Result.Reachable());
         verifyNoInteractions(client);
     }
 
+    /**
+     * EDG-894 P6: exempting the Server object from the <em>hierarchy</em> question must not exempt the
+     * narrowing node from existing.
+     * <p>
+     * §8.3.2 promises that every event of the server is accessible at the Server object. It promises nothing
+     * about a node id the operator typed, so a query tag rooted at Server narrowed by a node the server does
+     * not hold used to be accepted with nothing looked at — subscribing cleanly to a where clause that can
+     * never match, silent for the life of the adapter. The answer is {@code Unverified} rather than
+     * {@code OutsideHierarchy} because OPC 10000-9 §4.3 lets a server hide its condition instances, so the
+     * tag must still subscribe; what it must not do is subscribe without saying so.
+     */
     @Test
-    void andThatHoldsEvenWhenTheServerModelsNoAncestryAtAll() {
-        // The same case driven through a real browse fixture rather than an unstubbed mock: the node exists,
-        // the browse succeeds, and it returns no parents. That is precisely the shape that used to produce a
-        // confident OutsideHierarchy, so it is worth pinning separately from the short-circuit above.
-        final OpcUaClient client = client(Map.of(NODE, List.of()), Map.of(), Set.of());
+    void butANarrowingNodeTheServerDoesNotHoldIsNamedRatherThanSilentlyAccepted() {
+        final OpcUaClient client = client(Map.of(), Map.of(), Set.of(), Set.of(NODE));
 
         assertThat(EventPropagationVerifier.sourceCanEmitThrough(client, NODE, NodeIds.Server)
                         .join())
-                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(
+                        EventPropagationVerifier.Result.Unverified.class))
+                .satisfies(unverified -> assertThat(unverified.reason())
+                        .contains("does not expose")
+                        .contains("ns=2;s=Node")
+                        .contains("nothing can be confirmed to match this predicate"));
         assertThat(EventPropagationVerifier.conditionCanEmitThrough(client, NODE, NodeIds.Server)
                         .join())
-                .isEqualTo(new EventPropagationVerifier.Result.Reachable());
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(
+                        EventPropagationVerifier.Result.Unverified.class))
+                .satisfies(unverified -> assertThat(unverified.reason())
+                        .contains("does not expose")
+                        .contains("ns=2;s=Node"));
+    }
+
+    /** A browse that fails for any other reason under the root notifier is uncertainty, not a clean answer. */
+    @Test
+    void andABrowseThatCouldNotSettleItUnderTheRootNotifierIsUncertaintyToo() {
+        final OpcUaClient client = client(Map.of(), Map.of(), Set.of(NODE), Set.of());
+
+        assertThat(EventPropagationVerifier.sourceCanEmitThrough(client, NODE, NodeIds.Server)
+                        .join())
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(
+                        EventPropagationVerifier.Result.Unverified.class))
+                .satisfies(unverified ->
+                        assertThat(unverified.reason()).contains("ns=2;s=Node").contains("browse denied"));
     }
 
     @Test
@@ -168,11 +212,29 @@ class EventPropagationVerifierTest {
             final @NotNull Map<NodeId, List<NodeId>> parents,
             final @NotNull Map<NodeId, List<NodeId>> conditionSources,
             final @NotNull Set<NodeId> failedEventSourceBrowses) {
+        return client(parents, conditionSources, failedEventSourceBrowses, Set.of());
+    }
+
+    /**
+     * @param absentNodes nodes the server answers {@code Bad_NodeIdUnknown} about — the one browse outcome
+     *     that is a statement about the address space rather than about the connection.
+     */
+    private static @NotNull OpcUaClient client(
+            final @NotNull Map<NodeId, List<NodeId>> parents,
+            final @NotNull Map<NodeId, List<NodeId>> conditionSources,
+            final @NotNull Set<NodeId> failedEventSourceBrowses,
+            final @NotNull Set<NodeId> absentNodes) {
         final OpcUaClient client = mock(OpcUaClient.class);
         when(client.getNamespaceTable()).thenReturn(new NamespaceTable());
         when(client.browseAsync(any(BrowseDescription.class))).thenAnswer(invocation -> {
             final BrowseDescription browse = invocation.getArgument(0);
             final NodeId node = browse.getNodeId();
+            if (absentNodes.contains(node)) {
+                return CompletableFuture.completedFuture(new BrowseResult(
+                        new StatusCode(StatusCodes.Bad_NodeIdUnknown),
+                        ByteString.NULL_VALUE,
+                        new ReferenceDescription[0]));
+            }
             final boolean eventSource = NodeIds.HasEventSource.equals(browse.getReferenceTypeId());
             if (eventSource && failedEventSourceBrowses.contains(node)) {
                 return CompletableFuture.failedFuture(new IllegalStateException("browse denied"));

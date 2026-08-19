@@ -936,4 +936,91 @@ class ProtocolAdaptersResourceImplTest {
         assertThat(response.getLocation().toString())
                 .isEqualTo("/api/v1/management/protocol-adapters/schema/adapter/tag?direction=SOUTHBOUND");
     }
+
+    /**
+     * EDG-894 P7: when schema generation fails, the 500 must say what the adapter said.
+     * <p>
+     * {@code TagSchemaCreationOutput.fail(String)} records the adapter's reason on the output and completes the
+     * future with a fixed {@code "Json schema creation for tag failed."}. This layer read only the cause, so the
+     * entire body of the 500 was that fixed sentence — and every schema failure in the OPC UA adapter takes that
+     * route. QA met it as an unexplained 500 on an ordinary VALUE tag and could not tell from the response
+     * whether the fault was in schema generation or in the {@code direction} parameter that had just been added,
+     * so it was reported as a possible API compatibility break. The adapter had in fact said its connection was
+     * not established, and nothing carried that sentence to the caller.
+     */
+    @Test
+    void getSchema_whenTheAdapterGivesAReason_thenTheResponseCarriesIt() {
+        mockAdapterFailingSchemaWith("Discovery failed: ClientConnection not connected or not initialized");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "tag", null);
+
+        assertEquals(500, response.getStatus());
+        assertThat(response.getEntity().toString())
+                .as("the operator has to be told which condition stopped the schema being built")
+                .contains("ClientConnection not connected")
+                .doesNotContain("Json schema creation for tag failed.");
+    }
+
+    @Test
+    void getSchema_whenTheAdapterGivesNoReason_thenTheCauseIsStillReported() {
+        // fail(Throwable, null) leaves no message on the output, and there the throwable is the only account
+        // there is. Preferring the adapter's reason must not mean discarding the cause when there isn't one.
+        final ProtocolAdapterWrapper wrapper = mock();
+        final ProtocolAdapter adapter = mock();
+        when(wrapper.getAdapter()).thenReturn(adapter);
+        doAnswer(invocation -> {
+                    final TagSchemaCreationOutput output = invocation.getArgument(1);
+                    output.fail(new IllegalStateException("the node is not readable"), null);
+                    return null;
+                })
+                .when(adapter)
+                .createTagSchema(any(), any());
+        when(protocolAdapterManager.getProtocolAdapterWrapperByAdapterId("adapter"))
+                .thenReturn(Optional.of(wrapper));
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "tag", null);
+
+        assertEquals(500, response.getStatus());
+        assertThat(response.getEntity().toString()).contains("the node is not readable");
+    }
+
+    @Test
+    void getSchema_withoutDirection_takesTheSamePathAsNorthbound() {
+        // The other half of P7, and the half that refutes its stated hypothesis. The finding could not reach the
+        // NORTHBOUND call to compare, and offered "if NORTHBOUND succeeds, the defect is the default direction".
+        // It cannot: an absent direction resolves to NORTHBOUND, and createTagSchema runs and fails before the
+        // direction is consulted at all, so the two answers are identical whether the adapter succeeds or fails.
+        mockAdapterFailingSchemaWith("Discovery failed: ClientConnection not connected or not initialized");
+        final Response withoutDirection = protocolAdaptersResource.getSchema("adapter", "tag", null);
+
+        mockAdapterFailingSchemaWith("Discovery failed: ClientConnection not connected or not initialized");
+        final Response northbound = protocolAdaptersResource.getSchema("adapter", "tag", "NORTHBOUND");
+
+        assertEquals(withoutDirection.getStatus(), northbound.getStatus());
+        assertThat(withoutDirection.getEntity().toString())
+                .isEqualTo(northbound.getEntity().toString());
+
+        mockAdapterWithTagSchema("adapter");
+        final Response okWithout = protocolAdaptersResource.getSchema("adapter", "tag", null);
+        mockAdapterWithTagSchema("adapter");
+        final Response okNorthbound = protocolAdaptersResource.getSchema("adapter", "tag", "NORTHBOUND");
+
+        assertEquals(200, okWithout.getStatus());
+        assertThat((JsonNode) okWithout.getEntity()).isEqualTo((JsonNode) okNorthbound.getEntity());
+    }
+
+    private void mockAdapterFailingSchemaWith(final @NotNull String reason) {
+        final ProtocolAdapterWrapper wrapper = mock();
+        final ProtocolAdapter adapter = mock();
+        when(wrapper.getAdapter()).thenReturn(adapter);
+        doAnswer(invocation -> {
+                    final TagSchemaCreationOutput output = invocation.getArgument(1);
+                    output.fail(reason);
+                    return null;
+                })
+                .when(adapter)
+                .createTagSchema(any(), any());
+        when(protocolAdapterManager.getProtocolAdapterWrapperByAdapterId("adapter"))
+                .thenReturn(Optional.of(wrapper));
+    }
 }

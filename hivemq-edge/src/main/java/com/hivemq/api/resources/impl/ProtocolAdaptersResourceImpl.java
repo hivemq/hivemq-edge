@@ -747,11 +747,24 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             log.debug("Original exception: ", e);
             return errorResponse(new InternalServerError(null));
         } catch (final @NotNull ExecutionException e) {
+            // Prefer the adapter's own account of what went wrong. TagSchemaCreationOutputImpl.fail(String)
+            // records the adapter's sentence on the output and completes the future with a fixed
+            // "Json schema creation for tag failed.", so reading only the cause discards the only text that
+            // says anything -- and every one of the OPC UA adapter's schema failures takes that route. The
+            // symptom was a 500 whose whole body was that fixed sentence, which QA could not diagnose from and
+            // reported as a possible regression in the direction parameter (EDG-894 P7); the adapter had in
+            // fact said "Discovery failed: ClientConnection not connected or not initialized" and nothing
+            // carried it to the caller.
+            //
+            // Falling back to the cause rather than replacing it: fail(Throwable, null) leaves no message on
+            // the output, and there the throwable is the only account there is.
             final Throwable cause = e.getCause();
+            final String adapterReason = tagSchemaCreationOutput.getMessage();
             final String message;
-            if (cause == null) {
+            if (adapterReason != null && !adapterReason.isBlank()) {
+                message = adapterReason;
+            } else if (cause == null) {
                 message = "unknown error";
-                ;
             } else {
                 message = cause.getMessage();
             }

@@ -15,6 +15,11 @@
  */
 package com.hivemq.edge.adapters.opcua.config.tag;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * What kind of thing an OPC-UA tag points at.
  * <p>
@@ -65,5 +70,42 @@ public enum OpcuaTagKind {
      * A query against a notifier, delivering events from potentially many conditions beneath it.
      * Northbound only — there is no single target to write to.
      */
-    EVENT_SUBSCRIPTION
+    EVENT_SUBSCRIPTION;
+
+    /**
+     * Reads the kind from configuration, treating <b>blank as unset</b> so the documented default
+     * ({@link #VALUE}) applies.
+     * <p>
+     * The same rule and the same reason as {@link OpcuaConditionType#fromConfig} — a cleared UI field or an
+     * unset optional in a generator arrives as {@code "   "}, and failing on it lost the tag silently. Reached
+     * by a different route, which is why it needed its own fix: with no creator, Jackson's own coercion decided
+     * the question and refused with {@code "Cannot coerce empty String to OpcuaTagKind value"}, a message about
+     * Jackson's configuration rather than about the operator's.
+     * <p>
+     * Written as a creator rather than by enabling {@code CoercionConfig} on the mapper: the mapper is shared
+     * by every adapter's configuration, and blank-means-unset is true of this field rather than of every enum
+     * in the product.
+     *
+     * @throws IllegalArgumentException when a non-blank value names no kind. Unlike blank, that is a typo, and
+     *                                 a tag whose kind was mistyped must not silently become a plain value —
+     *                                 it would subscribe to an alarm node's Value attribute and publish
+     *                                 nothing.
+     */
+    @JsonCreator
+    public static @Nullable OpcuaTagKind fromConfig(final @Nullable String kind) {
+        if (kind == null || kind.isBlank()) {
+            return null;
+        }
+        // Trimmed to match what Jackson's default enum handling did before this creator took the decision over.
+        final String trimmed = kind.trim();
+        for (final OpcuaTagKind candidate : values()) {
+            if (candidate.name().equals(trimmed)) {
+                return candidate;
+            }
+        }
+        throw new IllegalArgumentException("Unknown OPC UA tag kind '"
+                + trimmed
+                + "'. Known kinds: "
+                + Arrays.stream(values()).map(Enum::name).collect(Collectors.joining(", ")));
+    }
 }
