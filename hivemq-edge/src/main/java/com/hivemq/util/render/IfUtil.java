@@ -48,6 +48,7 @@ public class IfUtil {
             "HIVEMQ_LDAP_ENABLED",
             "HIVEMQ_USERS_ENABLED",
             "HIVEMQ_LDAP_OBJECT_CLASS_ENABLED",
+            "HIVEMQ_LDAP_BASE_DN_ENABLED",
             "HIVEMQ_PRE_LOGIN_NOTICE_ENABLED",
             "HIVEMQ_LDAP_USER_ROLES_ENABLED");
 

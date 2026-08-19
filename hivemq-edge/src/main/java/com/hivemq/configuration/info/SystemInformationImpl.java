@@ -130,13 +130,11 @@ public class SystemInformationImpl implements SystemInformation {
         if (secondaryConfigFolderName == null) {
             secondaryConfigFolder = configFolder;
         } else {
-            secondaryConfigFolder = Objects.requireNonNullElseGet(
-                    configFolder,
-                    () -> setUpHiveMQFolder(
-                            SystemProperties.CONFIG_FOLDER_SECONDARY,
-                            EnvironmentVariables.CONFIG_FOLDER_SECONDARY,
-                            "conf",
-                            false));
+            secondaryConfigFolder = setUpHiveMQFolder(
+                    SystemProperties.CONFIG_FOLDER_SECONDARY,
+                    EnvironmentVariables.CONFIG_FOLDER_SECONDARY,
+                    "conf",
+                    false);
         }
 
         licenseFolder = Objects.requireNonNullElseGet(
