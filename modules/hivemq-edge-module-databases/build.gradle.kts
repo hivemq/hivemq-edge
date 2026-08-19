@@ -103,3 +103,7 @@ hivemqLicense {
     thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
     ignoredGroupPrefixes.add("org.mariadb.jdbc")
 }
+
+// BOM content depends on POM metadata that is not a declared task input, so an incomplete BOM
+// caches under the same key as a correct one and spreads via the remote build cache.
+tasks.named("cyclonedxDirectBom") { outputs.cacheIf { false } }
