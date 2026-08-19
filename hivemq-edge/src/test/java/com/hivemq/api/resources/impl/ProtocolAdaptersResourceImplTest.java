@@ -22,12 +22,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
@@ -47,6 +53,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.api.model.Adapter;
+import com.hivemq.edge.api.model.AdapterConfig;
 import com.hivemq.edge.api.model.DomainTagList;
 import com.hivemq.edge.api.model.DomainTagOwnerList;
 import com.hivemq.edge.api.model.FieldMapping;
@@ -59,6 +66,8 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.ProtocolAdapterConfigConverter;
+import com.hivemq.protocols.ProtocolAdapterFactoryManager;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import jakarta.ws.rs.core.Response;
@@ -66,11 +75,13 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -85,6 +96,9 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull TopicFilterPersistence topicFilterPersistence = mock();
     private final @NotNull SystemInformation systemInformation = mock();
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor = mock();
+    private final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager = mock();
+    private final @NotNull ProtocolAdapterConfigConverter configConverter =
+            new ProtocolAdapterConfigConverter(protocolAdapterFactoryManager, new ObjectMapper());
 
     private final ProtocolAdaptersResourceImpl protocolAdaptersResource = new ProtocolAdaptersResourceImpl(
             remoteService,
@@ -95,7 +109,8 @@ class ProtocolAdaptersResourceImplTest {
             versionProvider,
             topicFilterPersistence,
             systemInformation,
-            protocolAdapterExtractor);
+            protocolAdapterExtractor,
+            configConverter);
 
     @BeforeEach
     public void setUp() {
@@ -1022,5 +1037,200 @@ class ProtocolAdaptersResourceImplTest {
                 .createTagSchema(any(), any());
         when(protocolAdapterManager.getProtocolAdapterWrapperByAdapterId("adapter"))
                 .thenReturn(Optional.of(wrapper));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // A configuration that will not convert must be refused while the caller is still there.
+    //
+    // The write is answered before the configuration is read: the extractor notifies
+    // ProtocolAdapterManager.refresh, which converts on its own executor. A configuration that does not
+    // convert used to be answered 200 and then never appear - every later GET a 404, for good, and the
+    // reason only in Edge's log and event stream. Anything polling for the adapter burns its whole
+    // timeout and then reports that timeout, which names nothing about the configuration.
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    void addAdapter_whenTheConfigurationDoesNotConvert_thenTheCallerIsToldWhyAndNothingIsWritten() {
+        mockConvertibleAdapterType("refusing");
+
+        final Response response = protocolAdaptersResource.addAdapter(
+                "refusing", adapterModel("new-adapter", "refusing", Map.of("publishChangedDataOnly", true)));
+
+        assertEquals(400, response.getStatus());
+        final ProblemDetails problem = assertInstanceOf(ProblemDetails.class, response.getEntity());
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getDetail)
+                .as("the caller must be told which setting was refused, not merely that something was invalid")
+                .allSatisfy(detail -> assertThat(detail).contains("'publishChangedDataOnly'"));
+        verify(protocolAdapterExtractor, never()).addAdapter(any());
+    }
+
+    @Test
+    void addAdapter_whenTheConfigurationConverts_thenItIsWritten() {
+        mockConvertibleAdapterType("refusing");
+        when(protocolAdapterExtractor.addAdapter(any())).thenReturn(true);
+
+        final Response response = protocolAdaptersResource.addAdapter(
+                "refusing", adapterModel("new-adapter", "refusing", Map.of("hostname", "machine-1")));
+
+        assertEquals(200, response.getStatus());
+        verify(protocolAdapterExtractor).addAdapter(any());
+    }
+
+    @Test
+    void updateAdapter_whenTheConfigurationDoesNotConvert_thenTheCallerIsToldWhyAndNothingIsWritten() {
+        // This path never validated the payload at all, so an unreadable configuration reached the
+        // configuration file unopposed and took the running adapter's next reload with it.
+        final ProtocolAdapterEntity existing = existingEntity("existing", "refusing");
+        when(protocolAdapterExtractor.getAdapterByAdapterId("existing")).thenReturn(Optional.of(existing));
+
+        final Response response = protocolAdaptersResource.updateAdapter(
+                "existing", adapterModel("existing", "refusing", Map.of("publishChangedDataOnly", true)));
+
+        assertEquals(400, response.getStatus());
+        final ProblemDetails problem = assertInstanceOf(ProblemDetails.class, response.getEntity());
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getDetail)
+                .allSatisfy(detail -> assertThat(detail).contains("'publishChangedDataOnly'"));
+        verify(protocolAdapterExtractor, never()).updateAdapter(any());
+    }
+
+    @Test
+    void updateAdapter_whenTheConfigurationConverts_thenItIsWritten() {
+        final ProtocolAdapterEntity existing = existingEntity("existing", "refusing");
+        when(protocolAdapterExtractor.getAdapterByAdapterId("existing")).thenReturn(Optional.of(existing));
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response = protocolAdaptersResource.updateAdapter(
+                "existing", adapterModel("existing", "refusing", Map.of("hostname", "machine-1")));
+
+        assertEquals(200, response.getStatus());
+        verify(protocolAdapterExtractor).updateAdapter(any());
+    }
+
+    @Test
+    void createCompleteAdapter_whenTheConfigurationDoesNotConvert_thenTheCallerIsToldWhyAndNothingIsWritten() {
+        mockConvertibleAdapterType("refusing");
+
+        final AdapterConfig adapterConfig = new AdapterConfig()
+                .config(adapterModel("new-adapter", "refusing", Map.of("publishChangedDataOnly", true)))
+                .tags(List.of())
+                .northboundMappings(List.of())
+                .southboundMappings(List.of());
+
+        final Response response =
+                protocolAdaptersResource.createCompleteAdapter("refusing", "new-adapter", adapterConfig);
+
+        assertEquals(400, response.getStatus());
+        final ProblemDetails problem = assertInstanceOf(ProblemDetails.class, response.getEntity());
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getDetail)
+                .allSatisfy(detail -> assertThat(detail).contains("'publishChangedDataOnly'"));
+        verify(protocolAdapterExtractor, never()).addAdapter(any());
+    }
+
+    @Test
+    void whenTheFailureIsNested_thenTheReportedFieldIsThePathThroughTheCallersOwnPayload() {
+        // The reference chain, not the class that threw: "nested.publishChangedDataOnly" is a path
+        // through what the caller wrote, which is the only path they can act on.
+        mockConvertibleAdapterType("refusing");
+
+        final Response response = protocolAdaptersResource.addAdapter(
+                "refusing",
+                adapterModel("new-adapter", "refusing", Map.of("nested", Map.of("publishChangedDataOnly", true))));
+
+        assertEquals(400, response.getStatus());
+        final ProblemDetails problem = assertInstanceOf(ProblemDetails.class, response.getEntity());
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getParameter)
+                .containsExactly("nested.publishChangedDataOnly");
+    }
+
+    @Test
+    void whenTheFailureHasNoPropertyPath_thenItIsReportedAgainstTheConfigurationItself() {
+        // No factory for the protocol id: the conversion fails before a single property is reached, so
+        // there is no path to name and the complaint belongs to the configuration as a whole.
+        mockConvertibleAdapterType("refusing");
+        when(protocolAdapterFactoryManager.get("refusing")).thenReturn(Optional.empty());
+
+        final Response response = protocolAdaptersResource.addAdapter(
+                "refusing", adapterModel("new-adapter", "refusing", Map.of("hostname", "machine-1")));
+
+        assertEquals(400, response.getStatus());
+        final ProblemDetails problem = assertInstanceOf(ProblemDetails.class, response.getEntity());
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getParameter)
+                .containsExactly("config");
+        assertThat(problem.getErrors())
+                .extracting(com.hivemq.http.error.Error::getDetail)
+                .allSatisfy(detail -> assertThat(detail).contains("No Factory was found"));
+        verify(protocolAdapterExtractor, never()).addAdapter(any());
+    }
+
+    private @NotNull Adapter adapterModel(
+            final @NotNull String id, final @NotNull String type, final @NotNull Map<String, Object> config) {
+        // The resource casts the config to a LinkedHashMap, which is what Jackson hands it off the wire.
+        return new Adapter(id).type(type).config(new LinkedHashMap<>(config));
+    }
+
+    private @NotNull ProtocolAdapterEntity existingEntity(
+            final @NotNull String adapterId, final @NotNull String protocolId) {
+        final ProtocolAdapterEntity entity = mock(ProtocolAdapterEntity.class);
+        when(entity.getAdapterId()).thenReturn(adapterId);
+        when(entity.getProtocolId()).thenReturn(protocolId);
+        when(entity.getTags()).thenReturn(List.of());
+        when(entity.getNorthboundMappings()).thenReturn(List.of());
+        when(entity.getSouthboundMappings()).thenReturn(List.of());
+        mockRefusingFactory(protocolId);
+        return entity;
+    }
+
+    /**
+     * An adapter type whose configuration class refuses a setting it does not have, wired into both the
+     * type lookup the resource does and the factory lookup the converter does.
+     */
+    private void mockConvertibleAdapterType(final @NotNull String protocolId) {
+        final ProtocolAdapterInformation information = mock(ProtocolAdapterInformation.class);
+        when(protocolAdapterManager.getAdapterTypeById(protocolId)).thenReturn(Optional.of(information));
+        when(protocolAdapterManager.getAllAvailableAdapterTypes()).thenReturn(Map.of(protocolId, information));
+        //noinspection unchecked
+        when((Object) information.configurationClassNorthbound()).thenReturn(RefusingAdapterConfig.class);
+        //noinspection unchecked
+        when((Object) information.configurationClassNorthAndSouthbound()).thenReturn(RefusingAdapterConfig.class);
+        mockRefusingFactory(protocolId);
+    }
+
+    private void mockRefusingFactory(final @NotNull String protocolId) {
+        final ProtocolAdapterFactory<?> factory = mock(ProtocolAdapterFactory.class);
+        when(protocolAdapterFactoryManager.get(protocolId)).thenReturn(Optional.of(factory));
+        // Drive the converter's own mapper exactly as a real factory does - the mapper is the point,
+        // since it is the one an operator's configuration file goes through.
+        when(factory.convertConfigObject(any(), any(), org.mockito.ArgumentMatchers.anyBoolean()))
+                .thenAnswer(invocation -> {
+                    final ObjectMapper mapper = invocation.getArgument(0);
+                    final Map<String, Object> config = invocation.getArgument(1);
+                    return mapper.convertValue(config, RefusingAdapterConfig.class);
+                });
+        when(factory.convertTagDefinitionObjects(any(), any())).thenReturn(List.of());
+    }
+
+    /**
+     * Stands in for {@code OpcUaSpecificAdapterConfig}, which core cannot reference: the module depends
+     * on the adapter SDK, not the other way round. What is pinned here is the mechanism - a config class
+     * that refuses a setting it does not have - not OPC UA's particular settings.
+     */
+    static class RefusingAdapterConfig implements ProtocolSpecificAdapterConfig {
+
+        @JsonProperty("hostname")
+        public @Nullable String hostname;
+
+        @JsonProperty("nested")
+        public @Nullable RefusingAdapterConfig nested;
+
+        @JsonAnySetter
+        void refuseUnknownSetting(final @NotNull String name, final @Nullable Object value) {
+            throw new IllegalArgumentException(
+                    "The adapter configuration contains '" + name + "', which is not a setting it has.");
+        }
     }
 }
