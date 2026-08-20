@@ -286,6 +286,20 @@ public class MqttBridge {
         if (loopPreventionHopCount != that.loopPreventionHopCount) {
             return false;
         }
+        // Compared, and it was not before — while hashCode has always included it, which is an
+        // equals/hashCode contract violation on its own. It became observable when the REST update path
+        // changed: an update used to be expressed as remove-then-add, so every PUT restarted the bridge
+        // whatever equals said. Now an update is one transition and this comparison is what decides
+        // whether the bridge restarts, so toggling only `persist` was classified as "config is
+        // unchanged" and the bridge was never restarted under its new configuration.
+        //
+        // Scope, honestly: the publish path reads the flag from the live configuration
+        // (PublishDistributorImpl.getBridgeConfig), so the QoS downgrade itself follows the new value
+        // without a restart. What this fixes is the classification — a configuration change that Edge
+        // reported as no change at all — and the contract violation (EDG-882 QA round 4).
+        if (persist != that.persist) {
+            return false;
+        }
         if (!id.equals(that.id)) {
             return false;
         }

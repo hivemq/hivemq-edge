@@ -403,7 +403,12 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                     }
                     break;
                 }
-                if (isOrphaned(sharedQueue)) {
+                // Re-read after resolving ownership, immediately before the clear. The bridge shutdown
+                // hook can un-register every forwarder while isOrphaned is running, which turns a live
+                // queue into an apparently orphaned one between the guard above and the clear below --
+                // so the guard has to be the last thing that happens before the destructive call, not
+                // the first thing in the iteration (EDG-882 QA round 4).
+                if (isOrphaned(sharedQueue) && !shutdownHooks.isShuttingDown()) {
                     localPersistence.clear(sharedQueue, true, bucketIndex);
                 }
             }

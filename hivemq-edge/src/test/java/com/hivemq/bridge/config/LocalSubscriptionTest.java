@@ -421,6 +421,36 @@ class LocalSubscriptionTest {
         assertEquals(asWritten.hashCode(), reordered.hashCode());
     }
 
+    /**
+     * EDG-882 QA round 4. {@code persist} was in {@code hashCode} and not in {@code equals}, which was
+     * unobservable while a REST update was expressed as remove-then-add — every PUT restarted the bridge
+     * whatever equality said. Once an update became one transition, this comparison is what decides
+     * whether the bridge restarts, so toggling only this flag was silently ignored: the bridge kept
+     * forwarding under the old setting, which is what decides whether a local subscription's publishes
+     * are downgraded to QoS 0 and therefore whether they are persisted at all.
+     */
+    @Test
+    void mqttBridgeEquals_whenOnlyPersistDiffers_thenNotEqual() {
+        final LocalSubscription subscription = subscription("topicA/+", "destinationTopic");
+        final MqttBridge persisting = bridgeWithPersist(subscription, true);
+        final MqttBridge notPersisting = bridgeWithPersist(subscription, false);
+
+        assertNotEquals(persisting, notPersisting, "toggling persist must be a configuration change");
+        assertNotEquals(persisting.hashCode(), notPersisting.hashCode());
+    }
+
+    private static MqttBridge bridgeWithPersist(final LocalSubscription subscription, final boolean persist) {
+        return new MqttBridge.Builder()
+                .withId("edg-884-bridge")
+                .withHost("localhost")
+                .withPort(1883)
+                .withClientId("client")
+                .withLocalSubscriptions(List.of(subscription))
+                .withRemoteSubscriptions(List.of())
+                .persist(persist)
+                .build();
+    }
+
     /** But a repeated block is a different configuration, and a multiset keeps them apart. */
     @Test
     void mqttBridgeEquals_whenASubscriptionIsRepeated_thenNotEqual() {

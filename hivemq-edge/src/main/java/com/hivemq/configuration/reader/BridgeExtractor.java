@@ -68,27 +68,34 @@ public class BridgeExtractor
         this.configFileReaderWriter = configFileReaderWriter;
     }
 
-    public void addBridge(final @NotNull MqttBridge mqttBridge) {
+    /**
+     * These three mutators hold the extractor's monitor across {@code writeConfigWithSync()}, and that
+     * is deliberate even though it is a lock-order inversion against the configuration watcher, which
+     * takes {@code ConfigFileReaderWriter}'s lock first and then calls into {@link #updateConfig}.
+     * <p>
+     * Releasing the monitor before the write — tried in EDG-882 QA round 3 to close that inversion —
+     * opens a worse window: {@code updateConfig} is itself synchronized, so between the model mutation
+     * and the file write the watcher can read the not-yet-written file, overwrite {@code bridgeEntities}
+     * with the pre-edit configuration and notify the bridge subsystem, which reverts the operator's
+     * change and clears the queues of whatever the reverted configuration no longer contains. Trading a
+     * pre-existing deadlock for a new path that silently discards a REST change and its messages is not
+     * a fix. Closing both properly needs one configuration-transition lock shared by the reload and the
+     * mutators, which is a change to the shared configuration subsystem and belongs to its own ticket
+     * (EDG-882 QA round 4).
+     */
+    public synchronized void addBridge(final @NotNull MqttBridge mqttBridge) {
         if (!mqttBridge.isPersist()) {
             log.info(
                     "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
                     mqttBridge.getId());
         }
 
-        synchronized (this) {
-            bridgeEntities = new ImmutableList.Builder<MqttBridge>()
-                    .addAll(bridgeEntities)
-                    .add(mqttBridge)
-                    .build();
-            notifyConsumer();
-        }
-        // The configuration file is written after the monitor is released, never while holding it.
-        // notifyConsumer runs BridgeService.updateBridges inline, which can wait up to the bridge stop
-        // timeout, and writeConfigWithSync takes ConfigFileReaderWriter's lock -- the lock the config
-        // watcher already holds when it calls back into this extractor. Holding both in that order is
-        // the inverse of the watcher's, and the two together wedge the watcher and every REST write in
-        // every subsystem, permanently (EDG-882 QA round 3). sync() re-reads the volatile field, so a
-        // write that lands after another thread's change simply writes the newer configuration.
+        bridgeEntities = new ImmutableList.Builder<MqttBridge>()
+                .addAll(bridgeEntities)
+                .add(mqttBridge)
+                .build();
+
+        notifyConsumer();
         configFileReaderWriter.writeConfigWithSync();
     }
 
@@ -114,36 +121,31 @@ public class BridgeExtractor
      *
      * @return {@code false} if no bridge with that id is configured, in which case nothing changed.
      */
-    public boolean replaceBridge(final @NotNull String id, final @NotNull MqttBridge mqttBridge) {
-        synchronized (this) {
-            if (bridgeEntities.stream().noneMatch(entry -> entry.getId().equals(id))) {
-                return false;
-            }
-            if (!mqttBridge.isPersist()) {
-                log.info(
-                        "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
-                        mqttBridge.getId());
-            }
-
-            bridgeEntities = bridgeEntities.stream()
-                    .map(entry -> entry.getId().equals(id) ? mqttBridge : entry)
-                    .collect(ImmutableList.toImmutableList());
-
-            notifyConsumer();
+    public synchronized boolean replaceBridge(final @NotNull String id, final @NotNull MqttBridge mqttBridge) {
+        if (bridgeEntities.stream().noneMatch(entry -> entry.getId().equals(id))) {
+            return false;
         }
-        // after the monitor is released -- see addBridge for why
+        if (!mqttBridge.isPersist()) {
+            log.info(
+                    "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
+                    mqttBridge.getId());
+        }
+
+        bridgeEntities = bridgeEntities.stream()
+                .map(entry -> entry.getId().equals(id) ? mqttBridge : entry)
+                .collect(ImmutableList.toImmutableList());
+
+        notifyConsumer();
         configFileReaderWriter.writeConfigWithSync();
         return true;
     }
 
-    public void removeBridge(final @NotNull String id) {
-        synchronized (this) {
-            bridgeEntities = bridgeEntities.stream()
-                    .filter(entry -> !entry.getId().equals(id))
-                    .toList();
-            notifyConsumer();
-        }
-        // after the monitor is released -- see addBridge for why
+    public synchronized void removeBridge(final @NotNull String id) {
+        bridgeEntities = bridgeEntities.stream()
+                .filter(entry -> !entry.getId().equals(id))
+                .toList();
+
+        notifyConsumer();
         configFileReaderWriter.writeConfigWithSync();
     }
 
