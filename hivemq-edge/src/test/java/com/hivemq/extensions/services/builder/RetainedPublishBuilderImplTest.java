@@ -277,6 +277,44 @@ public class RetainedPublishBuilderImplTest {
     }
 
     @Test
+    public void test_message_expiry_no_expiry_markers_are_rejected_under_a_finite_maximum() {
+        // EDG-811 CR2-1: the shared validator backs five public SDK setters, and none of them may let a value
+        // past <message-expiry>. The markers are handled at the copy boundary instead, not here.
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
+
+        assertThatThrownBy(() -> new RetainedPublishBuilderImpl(configurationService)
+                        .messageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new RetainedPublishBuilderImpl(configurationService)
+                        .messageExpiryInterval(MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void test_from_retained_publish_does_not_smuggle_a_marker_past_the_configured_maximum() {
+        // The copy boundary bypasses the bounded setter, so it must resolve to the configured maximum rather
+        // than keep a marker the expiry handler and encoder would both treat as "no expiry".
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
+
+        final RetainedPublishImpl stored = new RetainedPublishImpl(
+                Qos.AT_MOST_ONCE,
+                "topic",
+                PayloadFormatIndicator.UTF_8,
+                MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT,
+                null,
+                null,
+                null,
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
+                UserPropertiesImpl.of(ImmutableList.of()));
+
+        final RetainedPublish built = new RetainedPublishBuilderImpl(configurationService)
+                .fromPublish(stored)
+                .build();
+
+        assertEquals(10L, built.getMessageExpiryInterval().get().longValue());
+    }
+
+    @Test
     public void test_from_retained_publish_without_expiry() {
         // EDG-811: the same copy boundary as PublishBuilderImpl. A retained message stored while the maximum
         // was the 2^32 default still carries that marker after the operator lowers the maximum, and copying it

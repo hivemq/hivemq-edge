@@ -93,14 +93,51 @@ public class PublishBuilderImplTest {
     }
 
     @Test
-    public void test_message_expiry_no_expiry_markers_are_accepted_above_the_configured_maximum() {
-        // EDG-811: the two "no expiry" markers are not durations, so the configured maximum does not apply to
-        // them. MESSAGE_EXPIRY_INTERVAL_NOT_SET is Long.MAX_VALUE; validating it as a numeric bound rejected
-        // it outright, which is what broke every copy of a publish that had no expiry.
+    public void test_message_expiry_no_expiry_markers_are_rejected_under_a_finite_maximum() {
+        // EDG-811 CR2-1: <message-expiry> is the one bound the setting exists to enforce, so nothing gets past
+        // it through a public SDK setter — not even the internal "no expiry" markers. Exempting them here is
+        // what let an extension mint a message that MessageExpiryHandler never counts down and the MQTT 5
+        // encoder never emits, i.e. a real no-expiry publish under a ten-second maximum.
         configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
-        new PublishBuilderImpl(configurationService).messageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
-        new PublishBuilderImpl(configurationService)
-                .messageExpiryInterval(MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT);
+
+        assertThatThrownBy(() -> new PublishBuilderImpl(configurationService)
+                        .messageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PublishBuilderImpl(configurationService)
+                        .messageExpiryInterval(MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void test_message_expiry_default_marker_cannot_be_built_into_a_no_expiry_publish() {
+        // EDG-811 CR2-1, followed through to the observable consequence the setter-level test stopped short
+        // of: 2^32 survives build() untouched (only MESSAGE_EXPIRY_INTERVAL_NOT_SET is resolved), and it is
+        // precisely the value MessageExpiryHandler refuses to count down and Mqtt5MessageEncoderUtil omits.
+        // Accepting it under a ten-second maximum therefore produced a genuine no-expiry publish.
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
+
+        assertThatThrownBy(() -> new PublishBuilderImpl(configurationService)
+                        .topic("topic")
+                        .payload(ByteBuffer.wrap(new byte[] {1}))
+                        .messageExpiryInterval(MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT)
+                        .build())
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void test_message_expiry_default_marker_is_accepted_while_it_is_the_configured_maximum() {
+        // The flip side: 2^32 is the default configured maximum, so it stays settable as long as it is the
+        // operator's bound. This is what the pre-existing test_max_message_expiry_value_validation pins; the
+        // build() assertion here shows the resulting publish is the same "no expiry" a fresh builder produces.
+        final Publish publish = new PublishBuilderImpl(configurationService)
+                .topic("topic")
+                .payload(ByteBuffer.wrap(new byte[] {1}))
+                .messageExpiryInterval(MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT)
+                .build();
+
+        assertEquals(
+                MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT,
+                publish.getMessageExpiryInterval().get().longValue());
     }
 
     @Test
@@ -121,8 +158,16 @@ public class PublishBuilderImplTest {
         // setMaxMessageExpiryInterval() performs no validation of its own — only config.xml parsing does — so
         // the four-byte cap has to be enforced here rather than inferred from the configured maximum.
         configurationService.mqttConfiguration().setMaxMessageExpiryInterval(Long.MAX_VALUE - 1);
-        assertThatThrownBy(() -> new PublishBuilderImpl(configurationService).messageExpiryInterval(1L << 40))
-                .isInstanceOf(IllegalArgumentException.class);
+        for (final long interval : new long[] {
+            1L << 40,
+            JavaScriptConstants.JS_MAX_SAFE_INTEGER,
+            PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET,
+            MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT + 1
+        }) {
+            assertThatThrownBy(() -> new PublishBuilderImpl(configurationService).messageExpiryInterval(interval))
+                    .describedAs("interval %s", interval)
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
     @Test
@@ -223,6 +268,32 @@ public class PublishBuilderImplTest {
         final PUBLISH aboveMaximum = publishWithExpiry(7_200L);
         assertThatThrownBy(() -> new PublishBuilderImpl(configurationService).fromPublish(aboveMaximum))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void test_from_PUBLISH_does_not_smuggle_a_marker_past_the_configured_maximum() {
+        // EDG-811 CR2-1: the copy boundary bypasses the bounded setter, so it must not become the bypass the
+        // setter exemption was. A marker copied under a ten-second maximum has to come out as ten seconds —
+        // a countable, encodable duration — not as the marker MessageExpiryHandler and the encoder ignore.
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(10);
+
+        for (final long sourceInterval : new long[] {
+            PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET,
+            MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT,
+            JavaScriptConstants.JS_MAX_SAFE_INTEGER,
+            1L << 40,
+            MqttConfigurationDefaults.TTL_DISABLED
+        }) {
+            final Publish copy = new PublishBuilderImpl(configurationService)
+                    .fromPublish(publishWithExpiry(sourceInterval))
+                    .topic("topic")
+                    .build();
+
+            assertEquals(
+                    10L,
+                    copy.getMessageExpiryInterval().get().longValue(),
+                    "source interval " + sourceInterval + " must be bounded by the configured maximum");
+        }
     }
 
     private static @NotNull PUBLISH publishWithoutExpiry() {
