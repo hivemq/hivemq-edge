@@ -16,10 +16,10 @@
 package com.hivemq.util.render;
 
 import com.hivemq.exceptions.UnrecoverableException;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -99,19 +99,41 @@ public class EnvVarUtil {
     }
 
     /**
-     * Every {@code ${ENV:...}} placeholder in the given text, mapped to the value it renders to.
-     * <p>
-     * Taken from the file as it was written, before rendering, so that
-     * {@link #restorePlaceholders(String, Map)} can put the placeholders back when the configuration is
-     * written out again.
+     * A {@code ${ENV:...}} placeholder that is the entire text of one element, and the value it renders
+     * to: the element's name, the placeholder as written, and that value.
      */
-    public static @NotNull Map<String, String> collectPlaceholders(final @NotNull String text) {
-        final Map<String, String> placeholders = new LinkedHashMap<>();
-        final var matcher = Pattern.compile(ENV_VAR_PATTERN).matcher(text);
+    public record ElementPlaceholder(
+            @NotNull String element,
+            @NotNull String literal,
+            @NotNull String value) {}
+
+    /** Matches a placeholder that is the whole text of an element, capturing the element name. */
+    private static final @NotNull Pattern ELEMENT_PLACEHOLDER =
+            Pattern.compile("<([A-Za-z_][\\w.:-]*)>\\s*(\\$\\{ENV:(.*?)})\\s*</\\1>");
+
+    private static final @NotNull Pattern XML_COMMENT = Pattern.compile("(?s)<!--.*?-->");
+
+    /**
+     * The {@code ${ENV:...}} placeholders of the file as it was written that
+     * {@link #restorePlaceholders} is able to put back.
+     * <p>
+     * Only placeholders that are an element's entire text are collected, because those are the only ones
+     * that can be located again in a document the marshaller rebuilt from the configuration model: a
+     * placeholder in an attribute, or one concatenated with other text, has no anchor to return to. Such
+     * a placeholder is reported by {@code restorePlaceholders} rather than silently resolved.
+     * <p>
+     * Comments are stripped first. A commented-out block is not part of the configuration and never
+     * reaches the marshalled document, but its placeholders would otherwise be counted and make every
+     * occurrence look ambiguous — commenting a bridge out is an ordinary thing for an operator to do.
+     */
+    public static @NotNull List<ElementPlaceholder> collectPlaceholders(final @NotNull String text) {
+        final String withoutComments = XML_COMMENT.matcher(text).replaceAll("");
+        final List<ElementPlaceholder> placeholders = new ArrayList<>();
+        final var matcher = ELEMENT_PLACEHOLDER.matcher(withoutComments);
         while (matcher.find()) {
-            final var value = getValue(matcher.group(1));
+            final var value = getValue(matcher.group(3));
             if (value != null && !value.isEmpty()) {
-                placeholders.put(matcher.group(), value);
+                placeholders.add(new ElementPlaceholder(matcher.group(1), matcher.group(2), value));
             }
         }
         return placeholders;
@@ -126,58 +148,66 @@ public class EnvVarUtil {
      * supplied through an environment variable ended up in {@code config.xml} in plain text, and the
      * indirection the operator chose was gone for good (EDG-882 QA round 2).
      * <p>
-     * <b>Anchored and count-checked, because the reverse direction is ambiguous by nature.</b> A value
-     * is only put back where it is the <em>entire</em> text of an element, and only when the document
-     * contains exactly as many such elements as the original file had occurrences of that placeholder.
-     * Anything else — a value that also appears somewhere the operator wrote literally, or two variables
-     * that happen to resolve to the same string — is left rendered and reported, because rewriting an
-     * element into a variable reference the operator did not ask for would be its own defect. That case
-     * is rare and visible; the alternative is silent and permanent.
+     * <b>Anchored to the element, and count-checked, because the reverse direction is ambiguous by
+     * nature.</b> A placeholder is only put back into the same element name it came from, and only when
+     * the document holds exactly as many such elements as the original file did. Matching on the value
+     * alone was not enough: a variable that resolves to a string the operator also wrote somewhere else
+     * — {@code ${ENV:NODE_NAME}} rendering to a bridge's own id, say — would have rewritten that other
+     * element into a variable reference nobody asked for. Anything ambiguous is left rendered and
+     * reported, which is rare and visible; the alternative is silent and permanent.
      *
-     * @param placeholders the mapping from {@link #collectPlaceholders(String)}, taken from the file as
-     *     it was written
-     * @param originalText the file as it was written, used to count the placeholder's occurrences
+     * @param placeholders what {@link #collectPlaceholders(String)} found in the file as it was written
      */
     public static @NotNull String restorePlaceholders(
-            final @NotNull String renderedXml,
-            final @NotNull Map<String, String> placeholders,
-            final @NotNull String originalText) {
+            final @NotNull String renderedXml, final @NotNull List<ElementPlaceholder> placeholders) {
         if (placeholders.isEmpty()) {
             return renderedXml;
         }
-        final Set<String> ambiguousValues = new HashSet<>();
-        final Set<String> seenValues = new HashSet<>();
-        for (final String value : placeholders.values()) {
-            if (!seenValues.add(value)) {
-                ambiguousValues.add(value);
-            }
+        // Grouped by the element the placeholder occupied and the value it renders to. Two placeholders
+        // that share both are indistinguishable in the marshalled document; a group whose literal is not
+        // unique is left alone rather than guessed at.
+        final Map<String, List<ElementPlaceholder>> byElementAndValue = new LinkedHashMap<>();
+        for (final ElementPlaceholder placeholder : placeholders) {
+            byElementAndValue
+                    .computeIfAbsent(placeholder.element() + ' ' + placeholder.value(), key -> new ArrayList<>())
+                    .add(placeholder);
         }
 
         var result = renderedXml;
-        for (final var placeholder : placeholders.entrySet()) {
-            final String literal = placeholder.getKey();
-            final String value = placeholder.getValue();
-            if (ambiguousValues.contains(value)) {
+        for (final List<ElementPlaceholder> group : byElementAndValue.values()) {
+            final ElementPlaceholder first = group.get(0);
+            final String literal = first.literal();
+            if (group.stream().anyMatch(placeholder -> !placeholder.literal().equals(literal))) {
                 log.warn(
-                        "Two placeholders in the configuration file resolve to the same value, so '{}' cannot be"
-                                + " restored when the file is written; its value will be written out instead.",
-                        literal);
+                        "Two different placeholders fill a '<{}>' element with the same value, so neither can be"
+                                + " restored when the configuration file is written; the value will be written out"
+                                + " instead.",
+                        first.element());
                 continue;
             }
-            final String element = ">" + escapeXmlText(value) + "<";
+            final String element =
+                    "<" + first.element() + ">" + escapeXmlText(first.value()) + "</" + first.element() + ">";
             final int inDocument = countOccurrences(result, element);
             if (inDocument == 0) {
-                continue;
-            }
-            if (inDocument != countOccurrences(originalText, literal)) {
                 log.warn(
-                        "The value of '{}' also appears in the configuration where it was not written as a"
-                                + " placeholder, so the placeholder cannot be restored when the file is written;"
-                                + " its value will be written out instead.",
+                        "The '<{}>' element that '{}' filled is not in the configuration being written, so the"
+                                + " placeholder cannot be restored. Check the file for a value that should have"
+                                + " stayed a variable reference.",
+                        first.element(),
                         literal);
                 continue;
             }
-            result = result.replace(element, ">" + literal + "<");
+            if (inDocument != group.size()) {
+                log.warn(
+                        "'{}' fills {} '<{}>' element(s) but the configuration being written has {}, so the"
+                                + " placeholder cannot be restored; its value will be written out instead.",
+                        literal,
+                        group.size(),
+                        first.element(),
+                        inDocument);
+                continue;
+            }
+            result = result.replace(element, "<" + first.element() + ">" + literal + "</" + first.element() + ">");
         }
         return result;
     }

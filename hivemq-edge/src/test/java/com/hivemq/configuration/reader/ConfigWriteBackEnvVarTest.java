@@ -123,13 +123,16 @@ public class ConfigWriteBackEnvVarTest extends AbstractConfigurationTest {
     }
 
     /**
-     * The conservative half of the rule. When the same value also appears where the operator wrote it
-     * literally, there is no way to tell the two apart in the rendered document, and rewriting the
-     * literal one into a variable reference would be a defect of its own — so the placeholder is left
-     * resolved instead, and the operator is told.
+     * A value that also appears where the operator wrote it literally, in a different element.
+     * <p>
+     * Restoration is anchored to the element the placeholder occupied, so the two are distinguishable
+     * and both are handled correctly: the password goes back to being a variable reference and the
+     * username stays exactly as the operator wrote it. Matching on the value alone could not tell them
+     * apart — it either left the secret in the file or rewrote the username into a variable reference
+     * nobody asked for (EDG-882 QA round 3).
      */
     @Test
-    public void whenTheValueAlsoAppearsLiterally_thenNothingIsRewrittenBlindly() throws IOException {
+    public void whenTheValueAlsoAppearsInAnotherElement_thenOnlyThePlaceholdersElementIsRestored() throws IOException {
         System.setProperty(PASSWORD_VAR, "hivemq-edge"); // the same string the username uses
 
         final String written = loadAndWriteBack(config("${ENV:" + PASSWORD_VAR + "}"));
@@ -137,7 +140,30 @@ public class ConfigWriteBackEnvVarTest extends AbstractConfigurationTest {
         assertThat(written)
                 .as("the username the operator wrote literally must not become a variable reference")
                 .contains("<username>hivemq-edge</username>");
-        assertThat(written).doesNotContain("${ENV:" + PASSWORD_VAR + "}");
+        assertThat(written)
+                .as("the password came from a variable and must go back to being one")
+                .contains("<password>${ENV:" + PASSWORD_VAR + "}</password>");
+    }
+
+    /**
+     * A placeholder in a commented-out block is not part of the configuration and never reaches the
+     * marshalled document; it must not make the live one look ambiguous. Commenting a bridge out is an
+     * ordinary thing for an operator to do (EDG-882 QA round 3).
+     */
+    @Test
+    public void whenACommentedOutBlockRepeatsThePlaceholder_thenTheLiveOneIsStillRestored() throws IOException {
+        System.setProperty(PASSWORD_VAR, SECRET);
+        final String placeholder = "${ENV:" + PASSWORD_VAR + "}";
+        final String configXml = config(placeholder)
+                .replace("<mqtt-bridges>", "<mqtt-bridges>\n<!-- <password>" + placeholder + "</password> -->");
+
+        Files.write(configXml.getBytes(UTF_8), xmlFile);
+        reader.applyConfig();
+        reader.writeConfigWithSync();
+
+        final String written = java.nio.file.Files.readString(Path.of(xmlFile.getPath()));
+        assertThat(written).doesNotContain(SECRET);
+        assertThat(written).contains("<password>" + placeholder + "</password>");
     }
 
     /** Two elements fed by the same variable are both restored — the count matches. */

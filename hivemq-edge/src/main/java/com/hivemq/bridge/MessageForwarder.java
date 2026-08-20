@@ -22,6 +22,18 @@ import org.jetbrains.annotations.NotNull;
 public interface MessageForwarder {
 
     /**
+     * Visited once a subscription taken from a forwarder's shared subscription group has actually been
+     * removed, so that a test can wait for the thing it means to observe rather than for time to pass.
+     * <p>
+     * On the interface rather than the implementation for the same reason as
+     * {@link com.hivemq.persistence.clientqueue.ClientQueuePersistence#CLIENT_QUEUE_CLEAN_UP_FINISHED}:
+     * an integration test cannot reference the implementation class. A checkpoint is inert unless a test
+     * enables it.
+     */
+    @NotNull
+    String FOREIGN_SUBSCRIBER_EVICTED = "forwarder-foreign-subscriber-evicted";
+
+    /**
      * Add forwarder to the service.
      * Multiple topic filters must be added separately.
      *

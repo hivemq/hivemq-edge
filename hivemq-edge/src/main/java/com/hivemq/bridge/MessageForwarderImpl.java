@@ -39,6 +39,7 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.util.FutureUtils;
+import com.hivemq.util.Checkpoints;
 import com.hivemq.util.ThreadFactoryUtil;
 import dagger.Lazy;
 import jakarta.inject.Inject;
@@ -458,9 +459,27 @@ public class MessageForwarderImpl implements MessageForwarder {
                         client,
                         forwarderId,
                         topic);
-                FutureUtils.addExceptionLogger(subscriptionPersistence
+                // The full '$share/<group>/<filter>' string, because that is what the client subscribed
+                // with and therefore what its session stores: removing it from the topic tree alone
+                // would let the next reconnect restore it.
+                final ListenableFuture<Void> removed = subscriptionPersistence
                         .get()
-                        .remove(client, SHARED_SUBSCRIPTION_PREFIX + shareName + "/" + topic));
+                        .remove(client, SHARED_SUBSCRIPTION_PREFIX + shareName + "/" + topic);
+                FutureUtils.addExceptionLogger(removed);
+                Futures.addCallback(
+                        removed,
+                        new FutureCallback<>() {
+                            @Override
+                            public void onSuccess(final @Nullable Void result) {
+                                Checkpoints.checkpoint(MessageForwarder.FOREIGN_SUBSCRIBER_EVICTED);
+                            }
+
+                            @Override
+                            public void onFailure(final @NotNull Throwable throwable) {
+                                // already reported by the exception logger above
+                            }
+                        },
+                        MoreExecutors.directExecutor());
             }
         }
     }
@@ -550,6 +569,13 @@ public class MessageForwarderImpl implements MessageForwarder {
         final MqttForwarder removed = forwarders.remove(forwarderId);
         if (removed != null) {
             removed.stop();
+            // After the stop, not before: stopping drains the forwarder's buffers, and every message it
+            // hands back re-adds its queue id through messageProcessed. Removing the ids first left an
+            // entry for a queue no forwarder owns, which nothing ever takes out again -- a set that
+            // grows by one per retired subscription for the life of the node (EDG-882 QA round 3).
+            for (final String topic : mqttForwarder.getTopics()) {
+                notEmptyQueues.remove(createQueueId(forwarderId, topic));
+            }
             if (log.isInfoEnabled()) {
                 log.info(
                         "Forwarder '{}' removed and stopped, total active forwarders: {}",
