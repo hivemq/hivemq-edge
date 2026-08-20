@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -30,10 +31,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
+import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,11 +70,21 @@ public class MessageForwarderImplTest {
     private MqttForwarder mqttForwarder;
     private MqttForwarder otherMqttForwarder;
 
+    private final ClientSessionSubscriptionPersistence subscriptionPersistence =
+            mock(ClientSessionSubscriptionPersistence.class);
+
     @BeforeEach
     public void setUp() {
         topicTree = mock(LocalTopicTree.class);
+        // production returns an empty set, never null; the eviction pass reads it on every registration
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
         messageForwarder = new MessageForwarderImpl(
-                topicTree, new HivemqId(), () -> null, mock(SingleWriterService.class), mock(ShutdownHooks.class));
+                topicTree,
+                new HivemqId(),
+                () -> null,
+                () -> subscriptionPersistence,
+                mock(SingleWriterService.class),
+                mock(ShutdownHooks.class));
         mqttForwarder = forwarder(FORWARDER_ID, TOPIC);
         otherMqttForwarder = forwarder(OTHER_FORWARDER_ID, OTHER_TOPIC);
     }
@@ -83,6 +98,58 @@ public class MessageForwarderImplTest {
 
     private static String queueId(final String forwarderId, final String topic) {
         return MessageForwarderImpl.FORWARDER_PREFIX + forwarderId + "/" + topic;
+    }
+
+    /**
+     * EDG-882 QA round 2. Shared subscribers of one group take turns, so a client that holds this
+     * forwarder's group receives the messages the bridge is there to forward and they never reach the
+     * remote broker. A SUBSCRIBE is refused while the queue is claimed, and BridgeService claims it from
+     * the top of every start and restart — so the one window left is a client subscribing to the group
+     * of a bridge that does not exist yet, which becomes a collision when the operator creates it. That
+     * window is closed here, at the moment the forwarder registers.
+     */
+    @Test
+    @Timeout(5)
+    public void test_addForwarder_removes_a_client_squatting_on_the_forwarders_group() {
+        when(topicTree.getSharedSubscriber(MessageForwarderImpl.FORWARDER_PREFIX + FORWARDER_ID, TOPIC))
+                .thenReturn(ImmutableSet.of(new SubscriberWithQoS("squatter", 1, (byte) 0, null)));
+        when(subscriptionPersistence.remove(anyString(), anyString())).thenReturn(Futures.immediateFuture(null));
+
+        messageForwarder.addForwarder(mqttForwarder);
+
+        // through the persistence, not the topic tree alone: the client's session would otherwise
+        // restore the subscription on its next reconnect and take the group straight back
+        verify(subscriptionPersistence)
+                .remove("squatter", "$share/" + MessageForwarderImpl.FORWARDER_PREFIX + FORWARDER_ID + "/" + TOPIC);
+    }
+
+    /** An internal component's own entry is not an intruder, including a previous generation of it. */
+    @Test
+    @Timeout(5)
+    public void test_addForwarder_leaves_internal_subscribers_alone() {
+        final String ownClientId = MessageForwarderImpl.FORWARDER_PREFIX + FORWARDER_ID + "#node-1";
+        when(topicTree.getSharedSubscriber(MessageForwarderImpl.FORWARDER_PREFIX + FORWARDER_ID, TOPIC))
+                .thenReturn(ImmutableSet.of(new SubscriberWithQoS(ownClientId, 1, (byte) 0, null)));
+
+        messageForwarder.addForwarder(mqttForwarder);
+
+        verify(subscriptionPersistence, never()).remove(anyString(), anyString());
+    }
+
+    /**
+     * The claim the subscribe-side check rests on: a queue held only by a reservation — which is what
+     * every start, restart and node bootstrap takes before anything is registered — already reads as a
+     * forwarder queue, so a client cannot slip into the group during the hand-over.
+     */
+    @Test
+    @Timeout(5)
+    public void test_isForwarderQueue_is_true_while_only_a_reservation_holds_the_queue() {
+        messageForwarder.reserveQueues("bridge", Map.of(FORWARDER_ID, List.of(TOPIC)));
+
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+
+        messageForwarder.releaseReservedQueues("bridge");
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID));
     }
 
     @Test

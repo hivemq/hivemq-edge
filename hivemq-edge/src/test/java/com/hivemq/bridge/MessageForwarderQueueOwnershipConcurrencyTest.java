@@ -18,15 +18,18 @@ package com.hivemq.bridge;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 import ch.qos.logback.classic.Level;
+import com.google.common.collect.ImmutableSet;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -96,10 +99,16 @@ public class MessageForwarderQueueOwnershipConcurrencyTest {
 
     @BeforeEach
     public void setUp() {
+        final LocalTopicTree topicTree =
+                mock(LocalTopicTree.class, withSettings().stubOnly());
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
         messageForwarder = new MessageForwarderImpl(
-                mock(LocalTopicTree.class, withSettings().stubOnly()),
+                topicTree,
                 new HivemqId(),
                 () -> null,
+                () -> mock(
+                        ClientSessionSubscriptionPersistence.class,
+                        withSettings().stubOnly()),
                 mock(SingleWriterService.class, withSettings().stubOnly()),
                 mock(ShutdownHooks.class, withSettings().stubOnly()));
         executor = Executors.newCachedThreadPool();

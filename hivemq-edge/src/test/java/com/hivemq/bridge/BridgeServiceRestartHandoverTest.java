@@ -18,10 +18,12 @@ package com.hivemq.bridge;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.bridge.config.LocalSubscription;
@@ -33,6 +35,7 @@ import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -117,13 +120,19 @@ class BridgeServiceRestartHandoverTest {
         return client;
     }
 
+    private final @NotNull ClientSessionSubscriptionPersistence subscriptionPersistence =
+            mock(ClientSessionSubscriptionPersistence.class);
+
     @BeforeEach
     void setUp() {
         clientFactory = mock(BridgeMqttClientFactory.class);
+        final LocalTopicTree topicTree = mock(LocalTopicTree.class);
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
         messageForwarder = new MessageForwarderImpl(
-                mock(LocalTopicTree.class),
+                topicTree,
                 new HivemqId(),
                 () -> null,
+                () -> subscriptionPersistence,
                 mock(SingleWriterService.class),
                 mock(ShutdownHooks.class));
         bridgeService = new BridgeService(

@@ -31,10 +31,13 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.subscribe.Topic;
+import com.hivemq.mqtt.services.PublishDistributorImpl;
+import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.util.FutureUtils;
 import com.hivemq.util.ThreadFactoryUtil;
 import dagger.Lazy;
@@ -64,12 +67,16 @@ public class MessageForwarderImpl implements MessageForwarder {
 
     public static final @NotNull String FORWARDER_PREFIX = "$FORWARDER::";
 
+    /** How a client writes a shared subscription, and therefore how one is stored for its session. */
+    private static final @NotNull String SHARED_SUBSCRIPTION_PREFIX = "$share/";
+
     private static final @NotNull Logger log = LoggerFactory.getLogger(MessageForwarderImpl.class);
     public static final int RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS = 30;
 
     private final @NotNull LocalTopicTree topicTree;
     private final @NotNull HivemqId hivemqId;
     private final @NotNull Lazy<ClientQueuePersistence> queuePersistence;
+    private final @NotNull Lazy<ClientSessionSubscriptionPersistence> subscriptionPersistence;
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull Set<String> notEmptyQueues;
     private final @NotNull Map<String, MqttForwarder> forwarders;
@@ -103,11 +110,13 @@ public class MessageForwarderImpl implements MessageForwarder {
             final @NotNull LocalTopicTree topicTree,
             final @NotNull HivemqId hivemqId,
             final @NotNull Lazy<ClientQueuePersistence> queuePersistence,
+            final @NotNull Lazy<ClientSessionSubscriptionPersistence> subscriptionPersistence,
             final @NotNull SingleWriterService singleWriterService,
             final @NotNull ShutdownHooks shutdownHooks) {
         this.topicTree = topicTree;
         this.hivemqId = hivemqId;
         this.queuePersistence = queuePersistence;
+        this.subscriptionPersistence = subscriptionPersistence;
         this.singleWriterService = singleWriterService;
         this.notEmptyQueues = new ConcurrentSkipListSet<>();
         this.forwarders = new ConcurrentHashMap<>(0);
@@ -196,6 +205,7 @@ public class MessageForwarderImpl implements MessageForwarder {
             queueIdsBuilder.add(createQueueId(forwarderId, topic));
         }
         final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
+        evictForeignSubscribers(forwarderId, shareName, mqttForwarder.getTopics());
         // Ownership is registered before anything else can observe the queues: the periodic clean-up
         // clears forwarder queues it finds unowned, so a pre-existing persisted queue must never be
         // visible while its forwarder is mid-registration.
@@ -401,6 +411,56 @@ public class MessageForwarderImpl implements MessageForwarder {
             // would keep a queue nobody drains alive for the life of the node.
             if (queueIdsForForwarder.remove(forwarderId, queueIds)) {
                 release(queueIds);
+            }
+        }
+    }
+
+    /**
+     * Takes this forwarder's shared-subscription group back from any external client that holds it.
+     * <p>
+     * Shared subscribers of one group take turns, so a client subscribed to
+     * {@code $share/$FORWARDER::<this forwarder's id>/<its filter>} receives the messages this bridge is
+     * meant to forward, and they never reach the remote broker. The group name embeds a digest a client
+     * can compute from the bridge's own configuration, which makes it reachable rather than theoretical
+     * (EDG-882 QA round 2).
+     * <p>
+     * A SUBSCRIBE is already refused while the queue is claimed —
+     * {@link com.hivemq.mqtt.handler.subscribe.IncomingSubscribeService} asks
+     * {@link #isForwarderQueue(String)}, and the queues are claimed by
+     * {@code BridgeService.internalStartBridge}'s reservation from the top of every start, restart and
+     * node bootstrap. That leaves exactly one window this cannot cover: a client subscribing to the
+     * group of a bridge that does not exist yet, which is legal at the time and becomes a collision the
+     * moment the operator creates that bridge. This is that window, closed from the other side.
+     * <p>
+     * The subscription is removed rather than the bridge refused: a bridge that an arbitrary client can
+     * stop from starting would be a worse defect than the one being fixed. Removal goes through the
+     * subscription persistence, not the topic tree alone, or the client's session would restore it on
+     * its next reconnect and take the group straight back.
+     * <p>
+     * Deliberately outside the registration rollback: the subscription being removed is one that must
+     * not exist while this forwarder does, so putting it back if the registration then fails would be
+     * restoring the defect.
+     */
+    private void evictForeignSubscribers(
+            final @NotNull String forwarderId, final @NotNull String shareName, final @NotNull List<String> topics) {
+        for (final String topic : topics) {
+            for (final SubscriberWithQoS subscriber : topicTree.getSharedSubscriber(shareName, topic)) {
+                final String client = subscriber.getSubscriber();
+                // An internal component's own entry is not an intruder -- including a previous
+                // generation of this forwarder, which a slow stop can leave behind for an instant.
+                if (PublishDistributorImpl.isReservedClientId(client)) {
+                    continue;
+                }
+                log.warn(
+                        "Client '{}' holds the shared subscription group of bridge forwarder '{}'; removing its"
+                                + " subscription to '{}', because it would otherwise receive the messages the bridge"
+                                + " is there to forward and they would never reach the remote broker.",
+                        client,
+                        forwarderId,
+                        topic);
+                FutureUtils.addExceptionLogger(subscriptionPersistence
+                        .get()
+                        .remove(client, SHARED_SUBSCRIPTION_PREFIX + shareName + "/" + topic));
             }
         }
     }
