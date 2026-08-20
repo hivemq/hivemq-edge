@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.*;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
@@ -45,9 +46,11 @@ import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
 import com.hivemq.persistence.clientsession.callback.SubscriptionResult;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
+import com.hivemq.sampling.SamplingService;
 import com.hivemq.util.Exceptions;
 import com.hivemq.util.ReasonStrings;
 import com.hivemq.util.Topics;
+import dagger.Lazy;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import jakarta.inject.Inject;
@@ -84,6 +87,8 @@ public class IncomingSubscribeService {
     private final @NotNull MqttConfigurationService mqttConfigurationService;
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;
+    private final @NotNull Lazy<MessageForwarder> messageForwarder;
+    private final @NotNull Lazy<SamplingService> samplingService;
 
     @Inject
     protected IncomingSubscribeService(
@@ -93,8 +98,12 @@ public class IncomingSubscribeService {
             final @NotNull RetainedMessagesSender retainedMessagesSender,
             final @NotNull MqttConfigurationService mqttConfigurationService,
             final @NotNull RestrictionsConfigurationService restrictionsConfigurationService,
-            final @NotNull MqttServerDisconnector mqttServerDisconnector) {
+            final @NotNull MqttServerDisconnector mqttServerDisconnector,
+            final @NotNull Lazy<MessageForwarder> messageForwarder,
+            final @NotNull Lazy<SamplingService> samplingService) {
 
+        this.messageForwarder = messageForwarder;
+        this.samplingService = samplingService;
         this.clientSessionSubscriptionPersistence = clientSessionSubscriptionPersistence;
         this.retainedMessagePersistence = retainedMessagePersistence;
         this.sharedSubscriptionService = sharedSubscriptionService;
@@ -183,6 +192,31 @@ public class IncomingSubscribeService {
     }
 
     /**
+     * Whether this subscription would land the client in the same shared-subscription group as a live
+     * internal queue — a bridge forwarder's or a sampler's.
+     * <p>
+     * Shared subscribers of one group take turns, so a client that joins a bridge forwarder's group
+     * receives the bridge's messages instead of the bridge, and they are never forwarded to the remote
+     * broker. The group name embeds a digest a client can compute from the bridge's own configuration,
+     * which makes it reachable rather than theoretical (EDG-882 QA round 2).
+     * <p>
+     * Asked of the registries, and deliberately <b>not</b> a reserved-namespace rule: the
+     * {@code $SAMPLER::} and {@code $FORWARDER::} namespaces stay open, because a share name is the
+     * client's to choose and {@code $share/$SAMPLER::customer/alerts} is a legal subscription that no
+     * part of Edge owns — EDG-882 F-05 settled that, and {@code SamplerNamedSharedSubscriptionIT} pins
+     * it. Only an actual collision with a queue Edge is using right now is refused.
+     */
+    private boolean collidesWithAnInternalQueue(final @NotNull String topic) {
+        final SharedSubscription sharedSubscription = Topics.checkForSharedSubscription(topic);
+        if (sharedSubscription == null) {
+            return false;
+        }
+        final String queueId = sharedSubscription.getShareName() + "/" + sharedSubscription.getTopicFilter();
+        return messageForwarder.get().isForwarderQueue(queueId)
+                || samplingService.get().isSamplerQueue(queueId);
+    }
+
+    /**
      * Checks if the SUBSCRIBE message contains only valid topic subscriptions
      *
      * @param ctx The ChannelHandlerContext
@@ -204,6 +238,17 @@ public class IncomingSubscribeService {
                         ctx.channel(),
                         logMessage,
                         "Invalid subscription topic " + topic.getTopic(),
+                        Mqtt5DisconnectReasonCode.TOPIC_FILTER_INVALID,
+                        ReasonStrings.DISCONNECT_SUBSCRIBE_TOPIC_FILTER_INVALID);
+                return false;
+            } else if (collidesWithAnInternalQueue(topicString)) {
+                final String logMessage = "Disconnecting client '" + clientConnection.getClientId()
+                        + "'  (IP: {}) because it subscribed to a shared subscription group that is in use"
+                        + " by an internal Edge component: '" + topic.getTopic() + "'";
+                mqttServerDisconnector.disconnect(
+                        ctx.channel(),
+                        logMessage,
+                        "Shared subscription group in use by Edge in " + topic.getTopic(),
                         Mqtt5DisconnectReasonCode.TOPIC_FILTER_INVALID,
                         ReasonStrings.DISCONNECT_SUBSCRIBE_TOPIC_FILTER_INVALID);
                 return false;

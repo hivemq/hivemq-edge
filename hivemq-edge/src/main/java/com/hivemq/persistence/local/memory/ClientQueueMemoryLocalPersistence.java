@@ -248,7 +248,16 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 increaseQos0MessagesMemory(freed);
                 increaseClientQos0MessagesMemory(messages, freed);
                 increaseMessagesMemory(freed);
-                logAndDecrementPayloadReference(oldest, shared, queueId);
+                // Rotation, not a drop. Reporting it through the dropped-message service put every
+                // sample a UI topic preview replaces on the node-wide dropped-message counter and wrote
+                // an event.log line per publish -- so opening a topic in the UI made the node look like
+                // it was losing customer messages (EDG-882 QA round 1). Nothing to dereference either:
+                // QoS 0 payloads are never reference-counted.
+                if (log.isTraceEnabled()) {
+                    log.trace(
+                            "Rotated the oldest QoS 0 message out of bounded queue '{}' to make room for a new one",
+                            queueId);
+                }
             }
         }
 

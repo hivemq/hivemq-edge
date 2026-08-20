@@ -100,6 +100,14 @@ class BridgeResourceImplConcurrencyTest {
                 .when(bridgeExtractor)
                 .removeBridge(anyString());
 
+        // An update is one transition, not remove-then-add: the removal half was seen by the bridge
+        // subsystem as "this bridge is gone" and cleared every queue it owned (EDG-882 QA round 1).
+        when(bridgeExtractor.replaceBridge(anyString(), any(MqttBridge.class))).thenAnswer(invocation -> {
+            final String bridgeId = invocation.getArgument(0);
+            final MqttBridge bridge = invocation.getArgument(1);
+            return bridgeStore.replace(bridgeId, bridge) != null;
+        });
+
         bridgeResource = new BridgeResourceImpl(configurationService, bridgeService, systemInformation);
     }
 

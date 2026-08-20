@@ -372,6 +372,74 @@ class LocalSubscriptionTest {
         assertEquals(running.hashCode(), freshlyParsed.hashCode());
     }
 
+    /**
+     * The configured order is kept for writing the file back out, and is invisible to identity: two
+     * subscriptions that differ only in the order they were written in are one subscription, or F-07's
+     * fix would be undone by the field that exists to protect the operator's file (EDG-882 QA round 2).
+     */
+    @Test
+    void configuredOrder_isKeptButDoesNotAffectIdentity() {
+        final LocalSubscription asWritten = new LocalSubscription(List.of("zone-b/#", "alarms/#"), "destinationTopic");
+        final LocalSubscription reordered = new LocalSubscription(List.of("alarms/#", "zone-b/#"), "destinationTopic");
+
+        assertEquals(List.of("zone-b/#", "alarms/#"), asWritten.getConfiguredFilters());
+        assertEquals(List.of("alarms/#", "zone-b/#"), reordered.getConfiguredFilters());
+        assertEquals(List.of("alarms/#", "zone-b/#"), asWritten.getFilters());
+        assertEquals(asWritten, reordered);
+        assertEquals(asWritten.hashCode(), reordered.hashCode());
+        assertEquals(asWritten.calculateUniqueId(), reordered.calculateUniqueId());
+    }
+
+    @Test
+    void configuredExcludes_areKeptInTheOrderTheyWereWritten() {
+        final LocalSubscription subscription = new LocalSubscription(
+                List.of("topicA/+"),
+                "destinationTopic",
+                List.of("zone-b/private/#", "alarms/private/#"),
+                List.of(),
+                false,
+                1,
+                null);
+
+        assertEquals(List.of("zone-b/private/#", "alarms/private/#"), subscription.getConfiguredExcludes());
+        assertEquals(List.of("alarms/private/#", "zone-b/private/#"), subscription.getExcludes());
+    }
+
+    /**
+     * EDG-882 QA round 1: the order of the {@code <forwarded-topic>} blocks was compared positionally,
+     * so moving one above another was a configuration change — and a configuration change restarts the
+     * bridge and clears the queues of everything the new configuration cannot match.
+     */
+    @Test
+    void mqttBridgeEquals_whenTheSubscriptionBlocksAreReordered_thenEqual() {
+        final LocalSubscription first = subscription("topicA/+", "destinationTopic");
+        final LocalSubscription second = subscription("topicB/+", "destinationTopic");
+        final MqttBridge asWritten = bridge(List.of(first, second));
+        final MqttBridge reordered = bridge(List.of(second, first));
+
+        assertEquals(asWritten, reordered, "a reordered subscription list is the same configuration");
+        assertEquals(asWritten.hashCode(), reordered.hashCode());
+    }
+
+    /** But a repeated block is a different configuration, and a multiset keeps them apart. */
+    @Test
+    void mqttBridgeEquals_whenASubscriptionIsRepeated_thenNotEqual() {
+        final LocalSubscription only = subscription("topicA/+", "destinationTopic");
+
+        assertNotEquals(bridge(List.of(only)), bridge(List.of(only, subscription("topicA/+", "destinationTopic"))));
+    }
+
+    private static MqttBridge bridge(final List<LocalSubscription> subscriptions) {
+        return new MqttBridge.Builder()
+                .withId("edg-884-bridge")
+                .withHost("localhost")
+                .withPort(1883)
+                .withClientId("client")
+                .withLocalSubscriptions(subscriptions)
+                .withRemoteSubscriptions(List.of())
+                .build();
+    }
+
     private static MqttBridge bridge(final LocalSubscription subscription) {
         return new MqttBridge.Builder()
                 .withId("edg-884-bridge")

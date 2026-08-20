@@ -19,7 +19,13 @@ import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENC
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.configuration.service.InternalConfigurations;
@@ -126,6 +132,42 @@ public class ClientQueueMemoryLocalPersistenceQos0LimitTest {
             expected.add("m" + i);
         }
         assertEquals(expected, payloadsInQueue(), "the ring must hold the most recent MAX payloads, in order");
+    }
+
+    /**
+     * EDG-882 QA round 1: rotation is not a drop. Reporting it through the dropped-message service put
+     * every sample a UI topic preview replaces on the node-wide dropped-message counter and wrote an
+     * event.log line per publish — so opening a topic in the UI made the node look like it was losing
+     * customer messages, and the one metric an operator watches for real loss became useless.
+     */
+    @Test
+    public void test_whenOptedIn_thenRotationIsNotReportedAsADroppedMessage() {
+        for (int i = 0; i < 25; i++) {
+            add("m" + i, true);
+        }
+
+        verifyNoInteractions(messageDroppedService);
+    }
+
+    /** The control: a real drop is still reported. */
+    @Test
+    public void test_whenNotOptedIn_andTheQos1LimitBites_thenTheDropIsStillReported() {
+        for (int i = 0; i < 25; i++) {
+            persistence.add(QUEUE_ID, true, qos1("m" + i), 5L, QueuedMessagesStrategy.DISCARD, false, false, BUCKET);
+        }
+
+        verify(messageDroppedService, atLeastOnce()).queueFullShared(eq(QUEUE_ID), anyString(), anyInt());
+    }
+
+    private static @NotNull PUBLISH qos1(final @NotNull String payload) {
+        return new PUBLISHFactory.Mqtt5Builder()
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withPublishId(1L)
+                .withPayload(payload.getBytes(UTF_8))
+                .withTopic("plant/line1")
+                .withHivemqId("hivemqId")
+                .build();
     }
 
     @Test

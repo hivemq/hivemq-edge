@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
@@ -43,6 +44,7 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
+import com.hivemq.sampling.SamplingService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -88,6 +90,12 @@ public class IncomingSubscribeServiceTest {
     @Mock
     private RestrictionsConfigurationService restrictionsConfigurationService;
 
+    @Mock
+    private MessageForwarder messageForwarder;
+
+    @Mock
+    private SamplingService samplingService;
+
     private EmbeddedChannel channel;
     private IncomingSubscribeService incomingSubscribeService;
 
@@ -104,7 +112,9 @@ public class IncomingSubscribeServiceTest {
                 retainedMessagesSender,
                 mqttConfigurationService,
                 restrictionsConfigurationService,
-                new MqttServerDisconnectorImpl(eventLog));
+                new MqttServerDisconnectorImpl(eventLog),
+                () -> messageForwarder,
+                () -> samplingService);
 
         channel = new EmbeddedChannel();
         clientConnection = new ClientConnection(channel, null);
@@ -286,6 +296,68 @@ public class IncomingSubscribeServiceTest {
         // We need to make sure we got disconnected
         assertFalse(channel.isActive());
         verify(eventLog).clientWasDisconnected(any(Channel.class), anyString());
+    }
+
+    /**
+     * EDG-882 QA round 2: shared subscribers of one group take turns, so a client that joins a live
+     * bridge forwarder's group receives the bridge's messages instead of the bridge — and they are
+     * never forwarded to the remote broker. The group name embeds a digest a client can compute from
+     * the bridge's own configuration, so it is reachable rather than theoretical.
+     */
+    @Test
+    public void test_subscribe_colliding_with_a_live_forwarder_queue_is_refused() {
+        when(mqttConfigurationService.sharedSubscriptionsEnabled()).thenReturn(true);
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
+        final String shareName = "$FORWARDER::bridge-DNkmbgZ6ni59NniT9XDvig==";
+        when(messageForwarder.isForwarderQueue(shareName + "/plant/temp")).thenReturn(true);
+        final SUBSCRIBE subscribe = new SUBSCRIBE(
+                ImmutableList.copyOf(
+                        Lists.newArrayList(new Topic("$share/" + shareName + "/plant/temp", QoS.AT_LEAST_ONCE))),
+                1);
+
+        incomingSubscribeService.processSubscribe(ctx, subscribe, false);
+
+        assertFalse(channel.isActive());
+        verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(any(), any());
+    }
+
+    @Test
+    public void test_subscribe_colliding_with_a_live_sampler_queue_is_refused() {
+        when(mqttConfigurationService.sharedSubscriptionsEnabled()).thenReturn(true);
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
+        when(samplingService.isSamplerQueue("$SAMPLER::plant/line1/plant/line1"))
+                .thenReturn(true);
+        final SUBSCRIBE subscribe = new SUBSCRIBE(
+                ImmutableList.copyOf(
+                        Lists.newArrayList(new Topic("$share/$SAMPLER::plant/line1/plant/line1", QoS.AT_LEAST_ONCE))),
+                1);
+
+        incomingSubscribeService.processSubscribe(ctx, subscribe, false);
+
+        assertFalse(channel.isActive());
+        verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(any(), any());
+    }
+
+    /**
+     * The control, and the reason this is a collision check rather than a reserved-namespace rule: a
+     * share name is the client's to choose, and a group that merely looks internal but collides with
+     * nothing Edge is using belongs to the client (EDG-882 F-05, pinned end to end by
+     * {@code SamplerNamedSharedSubscriptionIT}).
+     */
+    @Test
+    public void test_subscribe_to_an_unused_group_that_looks_internal_is_accepted() {
+        when(mqttConfigurationService.sharedSubscriptionsEnabled()).thenReturn(true);
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
+        final SUBSCRIBE subscribe = new SUBSCRIBE(
+                ImmutableList.copyOf(Lists.newArrayList(
+                        new Topic("$share/group/plant/temp", QoS.AT_LEAST_ONCE),
+                        new Topic("$share/$SAMPLER::customer/alerts", QoS.AT_LEAST_ONCE),
+                        new Topic("$share/$FORWARDER::nothing-here/plant/temp", QoS.AT_LEAST_ONCE))),
+                1);
+
+        incomingSubscribeService.processSubscribe(ctx, subscribe, false);
+
+        assertTrue(channel.isActive());
     }
 
     @Test

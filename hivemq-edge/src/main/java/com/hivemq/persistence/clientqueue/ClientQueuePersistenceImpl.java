@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
@@ -53,10 +54,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 @SuppressWarnings("FutureReturnValueIgnored")
 public class ClientQueuePersistenceImpl extends AbstractPersistence implements ClientQueuePersistence {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ClientQueuePersistenceImpl.class);
 
     public static final int SHARED_IN_FLIGHT_MARKER = 1;
 
@@ -69,6 +74,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
     private final @NotNull ConnectionPersistence connectionPersistence;
     private final @NotNull Lazy<PublishPollService> publishPollService;
     private final @NotNull MessageForwarder messageForwarder;
+    private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull Map<String, PublishAvailableCallback> queueidCallbackMap;
 
     @Inject
@@ -81,7 +87,9 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final @NotNull LocalTopicTree topicTree,
             final @NotNull ConnectionPersistence connectionPersistence,
             final @NotNull Lazy<PublishPollService> publishPollService,
-            final @NotNull MessageForwarder messageForwarder) {
+            final @NotNull MessageForwarder messageForwarder,
+            final @NotNull ShutdownHooks shutdownHooks) {
+        this.shutdownHooks = shutdownHooks;
         this.localPersistence = localPersistence;
         this.mqttConfigurationService = mqttConfigurationService;
         this.clientSessionLocalPersistence = clientSessionLocalPersistence;
@@ -218,7 +226,13 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
     @Override
     public void sharedPublishAvailable(final @NotNull String queueId) {
-        if (queueId.startsWith(MessageForwarderImpl.FORWARDER_PREFIX)) {
+        // Asked of the forwarder registry rather than read off the queue ID, for the same reason the
+        // producer side asks (EDG-882 F-05): a queue ID is built from a share name, and a share name is
+        // the client's to choose. A client subscribing to $share/$FORWARDER::anything/t used to have its
+        // notification handed to the message forwarder, which owns no such queue -- so the client was
+        // never told to poll, and the ID stayed in the forwarder's notEmptyQueues set for the life of
+        // the node, once per distinct share name the client cared to invent.
+        if (messageForwarder.isForwarderQueue(queueId)) {
             messageForwarder.messageAvailable(queueId);
         } else {
             final PublishAvailableCallback availableCallback = queueidCallbackMap.get(queueId);
@@ -370,9 +384,23 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
     public ListenableFuture<Void> cleanUp(final int bucketIndex) {
         return singleWriter.submit(bucketIndex, (bucketIndex1) -> {
             final ImmutableSet<String> sharedQueues = localPersistence.cleanUp(bucketIndex1);
-            for (final String sharedQueue : sharedQueues) {
-                if (isOrphaned(sharedQueue)) {
-                    localPersistence.clear(sharedQueue, true, bucketIndex);
+            // Expiry above still runs; reclaiming abandoned queues does not, once the node is going
+            // down. The bridge shutdown hook has priority HIGH and runs early, and it un-registers every
+            // forwarder -- so from that moment until the process exits, every live bridge queue reads as
+            // unowned while this job is still scheduled, and a sweep landing there clears the backlog
+            // the shutdown was careful not to clear. The start-up side of exactly this window is the
+            // hasAppliedBridgeConfiguration gate in isOrphaned; this is its missing other half
+            // (EDG-882 QA round 1). Nothing leaks: whatever is genuinely abandoned is still there for
+            // the next start's first sweep.
+            if (shutdownHooks.isShuttingDown()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Node is shutting down, skipping reclamation of {} shared queue(s)", sharedQueues.size());
+                }
+            } else {
+                for (final String sharedQueue : sharedQueues) {
+                    if (isOrphaned(sharedQueue)) {
+                        localPersistence.clear(sharedQueue, true, bucketIndex);
+                    }
                 }
             }
             // Visited once per bucket, after the sweep has finished, so that a test can wait for the

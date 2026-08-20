@@ -31,10 +31,13 @@ import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -146,6 +149,36 @@ public class BridgeService {
                     toRemove.size());
         }
 
+        try {
+            synchronizeBridges(bridgeIdToConfig, toRemove, toUpdate, toAdd);
+        } finally {
+            // From here on, a forwarder queue nobody owns is genuinely orphaned. Before it, ownership
+            // had not been claimed yet -- the clean-up service is scheduled during persistence
+            // bootstrap, well before this runs -- and a sweep in that window deletes the queues of
+            // every bridge on the node while they wait to be started.
+            //
+            // In a finally block because the alternative failure is silent and permanent: anything
+            // escaping the synchronization left the gate closed for the life of the node, and forwarder
+            // queues were then never reclaimed at all -- a storage leak in place of a message loss.
+            messageForwarder.markBridgeConfigurationApplied();
+        }
+
+        final long durationMs = System.currentTimeMillis() - start;
+        if (log.isInfoEnabled()) {
+            log.info(
+                    "Bridge synchronization completed in {} ms: {} added, {} updated, {} removed",
+                    durationMs,
+                    toAdd.size(),
+                    toUpdate.size(),
+                    toRemove.size());
+        }
+    }
+
+    private void synchronizeBridges(
+            final @NotNull Map<String, MqttBridge> bridgeIdToConfig,
+            final @NotNull Set<String> toRemove,
+            final @NotNull Set<String> toUpdate,
+            final @NotNull Set<String> toAdd) {
         // first stop bridges as they might use the same clientId in case the id of a bridge was changed
         // remove any orphaned connections
         toRemove.forEach(bridgeId -> {
@@ -167,19 +200,33 @@ public class BridgeService {
         toUpdate.forEach(bridgeId -> {
             final var active = activeBridgeNamesToClient.get(bridgeId);
             final var newBridge = bridgeIdToConfig.get(bridgeId);
-            if (active != null && newBridge != null) {
-                if (active.bridge().equals(newBridge)) {
-                    log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
-                } else {
-                    log.info("Restarting bridge {} because config has changed", bridgeId);
-                    // Through restartBridge rather than stop-with-an-empty-retain-list, which cleared
-                    // every queue of the bridge whatever had changed: editing one subscription's filter
-                    // threw away the messages queued for all the others, and a bridge with one busy
-                    // subscription and one being tuned lost the busy one's backlog on every save
-                    // (EDG-882 F-07). restartBridge keeps the queues of the forwarders that survive
-                    // into the new configuration, and holds them across the hand-over.
-                    restartBridge(bridgeId, newBridge);
+            if (newBridge == null) {
+                return;
+            }
+            // Recorded whether or not the bridge is running. Only restartBridge used to write this map,
+            // so a bridge stopped through the API kept the configuration it was stopped with: a later
+            // start ran a stale subscription set, and the next reload then saw the difference as a
+            // change and cleared the queues of the subscriptions that "disappeared" (EDG-882 QA round 1).
+            final var previous = allKnownBridgeConfigs.put(bridgeId, newBridge);
+            if (active == null) {
+                if (!newBridge.equals(previous)) {
+                    log.info(
+                            "Bridge '{}' is not running; its new configuration takes effect when it is started",
+                            bridgeId);
                 }
+                return;
+            }
+            if (active.bridge().equals(newBridge)) {
+                log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
+            } else {
+                log.info("Restarting bridge {} because config has changed", bridgeId);
+                // Through restartBridge rather than stop-with-an-empty-retain-list, which cleared
+                // every queue of the bridge whatever had changed: editing one subscription's filter
+                // threw away the messages queued for all the others, and a bridge with one busy
+                // subscription and one being tuned lost the busy one's backlog on every save
+                // (EDG-882 F-07). restartBridge keeps the queues of the forwarders that survive
+                // into the new configuration, and holds them across the hand-over.
+                restartBridge(bridgeId, newBridge);
             }
         });
 
@@ -191,24 +238,11 @@ public class BridgeService {
             }
             log.info("Adding bridge '{}' ({}:{})", bridgeId, newBridge.getHost(), newBridge.getPort());
             allKnownBridgeConfigs.put(bridgeId, newBridge);
-            activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(newBridge, internalStartBridge(newBridge)));
+            final var client = internalStartBridge(newBridge);
+            if (client != null) {
+                activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(newBridge, client));
+            }
         });
-
-        // From here on, a forwarder queue nobody owns is genuinely orphaned. Before it, ownership had
-        // not been claimed yet -- the clean-up service is scheduled during persistence bootstrap, well
-        // before this runs -- and a sweep in that window deletes the queues of every bridge on the node
-        // while they wait to be started.
-        messageForwarder.markBridgeConfigurationApplied();
-
-        final long durationMs = System.currentTimeMillis() - start;
-        if (log.isInfoEnabled()) {
-            log.info(
-                    "Bridge synchronization completed in {} ms: {} added, {} updated, {} removed",
-                    durationMs,
-                    toAdd.size(),
-                    toUpdate.size(),
-                    toRemove.size());
-        }
     }
 
     public @Nullable Throwable getLastError(final @NotNull String bridgeName) {
@@ -274,8 +308,10 @@ public class BridgeService {
             }
             stopBridge(bridgeId, true, newForwarderIds(newBridgeConfig));
             final MqttBridge effectiveBridge = newBridgeConfig != null ? newBridgeConfig : client.bridge();
-            activeBridgeNamesToClient.put(
-                    bridgeId, new MqttBridgeAndClient(effectiveBridge, internalStartBridge(effectiveBridge)));
+            final var replacement = internalStartBridge(effectiveBridge);
+            if (replacement != null) {
+                activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(effectiveBridge, replacement));
+            }
             if (newBridgeConfig != null) {
                 allKnownBridgeConfigs.put(bridgeId, newBridgeConfig);
             }
@@ -290,7 +326,10 @@ public class BridgeService {
         final var bridge = allKnownBridgeConfigs.get(bridgeId);
         if (bridge != null && !activeBridgeNamesToClient.containsKey(bridgeId)) {
             log.info("Starting bridge '{}'", bridgeId);
-            activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(bridge, internalStartBridge(bridge)));
+            final var client = internalStartBridge(bridge);
+            if (client != null) {
+                activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(bridge, client));
+            }
             return true;
         } else {
             log.debug("Not starting bridge '{}' since it was already started", bridgeId);
@@ -298,7 +337,14 @@ public class BridgeService {
         }
     }
 
-    private BridgeMqttClient internalStartBridge(final @NotNull MqttBridge bridge) {
+    /**
+     * Starts one bridge, or reports why it could not start.
+     *
+     * @return the client, or {@code null} when the bridge could not even be constructed — the caller
+     *     must not record a client it does not have, because every reader of
+     *     {@code activeBridgeNamesToClient} dereferences it.
+     */
+    private @Nullable BridgeMqttClient internalStartBridge(final @NotNull MqttBridge bridge) {
         final var bridgeId = bridge.getId();
         if (log.isDebugEnabled()) {
             log.debug(
@@ -315,18 +361,46 @@ public class BridgeService {
         // is corrected. Superseding an existing hold is exactly right on the restart path, which took
         // one before it stopped the previous generation.
         messageForwarder.reserveQueues(bridgeId, topicsByForwarderId(bridge));
-        final BridgeMqttClient bridgeMqttClient = bridgeMqttClientFactory.createRemoteClient(bridge);
+        BridgeMqttClient bridgeMqttClient = null;
+        final List<MqttForwarder> registered = new ArrayList<>();
         try {
+            // Inside the try, one statement further in than it used to be. Constructing the client reads
+            // the TLS material, so a mistyped keystore path threw straight past the guard below: the
+            // exception escaped updateBridges and every bridge after this one in the iteration was never
+            // started, exactly what the comment in the catch says cannot happen (EDG-882 QA round 1).
+            bridgeMqttClient = bridgeMqttClientFactory.createRemoteClient(bridge);
             final var forwarders = bridgeMqttClient.createForwarders();
             if (log.isDebugEnabled()) {
                 log.debug("Created {} forwarder(s) for bridge '{}'", forwarders.size(), bridgeId);
             }
-            forwarders.forEach(messageForwarder::addForwarder);
+            for (final MqttForwarder forwarder : forwarders) {
+                messageForwarder.addForwarder(forwarder);
+                registered.add(forwarder);
+            }
             // The forwarders own the queues now, so any hold taken by an earlier failed start can go.
             // After the registrations, never before: releasing first would leave the queues unowned for
             // an instant, which is all a clean-up sweep needs to clear them.
             messageForwarder.releaseReservedQueues(bridgeId);
         } catch (final Exception e) {
+            // Un-register the forwarders of this bridge that did register before the failure. Without
+            // this, a bridge reported as failed left live forwarders polling its persisted queues into
+            // an MQTT client that was never started and would never reconnect -- the messages were
+            // drained out of persistence and dropped. The bridge-level counterpart of the per-forwarder
+            // rollback in MessageForwarderImpl.addForwarder (EDG-882 F-10, QA round 2).
+            //
+            // clearQueue = false: nothing is destroyed, and the hold taken above keeps the periodic
+            // clean-up off those queues until the configuration is corrected.
+            for (final MqttForwarder forwarder : registered) {
+                try {
+                    messageForwarder.removeForwarder(forwarder, false);
+                } catch (final Throwable rollbackFailure) {
+                    log.error(
+                            "Could not un-register forwarder '{}' of failed bridge '{}'",
+                            forwarder.getId(),
+                            bridgeId,
+                            rollbackFailure);
+                }
+            }
             // A bridge that cannot register its forwarders must not take the rest of the
             // synchronization down with it: updateBridges iterates over every configured bridge, so an
             // exception escaping here would leave the bridges after this one unstarted. Reported the
@@ -350,7 +424,9 @@ public class BridgeService {
             return bridgeMqttClient;
         }
         Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
-        return internalStartBridgeMqttClient(bridge, bridgeMqttClient);
+        // Non-null on this path by construction: the only assignment is the first statement of the try,
+        // and any failure of it leaves through the catch above.
+        return internalStartBridgeMqttClient(bridge, Objects.requireNonNull(bridgeMqttClient));
     }
 
     private BridgeMqttClient internalStartBridgeMqttClient(

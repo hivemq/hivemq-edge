@@ -372,6 +372,12 @@ public class BridgeMqttClient {
                                 exception);
                     }
                 }
+                // Before the stop future completes, not after: whoever is waiting on that future starts
+                // the replacement bridge, and the replacement registers its own counters under the same
+                // names in the same registry. Clearing afterwards deleted the new client's metrics --
+                // the hand-over is now every configuration change, so the race is no longer rare
+                // (EDG-882 QA round 1).
+                perBridgeMetrics.clearAll(metricRegistry);
                 final var future = stopFutureRef.getAndSet(null);
                 if (future != null) {
                     future.set(null);
@@ -379,7 +385,6 @@ public class BridgeMqttClient {
                 // Only reset to IDLE if we're still in STOPPING state.
                 // Prevents overwriting a concurrent start()'s STARTING state.
                 operationState.compareAndSet(OperationState.STOPPING, OperationState.IDLE);
-                perBridgeMetrics.clearAll(metricRegistry);
                 if (log.isInfoEnabled()) {
                     log.info("Bridge '{}' stopped successfully", bridge.getId());
                 }

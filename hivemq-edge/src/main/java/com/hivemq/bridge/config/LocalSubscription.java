@@ -26,8 +26,10 @@ import org.jetbrains.annotations.Nullable;
 
 public class LocalSubscription {
     private final @NotNull List<String> filters;
+    private final @NotNull List<String> configuredFilters;
     private final @Nullable String destination;
     private final @NotNull List<String> excludes;
+    private final @NotNull List<String> configuredExcludes;
     private final @NotNull List<CustomUserProperty> customUserProperties;
     private final boolean preserveRetain;
     private final int maxQoS;
@@ -36,8 +38,10 @@ public class LocalSubscription {
 
     public LocalSubscription(final @NotNull List<String> filters, final @Nullable String destination) {
         this.filters = canonical(filters);
+        this.configuredFilters = List.copyOf(filters);
         this.destination = destination;
         this.excludes = List.of();
+        this.configuredExcludes = List.of();
         this.customUserProperties = List.of();
         this.maxQoS = 2;
         this.preserveRetain = false;
@@ -54,8 +58,10 @@ public class LocalSubscription {
             final @Nullable Long queueLimit) {
 
         this.filters = canonical(filters);
+        this.configuredFilters = List.copyOf(filters);
         this.destination = destination;
         this.excludes = canonical(excludes);
+        this.configuredExcludes = List.copyOf(excludes);
         this.customUserProperties = customUserProperties;
         this.maxQoS = maxQoS;
         this.preserveRetain = preserveRetain;
@@ -89,6 +95,28 @@ public class LocalSubscription {
 
     public @NotNull List<String> getFilters() {
         return filters;
+    }
+
+    /**
+     * The filters in the order they were configured, for writing the configuration back out.
+     * <p>
+     * Canonicalisation exists so that reordering a filter is not a configuration change; it was never
+     * meant to reorder the operator's file. Every write of {@code config.xml} rebuilds the bridge
+     * entities from these objects, and any REST write of any subsystem triggers one, so returning the
+     * sorted list here rewrote {@code <mqtt-topic-filter>} elements the operator had put in a
+     * deliberate order — in a file that is usually under version control (EDG-882 QA round 2).
+     * <p>
+     * Deliberately not part of {@link #equals(Object)} or {@link #hashCode()}: two subscriptions that
+     * differ only in the order they were written in are one subscription, which is the whole point of
+     * {@link #canonical(List)}.
+     */
+    public @NotNull List<String> getConfiguredFilters() {
+        return configuredFilters;
+    }
+
+    /** The excludes in the order they were configured; see {@link #getConfiguredFilters()}. */
+    public @NotNull List<String> getConfiguredExcludes() {
+        return configuredExcludes;
     }
 
     public @Nullable String getDestination() {
