@@ -88,6 +88,43 @@ public class BridgeExtractor
         return new ImmutableList.Builder<MqttBridge>().addAll(bridgeEntities).build();
     }
 
+    /**
+     * Replaces the configuration of one bridge in place, as a single configuration transition.
+     * <p>
+     * An update used to be expressed as {@link #removeBridge(String)} followed by
+     * {@link #addBridge(MqttBridge)}. Each of those notifies the consumer, so
+     * {@code BridgeService.updateBridges} saw the bridge disappear from the configuration and treated
+     * it as a removal: {@code internalStopBridge(active, clearQueue = true, retain = List.of())} —
+     * an empty retain list, so every forwarder queue of the bridge was cleared, including the
+     * subscriptions the operator had not touched. Editing one subscription through the API destroyed
+     * the backlog of all the others, which is exactly the loss EDG-882 exists to stop, arrived at
+     * through the path the UI uses (EDG-882 QA round 1).
+     * <p>
+     * Replacing in place keeps the bridge present across the transition, so it is classified as an
+     * update and goes through {@code restartBridge}, which retains the queues of the forwarders that
+     * survive into the new configuration and holds them across the hand-over.
+     *
+     * @return {@code false} if no bridge with that id is configured, in which case nothing changed.
+     */
+    public synchronized boolean replaceBridge(final @NotNull String id, final @NotNull MqttBridge mqttBridge) {
+        if (bridgeEntities.stream().noneMatch(entry -> entry.getId().equals(id))) {
+            return false;
+        }
+        if (!mqttBridge.isPersist()) {
+            log.info(
+                    "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
+                    mqttBridge.getId());
+        }
+
+        bridgeEntities = bridgeEntities.stream()
+                .map(entry -> entry.getId().equals(id) ? mqttBridge : entry)
+                .collect(ImmutableList.toImmutableList());
+
+        notifyConsumer();
+        configFileReaderWriter.writeConfigWithSync();
+        return true;
+    }
+
     public synchronized void removeBridge(final @NotNull String id) {
         bridgeEntities = bridgeEntities.stream()
                 .filter(entry -> !entry.getId().equals(id))
@@ -419,14 +456,15 @@ public class BridgeExtractor
         for (final LocalSubscription subscription : localSubscriptionList) {
             final ForwardedTopicEntity forwardedTopicEntity = new ForwardedTopicEntity();
             forwardedTopicEntity.setDestination(subscription.getDestination());
-            if (subscription.getExcludes() != null) {
-                forwardedTopicEntity.setExcludes(new ArrayList<>(subscription.getExcludes()));
-            }
-            if (subscription.getFilters() != null) {
-                forwardedTopicEntity.setFilters(new ArrayList<>(subscription.getFilters()));
-            }
+            // The configured order, not the canonical one: sorting exists so that a reorder is not a
+            // configuration change, not so that writing the file reorders the operator's elements.
+            forwardedTopicEntity.setExcludes(new ArrayList<>(subscription.getConfiguredExcludes()));
+            forwardedTopicEntity.setFilters(new ArrayList<>(subscription.getConfiguredFilters()));
             forwardedTopicEntity.setMaxQoS(subscription.getMaxQoS());
             forwardedTopicEntity.setPreserveRetain(subscription.isPreserveRetain());
+            // Dropped silently until now, so any write of config.xml deleted the operator's
+            // <queue-limit> and the reload that followed restarted the bridge for a change nobody made.
+            forwardedTopicEntity.setQueueLimit(subscription.getQueueLimit());
             if (subscription.getCustomUserProperties() != null) {
                 forwardedTopicEntity.setCustomUserProperties(subscription.getCustomUserProperties().stream()
                         .map(this::unconvertCustomUserProperty)
@@ -453,7 +491,13 @@ public class BridgeExtractor
         // Bridge MqttEntity
         final BridgeMqttEntity bridgeMqttEntity = new BridgeMqttEntity();
         bridgeMqttEntity.setCleanStart(from.isCleanStart());
-        bridgeMqttEntity.setClientId(from.getClientId());
+        // Only when it is not the default. convertBridgeConfigs fills the client id in from the bridge
+        // id when the element is absent, so writing it back unconditionally added a <client-id> element
+        // to the operator's file that they never wrote -- on every REST write of any subsystem
+        // (EDG-882 QA round 2). Same configuration either way; the file just stops growing elements.
+        if (!from.getId().equals(from.getClientId())) {
+            bridgeMqttEntity.setClientId(from.getClientId());
+        }
         bridgeMqttEntity.setKeepAlive(from.getKeepAlive());
         bridgeMqttEntity.setSessionExpiry(from.getSessionExpiry());
         remoteBrokerEntity.setMqtt(bridgeMqttEntity);

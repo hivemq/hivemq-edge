@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
@@ -165,6 +166,15 @@ public class ConfigFileReaderWriter {
     private final @NotNull SystemInformation sysInfo;
     private final @NotNull AtomicLong lastWrite;
     private final @NotNull AtomicReference<HiveMQConfigEntity> configEntity;
+
+    /**
+     * The {@code ${ENV:...}} placeholders of the configuration file as it was written, and the file's
+     * text at the point they were still in it. Both are needed to put them back when the configuration
+     * is written out again; see {@link EnvVarUtil#restorePlaceholders}.
+     */
+    private final @NotNull AtomicReference<Map<String, String>> envPlaceholders;
+
+    private final @NotNull AtomicReference<String> renderedText;
     private final @NotNull Lock lock;
     private final @NotNull AtomicReference<ScheduledExecutorService> executorService;
     private boolean defaultBackupConfig;
@@ -192,6 +202,8 @@ public class ConfigFileReaderWriter {
         this.postApplyCallbacks = new CopyOnWriteArrayList<>();
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
         this.configEntity = new AtomicReference<>();
+        this.envPlaceholders = new AtomicReference<>(Map.of());
+        this.renderedText = new AtomicReference<>("");
         this.lastWrite = new AtomicLong();
         this.lock = new ReentrantLock();
         this.executorService = new AtomicReference<>();
@@ -363,7 +375,18 @@ public class ConfigFileReaderWriter {
     public void writeConfigToXML(final @NotNull Writer writer) {
         lock.lock();
         try {
-            createMarshaller().marshal(configEntity.get(), writer);
+            // Marshalled to a string first so that the environment-variable placeholders can be put back
+            // before anything reaches the file. Rendering happens once, on the whole file, before it is
+            // parsed, so what is held in memory -- and what a marshaller would write -- is the resolved
+            // value: writing it out put a bridge password supplied through ${ENV:...} into config.xml in
+            // plain text, on any REST change to any subsystem (EDG-882 QA round 2).
+            final StringWriter marshalled = new StringWriter();
+            createMarshaller().marshal(configEntity.get(), marshalled);
+            writer.write(EnvVarUtil.restorePlaceholders(
+                    marshalled.toString(),
+                    Objects.requireNonNullElse(envPlaceholders.get(), Map.of()),
+                    Objects.requireNonNullElse(renderedText.get(), "")));
+            writer.flush();
         } catch (final Throwable e) {
             log.error("Original error message:", e);
             throw new UnrecoverableException(false);
@@ -426,6 +449,11 @@ public class ConfigFileReaderWriter {
             final var fragment = replaceFragmentPlaceHolders(content, sysInfo.isConfigFragmentBase64Zip());
             content = fragment.getRenderResult(); // must happen before env rendering so templates can be used with envs
             content = IfUtil.replaceIfPlaceHolders(content);
+            // Remembered before rendering, so that writing the configuration back out restores the
+            // operator's placeholders instead of the secrets they stand for -- see
+            // EnvVarUtil.restorePlaceholders.
+            renderedText.set(content);
+            envPlaceholders.set(EnvVarUtil.collectPlaceholders(content));
             content = EnvVarUtil.replaceEnvironmentVariablePlaceholders(content);
 
             fragmentToModificationTime.putAll(fragment.getFragmentToModificationTime());

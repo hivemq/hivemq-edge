@@ -16,6 +16,10 @@
 package com.hivemq.util.render;
 
 import com.hivemq.exceptions.UnrecoverableException;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -92,5 +96,104 @@ public class EnvVarUtil {
 
     private static @NotNull String escapeReplacement(final @NotNull String replacement) {
         return replacement.replace("\\", "\\\\").replace("$", "\\$");
+    }
+
+    /**
+     * Every {@code ${ENV:...}} placeholder in the given text, mapped to the value it renders to.
+     * <p>
+     * Taken from the file as it was written, before rendering, so that
+     * {@link #restorePlaceholders(String, Map)} can put the placeholders back when the configuration is
+     * written out again.
+     */
+    public static @NotNull Map<String, String> collectPlaceholders(final @NotNull String text) {
+        final Map<String, String> placeholders = new LinkedHashMap<>();
+        final var matcher = Pattern.compile(ENV_VAR_PATTERN).matcher(text);
+        while (matcher.find()) {
+            final var value = getValue(matcher.group(1));
+            if (value != null && !value.isEmpty()) {
+                placeholders.put(matcher.group(), value);
+            }
+        }
+        return placeholders;
+    }
+
+    /**
+     * Puts {@code ${ENV:...}} placeholders back into a rendered document before it is written to disk.
+     * <p>
+     * Rendering happens once, on the whole file, before it is parsed, so the configuration Edge holds in
+     * memory contains the <em>values</em>. Writing that back out — which any REST change to any subsystem
+     * does — replaced the operator's placeholders with what they resolved to, so a bridge password
+     * supplied through an environment variable ended up in {@code config.xml} in plain text, and the
+     * indirection the operator chose was gone for good (EDG-882 QA round 2).
+     * <p>
+     * <b>Anchored and count-checked, because the reverse direction is ambiguous by nature.</b> A value
+     * is only put back where it is the <em>entire</em> text of an element, and only when the document
+     * contains exactly as many such elements as the original file had occurrences of that placeholder.
+     * Anything else — a value that also appears somewhere the operator wrote literally, or two variables
+     * that happen to resolve to the same string — is left rendered and reported, because rewriting an
+     * element into a variable reference the operator did not ask for would be its own defect. That case
+     * is rare and visible; the alternative is silent and permanent.
+     *
+     * @param placeholders the mapping from {@link #collectPlaceholders(String)}, taken from the file as
+     *     it was written
+     * @param originalText the file as it was written, used to count the placeholder's occurrences
+     */
+    public static @NotNull String restorePlaceholders(
+            final @NotNull String renderedXml,
+            final @NotNull Map<String, String> placeholders,
+            final @NotNull String originalText) {
+        if (placeholders.isEmpty()) {
+            return renderedXml;
+        }
+        final Set<String> ambiguousValues = new HashSet<>();
+        final Set<String> seenValues = new HashSet<>();
+        for (final String value : placeholders.values()) {
+            if (!seenValues.add(value)) {
+                ambiguousValues.add(value);
+            }
+        }
+
+        var result = renderedXml;
+        for (final var placeholder : placeholders.entrySet()) {
+            final String literal = placeholder.getKey();
+            final String value = placeholder.getValue();
+            if (ambiguousValues.contains(value)) {
+                log.warn(
+                        "Two placeholders in the configuration file resolve to the same value, so '{}' cannot be"
+                                + " restored when the file is written; its value will be written out instead.",
+                        literal);
+                continue;
+            }
+            final String element = ">" + escapeXmlText(value) + "<";
+            final int inDocument = countOccurrences(result, element);
+            if (inDocument == 0) {
+                continue;
+            }
+            if (inDocument != countOccurrences(originalText, literal)) {
+                log.warn(
+                        "The value of '{}' also appears in the configuration where it was not written as a"
+                                + " placeholder, so the placeholder cannot be restored when the file is written;"
+                                + " its value will be written out instead.",
+                        literal);
+                continue;
+            }
+            result = result.replace(element, ">" + literal + "<");
+        }
+        return result;
+    }
+
+    private static int countOccurrences(final @NotNull String text, final @NotNull String needle) {
+        int count = 0;
+        int index = text.indexOf(needle);
+        while (index >= 0) {
+            count++;
+            index = text.indexOf(needle, index + needle.length());
+        }
+        return count;
+    }
+
+    /** The three characters a marshaller escapes inside element text. */
+    private static @NotNull String escapeXmlText(final @NotNull String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }

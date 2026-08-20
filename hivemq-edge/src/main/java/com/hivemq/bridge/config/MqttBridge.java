@@ -15,6 +15,7 @@
  */
 package com.hivemq.bridge.config;
 
+import com.google.common.collect.HashMultiset;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -306,10 +307,19 @@ public class MqttBridge {
         if (!Objects.equals(bridgeWebsocketConfig, that.bridgeWebsocketConfig)) {
             return false;
         }
-        if (!remoteSubscriptions.equals(that.remoteSubscriptions)) {
+        // As multisets, not as lists. The order of the <forwarded-topic> blocks in the configuration
+        // file carries no meaning -- each one is an independent subscription with its own forwarder and
+        // its own queues -- but comparing positionally made a reorder-only edit a "changed" bridge, and
+        // the reload path answers a change by restarting the bridge and clearing the queues of anything
+        // it cannot match. That is EDG-882 F-07 one level up: F-07 canonicalised the filters inside a
+        // subscription and left the order of the subscriptions themselves (QA round 1).
+        //
+        // A multiset rather than a set: two identical subscription blocks are a different configuration
+        // from one, and repeats must keep comparing as such.
+        if (!HashMultiset.create(remoteSubscriptions).equals(HashMultiset.create(that.remoteSubscriptions))) {
             return false;
         }
-        return localSubscriptions.equals(that.localSubscriptions);
+        return HashMultiset.create(localSubscriptions).equals(HashMultiset.create(that.localSubscriptions));
     }
 
     @Override
@@ -325,8 +335,9 @@ public class MqttBridge {
         result = 31 * result + Objects.hashCode(password);
         result = 31 * result + Objects.hashCode(bridgeTls);
         result = 31 * result + Objects.hashCode(bridgeWebsocketConfig);
-        result = 31 * result + remoteSubscriptions.hashCode();
-        result = 31 * result + localSubscriptions.hashCode();
+        // Order-independent, to agree with equals.
+        result = 31 * result + HashMultiset.create(remoteSubscriptions).hashCode();
+        result = 31 * result + HashMultiset.create(localSubscriptions).hashCode();
         result = 31 * result + Boolean.hashCode(loopPreventionEnabled);
         result = 31 * result + loopPreventionHopCount;
         result = 31 * result + Boolean.hashCode(persist);

@@ -251,11 +251,27 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                 return ErrorResponseUtil.errorResponse(new InvalidQueryParameterErrors(errorMessages.toErrorList()));
             } else {
                 // -- Modify the configuration atomically
-                configurationService.bridgeExtractor().removeBridge(bridgeId);
+                //
+                // One transition, not remove-then-add. Each of those notified the bridge subsystem
+                // separately, so the removal half was seen as "this bridge is gone from the
+                // configuration" and stopped it with clearQueue = true and an empty retain list: every
+                // forwarder queue of the bridge was cleared, including the subscriptions this request
+                // did not touch. Editing one subscription through the API destroyed the backlog of all
+                // the others (EDG-882 QA round 1). Replacing in place lets updateBridges classify it as
+                // an update and route it through restartBridge, which retains the surviving forwarders'
+                // queues and holds them across the hand-over.
                 final MqttBridge newBridgeConfig = unconvert(bridge);
-                configurationService.bridgeExtractor().addBridge(newBridgeConfig);
-                // -- Restart the new configuration on a new connection
-                bridgeService.restartBridge(bridgeId, newBridgeConfig);
+                if (!configurationService.bridgeExtractor().replaceBridge(bridgeId, newBridgeConfig)) {
+                    return ErrorResponseUtil.errorResponse(
+                            new BridgeNotFoundError(String.format("Bridge not found by id '%s'", bridgeId)));
+                }
+                // A bridge that was stopped through the API stays stopped by the update itself, so it is
+                // started here to keep the previous outcome of this endpoint: an update leaves the
+                // bridge running. A running bridge has already been restarted by the synchronization
+                // above and is left alone.
+                if (!bridgeService.isRunning(bridgeId)) {
+                    bridgeService.startBridge(bridgeId);
+                }
                 return Response.ok().build();
             }
         }

@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.reader.BridgeExtractor;
@@ -93,17 +94,26 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     private final Lazy<SamplingService> samplingService;
 
+    /**
+     * Lazy for the same reason as {@link #samplingService}: the message forwarder is built on the queue
+     * persistence this class also uses.
+     */
+    @NotNull
+    private final Lazy<MessageForwarder> messageForwarder;
+
     @Inject
     public PublishDistributorImpl(
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
             final @NotNull ConfigurationService configurationService,
-            final @NotNull Lazy<SamplingService> samplingService) {
+            final @NotNull Lazy<SamplingService> samplingService,
+            final @NotNull Lazy<MessageForwarder> messageForwarder) {
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionPersistence = clientSessionPersistence;
         this.mqttConfigurationService = configurationService.mqttConfiguration();
         this.bridgeConfiguration = configurationService.bridgeExtractor();
         this.samplingService = samplingService;
+        this.messageForwarder = messageForwarder;
     }
 
     @NotNull
@@ -183,8 +193,13 @@ public class PublishDistributorImpl implements PublishDistributor {
             final @Nullable ImmutableIntArray subscriptionIdentifier) {
 
         if (sharedSubscription) {
-            // only do the bridge iterations for client ids that can even be bridge clients
-            if (client.startsWith(FORWARDER_PREFIX)) {
+            // Asked of the registry that owns forwarder queues, not read off the queue ID -- the same
+            // rule the sampler branch below states, applied to the branch above it. A queue ID is built
+            // from a share name, and a share name is the client's to choose: a subscription to
+            // $share/$FORWARDER::<a live forwarder id>/t took this branch, so an ordinary client had a
+            // bridge's queue limit applied to its own queue and, against a persist=false bridge, its
+            // QoS silently rewritten to 0 (EDG-882 QA round 2).
+            if (messageForwarder.get().isForwarderQueue(client)) {
                 return handlePublishForBridgeForwarder(
                         publish,
                         client,
@@ -329,17 +344,25 @@ public class PublishDistributorImpl implements PublishDistributor {
         return statusFuture;
     }
 
-    private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
+    /**
+     * The limits configured for the bridge subscription that owns this queue, or {@code null}.
+     * <p>
+     * Anchored rather than by substring: a forwarder queue ID is exactly
+     * {@code $FORWARDER::<bridgeId>-<digest>/<topic filter>}, so the prefix up to and including the '/'
+     * identifies the subscription and the rest is the topic. Matching with {@code contains} let one
+     * bridge whose id merely appears inside another's queue ID answer for it, and made the resolution
+     * depend on a string a client can influence (EDG-882 QA round 2).
+     */
+    private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String queueId) {
         for (final MqttBridge bridge : bridgeConfiguration.getBridges()) {
-            final String bridgeClientId = FORWARDER_PREFIX + bridge.getId();
-            if (clientId.contains(bridgeClientId)) {
-                for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
-                    final String detailedBridgeClientId =
-                            FORWARDER_PREFIX + bridge.getId() + "-" + localSubscription.calculateUniqueId();
-                    // contains as it ends with the topic filter, which we dont know
-                    if (clientId.contains(detailedBridgeClientId)) {
-                        return new CustomBridgeLimitations(bridge.isPersist(), localSubscription.getQueueLimit());
-                    }
+            if (!queueId.startsWith(FORWARDER_PREFIX + bridge.getId() + "-")) {
+                continue;
+            }
+            for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
+                final String queueIdPrefix =
+                        FORWARDER_PREFIX + bridge.getId() + "-" + localSubscription.calculateUniqueId() + "/";
+                if (queueId.startsWith(queueIdPrefix)) {
+                    return new CustomBridgeLimitations(bridge.isPersist(), localSubscription.getQueueLimit());
                 }
             }
         }

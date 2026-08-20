@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
-import com.hivemq.configuration.reader.ConfigurationFile;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.io.FileUtils;
@@ -46,12 +45,15 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
         final PreLoginNoticeEntity notice = entity.getApiConfig().getPreLoginNotice();
         Assertions.assertNotNull(notice);
 
-        final File tempCopyFile = new File(System.getProperty("java.io.tmpdir"), "copy-config.xml");
-        tempFile.deleteOnExit();
-        configFileReader.writeConfigToXML(
-                new ConfigurationFile(tempCopyFile).file().get(), false, false);
+        // writeConfigWithSync, not writeConfigToXML: only this one runs the extractors' sync step, and
+        // that step is where the entity is rebuilt from the runtime objects. Marshalling the entity
+        // straight back out compares the JAXB round trip with itself and cannot fail -- so this test
+        // passed while a write-back was silently dropping a bridge's <queue-limit> and reordering the
+        // operator's topic filters (EDG-882 QA round 2). This is the path production takes on every
+        // REST write of any subsystem.
+        configFileReader.writeConfigWithSync();
 
-        final String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
+        final String copiedFileContent = FileUtils.readFileToString(tempFile, UTF_8);
 
         final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
         if (!diff.identical()) {

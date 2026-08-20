@@ -27,6 +27,7 @@ import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.MqttConfigurationService;
@@ -92,6 +93,8 @@ public class ClientQueuePersistenceImplTest {
     @Mock
     private MessageForwarder messageForwarder;
 
+    private final @NotNull ShutdownHooks shutdownHooks = new ShutdownHooks();
+
     private ClientQueuePersistenceImpl clientQueuePersistence;
 
     final int bucketSize = 4;
@@ -119,7 +122,8 @@ public class ClientQueuePersistenceImplTest {
                 topicTree,
                 connectionPersistence,
                 () -> publishPollService,
-                messageForwarder);
+                messageForwarder,
+                shutdownHooks);
     }
 
     @AfterEach
@@ -540,11 +544,81 @@ public class ClientQueuePersistenceImplTest {
         verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
     }
 
+    /**
+     * EDG-882 QA round 1: the other end of the start-up gate. The bridge shutdown hook has priority
+     * HIGH and un-registers every forwarder, while this job stays scheduled until the persistence hook
+     * runs — so between them every live bridge queue reads as unowned, and a sweep landing there clears
+     * the backlog the shutdown deliberately did not clear.
+     */
+    @Test
+    @Timeout(5)
+    public void test_clean_up_while_shutting_down_reclaims_nothing() throws ExecutionException, InterruptedException {
+        final String forwarderQueueId = MessageForwarderImpl.FORWARDER_PREFIX + "bridge-Bt80p78iNo/w7W1W7bGwcg==/topic";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(forwarderQueueId, "group/topic"));
+        when(messageForwarder.isForwarderQueue(forwarderQueueId)).thenReturn(false);
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
+        shutdownHooks.runShutdownHooks();
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        // expiry still ran; nothing was reclaimed, and ownership was not even asked about
+        verify(localPersistence).cleanUp(0);
+        verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
+        verify(topicTree, never()).getSharedSubscriber(anyString(), anyString());
+    }
+
+    /**
+     * The positive control for the test above: the skip must be tied to the shutdown, not to the
+     * queue — otherwise a passing "nothing was cleared" would only prove that nothing is ever cleared.
+     */
+    @Test
+    @Timeout(5)
+    public void test_clean_up_while_running_still_reclaims_orphans() throws ExecutionException, InterruptedException {
+        final String forwarderQueueId = MessageForwarderImpl.FORWARDER_PREFIX + "bridge-Bt80p78iNo/w7W1W7bGwcg==/topic";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(forwarderQueueId));
+        when(messageForwarder.isForwarderQueue(forwarderQueueId)).thenReturn(false);
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenReturn(ImmutableSet.of());
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(localPersistence).clear(forwarderQueueId, true, 0);
+    }
+
     @Test
     @Timeout(5)
     public void test_shared_publish_available() {
         clientQueuePersistence.sharedPublishAvailable("group/topic");
         verify(publishPollService).pollSharedPublishes("group/topic");
+    }
+
+    @Test
+    @Timeout(5)
+    public void test_shared_publish_available_for_a_registered_forwarder_queue_notifies_the_forwarder() {
+        final String queueId = MessageForwarderImpl.FORWARDER_PREFIX + "bridge-abc/topic";
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(true);
+
+        clientQueuePersistence.sharedPublishAvailable(queueId);
+
+        verify(messageForwarder).messageAvailable(queueId);
+        verify(publishPollService, never()).pollSharedPublishes(anyString());
+    }
+
+    /**
+     * EDG-882 QA round 2: a client may legally choose "$FORWARDER::anything" as its share group. The
+     * notification used to be handed to the message forwarder purely because of how the ID was spelled
+     * — so the client was never told to poll, and the ID stayed in the forwarder's notEmptyQueues set
+     * for the life of the node, once for every distinct share name the client cared to invent.
+     */
+    @Test
+    @Timeout(5)
+    public void test_shared_publish_available_for_a_client_queue_named_like_a_forwarder_polls_the_client() {
+        final String queueId = MessageForwarderImpl.FORWARDER_PREFIX + "anything/topic";
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(false);
+
+        clientQueuePersistence.sharedPublishAvailable(queueId);
+
+        verify(publishPollService).pollSharedPublishes(queueId);
+        verify(messageForwarder, never()).messageAvailable(anyString());
     }
 
     @Test

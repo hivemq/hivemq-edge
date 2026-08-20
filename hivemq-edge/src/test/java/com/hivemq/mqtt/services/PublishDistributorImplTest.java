@@ -15,6 +15,7 @@
  */
 package com.hivemq.mqtt.services;
 
+import static com.hivemq.bridge.MessageForwarderImpl.FORWARDER_PREFIX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,11 +24,14 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.bridge.MessageForwarder;
+import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -54,6 +58,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.mockito.ArgumentCaptor;
 import util.TestMessageUtil;
 import util.TestSingleWriterFactory;
 
@@ -69,6 +74,7 @@ public class PublishDistributorImplTest {
     private final @NotNull MqttBridge bridge = mock();
     private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
     private final @NotNull SamplingService samplingService = mock();
+    private final @NotNull MessageForwarder messageForwarder = mock();
 
     private @NotNull PublishDistributorImpl publishDistributor;
     private @NotNull SingleWriterService singleWriterService;
@@ -82,7 +88,11 @@ public class PublishDistributorImplTest {
         when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         publishDistributor = new PublishDistributorImpl(
-                clientQueuePersistence, () -> clientSessionPersistence, configurationService, () -> samplingService);
+                clientQueuePersistence,
+                () -> clientSessionPersistence,
+                configurationService,
+                () -> samplingService,
+                () -> messageForwarder);
         when(bridgeConfiguration.getBridges()).thenReturn(List.of(bridge));
     }
 
@@ -209,6 +219,96 @@ public class PublishDistributorImplTest {
                         anyBoolean(),
                         eq(SamplingService.SAMPLER_QUEUE_LIMIT),
                         eq(QueuePolicy.SAMPLE_RING));
+    }
+
+    /**
+     * EDG-882 QA round 2, the same rule as the sampler tests above applied to the branch above them.
+     * The forwarder branch decided from the spelling of the queue ID, and a share name is the client's
+     * to choose: subscribing to {@code $share/$FORWARDER::<a live forwarder id>/t} put an ordinary
+     * client's queue under a bridge's queue limit and, against a {@code persist=false} bridge, silently
+     * rewrote its QoS to 0 — so its own messages stopped being persisted.
+     */
+    @Test
+    @Timeout(5)
+    public void test_client_shared_subscription_named_like_a_forwarder_gets_the_ordinary_treatment()
+            throws ExecutionException, InterruptedException {
+        final String queueId = FORWARDER_PREFIX + "bridge-DNkmbgZ6ni59NniT9XDvig==/factory/temp";
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(false);
+        when(samplingService.isSamplerQueue(queueId)).thenReturn(false);
+        when(mqttConfigurationService.maxQueuedMessages()).thenReturn(1000L);
+        when(clientQueuePersistence.add(eq(queueId), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
+                .thenReturn(Futures.immediateFuture(null));
+
+        publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), queueId, 1, true, false, ImmutableIntArray.of(1))
+                .get();
+
+        final ArgumentCaptor<PUBLISH> queued = ArgumentCaptor.forClass(PUBLISH.class);
+        verify(clientQueuePersistence)
+                .add(eq(queueId), eq(true), queued.capture(), anyBoolean(), eq(1000L), eq(QueuePolicy.DEFAULT));
+        // the node default, not the bridge's limit; and the client's own QoS, not the bridge's rewrite
+        assertEquals(QoS.AT_LEAST_ONCE, queued.getValue().getQoS());
+        verifyNoInteractions(bridge);
+    }
+
+    /** The positive control: a queue a forwarder really owns still gets its bridge's limits. */
+    @Test
+    @Timeout(5)
+    public void test_a_real_forwarder_queue_gets_the_bridge_limits() throws ExecutionException, InterruptedException {
+        final LocalSubscription subscription = new LocalSubscription(List.of("factory/#"), "{#}");
+        final String queueId = FORWARDER_PREFIX + "bridge-" + subscription.calculateUniqueId() + "/factory/#";
+        when(bridge.getId()).thenReturn("bridge");
+        when(bridge.isPersist()).thenReturn(false);
+        when(bridge.getLocalSubscriptions()).thenReturn(List.of(subscription));
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(true);
+        when(mqttConfigurationService.maxQueuedMessages()).thenReturn(1000L);
+        when(clientQueuePersistence.add(eq(queueId), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
+                .thenReturn(Futures.immediateFuture(null));
+
+        publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), queueId, 1, true, false, ImmutableIntArray.of(1))
+                .get();
+
+        final ArgumentCaptor<PUBLISH> queued = ArgumentCaptor.forClass(PUBLISH.class);
+        verify(clientQueuePersistence)
+                .add(eq(queueId), eq(true), queued.capture(), anyBoolean(), anyLong(), eq(QueuePolicy.DEFAULT));
+        // persist=false is what downgrades it, and that is the bridge's own configuration
+        assertEquals(QoS.AT_MOST_ONCE, queued.getValue().getQoS());
+    }
+
+    /**
+     * The resolution used {@code contains}, so a bridge whose id merely appeared inside another
+     * bridge's queue ID answered for it. Anchored matching keeps them apart (EDG-882 QA round 2).
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_forwarder_queue_is_not_matched_to_a_bridge_whose_id_is_a_substring()
+            throws ExecutionException, InterruptedException {
+        final LocalSubscription subscription = new LocalSubscription(List.of("factory/#"), "{#}");
+        final MqttBridge otherBridge = mock();
+        when(otherBridge.getId()).thenReturn("plant");
+        when(otherBridge.isPersist()).thenReturn(false);
+        when(otherBridge.getLocalSubscriptions()).thenReturn(List.of(subscription));
+        when(bridgeConfiguration.getBridges()).thenReturn(List.of(otherBridge));
+        // the queue belongs to "plant-north", whose id contains "plant"
+        final String queueId = FORWARDER_PREFIX + "plant-north-" + subscription.calculateUniqueId() + "/factory/#";
+        when(messageForwarder.isForwarderQueue(queueId)).thenReturn(true);
+        when(mqttConfigurationService.maxQueuedMessages()).thenReturn(1000L);
+        when(clientQueuePersistence.add(eq(queueId), eq(true), any(PUBLISH.class), anyBoolean(), anyLong(), any()))
+                .thenReturn(Futures.immediateFuture(null));
+
+        publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), queueId, 1, true, false, ImmutableIntArray.of(1))
+                .get();
+
+        final ArgumentCaptor<PUBLISH> queued = ArgumentCaptor.forClass(PUBLISH.class);
+        verify(clientQueuePersistence)
+                .add(eq(queueId), eq(true), queued.capture(), anyBoolean(), eq(1000L), eq(QueuePolicy.DEFAULT));
+        // "plant"'s persist=false must not reach a queue that is not "plant"'s
+        assertEquals(QoS.AT_LEAST_ONCE, queued.getValue().getQoS());
     }
 
     @Test
