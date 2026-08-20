@@ -29,6 +29,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
 
+import ch.qos.logback.classic.Level;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import java.util.Set;
@@ -39,11 +40,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
 
 /**
  * EDG-885 / EDG-882 F-06: what sampling's lifecycle actually is, rather than what it looked like.
@@ -68,6 +72,34 @@ public class SamplingServiceLifecycleTest {
 
     private LocalTopicTree topicTree;
     private SamplingService samplingService;
+
+    private static Level previousSamplingLogLevel;
+
+    /**
+     * Silences {@link SamplingService}'s own logging for the duration of this class.
+     * <p>
+     * Not cosmetic, and the second time this exact defect has bitten on this branch — see the same
+     * guard in {@code MessageForwarderQueueOwnershipConcurrencyTest}. {@code startSampling} and
+     * {@code stopSampling} log at DEBUG on every call, and the concurrency tests below make hundreds
+     * of thousands of calls across a thread pool. Gradle captures that output into the JUnit XML,
+     * which produced a <b>27 MB result file</b> whose CDATA section exceeds libxml2's limit: CI's
+     * test-result reporter fails with {@code XMLSyntaxError: CData section too big} and reds the check
+     * while every test passes. Leave this in place, or restore it if the logging here ever changes.
+     */
+    @BeforeAll
+    public static void silenceSamplingLogging() {
+        final ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(SamplingService.class);
+        previousSamplingLogLevel = logger.getLevel();
+        logger.setLevel(Level.OFF);
+    }
+
+    /** Restores the level so this class cannot affect others sharing the JVM. */
+    @AfterAll
+    public static void restoreSamplingLogging() {
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(SamplingService.class))
+                .setLevel(previousSamplingLogLevel);
+    }
 
     @BeforeEach
     public void setUp() {
