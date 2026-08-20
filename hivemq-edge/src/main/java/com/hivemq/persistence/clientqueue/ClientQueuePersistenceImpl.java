@@ -392,15 +392,19 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             // hasAppliedBridgeConfiguration gate in isOrphaned; this is its missing other half
             // (EDG-882 QA round 1). Nothing leaks: whatever is genuinely abandoned is still there for
             // the next start's first sweep.
-            if (shutdownHooks.isShuttingDown()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Node is shutting down, skipping reclamation of {} shared queue(s)", sharedQueues.size());
-                }
-            } else {
-                for (final String sharedQueue : sharedQueues) {
-                    if (isOrphaned(sharedQueue)) {
-                        localPersistence.clear(sharedQueue, true, bucketIndex);
+            for (final String sharedQueue : sharedQueues) {
+                // Re-read per queue rather than once for the sweep: a sweep that started while the node
+                // was up can still be inside this loop when the bridge shutdown hook un-registers every
+                // forwarder, and each remaining iteration would then clear a live bridge queue. One
+                // volatile read per queue narrows that to a single iteration.
+                if (shutdownHooks.isShuttingDown()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Node is shutting down, stopping the reclamation of shared queues");
                     }
+                    break;
+                }
+                if (isOrphaned(sharedQueue)) {
+                    localPersistence.clear(sharedQueue, true, bucketIndex);
                 }
             }
             // Visited once per bucket, after the sweep has finished, so that a test can wait for the

@@ -65,9 +65,13 @@ public class BridgeUtils {
             return null;
         }
         return new LocalBridgeSubscription()
-                .filters(localSubscription.getFilters())
+                // The configured order, not the canonical one. Canonicalisation exists so that a reorder
+                // is not a configuration change; serving the sorted order here meant that any edit made
+                // through the UI wrote the sorted order back into the operator's file, which is the
+                // write-back damage EDG-882 QA round 2 removed from the reload path (round 3).
+                .filters(localSubscription.getConfiguredFilters())
                 .destination(localSubscription.getDestination())
-                .excludes(localSubscription.getExcludes())
+                .excludes(localSubscription.getConfiguredExcludes())
                 .customUserProperties(localSubscription.getCustomUserProperties().stream()
                         .map(BridgeUtils::convertProperty)
                         .collect(Collectors.toList()))

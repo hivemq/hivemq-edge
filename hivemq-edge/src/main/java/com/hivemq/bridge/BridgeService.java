@@ -209,7 +209,21 @@ public class BridgeService {
             // change and cleared the queues of the subscriptions that "disappeared" (EDG-882 QA round 1).
             final var previous = allKnownBridgeConfigs.put(bridgeId, newBridge);
             if (active == null) {
-                if (!newBridge.equals(previous)) {
+                if (newBridge.equals(previous)) {
+                    return;
+                }
+                if (bridgeNameToLastError.containsKey(bridgeId)) {
+                    // The bridge failed to start and its configuration has just changed: an operator
+                    // editing a bridge that is reporting an error is asking for it to be tried again,
+                    // and until this branch existed the correction was recorded and never acted on --
+                    // the queues held for the failed bridge stayed held and nothing forwarded them
+                    // (EDG-882 QA round 3).
+                    log.info("Retrying bridge '{}' with the corrected configuration", bridgeId);
+                    final var retried = internalStartBridge(newBridge);
+                    if (retried != null) {
+                        activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(newBridge, retried));
+                    }
+                } else {
                     log.info(
                             "Bridge '{}' is not running; its new configuration takes effect when it is started",
                             bridgeId);
@@ -258,7 +272,12 @@ public class BridgeService {
         return activeBridgeNamesToClient.containsKey(bridgeName);
     }
 
-    public void stopBridgeAndRemoveQueues(final @NotNull String bridgeName) {
+    /**
+     * Synchronized like every other path that mutates a reservation: the stop and the release must be
+     * one transition, or a start running concurrently can have the hold it just took released out from
+     * under it and its queues reaped while it is still coming up (EDG-882 QA round 3).
+     */
+    public synchronized void stopBridgeAndRemoveQueues(final @NotNull String bridgeName) {
         stopBridge(bridgeName, true, List.of());
         // "and remove queues" is the operator asking for them to go, which for a bridge that never
         // started means dropping the hold that keeps the clean-up off them.
@@ -421,7 +440,14 @@ public class BridgeService {
             errorEvent.addUserData("name", bridgeId);
             remoteService.fireUsageEvent(errorEvent);
             Checkpoints.checkpoint("mqtt-bridge-forwarder-start-failed");
-            return bridgeMqttClient;
+            // Null, not the client: the rollback above un-registered every forwarder this bridge had
+            // managed to add, so what is left is an object that was never started and owns nothing.
+            // Recording it made isRunning() report the bridge as STARTED and turned the API's START
+            // command into a permanent no-op, because startBridge refuses a bridge that is already in
+            // the map -- the operator was left with a bridge that says it is running, forwards nothing,
+            // and cannot be started (EDG-882 QA round 3). The queues are unaffected either way: the
+            // reservation taken above holds them until the bridge starts or leaves the configuration.
+            return null;
         }
         Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
         // Non-null on this path by construction: the only assignment is the first statement of the try,

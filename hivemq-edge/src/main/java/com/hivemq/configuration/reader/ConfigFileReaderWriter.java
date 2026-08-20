@@ -168,13 +168,12 @@ public class ConfigFileReaderWriter {
     private final @NotNull AtomicReference<HiveMQConfigEntity> configEntity;
 
     /**
-     * The {@code ${ENV:...}} placeholders of the configuration file as it was written, and the file's
-     * text at the point they were still in it. Both are needed to put them back when the configuration
-     * is written out again; see {@link EnvVarUtil#restorePlaceholders}.
+     * The {@code ${ENV:...}} placeholders of the configuration file as it was written, so that writing
+     * the configuration back out restores them instead of the values they stand for; see
+     * {@link EnvVarUtil#restorePlaceholders}. Replaced only when a configuration is actually accepted.
      */
-    private final @NotNull AtomicReference<Map<String, String>> envPlaceholders;
+    private final @NotNull AtomicReference<List<EnvVarUtil.ElementPlaceholder>> envPlaceholders;
 
-    private final @NotNull AtomicReference<String> renderedText;
     private final @NotNull Lock lock;
     private final @NotNull AtomicReference<ScheduledExecutorService> executorService;
     private boolean defaultBackupConfig;
@@ -202,8 +201,7 @@ public class ConfigFileReaderWriter {
         this.postApplyCallbacks = new CopyOnWriteArrayList<>();
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
         this.configEntity = new AtomicReference<>();
-        this.envPlaceholders = new AtomicReference<>(Map.of());
-        this.renderedText = new AtomicReference<>("");
+        this.envPlaceholders = new AtomicReference<>(List.of());
         this.lastWrite = new AtomicLong();
         this.lock = new ReentrantLock();
         this.executorService = new AtomicReference<>();
@@ -383,9 +381,7 @@ public class ConfigFileReaderWriter {
             final StringWriter marshalled = new StringWriter();
             createMarshaller().marshal(configEntity.get(), marshalled);
             writer.write(EnvVarUtil.restorePlaceholders(
-                    marshalled.toString(),
-                    Objects.requireNonNullElse(envPlaceholders.get(), Map.of()),
-                    Objects.requireNonNullElse(renderedText.get(), "")));
+                    marshalled.toString(), Objects.requireNonNullElse(envPlaceholders.get(), List.of())));
             writer.flush();
         } catch (final Throwable e) {
             log.error("Original error message:", e);
@@ -417,9 +413,18 @@ public class ConfigFileReaderWriter {
                 throw new UnrecoverableException(false);
             }
 
+            // Rendered in full before the file is opened, because opening it truncates it and the
+            // marshaller validates against the schema as it writes. Anything it rejects -- a value that
+            // does not fit its element, a constraint a REST call did not enforce -- used to leave the
+            // operator with a config.xml emptied or cut off mid-element, while the REST call that
+            // triggered the write answered 200 and the node kept running on the configuration it still
+            // had in memory. The next restart is where they would find out (EDG-882 QA round 3).
+            final StringWriter rendered = new StringWriter();
+            writeConfigToXML(rendered);
+
             backupConfig(file, doBackup); // write the backup of the file before rewriting
             try (final FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8)) {
-                writeConfigToXML(writer);
+                writer.write(rendered.toString());
             }
         } catch (final IOException e) {
             log.error("Error writing file:", e);
@@ -449,11 +454,13 @@ public class ConfigFileReaderWriter {
             final var fragment = replaceFragmentPlaceHolders(content, sysInfo.isConfigFragmentBase64Zip());
             content = fragment.getRenderResult(); // must happen before env rendering so templates can be used with envs
             content = IfUtil.replaceIfPlaceHolders(content);
-            // Remembered before rendering, so that writing the configuration back out restores the
+            // Collected before rendering, so that writing the configuration back out restores the
             // operator's placeholders instead of the secrets they stand for -- see
-            // EnvVarUtil.restorePlaceholders.
-            renderedText.set(content);
-            envPlaceholders.set(EnvVarUtil.collectPlaceholders(content));
+            // EnvVarUtil.restorePlaceholders. Held locally until the configuration has actually been
+            // accepted: a file that fails to parse must not replace the placeholders of the
+            // configuration still running, or the next write would marshal that older configuration --
+            // with its resolved secrets -- against a map that no longer describes it.
+            final List<EnvVarUtil.ElementPlaceholder> placeholders = EnvVarUtil.collectPlaceholders(content);
             content = EnvVarUtil.replaceEnvironmentVariablePlaceholders(content);
 
             fragmentToModificationTime.putAll(fragment.getFragmentToModificationTime());
@@ -475,6 +482,9 @@ public class ConfigFileReaderWriter {
                 }
 
                 configEntity.set(entity);
+                // Only now: this configuration is the one that will be written back out, so these are
+                // the placeholders that describe it.
+                envPlaceholders.set(placeholders);
                 return internalApplyConfig(entity);
             }
         } catch (final JAXBException | IOException e) {

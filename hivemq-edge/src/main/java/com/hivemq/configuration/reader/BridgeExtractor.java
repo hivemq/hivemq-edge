@@ -68,19 +68,27 @@ public class BridgeExtractor
         this.configFileReaderWriter = configFileReaderWriter;
     }
 
-    public synchronized void addBridge(final @NotNull MqttBridge mqttBridge) {
+    public void addBridge(final @NotNull MqttBridge mqttBridge) {
         if (!mqttBridge.isPersist()) {
             log.info(
                     "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
                     mqttBridge.getId());
         }
 
-        bridgeEntities = new ImmutableList.Builder<MqttBridge>()
-                .addAll(bridgeEntities)
-                .add(mqttBridge)
-                .build();
-
-        notifyConsumer();
+        synchronized (this) {
+            bridgeEntities = new ImmutableList.Builder<MqttBridge>()
+                    .addAll(bridgeEntities)
+                    .add(mqttBridge)
+                    .build();
+            notifyConsumer();
+        }
+        // The configuration file is written after the monitor is released, never while holding it.
+        // notifyConsumer runs BridgeService.updateBridges inline, which can wait up to the bridge stop
+        // timeout, and writeConfigWithSync takes ConfigFileReaderWriter's lock -- the lock the config
+        // watcher already holds when it calls back into this extractor. Holding both in that order is
+        // the inverse of the watcher's, and the two together wedge the watcher and every REST write in
+        // every subsystem, permanently (EDG-882 QA round 3). sync() re-reads the volatile field, so a
+        // write that lands after another thread's change simply writes the newer configuration.
         configFileReaderWriter.writeConfigWithSync();
     }
 
@@ -106,31 +114,36 @@ public class BridgeExtractor
      *
      * @return {@code false} if no bridge with that id is configured, in which case nothing changed.
      */
-    public synchronized boolean replaceBridge(final @NotNull String id, final @NotNull MqttBridge mqttBridge) {
-        if (bridgeEntities.stream().noneMatch(entry -> entry.getId().equals(id))) {
-            return false;
-        }
-        if (!mqttBridge.isPersist()) {
-            log.info(
-                    "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
-                    mqttBridge.getId());
-        }
+    public boolean replaceBridge(final @NotNull String id, final @NotNull MqttBridge mqttBridge) {
+        synchronized (this) {
+            if (bridgeEntities.stream().noneMatch(entry -> entry.getId().equals(id))) {
+                return false;
+            }
+            if (!mqttBridge.isPersist()) {
+                log.info(
+                        "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
+                        mqttBridge.getId());
+            }
 
-        bridgeEntities = bridgeEntities.stream()
-                .map(entry -> entry.getId().equals(id) ? mqttBridge : entry)
-                .collect(ImmutableList.toImmutableList());
+            bridgeEntities = bridgeEntities.stream()
+                    .map(entry -> entry.getId().equals(id) ? mqttBridge : entry)
+                    .collect(ImmutableList.toImmutableList());
 
-        notifyConsumer();
+            notifyConsumer();
+        }
+        // after the monitor is released -- see addBridge for why
         configFileReaderWriter.writeConfigWithSync();
         return true;
     }
 
-    public synchronized void removeBridge(final @NotNull String id) {
-        bridgeEntities = bridgeEntities.stream()
-                .filter(entry -> !entry.getId().equals(id))
-                .toList();
-
-        notifyConsumer();
+    public void removeBridge(final @NotNull String id) {
+        synchronized (this) {
+            bridgeEntities = bridgeEntities.stream()
+                    .filter(entry -> !entry.getId().equals(id))
+                    .toList();
+            notifyConsumer();
+        }
+        // after the monitor is released -- see addBridge for why
         configFileReaderWriter.writeConfigWithSync();
     }
 
@@ -464,7 +477,22 @@ public class BridgeExtractor
             forwardedTopicEntity.setPreserveRetain(subscription.isPreserveRetain());
             // Dropped silently until now, so any write of config.xml deleted the operator's
             // <queue-limit> and the reload that followed restarted the bridge for a change nobody made.
-            forwardedTopicEntity.setQueueLimit(subscription.getQueueLimit());
+            //
+            // Only when it fits the element: config.xsd declares queue-limit as xs:int, and the REST API
+            // takes an int64 that nothing bounds, so a larger value would fail schema-validated
+            // marshalling -- and writeConfigWithSync logs that failure and carries on, which would lose
+            // the whole write, including whatever unrelated subsystem triggered it (EDG-882 QA round 3).
+            final Long queueLimit = subscription.getQueueLimit();
+            if (queueLimit != null && (queueLimit > Integer.MAX_VALUE || queueLimit < Integer.MIN_VALUE)) {
+                log.warn(
+                        "The queue limit {} of a forwarded topic of bridge '{}' does not fit the configuration"
+                                + " file's queue-limit element and cannot be written to it; the limit stays in"
+                                + " effect for this node but will not survive a restart.",
+                        queueLimit,
+                        subscription.getDestination());
+            } else {
+                forwardedTopicEntity.setQueueLimit(queueLimit);
+            }
             if (subscription.getCustomUserProperties() != null) {
                 forwardedTopicEntity.setCustomUserProperties(subscription.getCustomUserProperties().stream()
                         .map(this::unconvertCustomUserProperty)
@@ -503,6 +531,13 @@ public class BridgeExtractor
         remoteBrokerEntity.setMqtt(bridgeMqttEntity);
 
         // Authentication
+        // Both halves, because config.xsd requires both elements: a bridge created over REST with a
+        // username and no password -- legal MQTT, and rejected nowhere -- has its username silently
+        // dropped here, and the reload that follows reads a changed bridge and restarts it for a change
+        // nobody made. Writing the element with one half would fail schema-validated marshalling and
+        // abort the whole configuration write instead, which is worse. Closing this properly means
+        // either relaxing the schema or refusing the combination at the API; both are decisions of their
+        // own and neither belongs to EDG-882 (QA round 3).
         if (from.getUsername() != null && from.getPassword() != null) {
             final BridgeAuthenticationEntity authentication = new BridgeAuthenticationEntity();
             final MqttSimpleAuthenticationEntity simpleAuthenticationEntity = new MqttSimpleAuthenticationEntity();
