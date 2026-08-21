@@ -1,4 +1,7 @@
-minimumReleaseAge: 0
+# 4320 minutes (3 days) matches the npm minimumReleaseAge in the shared Renovate config, so a
+# Renovate bump has always aged past the cutoff by the time it lands. It also covers local
+# installs, which Renovate does not see.
+minimumReleaseAge: 4320
 allowBuilds:
   '@parcel/watcher': true
   '@percy/core': true

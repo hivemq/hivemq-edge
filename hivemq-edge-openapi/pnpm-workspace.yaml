@@ -2,11 +2,11 @@
 # and requires them here as an `allowBuilds` map. Without this, `pnpm install` fails
 # with ERR_PNPM_IGNORED_BUILDS for the @redocly/cli transitive dependencies below.
 #
-# `minimumReleaseAge: 0` disables the 1-day dependency quarantine that pnpm 11 enables by
-# default. It is incompatible with our Renovate workflow: a freshly-bumped @redocly/cli
-# would otherwise fail with ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION until it ages past the
-# cutoff. pnpm 10 had no such check; this restores that behaviour.
-minimumReleaseAge: 0
+# 4320 minutes (3 days) matches the npm minimumReleaseAge in the shared Renovate config, so a
+# freshly-bumped @redocly/cli has always aged past the cutoff by the time Renovate raises it and
+# cannot fail with ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION. It also covers local installs, which
+# Renovate does not see.
+minimumReleaseAge: 4320
 allowBuilds:
   core-js: true
   protobufjs: true
