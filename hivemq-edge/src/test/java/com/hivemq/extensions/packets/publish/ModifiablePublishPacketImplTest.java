@@ -21,12 +21,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.ImmutableIntArray;
+import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -615,6 +617,40 @@ public class ModifiablePublishPacketImplTest {
         configurationService.mqttConfiguration().setMaxMessageExpiryInterval(240L);
         assertThatThrownBy(() -> modifiablePacket.setMessageExpiryInterval(241))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void setMessageExpiryInterval_noExpiryMarkersRejected() {
+        // EDG-811 CR2-1: like ModifiableOutboundPublishImpl there is no build() step here to resolve a marker
+        // against the configured maximum, so a marker accepted at this setter is a no-expiry publish under a
+        // finite <message-expiry>.
+        final PublishPacketImpl packet = new PublishPacketImpl(
+                "topic",
+                Qos.AT_LEAST_ONCE,
+                Qos.AT_LEAST_ONCE,
+                1,
+                false,
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
+                false,
+                60,
+                null,
+                null,
+                null,
+                null,
+                ImmutableIntArray.of(),
+                UserPropertiesImpl.of(ImmutableList.of()),
+                System.currentTimeMillis());
+        final ModifiablePublishPacketImpl modifiablePacket =
+                new ModifiablePublishPacketImpl(packet, configurationService);
+
+        configurationService.mqttConfiguration().setMaxMessageExpiryInterval(240L);
+        assertThatThrownBy(() -> modifiablePacket.setMessageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> modifiablePacket.setMessageExpiryInterval(
+                        MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertEquals(Optional.of(60L), modifiablePacket.getMessageExpiryInterval());
+        assertFalse(modifiablePacket.isModified());
     }
 
     @Test

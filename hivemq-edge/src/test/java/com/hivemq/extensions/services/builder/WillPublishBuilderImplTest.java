@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
@@ -35,6 +36,7 @@ import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Bytes;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -59,6 +61,35 @@ public class WillPublishBuilderImplTest {
     public void setUp() throws Exception {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
         willPublishBuilder = new WillPublishBuilderImpl(service);
+    }
+
+    @Test
+    public void test_message_expiry_no_expiry_markers_are_rejected_under_a_finite_maximum() {
+        // EDG-811 CR2-1: WillPublishBuilder.messageExpiryInterval is one of the five public setters backed by
+        // the shared validator. It has no copy-boundary need for the markers, so <message-expiry> binds here
+        // exactly as the extension SDK documents.
+        final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
+        service.mqttConfiguration().setMaxMessageExpiryInterval(10);
+        final WillPublishBuilderImpl builder = new WillPublishBuilderImpl(service);
+
+        assertThatThrownBy(() -> builder.messageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> builder.messageExpiryInterval(MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> builder.messageExpiryInterval(11)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void test_message_expiry_zero_is_accepted() {
+        // EDG-811 CR-5: the SDK documents only a negative interval as throwing.
+        final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
+        final WillPublishPacket willPublishPacket = new WillPublishBuilderImpl(service)
+                .topic("topic")
+                .payload(ByteBuffer.wrap(new byte[] {1, 2, 3}))
+                .messageExpiryInterval(0)
+                .build();
+
+        assertEquals(0L, willPublishPacket.getMessageExpiryInterval().get().longValue());
     }
 
     @Test
