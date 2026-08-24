@@ -12,4 +12,36 @@
     addLabels: [
         'edge-team',
     ],
+    packageRules: [
+        {
+            description: 'Chakra UI v3 is a rewrite with no upgrade path for this frontend - 117 of the 201 Chakra symbols we use are gone, across 274 files, and the codemods close less than a third of the gap. @chakra-ui/{anatomy,icons,radio,skip-nav,theme-tools,utils} have no v3 release at all. Deferred to a dedicated migration, see EDG-827',
+            matchManagers: [
+                'npm',
+            ],
+            matchPackageNames: [
+                '@chakra-ui/**',
+            ],
+            allowedVersions: '<3',
+        },
+        {
+            description: 'chakra-react-select v6 peers on @chakra-ui/react 3.x - blocked by the Chakra UI v3 decision above. v5 still peers on 2.x and stays available',
+            matchManagers: [
+                'npm',
+            ],
+            matchPackageNames: [
+                'chakra-react-select',
+            ],
+            allowedVersions: '<6',
+        },
+        {
+            description: '@rjsf/chakra-ui v6 peers on @chakra-ui/react >=3.16.1 and chakra-react-select >=6 - blocked by the Chakra UI v3 decision above. The @rjsf packages must move as a set, so the whole scope is held at v5',
+            matchManagers: [
+                'npm',
+            ],
+            matchPackageNames: [
+                '@rjsf/**',
+            ],
+            allowedVersions: '<6',
+        },
+    ],
 }
