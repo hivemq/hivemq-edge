@@ -159,8 +159,8 @@ class WorkloadControlChannelTest {
     @Test
     void aRetainedReplayWithoutAPriorRetain_missesLoudly_andEmitsNothing() throws Exception {
         ctl("emit datapointretained ghost 1");
-        await().atMost(Duration.ofSeconds(3))
-                .untilAsserted(() -> assertThat(journal()).contains("EMIT datapointretained node=ghost MISS no-retained-identity"));
+        await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> assertThat(journal())
+                .contains("EMIT datapointretained node=ghost MISS no-retained-identity"));
         assertThat(out.of("dataPoint")).isEmpty(); // no silent fallback to a synthetic node
     }
 
