@@ -1,7 +1,18 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
+
+
 plugins {
     java
     alias(libs.plugins.defaults)
     id("com.hivemq.repository-convention")
+    id("com.hivemq.jacoco-convention")
+    id("com.hivemq.errorprone-convention")
+    id("com.hivemq.nullaway-convention")
     id("com.hivemq.spotless-convention")
 }
 
@@ -37,6 +48,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events = setOf(STARTED, PASSED, FAILED, SKIPPED, STANDARD_ERROR)
+        exceptionFormat = TestExceptionFormat.FULL
+    }
 }
 
 // Test-only consumable variant (the chaos-module pattern): exposes the plain library jar so `hivemq-edge-test`'s
