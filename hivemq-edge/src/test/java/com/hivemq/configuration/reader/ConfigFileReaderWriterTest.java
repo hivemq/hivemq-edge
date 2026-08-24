@@ -94,7 +94,9 @@ class ConfigFileReaderWriterTest {
                 .toURI());
 
         // Read through Edge's real reader (validates against config.xsd)...
-        assertThat(reader.loadConfigFromXML(configFile)).as("read %s", resource).isTrue();
+        assertThat(reader.loadConfigFromXML(configFile))
+                .as("read %s", resource)
+                .isEqualTo(ConfigFileReaderWriter.ReloadOutcome.APPLIED);
         // ...then marshal back through the real writer (the marshaller validates against config.xsd too).
         final var writer = new java.io.StringWriter();
         reader.writeConfigToXML(writer);
@@ -128,7 +130,7 @@ class ConfigFileReaderWriterTest {
                 .getResource("configs/testing/oidc_disabled_no_role_mappings.xml")
                 .toURI());
 
-        assertThat(reader.loadConfigFromXML(configFile)).isTrue();
+        assertThat(reader.loadConfigFromXML(configFile)).isEqualTo(ConfigFileReaderWriter.ReloadOutcome.APPLIED);
 
         // Re-marshal (this is what config sync does). The marshaller validates against the schema, so an empty
         // <role-mappings/> would throw here. It must succeed and omit the element.
