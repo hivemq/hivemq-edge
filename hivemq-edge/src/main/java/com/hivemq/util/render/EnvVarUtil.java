@@ -109,9 +109,20 @@ public class EnvVarUtil {
             @NotNull String literal,
             @NotNull String value) {}
 
-    /** Matches a placeholder that is the whole text of an element, capturing the element name. */
+    /**
+     * Matches a placeholder that is the whole text of an element, capturing the element name and any
+     * whitespace the operator wrote around it.
+     * <p>
+     * The padding is captured rather than skipped because the element's text is what the document ends up
+     * holding: the file is rendered before it is parsed, so {@code <password>\n  ${ENV:PW}\n</password>}
+     * becomes an element whose text is the value <em>with</em> that padding, and the marshaller writes it
+     * back the same way. A search string built from the bare value then matches nothing, the restore gives
+     * up, and the credential is written out — which is what this looked like before
+     * {@code whenThePlaceholderIsWrittenWithSurroundingWhitespace_thenItIsStillRestored} was written
+     * (EDG-882 review v02, R2-20).
+     */
     private static final @NotNull Pattern ELEMENT_PLACEHOLDER =
-            Pattern.compile("<([A-Za-z_][\\w.:-]*)>\\s*(\\$\\{ENV:(.*?)})\\s*</\\1>");
+            Pattern.compile("<([A-Za-z_][\\w.:-]*)>(\\s*)(\\$\\{ENV:(.*?)})(\\s*)</\\1>");
 
     private static final @NotNull Pattern XML_COMMENT = Pattern.compile("(?s)<!--.*?-->");
 
@@ -133,9 +144,14 @@ public class EnvVarUtil {
         final List<ElementPlaceholder> placeholders = new ArrayList<>();
         final var matcher = ELEMENT_PLACEHOLDER.matcher(withoutComments);
         while (matcher.find()) {
-            final var value = getValue(matcher.group(3));
+            final var value = getValue(matcher.group(4));
             if (value != null && !value.isEmpty()) {
-                placeholders.add(new ElementPlaceholder(matcher.group(1), matcher.group(2), value));
+                // Both sides carry the operator's padding, so the search string is what the marshaller
+                // wrote and the replacement is what they typed, character for character.
+                final String leading = matcher.group(2);
+                final String trailing = matcher.group(5);
+                placeholders.add(new ElementPlaceholder(
+                        matcher.group(1), leading + matcher.group(3) + trailing, leading + value + trailing));
             }
         }
         return placeholders;
@@ -210,10 +226,15 @@ public class EnvVarUtil {
                 continue;
             }
             if (inDocument == 0) {
-                // Nothing to write out and nothing to replace: the element the placeholder filled is not
-                // in the document at all. Either it left the configuration, or the marshaller normalised
-                // its value on the way out (TRUE -> true, 01883 -> 1883), which only happens to a typed
-                // field and so never to a secret -- those are xs:string and are written verbatim.
+                // Nothing to replace: the element the placeholder filled is not in the document as this
+                // expects it. Either it left the configuration, or the marshaller wrote its text
+                // differently -- normalising a typed field (TRUE -> true, 01883 -> 1883), or anything else
+                // that makes the element's text not what was collected.
+                //
+                // This branch can leak: if the element is still there under a text this did not predict,
+                // the value is on disk and nothing here can find it to take it out. That is why the
+                // collection side has to record the text exactly as the document will hold it -- the
+                // whitespace case (R2-20) was precisely this, and it was a credential written in plain.
                 log.error(
                         "The '<{}>' element that '{}' filled is not in the configuration being written, so the"
                                 + " placeholder cannot be restored. If the element was not removed, check the file"

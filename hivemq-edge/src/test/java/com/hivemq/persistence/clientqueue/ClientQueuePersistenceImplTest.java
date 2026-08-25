@@ -568,6 +568,36 @@ public class ClientQueuePersistenceImplTest {
     }
 
     /**
+     * The shutdown starting <em>inside</em> the sweep, which is the case the loop-top guard cannot cover
+     * (EDG-882 QA round 4, review v02 R2-21).
+     * <p>
+     * The test above trips the guard at the top of the iteration: the node is already shutting down when
+     * the sweep begins. The window that costs messages is narrower — the bridge shutdown hook
+     * un-registers every forwarder <em>while</em> {@code isOrphaned} is running, so a queue that was live
+     * when the iteration started reads as orphaned by the time the clear is reached. That is why the
+     * guard is re-read immediately before the destructive call, and this is what pins it: the shutdown is
+     * triggered from inside the ownership lookup itself.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_shutdown_beginning_during_the_ownership_lookup_still_reclaims_nothing()
+            throws ExecutionException, InterruptedException {
+        final String forwarderQueueId = MessageForwarderImpl.FORWARDER_PREFIX + "bridge-Bt80p78iNo/w7W1W7bGwcg==/topic";
+        when(localPersistence.cleanUp(eq(0))).thenReturn(ImmutableSet.of(forwarderQueueId));
+        when(messageForwarder.isForwarderQueue(forwarderQueueId)).thenReturn(false);
+        // the hook fires while ownership is being resolved, exactly as the bridge hook does
+        when(topicTree.getSharedSubscriber(anyString(), anyString())).thenAnswer(invocation -> {
+            shutdownHooks.runShutdownHooks();
+            return ImmutableSet.of();
+        });
+
+        clientQueuePersistence.cleanUp(0).get();
+
+        verify(topicTree, atLeastOnce()).getSharedSubscriber(anyString(), anyString());
+        verify(localPersistence, never()).clear(anyString(), anyBoolean(), anyInt());
+    }
+
+    /**
      * The positive control for the test above: the skip must be tied to the shutdown, not to the
      * queue — otherwise a passing "nothing was cleared" would only prove that nothing is ever cleared.
      */
