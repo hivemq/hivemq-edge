@@ -138,6 +138,15 @@ public class HiveMQEdgeMain {
     protected void stopApiServer() {
         if (jaxrsServer != null) {
             jaxrsServer.stopServer();
+            // Drop the reference, not just the listener. stopServer() closes the HTTP endpoint but the field
+            // still points at the whole JAX-RS graph -- the HK2 injection registry, the routing tables and the
+            // provider chain -- and this object is reachable from the starting thread. In a JVM that starts and
+            // stops an embedded Edge repeatedly that retains one full REST stack per instance; a heap dump of
+            // one test JVM traced its largest retained set along
+            // HiveMQEdgeMain.jaxrsServer -> JaxrsHttpServer -> JaxrsProviders -> ..., with 1603 accumulated
+            // ApiAuthenticationFeature$AuthenticationFilter instances. startGateway() always calls
+            // initializeApiServer() before startApiServer(), so a null field is re-populated on restart.
+            jaxrsServer = null;
         }
     }
 

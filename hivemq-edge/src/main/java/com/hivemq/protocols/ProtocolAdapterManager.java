@@ -170,10 +170,15 @@ public class ProtocolAdapterManager {
                 new LinkedBlockingQueue<>(ADAPTER_LIFECYCLE_QUEUE_CAPACITY),
                 ThreadFactoryUtil.create("protocol-adapter-lifecycle-%d"),
                 new ThreadPoolExecutor.CallerRunsPolicy());
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            executorService.shutdown();
-            adapterLifecycleExecutor.shutdown();
-        }));
+        // No JVM shutdown hook here on purpose. Both executors are shut down by shutdown() below, which is
+        // reached on every path that matters: HiveMQEdgeMain.start() registers a JVM hook that runs the whole
+        // stop path (covering abrupt termination), and EmbeddedHiveMQImpl calls shutdownProtocolAdapters()
+        // directly. A hook registered here would additionally be a permanent leak: the JVM's hook registry is
+        // a GC root that is never cleared, the lambda captures `this` (not just the two executors), and this
+        // manager references the whole Edge object graph. In a test JVM that starts an embedded Edge per test
+        // that pinned every retired instance -- a heap dump showed 116 registered hooks holding 57 complete
+        // Edge instances and ~740 MB, which drove full GCs to ~80% of wall clock. Deregistering inside the
+        // hook is not an option: removeShutdownHook throws once the JVM is already exiting.
         protocolAdapterWritingService.addWritingChangedCallback(() ->
                 protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
     }
