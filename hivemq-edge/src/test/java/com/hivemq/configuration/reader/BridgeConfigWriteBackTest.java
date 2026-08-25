@@ -188,6 +188,49 @@ public class BridgeConfigWriteBackTest extends AbstractConfigurationTest {
                 .containsExactly("edg-882-writeback", "edg-882-second", "edg-882-third");
     }
 
+    /**
+     * A {@code <forwarded-topic>} with no {@code <max-qos>} forwards at QoS <b>0</b>, not at the
+     * schema's documented default of 2 (EDG-882 review v02, R2-17).
+     * <p>
+     * {@code ForwardedTopicEntity.maxQoS} is a bare {@code int} with no initialiser and the element is
+     * {@code minOccurs="0"}; the "Default: 2" in {@code config.xsd} is an {@code xs:annotation}, which is
+     * documentation and not an XSD {@code default}, so JAXB leaves the field at the Java default and
+     * {@code RemoteMqttForwarder.convertQos} then downgrades every forwarded message to fire-and-forget.
+     * <p>
+     * Pinned here because it is silent: a configuration or a test fixture that omits the element looks
+     * like it asks for QoS 2 and delivers at QoS 0, and the only symptom is messages that occasionally
+     * are not there. Three fixtures on this branch had exactly that.
+     */
+    @Test
+    public void whenMaxQosIsOmitted_thenTheSubscriptionForwardsAtQosZero() throws IOException {
+        Files.write(CONFIG.replace("<max-qos>1</max-qos>", "").getBytes(UTF_8), xmlFile);
+        reader.applyConfig();
+
+        assertThat(bridgeConfiguration
+                        .getBridges()
+                        .get(0)
+                        .getLocalSubscriptions()
+                        .get(0)
+                        .getMaxQoS())
+                .as("an absent <max-qos> is QoS 0, whatever the schema documentation says")
+                .isZero();
+    }
+
+    /** And the value is honoured when it is written, which is what the fixtures must do. */
+    @Test
+    public void whenMaxQosIsGiven_thenTheSubscriptionForwardsAtThatQos() throws IOException {
+        Files.write(CONFIG.getBytes(UTF_8), xmlFile);
+        reader.applyConfig();
+
+        assertThat(bridgeConfiguration
+                        .getBridges()
+                        .get(0)
+                        .getLocalSubscriptions()
+                        .get(0)
+                        .getMaxQoS())
+                .isEqualTo(1);
+    }
+
     private static @NotNull MqttBridge updatedCopy(final @NotNull MqttBridge bridge) {
         return builderOf(bridge)
                 .withLocalSubscriptions(List.of(new LocalSubscription(List.of("changed/#"), "{#}")))
