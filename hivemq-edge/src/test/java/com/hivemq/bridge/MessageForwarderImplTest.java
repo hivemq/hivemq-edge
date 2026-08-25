@@ -17,6 +17,8 @@ package com.hivemq.bridge;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,14 +33,21 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
+import com.hivemq.metrics.MetricsHolder;
+import com.hivemq.mqtt.message.QoS;
+import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
+import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
+import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+import com.hivemq.util.Topics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -121,6 +130,55 @@ public class MessageForwarderImplTest {
         // restore the subscription on its next reconnect and take the group straight back
         verify(subscriptionPersistence)
                 .remove("squatter", "$share/" + MessageForwarderImpl.FORWARDER_PREFIX + FORWARDER_ID + "/" + TOPIC);
+    }
+
+    /**
+     * EDG-882 review v02, R2-02. The test above stubs the tree under the forwarder's <em>own</em> split,
+     * which is the only split a forwarder itself ever registers — it passes the group and the filter to
+     * the tree directly. A client cannot: it sends one string and the broker splits it at the first '/'
+     * after {@code $share/}, which for this ticket's slash-bearing digest falls inside the digest. That
+     * puts the intruder on a different node entirely, so an eviction that looks only under the
+     * forwarder's own split finds nothing — while the queue the client polls is keyed off the
+     * concatenated string and is byte-identical to the bridge's.
+     * <p>
+     * A real {@link LocalTopicTree} and the real {@link Topics} split, because the whole defect lives in
+     * the disagreement between the two decompositions; a mock would only replay whichever one the test
+     * author had in mind.
+     */
+    @Test
+    @Timeout(5)
+    public void test_addForwarder_removes_a_squatter_stored_under_the_alternative_split() {
+        final LocalTopicTree realTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
+        final MessageForwarderImpl forwarderOverRealTree = new MessageForwarderImpl(
+                realTree,
+                new HivemqId(),
+                () -> null,
+                () -> subscriptionPersistence,
+                mock(SingleWriterService.class),
+                mock(ShutdownHooks.class));
+        when(subscriptionPersistence.remove(anyString(), anyString())).thenReturn(Futures.immediateFuture(null));
+
+        // exactly what a client's SUBSCRIBE goes through
+        final SharedSubscription asStored = Topics.checkForSharedSubscription("$share/" + QUEUE_ID);
+        assertNotNull(asStored);
+        // the premise, pinned: were the digest slash-free this would equal the forwarder's own split and
+        // the test would pass without exercising anything
+        assertNotEquals(MessageForwarderImpl.FORWARDER_PREFIX + FORWARDER_ID, asStored.getShareName());
+        realTree.addTopic(
+                "squatter",
+                new Topic(asStored.getTopicFilter(), QoS.AT_LEAST_ONCE, false, true),
+                SubscriptionFlag.getDefaultFlags(true, true, false),
+                asStored.getShareName());
+        assertFalse(
+                realTree.getSharedSubscriber(asStored.getShareName(), asStored.getTopicFilter())
+                        .isEmpty(),
+                "fixture is vacuous: the squatter is not in the tree");
+
+        forwarderOverRealTree.addForwarder(mqttForwarder);
+
+        // the removal string does not depend on which split found the client: group + '/' + filter is
+        // the queue ID however it was cut, and '$share/' + that is what the client's session stores
+        verify(subscriptionPersistence).remove("squatter", "$share/" + QUEUE_ID);
     }
 
     /** An internal component's own entry is not an intruder, including a previous generation of it. */

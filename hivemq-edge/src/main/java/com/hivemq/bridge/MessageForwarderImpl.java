@@ -206,7 +206,7 @@ public class MessageForwarderImpl implements MessageForwarder {
             queueIdsBuilder.add(createQueueId(forwarderId, topic));
         }
         final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
-        evictForeignSubscribers(forwarderId, shareName, mqttForwarder.getTopics());
+        evictForeignSubscribers(forwarderId, mqttForwarder.getTopics());
         // Ownership is registered before anything else can observe the queues: the periodic clean-up
         // clears forwarder queues it finds unowned, so a pre-existing persisted queue must never be
         // visible while its forwarder is mid-registration.
@@ -441,45 +441,68 @@ public class MessageForwarderImpl implements MessageForwarder {
      * Deliberately outside the registration rollback: the subscription being removed is one that must
      * not exist while this forwarder does, so putting it back if the registration then fails would be
      * restoring the defect.
+     * <p>
+     * <b>Every decomposition of the queue ID is searched, not just this forwarder's own</b> (EDG-882
+     * review v02, R2-02). A forwarder registers its node by passing the group and the filter to
+     * {@link LocalTopicTree#addTopic} directly, so its own node is split where this class puts the '/'.
+     * A client cannot do that: it sends one string, and {@link com.hivemq.util.Topics} splits it at the
+     * <em>first</em> '/' after {@code $share/} -- which, for the slash-bearing digest this ticket exists
+     * for, falls inside the digest and puts the client on an entirely different node. Looking only under
+     * this forwarder's own split therefore finds nothing and evicts nothing, while
+     * {@code PublishPollServiceImpl} keys the queue the client polls off the concatenated string, which
+     * is the same string whichever '/' it was split at -- so the intruder drains this queue anyway.
+     * <p>
+     * Enumerating the splits is both simpler than special-casing the two that can hold a subscriber and
+     * independent of how {@code Topics} chooses to split, which is the assumption that broke here in the
+     * first place. The extra nodes cannot hold an innocent client: a group taken from beyond the first
+     * '/' contains a '/' itself, and no SUBSCRIBE can be stored under such a group. The cost is the
+     * topic's depth in lookups, on a registration.
      */
-    private void evictForeignSubscribers(
-            final @NotNull String forwarderId, final @NotNull String shareName, final @NotNull List<String> topics) {
+    private void evictForeignSubscribers(final @NotNull String forwarderId, final @NotNull List<String> topics) {
         for (final String topic : topics) {
-            for (final SubscriberWithQoS subscriber : topicTree.getSharedSubscriber(shareName, topic)) {
-                final String client = subscriber.getSubscriber();
-                // An internal component's own entry is not an intruder -- including a previous
-                // generation of this forwarder, which a slow stop can leave behind for an instant.
-                if (PublishDistributorImpl.isReservedClientId(client)) {
-                    continue;
-                }
-                log.warn(
-                        "Client '{}' holds the shared subscription group of bridge forwarder '{}'; removing its"
-                                + " subscription to '{}', because it would otherwise receive the messages the bridge"
-                                + " is there to forward and they would never reach the remote broker.",
-                        client,
-                        forwarderId,
-                        topic);
-                // The full '$share/<group>/<filter>' string, because that is what the client subscribed
-                // with and therefore what its session stores: removing it from the topic tree alone
-                // would let the next reconnect restore it.
-                final ListenableFuture<Void> removed = subscriptionPersistence
-                        .get()
-                        .remove(client, SHARED_SUBSCRIPTION_PREFIX + shareName + "/" + topic);
-                FutureUtils.addExceptionLogger(removed);
-                Futures.addCallback(
-                        removed,
-                        new FutureCallback<>() {
-                            @Override
-                            public void onSuccess(final @Nullable Void result) {
-                                Checkpoints.checkpoint(MessageForwarder.FOREIGN_SUBSCRIBER_EVICTED);
-                            }
+            final String queueId = createQueueId(forwarderId, topic);
+            for (int slash = queueId.indexOf('/'); slash >= 0; slash = queueId.indexOf('/', slash + 1)) {
+                final String group = queueId.substring(0, slash);
+                final String filter = queueId.substring(slash + 1);
+                for (final SubscriberWithQoS subscriber : topicTree.getSharedSubscriber(group, filter)) {
+                    final String client = subscriber.getSubscriber();
+                    // An internal component's own entry is not an intruder -- including a previous
+                    // generation of this forwarder, which a slow stop can leave behind for an instant.
+                    if (PublishDistributorImpl.isReservedClientId(client)) {
+                        continue;
+                    }
+                    log.warn(
+                            "Client '{}' holds the shared subscription group of bridge forwarder '{}' (as group"
+                                    + " '{}', filter '{}'); removing its subscription to '{}', because it would"
+                                    + " otherwise receive the messages the bridge is there to forward and they"
+                                    + " would never reach the remote broker.",
+                            client,
+                            forwarderId,
+                            group,
+                            filter,
+                            topic);
+                    // The full '$share/' + queue ID string, because that is what the client subscribed
+                    // with and therefore what its session stores: removing it from the topic tree alone
+                    // would let the next reconnect restore it. It does not depend on which split found
+                    // the client -- group + '/' + filter is the queue ID however it was cut.
+                    final ListenableFuture<Void> removed =
+                            subscriptionPersistence.get().remove(client, SHARED_SUBSCRIPTION_PREFIX + queueId);
+                    FutureUtils.addExceptionLogger(removed);
+                    Futures.addCallback(
+                            removed,
+                            new FutureCallback<>() {
+                                @Override
+                                public void onSuccess(final @Nullable Void result) {
+                                    Checkpoints.checkpoint(MessageForwarder.FOREIGN_SUBSCRIBER_EVICTED);
+                                }
 
-                            @Override
-                            public void onFailure(final @NotNull Throwable throwable) {
-                                // already reported by the exception logger above
-                            }
-                        },
-                        MoreExecutors.directExecutor());
+                                @Override
+                                public void onFailure(final @NotNull Throwable throwable) {
+                                    // already reported by the exception logger above
+                                }
+                            },
+                            MoreExecutors.directExecutor());
+                }
             }
         }
     }
