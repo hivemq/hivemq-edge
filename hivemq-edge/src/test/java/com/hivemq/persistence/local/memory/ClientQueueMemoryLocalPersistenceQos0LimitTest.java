@@ -38,6 +38,9 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,11 +68,57 @@ public class ClientQueueMemoryLocalPersistenceQos0LimitTest {
 
     private ClientQueueMemoryLocalPersistence persistence;
 
+    /**
+     * The node-wide QoS 0 settings as this class found them.
+     * <p>
+     * {@code InternalConfigurations} holds plain statics and Gradle runs many test classes in one JVM, so
+     * what is set here outlives the class. Left set, the budget this class wants — the whole heap, and no
+     * per-client limit — is precisely the regime in which QoS 0 drop behaviour can no longer be observed,
+     * so every later class that constructs a queue persistence would quietly stop testing what it says it
+     * tests (EDG-882 review v02, R2-15).
+     * <p>
+     * Captured once in {@code @BeforeAll} rather than on each test: a per-test capture reads whatever the
+     * previous test left behind, so a single missed restore would be recorded as the value to restore
+     * <em>to</em> and the pollution would become permanent instead of being corrected.
+     */
+    private static int originalQos0HardLimitDivisor;
+
+    private static int originalQos0LimitPerClientBytes;
+
+    @BeforeAll
+    public static void captureTheNodeWideQos0Settings() {
+        originalQos0HardLimitDivisor = InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR.get();
+        originalQos0LimitPerClientBytes = InternalConfigurations.QOS_0_MEMORY_LIMIT_PER_CLIENT_BYTES.get();
+    }
+
+    @AfterEach
+    public void restoreTheNodeWideQos0Settings() {
+        InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR.set(originalQos0HardLimitDivisor);
+        InternalConfigurations.QOS_0_MEMORY_LIMIT_PER_CLIENT_BYTES.set(originalQos0LimitPerClientBytes);
+    }
+
+    /**
+     * The restore above cannot be asserted by any test in this class — what it protects is whatever runs
+     * next in the same JVM. This is the closest thing to an oracle for it, and it is what fails if a
+     * later change adds a mutation without a matching restore.
+     */
+    @AfterAll
+    public static void theNodeWideQos0SettingsAreAsTheyWereFound() {
+        assertEquals(
+                originalQos0HardLimitDivisor,
+                InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR.get(),
+                "this class leaked its QoS 0 memory divisor into every test class that runs after it");
+        assertEquals(
+                originalQos0LimitPerClientBytes,
+                InternalConfigurations.QOS_0_MEMORY_LIMIT_PER_CLIENT_BYTES.get(),
+                "this class leaked its per-client QoS 0 limit into every test class that runs after it");
+    }
+
     @BeforeEach
     public void setUp() {
         internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, "4");
         // a generous global QoS 0 budget, so that what this test observes is the count bound and never
-        // the memory backstop
+        // the memory backstop. Undone by restoreTheNodeWideQos0Settings; these are process-global.
         InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR.set(1);
         InternalConfigurations.QOS_0_MEMORY_LIMIT_PER_CLIENT_BYTES.set(Integer.MAX_VALUE);
         persistence = new ClientQueueMemoryLocalPersistence(
