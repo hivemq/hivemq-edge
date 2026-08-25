@@ -16,12 +16,14 @@
 package com.hivemq.bridge;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -42,6 +44,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.slf4j.LoggerFactory;
+import util.LogbackCapturingAppender;
 
 /**
  * EDG-882 F-02: a bridge queue that a restart keeps must never read as unowned while it is being
@@ -210,5 +214,46 @@ class BridgeServiceRestartHandoverTest {
         assertFalse(
                 messageForwarder.isForwarderQueue(queueId(FILTER)),
                 "the queue of a subscription that was removed and cleared must be reclaimable");
+    }
+
+    /**
+     * A cancelled start is this generation being stopped on purpose, not a bridge that failed.
+     * <p>
+     * {@code BridgeMqttClient.stop()} cancels the pending start future, and the callback attached to it
+     * then runs asynchronously — after {@code stopBridge} has cleared {@code bridgeNameToLastError}. So
+     * a restart of a bridge whose remote is down recorded a failure for the generation that had just
+     * been retired, and the bridge that went on to connect normally reported an error through the API
+     * under an {@code ERROR - Unable to start bridge} line saying it could not be started. Seen on a
+     * real node during the 2026-08-25 smoke test; reachable on every update of a disconnected bridge,
+     * because an update is now one transition through {@code restartBridge}.
+     */
+    @Test
+    @Timeout(10)
+    void internalStartBridge_whenTheStartIsCancelledByAStop_thenNoFailureIsRecordedOrLogged() {
+        final LogbackCapturingAppender logCapture =
+                LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(BridgeService.class));
+        try {
+            final MqttBridge configured = bridge(FILTER);
+            when(clientFactory.createRemoteClient(any())).thenAnswer(invocation -> {
+                final BridgeMqttClient client = client(configured, FILTER);
+                // exactly what stop() leaves behind for a start that was still in flight
+                when(client.start()).thenReturn(Futures.immediateCancelledFuture());
+                return client;
+            });
+
+            bridgeService.updateBridges(List.of(configured));
+
+            assertNull(
+                    bridgeService.getLastError(BRIDGE_ID),
+                    "a start cancelled by a deliberate stop was recorded as the bridge's last error, so the API "
+                            + "reports a failure for a bridge that is about to connect normally");
+            assertFalse(
+                    logCapture.getCapturedLogs().stream()
+                            .anyMatch(event -> event.getLevel() == Level.ERROR
+                                    && event.getFormattedMessage().contains("Unable to start bridge")),
+                    "an operator was told the bridge could not be started, when it was only stopped");
+        } finally {
+            LogbackCapturingAppender.Factory.cleanUp();
+        }
     }
 }

@@ -225,6 +225,28 @@ public class ClientQueueModuleCompatibilityTest {
         }
     }
 
+    /**
+     * A module that took half the contract: it overrides the single-publish form and leaves the batch
+     * form on the interface default. Nothing stops one being built — the two overloads carry separate
+     * defaults — and the batch form is the one the poll path uses, so a probe that looked only at the
+     * single-publish form would call this module current and say nothing.
+     */
+    private static class HalfMigratedModulePersistence extends LegacyModulePersistence {
+
+        @Override
+        public void add(
+                final @NotNull String queueId,
+                final boolean shared,
+                final @NotNull PUBLISH publish,
+                final long max,
+                final @NotNull QueuedMessagesStrategy strategy,
+                final boolean retained,
+                final boolean applyMaxToQos0,
+                final int bucketIndex) {
+            calls().add("single-with-policy:" + queueId + ":" + applyMaxToQos0);
+        }
+    }
+
     private static @NotNull PUBLISH publish() {
         return new PUBLISHFactory.Mqtt5Builder()
                 .withTopic("plant/a")
@@ -285,6 +307,17 @@ public class ClientQueueModuleCompatibilityTest {
     public void test_the_probe_tells_a_stale_module_from_a_current_one() {
         assertFalse(ClientQueueLocalPersistenceProvider.implementsQueuePolicyAdd(LegacyModulePersistence.class));
         assertTrue(ClientQueueLocalPersistenceProvider.implementsQueuePolicyAdd(CurrentModulePersistence.class));
+    }
+
+    /**
+     * Both overloads are the contract, so overriding one of them is not it. The probe reports on "the
+     * queue-policy contract", and answering that from the single-publish form alone would call a module
+     * current on the strength of the half that was migrated (EDG-882 QA, 2026-08-25).
+     */
+    @Test
+    @Timeout(5)
+    public void test_the_probe_is_not_satisfied_by_half_the_contract() {
+        assertFalse(ClientQueueLocalPersistenceProvider.implementsQueuePolicyAdd(HalfMigratedModulePersistence.class));
     }
 
     /**

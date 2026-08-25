@@ -155,6 +155,39 @@ public class BridgeExtractor
         return true;
     }
 
+    /**
+     * Names a credential that carries leading or trailing whitespace, because nothing else will.
+     * <p>
+     * An element's text is its text: {@code <password>\n    ${ENV:PW}\n</password>} is rendered before
+     * the file is parsed, so the value the bridge ends up sending carries the operator's indentation.
+     * The remote rejects it, the log says the credentials were refused, and the configuration looks
+     * correct to anyone reading it — the difference is invisible in a diff and in the REST response
+     * alike. Writing a placeholder on its own indented line is the natural way to write one, so this is
+     * a trap an operator falls into by formatting their file tidily (EDG-882 QA, 2026-08-25).
+     * <p>
+     * <b>Reported, not trimmed</b>, for two reasons. Whitespace is legal in an MQTT password and
+     * trimming would silently break anyone who means it, with no way to opt out. And the placeholder
+     * restore that keeps this credential out of {@code config.xml} on write-back
+     * ({@link com.hivemq.util.render.EnvVarUtil#restorePlaceholders}) anchors on the element's text
+     * exactly as the marshaller writes it: trimming here would make the search string miss, the restore
+     * give up, and the secret land on disk — trading a failed connection for a disclosure. Whether to
+     * trim is a product decision about every string in {@code config.xml}, not a repair to this method.
+     */
+    private static void warnIfPadded(
+            final @NotNull String bridgeId, final @NotNull String element, final @Nullable String value) {
+        if (value == null || value.isEmpty() || value.equals(value.strip())) {
+            return;
+        }
+        log.warn(
+                "The <{}> of bridge '{}' begins or ends with whitespace, and that whitespace is part of the"
+                        + " value the bridge sends. If the element was written across several lines -- a"
+                        + " '${ENV:...}' placeholder indented on its own line, for instance -- the indentation"
+                        + " is in the credential and the remote broker will refuse the connection. Put the value"
+                        + " on the same line as its element, or remove the padding.",
+                element,
+                bridgeId);
+    }
+
     public synchronized void removeBridge(final @NotNull String id) {
         bridgeEntities = bridgeEntities.stream()
                 .filter(entry -> !entry.getId().equals(id))
@@ -251,14 +284,17 @@ public class BridgeExtractor
 
                     if (remoteBroker.getAuthentication() != null
                             && remoteBroker.getAuthentication().getMqttSimpleAuthenticationEntity() != null) {
-                        builder.withUsername(remoteBroker
-                                        .getAuthentication()
-                                        .getMqttSimpleAuthenticationEntity()
-                                        .getUser())
-                                .withPassword(remoteBroker
-                                        .getAuthentication()
-                                        .getMqttSimpleAuthenticationEntity()
-                                        .getPassword());
+                        final String user = remoteBroker
+                                .getAuthentication()
+                                .getMqttSimpleAuthenticationEntity()
+                                .getUser();
+                        final String password = remoteBroker
+                                .getAuthentication()
+                                .getMqttSimpleAuthenticationEntity()
+                                .getPassword();
+                        warnIfPadded(bridgeConfig.getId(), "username", user);
+                        warnIfPadded(bridgeConfig.getId(), "password", password);
+                        builder.withUsername(user).withPassword(password);
                     }
 
                     if (remoteBroker.getMqtt().getClientId() != null) {

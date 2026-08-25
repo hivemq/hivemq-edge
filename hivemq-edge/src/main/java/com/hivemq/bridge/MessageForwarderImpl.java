@@ -723,6 +723,16 @@ public class MessageForwarderImpl implements MessageForwarder {
             // single writer and the answer can have changed by now: removeForwarder releases ownership
             // before it prunes, so re-checking here is what keeps an entry for a retired queue out of the
             // set for good (EDG-882 review v02, R2-06).
+            //
+            // isForwarderQueue is true for a queue that is only *reserved* -- held for a bridge that is
+            // starting or that failed to start -- and that is deliberate, both here and at the caller:
+            // a publish arriving mid-start must be queued and noted, or the hand-over would drop it.
+            // The accepted cost is that a bridge which never starts leaves its queue ids in this set for
+            // the life of the node. Bounded by the bridge's configured subscriptions, one string each,
+            // and it costs nothing to poll: pollForBuffer iterates registered forwarders, so a set entry
+            // nobody owns is never visited. The alternative -- deriving the forwarder from the queue id
+            // to see whether it is registered -- is the queue-name parsing this whole ticket exists to
+            // remove, so it is not worth having (EDG-882 QA, 2026-08-25).
             if (!isForwarderQueue(queueId)) {
                 return null;
             }
@@ -783,11 +793,32 @@ public class MessageForwarderImpl implements MessageForwarder {
 
     private void checkBuffersAfterLock() {
         if (notEmptyQueues.isEmpty()) {
-            if (log.isTraceEnabled()) {
-                log.trace("No queues to poll, ending polling cycle");
+            // Under the lock, and only when nothing asked for another pass. checkBuffers answers
+            // "already polling" by setting pollAgain and returning, so between the emptiness check above
+            // and clearing the flag there is a window in which another thread adds a queue, sees polling
+            // still true, sets pollAgain -- and then this cleared polling without ever looking at it.
+            // The wake-up was lost: the queue sits in notEmptyQueues with no cycle running, and nothing
+            // polls it until the next unrelated message or a reconnect. On a bridge whose last message
+            // before a quiet period lands in that window, that is a message that simply waits.
+            //
+            // This mirrors the end of the poll callback below, which has always done it this way.
+            // Pre-existing (EDG-882 QA, 2026-08-25); the branch made these paths busier.
+            pollLock.lock();
+            try {
+                if (!pollAgain) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("No queues to poll, ending polling cycle");
+                    }
+                    polling = false;
+                    return;
+                }
+                pollAgain = false;
+            } finally {
+                pollLock.unlock();
             }
-            polling = false;
-            return;
+            if (log.isTraceEnabled()) {
+                log.trace("pollAgain was set while the queue set read empty, polling again");
+            }
         }
 
         final int forwarderCount = forwarders.size();

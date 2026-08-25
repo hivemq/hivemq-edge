@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import ch.qos.logback.classic.Level;
 import com.google.common.io.Files;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
@@ -27,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import util.LogbackCapturingAppender;
 
 /**
  * What writing {@code config.xml} back out does to a bridge the operator did not touch (EDG-882 QA
@@ -82,6 +85,80 @@ public class BridgeConfigWriteBackTest extends AbstractConfigurationTest {
                 .as("a write-back the operator did not ask for must not change the bridge")
                 .isEqualTo(asRead);
         return afterRoundTrip;
+    }
+
+    /** A credential written the way an operator naturally writes a placeholder: indented, on its own line. */
+    private static final @NotNull String PADDED_CREDENTIAL_CONFIG = "" + "<hivemq>\n"
+            + "<mqtt-bridges>\n"
+            + "    <mqtt-bridge>\n"
+            + "        <id>edg-882-padded</id>\n"
+            + "        <remote-broker>\n"
+            + "            <host>testhost</host>\n"
+            + "            <authentication>\n"
+            + "                <mqtt-simple-authentication>\n"
+            + "                    <username>bridge-user</username>\n"
+            + "                    <password>\n"
+            + "                        s3cret\n"
+            + "                    </password>\n"
+            + "                </mqtt-simple-authentication>\n"
+            + "            </authentication>\n"
+            + "        </remote-broker>\n"
+            + "        <forwarded-topics>\n"
+            + "            <forwarded-topic>\n"
+            + "                <filters>\n"
+            + "                    <mqtt-topic-filter>alarms/#</mqtt-topic-filter>\n"
+            + "                </filters>\n"
+            + "                <destination>{#}</destination>\n"
+            + "                <max-qos>1</max-qos>\n"
+            + "            </forwarded-topic>\n"
+            + "        </forwarded-topics>\n"
+            + "    </mqtt-bridge>\n"
+            + "</mqtt-bridges>"
+            + "</hivemq>";
+
+    /**
+     * The element's text is the credential, indentation included, so the bridge sends a password with
+     * newlines in it and the remote refuses the connection — with nothing in the configuration looking
+     * wrong. It is not trimmed (whitespace is legal in a password, and trimming would break the
+     * placeholder restore that keeps the secret off disk), so the only defence is saying so.
+     */
+    @Test
+    public void whenACredentialIsIndentedOnItsOwnLine_thenTheWhitespaceIsPartOfItAndIsReported() throws IOException {
+        final LogbackCapturingAppender logCapture =
+                LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(BridgeExtractor.class));
+        try {
+            Files.write(PADDED_CREDENTIAL_CONFIG.getBytes(UTF_8), xmlFile);
+            reader.applyConfig();
+
+            final MqttBridge bridge = bridgeConfiguration.getBridges().get(0);
+            assertThat(bridge.getPassword())
+                    .as("the premise: the padding really is part of the value the bridge will send")
+                    .isNotNull()
+                    .isNotEqualTo("s3cret")
+                    .contains("s3cret");
+
+            assertThat(logCapture.getCapturedLogs())
+                    .as("an operator has no other way to find out")
+                    .anySatisfy(event -> {
+                        assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                        assertThat(event.getFormattedMessage())
+                                .contains("<password>")
+                                .contains("edg-882-padded")
+                                .contains("whitespace")
+                                // The advice names the syntax the operator has to correct, so it has to
+                                // be the syntax: SLF4J substitutes '{}' and passes anything else through,
+                                // so a brace doubled to "escape" it is simply printed. Caught on a real
+                                // node during the 2026-08-25 smoke test, where it read '${{ENV:...}}'.
+                                .contains("${ENV:...}")
+                                .doesNotContain("{{");
+                    });
+            assertThat(logCapture.getCapturedLogs())
+                    .as("the username is unpadded here, so nothing should be said about it")
+                    .noneSatisfy(
+                            event -> assertThat(event.getFormattedMessage()).contains("<username>"));
+        } finally {
+            LogbackCapturingAppender.Factory.cleanUp();
+        }
     }
 
     @Test
