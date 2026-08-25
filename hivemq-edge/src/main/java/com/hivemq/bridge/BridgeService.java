@@ -320,6 +320,14 @@ public class BridgeService {
         final var client = activeBridgeNamesToClient.remove(bridgeName);
         if (client != null) {
             log.info("Stopping bridge '{}'", bridgeName);
+            // Cleared here because bridgeNameToLastError is also written by the connect failure of a
+            // bridge that did start, and was cleared only by a later successful connect. A bridge whose
+            // remote was unreachable and which the operator then stopped kept its error, and the next
+            // hot reload read that as "failed to start, and the configuration has just been corrected"
+            // and started a bridge the operator had deliberately stopped (EDG-882 review v02, R2-07).
+            // Only on the path where a bridge was actually running: a refused bridge never gets here,
+            // and its error is the reason the API reports for why it is not running.
+            bridgeNameToLastError.remove(bridgeName);
             internalStopBridge(client, clearQueue, retainQueueForForwarders);
         } else {
             log.debug("Not stopping bridge '{}' since it wasn't started", bridgeName);
@@ -461,6 +469,14 @@ public class BridgeService {
             log.error("Bridge '{}' could not be started: {}", bridgeId, e.getMessage());
             log.debug("Forwarder registration failure details", e);
             bridgeNameToLastError.put(bridgeId, e);
+            // PerBridgeMetrics registers its counters in the BridgeMqttClient constructor and clearAll
+            // runs only in stop(), which this path never reaches -- so a refused bridge left its metrics
+            // registered, reporting zeros for something that is not running (EDG-882 review v02, R2-13).
+            // Cosmetic, because MetricRegistry.counter() is get-or-create and a retry re-registers the
+            // same instruments, but a gauge that reads zero is worse than one that is absent.
+            if (bridgeMqttClient != null) {
+                bridgeMqttClient.clearMetrics();
+            }
             final HiveMQEdgeRemoteEvent errorEvent =
                     new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_ERROR);
             errorEvent.addUserData(

@@ -441,6 +441,18 @@ public class BridgeMqttClient {
         return forwarders;
     }
 
+    /**
+     * Removes this bridge's counters from the registry.
+     * <p>
+     * {@link PerBridgeMetrics} registers them in this client's constructor, so a bridge that is refused
+     * before it ever starts has registered instruments and will never reach {@link #stop()}, which is
+     * where they are otherwise cleared. Called from {@code BridgeService.internalStartBridge}'s failure
+     * path (EDG-882 review v02, R2-13).
+     */
+    public void clearMetrics() {
+        perBridgeMetrics.clearAll(metricRegistry);
+    }
+
     public @NotNull MqttBridge getBridge() {
         return bridge;
     }

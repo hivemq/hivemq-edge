@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bridge.config.BridgeTls;
 import com.hivemq.bridge.config.BridgeWebsocketConfig;
@@ -122,6 +124,19 @@ public class BridgeExtractor
      * @return {@code false} if no bridge with that id is configured, in which case nothing changed.
      */
     public synchronized boolean replaceBridge(final @NotNull String id, final @NotNull MqttBridge mqttBridge) {
+        // The contract enforced where it is relied upon (EDG-882 review v02, R2-09). The REST layer
+        // rejects an id change, so today the two always agree; a caller that passed a body with a
+        // different id would leave the list without the old id and with a new one, which updateBridges
+        // classifies as remove + add -- and the removal clears every queue of the old bridge, silently.
+        // That is the defect this method exists to prevent, arrived at from the other side.
+        checkArgument(
+                id.equals(mqttBridge.getId()),
+                "Cannot replace bridge '%s' with a configuration carrying id '%s': replacing in place is"
+                        + " what keeps the bridge present across the transition, and a different id makes"
+                        + " it a removal followed by an addition, which clears the queues of the bridge"
+                        + " being replaced.",
+                id,
+                mqttBridge.getId());
         if (bridgeEntities.stream().noneMatch(entry -> entry.getId().equals(id))) {
             return false;
         }
@@ -487,9 +502,9 @@ public class BridgeExtractor
             final Long queueLimit = subscription.getQueueLimit();
             if (queueLimit != null && (queueLimit > Integer.MAX_VALUE || queueLimit < Integer.MIN_VALUE)) {
                 log.warn(
-                        "The queue limit {} of a forwarded topic of bridge '{}' does not fit the configuration"
-                                + " file's queue-limit element and cannot be written to it; the limit stays in"
-                                + " effect for this node but will not survive a restart.",
+                        "The queue limit {} of the forwarded topic with destination '{}' does not fit the"
+                                + " configuration file's queue-limit element and cannot be written to it; the"
+                                + " limit stays in effect for this node but will not survive a restart.",
                         queueLimit,
                         subscription.getDestination());
             } else {

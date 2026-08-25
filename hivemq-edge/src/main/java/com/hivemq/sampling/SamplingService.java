@@ -43,7 +43,20 @@ public class SamplingService {
 
     public static final @NotNull String SAMPLER_PREFIX = "$SAMPLER::";
 
+    /**
+     * How many samples {@link #getSamples} asks the persistence for.
+     * <p>
+     * <b>The ring is bounded per QoS class, not per queue</b> (EDG-882 review v02, R2-12). The limit is
+     * applied on the QoS 0 path and on the QoS 1/2 path independently, so a topic whose publishers use
+     * both can hold up to {@code 2 × SAMPLE_SIZE} messages while this peek takes {@code SAMPLE_SIZE} of
+     * them — and which ones is the persistence's read order, not recency. Acceptable for a diagnostic
+     * that exists to show an operator what a topic looks like, and written down because EDG-885's "at
+     * most ten samples" is true per class rather than per topic. Counting across both classes would mean
+     * one shared counter on a path where the two are stored separately, which is a bigger change than
+     * the imprecision costs.
+     */
     public static final int SAMPLE_SIZE = 10;
+
     public static final long SAMPLER_QUEUE_LIMIT = SAMPLE_SIZE;
     public static final int BYTE_LIMIT_SAMPLES = 100_000;
 

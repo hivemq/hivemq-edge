@@ -17,7 +17,9 @@ package com.hivemq.bridge;
 
 import static com.hivemq.configuration.service.InternalConfigurations.FORWARDER_POLL_THRESHOLD_MESSAGES;
 import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
+import static java.util.Objects.requireNonNullElse;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.FutureCallback;
@@ -45,6 +47,7 @@ import dagger.Lazy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -566,10 +569,16 @@ public class MessageForwarderImpl implements MessageForwarder {
                     clearQueue);
         }
 
+        // Read before anything is torn down: what was actually registered under this id, which is what
+        // has to be released and what has to be pruned from notEmptyQueues. mqttForwarder.getTopics() is
+        // only what the caller believes it registered, and the two can differ (EDG-882 review v02,
+        // R2-05). The topic-tree removal below still uses the caller's topics, because that is what the
+        // registration passed to addTopic.
+        final Set<String> registeredQueueIds = queueIdsForForwarder.get(forwarderId);
+
         for (final String topic : mqttForwarder.getTopics()) {
             topicTree.removeSubscriber(clientId, topic, FORWARDER_PREFIX + forwarderId);
             final String queueId = createQueueId(forwarderId, topic);
-            notEmptyQueues.remove(queueId);
             if (clearQueue) {
                 final var qPersistence = queuePersistence.get();
                 if (qPersistence != null) {
@@ -587,18 +596,20 @@ public class MessageForwarderImpl implements MessageForwarder {
         // instant between the stop and the release the queue reads as owned by a forwarder that has
         // gone, which costs one clean-up cycle and no messages.
         //
-        // The set the map returns -- not mqttForwarder.getTopics() -- is what was actually registered,
-        // and is what must be released.
+        // By id, not conditional on this instance -- and that is a decision, not an oversight
+        // (EDG-882 review v02, R2-05). Making it instance-conditional, as rollbackRegistration is, was
+        // tried and reverted: it breaks the case test_removal_releases_the_registered_set_not_the_current
+        // _topics pins, where the caller holds a forwarder object rebuilt since registration. That remove
+        // would then release nothing and the queue would be claimed for the life of the node, with no
+        // caller able to free it. The hazard the instance check defends against -- a stale remove tearing
+        // down a successor under the same id -- cannot arise: addForwarder refuses a second registration
+        // while one is live (putIfAbsent, then throw), so a successor can only exist after the incumbent
+        // was removed, and BridgeService performs both under its own monitor with the old client out of
+        // activeBridgeNamesToClient first. Trading an unreachable message-loss path for a reachable
+        // permanent leak is the wrong direction for this ticket.
         final MqttForwarder removed = forwarders.remove(forwarderId);
         if (removed != null) {
             removed.stop();
-            // After the stop, not before: stopping drains the forwarder's buffers, and every message it
-            // hands back re-adds its queue id through messageProcessed. Removing the ids first left an
-            // entry for a queue no forwarder owns, which nothing ever takes out again -- a set that
-            // grows by one per retired subscription for the life of the node (EDG-882 QA round 3).
-            for (final String topic : mqttForwarder.getTopics()) {
-                notEmptyQueues.remove(createQueueId(forwarderId, topic));
-            }
             if (log.isInfoEnabled()) {
                 log.info(
                         "Forwarder '{}' removed and stopped, total active forwarders: {}",
@@ -612,6 +623,32 @@ public class MessageForwarderImpl implements MessageForwarder {
         if (removedQueueIds != null) {
             release(removedQueueIds);
         }
+        // Last, after the ownership is gone. Stopping drains the forwarder's buffers and every message it
+        // hands back re-adds its queue id, so pruning before the stop left an entry nothing ever removed
+        // again -- one string per retired subscription, for the life of the node (EDG-882 QA round 3).
+        // Pruning after the stop was not enough either: those re-adds are submitted to the single writer
+        // and run later, so they could land after the prune (R2-06). They are now guarded, on the
+        // registration and on ownership respectively, and both of those are dropped above -- so a re-add
+        // can only happen before this point, and this prune is what takes it out. notEmptyQueues drives
+        // polling only, so moving it behind the release costs nothing: nothing polls a forwarder that has
+        // gone.
+        //
+        // Against the registered set rather than mqttForwarder.getTopics(), which is only what the caller
+        // believes it registered; the two can differ, and the entry left behind by the difference is one
+        // nothing else removes (R2-05).
+        for (final String queueId :
+                requireNonNullElse(registeredQueueIds, queueIdsOf(forwarderId, mqttForwarder.getTopics()))) {
+            notEmptyQueues.remove(queueId);
+        }
+    }
+
+    private static @NotNull Set<String> queueIdsOf(
+            final @NotNull String forwarderId, final @NotNull List<String> topics) {
+        final ImmutableSet.Builder<@NotNull String> queueIds = ImmutableSet.builder();
+        for (final String topic : topics) {
+            queueIds.add(createQueueId(forwarderId, topic));
+        }
+        return queueIds.build();
     }
 
     @SuppressWarnings("NullAway") // Task<Void> lambda returning null is required for Void type
@@ -635,9 +672,13 @@ public class MessageForwarderImpl implements MessageForwarder {
 
         FutureUtils.addExceptionLogger(
                 singleWriterService.getQueuedMessagesQueue().submit(queueId, bucketIndex -> {
-                    notEmptyQueues.add(queueId);
                     final MqttForwarder forwarder = forwarders.get(forwarderId);
+                    // Guarded on the registration, and read here rather than at submit time: this task
+                    // runs on the single writer, so it can land after removeForwarder has stopped the
+                    // forwarder and pruned the set. Adding then would leave an entry for a queue nobody
+                    // owns and nothing ever takes out again (EDG-882 review v02, R2-06).
                     if (forwarder != null) {
+                        notEmptyQueues.add(queueId);
                         final int inflightCount = forwarder.getInflightCount();
                         if (inflightCount < FORWARDER_POLL_THRESHOLD_MESSAGES) {
                             if (log.isTraceEnabled()) {
@@ -667,10 +708,30 @@ public class MessageForwarderImpl implements MessageForwarder {
             log.trace("Message available notification for queue '{}'", queueId);
         }
         singleWriterService.getQueuedMessagesQueue().submit(queueId, bucketIndex -> {
+            // The caller checked isForwarderQueue before notifying, but this task runs later on the
+            // single writer and the answer can have changed by now: removeForwarder releases ownership
+            // before it prunes, so re-checking here is what keeps an entry for a retired queue out of the
+            // set for good (EDG-882 review v02, R2-06).
+            if (!isForwarderQueue(queueId)) {
+                return null;
+            }
             notEmptyQueues.add(queueId);
             checkBuffers();
             return null;
         });
+    }
+
+    /**
+     * The queue ids the poll loop still has work for.
+     * <p>
+     * Exposed because it is otherwise unobservable, which is how it came to leak an entry per retired
+     * subscription without anything noticing (EDG-882 QA round 3, review v02 R2-06). Read-only: adding to
+     * it outside the single writer is what the ordering rules in {@code addForwarder} exist to prevent.
+     */
+    @VisibleForTesting
+    @NotNull
+    Set<String> notEmptyQueues() {
+        return Collections.unmodifiableSet(notEmptyQueues);
     }
 
     /**

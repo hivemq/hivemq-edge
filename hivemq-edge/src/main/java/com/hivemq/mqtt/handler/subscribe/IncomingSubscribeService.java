@@ -242,6 +242,14 @@ public class IncomingSubscribeService {
                         ReasonStrings.DISCONNECT_SUBSCRIBE_TOPIC_FILTER_INVALID);
                 return false;
             } else if (collidesWithAnInternalQueue(topicString)) {
+                // Answered with a DISCONNECT rather than a per-subscription SUBACK reason code, which
+                // takes the client's other, valid subscriptions in the same packet down with it. Kept
+                // deliberately (EDG-882 review v02, R2-11): every other refusal in this method
+                // disconnects, and a SUBSCRIBE that is refused for one filter and accepted for another
+                // would be the only mixed outcome here. The filter is syntactically valid and normally
+                // legal — it collides only while an internal queue is live — so MQTT 5's per-subscription
+                // answer would be the friendlier one, and if that is ever wanted it is a product decision
+                // about this whole method rather than about this branch.
                 final String logMessage = "Disconnecting client '" + clientConnection.getClientId()
                         + "'  (IP: {}) because it subscribed to a shared subscription group that is in use"
                         + " by an internal Edge component: '" + topic.getTopic() + "'";

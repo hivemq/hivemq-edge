@@ -44,6 +44,7 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.ProducerQueues;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
@@ -564,6 +565,132 @@ public class MessageForwarderImplTest {
         assertFalse(
                 messageForwarder.isForwarderQueue(QUEUE_ID),
                 "the originally registered queue leaked a reference and can never be reclaimed");
+    }
+
+    /**
+     * A notification that lands after the forwarder is gone must not put its queue back into the poll
+     * set (EDG-882 review v02, R2-06).
+     * <p>
+     * {@code messageAvailable} does not touch the set directly: it submits the add to the single writer,
+     * so the add runs at a moment {@code removeForwarder} does not control. Pruning "after the stop" was
+     * not enough, because a task submitted before the stop can still run after the prune, and the entry
+     * it leaves is one nothing else removes — one string per retired subscription, for the life of the
+     * node. The guard reads the ownership at the moment the task runs, and {@code removeForwarder}
+     * releases ownership before it prunes, so a late add is impossible rather than merely unlikely.
+     * <p>
+     * The writer here runs tasks inline, which is a faithful stand-in: what the guard depends on is the
+     * state when the task runs, not how long it waited.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_notification_arriving_after_removal_does_not_re_add_the_queue() {
+        final MessageForwarderImpl forwarderOverInlineWriter = new MessageForwarderImpl(
+                topicTree,
+                new HivemqId(),
+                () -> null,
+                () -> subscriptionPersistence,
+                inlineSingleWriter(),
+                mock(ShutdownHooks.class));
+        final MqttForwarder registered = forwarder(FORWARDER_ID, TOPIC);
+        forwarderOverInlineWriter.addForwarder(registered);
+
+        // the control: while it is registered, a notification does put the queue in the poll set
+        forwarderOverInlineWriter.messageAvailable(QUEUE_ID);
+        assertTrue(forwarderOverInlineWriter.notEmptyQueues().contains(QUEUE_ID));
+
+        forwarderOverInlineWriter.removeForwarder(registered, false);
+        forwarderOverInlineWriter.messageAvailable(QUEUE_ID); // the straggler
+
+        assertFalse(
+                forwarderOverInlineWriter.notEmptyQueues().contains(QUEUE_ID),
+                "a queue nobody owns was put back into the poll set, and nothing ever takes it out again");
+    }
+
+    /**
+     * The poll set is pruned against what was registered, not against what the forwarder object says its
+     * topics are now (EDG-882 review v02, R2-05).
+     * <p>
+     * The sibling test asserts the same thing for ownership. This is the other map the two can disagree
+     * about, and the entry the disagreement leaves behind is one nothing else removes: the forwarder is
+     * gone, so nothing polls it and nothing ever prunes it again.
+     */
+    @Test
+    @Timeout(5)
+    public void test_removal_prunes_the_poll_set_against_the_registered_set() {
+        messageForwarder.addForwarder(forwarder(FORWARDER_ID, TOPIC));
+        assertTrue(messageForwarder.notEmptyQueues().contains(QUEUE_ID));
+
+        // same id, different topics — as if the forwarder object had been rebuilt in the meantime
+        messageForwarder.removeForwarder(forwarder(FORWARDER_ID, OTHER_TOPIC), false);
+
+        assertFalse(
+                messageForwarder.notEmptyQueues().contains(QUEUE_ID),
+                "the registered queue stayed in the poll set, and nothing polls or prunes it again");
+    }
+
+    /** A single writer that runs what it is given, so a submitted task's ordering can be asserted. */
+    private static SingleWriterService inlineSingleWriter() {
+        final ProducerQueues queues = mock(ProducerQueues.class);
+        when(queues.submit(anyString(), any())).thenAnswer(invocation -> {
+            final SingleWriterService.Task<?> task = invocation.getArgument(1);
+            task.doTask(0);
+            return Futures.immediateFuture(null);
+        });
+        final SingleWriterService singleWriter = mock(SingleWriterService.class);
+        when(singleWriter.getQueuedMessagesQueue()).thenReturn(queues);
+        return singleWriter;
+    }
+
+    /**
+     * Why removal is by id and not conditional on the instance (EDG-882 review v02, R2-05).
+     * <p>
+     * The review asked for {@code forwarders.remove(id, instance)}, so that a caller holding a stale
+     * object cannot tear down a successor that has taken the same id. That defence is unnecessary and
+     * not free: it would break {@link #test_removal_releases_the_registered_set_not_the_current_topics},
+     * where the caller holds a rebuilt object and the removal must still release — otherwise the queue
+     * is claimed for the life of the node with nothing able to free it.
+     * <p>
+     * It is unnecessary because a successor cannot coexist with an incumbent: {@code addForwarder}
+     * refuses a second registration under a live id. This pins that, so the argument the decision rests
+     * on fails here rather than in review if it ever stops being true.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_successor_cannot_register_while_the_incumbent_is_live() {
+        final MqttForwarder incumbent = forwarder(FORWARDER_ID, TOPIC);
+        final MqttForwarder successor = forwarder(FORWARDER_ID, TOPIC);
+        messageForwarder.addForwarder(incumbent);
+
+        assertThrows(IllegalStateException.class, () -> messageForwarder.addForwarder(successor));
+
+        // and the incumbent is untouched by the refusal
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+        verify(successor, never()).start();
+    }
+
+    /**
+     * The other half of the same argument: once the incumbent has been removed, a successor may take the
+     * id, and a second (stale) removal of the incumbent must not take the successor's queues with it.
+     * <p>
+     * It does not, because the stale removal finds nothing left of the incumbent to remove — the maps
+     * were emptied by the first one and the successor re-populated them. This is the sequence the review
+     * asked for; it passes with removal by id.
+     */
+    @Test
+    @Timeout(5)
+    public void test_a_stale_removal_after_a_successor_registered_leaves_the_successor_alone() {
+        final MqttForwarder incumbent = forwarder(FORWARDER_ID, TOPIC);
+        final MqttForwarder successor = forwarder(FORWARDER_ID, TOPIC);
+        messageForwarder.addForwarder(incumbent);
+        messageForwarder.removeForwarder(incumbent, false);
+        messageForwarder.addForwarder(successor);
+
+        messageForwarder.removeForwarder(incumbent, false); // the stale one
+
+        assertFalse(
+                messageForwarder.isForwarderQueue(QUEUE_ID),
+                "a stale removal must not leave the successor's queue owned by nobody either");
+        verify(successor).stop();
     }
 
     /**

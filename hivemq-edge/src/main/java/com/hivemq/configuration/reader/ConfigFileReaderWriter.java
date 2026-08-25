@@ -58,10 +58,12 @@ import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -423,8 +425,32 @@ public class ConfigFileReaderWriter {
             writeConfigToXML(rendered);
 
             backupConfig(file, doBackup); // write the backup of the file before rewriting
-            try (final FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8)) {
-                writer.write(rendered.toString());
+            // Written beside the target and moved onto it, rather than opened and written in place.
+            // Rendering first closed the "schema validation fails half way" case; opening the real file
+            // still truncates it, so a crash, a full disk or a killed process between open and close left
+            // a config.xml cut off mid-element. There is a backup, but nothing restores it on its own and
+            // the node does not start (EDG-882 review v02, R2-08).
+            //
+            // Same directory on purpose: ATOMIC_MOVE is only guaranteed within a file store, and the
+            // temporary file has to be one the configuration watcher will not try to parse.
+            final Path target = file.toPath();
+            final Path partial = target.resolveSibling(file.getName() + ".partial");
+            try {
+                try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
+                    writer.write(rendered.toString());
+                    writer.flush();
+                }
+                try {
+                    Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (final AtomicMoveNotSupportedException atomicNotSupported) {
+                    // Some network and container file systems cannot do it. A non-atomic replace is still
+                    // better than truncating the original and writing into it, because the content being
+                    // moved is already complete on disk.
+                    log.debug("Atomic replace of {} is not supported here, falling back", file.getAbsolutePath());
+                    Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(partial);
             }
         } catch (final IOException e) {
             log.error("Error writing file:", e);

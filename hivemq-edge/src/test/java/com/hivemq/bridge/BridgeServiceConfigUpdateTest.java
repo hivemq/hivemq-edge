@@ -260,6 +260,39 @@ class BridgeServiceConfigUpdateTest {
         verify(messageForwarder).markBridgeConfigurationApplied();
     }
 
+    /**
+     * EDG-882 review v02, R2-07. A bridge the operator stopped by hand must stay stopped.
+     * <p>
+     * {@code bridgeNameToLastError} is written by two different things: a bridge that could not be
+     * <em>started</em>, and a bridge that started fine but could not <em>connect</em>. Only a later
+     * successful connect cleared it. The reload path reads it as "this bridge failed and its
+     * configuration has just been corrected, so try again" — which for the second kind, after the
+     * operator had deliberately stopped it, means the next unrelated edit to the file starts a bridge
+     * they turned off.
+     */
+    @Test
+    void updateBridges_whenAStoppedBridgeHadAConnectFailure_thenAReloadDoesNotStartItAgain() {
+        final MqttBridge before = bridge(List.of(KEPT));
+        final MqttBridge after = bridge(List.of(KEPT, EDITED_AFTER));
+        final BridgeMqttClient clientBefore = client(before, List.of(forwarder(KEPT)));
+        // it starts, and then fails to reach the remote -- which is what writes the error
+        when(clientBefore.start())
+                .thenReturn(Futures.immediateFailedFuture(new RuntimeException("remote unreachable")));
+        when(clientFactory.createRemoteClient(any())).thenReturn(clientBefore);
+
+        bridgeService.updateBridges(List.of(before));
+        assertNotNull(bridgeService.getLastError(BRIDGE_ID), "the connect failure must have been recorded");
+
+        bridgeService.stopBridge(BRIDGE_ID, false, List.of());
+        bridgeService.updateBridges(List.of(after));
+
+        assertFalse(
+                bridgeService.isRunning(BRIDGE_ID),
+                "a reload restarted a bridge the operator had stopped, because its old connect error was"
+                        + " still on record");
+        verify(clientFactory, times(1)).createRemoteClient(any());
+    }
+
     /** Thrown where {@code internalStartBridge}'s {@code catch (Exception)} cannot see it. */
     private static final class SynchronizationError extends Error {
         private SynchronizationError() {
