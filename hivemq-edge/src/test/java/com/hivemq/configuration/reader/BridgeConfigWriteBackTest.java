@@ -17,6 +17,7 @@ package com.hivemq.configuration.reader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.io.Files;
 import com.hivemq.bridge.config.LocalSubscription;
@@ -166,7 +167,11 @@ public class BridgeConfigWriteBackTest extends AbstractConfigurationTest {
                 bridges -> notified.add(bridges.stream().map(MqttBridge::getId).toList()));
         notified.clear();
 
-        final boolean replaced = bridgeConfiguration.replaceBridge("no-such-bridge", updatedCopy(before));
+        // The body carries the id being replaced: replaceBridge requires the two to agree, because a
+        // mismatch turns an update into a remove + add and clears the queues of the bridge it was meant
+        // to update (EDG-882 review v02, R2-09).
+        final boolean replaced =
+                bridgeConfiguration.replaceBridge("no-such-bridge", copyWithId(updatedCopy(before), "no-such-bridge"));
 
         assertThat(replaced).isFalse();
         assertThat(notified).isEmpty();
@@ -186,6 +191,33 @@ public class BridgeConfigWriteBackTest extends AbstractConfigurationTest {
 
         assertThat(bridgeConfiguration.getBridges().stream().map(MqttBridge::getId))
                 .containsExactly("edg-882-writeback", "edg-882-second", "edg-882-third");
+    }
+
+    /**
+     * The id in the body has to be the id being replaced (EDG-882 review v02, R2-09).
+     * <p>
+     * This method exists to keep a bridge <em>present</em> across an update, because a bridge that
+     * disappears from the configuration is stopped with an empty retain list and loses every queue it
+     * owns. A body carrying a different id defeats exactly that: the list comes out without the old id
+     * and with a new one, which {@code updateBridges} reads as a removal followed by an addition. The
+     * REST layer rejects an id change, so today no caller does it — the precondition is here so that the
+     * next one cannot either, silently.
+     */
+    @Test
+    public void whenTheBodyCarriesADifferentId_thenTheReplacementIsRefused() throws IOException {
+        Files.write(CONFIG.getBytes(UTF_8), xmlFile);
+        reader.applyConfig();
+        final MqttBridge before = bridgeConfiguration.getBridges().get(0);
+
+        assertThatThrownBy(
+                        () -> bridgeConfiguration.replaceBridge(before.getId(), copyWithId(before, "a-different-id")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(before.getId())
+                .hasMessageContaining("a-different-id");
+
+        assertThat(bridgeConfiguration.getBridges().stream().map(MqttBridge::getId))
+                .as("a refused replacement must not have changed the configuration")
+                .containsExactly(before.getId());
     }
 
     /**
