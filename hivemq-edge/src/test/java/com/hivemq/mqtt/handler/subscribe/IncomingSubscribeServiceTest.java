@@ -52,6 +52,8 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import java.util.HashSet;
 import java.util.Queue;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -357,7 +359,18 @@ public class IncomingSubscribeServiceTest {
 
         incomingSubscribeService.processSubscribe(ctx, subscribe, false);
 
+        // Asserted on the subscriptions, not only on the channel staying up: a client that is neither
+        // disconnected nor subscribed would look identical from the channel alone, so this test passed
+        // with the collision check deleted and with it never reached (EDG-882 review v02, R2-21).
         assertTrue(channel.isActive());
+        final ArgumentCaptor<ImmutableSet<Topic>> accepted = ArgumentCaptor.captor();
+        verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), accepted.capture());
+        assertEquals(
+                Set.of(
+                        "$share/group/plant/temp",
+                        "$share/$SAMPLER::customer/alerts",
+                        "$share/$FORWARDER::nothing-here/plant/temp"),
+                accepted.getValue().stream().map(Topic::getTopic).collect(Collectors.toSet()));
     }
 
     @Test

@@ -256,7 +256,12 @@ public class PublishDistributorImplTest {
     @Test
     @Timeout(5)
     public void test_a_real_forwarder_queue_gets_the_bridge_limits() throws ExecutionException, InterruptedException {
-        final LocalSubscription subscription = new LocalSubscription(List.of("factory/#"), "{#}");
+        // A limit of its own, so the assertion below can name it. With queueLimit = null the bridge and
+        // the node-wide default are the same number and anyLong() cannot tell which one was applied,
+        // which left the "gets the bridge limits" half of this test's name unproven (R2-21).
+        final long bridgeQueueLimit = 77L;
+        final LocalSubscription subscription =
+                new LocalSubscription(List.of("factory/#"), "{#}", List.of(), List.of(), false, 2, bridgeQueueLimit);
         final String queueId = FORWARDER_PREFIX + "bridge-" + subscription.calculateUniqueId() + "/factory/#";
         when(bridge.getId()).thenReturn("bridge");
         when(bridge.isPersist()).thenReturn(false);
@@ -273,7 +278,13 @@ public class PublishDistributorImplTest {
 
         final ArgumentCaptor<PUBLISH> queued = ArgumentCaptor.forClass(PUBLISH.class);
         verify(clientQueuePersistence)
-                .add(eq(queueId), eq(true), queued.capture(), anyBoolean(), anyLong(), eq(QueuePolicy.DEFAULT));
+                .add(
+                        eq(queueId),
+                        eq(true),
+                        queued.capture(),
+                        anyBoolean(),
+                        eq(bridgeQueueLimit),
+                        eq(QueuePolicy.DEFAULT));
         // persist=false is what downgrades it, and that is the bridge's own configuration
         assertEquals(QoS.AT_MOST_ONCE, queued.getValue().getQoS());
     }

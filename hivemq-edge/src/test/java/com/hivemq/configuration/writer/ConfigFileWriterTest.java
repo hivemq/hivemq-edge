@@ -55,12 +55,40 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
 
         final String copiedFileContent = FileUtils.readFileToString(tempFile, UTF_8);
 
-        final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
-        if (!diff.identical()) {
-            System.err.println("xml diff found " + diff);
-            System.err.println(originalXml);
-            System.err.println(copiedFileContent);
+        // identical(), not similar(): XMLUnit calls a different child sequence a *recoverable* difference,
+        // so a write-back that reordered the operator's <mqtt-topic-filter> elements satisfied similar()
+        // -- which is one of the two regressions this test is named for (EDG-882 review v02, R2-19).
+        //
+        // Whitespace and comments are normalised first, or identical() fails on every indentation
+        // difference between the operator's file and the marshaller's output: it compares child *indices*,
+        // and a text node between two elements shifts all of them. Element order is what has to be
+        // significant here, not formatting.
+        //
+        // The flags are static and global to the JVM, so they are restored -- Gradle runs many classes per
+        // fork and a class that leaves them set changes what every later comparison means.
+        //
+        // The fixture's *elements* are in the order the marshaller emits them, deliberately: the write-back
+        // reorders the children of <hivemq> and of <forwarded-topic> to the schema's order, which is
+        // cosmetic churn of the operator's file and pre-existing, and leaving it in would make this test
+        // fail for a reason it is not about. What is deliberately *not* canonical is the order of the two
+        // <mqtt-topic-filter> elements inside <filters> -- that one has to survive verbatim, because a
+        // reorder there reads as a changed bridge on the next reload and restarts it (EDG-882 F-07).
+        final boolean previousIgnoreWhitespace = XMLUnit.getIgnoreWhitespace();
+        final boolean previousIgnoreComments = XMLUnit.getIgnoreComments();
+        final Diff diff;
+        try {
+            XMLUnit.setIgnoreWhitespace(true);
+            XMLUnit.setIgnoreComments(true);
+            diff = XMLUnit.compareXML(originalXml, copiedFileContent);
+            if (!diff.identical()) {
+                System.err.println("xml diff found " + diff);
+                System.err.println(originalXml);
+                System.err.println(copiedFileContent);
+            }
+            assertTrue(diff.identical(), "XML Content Should Match");
+        } finally {
+            XMLUnit.setIgnoreWhitespace(previousIgnoreWhitespace);
+            XMLUnit.setIgnoreComments(previousIgnoreComments);
         }
-        assertTrue(diff.similar(), "XML Content Should Match");
     }
 }

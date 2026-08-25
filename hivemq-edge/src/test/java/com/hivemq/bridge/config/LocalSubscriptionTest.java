@@ -451,6 +451,48 @@ class LocalSubscriptionTest {
                 .build();
     }
 
+    /**
+     * The same, for the other half of the comparison (EDG-882 review v02, R2-21).
+     * <p>
+     * {@code MqttBridge.equals} compares both subscription lists as multisets. Only the local half was
+     * covered, so a change that made the remote half positional again would restart the bridge on a
+     * reorder — and a restart is what clears the queues of everything the new configuration cannot
+     * match. Note that this is about the order of the {@code <remote-subscription>} blocks; the filters
+     * <em>inside</em> a remote subscription are still compared positionally, which is the open item in
+     * the AUG-20 list.
+     */
+    @Test
+    void mqttBridgeEquals_whenTheRemoteSubscriptionBlocksAreReordered_thenEqual() {
+        final RemoteSubscription first = new RemoteSubscription(List.of("remoteA/+"), "destinationTopic");
+        final RemoteSubscription second = new RemoteSubscription(List.of("remoteB/+"), "destinationTopic");
+        final MqttBridge asWritten = bridgeWithRemote(List.of(first, second));
+        final MqttBridge reordered = bridgeWithRemote(List.of(second, first));
+
+        assertEquals(asWritten, reordered, "a reordered remote subscription list is the same configuration");
+        assertEquals(asWritten.hashCode(), reordered.hashCode());
+    }
+
+    /** And a repeated remote block is a different configuration, exactly as for the local ones. */
+    @Test
+    void mqttBridgeEquals_whenARemoteSubscriptionIsRepeated_thenNotEqual() {
+        final RemoteSubscription only = new RemoteSubscription(List.of("remoteA/+"), "destinationTopic");
+
+        assertNotEquals(
+                bridgeWithRemote(List.of(only)),
+                bridgeWithRemote(List.of(only, new RemoteSubscription(List.of("remoteA/+"), "destinationTopic"))));
+    }
+
+    private static MqttBridge bridgeWithRemote(final List<RemoteSubscription> remoteSubscriptions) {
+        return new MqttBridge.Builder()
+                .withId("edg-884-bridge")
+                .withHost("localhost")
+                .withPort(1883)
+                .withClientId("client")
+                .withLocalSubscriptions(List.of())
+                .withRemoteSubscriptions(remoteSubscriptions)
+                .build();
+    }
+
     /** But a repeated block is a different configuration, and a multiset keeps them apart. */
     @Test
     void mqttBridgeEquals_whenASubscriptionIsRepeated_thenNotEqual() {

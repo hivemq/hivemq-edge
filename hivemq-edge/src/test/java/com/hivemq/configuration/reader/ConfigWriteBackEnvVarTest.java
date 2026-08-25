@@ -319,6 +319,24 @@ public class ConfigWriteBackEnvVarTest extends AbstractConfigurationTest {
                 .anySatisfy(message -> assertThat(message).contains("variable reference is lost"));
     }
 
+    /**
+     * A placeholder written with whitespace around it (EDG-882 review v02, R2-20).
+     * <p>
+     * {@code collectPlaceholders} allows it — {@code <password>\s*${ENV:X}\s*</password>} — because an
+     * operator formatting their file that way is ordinary. The value the element resolves to is the
+     * trimmed one either way, so the restore has to put back the placeholder and not the padding, and the
+     * credential still has to stay off the disk.
+     */
+    @Test
+    public void whenThePlaceholderIsWrittenWithSurroundingWhitespace_thenItIsStillRestored() throws IOException {
+        System.setProperty(PASSWORD_VAR, SECRET);
+
+        final String written = loadAndWriteBack(config("\n            ${ENV:" + PASSWORD_VAR + "}\n        "));
+
+        assertThat(written).as("the credential must not reach the disk").doesNotContain(SECRET);
+        assertThat(written).contains("${ENV:" + PASSWORD_VAR + "}");
+    }
+
     private @NotNull List<String> errorsFromTheRestore() {
         return logCapture.getCapturedLogs().stream()
                 .filter(event -> event.getLevel() == Level.ERROR)
