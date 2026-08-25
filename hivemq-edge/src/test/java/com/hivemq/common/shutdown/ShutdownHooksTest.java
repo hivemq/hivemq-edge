@@ -74,7 +74,7 @@ public class ShutdownHooksTest {
     }
 
     @Test
-    public void hooksWhenRunThenCanNotBeRemoved() {
+    public void hooksWhenRunThenRegistryIsCleared() {
 
         final HiveMQShutdownHook shutdownHook = createShutdownHook("name", Priority.DOES_NOT_MATTER);
         shutdownHooks.add(shutdownHook);
@@ -84,8 +84,14 @@ public class ShutdownHooksTest {
         shutdownHooks.runShutdownHooks();
         assertTrue(shutdownHooks.isShuttingDown());
 
+        // The hooks have run, so the registry drops them: each one holds the component that registered it, and
+        // an embedded Edge that is stopped must not stay reachable through this map. `remove` is still a no-op
+        // once shutdown has started -- that guard exists so a component cannot skip its own cleanup mid-run --
+        // but after the run there is nothing left to remove.
+        assertEquals(0, shutdownHooks.getShutdownHooks().size());
+
         shutdownHooks.remove(shutdownHook);
-        assertEquals(1, shutdownHooks.getShutdownHooks().size());
+        assertEquals(0, shutdownHooks.getShutdownHooks().size());
     }
 
     @Test
