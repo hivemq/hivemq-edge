@@ -15,10 +15,12 @@
  */
 package com.hivemq.util.render;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.exceptions.UnrecoverableException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
@@ -153,8 +155,25 @@ public class EnvVarUtil {
      * the document holds exactly as many such elements as the original file did. Matching on the value
      * alone was not enough: a variable that resolves to a string the operator also wrote somewhere else
      * — {@code ${ENV:NODE_NAME}} rendering to a bridge's own id, say — would have rewritten that other
-     * element into a variable reference nobody asked for. Anything ambiguous is left rendered and
-     * reported, which is rare and visible; the alternative is silent and permanent.
+     * element into a variable reference nobody asked for.
+     * <p>
+     * <b>What happens when it cannot decide</b> is {@link #giveUpOn}: an error naming the element and the
+     * reason, and, for an element that holds a credential, {@link #UNRESTORED_SECRET} written in place of
+     * the value so that no secret reaches the disk unannounced (EDG-882 review v02, R2-04). It used to be
+     * a warning and the value.
+     * <p>
+     * <b>Known blind spots</b>, all of them cases {@link #collectPlaceholders} never sees, so they are
+     * resolved on the way in and stay resolved on the way out with nothing reported at all:
+     * <ul>
+     *   <li>a placeholder in an <em>attribute</em> rather than in element text;</li>
+     *   <li>a placeholder <em>concatenated</em> with other text, as in
+     *       {@code <host>edge-${ENV:SITE}</host>} — there is no anchor to return it to;</li>
+     *   <li>a placeholder inside a <em>configuration fragment</em> or an {@code <if>} block, which are
+     *       flattened into the document before this runs.</li>
+     * </ul>
+     * A credential written through any of these is materialised into {@code config.xml} exactly as it was
+     * before this method existed. Closing them means restoring at the level the operator wrote at rather
+     * than at the element, which is a larger change than this one.
      *
      * @param placeholders what {@link #collectPlaceholders(String)} found in the file as it was written
      */
@@ -177,39 +196,115 @@ public class EnvVarUtil {
         for (final List<ElementPlaceholder> group : byElementAndValue.values()) {
             final ElementPlaceholder first = group.get(0);
             final String literal = first.literal();
-            if (group.stream().anyMatch(placeholder -> !placeholder.literal().equals(literal))) {
-                log.warn(
-                        "Two different placeholders fill a '<{}>' element with the same value, so neither can be"
-                                + " restored when the configuration file is written; the value will be written out"
-                                + " instead.",
-                        first.element());
-                continue;
-            }
             final String element =
                     "<" + first.element() + ">" + escapeXmlText(first.value()) + "</" + first.element() + ">";
             final int inDocument = countOccurrences(result, element);
+
+            if (group.stream().anyMatch(placeholder -> !placeholder.literal().equals(literal))) {
+                result = giveUpOn(
+                        result,
+                        first,
+                        element,
+                        "two different placeholders fill it with the same value, so neither of them can be told"
+                                + " from the other");
+                continue;
+            }
             if (inDocument == 0) {
-                log.warn(
+                // Nothing to write out and nothing to replace: the element the placeholder filled is not
+                // in the document at all. Either it left the configuration, or the marshaller normalised
+                // its value on the way out (TRUE -> true, 01883 -> 1883), which only happens to a typed
+                // field and so never to a secret -- those are xs:string and are written verbatim.
+                log.error(
                         "The '<{}>' element that '{}' filled is not in the configuration being written, so the"
-                                + " placeholder cannot be restored. Check the file for a value that should have"
-                                + " stayed a variable reference.",
+                                + " placeholder cannot be restored. If the element was not removed, check the file"
+                                + " for a value that should have stayed a variable reference.",
                         first.element(),
                         literal);
                 continue;
             }
             if (inDocument != group.size()) {
-                log.warn(
-                        "'{}' fills {} '<{}>' element(s) but the configuration being written has {}, so the"
-                                + " placeholder cannot be restored; its value will be written out instead.",
-                        literal,
-                        group.size(),
-                        first.element(),
-                        inDocument);
+                result = giveUpOn(
+                        result,
+                        first,
+                        element,
+                        "'" + literal + "' fills " + group.size() + " of them but the configuration being written"
+                                + " has " + inDocument + ", so which ones came from the variable cannot be told");
                 continue;
             }
             result = result.replace(element, "<" + first.element() + ">" + literal + "</" + first.element() + ">");
         }
         return result;
+    }
+
+    /**
+     * What is written in place of a secret whose placeholder could not be restored.
+     * <p>
+     * Not the value, which is the whole point; not an empty element either, because some secret-bearing
+     * elements are {@code nonEmptyString} in the schema and an empty one would make the file unparseable
+     * on the next start — a worse failure than the one being avoided, and one that names the schema
+     * rather than the cause. This is a placeholder for a variable nobody sets, so the next start stops
+     * with {@code Environment Variable EDGE_UNRESTORED_SECRET for HiveMQ config.xml is not set} and the
+     * operator is told exactly where to look, while the node they are running now carries on with the
+     * secret it already holds in memory.
+     */
+    @VisibleForTesting
+    static final @NotNull String UNRESTORED_SECRET = "${ENV:EDGE_UNRESTORED_SECRET}";
+
+    /**
+     * Element names whose text is a credential. Matched as a suffix so that the adapter configurations —
+     * {@code xs:any} in the schema, so their element names are not knowable here — are covered by the
+     * same rule as {@code <password>}, {@code <client-secret>}, {@code <private-key-password>} and
+     * {@code <truststore-password>}.
+     */
+    private static final @NotNull List<String> SECRET_ELEMENT_SUFFIXES =
+            List.of("password", "secret", "passphrase", "token", "credentials");
+
+    private static boolean isSecretElement(final @NotNull String element) {
+        final String name = element.toLowerCase(Locale.ROOT);
+        return SECRET_ELEMENT_SUFFIXES.stream().anyMatch(name::endsWith);
+    }
+
+    /**
+     * Reports a placeholder that cannot be put back, and keeps its value off the disk when that value is
+     * a credential.
+     * <p>
+     * The restore is anchored to an element name and count-checked, which is sound when the counts line
+     * up and ambiguous when they do not; there is no reading of an ambiguous case that is right, because
+     * an element holding the value and an element holding a literal that happens to equal it are the same
+     * bytes by the time the document is marshalled. So the ambiguous case is decided by which mistake can
+     * be undone. Writing a credential out cannot be: it is on disk, usually under version control, and
+     * rotating it is the only remedy. Replacing one the operator had written literally can be — the write
+     * takes a rolling backup of {@code config.xml} first, and the element is named in the error below.
+     * <p>
+     * A non-secret takes the other side of that trade and keeps its value: losing the indirection is
+     * permanent and worth an error, but poisoning a {@code <port>} would stop a node from starting over
+     * something that is not a disclosure.
+     */
+    private static @NotNull String giveUpOn(
+            final @NotNull String document,
+            final @NotNull ElementPlaceholder placeholder,
+            final @NotNull String element,
+            final @NotNull String reason) {
+        if (!isSecretElement(placeholder.element())) {
+            log.error(
+                    "The '<{}>' placeholder cannot be restored when the configuration file is written, because"
+                            + " {}. Its value is written out instead and the variable reference is lost; put it"
+                            + " back by hand once the ambiguity is resolved.",
+                    placeholder.element(),
+                    reason);
+            return document;
+        }
+        log.error(
+                "The '<{}>' element holds a credential and its placeholder cannot be restored, because {}."
+                        + " Rather than write the credential to config.xml it is written as '{}', which no"
+                        + " variable sets: this node keeps running on the value it already holds, and the next"
+                        + " start will stop and name that variable. Restore the intended '${{ENV:...}}'"
+                        + " reference in config.xml -- the previous file is in the rolling backup beside it.",
+                placeholder.element(),
+                reason,
+                UNRESTORED_SECRET);
+        return document.replace(
+                element, "<" + placeholder.element() + ">" + UNRESTORED_SECRET + "</" + placeholder.element() + ">");
     }
 
     private static int countOccurrences(final @NotNull String text, final @NotNull String needle) {
@@ -222,7 +317,15 @@ public class EnvVarUtil {
         return count;
     }
 
-    /** The three characters a marshaller escapes inside element text. */
+    /**
+     * The three characters a marshaller escapes inside element text.
+     * <p>
+     * Defensive only, and unreachable through {@code ${ENV:...}}:
+     * {@link #replaceEnvironmentVariablePlaceholders} splices a value into the document as raw text
+     * before it is parsed, escaping only the regex metacharacters, so a value carrying one of these
+     * makes the file malformed and the configuration fails to read. Kept because the search string has
+     * to be what the marshaller wrote for any value that reaches here by another route.
+     */
     private static @NotNull String escapeXmlText(final @NotNull String text) {
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
