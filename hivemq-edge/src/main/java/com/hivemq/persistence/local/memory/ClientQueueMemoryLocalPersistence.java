@@ -164,6 +164,38 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
     public void add(
             final @NotNull String queueId,
             final boolean shared,
+            final @NotNull PUBLISH publish,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final int bucketIndex) {
+        add(queueId, shared, publish, max, strategy, retained, false, bucketIndex);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @ExecuteInSingleWriter
+    public void add(
+            final @NotNull String queueId,
+            final boolean shared,
+            final @NotNull List<PUBLISH> publishes,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final int bucketIndex) {
+        add(queueId, shared, publishes, max, strategy, retained, false, bucketIndex);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @ExecuteInSingleWriter
+    public void add(
+            final @NotNull String queueId,
+            final boolean shared,
             final @NotNull List<PUBLISH> publishes,
             final long max,
             final @NotNull QueuedMessagesStrategy strategy,
