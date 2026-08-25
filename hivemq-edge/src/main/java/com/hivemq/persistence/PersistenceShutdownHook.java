@@ -45,6 +45,12 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
 
     private static final Logger log = LoggerFactory.getLogger(PersistenceShutdownHook.class);
 
+    /**
+     * How long to wait for a single Xodus job processor thread to end. Deliberately short: a processor that
+     * will stop does so at once, and one that will not is a leak we tolerate rather than a shutdown we hang.
+     */
+    private static final int XODUS_JOIN_TIMEOUT_MSEC = 1000;
+
     private final @NotNull ClientSessionPersistence clientSessionPersistence;
     private final @NotNull ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence;
     private final @NotNull IncomingMessageFlowPersistence incomingMessageFlowPersistence;
@@ -161,15 +167,8 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
                 return;
             }
             for (final Object processor : (Iterable<?>) processors) {
-                try {
-                    // finish() only *requests* termination; waitUntilFinished() joins the worker. Without the
-                    // second call the thread is still alive when the next embedded Edge starts, so the pool
-                    // keeps growing and every retired instance leaves its pollers behind.
-                    processor.getClass().getMethod("finish").invoke(processor);
-                    processor.getClass().getMethod("waitUntilFinished").invoke(processor);
+                if (finishProcessor(processor)) {
                     finished++;
-                } catch (final Exception e) {
-                    log.debug("Could not finish Xodus job processor {}", processor, e);
                 }
             }
             finished += finishSpawner(poolClass);
@@ -177,6 +176,75 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
         } catch (final Throwable t) {
             log.debug("Could not finish Xodus job processors", t);
         }
+    }
+
+    /**
+     * Ask one job processor to stop and wait briefly for its thread, returning whether it ended.
+     * <p>
+     * NEVER call Xodus's {@code finish()} or {@code waitUntilFinished()} here. Both end in a bare
+     * {@link Thread#join()} with NO timeout, so a worker that does not come back wedges the whole shutdown
+     * silently -- no log line, no exception, nothing to interrupt. {@code finish()} is additionally guarded on
+     * an internal {@code started} flag and does nothing at all when the processor was never started, so
+     * calling {@code waitUntilFinished()} separately reaches past that guard and joins a thread the library
+     * itself would have declined to wait for.
+     * <p>
+     * {@code queueFinish()} is the non-blocking equivalent: it queues the termination job and returns. The
+     * wait is then ours to bound, via the processor's private {@code thread} field.
+     */
+    private boolean finishProcessor(final @NotNull Object processor) {
+        try {
+            processor.getClass().getMethod("queueFinish").invoke(processor);
+            return joinBriefly(threadOf(processor));
+        } catch (final Exception e) {
+            log.debug("Could not finish Xodus job processor {}", processor, e);
+            return false;
+        }
+    }
+
+    /**
+     * The worker thread behind a Xodus job processor, or {@code null} if it cannot be reached.
+     * <p>
+     * Private field, deliberately: the class exposes no bounded way to wait for its thread, and the only
+     * public alternatives block forever.
+     */
+    private @Nullable Thread threadOf(final @NotNull Object processor) {
+        try {
+            final java.lang.reflect.Field field = processor.getClass().getDeclaredField("thread");
+            field.setAccessible(true);
+            return field.get(processor) instanceof Thread thread ? thread : null;
+        } catch (final Throwable t) {
+            log.debug("Could not reach the thread of Xodus job processor {}", processor, t);
+            return null;
+        }
+    }
+
+    /**
+     * Join [thread] for at most {@link #XODUS_JOIN_TIMEOUT_MSEC}, returning whether it actually ended.
+     * <p>
+     * The bound is short on purpose. A processor that is going to stop stops immediately -- it is parked on a
+     * queue and the termination job is already in it. One that does not stop within a second was not going to,
+     * and waiting longer only converts a leak into a hang. Giving up leaves exactly the leak that existed
+     * before any of this cleanup was written, which is the worst case we are entitled to; a wedged shutdown
+     * would be strictly worse than that.
+     */
+    private boolean joinBriefly(final @Nullable Thread thread) {
+        if (thread == null || !thread.isAlive()) {
+            return thread != null;
+        }
+        try {
+            thread.join(XODUS_JOIN_TIMEOUT_MSEC);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+        if (thread.isAlive()) {
+            log.debug(
+                    "Xodus job processor thread {} did not stop within {} ms; leaving it",
+                    thread.getName(),
+                    XODUS_JOIN_TIMEOUT_MSEC);
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -199,9 +267,8 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
             if (spawner == null) {
                 return 0;
             }
-            spawner.getClass().getMethod("finish").invoke(spawner);
-            spawner.getClass().getMethod("waitUntilFinished").invoke(spawner);
-            return 1;
+            // Same bounded stop as the pooled processors: the blocking Xodus methods join without a timeout.
+            return finishProcessor(spawner) ? 1 : 0;
         } catch (final Throwable t) {
             log.debug("Could not finish the Xodus job processor pool spawner", t);
             return 0;
