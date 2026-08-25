@@ -338,10 +338,17 @@ public class ConfigWriteBackEnvVarTest extends AbstractConfigurationTest {
     }
 
     private @NotNull List<String> errorsFromTheRestore() {
-        return logCapture.getCapturedLogs().stream()
+        final List<String> errors = logCapture.getCapturedLogs().stream()
                 .filter(event -> event.getLevel() == Level.ERROR)
                 .map(ILoggingEvent::getFormattedMessage)
                 .toList();
+        // These messages tell the operator to restore a '${ENV:...}' reference by hand, so they have to
+        // spell it the way it is written in the file. SLF4J substitutes '{}' and prints everything else
+        // verbatim, so a brace doubled to "escape" it survives into the log and the advice names syntax
+        // that does not exist. Caught on a real node during the 2026-08-25 smoke test.
+        assertThat(errors).as("an operator is being told to type this").allSatisfy(message -> assertThat(message)
+                .doesNotContain("{{"));
+        return errors;
     }
 
     /** Two bridges, so that one element name can carry two values or two variables. */

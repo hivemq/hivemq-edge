@@ -319,7 +319,7 @@ public class EnvVarUtil {
                 "The '<{}>' element holds a credential and its placeholder cannot be restored, because {}."
                         + " Rather than write the credential to config.xml it is written as '{}', which no"
                         + " variable sets: this node keeps running on the value it already holds, and the next"
-                        + " start will stop and name that variable. Restore the intended '${{ENV:...}}'"
+                        + " start will stop and name that variable. Restore the intended '${ENV:...}'"
                         + " reference in config.xml -- the previous file is in the rolling backup beside it.",
                 placeholder.element(),
                 reason,

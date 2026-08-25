@@ -32,6 +32,7 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import jakarta.inject.Inject;
 import java.lang.reflect.Method;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,20 +118,31 @@ public class ClientQueueLocalPersistenceProvider {
     }
 
     /**
-     * @return whether the loaded implementation supplies its own {@code applyMaxToQos0} overload. Read
+     * @return whether the loaded implementation supplies its own {@code applyMaxToQos0} overloads. Read
      *     off the resolved method's declaring class rather than by calling it: a class that does not
-     *     override it resolves to the interface's default, and a default is not distinguishable from an
+     *     override one resolves to the interface's default, and a default is not distinguishable from an
      *     override by any cheaper means.
+     *     <p>
+     *     <b>Both</b> overloads are probed, single-publish and batch, because the parameter was added to
+     *     both and each has its own default. Probing one and reporting on "the queue-policy contract"
+     *     would answer for a contract half of which had not been looked at, and it is the batch form the
+     *     poll path uses (EDG-882 QA, 2026-08-25).
      */
     @VisibleForTesting
     static boolean implementsQueuePolicyAdd(
             final @NotNull Class<? extends ClientQueueLocalPersistence> implementation) {
+        return overridesAdd(implementation, PUBLISH.class) && overridesAdd(implementation, List.class);
+    }
+
+    private static boolean overridesAdd(
+            final @NotNull Class<? extends ClientQueueLocalPersistence> implementation,
+            final @NotNull Class<?> publishParameter) {
         try {
             final Method add = implementation.getMethod(
                     "add",
                     String.class,
                     boolean.class,
-                    PUBLISH.class,
+                    publishParameter,
                     long.class,
                     QueuedMessagesStrategy.class,
                     boolean.class,

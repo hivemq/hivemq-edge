@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -527,6 +528,20 @@ public class BridgeService {
 
                     @Override
                     public void onFailure(final @NotNull Throwable t) {
+                        // A cancellation is this generation being stopped on purpose, not a bridge that
+                        // could not start. BridgeMqttClient.stop() cancels the pending start future, and
+                        // this callback then runs asynchronously -- after stopBridge has already cleared
+                        // bridgeNameToLastError -- so recording it left a bridge that goes on to connect
+                        // normally reporting an error through the API, under a log line saying it could
+                        // not be started. Reachable on every update of a bridge whose remote is down,
+                        // because an update is now one transition through restartBridge rather than a
+                        // removal and an addition (EDG-882, seen on a real node).
+                        if (t instanceof CancellationException) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Start of bridge '{}' was cancelled because it was stopped", bridge.getId());
+                            }
+                            return;
+                        }
                         log.error(
                                 "Unable to start bridge '{}' to {}:{}: {}",
                                 bridge.getId(),
