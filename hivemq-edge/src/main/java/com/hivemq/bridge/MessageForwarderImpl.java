@@ -17,7 +17,7 @@ package com.hivemq.bridge;
 
 import static com.hivemq.configuration.service.InternalConfigurations.FORWARDER_POLL_THRESHOLD_MESSAGES;
 import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
-import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -204,11 +204,7 @@ public class MessageForwarderImpl implements MessageForwarder {
                     mqttForwarder.getTopics());
         }
 
-        final ImmutableSet.Builder<@NotNull String> queueIdsBuilder = ImmutableSet.builder();
-        for (final String topic : mqttForwarder.getTopics()) {
-            queueIdsBuilder.add(createQueueId(forwarderId, topic));
-        }
-        final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
+        final Set<String> queueIds = queueIdsOf(forwarderId, mqttForwarder.getTopics());
         evictForeignSubscribers(forwarderId, mqttForwarder.getTopics());
         // Ownership is registered before anything else can observe the queues: the periodic clean-up
         // clears forwarder queues it finds unowned, so a pre-existing persisted queue must never be
@@ -455,6 +451,17 @@ public class MessageForwarderImpl implements MessageForwarder {
      * {@code PublishPollServiceImpl} keys the queue the client polls off the concatenated string, which
      * is the same string whichever '/' it was split at -- so the intruder drains this queue anyway.
      * <p>
+     * <b>Samplers are deliberately not given the same protection</b> (EDG-882 review v02, R2-02). A
+     * client can squat on a sampler's group the same way — {@code SamplingService} registers its node
+     * under {@code $SAMPLER::<topic>} and a client's SUBSCRIBE is stored split at the first '/' of the
+     * topic — and nothing evicts it when sampling starts. The asymmetry is intentional: what a squatter
+     * takes there is sample fidelity, a diagnostic that regenerates in seconds, not customer messages
+     * queued for a remote broker. The subscribe-time refusal in
+     * {@link com.hivemq.mqtt.handler.subscribe.IncomingSubscribeService} covers a sampler that is
+     * already live, which leaves only the "sampling had not started yet" window open. Closing it means
+     * the same enumeration in {@code SamplingService.startSampling}, and it was left rather than
+     * forgotten.
+     * <p>
      * Enumerating the splits is both simpler than special-casing the two that can hold a subscriber and
      * independent of how {@code Topics} chooses to split, which is the assumption that broke here in the
      * first place. The extra nodes cannot hold an innocent client: a group taken from beyond the first
@@ -524,11 +531,7 @@ public class MessageForwarderImpl implements MessageForwarder {
     public void reserveQueues(
             final @NotNull String reservationId, final @NotNull Map<String, List<String>> topicsByForwarderId) {
         final ImmutableSet.Builder<@NotNull String> queueIdsBuilder = ImmutableSet.builder();
-        topicsByForwarderId.forEach((forwarderId, topics) -> {
-            for (final String topic : topics) {
-                queueIdsBuilder.add(createQueueId(forwarderId, topic));
-            }
-        });
+        topicsByForwarderId.forEach((forwarderId, topics) -> queueIdsBuilder.addAll(queueIdsOf(forwarderId, topics)));
         final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
         // Same ordering as addForwarder, for the same reason (O2): retain the new set before releasing
         // the one it replaces, so a queue held by both never drops to zero references in between.
@@ -637,11 +640,19 @@ public class MessageForwarderImpl implements MessageForwarder {
         // believes it registered; the two can differ, and the entry left behind by the difference is one
         // nothing else removes (R2-05).
         for (final String queueId :
-                requireNonNullElse(registeredQueueIds, queueIdsOf(forwarderId, mqttForwarder.getTopics()))) {
+                requireNonNullElseGet(registeredQueueIds, () -> queueIdsOf(forwarderId, mqttForwarder.getTopics()))) {
             notEmptyQueues.remove(queueId);
         }
     }
 
+    /**
+     * The queue ids a forwarder owns, derived from its id and its topics.
+     * <p>
+     * The one place that turns the two into a set, used by every caller that needs it — registration,
+     * reservation and removal. These ids name the persisted queues, and the ownership index is keyed by
+     * them, so two spellings of the same derivation that drift apart would mean a queue that is owned
+     * under one name and reclaimed under the other.
+     */
     private static @NotNull Set<String> queueIdsOf(
             final @NotNull String forwarderId, final @NotNull List<String> topics) {
         final ImmutableSet.Builder<@NotNull String> queueIds = ImmutableSet.builder();

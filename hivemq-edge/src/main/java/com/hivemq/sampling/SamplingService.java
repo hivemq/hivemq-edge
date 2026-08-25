@@ -225,8 +225,14 @@ public class SamplingService {
                 clientQueuePersistence.peek(queueId, true, BYTE_LIMIT_SAMPLES, SAMPLE_SIZE);
         try {
             return publishes.get().stream().map(PUBLISH::getPayload).collect(Collectors.toList());
-        } catch (final @NotNull InterruptedException | ExecutionException e) {
-            log.warn("Exception while retrieval of sample payloads for topic '{}'", topic);
+        } catch (final InterruptedException | ExecutionException e) {
+            // The flag is restored before the throw: this runs on the REST request thread, which the
+            // container reuses, and swallowing the interrupt leaves the next request on that thread
+            // unable to see that it was asked to stop.
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            log.warn("Exception while retrieval of sample payloads for topic '{}'", topic, e);
             throw new RuntimeException(e);
         }
     }
