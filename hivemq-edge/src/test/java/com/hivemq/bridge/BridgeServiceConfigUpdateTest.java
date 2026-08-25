@@ -17,6 +17,7 @@ package com.hivemq.bridge;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -35,8 +36,12 @@ import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -229,11 +234,6 @@ class BridgeServiceConfigUpdateTest {
     }
 
     /**
-     * And the reaping gate opens even then. It is what tells the periodic clean-up that a forwarder
-     * queue nobody owns is genuinely abandoned; left closed, forwarder queues are never reclaimed again
-     * for the life of the node — a storage leak in place of a message loss, and silent either way.
-     */
-    /**
      * And on a node with no bridges at all. The gate is what tells the periodic clean-up that a
      * forwarder queue nobody owns is genuinely abandoned; if it only opened when a bridge started, a
      * node whose bridges were all removed would never reclaim the queues they left behind.
@@ -245,6 +245,11 @@ class BridgeServiceConfigUpdateTest {
         verify(messageForwarder).markBridgeConfigurationApplied();
     }
 
+    /**
+     * And the reaping gate opens even when a bridge fails. Left closed, forwarder queues are never
+     * reclaimed again for the life of the node — a storage leak in place of a message loss, and silent
+     * either way.
+     */
     @Test
     void updateBridges_whenABridgeThrows_thenTheReapingGateIsStillOpened() {
         final MqttBridge broken = bridge("edg-882-broken", List.of(KEPT));
@@ -253,6 +258,66 @@ class BridgeServiceConfigUpdateTest {
         bridgeService.updateBridges(List.of(broken));
 
         verify(messageForwarder).markBridgeConfigurationApplied();
+    }
+
+    /** Thrown where {@code internalStartBridge}'s {@code catch (Exception)} cannot see it. */
+    private static final class SynchronizationError extends Error {
+        private SynchronizationError() {
+            super("out of stack reading the keystore");
+        }
+    }
+
+    /**
+     * EDG-882 review v02, R2-03. The gate opens in a {@code finally}, so it opens whether or not every
+     * bridge got its turn — and each bridge claims its own queues only when its turn comes, inside
+     * {@code internalStartBridge}. Anything escaping the synchronization part way therefore used to open
+     * the gate with the bridges after it neither registered nor held, and the periodic clean-up reclaims
+     * a forwarder queue nobody holds. On the first call at boot that is every configured bridge, and
+     * what it reclaims is the backlog they accumulated before the restart.
+     * <p>
+     * Asserted against a real {@link MessageForwarderImpl}, because the reading that decides whether a
+     * queue is deleted is {@code isForwarderQueue}, and a mock would answer whatever the test wanted.
+     * Both halves are asserted: the gate must open <em>and</em> the queues must be held. Either one
+     * alone passes for the wrong reason — a gate that stayed shut would also leave the queues intact.
+     */
+    @Test
+    void updateBridges_whenTheSynchronizationThrows_thenTheUnstartedBridgesStillHoldTheirQueues() {
+        final MessageForwarder realForwarder = new MessageForwarderImpl(
+                mock(LocalTopicTree.class),
+                new HivemqId(),
+                () -> null,
+                () -> mock(ClientSessionSubscriptionPersistence.class),
+                mock(SingleWriterService.class),
+                new ShutdownHooks());
+        final BridgeService service = new BridgeService(
+                mock(BridgeExtractor.class),
+                realForwarder,
+                clientFactory,
+                MoreExecutors.newDirectExecutorService(),
+                mock(HiveMQEdgeRemoteService.class),
+                new ShutdownHooks(),
+                new MetricRegistry());
+        final List<MqttBridge> bridges = List.of(
+                bridge("edg-882-one", List.of(KEPT)),
+                bridge("edg-882-two", List.of(KEPT)),
+                bridge("edg-882-three", List.of(KEPT)));
+        // On the very first invocation, so no bridge has been through internalStartBridge. Which bridge
+        // draws it does not matter and must not: toAdd is a HashSet, so the iteration order is the hash
+        // order, and a test that named a position would be pinning that instead of the behaviour.
+        when(clientFactory.createRemoteClient(any())).thenThrow(new SynchronizationError());
+
+        assertThrows(SynchronizationError.class, () -> service.updateBridges(bridges));
+
+        assertTrue(realForwarder.hasAppliedBridgeConfiguration(), "the reaping gate never opened");
+        for (final MqttBridge configured : bridges) {
+            for (final String filter : KEPT.getFilters()) {
+                final String queueId = MessageForwarderImpl.FORWARDER_PREFIX
+                        + BridgeMqttClient.createForwarderId(configured.getId(), KEPT) + "/" + filter;
+                assertTrue(
+                        realForwarder.isForwarderQueue(queueId),
+                        "queue '" + queueId + "' reads as orphaned, so the clean-up will delete it");
+            }
+        }
     }
 
     /**

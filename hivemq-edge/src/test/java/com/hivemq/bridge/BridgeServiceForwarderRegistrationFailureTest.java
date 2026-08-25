@@ -138,6 +138,12 @@ class BridgeServiceForwarderRegistrationFailureTest {
      * The hold covers both colliding subscriptions. Their forwarder id is the same by construction, so
      * a hold built by keying on it must merge the two filter lists rather than keep whichever came
      * last — otherwise half the queues are left to the clean-up.
+     * <p>
+     * Two holds are taken, and every one of them is checked: {@code updateBridges} pre-reserves each
+     * bridge it is about to add before the reaping gate can open (R2-03), and {@code internalStartBridge}
+     * takes its own when the bridge's turn comes. They supersede rather than accumulate, but a
+     * pre-reservation that built the map differently would leave exactly the queues this test is about
+     * uncovered for the part of the window it exists to cover.
      */
     @Test
     void updateBridges_whenForwarderRegistrationIsRejected_thenTheQueuesOfEverySubscriptionAreHeld() {
@@ -152,13 +158,15 @@ class BridgeServiceForwarderRegistrationFailureTest {
         bridgeService.updateBridges(List.of(colliding));
 
         final ArgumentCaptor<Map<String, List<String>>> held = ArgumentCaptor.captor();
-        verify(messageForwarder).reserveQueues(eq("colliding-bridge"), held.capture());
+        verify(messageForwarder, times(2)).reserveQueues(eq("colliding-bridge"), held.capture());
         final String forwarderId = "colliding-bridge-" + split.calculateUniqueId();
-        assertEquals(Set.of(forwarderId), held.getValue().keySet());
-        assertEquals(
-                List.of("ab", "c", "a", "bc"),
-                held.getValue().get(forwarderId),
-                "a queue of either subscription that is not held is a queue the clean-up will delete");
+        for (final Map<String, List<String>> reservation : held.getAllValues()) {
+            assertEquals(Set.of(forwarderId), reservation.keySet());
+            assertEquals(
+                    List.of("ab", "c", "a", "bc"),
+                    reservation.get(forwarderId),
+                    "a queue of either subscription that is not held is a queue the clean-up will delete");
+        }
     }
 
     /**
@@ -168,6 +176,11 @@ class BridgeServiceForwarderRegistrationFailureTest {
      * owns. The hold is therefore taken for every start and dropped the moment the forwarders take
      * over: before the registration it would not cover the window, after it there would be an instant
      * with no owner at all, and never dropping it would strand the queues for the life of the node.
+     * <p>
+     * Both holds are expected before the registration: {@code updateBridges} pre-reserves every bridge
+     * it is about to add before the reaping gate can open (R2-03), and {@code internalStartBridge} takes
+     * its own when the bridge's turn comes. What this pins is the order — every hold ahead of the
+     * registration, the release behind it — not how many there are.
      */
     @Test
     void updateBridges_whenTheBridgeStarts_thenItsQueuesAreHeldOnlyUntilTheForwardersOwnThem() {
@@ -184,7 +197,7 @@ class BridgeServiceForwarderRegistrationFailureTest {
         bridgeService.updateBridges(List.of(healthy));
 
         final InOrder handover = inOrder(messageForwarder);
-        handover.verify(messageForwarder).reserveQueues(eq("healthy-bridge"), any());
+        handover.verify(messageForwarder, times(2)).reserveQueues(eq("healthy-bridge"), any());
         handover.verify(messageForwarder).addForwarder(forwarder);
         handover.verify(messageForwarder).releaseReservedQueues("healthy-bridge");
     }
