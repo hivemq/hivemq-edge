@@ -433,13 +433,28 @@ public class ConfigFileReaderWriter {
             //
             // Same directory on purpose: ATOMIC_MOVE is only guaranteed within a file store, and the
             // temporary file has to be one the configuration watcher will not try to parse.
-            final Path target = file.toPath();
-            final Path partial = target.resolveSibling(file.getName() + ".partial");
+            //
+            // The real path, not the configured one: replacing a path is replacing whatever the last
+            // component *is*, so when config.xml is a symbolic link -- a mounted configuration
+            // directory, an operator's link into a versioned tree -- the move would delete the link and
+            // leave a regular file in its place. Writing in place followed it, which is the behaviour
+            // being preserved here; resolving it also keeps the partial file in the same real directory,
+            // which is what ATOMIC_MOVE needs.
+            final Path configured = file.toPath();
+            final Path target = Files.exists(configured) ? configured.toRealPath() : configured;
+            final Path partial = target.resolveSibling(target.getFileName() + ".partial");
             try {
                 try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
                     writer.write(rendered.toString());
                     writer.flush();
                 }
+                // The replacement is a new file, so it carries this process's umask rather than the mode
+                // of the file it replaces -- and config.xml holds bridge passwords, keystore passwords
+                // and client secrets. Writing in place preserved whatever the operator had set; the
+                // first REST write after this change would otherwise widen a deliberately restricted
+                // file, silently. Best effort: a file store without POSIX permissions has nothing to
+                // carry over, and failing the whole write over the mode would be the worse outcome.
+                copyPermissions(target, partial);
                 try {
                     Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
                 } catch (final AtomicMoveNotSupportedException atomicNotSupported) {
@@ -457,6 +472,27 @@ public class ConfigFileReaderWriter {
             throw new UnrecoverableException(false);
         } finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * Gives {@code replacement} the POSIX permissions of {@code existing}, so that replacing a file
+     * does not change who can read it.
+     * <p>
+     * Best effort by design. A file store with no POSIX view has nothing to carry over, and a
+     * permission that cannot be set is not a reason to fail a configuration write that has already been
+     * rendered successfully — the previous behaviour, writing into the original file, simply left the
+     * mode alone. Reported at debug rather than warn for the same reason: on the platforms where this
+     * does nothing, it does nothing on every write.
+     */
+    private static void copyPermissions(final @NotNull Path existing, final @NotNull Path replacement) {
+        if (!Files.exists(existing)) {
+            return;
+        }
+        try {
+            Files.setPosixFilePermissions(replacement, Files.getPosixFilePermissions(existing));
+        } catch (final UnsupportedOperationException | IOException | SecurityException e) {
+            log.debug("Could not carry the permissions of {} over to the replacement file", existing, e);
         }
     }
 

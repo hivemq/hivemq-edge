@@ -16,13 +16,20 @@
 package com.hivemq.configuration.writer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -90,5 +97,56 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
             XMLUnit.setIgnoreWhitespace(previousIgnoreWhitespace);
             XMLUnit.setIgnoreComments(previousIgnoreComments);
         }
+    }
+
+    /**
+     * The write replaces {@code config.xml} with a file written beside it, and a new file carries the
+     * process umask rather than the mode of the file it replaces. {@code config.xml} holds bridge
+     * passwords, keystore passwords and client secrets, so widening a deliberately restricted file on
+     * the first REST write of any subsystem would undo what the operator set — silently, and on a file
+     * this branch is otherwise working to keep secrets out of.
+     */
+    @Test
+    public void writeConfigWithSync_keepsTheModeOfTheFileItReplaces() throws IOException {
+        final File tempFile = loadTestConfigFile();
+        final Path path = tempFile.toPath();
+        assumeTrue(
+                path.getFileSystem().supportedFileAttributeViews().contains("posix"),
+                "no POSIX permissions on this file system, so there is nothing to carry over");
+
+        final Set<PosixFilePermission> restricted = PosixFilePermissions.fromString("rw-------");
+        Files.setPosixFilePermissions(path, restricted);
+
+        final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
+        configFileReader.applyConfig();
+        configFileReader.writeConfigWithSync();
+
+        assertEquals(restricted, Files.getPosixFilePermissions(path), "the operator's mode must survive a write");
+    }
+
+    /**
+     * A symbolic link is a path whose last component <em>is</em> the link, so replacing the path
+     * replaces the link. Writing into the file followed it, which is what a mounted configuration
+     * directory or an operator's link into a versioned tree relies on; the replace-by-move has to keep
+     * doing that or the link is gone after the first write.
+     */
+    @Test
+    public void writeConfigWithSync_writesThroughASymbolicLink() throws IOException {
+        final File target = loadTestConfigFile();
+        final Path link = target.toPath().resolveSibling("linked-config.xml");
+        try {
+            Files.createSymbolicLink(link, target.toPath());
+        } catch (final UnsupportedOperationException | IOException e) {
+            assumeTrue(false, "symbolic links are not available here: " + e.getMessage());
+        }
+
+        final ConfigFileReaderWriter configFileReader = createFileReaderWriter(link.toFile());
+        configFileReader.applyConfig();
+        configFileReader.writeConfigWithSync();
+
+        assertTrue(Files.isSymbolicLink(link), "the link must still be a link");
+        assertTrue(
+                FileUtils.readFileToString(target, UTF_8).contains("<hivemq"),
+                "the write must have gone through the link to the file it points at");
     }
 }
