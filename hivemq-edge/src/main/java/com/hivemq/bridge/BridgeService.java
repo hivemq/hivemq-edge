@@ -149,6 +149,34 @@ public class BridgeService {
                     toRemove.size());
         }
 
+        // Claimed before the gate below can open, so that both ways out of the synchronization are safe.
+        //
+        // The gate is a latch: it only ever transitions on the first call, and on that call
+        // allKnownBridgeConfigs is still empty, so toRemove and toUpdate are empty and toAdd is every
+        // configured bridge. Each of them claims its own queues inside internalStartBridge -- but only
+        // when its turn comes, and the finally below runs whether or not every turn came. Anything
+        // escaping synchronizeBridges part way (an Error, or a throw from a path internalStartBridge's
+        // catch does not cover) therefore used to open the gate with the bridges after it neither
+        // registered nor held, and their backlog from before the restart was reclaimable within minutes
+        // (EDG-882 review v02, R2-03).
+        //
+        // Restricted to toAdd rather than every inactive bridge: it is the whole at-risk set by the
+        // reasoning above, and a hold is not free -- IncomingSubscribeService refuses a client's
+        // SUBSCRIBE to a held queue's group, which on every later call, with the gate already open,
+        // would cost something and buy nothing.
+        //
+        // internalStartBridge reserves under the same id, so the hold is superseded rather than
+        // duplicated, and released once that bridge's forwarders have registered. A bridge whose turn
+        // never came keeps it, exactly as a bridge whose start failed does: held until it starts or
+        // leaves the configuration. That is a leak in place of a deletion, which is the trade this
+        // ticket exists to make.
+        for (final String bridgeId : toAdd) {
+            final var bridge = bridgeIdToConfig.get(bridgeId);
+            if (bridge != null) {
+                messageForwarder.reserveQueues(bridgeId, topicsByForwarderId(bridge));
+            }
+        }
+
         try {
             synchronizeBridges(bridgeIdToConfig, toRemove, toUpdate, toAdd);
         } finally {
@@ -160,6 +188,7 @@ public class BridgeService {
             // In a finally block because the alternative failure is silent and permanent: anything
             // escaping the synchronization left the gate closed for the life of the node, and forwarder
             // queues were then never reclaimed at all -- a storage leak in place of a message loss.
+            // Safe in both directions now that the queues above are held before it can run.
             messageForwarder.markBridgeConfigurationApplied();
         }
 
