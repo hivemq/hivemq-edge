@@ -60,6 +60,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 
 /**
  * @author Simon L Johnson
@@ -68,7 +69,10 @@ public class BearerTokenAuthTests {
 
     protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
+    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
+    // hardcoded 8088; whichever ran second on a busy agent could block forever in setup, with no failure
+    // and no timeout to end it -- three CI builds had to be aborted by hand.
+    private static int testHttpPort;
     // The first request against the freshly started server pays the Jersey/Jackson bootstrap cost,
     // which is orders of magnitude slower than every later request. A 1s budget is not enough for
     // that on a loaded CI agent, so the first test to run would time out at random. Matches
@@ -82,9 +86,10 @@ public class BearerTokenAuthTests {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
 
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
         // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(objectMapper);
 
@@ -125,13 +130,13 @@ public class BearerTokenAuthTests {
 
     protected static HttpResponse get(final @NotNull String path, final @Nullable Map<String, String> headers)
             throws IOException {
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.get(headers, serverAddress, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 
     protected static HttpResponse post(final @NotNull String path, final ByteArrayInputStream body) throws IOException {
         final var headers = HttpUrlConnectionClient.JSON_HEADERS;
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.post(headers, serverAddress, body, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 
@@ -249,7 +254,7 @@ public class BearerTokenAuthTests {
     protected static HttpResponse post(
             final @NotNull String path, final @NotNull Map<String, String> headers, final ByteArrayInputStream body)
             throws IOException {
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.post(headers, serverAddress, body, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 }

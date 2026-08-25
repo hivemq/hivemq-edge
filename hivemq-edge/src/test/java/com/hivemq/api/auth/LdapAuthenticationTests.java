@@ -53,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import util.RandomPortGenerator;
 
 @Testcontainers
 public class LdapAuthenticationTests {
@@ -62,7 +63,10 @@ public class LdapAuthenticationTests {
 
     protected final Logger logger = LoggerFactory.getLogger(LdapAuthenticationTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
+    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
+    // hardcoded 8088; whichever ran second on a busy agent could block forever in setup, with no failure
+    // and no timeout to end it -- three CI builds had to be aborted by hand.
+    private static int testHttpPort;
     // See BearerTokenAuthTests: the first request pays the server bootstrap cost and a 1s budget
     // makes whichever test runs first flaky on a loaded CI agent. Matches JaxrsResourceTests.
     static final int CONNECT_TIMEOUT = 5000;
@@ -73,6 +77,7 @@ public class LdapAuthenticationTests {
 
     @BeforeAll
     static void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
         // Get the dynamically mapped port from the container
         final var host = LLDAP_CONTAINER.getHost();
         final var port = LLDAP_CONTAINER.getLdapPort();
@@ -112,7 +117,7 @@ public class LdapAuthenticationTests {
         final var config = new JaxrsHttpServerConfiguration();
         // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(
@@ -146,7 +151,7 @@ public class LdapAuthenticationTests {
     @Test
     public void testGetSecuredResourceWithoutCreds() throws IOException {
         final var response = HttpUrlConnectionClient.get(
-                null, getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
+                null, getTestServerAddress(HTTP, testHttpPort, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
         assertThat(response.getStatusCode()).as("Resource should be denied").isEqualTo(401);
     }
 
@@ -157,7 +162,7 @@ public class LdapAuthenticationTests {
                 BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testaWRONG", TEST_PASSWORD));
         final var response = HttpUrlConnectionClient.get(
                 headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
+                getTestServerAddress(HTTP, testHttpPort, "test/get/auth/admin"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
         assertThat(response.getStatusCode()).as("Resource should be denied").isEqualTo(401);
@@ -170,7 +175,7 @@ public class LdapAuthenticationTests {
                 BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(TEST_USERNAME, "incorrect"));
         final var response = HttpUrlConnectionClient.get(
                 headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
+                getTestServerAddress(HTTP, testHttpPort, "test/get/auth/admin"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
         assertThat(response.getStatusCode()).as("Resource should be denied").isEqualTo(401);
@@ -183,7 +188,7 @@ public class LdapAuthenticationTests {
                 BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(TEST_USERNAME, TEST_PASSWORD));
         final var response = HttpUrlConnectionClient.get(
                 headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
+                getTestServerAddress(HTTP, testHttpPort, "test/get/auth/admin"),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
         assertThat(response.getStatusCode()).as("Resource should be accepted").isEqualTo(200);

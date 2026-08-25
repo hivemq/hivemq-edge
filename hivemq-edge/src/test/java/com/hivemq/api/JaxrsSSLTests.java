@@ -46,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 import util.TestKeyStoreGenerator;
 
 /**
@@ -55,7 +56,10 @@ public class JaxrsSSLTests {
 
     protected final Logger logger = LoggerFactory.getLogger(JaxrsSSLTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
+    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
+    // hardcoded 8088; whichever ran second on a busy agent could block forever in setup, with no failure
+    // and no timeout to end it -- three CI builds had to be aborted by hand.
+    private static int testHttpPort;
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTPS = "https";
@@ -66,9 +70,10 @@ public class JaxrsSSLTests {
 
     @BeforeEach
     public void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
         testKeyStoreGenerator = new TestKeyStoreGenerator();
         JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
         config.setProtocol(HTTPS);
         context = getSslContext("testpassword");
         config.setSslContext(context);
@@ -142,7 +147,7 @@ public class JaxrsSSLTests {
         HttpsURLConnection.setDefaultHostnameVerifier((string, ssls) -> true);
 
         HttpResponse response = HttpUrlConnectionClient.get(
-                null, getTestServerAddress(HTTPS, TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
+                null, getTestServerAddress(HTTPS, testHttpPort, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
         assertEquals(200, response.getStatusCode(), "Resource should exist");
     }
 
@@ -150,7 +155,7 @@ public class JaxrsSSLTests {
     public void testGetResourceOnWrongProtocol() {
         assertThrows(SocketException.class, () -> {
             HttpUrlConnectionClient.get(
-                    null, getTestServerAddress("http", TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
+                    null, getTestServerAddress("http", testHttpPort, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
         });
     }
 }

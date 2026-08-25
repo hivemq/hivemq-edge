@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 
 /**
  * @author Simon L Johnson
@@ -52,7 +53,10 @@ public class BasicAuthenticationTests {
 
     protected final Logger logger = LoggerFactory.getLogger(BasicAuthenticationTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
+    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
+    // hardcoded 8088; whichever ran second on a busy agent could block forever in setup, with no failure
+    // and no timeout to end it -- three CI builds had to be aborted by hand.
+    private static int testHttpPort;
     // See BearerTokenAuthTests: the first request pays the server bootstrap cost and a 1s budget
     // makes whichever test runs first flaky on a loaded CI agent. Matches JaxrsResourceTests.
     static final int CONNECT_TIMEOUT = 5000;
@@ -63,8 +67,9 @@ public class BasicAuthenticationTests {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
         final var config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
         // -- ensure we supplied our own test mapper as this can affect output
         config.setObjectMapper(new ObjectMapper());
 
@@ -101,7 +106,7 @@ public class BasicAuthenticationTests {
         } else {
             headers = null;
         }
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.get(headers, serverAddress, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 
