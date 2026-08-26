@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -280,5 +281,47 @@ class BridgeServiceForwarderRegistrationFailureTest {
         // the restart path clears the queues of the forwarders it removes; the rejected bridge has none,
         // so what accumulated while the configuration was broken is still there to be forwarded
         verify(messageForwarder, never()).removeForwarder(any(), anyBoolean());
+    }
+
+    /**
+     * EDG-882 review v03, R3-04. The removal loop used to sit inside one {@code try}, so the first
+     * forwarder whose teardown threw took every forwarder behind it with it: they were never removed,
+     * their queue IDs stayed in the ownership index, and the periodic clean-up read them as owned for
+     * the life of the node — while {@code addForwarder} refused to re-register any of them, so the
+     * bridge could not be restarted either.
+     * <p>
+     * {@code removeForwarder} now completes its own teardown before reporting, so what reaches this loop
+     * is a forwarder that has already been released. Continuing is what lets the rest of the bridge be
+     * released too.
+     */
+    @Test
+    void stopBridge_whenOneForwardersTeardownThrows_thenTheRemainingForwardersAreStillRemoved() {
+        final LocalSubscription first = new LocalSubscription(List.of("plant/line1"), "remote/one");
+        final LocalSubscription second = new LocalSubscription(List.of("plant/line2"), "remote/two");
+        final MqttBridge bridge = bridge("two-forwarder-bridge", List.of(first, second));
+        final MqttForwarder failing = mock(MqttForwarder.class);
+        when(failing.getId()).thenReturn("two-forwarder-bridge-" + first.calculateUniqueId());
+        when(failing.getTopics()).thenReturn(List.of("plant/line1"));
+        final MqttForwarder survivor = mock(MqttForwarder.class);
+        when(survivor.getId()).thenReturn("two-forwarder-bridge-" + second.calculateUniqueId());
+        when(survivor.getTopics()).thenReturn(List.of("plant/line2"));
+
+        final BridgeMqttClient client = healthyClient(bridge);
+        when(client.createForwarders()).thenReturn(List.of(failing, survivor));
+        when(client.getActiveForwarders()).thenReturn(List.of(failing, survivor));
+        when(clientFactory.createRemoteClient(any())).thenReturn(client);
+        bridgeService.updateBridges(List.of(bridge));
+
+        doThrow(new IllegalStateException("teardown did not complete cleanly"))
+                .when(messageForwarder)
+                .removeForwarder(eq(failing), anyBoolean());
+
+        // the bridge leaves the configuration, so every forwarder must be torn down
+        assertDoesNotThrow(() -> bridgeService.updateBridges(List.of()));
+
+        verify(messageForwarder).removeForwarder(eq(failing), anyBoolean());
+        verify(messageForwarder)
+                .removeForwarder(
+                        eq(survivor), anyBoolean()); // the one behind the failure -- never reached before the fix
     }
 }

@@ -20,6 +20,7 @@ import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMe
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -399,5 +400,98 @@ public class ClientQueueMemoryLocalPersistenceQos0LimitTest {
         }
 
         assertEquals(MAX, persistence.size(QUEUE_ID, true, BUCKET));
+    }
+
+    /**
+     * The case {@code test_atTheGlobalCeiling_theRingStillRotates} does not cover: the node is over the
+     * QoS 0 budget because of traffic that belongs to <em>another</em> queue, so the space the ring
+     * frees by rotating cannot bring it back under.
+     * <p>
+     * Trimming first and checking the guards afterwards destroyed the sample the ring held and then
+     * rejected its replacement against pressure the ring never caused — leaving it empty, and leaving it
+     * empty again on every sample that followed, because each one repeated the trade. The diagnostic the
+     * bound exists to protect showed nothing at all (EDG-882 review v03, R3-05).
+     * <p>
+     * The oracle is the surviving payload, not the size: a ring that rejected the incoming sample
+     * <em>and</em> kept the old one is the whole point, and a size assertion alone would pass on a ring
+     * that had swapped one for the other.
+     */
+    @Test
+    public void test_atTheGlobalCeiling_unrelatedPressureDoesNotEmptyTheRing() {
+        withGlobalBudgetOfAbout(8 * 1024);
+
+        add("old", 1, true);
+        assertEquals(List.of("old"), payloadsInQueue(), "the ring must start holding the sample under test");
+
+        // pressure that belongs to somebody else, and that the ring cannot free by rotating
+        persistence.add(
+                "some/other/consumer",
+                true,
+                qos0("x".repeat(32 * 1024)),
+                Long.MAX_VALUE,
+                QueuedMessagesStrategy.DISCARD_OLDEST,
+                false,
+                false,
+                BUCKET);
+
+        add("new", 1, true);
+
+        assertEquals(
+                List.of("old"),
+                payloadsInQueue(),
+                "the ring gave up the sample it held for a replacement that was then rejected");
+        assertEquals(1, persistence.size(QUEUE_ID, true, BUCKET), "the ring must not have emptied itself");
+    }
+
+    /**
+     * And it must not empty itself over many attempts either. One rejected sample leaving the ring intact
+     * is the fix; the defect's real shape was that every sample after the first repeated it, so a ring
+     * that survives one attempt but erodes over ten would still be broken.
+     */
+    @Test
+    public void test_atTheGlobalCeiling_unrelatedPressureLeavesTheRingIntactOverManyAttempts() {
+        withGlobalBudgetOfAbout(8 * 1024);
+
+        add("old", 1, true);
+        persistence.add(
+                "some/other/consumer",
+                true,
+                qos0("x".repeat(32 * 1024)),
+                Long.MAX_VALUE,
+                QueuedMessagesStrategy.DISCARD_OLDEST,
+                false,
+                false,
+                BUCKET);
+
+        for (int i = 0; i < 10; i++) {
+            add("rejected-" + i, 1, true);
+        }
+
+        assertEquals(List.of("old"), payloadsInQueue(), "the ring eroded under repeated rejected samples");
+    }
+
+    /**
+     * The rejection is still a rejection: refusing to destroy what the ring holds must not also stop the
+     * node reporting that it could not accept the message.
+     */
+    @Test
+    public void test_atTheGlobalCeiling_unrelatedPressureStillReportsTheDrop() {
+        withGlobalBudgetOfAbout(8 * 1024);
+
+        add("old", 1, true);
+        persistence.add(
+                "some/other/consumer",
+                true,
+                qos0("x".repeat(32 * 1024)),
+                Long.MAX_VALUE,
+                QueuedMessagesStrategy.DISCARD_OLDEST,
+                false,
+                false,
+                BUCKET);
+
+        add("new", 1, true);
+
+        verify(messageDroppedService, atLeastOnce())
+                .qos0MemoryExceededShared(eq(QUEUE_ID), anyString(), anyInt(), anyLong(), anyLong());
     }
 }
