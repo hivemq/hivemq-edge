@@ -364,4 +364,79 @@ public class ConfigWriteBackEnvVarTest extends AbstractConfigurationTest {
                 .replace("testhost", "testhost2")
                 .replace("plant/#", "plant2/#");
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v03, R3-01 -- the collector recorded only placeholders that were an element's
+    // entire text, so a placeholder concatenated with other text, or one in an attribute, was resolved
+    // on the way in and written out resolved with nothing reported at all. The unit collected is now the
+    // whole span, which makes both restorable by the same anchoring the bare case already used.
+    // ---------------------------------------------------------------------------------------------
+
+    /** Sam's reproducer, verbatim: a password that is a prefix plus a variable. */
+    @Test
+    public void whenAPasswordIsConcatenatedWithText_thenTheSecretIsNotWrittenToTheFile() throws IOException {
+        System.setProperty(PASSWORD_VAR, SECRET);
+
+        final String written = loadAndWriteBack(config("prefix-${ENV:" + PASSWORD_VAR + "}"));
+
+        assertThat(written).as("the credential must not reach the disk").doesNotContain(SECRET);
+        assertThat(written)
+                .as("the operator's span must come back exactly as they wrote it")
+                .contains("<password>prefix-${ENV:" + PASSWORD_VAR + "}</password>");
+    }
+
+    /** The variable in the middle, so the restore cannot be a prefix or suffix trick. */
+    @Test
+    public void whenAPasswordSurroundsTheVariableOnBothSides_thenTheSecretIsNotWrittenToTheFile() throws IOException {
+        System.setProperty(PASSWORD_VAR, SECRET);
+
+        final String written = loadAndWriteBack(config("pre-${ENV:" + PASSWORD_VAR + "}-post"));
+
+        assertThat(written).doesNotContain(SECRET);
+        assertThat(written).contains("<password>pre-${ENV:" + PASSWORD_VAR + "}-post</password>");
+    }
+
+    /** Two variables in one span: the whole span is the unit, so the count does not matter. */
+    @Test
+    public void whenAPasswordUsesTwoVariables_thenNeitherValueIsWritten() throws IOException {
+        System.setProperty(PASSWORD_VAR, SECRET);
+        System.setProperty(OTHER_VAR, "second-half");
+
+        final String written = loadAndWriteBack(config("${ENV:" + PASSWORD_VAR + "}:${ENV:" + OTHER_VAR + "}"));
+
+        assertThat(written).doesNotContain(SECRET);
+        assertThat(written).doesNotContain("second-half");
+        assertThat(written).contains("<password>${ENV:" + PASSWORD_VAR + "}:${ENV:" + OTHER_VAR + "}</password>");
+    }
+
+    /** A concatenated non-secret keeps working too, and keeps its indirection. */
+    @Test
+    public void whenANonSecretIsConcatenated_thenItsPlaceholderIsAlsoRestored() throws IOException {
+        System.setProperty(OTHER_VAR, "berlin");
+
+        final String written = loadAndWriteBack(config("literal-password")
+                .replace("<host>testhost</host>", "<host>edge-${ENV:" + OTHER_VAR + "}</host>"));
+
+        assertThat(written)
+                .as("the indirection must survive for ordinary settings, not just credentials")
+                .contains("<host>edge-${ENV:" + OTHER_VAR + "}</host>");
+        assertThat(written).doesNotContain("<host>edge-berlin</host>");
+    }
+
+    /**
+     * The value being a substring of the rendered span must not confuse the anchor: the search is for the
+     * whole span between the tags, so a bare-value match elsewhere is not a candidate.
+     */
+    @Test
+    public void whenTheConcatenatedValueAlsoAppearsBare_thenOnlyTheSpanIsRestored() throws IOException {
+        System.setProperty(OTHER_VAR, "testhost");
+
+        final String written = loadAndWriteBack(twoBridges("literal-password", "literal-password")
+                .replace("<host>testhost2</host>", "<host>edge-${ENV:" + OTHER_VAR + "}</host>"));
+
+        assertThat(written).contains("<host>edge-${ENV:" + OTHER_VAR + "}</host>");
+        assertThat(written)
+                .as("the bridge that wrote the value literally must keep it")
+                .contains("<host>testhost</host>");
+    }
 }
