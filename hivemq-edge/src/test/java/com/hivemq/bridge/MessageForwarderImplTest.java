@@ -22,7 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyByte;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -34,6 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -46,10 +50,12 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.ProducerQueues;
 import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
 import com.hivemq.util.Topics;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -952,5 +958,144 @@ public class MessageForwarderImplTest {
             }
         }
         return false;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v03, R3-04 — the teardown must reach a deliberate final state whatever throws.
+    //
+    // removeForwarder used to stop the forwarder before dropping its ownership, and a stop() that threw
+    // took the rest of the method with it: the queue IDs stayed in the index, so the periodic clean-up
+    // read them as owned for the life of the node and never reclaimed them, and addForwarder refused a
+    // replacement under the same id because putIfAbsent still found the abandoned claim. One transient
+    // persistence failure, and the bridge could not be restarted and its storage could not be freed.
+    //
+    // RemoteMqttForwarder.stop() drains its buffers through reset callbacks that wait on persistence
+    // futures and rethrow an ExecutionException as a RuntimeException, so this is an ordinary
+    // consequence of a persistence hiccup rather than a contrived mock.
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    @Timeout(5)
+    public void test_aStopThatThrowsStillReleasesQueueOwnership() {
+        messageForwarder.addForwarder(mqttForwarder);
+        assertTrue(messageForwarder.isForwarderQueue(QUEUE_ID));
+        doThrow(new RuntimeException("persistence future failed while draining"))
+                .when(mqttForwarder)
+                .stop();
+
+        assertThrows(RuntimeException.class, () -> messageForwarder.removeForwarder(mqttForwarder, false));
+
+        assertFalse(
+                messageForwarder.isForwarderQueue(QUEUE_ID),
+                "the queue is owned by a forwarder that no longer exists, so the clean-up can never reclaim it");
+    }
+
+    /**
+     * And the id must be reusable afterwards. A claim left behind is not only a storage leak: {@code
+     * addForwarder} refuses a second registration while one is live, so the bridge cannot be restarted.
+     */
+    @Test
+    @Timeout(5)
+    public void test_aStopThatThrowsLeavesTheForwarderIdReusable() {
+        messageForwarder.addForwarder(mqttForwarder);
+        doThrow(new RuntimeException("persistence future failed while draining"))
+                .when(mqttForwarder)
+                .stop();
+        assertThrows(RuntimeException.class, () -> messageForwarder.removeForwarder(mqttForwarder, false));
+
+        final MqttForwarder replacement = forwarder(FORWARDER_ID, TOPIC);
+        messageForwarder.addForwarder(replacement);
+
+        assertTrue(
+                messageForwarder.isForwarderQueue(QUEUE_ID),
+                "the replacement could not claim the id its predecessor abandoned");
+    }
+
+    /** The failure still has to reach the caller — released, but not silently. */
+    @Test
+    @Timeout(5)
+    public void test_aStopThatThrowsIsReportedToTheCaller() {
+        messageForwarder.addForwarder(mqttForwarder);
+        final RuntimeException stopFailure = new RuntimeException("persistence future failed while draining");
+        doThrow(stopFailure).when(mqttForwarder).stop();
+
+        final RuntimeException thrown =
+                assertThrows(RuntimeException.class, () -> messageForwarder.removeForwarder(mqttForwarder, false));
+
+        assertTrue(
+                Arrays.asList(thrown.getSuppressed()).contains(stopFailure),
+                "the teardown swallowed the reason it did not complete cleanly");
+    }
+
+    /**
+     * The topic-tree removal runs before the stop, and it can throw too — a forwarder left subscribed to
+     * a topic it can no longer serve is the same class of half-finished teardown.
+     */
+    @Test
+    @Timeout(5)
+    public void test_aTopicTreeRemovalThatThrowsStillReleasesQueueOwnership() {
+        messageForwarder.addForwarder(mqttForwarder);
+        doThrow(new RuntimeException("topic tree unavailable"))
+                .when(topicTree)
+                .removeSubscriber(anyString(), anyString(), anyString());
+
+        assertThrows(RuntimeException.class, () -> messageForwarder.removeForwarder(mqttForwarder, false));
+
+        assertFalse(
+                messageForwarder.isForwarderQueue(QUEUE_ID),
+                "a topic-tree failure stranded the queue ownership behind it");
+    }
+
+    /**
+     * A stop that throws must not take the other forwarders' teardown with it either. This is the
+     * per-forwarder guarantee {@code BridgeService.internalStopBridge} relies on when it continues to the
+     * next forwarder after one reports a failure.
+     */
+    @Test
+    @Timeout(5)
+    public void test_aStopThatThrowsDoesNotStrandTheOtherForwardersQueues() {
+        messageForwarder.addForwarder(mqttForwarder);
+        messageForwarder.addForwarder(otherMqttForwarder);
+        doThrow(new RuntimeException("persistence future failed while draining"))
+                .when(mqttForwarder)
+                .stop();
+
+        assertThrows(RuntimeException.class, () -> messageForwarder.removeForwarder(mqttForwarder, false));
+        messageForwarder.removeForwarder(otherMqttForwarder, false);
+
+        assertFalse(messageForwarder.isForwarderQueue(QUEUE_ID), "the failing forwarder's queue stayed claimed");
+        assertFalse(messageForwarder.isForwarderQueue(OTHER_QUEUE_ID), "the second forwarder's queue stayed claimed");
+    }
+
+    /**
+     * Clearing a queue is fallible too — the persistence it calls is the same one whose failures make
+     * {@code stop()} throw.
+     */
+    @Test
+    @Timeout(5)
+    public void test_aQueueClearThatThrowsStillReleasesQueueOwnership() {
+        final ClientQueuePersistence queuePersistence = mock(ClientQueuePersistence.class);
+        // registration polls the queue as soon as the forwarder is added; an empty read is all this
+        // test needs from that path, and without it the poll fails before the removal under test runs
+        when(queuePersistence.readShared(anyString(), anyInt(), anyLong()))
+                .thenReturn(Futures.immediateFuture(ImmutableList.of()));
+        doThrow(new RuntimeException("queue persistence unavailable"))
+                .when(queuePersistence)
+                .clear(anyString(), anyBoolean());
+        final MessageForwarderImpl forwarderWithPersistence = new MessageForwarderImpl(
+                topicTree,
+                new HivemqId(),
+                () -> queuePersistence,
+                () -> subscriptionPersistence,
+                mock(SingleWriterService.class),
+                mock(ShutdownHooks.class));
+        final MqttForwarder toRemove = forwarder(FORWARDER_ID, TOPIC);
+        forwarderWithPersistence.addForwarder(toRemove);
+
+        assertThrows(RuntimeException.class, () -> forwarderWithPersistence.removeForwarder(toRemove, true));
+
+        assertFalse(
+                forwarderWithPersistence.isForwarderQueue(QUEUE_ID),
+                "a queue-clear failure stranded the ownership behind it");
     }
 }

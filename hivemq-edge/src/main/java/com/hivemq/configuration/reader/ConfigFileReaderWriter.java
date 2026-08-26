@@ -65,14 +65,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -444,17 +448,31 @@ public class ConfigFileReaderWriter {
             final Path target = Files.exists(configured) ? configured.toRealPath() : configured;
             final Path partial = target.resolveSibling(target.getFileName() + ".partial");
             try {
+                // The replacement's mode is settled before a single byte of it is written, not after.
+                //
+                // The rendered document holds bridge passwords, keystore and truststore passwords and
+                // adapter credentials. A file created by FileWriter takes this process's umask, so on a
+                // 022 umask the first version of this change created a world-readable 0644 file,
+                // populated it with every secret in the configuration, closed it, and only then narrowed
+                // it to the mode of the file it was about to replace. Any local principal reading the
+                // directory during that window got the lot -- on every REST write to any subsystem.
+                //
+                // That window did not exist before this branch: writing in place reused config.xml's own
+                // inode and therefore its own mode, so the secrets never touched a wider file. It is a
+                // disclosure this change would have introduced, which is why it fails closed rather than
+                // best-effort (EDG-882 review v03, R3-07).
+                final Set<PosixFilePermission> targetPermissions = posixPermissionsOf(target);
+                createPartialFile(partial, targetPermissions);
                 try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
                     writer.write(rendered.toString());
                     writer.flush();
                 }
-                // The replacement is a new file, so it carries this process's umask rather than the mode
-                // of the file it replaces -- and config.xml holds bridge passwords, keystore passwords
-                // and client secrets. Writing in place preserved whatever the operator had set; the
-                // first REST write after this change would otherwise widen a deliberately restricted
-                // file, silently. Best effort: a file store without POSIX permissions has nothing to
-                // carry over, and failing the whole write over the mode would be the worse outcome.
-                copyPermissions(target, partial);
+                // Widened to exactly the target's mode only once the content is on disk, so the file is
+                // never wider than its eventual self while it is being filled. A failure here aborts the
+                // replacement: moving a file whose protections could not be reproduced would either
+                // widen a deliberately restricted config.xml or narrow one an operator shares
+                // deliberately, and the original on disk is still valid and still correct.
+                applyPermissions(partial, targetPermissions);
                 try {
                     Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
                 } catch (final AtomicMoveNotSupportedException atomicNotSupported) {
@@ -476,23 +494,82 @@ public class ConfigFileReaderWriter {
     }
 
     /**
-     * Gives {@code replacement} the POSIX permissions of {@code existing}, so that replacing a file
-     * does not change who can read it.
+     * Owner read/write and nothing else: what the replacement is created as, before it is written.
      * <p>
-     * Best effort by design. A file store with no POSIX view has nothing to carry over, and a
-     * permission that cannot be set is not a reason to fail a configuration write that has already been
-     * rendered successfully — the previous behaviour, writing into the original file, simply left the
-     * mode alone. Reported at debug rather than warn for the same reason: on the platforms where this
-     * does nothing, it does nothing on every write.
+     * Unmodifiable because it is shared static state handed to callers that have no reason to expect a
+     * mutable set — an {@code EnumSet} on its own would let one of them widen it for the whole process.
      */
-    private static void copyPermissions(final @NotNull Path existing, final @NotNull Path replacement) {
-        if (!Files.exists(existing)) {
+    private static final @NotNull Set<PosixFilePermission> OWNER_ONLY =
+            Collections.unmodifiableSet(EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+
+    /**
+     * The POSIX permissions of the file about to be replaced, or {@code null} when there are none to
+     * reproduce — the file does not exist yet, or its file store has no POSIX view.
+     * <p>
+     * {@code null} is the "nothing to preserve" answer, not a failure: a configuration file being
+     * created for the first time has no mode of its own to carry, and on a store without POSIX
+     * permissions there is nothing a replacement could get wrong.
+     */
+    @VisibleForTesting
+    static @Nullable Set<PosixFilePermission> posixPermissionsOf(final @NotNull Path path) {
+        if (!Files.exists(path)) {
+            return null;
+        }
+        try {
+            return Files.getPosixFilePermissions(path);
+        } catch (final UnsupportedOperationException | IOException | SecurityException e) {
+            log.debug("No POSIX permissions to carry over from {}", path, e);
+            return null;
+        }
+    }
+
+    /**
+     * Creates the file the configuration is rendered into, narrow from the moment it exists.
+     * <p>
+     * When there is a mode to reproduce, the file is created owner-only and widened to the target's
+     * mode after it has been written — the permissions are an attribute of the {@code createFile} call
+     * rather than a {@code chmod} after the fact, so there is no instant at which the file exists and is
+     * readable by anyone else. With nothing to reproduce, it is created normally and takes the umask,
+     * which is what a first-time configuration file would have had anyway.
+     * <p>
+     * A partial file left behind by a killed process is deleted rather than reused: reopening it would
+     * inherit whatever mode <em>it</em> was left with.
+     */
+    @VisibleForTesting
+    static void createPartialFile(
+            final @NotNull Path partial, final @Nullable Set<PosixFilePermission> targetPermissions)
+            throws IOException {
+        Files.deleteIfExists(partial);
+        if (targetPermissions == null) {
+            Files.createFile(partial);
+        } else {
+            Files.createFile(partial, PosixFilePermissions.asFileAttribute(OWNER_ONLY));
+        }
+    }
+
+    /**
+     * Gives the written replacement exactly the mode of the file it is about to replace.
+     * <p>
+     * Throws rather than warns. The alternative — carry the mode if you can, move it either way — is
+     * what {@code R3-07} reported: a failure there leaves the umask's mode on a file full of
+     * credentials, permanently, announced at debug level. Refusing the replacement keeps the previous
+     * configuration file, which is intact, correctly permissioned and still the one the running node
+     * matches.
+     */
+    @VisibleForTesting
+    static void applyPermissions(
+            final @NotNull Path partial, final @Nullable Set<PosixFilePermission> targetPermissions)
+            throws IOException {
+        if (targetPermissions == null) {
             return;
         }
         try {
-            Files.setPosixFilePermissions(replacement, Files.getPosixFilePermissions(existing));
-        } catch (final UnsupportedOperationException | IOException | SecurityException e) {
-            log.debug("Could not carry the permissions of {} over to the replacement file", existing, e);
+            Files.setPosixFilePermissions(partial, targetPermissions);
+        } catch (final UnsupportedOperationException | SecurityException e) {
+            throw new IOException(
+                    "Could not reproduce the permissions of the configuration file being replaced; "
+                            + "the existing file has been left untouched",
+                    e);
         }
     }
 

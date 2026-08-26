@@ -149,4 +149,42 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
                 FileUtils.readFileToString(target, UTF_8).contains("<hivemq"),
                 "the write must have gone through the link to the file it points at");
     }
+
+    /**
+     * The other direction, and the one the fail-closed handling of EDG-882 review v03 R3-07 makes
+     * possible to get wrong: a configuration an operator deliberately shares with a group must not come
+     * back owner-only either. The replacement is written under owner-only protection and then widened to
+     * exactly what it replaces — "exactly", in both directions.
+     */
+    @Test
+    public void writeConfigWithSync_doesNotNarrowAModeTheOperatorWidened() throws IOException {
+        final File tempFile = loadTestConfigFile();
+        final Path path = tempFile.toPath();
+        assumeTrue(
+                path.getFileSystem().supportedFileAttributeViews().contains("posix"),
+                "no POSIX permissions on this file system, so there is nothing to carry over");
+
+        final Set<PosixFilePermission> shared = PosixFilePermissions.fromString("rw-r--r--");
+        Files.setPosixFilePermissions(path, shared);
+
+        final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
+        configFileReader.applyConfig();
+        configFileReader.writeConfigWithSync();
+
+        assertEquals(shared, Files.getPosixFilePermissions(path), "the operator's mode must survive a write");
+    }
+
+    /** And the temporary file must never be left behind, whichever mode the target carried. */
+    @Test
+    public void writeConfigWithSync_leavesNoPartialFileBehind() throws IOException {
+        final File tempFile = loadTestConfigFile();
+
+        final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
+        configFileReader.applyConfig();
+        configFileReader.writeConfigWithSync();
+
+        assertTrue(
+                Files.notExists(tempFile.toPath().resolveSibling(tempFile.getName() + ".partial")),
+                "a partial file survived a successful write");
+    }
 }

@@ -392,26 +392,54 @@ public class MessageForwarderImpl implements MessageForwarder {
             final @NotNull Set<String> queueIds,
             final @NotNull List<String> subscribedTopics) {
         log.error("Registration of forwarder '{}' failed, undoing it", forwarderId);
+        // A try per phase, not one around all three. Sharing a single try meant a stop() that threw --
+        // an ordinary outcome, since it drains buffers through persistence futures -- skipped the
+        // topic-tree removal and the poll-set prune, leaving this forwarder subscribed to topics it can
+        // no longer serve. Ownership was released either way in the finally, so a queue was never
+        // stranded; the subscriptions were (EDG-882 review v03, R3-04).
         try {
             if (forwarders.remove(forwarderId, mqttForwarder)) {
                 mqttForwarder.stop();
             }
-            for (final String topic : subscribedTopics) {
-                topicTree.removeSubscriber(clientId, topic, shareName);
-            }
-            notEmptyQueues.removeAll(queueIds);
         } catch (final Throwable rollbackFailure) {
             // Reported, never rethrown: the caller must see why the registration failed, not why the
             // clean-up after it did.
             log.error(
-                    "Undoing the failed registration of forwarder '{}' did not complete", forwarderId, rollbackFailure);
-        } finally {
+                    "Stopping forwarder '{}' while undoing its failed registration failed",
+                    forwarderId,
+                    rollbackFailure);
+        }
+        for (final String topic : subscribedTopics) {
+            try {
+                topicTree.removeSubscriber(clientId, topic, shareName);
+            } catch (final Throwable rollbackFailure) {
+                log.error(
+                        "Removing forwarder '{}' from the topic tree for topic '{}' while undoing its failed registration failed",
+                        forwarderId,
+                        topic,
+                        rollbackFailure);
+            }
+        }
+        try {
+            notEmptyQueues.removeAll(queueIds);
+        } catch (final Throwable rollbackFailure) {
+            log.error(
+                    "Pruning the poll set of forwarder '{}' while undoing its failed registration failed",
+                    forwarderId,
+                    rollbackFailure);
+        }
+        try {
             // Last, and unconditionally: ownership is what the periodic clean-up reads, so releasing it
             // before the forwarder is unpublished would expose a live queue, and not releasing it at all
             // would keep a queue nobody drains alive for the life of the node.
             if (queueIdsForForwarder.remove(forwarderId, queueIds)) {
                 release(queueIds);
             }
+        } catch (final Throwable rollbackFailure) {
+            log.error(
+                    "Releasing the queue ownership of forwarder '{}' while undoing its failed registration failed",
+                    forwarderId,
+                    rollbackFailure);
         }
     }
 
@@ -579,16 +607,39 @@ public class MessageForwarderImpl implements MessageForwarder {
         // registration passed to addTopic.
         final Set<String> registeredQueueIds = queueIdsForForwarder.get(forwarderId);
 
+        // Every phase below runs, whatever the ones before it did. A teardown that stops half way leaves
+        // this forwarder's queue IDs in the ownership index with no forwarder behind them: the periodic
+        // clean-up then reads those queues as owned for the life of the node -- so they are never
+        // reclaimed -- and addForwarder refuses a replacement under the same id, because putIfAbsent
+        // still finds the abandoned claim. A bridge that cannot be restarted and storage that cannot be
+        // freed, out of one exception during a stop. The failures are collected and rethrown at the end
+        // so the caller still learns, but they no longer decide how much of the teardown happens
+        // (EDG-882 review v03, R3-04).
+        //
+        // The ordering the phases run in is unchanged and still load-bearing: unpublish and stop before
+        // ownership is dropped, prune the poll set last. See the note above the removal below.
+        final List<Throwable> teardownFailures = new ArrayList<>();
+
         for (final String topic : mqttForwarder.getTopics()) {
-            topicTree.removeSubscriber(clientId, topic, FORWARDER_PREFIX + forwarderId);
+            try {
+                topicTree.removeSubscriber(clientId, topic, FORWARDER_PREFIX + forwarderId);
+            } catch (final Throwable t) {
+                teardownFailures.add(t);
+                log.error("Removing forwarder '{}' from the topic tree for topic '{}' failed", forwarderId, topic, t);
+            }
             final String queueId = createQueueId(forwarderId, topic);
             if (clearQueue) {
-                final var qPersistence = queuePersistence.get();
-                if (qPersistence != null) {
-                    qPersistence.clear(queueId, true); // clear up queue
-                    if (log.isTraceEnabled()) {
-                        log.trace("Cleared queue '{}' for forwarder '{}'", queueId, forwarderId);
+                try {
+                    final var qPersistence = queuePersistence.get();
+                    if (qPersistence != null) {
+                        qPersistence.clear(queueId, true); // clear up queue
+                        if (log.isTraceEnabled()) {
+                            log.trace("Cleared queue '{}' for forwarder '{}'", queueId, forwarderId);
+                        }
                     }
+                } catch (final Throwable t) {
+                    teardownFailures.add(t);
+                    log.error("Clearing queue '{}' of forwarder '{}' failed", queueId, forwarderId, t);
                 }
             }
         }
@@ -612,12 +663,23 @@ public class MessageForwarderImpl implements MessageForwarder {
         // permanent leak is the wrong direction for this ticket.
         final MqttForwarder removed = forwarders.remove(forwarderId);
         if (removed != null) {
-            removed.stop();
-            if (log.isInfoEnabled()) {
-                log.info(
-                        "Forwarder '{}' removed and stopped, total active forwarders: {}",
+            // RemoteMqttForwarder.stop() drains its buffers through reset callbacks that wait on
+            // persistence futures and rethrow an ExecutionException as a RuntimeException, so this
+            // throwing is an ordinary consequence of a persistence hiccup, not a contrived case.
+            try {
+                removed.stop();
+                if (log.isInfoEnabled()) {
+                    log.info(
+                            "Forwarder '{}' removed and stopped, total active forwarders: {}",
+                            forwarderId,
+                            forwarders.size());
+                }
+            } catch (final Throwable t) {
+                teardownFailures.add(t);
+                log.error(
+                        "Stopping forwarder '{}' failed; its ownership and poll state are still being released",
                         forwarderId,
-                        forwarders.size());
+                        t);
             }
         } else {
             log.warn("Attempted to remove forwarder '{}' but it was not found in active forwarders", forwarderId);
@@ -642,6 +704,17 @@ public class MessageForwarderImpl implements MessageForwarder {
         for (final String queueId :
                 requireNonNullElseGet(registeredQueueIds, () -> queueIdsOf(forwarderId, mqttForwarder.getTopics()))) {
             notEmptyQueues.remove(queueId);
+        }
+
+        // Reported only once every phase above has run. The caller still sees that the teardown was not
+        // clean -- BridgeService logs it and carries on to the next forwarder -- but by this point the
+        // index is in the state it would have reached anyway, so nothing is left claiming a queue.
+        if (!teardownFailures.isEmpty()) {
+            final RuntimeException aggregate = new IllegalStateException(String.format(
+                    "Forwarder '%s' was removed and its queue ownership released, but %d step(s) of the teardown failed",
+                    forwarderId, teardownFailures.size()));
+            teardownFailures.forEach(aggregate::addSuppressed);
+            throw aggregate;
         }
     }
 

@@ -614,6 +614,7 @@ public class BridgeService {
             }
             try {
                 int removedCount = 0;
+                int failedCount = 0;
                 for (final MqttForwarder forwarder : client.getActiveForwarders()) {
                     final boolean shouldClearQueue =
                             clearQueue && !retainQueueForForwarders.contains(forwarder.getId());
@@ -624,10 +625,31 @@ public class BridgeService {
                                 bridgeId,
                                 shouldClearQueue);
                     }
-                    messageForwarder.removeForwarder(forwarder, shouldClearQueue);
-                    removedCount++;
+                    // Per forwarder, not around the loop. Catching outside it meant the first forwarder
+                    // whose teardown threw took every forwarder after it down with it -- they stayed in
+                    // the ownership index, so their queues were never reclaimed and the bridge could not
+                    // be restarted under the same ids. removeForwarder now completes its own teardown
+                    // before reporting, so what arrives here is a forwarder already released; continuing
+                    // is what lets the rest of the bridge be released too (EDG-882 review v03, R3-04).
+                    try {
+                        messageForwarder.removeForwarder(forwarder, shouldClearQueue);
+                        removedCount++;
+                    } catch (final Throwable e) {
+                        failedCount++;
+                        log.error(
+                                "Removing forwarder '{}' of bridge '{}' did not complete cleanly; continuing with the rest",
+                                forwarder.getId(),
+                                bridgeId,
+                                e);
+                    }
                 }
-                if (log.isDebugEnabled()) {
+                if (failedCount > 0) {
+                    log.warn(
+                            "Bridge '{}' released {} forwarder(s), {} of which reported a teardown failure",
+                            bridgeId,
+                            removedCount + failedCount,
+                            failedCount);
+                } else if (log.isDebugEnabled()) {
                     log.debug("Removed {} forwarder(s) for bridge '{}'", removedCount, bridgeId);
                 }
                 Checkpoints.checkpoint("mqtt-bridge-stopped");
