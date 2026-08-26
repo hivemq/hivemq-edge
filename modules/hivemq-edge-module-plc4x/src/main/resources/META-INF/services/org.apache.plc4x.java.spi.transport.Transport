@@ -1,2 +1,0 @@
-org.apache.plc4x.java.transport.tcp.TcpTransport
-org.apache.plc4x.java.transport.serial.SerialTransport
