@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import util.RandomPortGenerator;
 
 /**
  * Verifies that the resource retriever used for the discovery and JWKS fetches does not follow HTTP
@@ -55,7 +56,8 @@ class OidcServiceImplRedirectTest {
     void resourceRetriever_doesNotFollowRedirects() throws Exception {
         // The second server records every hit; if a redirect were followed, its counter would move.
         final AtomicInteger secondServerHits = new AtomicInteger();
-        secondServer = HttpServer.create(new InetSocketAddress(0), 0);
+        final int secondPort = RandomPortGenerator.get();
+        secondServer = HttpServer.create(new InetSocketAddress(secondPort), 0);
         secondServer.createContext("/", exchange -> {
             secondServerHits.incrementAndGet();
             final byte[] body = "{}".getBytes(StandardCharsets.UTF_8);
@@ -64,19 +66,18 @@ class OidcServiceImplRedirectTest {
             exchange.close();
         });
         secondServer.start();
-        final int secondPort = secondServer.getAddress().getPort();
 
         // The first server answers every request with a 302 pointing at the second server.
-        redirectingServer = HttpServer.create(new InetSocketAddress(0), 0);
+        final int redirectingPort = RandomPortGenerator.get();
+        redirectingServer = HttpServer.create(new InetSocketAddress(redirectingPort), 0);
         redirectingServer.createContext("/", exchange -> {
             exchange.getResponseHeaders().add("Location", "http://127.0.0.1:" + secondPort + "/");
             exchange.sendResponseHeaders(302, -1);
             exchange.close();
         });
         redirectingServer.start();
-        final URL firstUrl = URI.create(
-                        "http://127.0.0.1:" + redirectingServer.getAddress().getPort() + "/")
-                .toURL();
+        final URL firstUrl =
+                URI.create("http://127.0.0.1:" + redirectingPort + "/").toURL();
 
         // Retrieving through the retriever must not chase the redirect: it fails on the 302 instead of
         // fetching the second server's body, and the second server is never contacted.
