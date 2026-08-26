@@ -154,4 +154,114 @@ public class EnvVarUtilTest {
             }
         }
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v03, R3-01. The collection unit is the whole span -- an element's entire text or an
+    // attribute's entire value -- rather than a placeholder that occupies all of it, which is what makes
+    // a concatenation restorable. And the "cannot locate it" branch no longer returns a document that
+    // still holds the credential.
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    public void collectPlaceholders_collectsAConcatenatedSpanWhole() {
+        System.setProperty("EDG882_UNIT_SITE", "berlin");
+        try {
+            final var collected = EnvVarUtil.collectPlaceholders("<host>edge-${ENV:EDG882_UNIT_SITE}</host>");
+
+            assertEquals(1, collected.size());
+            assertEquals("host", collected.get(0).name());
+            assertEquals("edge-${ENV:EDG882_UNIT_SITE}", collected.get(0).literal());
+            assertEquals("edge-berlin", collected.get(0).value());
+        } finally {
+            System.clearProperty("EDG882_UNIT_SITE");
+        }
+    }
+
+    @Test
+    public void collectPlaceholders_collectsAnAttributeSpan() {
+        System.setProperty("EDG882_UNIT_DIR", "/etc/edge");
+        try {
+            final var collected = EnvVarUtil.collectPlaceholders("<keystore path=\"${ENV:EDG882_UNIT_DIR}/k.jks\"/>");
+
+            assertEquals(1, collected.size());
+            assertEquals("path", collected.get(0).name());
+            assertEquals("/etc/edge/k.jks", collected.get(0).value());
+            assertEquals(true, collected.get(0).attribute());
+        } finally {
+            System.clearProperty("EDG882_UNIT_DIR");
+        }
+    }
+
+    /** A span whose variable is unset is not collected: the whole-file render throws on it moments later. */
+    @Test
+    public void collectPlaceholders_skipsASpanWithAnUnsetVariable() {
+        assertEquals(
+                0,
+                EnvVarUtil.collectPlaceholders("<host>edge-${ENV:EDG882_UNIT_NOT_SET}</host>")
+                        .size());
+    }
+
+    @Test
+    public void restorePlaceholders_putsAConcatenatedSpanBack() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("host", "edge-${ENV:SITE}", "edge-berlin", false);
+
+        final String restored =
+                EnvVarUtil.restorePlaceholders("<x><host>edge-berlin</host></x>", java.util.List.of(placeholder));
+
+        assertEquals("<x><host>edge-${ENV:SITE}</host></x>", restored);
+    }
+
+    @Test
+    public void restorePlaceholders_putsAnAttributeSpanBack() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("path", "${ENV:DIR}/k.jks", "/etc/edge/k.jks", true);
+
+        final String restored =
+                EnvVarUtil.restorePlaceholders("<keystore path=\"/etc/edge/k.jks\"/>", java.util.List.of(placeholder));
+
+        assertEquals("<keystore path=\"${ENV:DIR}/k.jks\"/>", restored);
+    }
+
+    /**
+     * The branch R3-01 named. The span cannot be located -- the marshaller wrote it in a form the
+     * collector did not predict -- but the credential is unmistakably still in the document. Returning it
+     * is what the old code did; refusing the write is the only answer that keeps the secret off the disk,
+     * and the write has not opened the file yet when this runs.
+     */
+    @Test
+    public void restorePlaceholders_whenACredentialIsPresentButUnlocatable_thenTheWriteIsRefused() {
+        final var placeholder =
+                new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", "s3cr3t-do-not-write-me", false);
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders(
+                        "<x><password xmlns=\"urn:other\">s3cr3t-do-not-write-me</password></x>",
+                        java.util.List.of(placeholder)));
+    }
+
+    /**
+     * And the other side of that judgement: when the value is genuinely gone from the document there is
+     * nothing to leak, so the write proceeds. Refusing here would stop a node writing its configuration
+     * because an element was removed.
+     */
+    @Test
+    public void restorePlaceholders_whenTheSpanIsGoneAltogether_thenTheWriteProceeds() {
+        final var placeholder =
+                new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", "s3cr3t-do-not-write-me", false);
+
+        final String document = "<x><host>testhost</host></x>";
+
+        assertEquals(document, EnvVarUtil.restorePlaceholders(document, java.util.List.of(placeholder)));
+    }
+
+    /** A non-secret that cannot be located keeps its value: losing an indirection is not a disclosure. */
+    @Test
+    public void restorePlaceholders_whenANonSecretIsPresentButUnlocatable_thenTheWriteProceeds() {
+        final var placeholder =
+                new EnvVarUtil.ElementPlaceholder("host", "${ENV:HOSTNAME}", "shared.example.com", false);
+
+        final String document = "<x><host xmlns=\"urn:other\">shared.example.com</host></x>";
+
+        assertEquals(document, EnvVarUtil.restorePlaceholders(document, java.util.List.of(placeholder)));
+    }
 }

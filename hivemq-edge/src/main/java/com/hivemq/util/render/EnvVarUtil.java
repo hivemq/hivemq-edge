@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,39 +102,72 @@ public class EnvVarUtil {
     }
 
     /**
-     * A {@code ${ENV:...}} placeholder that is the entire text of one element, and the value it renders
-     * to: the element's name, the placeholder as written, and that value.
+     * One span of the configuration file that contained at least one {@code ${ENV:...}} placeholder, and
+     * the text it renders to.
+     * <p>
+     * {@code name} is the element name, or the attribute name when {@code attribute} is set. {@code
+     * literal} is the span exactly as the operator wrote it, placeholders and all; {@code value} is what
+     * that span renders to, which is what the marshaller will have written.
+     * <p>
+     * The span is the <em>whole</em> text of the element or attribute, not the placeholder alone. That is
+     * what makes a concatenation restorable: {@code <host>edge-${ENV:SITE}</host>} is one span whose
+     * literal is {@code edge-${ENV:SITE}} and whose value is {@code edge-berlin}, and putting the literal
+     * back where the value is found needs no knowledge of where inside it the placeholder sat (EDG-882
+     * review v03, R3-01).
      */
     public record ElementPlaceholder(
-            @NotNull String element,
+            @NotNull String name,
             @NotNull String literal,
-            @NotNull String value) {}
+            @NotNull String value,
+            boolean attribute) {
+
+        /** An element span, which is what the great majority of placeholders are. */
+        public ElementPlaceholder(
+                final @NotNull String name, final @NotNull String literal, final @NotNull String value) {
+            this(name, literal, value, false);
+        }
+    }
 
     /**
-     * Matches a placeholder that is the whole text of an element, capturing the element name and any
-     * whitespace the operator wrote around it.
+     * Matches an element whose text contains at least one placeholder, capturing the name and the entire
+     * text between the tags.
      * <p>
-     * The padding is captured rather than skipped because the element's text is what the document ends up
-     * holding: the file is rendered before it is parsed, so {@code <password>\n  ${ENV:PW}\n</password>}
-     * becomes an element whose text is the value <em>with</em> that padding, and the marshaller writes it
-     * back the same way. A search string built from the bare value then matches nothing, the restore gives
-     * up, and the credential is written out — which is what this looked like before
-     * {@code whenThePlaceholderIsWrittenWithSurroundingWhitespace_thenItIsStillRestored} was written
-     * (EDG-882 review v02, R2-20).
+     * The whole text, rather than the placeholder alone, so that any whitespace the operator wrote and
+     * any literal text they concatenated it with are both carried. The file is rendered before it is
+     * parsed, so {@code <password>\n  ${ENV:PW}\n</password>} becomes an element whose text is the value
+     * <em>with</em> that padding and the marshaller writes it back the same way; a search string built
+     * from the bare value matches nothing, the restore gives up, and the credential goes out (EDG-882
+     * review v02, R2-20). Concatenation is the same problem one step further out (R3-01).
+     * <p>
+     * {@code [^<>]} keeps a match inside one element: without it the text could run across a closing tag
+     * and swallow a sibling.
      */
     private static final @NotNull Pattern ELEMENT_PLACEHOLDER =
-            Pattern.compile("<([A-Za-z_][\\w.:-]*)>(\\s*)(\\$\\{ENV:(.*?)})(\\s*)</\\1>");
+            Pattern.compile("<([A-Za-z_][\\w.:-]*)>([^<>]*\\$\\{ENV:[^}]*}[^<>]*)</\\1>");
+
+    /**
+     * Matches an attribute whose value contains at least one placeholder.
+     * <p>
+     * Attributes were a documented blind spot until R3-01: a placeholder in one was resolved on the way
+     * in and written out resolved, with nothing reported at all. There is nothing about an attribute that
+     * makes it harder than an element — it is a named span with a value — so it is collected the same way
+     * and restored the same way.
+     */
+    private static final @NotNull Pattern ATTRIBUTE_PLACEHOLDER =
+            Pattern.compile("([A-Za-z_][\\w.:-]*)=\"([^\"]*\\$\\{ENV:[^}]*}[^\"]*)\"");
 
     private static final @NotNull Pattern XML_COMMENT = Pattern.compile("(?s)<!--.*?-->");
+
+    private static final @NotNull Pattern ENV_PLACEHOLDER = Pattern.compile(ENV_VAR_PATTERN);
 
     /**
      * The {@code ${ENV:...}} placeholders of the file as it was written that
      * {@link #restorePlaceholders} is able to put back.
      * <p>
-     * Only placeholders that are an element's entire text are collected, because those are the only ones
-     * that can be located again in a document the marshaller rebuilt from the configuration model: a
-     * placeholder in an attribute, or one concatenated with other text, has no anchor to return to. Such
-     * a placeholder is reported by {@code restorePlaceholders} rather than silently resolved.
+     * Every element text and every attribute value that contains a placeholder is collected, whether the
+     * placeholder is the whole of it or concatenated with literal text. What is <em>not</em> collectable
+     * is a span whose rendered form the marshaller will not reproduce verbatim; {@code restorePlaceholders}
+     * decides that when it looks, and refuses to write a credential it cannot put back.
      * <p>
      * Comments are stripped first. A commented-out block is not part of the configuration and never
      * reaches the marshalled document, but its placeholders would otherwise be counted and make every
@@ -142,19 +176,47 @@ public class EnvVarUtil {
     public static @NotNull List<ElementPlaceholder> collectPlaceholders(final @NotNull String text) {
         final String withoutComments = XML_COMMENT.matcher(text).replaceAll("");
         final List<ElementPlaceholder> placeholders = new ArrayList<>();
-        final var matcher = ELEMENT_PLACEHOLDER.matcher(withoutComments);
+        collectInto(placeholders, ELEMENT_PLACEHOLDER.matcher(withoutComments), false);
+        collectInto(placeholders, ATTRIBUTE_PLACEHOLDER.matcher(withoutComments), true);
+        return placeholders;
+    }
+
+    private static void collectInto(
+            final @NotNull List<ElementPlaceholder> placeholders,
+            final @NotNull Matcher matcher,
+            final boolean attribute) {
         while (matcher.find()) {
-            final var value = getValue(matcher.group(4));
+            final String literal = matcher.group(2);
+            final String value = renderOrNull(literal);
+            // An empty rendered span gives the restore nothing to search for, and a span with an unset
+            // variable never reaches the marshalled document at all -- the render of the whole file
+            // throws first, which is the behaviour this must not change.
             if (value != null && !value.isEmpty()) {
-                // Both sides carry the operator's padding, so the search string is what the marshaller
-                // wrote and the replacement is what they typed, character for character.
-                final String leading = matcher.group(2);
-                final String trailing = matcher.group(5);
-                placeholders.add(new ElementPlaceholder(
-                        matcher.group(1), leading + matcher.group(3) + trailing, leading + value + trailing));
+                placeholders.add(new ElementPlaceholder(matcher.group(1), literal, value, attribute));
             }
         }
-        return placeholders;
+    }
+
+    /**
+     * Renders one span the way {@link #replaceEnvironmentVariablePlaceholders} renders the whole file, or
+     * {@code null} when a variable it uses is unset.
+     * <p>
+     * Null rather than a throw: the whole-file render runs immediately after collection and throws on the
+     * same variable with the message the operator needs. Throwing here would only move that failure
+     * earlier and describe it worse.
+     */
+    private static @Nullable String renderOrNull(final @NotNull String span) {
+        final StringBuilder rendered = new StringBuilder();
+        final var matcher = ENV_PLACEHOLDER.matcher(span);
+        while (matcher.find()) {
+            final String replacement = getValue(matcher.group(1));
+            if (replacement == null) {
+                return null;
+            }
+            matcher.appendReplacement(rendered, escapeReplacement(replacement));
+        }
+        matcher.appendTail(rendered);
+        return rendered.toString();
     }
 
     /**
@@ -178,68 +240,108 @@ public class EnvVarUtil {
      * the value so that no secret reaches the disk unannounced (EDG-882 review v02, R2-04). It used to be
      * a warning and the value.
      * <p>
-     * <b>Known blind spots</b>, all of them cases {@link #collectPlaceholders} never sees, so they are
-     * resolved on the way in and stay resolved on the way out with nothing reported at all:
-     * <ul>
-     *   <li>a placeholder in an <em>attribute</em> rather than in element text;</li>
-     *   <li>a placeholder <em>concatenated</em> with other text, as in
-     *       {@code <host>edge-${ENV:SITE}</host>} — there is no anchor to return it to;</li>
-     *   <li>a placeholder inside a <em>configuration fragment</em> or an {@code <if>} block, which are
-     *       flattened into the document before this runs.</li>
-     * </ul>
-     * A credential written through any of these is materialised into {@code config.xml} exactly as it was
-     * before this method existed. Closing them means restoring at the level the operator wrote at rather
-     * than at the element, which is a larger change than this one.
+     * <b>Concatenation and attributes are covered</b> (EDG-882 review v03, R3-01). The unit collected is
+     * the whole text of an element or the whole value of an attribute, so
+     * {@code <host>edge-${ENV:SITE}</host>} and {@code path="${ENV:DIR}/certs"} are located and restored
+     * the same way a bare placeholder is; there is no need to know where inside the span it sat.
+     * <p>
+     * <b>What remains genuinely undecidable</b> is a span the marshaller does not reproduce verbatim: it
+     * normalises a typed field, or the element leaves the configuration. That is the {@code inDocument ==
+     * 0} case below, and it no longer returns quietly. If the value is still somewhere in the document
+     * and it is a credential, the write is <b>refused</b> rather than completed with the secret in it.
+     * <p>
+     * A placeholder inside a configuration fragment or an {@code <if>} block is collected, because both
+     * are flattened into the text before this runs; the write-back cannot reproduce the fragment
+     * structure itself, which is a separate and pre-existing limitation of the round trip.
      *
      * @param placeholders what {@link #collectPlaceholders(String)} found in the file as it was written
+     * @throws UnrecoverableException when a credential cannot be kept out of the document being written
      */
     public static @NotNull String restorePlaceholders(
             final @NotNull String renderedXml, final @NotNull List<ElementPlaceholder> placeholders) {
         if (placeholders.isEmpty()) {
             return renderedXml;
         }
-        // Grouped by the element the placeholder occupied and the value it renders to. Two placeholders
-        // that share both are indistinguishable in the marshalled document; a group whose literal is not
+        // Grouped by the span the placeholder occupied and the value it renders to. Two placeholders that
+        // share both are indistinguishable in the marshalled document; a group whose literal is not
         // unique is left alone rather than guessed at.
-        final Map<String, List<ElementPlaceholder>> byElementAndValue = new LinkedHashMap<>();
+        final Map<String, List<ElementPlaceholder>> bySpanAndValue = new LinkedHashMap<>();
         for (final ElementPlaceholder placeholder : placeholders) {
-            byElementAndValue
-                    .computeIfAbsent(placeholder.element() + ' ' + placeholder.value(), key -> new ArrayList<>())
+            bySpanAndValue
+                    .computeIfAbsent(
+                            // NUL, as the original key did -- it cannot occur in an XML name or in text
+                            // the parser accepted, so the three parts can never run together ambiguously.
+                            // Written as the escape rather than as a raw byte: the byte was in the source
+                            // literally, which made file(1) and grep treat this whole file as binary and
+                            // silently skip it (EDG-882 review v03, R3-01).
+                            placeholder.attribute() + "@" + placeholder.name() + '\0' + placeholder.value(),
+                            key -> new ArrayList<>())
                     .add(placeholder);
         }
 
         var result = renderedXml;
-        for (final List<ElementPlaceholder> group : byElementAndValue.values()) {
+        for (final List<ElementPlaceholder> group : bySpanAndValue.values()) {
             final ElementPlaceholder first = group.get(0);
             final String literal = first.literal();
-            final String element =
-                    "<" + first.element() + ">" + escapeXmlText(first.value()) + "</" + first.element() + ">";
-            final int inDocument = countOccurrences(result, element);
+            final String rendered = renderedSpan(first);
+            final int inDocument = countOccurrences(result, rendered);
 
             if (group.stream().anyMatch(placeholder -> !placeholder.literal().equals(literal))) {
                 result = giveUpOn(
                         result,
                         first,
-                        element,
+                        rendered,
                         "two different placeholders fill it with the same value, so neither of them can be told"
                                 + " from the other");
                 continue;
             }
             if (inDocument == 0) {
-                // Nothing to replace: the element the placeholder filled is not in the document as this
-                // expects it. Either it left the configuration, or the marshaller wrote its text
-                // differently -- normalising a typed field (TRUE -> true, 01883 -> 1883), or anything else
-                // that makes the element's text not what was collected.
+                // The span is not in the document as this expects it. Either it left the configuration --
+                // nothing to restore, and nothing to leak -- or the marshaller wrote it differently,
+                // normalising a typed field (TRUE to true, 01883 to 1883) or anything else not predicted
+                // here.
                 //
-                // This branch can leak: if the element is still there under a text this did not predict,
-                // the value is on disk and nothing here can find it to take it out. That is why the
-                // collection side has to record the text exactly as the document will hold it -- the
-                // whitespace case (R2-20) was precisely this, and it was a credential written in plain.
+                // Telling those two apart is the whole point, because the second is a leak: the value is in
+                // the document and the anchor cannot find it to take it out. So ask the one question that
+                // separates them, which is whether the value is still there at all. If it is, and it is a
+                // credential, refuse the write. Returning a document known to contain a secret the operator
+                // chose to keep out of it is not a decision this method gets to make (R3-01).
+                // Both forms, because the question is "is the secret in this document", not "is this exact
+                // string": a value the marshaller escaped is the same disclosure spelled differently. It is
+                // not reachable through ${ENV:...} today -- a value carrying an XML metacharacter is
+                // spliced in raw and makes the file unparseable long before this -- but a security check
+                // that only looks for one spelling is the kind that stops being true quietly.
+                if (result.contains(first.value()) || result.contains(escapeXmlText(first.value()))) {
+                    if (isSecretElement(first.name())) {
+                        log.error(
+                                "The '{}' {} holds a credential supplied through '{}', and that value is in the"
+                                        + " configuration being written in a form this cannot locate, so the"
+                                        + " placeholder cannot be put back. The write has been refused: config.xml is"
+                                        + " unchanged, and this node keeps running on the value it already holds.",
+                                first.name(),
+                                first.attribute() ? "attribute" : "element",
+                                literal);
+                        throw new UnrecoverableException(false);
+                    }
+                    log.error(
+                            "The '{}' {} that '{}' filled is in the configuration being written in a form this cannot"
+                                    + " locate, so its value is written out and the variable reference is lost; put it"
+                                    + " back by hand.",
+                            first.name(),
+                            first.attribute() ? "attribute" : "element",
+                            literal);
+                    continue;
+                }
+                // The value is nowhere in the document, so nothing leaked. Still an error, because the two
+                // readings of that are "the element left the configuration", which costs nothing, and "the
+                // marshaller normalised it", which silently costs the operator their variable reference --
+                // and this cannot tell them apart.
                 log.error(
-                        "The '<{}>' element that '{}' filled is not in the configuration being written, so the"
-                                + " placeholder cannot be restored. If the element was not removed, check the file"
-                                + " for a value that should have stayed a variable reference.",
-                        first.element(),
+                        "The '{}' {} that '{}' filled is not in the configuration being written, so the placeholder"
+                                + " cannot be restored. If it was not removed, check the file for a value that should"
+                                + " have stayed a variable reference.",
+                        first.name(),
+                        first.attribute() ? "attribute" : "element",
                         literal);
                 continue;
             }
@@ -247,12 +349,12 @@ public class EnvVarUtil {
                 result = giveUpOn(
                         result,
                         first,
-                        element,
+                        rendered,
                         "'" + literal + "' fills " + group.size() + " of them but the configuration being written"
                                 + " has " + inDocument + ", so which ones came from the variable cannot be told");
                 continue;
             }
-            result = result.replace(element, "<" + first.element() + ">" + literal + "</" + first.element() + ">");
+            result = result.replace(rendered, literalSpan(first));
         }
         return result;
     }
@@ -304,14 +406,14 @@ public class EnvVarUtil {
     private static @NotNull String giveUpOn(
             final @NotNull String document,
             final @NotNull ElementPlaceholder placeholder,
-            final @NotNull String element,
+            final @NotNull String rendered,
             final @NotNull String reason) {
-        if (!isSecretElement(placeholder.element())) {
+        if (!isSecretElement(placeholder.name())) {
             log.error(
                     "The '<{}>' placeholder cannot be restored when the configuration file is written, because"
                             + " {}. Its value is written out instead and the variable reference is lost; put it"
                             + " back by hand once the ambiguity is resolved.",
-                    placeholder.element(),
+                    placeholder.name(),
                     reason);
             return document;
         }
@@ -321,11 +423,39 @@ public class EnvVarUtil {
                         + " variable sets: this node keeps running on the value it already holds, and the next"
                         + " start will stop and name that variable. Restore the intended '${ENV:...}'"
                         + " reference in config.xml -- the previous file is in the rolling backup beside it.",
-                placeholder.element(),
+                placeholder.name(),
                 reason,
                 UNRESTORED_SECRET);
-        return document.replace(
-                element, "<" + placeholder.element() + ">" + UNRESTORED_SECRET + "</" + placeholder.element() + ">");
+        return document.replace(rendered, poisonedSpan(placeholder));
+    }
+
+    /** The span as the marshaller will have written it: what the restore searches the document for. */
+    private static @NotNull String renderedSpan(final @NotNull ElementPlaceholder placeholder) {
+        return placeholder.attribute()
+                ? placeholder.name() + "=\"" + escapeXmlAttribute(placeholder.value()) + "\""
+                : "<" + placeholder.name() + ">" + escapeXmlText(placeholder.value()) + "</" + placeholder.name() + ">";
+    }
+
+    /** The same span with the operator's placeholders back in it: what the restore writes. */
+    private static @NotNull String literalSpan(final @NotNull ElementPlaceholder placeholder) {
+        return placeholder.attribute()
+                ? placeholder.name() + "=\"" + placeholder.literal() + "\""
+                : "<" + placeholder.name() + ">" + placeholder.literal() + "</" + placeholder.name() + ">";
+    }
+
+    /** The same span with {@link #UNRESTORED_SECRET} in place of a credential that cannot be restored. */
+    private static @NotNull String poisonedSpan(final @NotNull ElementPlaceholder placeholder) {
+        return placeholder.attribute()
+                ? placeholder.name() + "=\"" + UNRESTORED_SECRET + "\""
+                : "<" + placeholder.name() + ">" + UNRESTORED_SECRET + "</" + placeholder.name() + ">";
+    }
+
+    /**
+     * The characters a marshaller escapes inside an attribute value. Differs from element text by the
+     * quote, which would otherwise close the attribute.
+     */
+    private static @NotNull String escapeXmlAttribute(final @NotNull String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace("\"", "&quot;");
     }
 
     private static int countOccurrences(final @NotNull String text, final @NotNull String needle) {
