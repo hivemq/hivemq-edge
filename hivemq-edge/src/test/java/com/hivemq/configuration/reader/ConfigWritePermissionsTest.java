@@ -16,40 +16,55 @@
 package com.hivemq.configuration.reader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.hivemq.configuration.reader.ConfigFileReaderWriter.PreservedAttributes;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * EDG-882 review v03, R3-07 — the replacement configuration file must never be readable by anyone the
- * file it replaces was not, at any point while it holds the configuration.
+ * EDG-882 review v03, R3-07 and R3-09 — the replacement configuration file must never be readable by
+ * anyone the file it replaces was not, at any point while it holds the configuration.
  * <p>
  * {@code config.xml} carries bridge passwords, keystore and truststore passwords and adapter
  * credentials. The first version of the replace-by-move wrote the rendered document into a file created
  * by {@code FileWriter}, which takes the process umask — commonly {@code 0644} — and only narrowed it to
  * the target's mode afterwards. Between those two steps a world-readable file held every secret in the
- * configuration, on every REST write to any subsystem.
+ * configuration, on every REST write to any subsystem (R3-07).
+ * <p>
+ * The second version fixed the timing but carried only the mode. A mode names a group without naming
+ * <em>which</em> group, and a newly created file takes its group from the creating process or from the
+ * directory — so a {@code 0640} file could be replaced by a {@code 0640} file whose group-read was
+ * granted to an entirely different set of principals, and a failure to read the original's protections
+ * was treated as "there are none" and the write proceeded on the umask (R3-09).
  * <p>
  * That window did not exist before the branch that introduced it: writing in place reused the file's own
- * inode and therefore its own mode. This is a regression, which is why the behaviour here is fail-closed
- * rather than best-effort.
+ * inode and therefore its own mode, group and ACL. It is a regression, which is why the behaviour here is
+ * fail-closed rather than best-effort.
  * <p>
  * The creation-time property is the one that matters and it cannot be observed end to end — the write is
  * synchronous and the temporary file is gone by the time any assertion could run — so it is pinned
- * directly on the helper that establishes it. {@code ConfigFileWriterTest} covers the end-to-end mode
+ * directly on the helpers that establish it. {@code ConfigFileWriterTest} covers the end-to-end mode
  * preservation and the symbolic-link case.
  */
 public class ConfigWritePermissionsTest {
@@ -59,6 +74,8 @@ public class ConfigWritePermissionsTest {
             PosixFilePermissions.fromString("rw-r--r--");
     private static final @NotNull Set<PosixFilePermission> WORLD_WRITABLE =
             PosixFilePermissions.fromString("rw-rw-rw-");
+    private static final @NotNull Set<PosixFilePermission> GROUP_READABLE =
+            PosixFilePermissions.fromString("rw-r-----");
 
     @TempDir
     private @NotNull Path directory;
@@ -73,6 +90,14 @@ public class ConfigWritePermissionsTest {
         partial = directory.resolve("config.xml.partial");
     }
 
+    private @NotNull Path targetWith(final @NotNull Set<PosixFilePermission> mode) throws IOException {
+        final Path target = directory.resolve("config.xml");
+        Files.createFile(target, PosixFilePermissions.asFileAttribute(mode));
+        return target;
+    }
+
+    // ---------------------------------------------------------------- R3-07: the disclosure window
+
     /**
      * The defect, at the only moment it is observable. A target the operator restricted to {@code 0600}
      * must not produce a replacement that is briefly readable by everyone — so the file is created
@@ -80,7 +105,8 @@ public class ConfigWritePermissionsTest {
      */
     @Test
     public void createPartialFile_createsTheReplacementOwnerOnly() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, OWNER_ONLY);
+        ConfigFileReaderWriter.createPartialFile(
+                partial, ConfigFileReaderWriter.preservedAttributesOf(targetWith(OWNER_ONLY)));
 
         assertEquals(
                 OWNER_ONLY,
@@ -95,7 +121,8 @@ public class ConfigWritePermissionsTest {
      */
     @Test
     public void createPartialFile_isOwnerOnlyEvenWhenTheTargetIsWorldReadable() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, WORLD_READABLE);
+        ConfigFileReaderWriter.createPartialFile(
+                partial, ConfigFileReaderWriter.preservedAttributesOf(targetWith(WORLD_READABLE)));
 
         assertEquals(
                 OWNER_ONLY,
@@ -113,7 +140,8 @@ public class ConfigWritePermissionsTest {
         Files.createFile(partial, PosixFilePermissions.asFileAttribute(WORLD_WRITABLE));
         Files.writeString(partial, "left behind by a killed write");
 
-        ConfigFileReaderWriter.createPartialFile(partial, OWNER_ONLY);
+        ConfigFileReaderWriter.createPartialFile(
+                partial, ConfigFileReaderWriter.preservedAttributesOf(targetWith(OWNER_ONLY)));
 
         assertEquals(
                 OWNER_ONLY,
@@ -123,23 +151,24 @@ public class ConfigWritePermissionsTest {
     }
 
     /**
-     * With no mode to reproduce — a configuration file being created for the first time — the
-     * replacement is created normally and takes the umask, which is what that file would have had
-     * anyway. Narrowing it here would silently change the mode of every newly created configuration.
+     * With nothing to reproduce — a configuration file being created for the first time — the replacement
+     * is created normally and takes the umask, which is what that file would have had anyway. Narrowing
+     * it here would silently change the mode of every newly created configuration.
      */
     @Test
     public void createPartialFile_withNothingToReproduce_createsTheFileNormally() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, null);
+        ConfigFileReaderWriter.createPartialFile(partial, PreservedAttributes.NONE);
 
         assertTrue(Files.exists(partial), "the replacement must still be created");
     }
 
     /** The widening step: the written replacement ends up with exactly the target's mode. */
     @Test
-    public void applyPermissions_givesTheReplacementTheTargetsExactMode() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, WORLD_READABLE);
+    public void applyPreservedAttributes_givesTheReplacementTheTargetsExactMode() throws IOException {
+        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(targetWith(WORLD_READABLE));
+        ConfigFileReaderWriter.createPartialFile(partial, preserved);
 
-        ConfigFileReaderWriter.applyPermissions(partial, WORLD_READABLE);
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
 
         assertEquals(WORLD_READABLE, Files.getPosixFilePermissions(partial), "the target's mode was not reproduced");
     }
@@ -151,52 +180,124 @@ public class ConfigWritePermissionsTest {
      * intact and correctly permissioned.
      */
     @Test
-    public void applyPermissions_whenTheModeCannotBeReproduced_thenTheWriteIsAborted() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, OWNER_ONLY);
-        Files.delete(partial); // the replacement is gone, so its mode cannot be set
+    public void applyPreservedAttributes_whenTheModeCannotBeReproduced_thenTheWriteIsAborted() throws IOException {
+        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(targetWith(OWNER_ONLY));
+        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        Files.delete(partial); // the replacement is gone, so its protections cannot be set
 
         assertThrows(
                 IOException.class,
-                () -> ConfigFileReaderWriter.applyPermissions(partial, OWNER_ONLY),
-                "a mode that cannot be reproduced must abort the replacement, not be logged and ignored");
+                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved),
+                "protections that cannot be reproduced must abort the replacement, not be logged and ignored");
     }
 
     /** Nothing to reproduce is not a failure — it is the answer for a first-time configuration file. */
     @Test
-    public void applyPermissions_withNothingToReproduce_isANoOp() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, null);
+    public void applyPreservedAttributes_withNothingToReproduce_isANoOp() throws IOException {
+        ConfigFileReaderWriter.createPartialFile(partial, PreservedAttributes.NONE);
 
-        ConfigFileReaderWriter.applyPermissions(partial, null);
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, PreservedAttributes.NONE);
 
         assertTrue(Files.exists(partial));
     }
 
-    @Test
-    public void posixPermissionsOf_readsTheModeOfAnExistingFile() throws IOException {
-        final Path target = directory.resolve("config.xml");
-        Files.createFile(target, PosixFilePermissions.asFileAttribute(OWNER_ONLY));
+    // ---------------------------------------------------------- R3-09: who the mode actually refers to
 
-        assertEquals(OWNER_ONLY, ConfigFileReaderWriter.posixPermissionsOf(target));
-    }
-
-    /** A file that does not exist yet has no mode to carry, which is a null answer rather than a throw. */
+    /**
+     * The mode is not the access control. R3-09: the reader captured only {@code Set<PosixFilePermission>},
+     * so owner and group were whatever the newly created replacement happened to get — and {@code 0640}
+     * then granted group-read to a different set of principals than the file it replaced did.
+     */
     @Test
-    public void posixPermissionsOf_aMissingFile_hasNothingToReproduce() {
-        assertNull(ConfigFileReaderWriter.posixPermissionsOf(directory.resolve("not-written-yet.xml")));
+    public void preservedAttributesOf_capturesOwnerAndGroupNotJustTheMode() throws IOException {
+        final Path target = targetWith(GROUP_READABLE);
+        final PosixFileAttributes expected = Files.readAttributes(target, PosixFileAttributes.class);
+
+        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+
+        assertEquals(GROUP_READABLE, preserved.permissions(), "the mode must still be carried");
+        assertNotNull(preserved.owner(), "the owner must be carried, or 0640 names a group it cannot name");
+        assertNotNull(preserved.group(), "the group must be carried, or 0640 names a group it cannot name");
+        assertEquals(expected.owner(), preserved.owner());
+        assertEquals(expected.group(), preserved.group());
     }
 
     /**
-     * The two halves together, in the order the writer runs them: created narrow, written, widened to
-     * the target's mode. This is the sequence R3-07 asks for, and the assertion in the middle is the one
-     * the end-to-end test cannot make.
+     * Sam's reproduction, as a test. A {@code 0640} file owned by a group the replacement would not
+     * naturally get must come back out of the replacement owned by that same group — otherwise the mode
+     * survives and the access control does not.
+     * <p>
+     * Skipped where the account running the build belongs to only one group, or where it may not set the
+     * group of a file it owns; there is then no second principal for the assertion to distinguish.
+     */
+    @Test
+    public void applyPreservedAttributes_reproducesTheTargetsGroupNotTheProcessDefault() throws IOException {
+        final Path target = targetWith(GROUP_READABLE);
+        final GroupPrincipal defaultGroup =
+                Files.readAttributes(target, PosixFileAttributes.class).group();
+        final GroupPrincipal other = aDifferentGroupOfThisUser(target, defaultGroup);
+        assumeTrue(other != null, "this account has no second group, so there is nothing to tell apart");
+
+        Files.getFileAttributeView(target, PosixFileAttributeView.class).setGroup(other);
+        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
+
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
+
+        final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
+        assertEquals(
+                other,
+                actual.group(),
+                "the replacement kept the mode but granted group-read to a different group than the file it replaces");
+        assertEquals(GROUP_READABLE, actual.permissions(), "the mode must be reproduced as well as the group");
+    }
+
+    /**
+     * R3-09's second half. An {@code IOException} or a {@code SecurityException} reading an existing
+     * file's protections is not the same answer as "this file has no protections", and treating them the
+     * same let the write proceed on the umask. Only a genuinely absent file is "nothing to preserve".
+     * <p>
+     * Provoked by making the containing directory untraversable, which is skipped when the build runs as
+     * a superuser because the permission check does not apply to one.
+     */
+    @Test
+    public void preservedAttributesOf_whenTheProtectionsCannotBeRead_thenTheWriteIsAborted() throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser is not refused by mode bits");
+        final Path enclosing = Files.createDirectory(directory.resolve("locked"));
+        final Path target = enclosing.resolve("config.xml");
+        Files.createFile(target, PosixFilePermissions.asFileAttribute(GROUP_READABLE));
+        Files.setPosixFilePermissions(enclosing, PosixFilePermissions.fromString("---------"));
+        try {
+            assertThrows(
+                    IOException.class,
+                    () -> ConfigFileReaderWriter.preservedAttributesOf(target),
+                    "a failure to read the target's protections must abort the write, not fall back to the umask");
+        } finally {
+            Files.setPosixFilePermissions(enclosing, PosixFilePermissions.fromString("rwx------"));
+        }
+    }
+
+    /** A file that does not exist yet has no protections to carry, which is an answer rather than a throw. */
+    @Test
+    public void preservedAttributesOf_aMissingFile_hasNothingToReproduce() throws IOException {
+        final PreservedAttributes preserved =
+                ConfigFileReaderWriter.preservedAttributesOf(directory.resolve("not-written-yet.xml"));
+
+        assertTrue(preserved.nothingToReproduce(), "a first-time configuration file has nothing to preserve");
+    }
+
+    /**
+     * The whole sequence, in the order the writer runs them: created narrow, written, widened to the
+     * target's protections. This is what R3-07 and R3-09 ask for together, and the assertion in the
+     * middle is the one the end-to-end test cannot make.
      */
     @Test
     public void theReplacementIsNeverWiderThanItsTargetWhileItHoldsTheConfiguration() throws IOException {
-        final Path target = directory.resolve("config.xml");
-        Files.createFile(target, PosixFilePermissions.asFileAttribute(WORLD_READABLE));
-        final Set<PosixFilePermission> targetMode = ConfigFileReaderWriter.posixPermissionsOf(target);
+        final Path target = targetWith(WORLD_READABLE);
+        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
 
-        ConfigFileReaderWriter.createPartialFile(partial, targetMode);
+        ConfigFileReaderWriter.createPartialFile(partial, preserved);
         assertEquals(
                 OWNER_ONLY,
                 Files.getPosixFilePermissions(partial),
@@ -207,11 +308,64 @@ public class ConfigWritePermissionsTest {
                 Files.getPosixFilePermissions(partial),
                 "the file was widened while it still held the configuration");
 
-        ConfigFileReaderWriter.applyPermissions(partial, targetMode);
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
 
-        assertEquals(WORLD_READABLE, Files.getPosixFilePermissions(partial), "the target's mode must be reproduced");
-        assertFalse(
-                Files.getPosixFilePermissions(partial).isEmpty(),
-                "the replacement must carry a mode, not be left with none");
+        final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
+        assertEquals(WORLD_READABLE, actual.permissions(), "the target's mode must be reproduced");
+        assertEquals(
+                Files.readAttributes(target, PosixFileAttributes.class).group(),
+                actual.group(),
+                "the target's group must be reproduced along with its mode");
+    }
+
+    /**
+     * A group this account belongs to that is not {@code current}, and that it may actually set on a file
+     * it owns, or {@code null} when there is none. Both conditions matter: membership is what makes the
+     * change legal, and some platforms restrict it further.
+     */
+    private static @Nullable GroupPrincipal aDifferentGroupOfThisUser(
+            final @NotNull Path file, final @NotNull GroupPrincipal current) {
+        for (final String name : groupNamesOfThisUser()) {
+            if (name.equals(current.getName())) {
+                continue;
+            }
+            try {
+                final GroupPrincipal candidate =
+                        file.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByGroupName(name);
+                final PosixFileAttributeView view = Files.getFileAttributeView(file, PosixFileAttributeView.class);
+                view.setGroup(candidate);
+                view.setGroup(current); // put it back; the test sets it again itself
+                return candidate;
+            } catch (final IOException | UnsupportedOperationException ignored) {
+                // not a group this account can actually assign; try the next one
+            }
+        }
+        return null;
+    }
+
+    private static @NotNull List<String> groupNamesOfThisUser() {
+        final List<String> names = new ArrayList<>();
+        try {
+            final Process process =
+                    new ProcessBuilder("id", "-Gn").redirectErrorStream(true).start();
+            try (final BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                final String line = reader.readLine();
+                if (line != null) {
+                    for (final String name : line.trim().split("\\s+")) {
+                        if (!name.isEmpty()) {
+                            names.add(name);
+                        }
+                    }
+                }
+            }
+            process.waitFor();
+        } catch (final IOException e) {
+            return List.of();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return List.of();
+        }
+        return names;
     }
 }

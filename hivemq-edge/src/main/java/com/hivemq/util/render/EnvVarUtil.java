@@ -15,19 +15,33 @@
  */
 package com.hivemq.util.render;
 
+import static java.util.Objects.requireNonNullElse;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.exceptions.UnrecoverableException;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Util for handling system environment variables
@@ -128,72 +142,176 @@ public class EnvVarUtil {
         }
     }
 
-    /**
-     * Matches an element whose text contains at least one placeholder, capturing the name and the entire
-     * text between the tags.
-     * <p>
-     * The whole text, rather than the placeholder alone, so that any whitespace the operator wrote and
-     * any literal text they concatenated it with are both carried. The file is rendered before it is
-     * parsed, so {@code <password>\n  ${ENV:PW}\n</password>} becomes an element whose text is the value
-     * <em>with</em> that padding and the marshaller writes it back the same way; a search string built
-     * from the bare value matches nothing, the restore gives up, and the credential goes out (EDG-882
-     * review v02, R2-20). Concatenation is the same problem one step further out (R3-01).
-     * <p>
-     * {@code [^<>]} keeps a match inside one element: without it the text could run across a closing tag
-     * and swallow a sibling.
-     */
-    private static final @NotNull Pattern ELEMENT_PLACEHOLDER =
-            Pattern.compile("<([A-Za-z_][\\w.:-]*)>([^<>]*\\$\\{ENV:[^}]*}[^<>]*)</\\1>");
-
-    /**
-     * Matches an attribute whose value contains at least one placeholder.
-     * <p>
-     * Attributes were a documented blind spot until R3-01: a placeholder in one was resolved on the way
-     * in and written out resolved, with nothing reported at all. There is nothing about an attribute that
-     * makes it harder than an element — it is a named span with a value — so it is collected the same way
-     * and restored the same way.
-     */
-    private static final @NotNull Pattern ATTRIBUTE_PLACEHOLDER =
-            Pattern.compile("([A-Za-z_][\\w.:-]*)=\"([^\"]*\\$\\{ENV:[^}]*}[^\"]*)\"");
-
-    private static final @NotNull Pattern XML_COMMENT = Pattern.compile("(?s)<!--.*?-->");
-
     private static final @NotNull Pattern ENV_PLACEHOLDER = Pattern.compile(ENV_VAR_PATTERN);
+
+    /** The token every placeholder starts with, used for the cheap "is there one in here at all" test. */
+    private static final @NotNull String ENV_TOKEN = "${ENV:";
+
+    /**
+     * What {@link #collectPlaceholders(String)} found: the spans that can be restored, and whether it was
+     * able to account for every placeholder in the file.
+     *
+     * @param placeholders      one entry per element text or attribute value that holds a placeholder
+     * @param unaccountedTokens placeholders present in the file that the walk below never saw. Always
+     *                          zero for a well-formed configuration; anything else means the file holds a
+     *                          placeholder somewhere this cannot reason about, and
+     *                          {@link #restorePlaceholders} refuses the write rather than guess whether a
+     *                          credential is about to go out with it (EDG-882 review v03, R3-08).
+     */
+    public record CollectedPlaceholders(@NotNull List<ElementPlaceholder> placeholders, int unaccountedTokens) {
+
+        public static final @NotNull CollectedPlaceholders NONE = new CollectedPlaceholders(List.of(), 0);
+    }
 
     /**
      * The {@code ${ENV:...}} placeholders of the file as it was written that
      * {@link #restorePlaceholders} is able to put back.
      * <p>
-     * Every element text and every attribute value that contains a placeholder is collected, whether the
-     * placeholder is the whole of it or concatenated with literal text. What is <em>not</em> collectable
-     * is a span whose rendered form the marshaller will not reproduce verbatim; {@code restorePlaceholders}
-     * decides that when it looks, and refuses to write a credential it cannot put back.
+     * <b>Collected from a parsed document, not from the file's bytes.</b> The earlier version of this
+     * matched elements and attributes with a regular expression and stored the source span exactly as the
+     * operator typed it. That span is not what the marshaller writes, because the parser normalises text
+     * on the way in and the restore compares against post-marshal output: a numeric character reference
+     * standing in for an ordinary character, CRLF padding, or a value inside a CDATA section all
+     * rendered to something the restore then failed to find, took the "not in the document" branch, and
+     * let the credential through. CDATA was worse still — the pattern excluded angle brackets, so it
+     * could not match one and nothing was collected at all. Parsing the file the same way the
+     * configuration loader is about to parse it makes the collected value equal to the value JAXB will
+     * hold, which is the only thing the restore can honestly anchor on (EDG-882 review v03, R3-08).
      * <p>
-     * Comments are stripped first. A commented-out block is not part of the configuration and never
-     * reaches the marshalled document, but its placeholders would otherwise be counted and make every
-     * occurrence look ambiguous — commenting a bridge out is an ordinary thing for an operator to do.
+     * The literal kept is therefore the <em>parsed</em> text with the placeholders still in it, not the
+     * original bytes: a character reference comes back as the character it denotes, and a CDATA section
+     * comes back as its content. Both mean the same thing to the next parse, and {@link #literalSpan}
+     * escapes whatever needs escaping on the way out.
+     * <p>
+     * Comments are skipped, because the walk only visits element text and attribute values. A
+     * commented-out block is not part of the configuration and never reaches the marshalled document, but
+     * its placeholders would otherwise make every occurrence look ambiguous — commenting a bridge out is
+     * an ordinary thing for an operator to do. Their tokens are counted as seen, so they do not show up
+     * as unaccounted either.
      */
-    public static @NotNull List<ElementPlaceholder> collectPlaceholders(final @NotNull String text) {
-        final String withoutComments = XML_COMMENT.matcher(text).replaceAll("");
+    public static @NotNull CollectedPlaceholders collectPlaceholders(final @NotNull String text) {
+        final int inFile = countOccurrences(text, ENV_TOKEN);
+        if (inFile == 0) {
+            return CollectedPlaceholders.NONE;
+        }
+        final Document document = parseOrNull(text);
+        if (document == null) {
+            // Every token is unaccounted for, which refuses the next write-back rather than performing
+            // one with no restoration at all.
+            //
+            // Usually this never matters: the content handed here is what the configuration loader is
+            // about to unmarshal, so content this cannot parse fails there a moment later with the
+            // parser's own message, and the placeholders of a configuration that was never accepted are
+            // never used. What it does cover is the case where the two parsers disagree -- this one
+            // refuses a DOCTYPE and turns off external access, so a file the loader would accept can
+            // still be rejected here. Returning "no placeholders" for that would write every resolved
+            // secret to disk in silence, which is the failure this whole mechanism exists to prevent.
+            log.error("The configuration could not be parsed while locating its environment-variable"
+                    + " placeholders, so writing the configuration back out will be refused until it can be."
+                    + " Until then a REST change to any subsystem applies to the running node but cannot be"
+                    + " persisted to config.xml.");
+            return new CollectedPlaceholders(List.of(), inFile);
+        }
         final List<ElementPlaceholder> placeholders = new ArrayList<>();
-        collectInto(placeholders, ELEMENT_PLACEHOLDER.matcher(withoutComments), false);
-        collectInto(placeholders, ATTRIBUTE_PLACEHOLDER.matcher(withoutComments), true);
-        return placeholders;
+        final int[] seen = {0};
+        walk(document, placeholders, seen);
+        return new CollectedPlaceholders(placeholders, inFile - seen[0]);
     }
 
-    private static void collectInto(
+    /**
+     * Parses the configuration content with external access turned off, or {@code null} when it is not
+     * well formed.
+     * <p>
+     * This runs on a file that is about to be unmarshalled by the loader anyway, so it resolves nothing
+     * the loader would not; the restrictions are here because a parser that reaches the network or the
+     * file system on someone else's say-so is never wanted, not because this particular content is
+     * suspect.
+     */
+    private static @Nullable Document parseOrNull(final @NotNull String text) {
+        try {
+            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", true);
+            setFeatureQuietly(factory, "http://xml.org/sax/features/external-general-entities", false);
+            setFeatureQuietly(factory, "http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            factory.setNamespaceAware(false);
+            final DocumentBuilder builder = factory.newDocumentBuilder();
+            builder.setErrorHandler(null);
+            return builder.parse(new InputSource(new StringReader(text)));
+        } catch (final ParserConfigurationException | SAXException | IOException e) {
+            return null;
+        }
+    }
+
+    private static void setFeatureQuietly(
+            final @NotNull DocumentBuilderFactory factory, final @NotNull String feature, final boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        } catch (final ParserConfigurationException ignored) {
+            // Not every parser implementation knows every feature name; secure processing is already on.
+        }
+    }
+
+    /**
+     * Visits every node, collecting the restorable spans and counting every placeholder token the
+     * document holds anywhere — including in comments and processing instructions, which are counted as
+     * seen but never restored.
+     * <p>
+     * Counting them is what makes {@code unaccountedTokens} mean "somewhere this walk cannot reach"
+     * rather than "somewhere this walk chose not to restore".
+     */
+    private static void walk(
+            final @NotNull Node node,
             final @NotNull List<ElementPlaceholder> placeholders,
-            final @NotNull Matcher matcher,
-            final boolean attribute) {
-        while (matcher.find()) {
-            final String literal = matcher.group(2);
-            final String value = renderOrNull(literal);
-            // An empty rendered span gives the restore nothing to search for, and a span with an unset
-            // variable never reaches the marshalled document at all -- the render of the whole file
-            // throws first, which is the behaviour this must not change.
-            if (value != null && !value.isEmpty()) {
-                placeholders.add(new ElementPlaceholder(matcher.group(1), literal, value, attribute));
+            final int @NotNull [] seen) {
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            final Element element = (Element) node;
+            final NamedNodeMap attributes = element.getAttributes();
+            for (int i = 0; i < attributes.getLength(); i++) {
+                final Node attribute = attributes.item(i);
+                collect(placeholders, seen, attribute.getNodeName(), attribute.getNodeValue(), true);
             }
+            // Only the direct text children, joined: that is what the element's value is to the
+            // unmarshaller, and what the marshaller writes back for it.
+            final StringBuilder text = new StringBuilder();
+            final NodeList children = element.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                final Node child = children.item(i);
+                if (child.getNodeType() == Node.TEXT_NODE || child.getNodeType() == Node.CDATA_SECTION_NODE) {
+                    text.append(child.getNodeValue());
+                }
+            }
+            collect(placeholders, seen, element.getTagName(), text.toString(), false);
+        } else if (node.getNodeType() == Node.COMMENT_NODE || node.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE) {
+            // Seen, deliberately not restorable: neither reaches the marshalled document.
+            seen[0] += countOccurrences(requireNonNullElse(node.getNodeValue(), ""), ENV_TOKEN);
+        }
+        final NodeList children = node.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            walk(children.item(i), placeholders, seen);
+        }
+    }
+
+    private static void collect(
+            final @NotNull List<ElementPlaceholder> placeholders,
+            final int @NotNull [] seen,
+            final @NotNull String name,
+            final @NotNull String literal,
+            final boolean attribute) {
+        final int tokens = countOccurrences(literal, ENV_TOKEN);
+        if (tokens == 0) {
+            return;
+        }
+        seen[0] += tokens;
+        final String value = renderOrNull(literal);
+        // An empty rendered span gives the restore nothing to search for, and a span with an unset
+        // variable never reaches the marshalled document at all -- the render of the whole file
+        // throws first, which is the behaviour this must not change. Both are still accounted for
+        // above: they were found, they are simply not restorable, which is not the same as unseen.
+        if (value != null && !value.isEmpty()) {
+            placeholders.add(new ElementPlaceholder(name, literal, value, attribute));
         }
     }
 
@@ -356,7 +474,76 @@ public class EnvVarUtil {
             }
             result = result.replace(rendered, literalSpan(first));
         }
-        return result;
+        return refuseIfACredentialSurvived(result, placeholders);
+    }
+
+    /**
+     * Restores the placeholders of a whole configuration file, refusing the write when the collector
+     * could not account for every one of them.
+     * <p>
+     * The branch-by-branch reasoning in {@link #restorePlaceholders(String, List)} can only speak for the
+     * spans it was given. A token the collector never saw has no branch at all — and "no branch" was
+     * exactly how the character-reference, CRLF and CDATA cases got a credential onto disk before the
+     * collector was rewritten. So the count is checked here rather than trusted: if the file held a
+     * placeholder the walk did not reach, this cannot say whether the value it stands for is in the
+     * document, and it refuses instead of assuming (EDG-882 review v03, R3-08).
+     *
+     * @throws UnrecoverableException when a credential cannot be kept out of the document being written
+     */
+    public static @NotNull String restorePlaceholders(
+            final @NotNull String renderedXml, final @NotNull CollectedPlaceholders collected) {
+        if (collected.unaccountedTokens() != 0) {
+            log.error(
+                    "The configuration file holds {} '{}...' placeholder(s) that could not be located in its"
+                            + " structure, so this cannot tell whether writing the configuration back out would"
+                            + " put the value of one on disk. The write has been refused: config.xml is"
+                            + " unchanged, and this node keeps running on the configuration it already holds.",
+                    collected.unaccountedTokens(),
+                    ENV_TOKEN);
+            throw new UnrecoverableException(false);
+        }
+        return restorePlaceholders(renderedXml, collected.placeholders());
+    }
+
+    /**
+     * The last word on whether a credential is going to disk, asked of the finished document rather than
+     * of the branch that produced it.
+     * <p>
+     * Every branch above that can end with a secret still in the document refuses on its own, and each of
+     * those refusals is tested. This exists because the branch that gets it wrong is by definition the one
+     * nobody thought of: it does not reason about how the document was built, it just looks for the values
+     * that were supposed to have been taken out of it. A secret that is still there when the restore
+     * believes it is finished is a bug in the restore, and shipping the document anyway would make it a
+     * disclosure instead (EDG-882 review v03, R3-08).
+     * <p>
+     * The one false positive it can have is an operator who wrote the same string that a credential
+     * variable resolves to somewhere else in the file, literally. Refusing that write is the right side of
+     * the trade: the remedy is to stop writing the credential in plain text, and the message names the
+     * element.
+     */
+    private static @NotNull String refuseIfACredentialSurvived(
+            final @NotNull String document, final @NotNull List<ElementPlaceholder> placeholders) {
+        for (final ElementPlaceholder placeholder : placeholders) {
+            if (!isSecretElement(placeholder.name())) {
+                continue;
+            }
+            final String value = placeholder.value();
+            if (document.contains(value)
+                    || document.contains(escapeXmlText(value))
+                    || document.contains(escapeXmlAttribute(value))) {
+                log.error(
+                        "The value supplied to the '{}' {} through '{}' is still present in the configuration"
+                                + " being written after its placeholder was restored, so writing it would put a"
+                                + " credential on disk. The write has been refused: config.xml is unchanged, and"
+                                + " this node keeps running on the value it already holds. If that value is also"
+                                + " written literally somewhere else in the file, remove it there.",
+                        placeholder.name(),
+                        placeholder.attribute() ? "attribute" : "element",
+                        placeholder.literal());
+                throw new UnrecoverableException(false);
+            }
+        }
+        return document;
     }
 
     /**
@@ -436,11 +623,19 @@ public class EnvVarUtil {
                 : "<" + placeholder.name() + ">" + escapeXmlText(placeholder.value()) + "</" + placeholder.name() + ">";
     }
 
-    /** The same span with the operator's placeholders back in it: what the restore writes. */
+    /**
+     * The same span with the operator's placeholders back in it: what the restore writes.
+     * <p>
+     * Escaped on the way out, because the literal is now the <em>parsed</em> text rather than the
+     * original bytes: an operator who wrote an escaped ampersand has a literal holding a bare one, and
+     * putting that back raw would produce a config.xml that does not parse on the next start. A
+     * placeholder itself carries none of the escaped characters, so it passes through untouched.
+     */
     private static @NotNull String literalSpan(final @NotNull ElementPlaceholder placeholder) {
         return placeholder.attribute()
-                ? placeholder.name() + "=\"" + placeholder.literal() + "\""
-                : "<" + placeholder.name() + ">" + placeholder.literal() + "</" + placeholder.name() + ">";
+                ? placeholder.name() + "=\"" + escapeXmlAttribute(placeholder.literal()) + "\""
+                : "<" + placeholder.name() + ">" + escapeXmlText(placeholder.literal()) + "</" + placeholder.name()
+                        + ">";
     }
 
     /** The same span with {@link #UNRESTORED_SECRET} in place of a credential that cannot be restored. */

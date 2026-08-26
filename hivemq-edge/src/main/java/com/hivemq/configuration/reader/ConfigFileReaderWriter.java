@@ -61,12 +61,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -178,7 +185,7 @@ public class ConfigFileReaderWriter {
      * the configuration back out restores them instead of the values they stand for; see
      * {@link EnvVarUtil#restorePlaceholders}. Replaced only when a configuration is actually accepted.
      */
-    private final @NotNull AtomicReference<List<EnvVarUtil.ElementPlaceholder>> envPlaceholders;
+    private final @NotNull AtomicReference<EnvVarUtil.CollectedPlaceholders> envPlaceholders;
 
     private final @NotNull Lock lock;
     private final @NotNull AtomicReference<ScheduledExecutorService> executorService;
@@ -207,7 +214,7 @@ public class ConfigFileReaderWriter {
         this.postApplyCallbacks = new CopyOnWriteArrayList<>();
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
         this.configEntity = new AtomicReference<>();
-        this.envPlaceholders = new AtomicReference<>(List.of());
+        this.envPlaceholders = new AtomicReference<>(EnvVarUtil.CollectedPlaceholders.NONE);
         this.lastWrite = new AtomicLong();
         this.lock = new ReentrantLock();
         this.executorService = new AtomicReference<>();
@@ -387,7 +394,8 @@ public class ConfigFileReaderWriter {
             final StringWriter marshalled = new StringWriter();
             createMarshaller().marshal(configEntity.get(), marshalled);
             writer.write(EnvVarUtil.restorePlaceholders(
-                    marshalled.toString(), Objects.requireNonNullElse(envPlaceholders.get(), List.of())));
+                    marshalled.toString(),
+                    Objects.requireNonNullElse(envPlaceholders.get(), EnvVarUtil.CollectedPlaceholders.NONE)));
             writer.flush();
         } catch (final Throwable e) {
             log.error("Original error message:", e);
@@ -461,18 +469,18 @@ public class ConfigFileReaderWriter {
                 // inode and therefore its own mode, so the secrets never touched a wider file. It is a
                 // disclosure this change would have introduced, which is why it fails closed rather than
                 // best-effort (EDG-882 review v03, R3-07).
-                final Set<PosixFilePermission> targetPermissions = posixPermissionsOf(target);
-                createPartialFile(partial, targetPermissions);
+                final PreservedAttributes preserved = preservedAttributesOf(target);
+                createPartialFile(partial, preserved);
                 try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
                     writer.write(rendered.toString());
                     writer.flush();
                 }
-                // Widened to exactly the target's mode only once the content is on disk, so the file is
-                // never wider than its eventual self while it is being filled. A failure here aborts the
-                // replacement: moving a file whose protections could not be reproduced would either
-                // widen a deliberately restricted config.xml or narrow one an operator shares
+                // Widened to exactly the target's protections only once the content is on disk, so the
+                // file is never wider than its eventual self while it is being filled. A failure here
+                // aborts the replacement: moving a file whose protections could not be reproduced would
+                // either widen a deliberately restricted config.xml or narrow one an operator shares
                 // deliberately, and the original on disk is still valid and still correct.
-                applyPermissions(partial, targetPermissions);
+                applyPreservedAttributes(partial, preserved);
                 try {
                     Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
                 } catch (final AtomicMoveNotSupportedException atomicNotSupported) {
@@ -503,44 +511,123 @@ public class ConfigFileReaderWriter {
             Collections.unmodifiableSet(EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
 
     /**
-     * The POSIX permissions of the file about to be replaced, or {@code null} when there are none to
-     * reproduce — the file does not exist yet, or its file store has no POSIX view.
+     * Everything about the file being replaced that decides who can read it.
      * <p>
-     * {@code null} is the "nothing to preserve" answer, not a failure: a configuration file being
-     * created for the first time has no mode of its own to carry, and on a store without POSIX
-     * permissions there is nothing a replacement could get wrong.
+     * The mode alone is not that. {@code 0640} names a group without naming <em>which</em> group, and a
+     * freshly created file takes its group from the creating process or, on macOS and on any directory
+     * with the setgid bit, from the directory — so reproducing only the mode can hand group-read of a
+     * file full of credentials to a completely different set of principals than the file it replaced had
+     * (EDG-882 review v03, R3-09). Owner, group and any ACL are therefore carried with it.
+     *
+     * @param permissions the POSIX mode, or {@code null} on a store with no POSIX view
+     * @param owner       the owning principal, or {@code null} when the store exposes none
+     * @param group       the owning group, or {@code null} on a store with no POSIX view
+     * @param acl         the access-control list, or {@code null} on a store that has no ACL view
      */
     @VisibleForTesting
-    static @Nullable Set<PosixFilePermission> posixPermissionsOf(final @NotNull Path path) {
-        if (!Files.exists(path)) {
-            return null;
+    record PreservedAttributes(
+            @Nullable Set<PosixFilePermission> permissions,
+            @Nullable UserPrincipal owner,
+            @Nullable GroupPrincipal group,
+            @Nullable List<AclEntry> acl) {
+
+        /** Nothing to reproduce: the configuration file is being created for the first time. */
+        static final @NotNull PreservedAttributes NONE = new PreservedAttributes(null, null, null, null);
+
+        boolean nothingToReproduce() {
+            return permissions == null && owner == null && group == null && acl == null;
         }
-        try {
-            return Files.getPosixFilePermissions(path);
-        } catch (final UnsupportedOperationException | IOException | SecurityException e) {
-            log.debug("No POSIX permissions to carry over from {}", path, e);
-            return null;
+    }
+
+    /**
+     * Reads the protections of the file about to be replaced, or {@link PreservedAttributes#NONE} when
+     * there are none to reproduce.
+     * <p>
+     * <b>"Nothing to preserve" and "could not find out" are different answers and only the first one is
+     * safe.</b> The previous version returned "nothing" for both, so an {@code IOException} or a
+     * {@code SecurityException} on a file that exists and is protected ended with the replacement taking
+     * the process umask — the write proceeded and the protection was silently dropped (R3-09). Only a
+     * genuinely absent file, or a store that positively does not support a view, is "nothing"; a failure
+     * to read one that should be there aborts the write before the partial file is even created.
+     *
+     * @throws IOException when the file exists but its protections cannot be determined
+     */
+    @VisibleForTesting
+    static @NotNull PreservedAttributes preservedAttributesOf(final @NotNull Path path) throws IOException {
+        Set<PosixFilePermission> permissions = null;
+        UserPrincipal owner = null;
+        GroupPrincipal group = null;
+        List<AclEntry> acl = null;
+
+        final PosixFileAttributeView posixView = Files.getFileAttributeView(path, PosixFileAttributeView.class);
+        if (posixView != null) {
+            try {
+                final PosixFileAttributes attributes = posixView.readAttributes();
+                permissions = attributes.permissions();
+                owner = attributes.owner();
+                group = attributes.group();
+            } catch (final NoSuchFileException absent) {
+                return PreservedAttributes.NONE;
+            } catch (final IOException | SecurityException e) {
+                throw new IOException(
+                        "Could not read the permissions of the configuration file being replaced, so a"
+                                + " replacement carrying the same protections cannot be produced; the existing"
+                                + " file has been left untouched",
+                        e);
+            }
         }
+
+        final AclFileAttributeView aclView = Files.getFileAttributeView(path, AclFileAttributeView.class);
+        if (aclView != null) {
+            try {
+                final List<AclEntry> entries = aclView.getAcl();
+                // Only a non-empty list is worth carrying. Several stores expose an ACL view for every
+                // file and answer with an empty list when none is set; reproducing that would mean an
+                // otherwise pointless setAcl on the ordinary path, which can fail for its own reasons and
+                // would then refuse a write that had nothing to preserve in the first place.
+                acl = entries.isEmpty() ? null : entries;
+                if (owner == null) {
+                    owner = aclView.getOwner();
+                }
+            } catch (final NoSuchFileException absent) {
+                return PreservedAttributes.NONE;
+            } catch (final IOException | SecurityException e) {
+                throw new IOException(
+                        "Could not read the access-control list of the configuration file being replaced, so a"
+                                + " replacement carrying the same protections cannot be produced; the existing"
+                                + " file has been left untouched",
+                        e);
+            }
+        }
+
+        if (posixView == null && aclView == null) {
+            // A store that exposes neither view has no protections a replacement could get wrong.
+            if (!Files.exists(path)) {
+                return PreservedAttributes.NONE;
+            }
+            log.debug("{} is on a file store with no POSIX or ACL view; nothing to reproduce", path);
+            return PreservedAttributes.NONE;
+        }
+        return new PreservedAttributes(permissions, owner, group, acl);
     }
 
     /**
      * Creates the file the configuration is rendered into, narrow from the moment it exists.
      * <p>
-     * When there is a mode to reproduce, the file is created owner-only and widened to the target's
-     * mode after it has been written — the permissions are an attribute of the {@code createFile} call
-     * rather than a {@code chmod} after the fact, so there is no instant at which the file exists and is
-     * readable by anyone else. With nothing to reproduce, it is created normally and takes the umask,
-     * which is what a first-time configuration file would have had anyway.
+     * When there is anything to reproduce, the file is created owner-read/write and widened to the
+     * target's protections after it has been written — the permissions are an attribute of the
+     * {@code createFile} call rather than a {@code chmod} after the fact, so there is no instant at which
+     * the file exists and is readable by anyone else. With nothing to reproduce, it is created normally
+     * and takes the umask, which is what a first-time configuration file would have had anyway.
      * <p>
      * A partial file left behind by a killed process is deleted rather than reused: reopening it would
      * inherit whatever mode <em>it</em> was left with.
      */
     @VisibleForTesting
-    static void createPartialFile(
-            final @NotNull Path partial, final @Nullable Set<PosixFilePermission> targetPermissions)
+    static void createPartialFile(final @NotNull Path partial, final @NotNull PreservedAttributes preserved)
             throws IOException {
         Files.deleteIfExists(partial);
-        if (targetPermissions == null) {
+        if (preserved.nothingToReproduce() || preserved.permissions() == null) {
             Files.createFile(partial);
         } else {
             Files.createFile(partial, PosixFilePermissions.asFileAttribute(OWNER_ONLY));
@@ -548,28 +635,96 @@ public class ConfigFileReaderWriter {
     }
 
     /**
-     * Gives the written replacement exactly the mode of the file it is about to replace.
+     * Gives the written replacement exactly the protections of the file it is about to replace, and
+     * proves it before the move.
      * <p>
-     * Throws rather than warns. The alternative — carry the mode if you can, move it either way — is
-     * what {@code R3-07} reported: a failure there leaves the umask's mode on a file full of
-     * credentials, permanently, announced at debug level. Refusing the replacement keeps the previous
-     * configuration file, which is intact, correctly permissioned and still the one the running node
-     * matches.
+     * Order matters: owner and group are set while the file is still owner-only, then the ACL, then the
+     * mode last. Setting the mode first would open a window in which the file is already group- or
+     * world-readable but still owned by the wrong principals.
+     * <p>
+     * Throws rather than warns, at every step. The alternative — carry what you can, move it either way —
+     * is what R3-07 and R3-09 reported between them: a failure leaves a file full of credentials with the
+     * umask's mode and the creating process's group, permanently, announced at debug level. Refusing the
+     * replacement keeps the previous configuration file, which is intact, correctly permissioned and
+     * still the one the running node matches.
      */
     @VisibleForTesting
-    static void applyPermissions(
-            final @NotNull Path partial, final @Nullable Set<PosixFilePermission> targetPermissions)
+    static void applyPreservedAttributes(final @NotNull Path partial, final @NotNull PreservedAttributes preserved)
             throws IOException {
-        if (targetPermissions == null) {
+        if (preserved.nothingToReproduce()) {
             return;
         }
         try {
-            Files.setPosixFilePermissions(partial, targetPermissions);
-        } catch (final UnsupportedOperationException | SecurityException e) {
+            final PosixFileAttributeView partialPosix =
+                    Files.getFileAttributeView(partial, PosixFileAttributeView.class);
+            if (partialPosix != null) {
+                // Only when they differ. Changing owner is a privileged operation on every platform this
+                // runs on, and changing group requires membership; asking for a change that is already
+                // true would fail for no reason on the ordinary path, where the node replaces a file it
+                // owns.
+                final PosixFileAttributes current = partialPosix.readAttributes();
+                if (preserved.owner() != null && !preserved.owner().equals(current.owner())) {
+                    partialPosix.setOwner(preserved.owner());
+                }
+                if (preserved.group() != null && !preserved.group().equals(current.group())) {
+                    partialPosix.setGroup(preserved.group());
+                }
+            }
+            if (preserved.acl() != null) {
+                final AclFileAttributeView partialAcl = Files.getFileAttributeView(partial, AclFileAttributeView.class);
+                if (partialAcl == null) {
+                    throw new IOException("The replacement cannot carry an access-control list on this file store");
+                }
+                partialAcl.setAcl(preserved.acl());
+            }
+            if (preserved.permissions() != null) {
+                Files.setPosixFilePermissions(partial, preserved.permissions());
+            }
+        } catch (final UnsupportedOperationException | SecurityException | IOException e) {
             throw new IOException(
-                    "Could not reproduce the permissions of the configuration file being replaced; "
+                    "Could not reproduce the protections of the configuration file being replaced; "
                             + "the existing file has been left untouched",
                     e);
+        }
+        verifyPreservedAttributes(partial, preserved);
+    }
+
+    /**
+     * Re-reads what was just applied and refuses the replacement if any of it did not take.
+     * <p>
+     * Every setter above can succeed on a store that then quietly reports something else back —
+     * a mapped volume that ignores ownership, a mode masked by a mount option. The whole point of this
+     * code is that the replacement is no more readable than the file it replaces, and that is a claim
+     * worth checking rather than assuming, because the cost of it being wrong is every credential in the
+     * configuration.
+     */
+    private static void verifyPreservedAttributes(
+            final @NotNull Path partial, final @NotNull PreservedAttributes preserved) throws IOException {
+        final PosixFileAttributeView view = Files.getFileAttributeView(partial, PosixFileAttributeView.class);
+        if (view == null) {
+            return;
+        }
+        final PosixFileAttributes actual = view.readAttributes();
+        if (preserved.permissions() != null && !preserved.permissions().equals(actual.permissions())) {
+            throw new IOException("The replacement's permissions are "
+                    + PosixFilePermissions.toString(actual.permissions())
+                    + " but the configuration file being replaced has "
+                    + PosixFilePermissions.toString(preserved.permissions())
+                    + "; the existing file has been left untouched");
+        }
+        if (preserved.owner() != null && !preserved.owner().equals(actual.owner())) {
+            throw new IOException(
+                    "The replacement is owned by '" + actual.owner().getName() + "' but the"
+                            + " configuration file being replaced is owned by '"
+                            + preserved.owner().getName()
+                            + "'; the existing file has been left untouched");
+        }
+        if (preserved.group() != null && !preserved.group().equals(actual.group())) {
+            throw new IOException(
+                    "The replacement's group is '" + actual.group().getName() + "' but the"
+                            + " configuration file being replaced has group '"
+                            + preserved.group().getName()
+                            + "'; the existing file has been left untouched");
         }
     }
 
@@ -599,7 +754,7 @@ public class ConfigFileReaderWriter {
             // accepted: a file that fails to parse must not replace the placeholders of the
             // configuration still running, or the next write would marshal that older configuration --
             // with its resolved secrets -- against a map that no longer describes it.
-            final List<EnvVarUtil.ElementPlaceholder> placeholders = EnvVarUtil.collectPlaceholders(content);
+            final EnvVarUtil.CollectedPlaceholders placeholders = EnvVarUtil.collectPlaceholders(content);
             content = EnvVarUtil.replaceEnvironmentVariablePlaceholders(content);
 
             fragmentToModificationTime.putAll(fragment.getFragmentToModificationTime());

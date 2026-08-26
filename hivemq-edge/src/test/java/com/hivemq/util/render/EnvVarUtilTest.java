@@ -16,13 +16,16 @@
 package com.hivemq.util.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.hivemq.exceptions.UnrecoverableException;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -166,7 +169,8 @@ public class EnvVarUtilTest {
     public void collectPlaceholders_collectsAConcatenatedSpanWhole() {
         System.setProperty("EDG882_UNIT_SITE", "berlin");
         try {
-            final var collected = EnvVarUtil.collectPlaceholders("<host>edge-${ENV:EDG882_UNIT_SITE}</host>");
+            final var collected = EnvVarUtil.collectPlaceholders("<host>edge-${ENV:EDG882_UNIT_SITE}</host>")
+                    .placeholders();
 
             assertEquals(1, collected.size());
             assertEquals("host", collected.get(0).name());
@@ -181,7 +185,8 @@ public class EnvVarUtilTest {
     public void collectPlaceholders_collectsAnAttributeSpan() {
         System.setProperty("EDG882_UNIT_DIR", "/etc/edge");
         try {
-            final var collected = EnvVarUtil.collectPlaceholders("<keystore path=\"${ENV:EDG882_UNIT_DIR}/k.jks\"/>");
+            final var collected = EnvVarUtil.collectPlaceholders("<keystore path=\"${ENV:EDG882_UNIT_DIR}/k.jks\"/>")
+                    .placeholders();
 
             assertEquals(1, collected.size());
             assertEquals("path", collected.get(0).name());
@@ -198,6 +203,7 @@ public class EnvVarUtilTest {
         assertEquals(
                 0,
                 EnvVarUtil.collectPlaceholders("<host>edge-${ENV:EDG882_UNIT_NOT_SET}</host>")
+                        .placeholders()
                         .size());
     }
 
@@ -263,5 +269,183 @@ public class EnvVarUtilTest {
         final String document = "<x><host xmlns=\"urn:other\">shared.example.com</host></x>";
 
         assertEquals(document, EnvVarUtil.restorePlaceholders(document, java.util.List.of(placeholder)));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v03, R3-08. The collector used to store the raw XML source span and compare it
+    // with post-marshal output. XML parsing normalises the representation without changing the value,
+    // so three ordinary ways of writing a placeholder rendered to something the restore could not find:
+    // it took the "not in the document" branch and let the credential onto disk. Each of the three is
+    // pinned here on the collector and again on the document the marshaller would have produced.
+    // ---------------------------------------------------------------------------------------------
+
+    private static final @NotNull String PW = "EDG882_UNIT_PW";
+    private static final @NotNull String SECRET = "s3cr3t-do-not-write-me";
+
+    private @NotNull EnvVarUtil.CollectedPlaceholders collectWithSecret(final @NotNull String xml) {
+        System.setProperty(PW, SECRET);
+        try {
+            return EnvVarUtil.collectPlaceholders(xml);
+        } finally {
+            System.clearProperty(PW);
+        }
+    }
+
+    /**
+     * A numeric character reference. The parser turns it into the character it denotes long before JAXB
+     * marshals anything, so a collector storing the source span searched the document for a string
+     * containing the reference and never found it.
+     */
+    @Test
+    public void collectPlaceholders_normalisesANumericCharacterReference() {
+        final var collected = collectWithSecret("<password>prefix&#45;${ENV:" + PW + "}</password>");
+
+        assertEquals(1, collected.placeholders().size());
+        assertEquals(0, collected.unaccountedTokens());
+        assertEquals("prefix-${ENV:" + PW + "}", collected.placeholders().get(0).literal());
+        assertEquals("prefix-" + SECRET, collected.placeholders().get(0).value());
+    }
+
+    @Test
+    public void restorePlaceholders_putsBackASpanWrittenWithACharacterReference() {
+        final var collected = collectWithSecret("<password>prefix&#45;${ENV:" + PW + "}</password>");
+
+        // What JAXB writes: the parsed value, with the reference already resolved.
+        final String restored =
+                EnvVarUtil.restorePlaceholders("<x><password>prefix-" + SECRET + "</password></x>", collected);
+
+        assertFalse(restored.contains(SECRET), "the credential was written to config.xml");
+        assertEquals("<x><password>prefix-${ENV:" + PW + "}</password></x>", restored);
+    }
+
+    /** CRLF padding. The parser normalises the line endings; the raw span kept the carriage returns. */
+    @Test
+    public void collectPlaceholders_normalisesCrlfPadding() {
+        final var collected = collectWithSecret("<password>\r\n  ${ENV:" + PW + "}\r\n</password>");
+
+        assertEquals(1, collected.placeholders().size());
+        assertEquals(0, collected.unaccountedTokens());
+        assertFalse(collected.placeholders().get(0).value().contains("\r"), "the carriage returns survived the parse");
+        assertEquals("\n  " + SECRET + "\n", collected.placeholders().get(0).value());
+    }
+
+    @Test
+    public void restorePlaceholders_putsBackASpanWrittenWithCrlfPadding() {
+        final var collected = collectWithSecret("<password>\r\n  ${ENV:" + PW + "}\r\n</password>");
+
+        final String restored =
+                EnvVarUtil.restorePlaceholders("<x><password>\n  " + SECRET + "\n</password></x>", collected);
+
+        assertFalse(restored.contains(SECRET), "the credential was written to config.xml");
+        assertEquals("<x><password>\n  ${ENV:" + PW + "}\n</password></x>", restored);
+    }
+
+    /**
+     * CDATA, which the old pattern could not match at all — so nothing was collected, the restore never
+     * ran, and the secret went out with no message of any kind.
+     */
+    @Test
+    public void collectPlaceholders_seesInsideACdataSection() {
+        final var collected = collectWithSecret("<password><![CDATA[prefix-${ENV:" + PW + "}]]></password>");
+
+        assertEquals(1, collected.placeholders().size(), "a placeholder inside CDATA was invisible to the collector");
+        assertEquals(0, collected.unaccountedTokens());
+        assertEquals("prefix-" + SECRET, collected.placeholders().get(0).value());
+    }
+
+    @Test
+    public void restorePlaceholders_putsBackASpanWrittenInsideCdata() {
+        final var collected = collectWithSecret("<password><![CDATA[prefix-${ENV:" + PW + "}]]></password>");
+
+        final String restored =
+                EnvVarUtil.restorePlaceholders("<x><password>prefix-" + SECRET + "</password></x>", collected);
+
+        assertFalse(restored.contains(SECRET), "the credential was written to config.xml");
+        assertEquals("<x><password>prefix-${ENV:" + PW + "}</password></x>", restored);
+    }
+
+    /** Single-quoted attributes are as valid as double-quoted ones; the old pattern matched only one. */
+    @Test
+    public void collectPlaceholders_seesASingleQuotedAttribute() {
+        System.setProperty("EDG882_UNIT_DIR", "/etc/edge");
+        try {
+            final var collected = EnvVarUtil.collectPlaceholders("<keystore path='${ENV:EDG882_UNIT_DIR}/k.jks'/>");
+
+            assertEquals(1, collected.placeholders().size());
+            assertEquals(0, collected.unaccountedTokens());
+            assertEquals("path", collected.placeholders().get(0).name());
+            assertEquals("/etc/edge/k.jks", collected.placeholders().get(0).value());
+            assertTrue(collected.placeholders().get(0).attribute());
+        } finally {
+            System.clearProperty("EDG882_UNIT_DIR");
+        }
+    }
+
+    /**
+     * A literal that needs escaping on the way back out. The collected literal is now parsed text, so an
+     * operator's escaped ampersand is a bare one by the time it is restored; writing it raw would produce
+     * a config.xml that does not parse on the next start.
+     */
+    @Test
+    public void restorePlaceholders_escapesTheLiteralItWritesBack() {
+        System.setProperty("EDG882_UNIT_SITE", "berlin");
+        try {
+            final var collected = EnvVarUtil.collectPlaceholders("<host>a&amp;b-${ENV:EDG882_UNIT_SITE}</host>");
+
+            final String restored = EnvVarUtil.restorePlaceholders("<x><host>a&amp;b-berlin</host></x>", collected);
+
+            assertEquals("<x><host>a&amp;b-${ENV:EDG882_UNIT_SITE}</host></x>", restored);
+        } finally {
+            System.clearProperty("EDG882_UNIT_SITE");
+        }
+    }
+
+    /** A commented-out block is counted as seen so that it does not read as an unaccounted placeholder. */
+    @Test
+    public void collectPlaceholders_countsACommentedPlaceholderAsSeenButDoesNotRestoreIt() {
+        final var collected = collectWithSecret("<x><!-- <password>${ENV:" + PW + "}</password> --></x>");
+
+        assertEquals(0, collected.placeholders().size(), "a commented-out block is not part of the configuration");
+        assertEquals(0, collected.unaccountedTokens(), "and it must not read as a placeholder that was missed");
+    }
+
+    /**
+     * The safety net. The branch-by-branch reasoning can only speak for the spans the collector handed
+     * over; a token it never saw has no branch at all, which is exactly how the three cases above got a
+     * credential onto disk. So an unaccounted token refuses the write rather than assuming.
+     */
+    @Test
+    public void restorePlaceholders_whenATokenIsUnaccountedFor_thenTheWriteIsRefused() {
+        final var collected = new EnvVarUtil.CollectedPlaceholders(List.of(), 1);
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders("<x><host>testhost</host></x>", collected),
+                "a placeholder the collector could not locate must refuse the write");
+    }
+
+    /** And nothing unaccounted for is the ordinary case, which must not refuse anything. */
+    @Test
+    public void restorePlaceholders_whenEveryTokenIsAccountedFor_thenTheWriteProceeds() {
+        final var collected = new EnvVarUtil.CollectedPlaceholders(List.of(), 0);
+        final String document = "<x><host>testhost</host></x>";
+
+        assertEquals(document, EnvVarUtil.restorePlaceholders(document, collected));
+    }
+
+    /**
+     * The last word, asked of the finished document rather than of the branch that produced it. Here the
+     * restore succeeds on the {@code <password>} element and the same value is also written literally in a
+     * second one, so the document still carries the credential when the restore believes it is done.
+     */
+    @Test
+    public void restorePlaceholders_whenACredentialSurvivesTheRestore_thenTheWriteIsRefused() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders(
+                        "<x><password>" + SECRET + "</password><note>" + SECRET + "</note></x>", List.of(placeholder)),
+                "a credential still in the document when the restore finishes must refuse the write");
     }
 }
