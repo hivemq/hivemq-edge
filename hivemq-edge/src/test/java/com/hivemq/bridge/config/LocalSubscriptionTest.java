@@ -457,9 +457,8 @@ class LocalSubscriptionTest {
      * {@code MqttBridge.equals} compares both subscription lists as multisets. Only the local half was
      * covered, so a change that made the remote half positional again would restart the bridge on a
      * reorder — and a restart is what clears the queues of everything the new configuration cannot
-     * match. Note that this is about the order of the {@code <remote-subscription>} blocks; the filters
-     * <em>inside</em> a remote subscription are still compared positionally, which is the open item in
-     * the AUG-20 list.
+     * match. The order of the filters <em>inside</em> a remote subscription is covered separately,
+     * below.
      */
     @Test
     void mqttBridgeEquals_whenTheRemoteSubscriptionBlocksAreReordered_thenEqual() {
@@ -480,6 +479,51 @@ class LocalSubscriptionTest {
         assertNotEquals(
                 bridgeWithRemote(List.of(only)),
                 bridgeWithRemote(List.of(only, new RemoteSubscription(List.of("remoteA/+"), "destinationTopic"))));
+    }
+
+    /**
+     * And the filters <em>inside</em> a remote subscription, which is the half F-07 left behind.
+     * <p>
+     * {@code RemoteSubscription.equals} compared them positionally, so reordering a
+     * {@code <mqtt-topic-filter>} inside one {@code <remote-subscription>} made the bridge compare as
+     * changed and the reload path restarted it — EDG-884's yardstick failing on the remote side, with
+     * no message loss (the retain list comes from the local subscriptions) but a reconnect nobody asked
+     * for (EDG-882 QA, 2026-08-25).
+     */
+    @Test
+    void remoteSubscriptionEquals_whenTheFiltersAreReordered_thenEqual() {
+        final RemoteSubscription asWritten =
+                new RemoteSubscription(List.of("remoteB/+", "remoteA/+"), "destinationTopic");
+        final RemoteSubscription reordered =
+                new RemoteSubscription(List.of("remoteA/+", "remoteB/+"), "destinationTopic");
+
+        assertEquals(asWritten, reordered, "the same filters in another order are the same subscription");
+        assertEquals(asWritten.hashCode(), reordered.hashCode());
+        assertEquals(
+                bridgeWithRemote(List.of(asWritten)),
+                bridgeWithRemote(List.of(reordered)),
+                "so the bridge is unchanged, and the reload must not restart it");
+    }
+
+    /** A repeated filter is still a different subscription: canonical means sorted, not de-duplicated. */
+    @Test
+    void remoteSubscriptionEquals_whenAFilterIsRepeated_thenNotEqual() {
+        assertNotEquals(
+                new RemoteSubscription(List.of("remoteA/+"), "destinationTopic"),
+                new RemoteSubscription(List.of("remoteA/+", "remoteA/+"), "destinationTopic"));
+    }
+
+    /**
+     * And the operator's order survives for the write-back, or canonicalisation would rewrite the
+     * elements of a file it was only ever meant to stop reacting to.
+     */
+    @Test
+    void remoteSubscription_keepsTheConfiguredFilterOrderForTheWriteBack() {
+        final RemoteSubscription asWritten =
+                new RemoteSubscription(List.of("remoteB/+", "remoteA/+"), "destinationTopic");
+
+        assertEquals(List.of("remoteB/+", "remoteA/+"), asWritten.getConfiguredFilters());
+        assertEquals(List.of("remoteA/+", "remoteB/+"), asWritten.getFilters(), "identity is the sorted order");
     }
 
     private static MqttBridge bridgeWithRemote(final List<RemoteSubscription> remoteSubscriptions) {

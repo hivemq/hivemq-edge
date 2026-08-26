@@ -500,9 +500,9 @@ public class BridgeExtractor
         for (final RemoteSubscription subscription : remoteSubscriptionList) {
             final RemoteSubscriptionEntity subscriptionEntity = new RemoteSubscriptionEntity();
             subscriptionEntity.setDestination(subscription.getDestination());
-            if (subscription.getFilters() != null) {
-                subscriptionEntity.setFilters(new ArrayList<>(subscription.getFilters()));
-            }
+            // The configured order, not the canonical one: sorting exists so that a reorder is not a
+            // configuration change, not so that writing the file reorders the operator's elements.
+            subscriptionEntity.setFilters(new ArrayList<>(subscription.getConfiguredFilters()));
             subscriptionEntity.setPreserveRetain(subscription.isPreserveRetain());
             subscriptionEntity.setMaxQoS(subscription.getMaxQoS());
             if (subscription.getCustomUserProperties() != null) {

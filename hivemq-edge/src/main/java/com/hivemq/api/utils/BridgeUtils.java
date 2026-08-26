@@ -86,7 +86,8 @@ public class BridgeUtils {
             return null;
         }
         return new BridgeSubscription()
-                .filters(remoteSubscription.getFilters())
+                // The configured order, not the canonical one; see convertLocalSubscription above.
+                .filters(remoteSubscription.getConfiguredFilters())
                 .destination(remoteSubscription.getDestination())
                 .customUserProperties(remoteSubscription.getCustomUserProperties().stream()
                         .map(BridgeUtils::convertProperty)

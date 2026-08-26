@@ -66,6 +66,16 @@ public class BridgeConfigWriteBackTest extends AbstractConfigurationTest {
             + "                <queue-limit>500</queue-limit>\n"
             + "            </forwarded-topic>\n"
             + "        </forwarded-topics>\n"
+            + "        <remote-subscriptions>\n"
+            + "            <remote-subscription>\n"
+            + "                <filters>\n"
+            + "                    <mqtt-topic-filter>remote-z/#</mqtt-topic-filter>\n"
+            + "                    <mqtt-topic-filter>remote-a/#</mqtt-topic-filter>\n"
+            + "                </filters>\n"
+            + "                <destination>{#}</destination>\n"
+            + "                <max-qos>1</max-qos>\n"
+            + "            </remote-subscription>\n"
+            + "        </remote-subscriptions>\n"
             + "    </mqtt-bridge>\n"
             + "</mqtt-bridges>"
             + "</hivemq>";
@@ -166,6 +176,21 @@ public class BridgeConfigWriteBackTest extends AbstractConfigurationTest {
         final MqttBridge bridge = loadAndWriteBack();
 
         assertThat(bridge.getLocalSubscriptions().get(0).getQueueLimit()).isEqualTo(500L);
+    }
+
+    /**
+     * The remote half of the same rule. Canonicalisation makes a reorder stop counting as a change; it
+     * must not make the write-back reorder the operator's elements, which would be the churn F-07
+     * removed from the local half arriving through the other door (EDG-882 QA, 2026-08-25).
+     */
+    @Test
+    public void whenTheConfigurationIsWrittenBack_thenTheRemoteFilterOrderIsKept() throws IOException {
+        loadAndWriteBack();
+
+        final String written = java.nio.file.Files.readString(xmlFile.toPath());
+        assertThat(written.indexOf("remote-z/#"))
+                .as("the remote filters were written as remote-z then remote-a and must stay that way")
+                .isLessThan(written.indexOf("remote-a/#"));
     }
 
     @Test
