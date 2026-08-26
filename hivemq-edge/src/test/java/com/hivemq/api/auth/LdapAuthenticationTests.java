@@ -115,10 +115,6 @@ public class LdapAuthenticationTests {
         final var config = new JaxrsHttpServerConfiguration();
         // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
-        // Taken last, so that the container round trip above happens before the port is claimed
-        // rather than between claiming it and binding it.
-        testHttpPort = RandomPortGenerator.get();
-        config.setPort(testHttpPort);
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(
@@ -132,6 +128,12 @@ public class LdapAuthenticationTests {
         resourceConfig.register(TestApiResource.class);
         resourceConfig.register(TestPermitAllApiResource.class);
         resourceConfig.register(TestResourceLevelRolesApiResource.class);
+
+        // Taken last, so that the container round trips above happen before the port is claimed
+        // rather than between claiming it and binding it. There are two: createTestUser, and the
+        // LdapUsernameRolesProvider constructor, which starts an LdapClient and opens a pool.
+        testHttpPort = RandomPortGenerator.get();
+        config.setPort(testHttpPort);
 
         server = new JaxrsHttpServer(mock(), List.of(config), resourceConfig);
         server.startServer();
