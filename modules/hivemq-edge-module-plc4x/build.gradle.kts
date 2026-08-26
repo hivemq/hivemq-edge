@@ -83,6 +83,18 @@ tasks.register<Copy>("copyAllDependencies") {
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }
 
+tasks.shadowJar {
+    // ShadowJar defaults its duplicatesStrategy to EXCLUDE, and that filtering runs before the
+    // service-file merge, so without this override only the first META-INF/services file of a given
+    // name reaches the jar and every other provider is dropped silently. That is what used to hide
+    // the ADS driver behind the S7 one, and it is why this module carried hand-written copies of
+    // the PlcDriver and Transport descriptors; those are gone now that the merge does its job. The
+    // override is scoped to service files, so every other duplicated resource still lands in the
+    // jar exactly once.
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    mergeServiceFiles()
+}
+
 // ******************** artifacts ********************
 
 val releaseBinary: Configuration by configurations.creating {

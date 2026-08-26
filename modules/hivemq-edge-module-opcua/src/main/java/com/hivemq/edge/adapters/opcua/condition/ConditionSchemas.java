@@ -344,6 +344,39 @@ public final class ConditionSchemas {
      * condition as a whole. {@link ConditionUpdate.Method.Arguments} is the list. A static schema cannot
      * express that dependency, so the fields are optional here and the adapter checks them per method before
      * making the call.
+     * <p>
+     * <b>Optional and nullable are different questions, and only {@code comment} answers yes to the second.</b>
+     * Optionality in JSON Schema is about whether a key must be present; nullability is about whether
+     * {@code null} is a value the field can carry. A field can be omitted freely and still not admit a null,
+     * and four of the five are exactly that.
+     * <p>
+     * {@code comment} admits null because the specification gives null a meaning there. OPC 10000-9 §5.7.3
+     * makes the {@code Comment} argument a {@code LocalizedText} that may be NULL and says what NULL does —
+     * leave the condition's existing comment untouched, as against {@code ""} to erase it and text to set it.
+     * {@link ConditionUpdate#fromJson} has always implemented all three, and the user documentation promises
+     * them; declaring the field a bare string was the one thing making the promise unreachable, so the command
+     * an operator sends most often was refused over a field they deliberately said nothing about. Found by QA
+     * as EDG-835 P4.3.
+     * <p>
+     * {@code eventId}, {@code duration} and {@code selectedResponse} are <b>deliberately not nullable</b>, and
+     * the reason is that they are OPC UA method arguments rather than free-form fields of Edge's own: where each
+     * applies the specification makes it <em>required</em> — {@code Acknowledge}'s {@code EventId} (§5.7.2),
+     * {@code TimedShelve}'s {@code ShelvingTime} (§5.8.10.4), {@code Respond}'s {@code SelectedResponse}
+     * (§5.6.3). There is no such thing as a null {@code EventId} that means something; a caller who does not
+     * have one has nothing to say about the field, and the way to say nothing is to omit the key. Declaring them
+     * nullable would advertise a value the protocol cannot carry and no method accepts.
+     * <p>
+     * The consequence is worth stating rather than leaving to be met: a client that builds this command as a
+     * struct and serialises it must <b>suppress its null keys</b>, because Jackson,
+     * {@code JSON.stringify} and {@code json.dumps} all emit {@code "field": null} for a field that was never
+     * assigned. {@code @JsonInclude(NON_NULL)}, a {@code JSON.stringify} replacer, or
+     * {@code model_dump(exclude_none=True)} is what that takes. Sending {@code "duration": null} on an
+     * {@code ACKNOWLEDGE} is refused at the gate, and that refusal is the intended contract — the field is not
+     * a place to put a null.
+     * <p>
+     * {@code method} is not nullable either, for a third reason again: it is the field that decides which of the
+     * others apply, so a command that does not name an action is not an under-specified command but a different
+     * kind of thing. It is rejected as early as it can be, which is here.
      */
     public static @NotNull Schema writeSchema() {
         return new SchemaBuilder()
@@ -359,13 +392,17 @@ public final class ConditionSchemas {
                 .scalar(ScalarType.BINARY)
                 .description("The EventId from the northbound message being responded to, echoed back "
                         + "unchanged. Required for ACKNOWLEDGE, CONFIRM and ADD_COMMENT, which act on one "
-                        + "specific transition.")
+                        + "specific transition. Omit it for every other method, which acts on the condition "
+                        + "rather than on one of its transitions.")
                 .writable()
                 .readable(false)
                 .endProperty()
                 .property(ConditionUpdate.FIELD_COMMENT)
                 .scalar(ScalarType.STRING)
-                .description("Free text recorded by the server alongside the transition.")
+                .nullable()
+                .description("Free text recorded by the server alongside the transition. Three intents, "
+                        + "distinguished by shape (OPC 10000-9 §5.7.3): null or absent leaves any existing "
+                        + "comment unchanged, an empty string erases it, and text sets it.")
                 .writable()
                 .readable(false)
                 .endProperty()
