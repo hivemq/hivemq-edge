@@ -76,7 +76,6 @@ public class LdapAuthenticationTests {
 
     @BeforeAll
     static void setUp() throws Exception {
-        testHttpPort = RandomPortGenerator.get();
         // Get the dynamically mapped port from the container
         final var host = LLDAP_CONTAINER.getHost();
         final var port = LLDAP_CONTAINER.getLdapPort();
@@ -116,6 +115,9 @@ public class LdapAuthenticationTests {
         final var config = new JaxrsHttpServerConfiguration();
         // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
+        // Taken last, so that the container round trip above happens before the port is claimed
+        // rather than between claiming it and binding it.
+        testHttpPort = RandomPortGenerator.get();
         config.setPort(testHttpPort);
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();

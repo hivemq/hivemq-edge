@@ -69,10 +69,8 @@ public class JaxrsSSLTests {
 
     @BeforeEach
     public void setUp() throws Exception {
-        testHttpPort = RandomPortGenerator.get();
         testKeyStoreGenerator = new TestKeyStoreGenerator();
         JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
-        config.setPort(testHttpPort);
         config.setProtocol(HTTPS);
         context = getSslContext("testpassword");
         config.setSslContext(context);
@@ -88,6 +86,10 @@ public class JaxrsSSLTests {
         // -- ensure we supplied our own test mapper as this can effect output
         ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
+        // Taken last, so that the key generation above happens before the port is claimed rather
+        // than between claiming it and binding it.
+        testHttpPort = RandomPortGenerator.get();
+        config.setPort(testHttpPort);
         server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
     }
