@@ -296,8 +296,6 @@ dependencies {
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
     testImplementation(libs.systemstubs)
-    testImplementation(libs.testcontainers)
-    testImplementation(libs.testcontainers.junit.jupiter)
 }
 
 tasks.test {
