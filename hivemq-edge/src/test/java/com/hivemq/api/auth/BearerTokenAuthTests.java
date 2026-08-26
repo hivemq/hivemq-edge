@@ -69,9 +69,8 @@ public class BearerTokenAuthTests {
 
     protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
 
-    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
-    // hardcoded 8088; whichever ran second on a busy agent could block forever in setup, with no failure
-    // and no timeout to end it -- three CI builds had to be aborted by hand.
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
     private static int testHttpPort;
     // The first request against the freshly started server pays the Jersey/Jackson bootstrap cost,
     // which is orders of magnitude slower than every later request. A 1s budget is not enough for

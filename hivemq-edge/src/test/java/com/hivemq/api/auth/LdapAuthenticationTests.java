@@ -63,9 +63,8 @@ public class LdapAuthenticationTests {
 
     protected final Logger logger = LoggerFactory.getLogger(LdapAuthenticationTests.class);
 
-    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
-    // hardcoded 8088; whichever ran second on a busy agent could block forever in setup, with no failure
-    // and no timeout to end it -- three CI builds had to be aborted by hand.
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
     private static int testHttpPort;
     // See BearerTokenAuthTests: the first request pays the server bootstrap cost and a 1s budget
     // makes whichever test runs first flaky on a loaded CI agent. Matches JaxrsResourceTests.

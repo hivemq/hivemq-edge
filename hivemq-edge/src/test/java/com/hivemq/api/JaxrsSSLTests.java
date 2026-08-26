@@ -56,10 +56,9 @@ public class JaxrsSSLTests {
 
     protected final Logger logger = LoggerFactory.getLogger(JaxrsSSLTests.class);
 
-    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
-    // hardcoded 8088; whichever ran second on a busy agent could block forever in setup, with no failure
-    // and no timeout to end it -- three CI builds had to be aborted by hand.
-    private static int testHttpPort;
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
+    private int testHttpPort;
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTPS = "https";

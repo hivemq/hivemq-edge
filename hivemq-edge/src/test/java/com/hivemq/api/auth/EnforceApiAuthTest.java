@@ -60,9 +60,8 @@ public class EnforceApiAuthTest {
     static final int READ_TIMEOUT = 1000;
     static final String HTTP = "http";
 
-    // Picked per class rather than shared (EDG-931). Six classes in this source set used to bind the same
-    // hardcoded 8088; whichever ran second on a busy agent could block forever in this @BeforeAll, with no
-    // failure and no timeout to end it -- three CI builds had to be aborted by hand.
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
     private static int testHttpPort;
 
     protected static JaxrsHttpServer server;
