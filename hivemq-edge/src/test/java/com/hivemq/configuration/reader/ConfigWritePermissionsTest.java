@@ -322,8 +322,10 @@ public class ConfigWritePermissionsTest {
      * A group this account belongs to that is not {@code current}, and that it may actually set on a file
      * it owns, or {@code null} when there is none. Both conditions matter: membership is what makes the
      * change legal, and some platforms restrict it further.
+     * <p>
+     * Shared with {@link ConfigBackupPermissionsTest}, which asks the same question of the rolling backup.
      */
-    private static @Nullable GroupPrincipal aDifferentGroupOfThisUser(
+    static @Nullable GroupPrincipal aDifferentGroupOfThisUser(
             final @NotNull Path file, final @NotNull GroupPrincipal current) {
         for (final String name : groupNamesOfThisUser()) {
             if (name.equals(current.getName())) {
@@ -343,7 +345,7 @@ public class ConfigWritePermissionsTest {
         return null;
     }
 
-    private static @NotNull List<String> groupNamesOfThisUser() {
+    static @NotNull List<String> groupNamesOfThisUser() {
         final List<String> names = new ArrayList<>();
         try {
             final Process process =

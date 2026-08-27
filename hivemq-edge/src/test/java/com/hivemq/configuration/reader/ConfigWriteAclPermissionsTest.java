@@ -318,6 +318,31 @@ public class ConfigWriteAclPermissionsTest {
                 "protections that cannot be reproduced must abort the replacement, not be logged and ignored");
     }
 
+    /**
+     * The sequence both the configuration file and its rolling backup now go through, end to end on this
+     * store: created restricted to its own owner, filled, given the target's protections, moved onto the
+     * target, nothing left beside it.
+     */
+    @Test
+    public void replaceCarryingProtections_writesUnderTheTargetsProtectionsAndLeavesNothingBehind() throws IOException {
+        final Path target = targetReadableBy(bob);
+        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+
+        ConfigFileReaderWriter.replaceCarryingProtections(target, preserved, written -> {
+            assertFalse(namesPrincipal(aclOf(written), bob), "the configuration is written into a file bob can read");
+            Files.writeString(written, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
+        });
+
+        assertEquals(
+                "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>",
+                Files.readString(target),
+                "the content did not reach the target");
+        assertEquals(aclOf(target), preserved.acl(), "the target's access-control list was not reproduced");
+        assertFalse(
+                Files.exists(target.resolveSibling(target.getFileName() + ".partial")),
+                "a partial file was left beside the target");
+    }
+
     /** A file that does not exist yet has no protections to carry, which is an answer rather than a throw. */
     @Test
     public void preservedAttributesOf_aMissingFile_hasNothingToReproduce() throws IOException {
