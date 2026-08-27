@@ -182,37 +182,53 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             return
         }
 
-        // (start, end) in epoch millis for every class, grouped by the run its JVM belonged to. The
-        // directory ACCUMULATES -- Gradle never clears it -- so logs from earlier runs sit beside this
-        // one's. The build stamps each fork with a run id precisely so they can be told apart; timing
-        // cannot do it, because the idle gap while the build recompiles between two runs is the same
-        // length as a slow test class.
-        val byRun = mutableMapOf<String, MutableList<Pair<Long, Long>>>()
+        // (start, end) in epoch millis for every class in every log file.
+        val all = mutableListOf<Pair<Long, Long>>()
         files.forEach { file ->
-            var runId = "unknown"
             file.forEachLine { line ->
-                if (line.startsWith("#")) {
-                    RUN_ID.find(line)?.let { runId = it.groupValues[1] }
-                    return@forEachLine
-                }
+                if (line.startsWith("#")) return@forEachLine
                 val f = line.split(' ')
                 if (f.size < 5) return@forEachLine
                 val end = f[0].toLongOrNull() ?: return@forEachLine
                 val duration = f[2].toLongOrNull() ?: return@forEachLine
-                byRun.getOrPut(runId) { mutableListOf() } += (end - duration) to end
+                all += (end - duration) to end
             }
         }
-        if (byRun.isEmpty()) {
+        if (all.isEmpty()) {
             logger.lifecycle("")
             logger.lifecycle("Fork occupancy: fork logs present but empty")
             return
         }
 
-        // The most recent run is the one that ended last.
-        val latest = byRun.maxBy { it.value.maxOf { span -> span.second } }
-        val spans = latest.value
-        val ignored = byRun.values.sumOf { it.size } - spans.size
-        val otherRuns = byRun.size - 1
+        // SPLIT THE RUNS BY ACTIVITY, not by wall-clock gaps between class starts.
+        //
+        // The directory accumulates -- Gradle never clears it -- so earlier runs sit beside this one's.
+        // Within a run the forks are essentially never ALL idle: Gradle hands the next class to a fork
+        // the moment one frees up. Between runs everything stops while the build recompiles. So a run
+        // boundary is a stretch where NO class is running, which is a much cleaner signal than the gap
+        // between consecutive class starts -- that one cannot tell a slow class from a pause, and a
+        // five-minute threshold once merged three runs into a single 37-minute "run" of 714 classes.
+        //
+        // Verified on real logs: this recovers both full runs at exactly 353 classes, the true suite size.
+        //
+        // If it ever does merge two runs the cost is a slightly misdrawn occupancy chart in a diagnostic
+        // report -- which is why this is preferable to stamping a run id from the build, where the id
+        // would have to differ per invocation and would make the test task permanently uncacheable.
+        val sorted = all.sortedBy { it.first }
+        val runs = mutableListOf(mutableListOf(sorted.first()))
+        var busyUntil = sorted.first().second
+        sorted.drop(1).forEach { span ->
+            if (span.first > busyUntil + IDLE_GAP_MS) {
+                runs += mutableListOf(span)
+            } else {
+                runs.last() += span
+            }
+            busyUntil = maxOf(busyUntil, span.second)
+        }
+
+        val spans = runs.last()
+        val ignored = all.size - spans.size
+        val otherRuns = runs.size - 1
 
         val start = spans.minOf { it.first }
         val finish = spans.maxOf { it.second }
@@ -341,8 +357,14 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
     }
 
     private companion object {
-        /** `# runId=... jvmStart=...` -- the header the build stamps onto every fork log. */
-        val RUN_ID = Regex("runId=(\\S+)")
+        /**
+         * No class running for this long => a run boundary.
+         *
+         * Deliberately short. Within a run the forks are never all idle for seconds at a time, so 5s is
+         * already generous; raising it starts merging genuinely separate runs. Measured across several
+         * values, 5s recovered both full runs at their exact class count where 15s and above did not.
+         */
+        const val IDLE_GAP_MS = 5_000L
     }
 
     private fun fmt(millis: Long): String {

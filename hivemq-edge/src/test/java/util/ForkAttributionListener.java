@@ -52,7 +52,6 @@ import org.junit.platform.launcher.TestIdentifier;
 public class ForkAttributionListener implements TestExecutionListener {
 
     private static final @NotNull String OUTPUT_DIR_PROPERTY = "forkLog.dir";
-    private static final @NotNull String RUN_ID_PROPERTY = "forkLog.runId";
 
     private final @NotNull ConcurrentHashMap<String, Long> startedAt = new ConcurrentHashMap<>();
     private final @NotNull AtomicReference<Writer> writer = new AtomicReference<>();
@@ -107,28 +106,27 @@ public class ForkAttributionListener implements TestExecutionListener {
                         if (dir == null) {
                             return; // not enabled for this run
                         }
-                        // The build stamps every fork of one test task with the same run id. Without it
-                        // the logs of separate runs sit side by side in this directory -- Gradle never
-                        // clears it -- and nothing distinguishes them: two back-to-back runs look like
-                        // one run twice as long, with a dead stretch in the middle where the build was
-                        // recompiling. Timing heuristics cannot separate them, because the idle gap
-                        // between runs is the same length as a slow class.
-                        final String runId = System.getProperty(RUN_ID_PROPERTY, "unknown");
+                        // No run id is stamped here. The build deliberately does not pass one: it would
+                        // have to differ on every invocation, and a system property is part of a test
+                        // task's cache key, so the task could then never be restored from the build
+                        // cache. Separating runs is left to the reader of these logs, which can do it
+                        // from the timings -- within a run the forks are essentially never all idle at
+                        // once, so a stretch with nothing running is a run boundary.
                         final Path path = Paths.get(dir);
                         Files.createDirectories(path);
                         final long pid = ProcessHandle.current().pid();
                         out = Files.newBufferedWriter(
-                                path.resolve("fork-" + runId + "-" + pid + ".log"),
+                                path.resolve("fork-" + pid + ".log"),
                                 StandardCharsets.UTF_8,
                                 StandardOpenOption.CREATE,
                                 StandardOpenOption.APPEND);
-                        // Header: which run this JVM belonged to, when it started, and the worker number
-                        // Gradle gave it. The worker number counts JVMs, not slots (a forkEvery restart
-                        // gets a new one), so it does NOT identify the fork -- recorded because it is
-                        // free and pins this file to a line in Gradle's own output.
+                        // Header: when this JVM started and the worker number Gradle gave it. The worker
+                        // number counts JVMs, not slots (a forkEvery restart gets a new one), so it does
+                        // NOT identify the fork -- recorded because it is free and pins this file to a
+                        // line in Gradle's own output.
                         out.write(String.format(
-                                "# runId=%s jvmStart=%d pid=%d gradleWorker=%s%n",
-                                runId, jvmStart, pid, System.getProperty("org.gradle.test.worker", "?")));
+                                "# jvmStart=%d pid=%d gradleWorker=%s%n",
+                                jvmStart, pid, System.getProperty("org.gradle.test.worker", "?")));
                         writer.set(out);
                     }
                 }

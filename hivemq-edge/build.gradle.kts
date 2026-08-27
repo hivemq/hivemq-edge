@@ -301,10 +301,6 @@ dependencies {
     testImplementation(libs.systemstubs)
 }
 
-// One id per Gradle invocation, stamped onto every fork log so the concurrency report can tell this
-// run's logs from the previous one's. Computed here rather than inside the task so all forks agree.
-val forkLogRunId: String = System.currentTimeMillis().toString(36)
-
 tasks.test {
     useJUnitPlatform()
     // Run the unit tests in parallel JVMs, one per 2 cores, overridable with -PunitTestForks=N.
@@ -325,10 +321,9 @@ tasks.test {
                 .get()
                 .asFile.path
         )
-        // Every fork of THIS task execution shares one id, so the report can tell one run's logs from
-        // the next. The directory is never cleared, and two back-to-back runs cannot be told apart by
-        // timing -- the idle gap while the build recompiles is as long as a slow test class.
-        systemProperty("forkLog.runId", forkLogRunId)
+        // Deliberately NO run id. Stamping one would mean a value that differs on every invocation, and a
+        // systemProperty is part of a test task's cache key -- the task could then never be restored from
+        // the build cache. reportTestConcurrency separates runs from the logs themselves instead.
     }
 
     minHeapSize = "128m"
