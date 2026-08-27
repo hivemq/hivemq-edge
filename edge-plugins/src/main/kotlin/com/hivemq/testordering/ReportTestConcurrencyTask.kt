@@ -123,8 +123,24 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             )
         )
 
+        reportTotals()
         reportOccupancy()
         reportSimulation(runtimes, committed, committedFile)
+    }
+
+    /** What the run consisted of, before any analysis of how it was spread. */
+    private fun reportTotals() {
+        val t = readRunTotals(resultsDir.get().asFile)
+        logger.lifecycle("")
+        // Sum of the individual test methods. Less than the fork-occupancy figure below, which measures
+        // how long each class HELD its JVM and so also carries per-class setup and teardown.
+        logger.lifecycle(
+            "Test run -- ${t.classes} classes, ${t.tests} tests, " +
+                "${fmt((t.seconds * 1000).toLong())} in test methods"
+        )
+        logger.lifecycle(
+            "  ${t.passed} passed, ${t.flaky} flaky, ${t.failed} failed, ${t.skipped} skipped"
+        )
     }
 
     /**
@@ -188,23 +204,26 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         val work = spans.sumOf { it.second - it.first }
 
         logger.lifecycle("")
-        logger.lifecycle("Fork occupancy over the test execution -- ${spans.size} classes in ${fmt(window)}")
+        logger.lifecycle("Fork occupancy through the test execution")
         if (ignored > 0) {
             logger.lifecycle("  ($ignored class record(s) from $otherRuns earlier run(s) in the same directory ignored)")
         }
-        logger.lifecycle("")
-        logger.lifecycle("  % of execution   forks busy")
+        val labels = StringBuilder("  % of run   ")
+        val values = StringBuilder("  forks busy ")
         for (i in 0 until 10) {
             val lo = start + window * i / 10
             val hi = start + window * (i + 1) / 10
             val occupied = spans.sumOf { (a, b) -> (minOf(b, hi) - maxOf(a, lo)).coerceAtLeast(0) }
-            logger.lifecycle(String.format("  %6d-%3d%%       %.1f", i * 10, (i + 1) * 10, occupied.toDouble() / (hi - lo)))
+            labels.append(String.format("%7d", (i + 1) * 10))
+            values.append(String.format("%7.1f", occupied.toDouble() / (hi - lo)))
         }
+        logger.lifecycle(labels.toString())
+        logger.lifecycle(values.toString())
         logger.lifecycle("")
         logger.lifecycle(
             String.format(
-                "  average concurrency %.1f  (%s of work in %s of execution)",
-                work.toDouble() / window, fmt(work), fmt(window)
+                "  %s of class time in %s of wall clock = %.1f effective average concurrency",
+                fmt(work), fmt(window), work.toDouble() / window
             )
         )
     }
