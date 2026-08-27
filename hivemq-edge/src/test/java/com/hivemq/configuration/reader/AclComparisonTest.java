@@ -29,8 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * EDG-882 review v04, finding 2.1 — the decision the ACL-only write path makes, taken apart from the file
- * store that provokes it.
+ * EDG-882 review v04 finding 2.1 and review v05 finding 1 — the decision the ACL-only write path makes,
+ * taken apart from the file store that provokes it.
  * <p>
  * Both ACL checks used to demand that the list read back be <em>equal</em> to the list set. That is a claim
  * about how a store represents an access-control list, not about who can read the file, and it is the
@@ -43,6 +43,11 @@ import org.junit.jupiter.api.Test;
  * all. This class is that answer: every shape a store might plausibly hand back, judged directly. What
  * remains untested off Windows is only what NTFS actually returns — and under this rule, any answer that
  * does not widen access is accepted.
+ * <p>
+ * The first version of that question was asked of the entries rather than of what they decide, which threw
+ * away the two things about an access-control list that are not decoration: the order the entries are
+ * evaluated in, and {@code INHERIT_ONLY}, which says an entry does not apply to the object carrying it.
+ * Both are exercised below, in both directions.
  */
 public class AclComparisonTest {
 
@@ -69,6 +74,13 @@ public class AclComparisonTest {
                 .setType(AclEntryType.DENY)
                 .setPrincipal(principal)
                 .setPermissions(permissions)
+                .build();
+    }
+
+    /** The same entry, marked as not applying to the object that carries it. */
+    private static @NotNull AclEntry inheritOnly(final @NotNull AclEntry entry) {
+        return AclEntry.newBuilder(entry)
+                .setFlags(AclEntryFlag.INHERIT_ONLY, AclEntryFlag.FILE_INHERIT)
                 .build();
     }
 
@@ -104,8 +116,9 @@ public class AclComparisonTest {
     }
 
     /**
-     * Nor are inheritance flags: they decide what a <em>directory</em> propagates to what is created inside
-     * it, and the file being written propagates to nothing.
+     * Nor are the propagation flags: they decide what a <em>directory</em> propagates to what is created
+     * inside it, and the file being written propagates to nothing. {@code INHERIT_ONLY} is not one of them
+     * — see below.
      */
     @Test
     public void inheritanceFlagsGrantNoMore() {
@@ -117,6 +130,75 @@ public class AclComparisonTest {
                 .build();
 
         assertTrue(grantsNoMoreThan(List.of(flagged), List.of(allow(EDGE, READ_WRITE))));
+    }
+
+    /**
+     * A denial the list can never reach, because an earlier entry has already allowed the permission, is
+     * worth nothing — so a list that puts the same denial where it does decide something is narrower, not
+     * wider.
+     */
+    @Test
+    public void movingADenialAheadOfItsAllowGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(
+                List.of(deny(ALICE, READ), allow(ALICE, READ)), List.of(allow(ALICE, READ), deny(ALICE, READ))));
+    }
+
+    /** Which entry decides is settled one permission at a time, not one principal at a time. */
+    @Test
+    public void aDenialOfOnePermissionLeavesTheOthersToTheNextEntry() {
+        assertTrue(grantsNoMoreThan(
+                List.of(deny(ALICE, READ), allow(ALICE, READ_WRITE)),
+                List.of(deny(ALICE, READ), allow(ALICE, READ_WRITE))));
+        assertFalse(
+                grantsNoMoreThan(
+                        List.of(allow(ALICE, READ_WRITE)), List.of(deny(ALICE, READ), allow(ALICE, READ_WRITE))),
+                "the write survives the denial, the read does not");
+    }
+
+    /**
+     * An entry that does not apply to the file grants nothing on the file, so a list carrying one is no
+     * wider than the same list without it.
+     */
+    @Test
+    public void anInheritOnlyEntryGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(
+                List.of(allow(EDGE, READ_WRITE), inheritOnly(allow(ALICE, READ))), List.of(allow(EDGE, READ_WRITE))));
+    }
+
+    /** And adding the flag to an entry that did apply narrows it to nothing. */
+    @Test
+    public void addingInheritOnlyGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(List.of(inheritOnly(allow(ALICE, READ))), List.of(allow(ALICE, READ))));
+    }
+
+    // ------------------------------------------------- what order and INHERIT_ONLY must still refuse
+
+    /**
+     * The first of the two shapes review v05 named. A list is evaluated in order, so the entry that comes
+     * first settles the permission: {@code DENY} then {@code ALLOW} keeps Alice out, and the same two
+     * entries the other way round let her in. Nothing about the entries themselves changed.
+     */
+    @Test
+    public void movingAnAllowAheadOfItsDenialGrantsMore() {
+        assertFalse(grantsNoMoreThan(
+                List.of(allow(ALICE, READ), deny(ALICE, READ)), List.of(deny(ALICE, READ), allow(ALICE, READ))));
+    }
+
+    /**
+     * The second. {@code INHERIT_ONLY} says the entry does not apply to the object carrying it, so taking
+     * the flag off an entry hands its principal access to the file that the reference never gave.
+     */
+    @Test
+    public void removingInheritOnlyGrantsMore() {
+        assertFalse(grantsNoMoreThan(List.of(allow(ALICE, READ)), List.of(inheritOnly(allow(ALICE, READ)))));
+    }
+
+    /** The same, where the flag is the only thing keeping the principal off an otherwise owner-only file. */
+    @Test
+    public void removingInheritOnlyFromAnOwnerOnlyListGrantsMore() {
+        assertFalse(grantsNoMoreThan(
+                List.of(allow(EDGE, READ_WRITE), allow(ADMINISTRATORS, READ)),
+                List.of(allow(EDGE, READ_WRITE), inheritOnly(allow(ADMINISTRATORS, READ)))));
     }
 
     /** An audit entry grants nothing, so a store that adds one has not widened anything. */

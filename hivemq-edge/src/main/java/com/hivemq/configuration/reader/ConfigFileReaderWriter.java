@@ -68,6 +68,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryFlag;
 import java.nio.file.attribute.AclEntryPermission;
 import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.AclFileAttributeView;
@@ -776,10 +777,12 @@ public class ConfigFileReaderWriter {
      * <p>
      * <b>Narrow enough, not identical.</b> The first version demanded that the list read back be equal to
      * the list set, which is a claim about how a file store represents an access-control list rather than
-     * about who can read the file. A store that reorders entries, normalises a permission mask, or hands
-     * back an inherited entry alongside the one just written would have failed that comparison and refused
-     * every configuration write — on the only kind of store this code path exists for, and in a way
-     * nothing off that platform can reproduce (EDG-882 review v04). What has to be true is that nobody
+     * about who can read the file. A store that reorders entries without changing what they decide,
+     * normalises a permission mask, or hands back an inherited entry alongside the one just written would
+     * have failed that comparison and refused every configuration write — on the only kind of store this
+     * code path exists for, and in a way nothing off that platform can reproduce (EDG-882 review v04).
+     * The list is compared by what it decides instead, which is order- and flag-aware where those change
+     * the decision and indifferent to them where they do not. What has to be true is that nobody
      * else can read the file while the credentials go into it: owner-only if the store took it, and
      * otherwise no wider than the file about to be replaced, which the replacement is entitled to be
      * because that is what it is about to become.
@@ -831,34 +834,66 @@ public class ConfigFileReaderWriter {
      * Whether an access-control list grants nobody anything that another one does not.
      * <p>
      * The question every check on this path actually wants to ask, and the only one that can be answered
-     * without knowing how a particular file store chooses to represent a list. Two lists that grant the
-     * same access are the same answer here whatever order they are in, however their permissions are split
-     * across entries, and whatever inheritance flags they carry — flags govern what a <em>directory</em>
-     * propagates to things created inside it, and a file propagates to nothing.
+     * without knowing how a particular file store chooses to represent a list. It is asked of what each
+     * list <em>decides</em>, not of how it is written down: two lists that decide the same access are the
+     * same answer here whatever order their entries are in and however their permissions are split across
+     * entries.
      * <p>
-     * Conservative in both directions that can widen access: an {@code ALLOW} the reference does not have
-     * widens, and so does losing a {@code DENY} the reference does have, because a denial can be the only
-     * thing keeping a member of an allowed group out. Entries that are neither — audit and alarm entries —
-     * grant no access and are ignored.
+     * Deciding is where order lives. A list is evaluated in sequence and the first entry that names a
+     * principal and mentions a permission settles that permission for that principal, so
+     * {@code DENY Alice READ} followed by {@code ALLOW Alice READ} keeps Alice out while the same two
+     * entries the other way round let her in — the same entries, opposite access (EDG-882 review v05,
+     * finding 1). {@link #effective} is that evaluation; the comparison then runs over its result.
+     * <p>
+     * Flags are read the same way. {@code FILE_INHERIT} and {@code DIRECTORY_INHERIT} govern what a
+     * <em>directory</em> propagates to what is created inside it, and the file being written propagates to
+     * nothing, so they change no answer here. {@code INHERIT_ONLY} is not one of those: it says the entry
+     * does not apply to the object carrying it, so such an entry decides nothing about this file and
+     * dropping it grants access the reference did not.
+     * <p>
+     * Conservative in both directions that can widen access: an {@code ALLOW} in effect that the reference
+     * does not have widens, and so does losing a {@code DENY} the reference has in effect, because a denial
+     * can be the only thing keeping a member of an allowed group out. Entries that are neither — audit and
+     * alarm entries — grant no access and are ignored.
      */
     @VisibleForTesting
     static boolean grantsNoMoreThan(final @NotNull List<AclEntry> candidate, final @NotNull List<AclEntry> reference) {
-        return contains(byPrincipal(reference, AclEntryType.ALLOW), byPrincipal(candidate, AclEntryType.ALLOW))
-                && contains(byPrincipal(candidate, AclEntryType.DENY), byPrincipal(reference, AclEntryType.DENY));
+        return contains(effective(reference, AclEntryType.ALLOW), effective(candidate, AclEntryType.ALLOW))
+                && contains(effective(candidate, AclEntryType.DENY), effective(reference, AclEntryType.DENY));
     }
 
-    /** The permissions each principal is given by the entries of one type, merged across entries. */
-    private static @NotNull Map<UserPrincipal, Set<AclEntryPermission>> byPrincipal(
+    /**
+     * The permissions each principal is actually left with by the entries of one type, once the list has
+     * been evaluated in order.
+     * <p>
+     * A permission belongs to the first entry that names the principal and mentions it; every later entry
+     * for that principal and permission has already been settled and cannot change it. Entries that do not
+     * apply to the object itself, and entries that grant nothing, take no part.
+     */
+    private static @NotNull Map<UserPrincipal, Set<AclEntryPermission>> effective(
             final @NotNull List<AclEntry> acl, final @NotNull AclEntryType type) {
-        final Map<UserPrincipal, Set<AclEntryPermission>> permissions = new HashMap<>();
+        final Map<UserPrincipal, Set<AclEntryPermission>> settled = new HashMap<>();
+        final Map<UserPrincipal, Set<AclEntryPermission>> ofThisType = new HashMap<>();
         for (final AclEntry entry : acl) {
-            if (entry.type() == type) {
-                permissions
-                        .computeIfAbsent(entry.principal(), principal -> EnumSet.noneOf(AclEntryPermission.class))
-                        .addAll(entry.permissions());
+            if (entry.type() != AclEntryType.ALLOW && entry.type() != AclEntryType.DENY) {
+                continue;
             }
+            if (entry.flags().contains(AclEntryFlag.INHERIT_ONLY)) {
+                continue;
+            }
+            final Set<AclEntryPermission> alreadySettled =
+                    settled.computeIfAbsent(entry.principal(), principal -> EnumSet.noneOf(AclEntryPermission.class));
+            final Set<AclEntryPermission> decidedHere = EnumSet.noneOf(AclEntryPermission.class);
+            decidedHere.addAll(entry.permissions());
+            decidedHere.removeAll(alreadySettled);
+            if (entry.type() == type) {
+                ofThisType
+                        .computeIfAbsent(entry.principal(), principal -> EnumSet.noneOf(AclEntryPermission.class))
+                        .addAll(decidedHere);
+            }
+            alreadySettled.addAll(decidedHere);
         }
-        return permissions;
+        return ofThisType;
     }
 
     /** Whether every principal in {@code subset} is given no more there than {@code superset} gives it. */
