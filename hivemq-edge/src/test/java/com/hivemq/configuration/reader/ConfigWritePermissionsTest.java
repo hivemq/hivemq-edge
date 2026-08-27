@@ -33,6 +33,7 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -316,6 +317,84 @@ public class ConfigWritePermissionsTest {
                 Files.readAttributes(target, PosixFileAttributes.class).group(),
                 actual.group(),
                 "the target's group must be reproduced along with its mode");
+    }
+
+    // ------------------------------------------------- EDG-882 review v04: an owner this node cannot set
+
+    /**
+     * The regression this closes. Changing a file's owner is privileged on every platform this runs on, so
+     * a configuration installed by one account and served by another — root-owned {@code config.xml}, Edge
+     * running as a service user — made {@code setOwner} fail, and failing there refused the whole write.
+     * The node then silently stopped persisting anything at all.
+     * <p>
+     * Provoked by asking for {@code root}, which this account may not assign and which every POSIX system
+     * has. Skipped when the build itself runs as a superuser, for whom the call succeeds.
+     */
+    @Test
+    public void applyPreservedAttributes_whenTheOwnerCannotBeSet_thenTheWriteGoesOnWithoutIt() throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any owner");
+        final Path target = targetWith(GROUP_READABLE);
+        final PosixFileAttributes attributes = Files.readAttributes(target, PosixFileAttributes.class);
+        final UserPrincipal root =
+                directory.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName("root");
+        final PreservedAttributes rootOwned =
+                new PreservedAttributes(attributes.permissions(), root, attributes.group(), null);
+        ConfigFileReaderWriter.createPartialFile(partial, rootOwned);
+        Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
+
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, rootOwned);
+
+        final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
+        assertEquals(attributes.owner(), actual.owner(), "the replacement is owned by the account that wrote it");
+        assertEquals(GROUP_READABLE, actual.permissions(), "the mode is still reproduced exactly");
+        assertEquals(attributes.group(), actual.group(), "and so is the group, which is who else can read it");
+    }
+
+    /**
+     * The other half of that trade: the protections that decide who <em>else</em> can read the file keep
+     * refusing. A group this account cannot assign aborts the replacement rather than granting group-read
+     * to whichever group the node happens to belong to.
+     */
+    @Test
+    public void applyPreservedAttributes_whenTheGroupCannotBeSet_thenTheWriteIsStillAborted() throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any group");
+        final Path target = targetWith(GROUP_READABLE);
+        final PosixFileAttributes attributes = Files.readAttributes(target, PosixFileAttributes.class);
+        final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
+        assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
+        final PreservedAttributes elsewhere =
+                new PreservedAttributes(attributes.permissions(), attributes.owner(), foreign, null);
+        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+
+        assertThrows(
+                IOException.class,
+                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere),
+                "a group that cannot be reproduced decides who else can read the file, so it must abort");
+    }
+
+    /** A group this account cannot set on a file it owns, or {@code null} when every named group works. */
+    private static @Nullable GroupPrincipal aGroupThisUserIsNotIn(final @NotNull Path file) {
+        final List<String> mine = groupNamesOfThisUser();
+        for (final String name : new String[] {"daemon", "wheel", "operator", "sys", "tty", "bin"}) {
+            if (mine.contains(name)) {
+                continue;
+            }
+            try {
+                final GroupPrincipal candidate =
+                        file.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByGroupName(name);
+                final PosixFileAttributeView view = Files.getFileAttributeView(file, PosixFileAttributeView.class);
+                final GroupPrincipal current = view.readAttributes().group();
+                try {
+                    view.setGroup(candidate);
+                    view.setGroup(current); // it worked after all; not a group this can refuse on
+                } catch (final IOException notPermitted) {
+                    return candidate;
+                }
+            } catch (final IOException | UnsupportedOperationException ignored) {
+                // not a group this system knows; try the next one
+            }
+        }
+        return null;
     }
 
     /**
