@@ -54,7 +54,9 @@ fun writeTimings(
 ) {
     file.parentFile?.mkdirs()
     file.bufferedWriter().use { out ->
-        header.forEach { out.write("# $it\n") }
+        // An empty header entry is a blank comment line -- written as a bare "#" so it carries no
+        // trailing whitespace, which some editors and pre-commit hooks strip on sight.
+        header.forEach { out.write(if (it.isEmpty()) "#\n" else "# $it\n") }
         out.write("class,seconds\n")
         timings.entries
             .sortedWith(compareByDescending<Map.Entry<String, Double>> { it.value }.thenBy { it.key })

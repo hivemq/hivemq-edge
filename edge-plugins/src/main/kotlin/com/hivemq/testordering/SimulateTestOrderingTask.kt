@@ -92,11 +92,29 @@ abstract class SimulateTestOrderingTask : DefaultTask() {
         writeTimings(
             runTimings.get().asFile,
             runtimes,
+            // ONE header, because adopting a new ordering is a plain `cp` of this file over the committed
+            // one. So it has to read as the committed file -- that is where someone will find it and wonder.
             listOf(
-                "Measured runtime per test class, slowest first. Seconds.",
-                "Generated from this run. Used ONLY to order classes across the parallel forks;",
-                "the numbers themselves are never summed or used as an estimate.",
-                "Copy over the committed file to adopt this ordering."
+                "Test class runtimes, slowest first. Seconds.",
+                "",
+                "WHAT THIS IS FOR. Gradle deals test class i to fork (i mod maxParallelForks) up front and",
+                "never rebalances or steals work, so the dispatch ORDER alone decides how evenly the forks",
+                "are loaded. In directory order one fork draws several slow classes and runs long after the",
+                "others have gone idle. This file lets the build sort the slow ones first.",
+                "",
+                "ONLY THE ORDER MATTERS. The seconds are never summed and never used as an estimate -- they",
+                "decide the sort and nothing else. Halve them all and nothing changes. They are kept as real",
+                "numbers only because they are useful to read.",
+                "",
+                "IT DOES NOT DECIDE WHAT RUNS. The build enumerates the compiled classes itself and uses this",
+                "only to sort them. A class that is not listed is worth 0 seconds and sorts last, which is the",
+                "right place for both a helper (JUnit finds nothing in it) and a newly added test (it runs, it",
+                "just cannot be placed until it has been measured). So a stale or incomplete file costs a",
+                "slightly worse distribution -- never a test that stops running. It is safe to leave alone.",
+                "",
+                "TO REFRESH. Run the suite green, then `./gradlew simulateTestOrdering`. It reports what this",
+                "ordering costs against what a fresh one would, for a range of fork counts, and prints the",
+                "copy command. Worth a PR when the gain is real; not worth churn when it is noise."
             )
         )
 
