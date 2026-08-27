@@ -765,16 +765,27 @@ public class ConfigFileReaderWriter {
             Files.createFile(partial);
         }
         if (preserved.acl() != null) {
-            narrowToItsOwner(partial);
+            narrowToItsOwner(partial, preserved.acl());
         }
     }
 
     /**
      * Replaces the inherited access-control list of the just-created, still-empty replacement with one
-     * that grants its own owner everything and everyone else nothing, and refuses to go on if that did
-     * not take.
+     * that grants its own owner everything and everyone else nothing, and refuses to go on unless the
+     * result is narrow enough to write the configuration into.
+     * <p>
+     * <b>Narrow enough, not identical.</b> The first version demanded that the list read back be equal to
+     * the list set, which is a claim about how a file store represents an access-control list rather than
+     * about who can read the file. A store that reorders entries, normalises a permission mask, or hands
+     * back an inherited entry alongside the one just written would have failed that comparison and refused
+     * every configuration write — on the only kind of store this code path exists for, and in a way
+     * nothing off that platform can reproduce (EDG-882 review v04). What has to be true is that nobody
+     * else can read the file while the credentials go into it: owner-only if the store took it, and
+     * otherwise no wider than the file about to be replaced, which the replacement is entitled to be
+     * because that is what it is about to become.
      */
-    private static void narrowToItsOwner(final @NotNull Path partial) throws IOException {
+    private static void narrowToItsOwner(final @NotNull Path partial, final @NotNull List<AclEntry> targetAcl)
+            throws IOException {
         final AclFileAttributeView view = Files.getFileAttributeView(partial, AclFileAttributeView.class);
         if (view == null) {
             throw new IOException("The replacement for the configuration file cannot be given an access-control"
@@ -794,11 +805,72 @@ public class ConfigFileReaderWriter {
                             + " being written; the existing file has been left untouched",
                     e);
         }
-        if (!ownerOnly.equals(view.getAcl())) {
-            throw new IOException("The replacement for the configuration file did not keep the access-control"
-                    + " list restricting it to its owner, so the configuration cannot be written into it;"
-                    + " the existing file has been left untouched");
+        final List<AclEntry> actual = view.getAcl();
+        if (grantsNoMoreThan(actual, ownerOnly)) {
+            return;
         }
+        if (grantsNoMoreThan(actual, targetAcl)) {
+            // Not owner-only, but no wider than the file it is about to replace -- which is the property
+            // that matters: the replacement is never readable by anyone the configuration it replaces is
+            // not, at any point while it holds the configuration. Worth saying out loud, because it means
+            // the store did not do what it was asked.
+            log.warn(
+                    "The replacement for the configuration file could not be restricted to its owner: {} keeps"
+                            + " an access-control list this node did not set. It is no wider than the"
+                            + " configuration file being replaced, so the configuration is written into it"
+                            + " anyway.",
+                    partial);
+            return;
+        }
+        throw new IOException("The replacement for the configuration file is readable by principals the"
+                + " configuration file being replaced is not, so the configuration cannot be written into it;"
+                + " the existing file has been left untouched");
+    }
+
+    /**
+     * Whether an access-control list grants nobody anything that another one does not.
+     * <p>
+     * The question every check on this path actually wants to ask, and the only one that can be answered
+     * without knowing how a particular file store chooses to represent a list. Two lists that grant the
+     * same access are the same answer here whatever order they are in, however their permissions are split
+     * across entries, and whatever inheritance flags they carry — flags govern what a <em>directory</em>
+     * propagates to things created inside it, and a file propagates to nothing.
+     * <p>
+     * Conservative in both directions that can widen access: an {@code ALLOW} the reference does not have
+     * widens, and so does losing a {@code DENY} the reference does have, because a denial can be the only
+     * thing keeping a member of an allowed group out. Entries that are neither — audit and alarm entries —
+     * grant no access and are ignored.
+     */
+    @VisibleForTesting
+    static boolean grantsNoMoreThan(final @NotNull List<AclEntry> candidate, final @NotNull List<AclEntry> reference) {
+        return contains(byPrincipal(reference, AclEntryType.ALLOW), byPrincipal(candidate, AclEntryType.ALLOW))
+                && contains(byPrincipal(candidate, AclEntryType.DENY), byPrincipal(reference, AclEntryType.DENY));
+    }
+
+    /** The permissions each principal is given by the entries of one type, merged across entries. */
+    private static @NotNull Map<UserPrincipal, Set<AclEntryPermission>> byPrincipal(
+            final @NotNull List<AclEntry> acl, final @NotNull AclEntryType type) {
+        final Map<UserPrincipal, Set<AclEntryPermission>> permissions = new HashMap<>();
+        for (final AclEntry entry : acl) {
+            if (entry.type() == type) {
+                permissions
+                        .computeIfAbsent(entry.principal(), principal -> EnumSet.noneOf(AclEntryPermission.class))
+                        .addAll(entry.permissions());
+            }
+        }
+        return permissions;
+    }
+
+    /** Whether every principal in {@code subset} is given no more there than {@code superset} gives it. */
+    private static boolean contains(
+            final @NotNull Map<UserPrincipal, Set<AclEntryPermission>> superset,
+            final @NotNull Map<UserPrincipal, Set<AclEntryPermission>> subset) {
+        for (final Map.Entry<UserPrincipal, Set<AclEntryPermission>> granted : subset.entrySet()) {
+            if (!superset.getOrDefault(granted.getKey(), Set.of()).containsAll(granted.getValue())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -952,11 +1024,21 @@ public class ConfigFileReaderWriter {
         if (preserved.acl() != null) {
             final AclFileAttributeView aclView = Files.getFileAttributeView(partial, AclFileAttributeView.class);
             final List<AclEntry> actualAcl = aclView == null ? null : aclView.getAcl();
-            if (!preserved.acl().equals(actualAcl)) {
-                throw new IOException(
-                        "The replacement's access-control list is " + actualAcl + " but the configuration file"
-                                + " being replaced has " + preserved.acl()
-                                + "; the existing file has been left untouched");
+            if (actualAcl == null || !grantsNoMoreThan(actualAcl, preserved.acl())) {
+                throw new IOException("The replacement's access-control list grants access the configuration file being"
+                        + " replaced does not: it is " + actualAcl + " where that file has "
+                        + preserved.acl() + "; the existing file has been left untouched");
+            }
+            if (!grantsNoMoreThan(preserved.acl(), actualAcl)) {
+                // Narrower than the file it replaces. Nobody gains anything, so this is not the disclosure
+                // the check is here for -- but someone who could read the configuration no longer can, and
+                // that is not something to find out later.
+                log.warn(
+                        "The replacement for the configuration file has a narrower access-control list than the"
+                                + " file it replaces: {} where that file has {}. Nobody gains access, but"
+                                + " principals that could read the configuration may no longer be able to.",
+                        actualAcl,
+                        preserved.acl());
             }
         }
     }
