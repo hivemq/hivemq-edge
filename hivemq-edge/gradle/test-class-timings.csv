@@ -1,23 +1,14 @@
 # Test class runtimes, slowest first. Seconds.
 #
-# WHAT THIS IS FOR. Gradle deals test class i to fork (i mod maxParallelForks) up front and
-# never rebalances or steals work, so the dispatch ORDER alone decides how evenly the forks
-# are loaded. In directory order one fork draws several slow classes and runs long after the
-# others have gone idle. This file lets the build sort the slow ones first.
+# Used ONLY to order the classes across Gradle's parallel forks, so they finish together.
+# The relative order is all that matters -- the numbers are never summed. A class that is
+# not listed sorts last and still runs, so a stale file costs a slightly worse distribution,
+# never a missing test.
 #
-# ONLY THE ORDER MATTERS. The seconds are never summed and never used as an estimate -- they
-# decide the sort and nothing else. Halve them all and nothing changes. They are kept as real
-# numbers only because they are useful to read.
+# To refresh: run the suite green, then `./gradlew simulateTestOrdering`.
 #
-# IT DOES NOT DECIDE WHAT RUNS. The build enumerates the compiled classes itself and uses this
-# only to sort them. A class that is not listed is worth 0 seconds and sorts last, which is the
-# right place for both a helper (JUnit finds nothing in it) and a newly added test (it runs, it
-# just cannot be placed until it has been measured). So a stale or incomplete file costs a
-# slightly worse distribution -- never a test that stops running. It is safe to leave alone.
-#
-# TO REFRESH. Run the suite green, then `./gradlew simulateTestOrdering`. It reports what this
-# ordering costs against what a fresh one would, for a range of fork counts, and prints the
-# copy command. Worth a PR when the gain is real; not worth churn when it is noise.
+# Why this exists, and how to read the simulation:
+# https://hivemq.github.io/hivemq-edge-lore/3-Quality-and-Testing/balancing-the-parallel-forks/
 class,seconds
 com.hivemq.extensions.executor.task.PluginTaskExecutorTest,8.0
 com.hivemq.embedded.internal.EmbeddedHiveMQImplTest,6.5
