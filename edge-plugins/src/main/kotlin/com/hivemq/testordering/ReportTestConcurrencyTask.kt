@@ -150,31 +150,37 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             return
         }
 
-        // (start, end) in epoch millis for every class that ran, across all JVMs.
-        val all = mutableListOf<Pair<Long, Long>>()
+        // (start, end) in epoch millis for every class, grouped by the run its JVM belonged to. The
+        // directory ACCUMULATES -- Gradle never clears it -- so logs from earlier runs sit beside this
+        // one's. The build stamps each fork with a run id precisely so they can be told apart; timing
+        // cannot do it, because the idle gap while the build recompiles between two runs is the same
+        // length as a slow test class.
+        val byRun = mutableMapOf<String, MutableList<Pair<Long, Long>>>()
         files.forEach { file ->
+            var runId = "unknown"
             file.forEachLine { line ->
-                if (line.startsWith("#")) return@forEachLine
+                if (line.startsWith("#")) {
+                    RUN_ID.find(line)?.let { runId = it.groupValues[1] }
+                    return@forEachLine
+                }
                 val f = line.split(' ')
                 if (f.size < 5) return@forEachLine
                 val end = f[0].toLongOrNull() ?: return@forEachLine
                 val duration = f[2].toLongOrNull() ?: return@forEachLine
-                all += (end - duration) to end
+                byRun.getOrPut(runId) { mutableListOf() } += (end - duration) to end
             }
         }
-        if (all.isEmpty()) {
+        if (byRun.isEmpty()) {
             logger.lifecycle("")
             logger.lifecycle("Fork occupancy: fork logs present but empty")
             return
         }
 
-        // The directory ACCUMULATES across runs -- Gradle never clears it, so logs from days ago sit beside
-        // today's. Keep the last run only, cutting wherever no class started for five minutes: within a run
-        // the forks are never idle that long, between runs they always are.
-        val starts = all.map { it.first }.sorted()
-        val lastRunStart = starts.foldRight(starts.last()) { t, acc -> if (acc - t > RUN_GAP_MS) acc else t }
-        val spans = all.filter { it.first >= lastRunStart }
-        val ignored = all.size - spans.size
+        // The most recent run is the one that ended last.
+        val latest = byRun.maxBy { it.value.maxOf { span -> span.second } }
+        val spans = latest.value
+        val ignored = byRun.values.sumOf { it.size } - spans.size
+        val otherRuns = byRun.size - 1
 
         val start = spans.minOf { it.first }
         val finish = spans.maxOf { it.second }
@@ -184,7 +190,7 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         logger.lifecycle("")
         logger.lifecycle("Fork occupancy over the test execution -- ${spans.size} classes in ${fmt(window)}")
         if (ignored > 0) {
-            logger.lifecycle("  ($ignored class record(s) from earlier runs in the same directory ignored)")
+            logger.lifecycle("  ($ignored class record(s) from $otherRuns earlier run(s) in the same directory ignored)")
         }
         logger.lifecycle("")
         logger.lifecycle("  % of execution   forks busy")
@@ -258,8 +264,8 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
     }
 
     private companion object {
-        /** No class starts for this long => a run boundary. Forks are never idle this long mid-run. */
-        const val RUN_GAP_MS = 300_000L
+        /** `# runId=... jvmStart=...` -- the header the build stamps onto every fork log. */
+        val RUN_ID = Regex("runId=(\\S+)")
     }
 
     private fun fmt(millis: Long): String {
