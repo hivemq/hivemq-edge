@@ -284,6 +284,7 @@ public class EnvVarUtilTest {
     // ---------------------------------------------------------------------------------------------
 
     private static final @NotNull String PW = "EDG882_UNIT_PW";
+    private static final @NotNull String OTHER = "EDG882_UNIT_OTHER";
     private static final @NotNull String SECRET = "s3cr3t-do-not-write-me";
 
     private @NotNull EnvVarUtil.CollectedPlaceholders collectWithSecret(final @NotNull String xml) {
@@ -451,6 +452,79 @@ public class EnvVarUtilTest {
                 () -> EnvVarUtil.restorePlaceholders(
                         "<x><password>" + SECRET + "</password><note>" + SECRET + "</note></x>", List.of(placeholder)),
                 "a credential still in the document when the restore finishes must refuse the write");
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v04, finding 1.3. The accounting subtracted a count taken from the parsed document
+    // from one taken from the file's bytes, and the two measure different populations: a placeholder
+    // spelled with a character reference exists only in the second. The difference went negative, and the
+    // guard refuses on "not zero" -- so a configuration with nothing wrong with it could never be written
+    // again. It is compared per variable now, and only a shortfall counts.
+    // ---------------------------------------------------------------------------------------------
+
+    /** The reported case: one ordinary placeholder, one the raw file cannot see. Nothing is missing. */
+    @Test
+    public void collectPlaceholders_whenAPlaceholderIsSpelledWithACharacterReference_thenNothingIsUnaccountedFor() {
+        System.setProperty(OTHER, "probe-host");
+        try {
+            final var collected = collectWithSecret(
+                    "<x><host>${ENV:" + OTHER + "}</host><password>$&#123;ENV:" + PW + "}</password></x>");
+
+            assertEquals(
+                    0,
+                    collected.unaccountedTokens(),
+                    "a placeholder only the parser can see is not a placeholder the walk missed");
+            assertEquals(2, collected.placeholders().size(), "both spans are still restorable");
+        } finally {
+            System.clearProperty(OTHER);
+        }
+    }
+
+    /** And such a configuration can still be written, which is what the negative count took away. */
+    @Test
+    public void restorePlaceholders_whenAPlaceholderIsSpelledWithACharacterReference_thenTheWriteProceeds() {
+        System.setProperty(OTHER, "probe-host");
+        try {
+            final var collected = collectWithSecret(
+                    "<x><host>${ENV:" + OTHER + "}</host><password>$&#123;ENV:" + PW + "}</password></x>");
+
+            // What the marshaller holds: the resolved host, and the literal text of the escaped token,
+            // which the render never resolved because it works on the file's bytes.
+            final String written = EnvVarUtil.restorePlaceholders(
+                    "<x><host>probe-host</host><password>${ENV:" + PW + "}</password></x>", collected);
+
+            assertEquals("<x><host>${ENV:" + OTHER + "}</host><password>${ENV:" + PW + "}</password></x>", written);
+            assertFalse(written.contains(SECRET), "the escaped token's value was never rendered, so it cannot leak");
+        } finally {
+            System.clearProperty(OTHER);
+        }
+    }
+
+    /**
+     * The reason the totals were not simply clamped. A placeholder the walk genuinely could not account
+     * for and one only the parser can see used to cancel each other out to zero, which reads as "every
+     * token accounted for" — the one answer this guard must never give by accident.
+     */
+    @Test
+    public void collectPlaceholders_whenAnUnaccountedTokenMeetsAnEscapedOne_thenTheyDoNotCancelOut() {
+        final var collected =
+                collectWithSecret("<x><note>${ENV:</note><password>$&#123;ENV:" + PW + "}</password></x>");
+
+        assertEquals(1, collected.unaccountedTokens(), "a token this cannot name must stay unaccounted for");
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders("<x><note>${ENV:</note></x>", collected),
+                "an unaccounted token must refuse the write whatever else the file holds");
+    }
+
+    /** A placeholder named twice is accounted for twice, not once. */
+    @Test
+    public void collectPlaceholders_countsEachOccurrenceOfTheSameVariable() {
+        final var collected = collectWithSecret("<x><password>${ENV:" + PW + "}</password><keystore-password>${ENV:"
+                + PW + "}</keystore-password></x>");
+
+        assertEquals(0, collected.unaccountedTokens());
+        assertEquals(2, collected.placeholders().size());
     }
 
     // ---------------------------------------------------------------------------------------------

@@ -22,6 +22,7 @@ import com.hivemq.exceptions.UnrecoverableException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -157,7 +158,8 @@ public class EnvVarUtil {
      *                          zero for a well-formed configuration; anything else means the file holds a
      *                          placeholder somewhere this cannot reason about, and
      *                          {@link #restorePlaceholders} refuses the write rather than guess whether a
-     *                          credential is about to go out with it (EDG-882 review v03, R3-08).
+     *                          credential is about to go out with it (EDG-882 review v03, R3-08). Counted
+     *                          per variable and never negative -- see {@link #collectPlaceholders}.
      */
     public record CollectedPlaceholders(@NotNull List<ElementPlaceholder> placeholders, int unaccountedTokens) {
 
@@ -189,12 +191,29 @@ public class EnvVarUtil {
      * its placeholders would otherwise make every occurrence look ambiguous — commenting a bridge out is
      * an ordinary thing for an operator to do. Their tokens are counted as seen, so they do not show up
      * as unaccounted either.
+     * <p>
+     * <b>Accounted for by variable, not by total.</b> The two counts measure different populations: the
+     * file's own bytes are what the whole-file render resolves, and the parsed document is what this walk
+     * can reach. A placeholder spelled with a character reference — {@code $&#123;ENV:PW}} — exists only
+     * in the second, so subtracting one total from the other went <em>negative</em>, and a negative count
+     * is not zero: it refused every subsequent write of a configuration that had nothing wrong with it
+     * (EDG-882 review v04). Comparing per variable and keeping only the shortfall says what the guard
+     * always meant — a placeholder the render resolved and this walk could not find — and it no longer
+     * lets two different oddities cancel each other out into a clean bill of health.
+     * <p>
+     * A token visible only after parsing is not a disclosure risk in the first place: the render works on
+     * the file's bytes, so it never resolves one, and the value it stands for never enters the document.
      */
     public static @NotNull CollectedPlaceholders collectPlaceholders(final @NotNull String text) {
-        final int inFile = countOccurrences(text, ENV_TOKEN);
-        if (inFile == 0) {
+        final int tokensInFile = countOccurrences(text, ENV_TOKEN);
+        if (tokensInFile == 0) {
             return CollectedPlaceholders.NONE;
         }
+        final Map<String, Integer> namedInFile = tokenCounts(text);
+        // A token whose braces never close names no variable, so nothing can account for it. It is not
+        // rendered either -- the whole-file render matches the same pattern this does -- but it is exactly
+        // the shape this guard exists to be suspicious of, so it stays unaccounted rather than ignored.
+        final int unnamedInFile = tokensInFile - total(namedInFile);
         final Document document = parseOrNull(text);
         if (document == null) {
             // Every token is unaccounted for, which refuses the next write-back rather than performing
@@ -211,12 +230,34 @@ public class EnvVarUtil {
                     + " placeholders, so writing the configuration back out will be refused until it can be."
                     + " Until then a REST change to any subsystem applies to the running node but cannot be"
                     + " persisted to config.xml.");
-            return new CollectedPlaceholders(List.of(), inFile);
+            return new CollectedPlaceholders(List.of(), tokensInFile);
         }
         final List<ElementPlaceholder> placeholders = new ArrayList<>();
-        final int[] seen = {0};
+        final Map<String, Integer> seen = new HashMap<>();
         visitValues(document, (name, value, attribute) -> collect(placeholders, seen, name, value, attribute), seen);
-        return new CollectedPlaceholders(placeholders, inFile - seen[0]);
+        int unaccounted = unnamedInFile;
+        for (final Map.Entry<String, Integer> token : namedInFile.entrySet()) {
+            unaccounted += Math.max(0, token.getValue() - seen.getOrDefault(token.getKey(), 0));
+        }
+        return new CollectedPlaceholders(placeholders, unaccounted);
+    }
+
+    /** How many times each variable is named by a placeholder in the given text. */
+    private static @NotNull Map<String, Integer> tokenCounts(final @NotNull String text) {
+        final Map<String, Integer> counts = new HashMap<>();
+        final var matcher = ENV_PLACEHOLDER.matcher(text);
+        while (matcher.find()) {
+            counts.merge(matcher.group(1), 1, Integer::sum);
+        }
+        return counts;
+    }
+
+    private static int total(final @NotNull Map<String, Integer> counts) {
+        int total = 0;
+        for (final int count : counts.values()) {
+            total += count;
+        }
+        return total;
     }
 
     /**
@@ -274,7 +315,9 @@ public class EnvVarUtil {
      * rather than "somewhere this walk chose not to restore". Null for callers that only want the values.
      */
     private static void visitValues(
-            final @NotNull Node node, final @NotNull ValueVisitor visitor, final int @Nullable [] seenInComments) {
+            final @NotNull Node node,
+            final @NotNull ValueVisitor visitor,
+            final @Nullable Map<String, Integer> seenInComments) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             final Element element = (Element) node;
             final NamedNodeMap attributes = element.getAttributes();
@@ -297,7 +340,8 @@ public class EnvVarUtil {
                 && (node.getNodeType() == Node.COMMENT_NODE
                         || node.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE)) {
             // Seen, deliberately not restorable: neither reaches the marshalled document.
-            seenInComments[0] += countOccurrences(requireNonNullElse(node.getNodeValue(), ""), ENV_TOKEN);
+            tokenCounts(requireNonNullElse(node.getNodeValue(), ""))
+                    .forEach((name, count) -> seenInComments.merge(name, count, Integer::sum));
         }
         final NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -307,15 +351,15 @@ public class EnvVarUtil {
 
     private static void collect(
             final @NotNull List<ElementPlaceholder> placeholders,
-            final int @NotNull [] seen,
+            final @NotNull Map<String, Integer> seen,
             final @NotNull String name,
             final @NotNull String literal,
             final boolean attribute) {
-        final int tokens = countOccurrences(literal, ENV_TOKEN);
-        if (tokens == 0) {
+        final Map<String, Integer> tokens = tokenCounts(literal);
+        if (tokens.isEmpty()) {
             return;
         }
-        seen[0] += tokens;
+        tokens.forEach((variable, count) -> seen.merge(variable, count, Integer::sum));
         final String value = renderOrNull(literal);
         // An empty rendered span gives the restore nothing to search for, and a span with an unset
         // variable never reaches the marshalled document at all -- the render of the whole file
