@@ -68,7 +68,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclEntryFlag;
 import java.nio.file.attribute.AclEntryPermission;
 import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.AclFileAttributeView;
@@ -781,11 +780,18 @@ public class ConfigFileReaderWriter {
      * normalises a permission mask, or hands back an inherited entry alongside the one just written would
      * have failed that comparison and refused every configuration write — on the only kind of store this
      * code path exists for, and in a way nothing off that platform can reproduce (EDG-882 review v04).
-     * The list is compared by what it decides instead, which is order- and flag-aware where those change
-     * the decision and indifferent to them where they do not. What has to be true is that nobody
-     * else can read the file while the credentials go into it: owner-only if the store took it, and
-     * otherwise no wider than the file about to be replaced, which the replacement is entitled to be
-     * because that is what it is about to become.
+     * {@link AclComparison} answers what the lists grant instead, over every token that could be presented
+     * to them, so a store may return the narrowing in whatever shape it likes and is held only to what it
+     * decided.
+     * <p>
+     * <b>Two acceptable outcomes, in order of preference.</b> Owner-only, when the store took the list it
+     * was given; otherwise no wider than the file about to be replaced, which the replacement is entitled
+     * to be because that is exactly what it is about to become. The second is not a weakening: a Windows
+     * directory that propagates entries to what is created inside it — {@code ProgramData} and most
+     * installation trees do — hands every new file an inherited list, and {@code setAcl} cannot mark a
+     * DACL protected through this API, so demanding owner-only would refuse every configuration write on
+     * an ordinary node. That is review v04's finding 2.1 in the other direction, and it is a fault, not a
+     * safeguard.
      */
     private static void narrowToItsOwner(final @NotNull Path partial, final @NotNull List<AclEntry> targetAcl)
             throws IOException {
@@ -809,10 +815,10 @@ public class ConfigFileReaderWriter {
                     e);
         }
         final List<AclEntry> actual = view.getAcl();
-        if (grantsNoMoreThan(actual, ownerOnly)) {
+        if (AclComparison.grantsNoMoreThan(actual, ownerOnly)) {
             return;
         }
-        if (grantsNoMoreThan(actual, targetAcl)) {
+        if (AclComparison.grantsNoMoreThan(actual, targetAcl)) {
             // Not owner-only, but no wider than the file it is about to replace -- which is the property
             // that matters: the replacement is never readable by anyone the configuration it replaces is
             // not, at any point while it holds the configuration. Worth saying out loud, because it means
@@ -828,84 +834,6 @@ public class ConfigFileReaderWriter {
         throw new IOException("The replacement for the configuration file is readable by principals the"
                 + " configuration file being replaced is not, so the configuration cannot be written into it;"
                 + " the existing file has been left untouched");
-    }
-
-    /**
-     * Whether an access-control list grants nobody anything that another one does not.
-     * <p>
-     * The question every check on this path actually wants to ask, and the only one that can be answered
-     * without knowing how a particular file store chooses to represent a list. It is asked of what each
-     * list <em>decides</em>, not of how it is written down: two lists that decide the same access are the
-     * same answer here whatever order their entries are in and however their permissions are split across
-     * entries.
-     * <p>
-     * Deciding is where order lives. A list is evaluated in sequence and the first entry that names a
-     * principal and mentions a permission settles that permission for that principal, so
-     * {@code DENY Alice READ} followed by {@code ALLOW Alice READ} keeps Alice out while the same two
-     * entries the other way round let her in — the same entries, opposite access (EDG-882 review v05,
-     * finding 1). {@link #effective} is that evaluation; the comparison then runs over its result.
-     * <p>
-     * Flags are read the same way. {@code FILE_INHERIT} and {@code DIRECTORY_INHERIT} govern what a
-     * <em>directory</em> propagates to what is created inside it, and the file being written propagates to
-     * nothing, so they change no answer here. {@code INHERIT_ONLY} is not one of those: it says the entry
-     * does not apply to the object carrying it, so such an entry decides nothing about this file and
-     * dropping it grants access the reference did not.
-     * <p>
-     * Conservative in both directions that can widen access: an {@code ALLOW} in effect that the reference
-     * does not have widens, and so does losing a {@code DENY} the reference has in effect, because a denial
-     * can be the only thing keeping a member of an allowed group out. Entries that are neither — audit and
-     * alarm entries — grant no access and are ignored.
-     */
-    @VisibleForTesting
-    static boolean grantsNoMoreThan(final @NotNull List<AclEntry> candidate, final @NotNull List<AclEntry> reference) {
-        return contains(effective(reference, AclEntryType.ALLOW), effective(candidate, AclEntryType.ALLOW))
-                && contains(effective(candidate, AclEntryType.DENY), effective(reference, AclEntryType.DENY));
-    }
-
-    /**
-     * The permissions each principal is actually left with by the entries of one type, once the list has
-     * been evaluated in order.
-     * <p>
-     * A permission belongs to the first entry that names the principal and mentions it; every later entry
-     * for that principal and permission has already been settled and cannot change it. Entries that do not
-     * apply to the object itself, and entries that grant nothing, take no part.
-     */
-    private static @NotNull Map<UserPrincipal, Set<AclEntryPermission>> effective(
-            final @NotNull List<AclEntry> acl, final @NotNull AclEntryType type) {
-        final Map<UserPrincipal, Set<AclEntryPermission>> settled = new HashMap<>();
-        final Map<UserPrincipal, Set<AclEntryPermission>> ofThisType = new HashMap<>();
-        for (final AclEntry entry : acl) {
-            if (entry.type() != AclEntryType.ALLOW && entry.type() != AclEntryType.DENY) {
-                continue;
-            }
-            if (entry.flags().contains(AclEntryFlag.INHERIT_ONLY)) {
-                continue;
-            }
-            final Set<AclEntryPermission> alreadySettled =
-                    settled.computeIfAbsent(entry.principal(), principal -> EnumSet.noneOf(AclEntryPermission.class));
-            final Set<AclEntryPermission> decidedHere = EnumSet.noneOf(AclEntryPermission.class);
-            decidedHere.addAll(entry.permissions());
-            decidedHere.removeAll(alreadySettled);
-            if (entry.type() == type) {
-                ofThisType
-                        .computeIfAbsent(entry.principal(), principal -> EnumSet.noneOf(AclEntryPermission.class))
-                        .addAll(decidedHere);
-            }
-            alreadySettled.addAll(decidedHere);
-        }
-        return ofThisType;
-    }
-
-    /** Whether every principal in {@code subset} is given no more there than {@code superset} gives it. */
-    private static boolean contains(
-            final @NotNull Map<UserPrincipal, Set<AclEntryPermission>> superset,
-            final @NotNull Map<UserPrincipal, Set<AclEntryPermission>> subset) {
-        for (final Map.Entry<UserPrincipal, Set<AclEntryPermission>> granted : subset.entrySet()) {
-            if (!superset.getOrDefault(granted.getKey(), Set.of()).containsAll(granted.getValue())) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -1059,12 +987,12 @@ public class ConfigFileReaderWriter {
         if (preserved.acl() != null) {
             final AclFileAttributeView aclView = Files.getFileAttributeView(partial, AclFileAttributeView.class);
             final List<AclEntry> actualAcl = aclView == null ? null : aclView.getAcl();
-            if (actualAcl == null || !grantsNoMoreThan(actualAcl, preserved.acl())) {
+            if (actualAcl == null || !AclComparison.grantsNoMoreThan(actualAcl, preserved.acl())) {
                 throw new IOException("The replacement's access-control list grants access the configuration file being"
                         + " replaced does not: it is " + actualAcl + " where that file has "
                         + preserved.acl() + "; the existing file has been left untouched");
             }
-            if (!grantsNoMoreThan(preserved.acl(), actualAcl)) {
+            if (!AclComparison.grantsNoMoreThan(preserved.acl(), actualAcl)) {
                 // Narrower than the file it replaces. Nobody gains anything, so this is not the disclosure
                 // the check is here for -- but someone who could read the configuration no longer can, and
                 // that is not something to find out later.

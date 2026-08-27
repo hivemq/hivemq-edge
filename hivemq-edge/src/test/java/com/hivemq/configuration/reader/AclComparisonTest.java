@@ -15,78 +15,57 @@
  */
 package com.hivemq.configuration.reader;
 
+import static com.hivemq.configuration.reader.AclComparisonFixture.ADMINISTRATORS;
+import static com.hivemq.configuration.reader.AclComparisonFixture.ALICE;
+import static com.hivemq.configuration.reader.AclComparisonFixture.EDGE;
+import static com.hivemq.configuration.reader.AclComparisonFixture.READ;
+import static com.hivemq.configuration.reader.AclComparisonFixture.READ_WRITE;
+import static com.hivemq.configuration.reader.AclComparisonFixture.WRITE;
+import static com.hivemq.configuration.reader.AclComparisonFixture.allow;
+import static com.hivemq.configuration.reader.AclComparisonFixture.deny;
+import static com.hivemq.configuration.reader.AclComparisonFixture.inheritOnly;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.attribute.AclEntry;
 import java.nio.file.attribute.AclEntryFlag;
 import java.nio.file.attribute.AclEntryPermission;
 import java.nio.file.attribute.AclEntryType;
-import java.nio.file.attribute.UserPrincipal;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * EDG-882 review v04 finding 2.1 and review v05 finding 1 — the decision the ACL-only write path makes,
- * taken apart from the file store that provokes it.
+ * EDG-882 reviews v04, v05 and v06 — the decision the ACL-only configuration write path makes, taken apart
+ * from the file store that provokes it.
  * <p>
- * Both ACL checks used to demand that the list read back be <em>equal</em> to the list set. That is a claim
- * about how a store represents an access-control list, not about who can read the file, and it is the
+ * Both ACL checks originally demanded that the list read back be <em>equal</em> to the list set. That is a
+ * claim about how a store represents an access-control list, not about who can read the file, and it is the
  * claim nothing outside Windows can test: jimfs hands back exactly what it was given, so those tests passed
  * by construction while a real NTFS volume that reordered entries, merged a permission mask or returned an
  * inherited entry alongside the one just written would have refused every configuration write — on the only
  * platform the code path exists for.
  * <p>
- * The question is now "does this grant anyone more than that does", which is answerable without a store at
- * all. This class is that answer: every shape a store might plausibly hand back, judged directly. What
- * remains untested off Windows is only what NTFS actually returns — and under this rule, any answer that
- * does not widen access is accepted.
+ * Three rounds then found three ways the replacement was wrong about what a list means: it ignored the order
+ * entries are evaluated in (v05), it read {@code INHERIT_ONLY} as a propagation flag (v05), and it settled
+ * permissions per principal, so an entry naming a group could not settle a permission for a user who belongs
+ * to it (v06). Each round arrived from outside, because nothing here was capable of producing the next one.
  * <p>
- * The first version of that question was asked of the entries rather than of what they decide, which threw
- * away the two things about an access-control list that are not decoration: the order the entries are
- * evaluated in, and {@code INHERIT_ONLY}, which says an entry does not apply to the object carrying it.
- * Both are exercised below, in both directions.
+ * {@link AclComparison} answers the question over every token that could be presented to the two lists
+ * rather than modelling any particular directory's groups, which makes it exact. This class pins the rules
+ * one shape at a time and every case the three rounds raised; {@link AclComparisonOracleTest} is the part
+ * that closes the class rather than the instance, by agreeing with a direct implementation of the
+ * access-check algorithm over an exhaustively generated universe of lists.
  */
 public class AclComparisonTest {
 
-    private static final @NotNull UserPrincipal EDGE = new Principal("edge");
-    private static final @NotNull UserPrincipal ALICE = new Principal("alice");
-    private static final @NotNull UserPrincipal ADMINISTRATORS = new Principal("Administrators");
-
-    private static final @NotNull Set<AclEntryPermission> READ = Set.of(AclEntryPermission.READ_DATA);
-    private static final @NotNull Set<AclEntryPermission> READ_WRITE =
-            Set.of(AclEntryPermission.READ_DATA, AclEntryPermission.WRITE_DATA);
-
-    private static @NotNull AclEntry allow(
-            final @NotNull UserPrincipal principal, final @NotNull Set<AclEntryPermission> permissions) {
-        return AclEntry.newBuilder()
-                .setType(AclEntryType.ALLOW)
-                .setPrincipal(principal)
-                .setPermissions(permissions)
-                .build();
-    }
-
-    private static @NotNull AclEntry deny(
-            final @NotNull UserPrincipal principal, final @NotNull Set<AclEntryPermission> permissions) {
-        return AclEntry.newBuilder()
-                .setType(AclEntryType.DENY)
-                .setPrincipal(principal)
-                .setPermissions(permissions)
-                .build();
-    }
-
-    /** The same entry, marked as not applying to the object that carries it. */
-    private static @NotNull AclEntry inheritOnly(final @NotNull AclEntry entry) {
-        return AclEntry.newBuilder(entry)
-                .setFlags(AclEntryFlag.INHERIT_ONLY, AclEntryFlag.FILE_INHERIT)
-                .build();
-    }
-
     private static boolean grantsNoMoreThan(
             final @NotNull List<AclEntry> candidate, final @NotNull List<AclEntry> reference) {
-        return ConfigFileReaderWriter.grantsNoMoreThan(candidate, reference);
+        return AclComparison.grantsNoMoreThan(candidate, reference);
     }
 
     // ------------------------------------------------------------- what a store may change and still pass
@@ -110,9 +89,7 @@ public class AclComparisonTest {
     /** Nor is how the permissions are split across entries for the same principal. */
     @Test
     public void permissionsSplitAcrossEntriesGrantNoMore() {
-        assertTrue(grantsNoMoreThan(
-                List.of(allow(EDGE, READ), allow(EDGE, Set.of(AclEntryPermission.WRITE_DATA))),
-                List.of(allow(EDGE, READ_WRITE))));
+        assertTrue(grantsNoMoreThan(List.of(allow(EDGE, READ), allow(EDGE, WRITE)), List.of(allow(EDGE, READ_WRITE))));
     }
 
     /**
@@ -171,7 +148,106 @@ public class AclComparisonTest {
         assertTrue(grantsNoMoreThan(List.of(inheritOnly(allow(ALICE, READ))), List.of(allow(ALICE, READ))));
     }
 
-    // ------------------------------------------------- what order and INHERIT_ONLY must still refuse
+    /** An audit entry grants nothing, so a store that adds one has not widened anything. */
+    @Test
+    public void anAuditEntryGrantsNoMore() {
+        final AclEntry audit = AclEntry.newBuilder()
+                .setType(AclEntryType.AUDIT)
+                .setPrincipal(ALICE)
+                .setPermissions(READ)
+                .setFlags(AclEntryFlag.FILE_INHERIT)
+                .build();
+
+        assertTrue(grantsNoMoreThan(List.of(allow(EDGE, READ_WRITE), audit), List.of(allow(EDGE, READ_WRITE))));
+    }
+
+    /**
+     * An audit entry grants nothing, so it also takes nothing away: it does not stand in front of the entry
+     * behind it and hide what that one grants.
+     * <p>
+     * Both directions matter and they fail differently. Read as a decision, an audit entry ahead of an allow
+     * makes a replacement that grants access look like one that grants none — a widening waved through,
+     * which is the whole disclosure this path exists to prevent. Read as a decision in the file being
+     * replaced, it makes that file look narrower than it is and refuses a write that discloses nothing.
+     */
+    @Test
+    public void anAuditEntryDoesNotHideTheEntryBehindIt() {
+        final AclEntry audit = AclEntry.newBuilder()
+                .setType(AclEntryType.AUDIT)
+                .setPrincipal(ALICE)
+                .setPermissions(READ)
+                .build();
+
+        assertFalse(
+                grantsNoMoreThan(List.of(audit, allow(ALICE, READ)), List.of()),
+                "the allow behind the audit entry grants Alice a read the file being replaced does not");
+        assertTrue(
+                grantsNoMoreThan(List.of(allow(ALICE, READ)), List.of(audit, allow(ALICE, READ))),
+                "the file being replaced grants that read too, whatever is recorded in front of it");
+    }
+
+    /** Granting less is not granting more. */
+    @Test
+    public void aNarrowerListGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(List.of(allow(EDGE, READ)), List.of(allow(EDGE, READ_WRITE), allow(ALICE, READ))));
+    }
+
+    /** And granting nothing at all is the narrowest there is. */
+    @Test
+    public void anEmptyListGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(List.of(), List.of(allow(EDGE, READ_WRITE))));
+    }
+
+    /** Adding a denial is a narrowing whatever else the list says. */
+    @Test
+    public void addingADenialGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(
+                List.of(allow(EDGE, READ_WRITE), deny(ALICE, READ)), List.of(allow(EDGE, READ_WRITE))));
+    }
+
+    // ---------------------------------------------------------------------- what must still be refused
+
+    /** A principal the file being replaced does not name at all. */
+    @Test
+    public void anExtraPrincipalGrantsMore() {
+        assertFalse(grantsNoMoreThan(
+                List.of(allow(EDGE, READ_WRITE), allow(ADMINISTRATORS, READ)), List.of(allow(EDGE, READ_WRITE))));
+    }
+
+    /** A permission the file being replaced does not grant that principal. */
+    @Test
+    public void anExtraPermissionGrantsMore() {
+        assertFalse(grantsNoMoreThan(List.of(allow(EDGE, READ_WRITE)), List.of(allow(EDGE, READ))));
+    }
+
+    /** Anything at all, where the file being replaced grants nobody anything. */
+    @Test
+    public void anythingGrantsMoreThanAnEmptyList() {
+        assertFalse(grantsNoMoreThan(List.of(allow(EDGE, READ)), List.of()));
+    }
+
+    /**
+     * The shape the whole change is about, end to end: the list a store might return after being asked for
+     * owner-only — reordered, flagged, and with the permissions merged differently — is accepted, while the
+     * same list with the directory's inherited entry still in it is not.
+     */
+    @Test
+    public void whatAStoreMayReturnAfterBeingAskedForOwnerOnly() {
+        final List<AclEntry> ownerOnly = List.of(allow(EDGE, READ_WRITE));
+        final AclEntry rewritten = AclEntry.newBuilder()
+                .setType(AclEntryType.ALLOW)
+                .setPrincipal(EDGE)
+                .setPermissions(READ_WRITE)
+                .setFlags(AclEntryFlag.NO_PROPAGATE_INHERIT)
+                .build();
+
+        assertTrue(grantsNoMoreThan(List.of(rewritten), ownerOnly), "a store that rewrote the entry did not widen it");
+        assertFalse(
+                grantsNoMoreThan(List.of(rewritten, allow(ADMINISTRATORS, READ)), ownerOnly),
+                "an inherited entry the store kept is exactly what the narrowing is for");
+    }
+
+    // ------------------------------------------------------- review v05: order is part of what a list says
 
     /**
      * The first of the two shapes review v05 named. A list is evaluated in order, so the entry that comes
@@ -201,97 +277,212 @@ public class AclComparisonTest {
                 List.of(allow(EDGE, READ_WRITE), inheritOnly(allow(ADMINISTRATORS, READ)))));
     }
 
-    /** An audit entry grants nothing, so a store that adds one has not widened anything. */
-    @Test
-    public void anAuditEntryGrantsNoMore() {
-        final AclEntry audit = AclEntry.newBuilder()
-                .setType(AclEntryType.AUDIT)
-                .setPrincipal(ALICE)
-                .setPermissions(READ)
-                .setFlags(AclEntryFlag.FILE_INHERIT)
-                .build();
+    // ------------------------------- review v06: an entry naming a group settles a permission for its members
 
-        assertTrue(grantsNoMoreThan(List.of(allow(EDGE, READ_WRITE), audit), List.of(allow(EDGE, READ_WRITE))));
+    /**
+     * Review v06, exactly as reported. A token carries the user's own identity <em>and</em> every group they
+     * belong to, so entries naming different principals settle the same person's access and the order
+     * between them decides who wins.
+     * <p>
+     * The reference denies Alice and then allows the administrators; a request from Alice, who is one, meets
+     * her denial first and is refused. The candidate has the same two entries the other way round, so the
+     * group's allow is reached first and she is let in. Every per-principal summary of these two lists is
+     * identical, which is why the previous implementation called them equivalent.
+     */
+    @Test
+    public void reorderingAGroupAllowAheadOfAUserDenialGrantsMore() {
+        assertFalse(
+                grantsNoMoreThan(
+                        List.of(allow(ADMINISTRATORS, READ), deny(ALICE, READ)),
+                        List.of(deny(ALICE, READ), allow(ADMINISTRATORS, READ))),
+                "Alice is an administrator: the group's allow now settles the read her own denial used to");
     }
 
-    /** Granting less is not granting more. */
+    /** The same pair the other way round, which is a narrowing and has to stay accepted. */
     @Test
-    public void aNarrowerListGrantsNoMore() {
-        assertTrue(grantsNoMoreThan(List.of(allow(EDGE, READ)), List.of(allow(EDGE, READ_WRITE), allow(ALICE, READ))));
-    }
-
-    /** And granting nothing at all is the narrowest there is. */
-    @Test
-    public void anEmptyListGrantsNoMore() {
-        assertTrue(grantsNoMoreThan(List.of(), List.of(allow(EDGE, READ_WRITE))));
-    }
-
-    // ---------------------------------------------------------------------- what must still be refused
-
-    /** A principal the file being replaced does not name at all. */
-    @Test
-    public void anExtraPrincipalGrantsMore() {
-        assertFalse(grantsNoMoreThan(
-                List.of(allow(EDGE, READ_WRITE), allow(ADMINISTRATORS, READ)), List.of(allow(EDGE, READ_WRITE))));
-    }
-
-    /** A permission the file being replaced does not grant that principal. */
-    @Test
-    public void anExtraPermissionGrantsMore() {
-        assertFalse(grantsNoMoreThan(List.of(allow(EDGE, READ_WRITE)), List.of(allow(EDGE, READ))));
-    }
-
-    /** Anything at all, where the file being replaced grants nobody anything. */
-    @Test
-    public void anythingGrantsMoreThanAnEmptyList() {
-        assertFalse(grantsNoMoreThan(List.of(allow(EDGE, READ)), List.of()));
+    public void reorderingAUserDenialAheadOfAGroupAllowGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(
+                List.of(deny(ALICE, READ), allow(ADMINISTRATORS, READ)),
+                List.of(allow(ADMINISTRATORS, READ), deny(ALICE, READ))));
     }
 
     /**
-     * A denial that was dropped. It reads like a narrowing and is the opposite: a DENY can be the only
-     * thing keeping a member of an allowed group out of the file, so losing one widens access even though
-     * no ALLOW changed.
+     * The membership is never asserted anywhere, because it cannot be: {@code java.nio} will not say who
+     * belongs to what. The comparison assumes any principals may appear in one token, so a group allow that
+     * the reference does not have is refused whether or not anybody is actually in the group.
      */
     @Test
-    public void losingADenialGrantsMore() {
-        assertFalse(grantsNoMoreThan(
+    public void aGroupAllowIsJudgedWithoutKnowingWhoIsInTheGroup() {
+        assertFalse(
+                grantsNoMoreThan(List.of(deny(ALICE, READ), allow(ADMINISTRATORS, READ)), List.of(deny(ALICE, READ))));
+    }
+
+    // ------------------------------------------------- a denial is worth what its position makes it worth
+
+    /**
+     * A denial sitting behind an allow that already settles the permission for anyone who can reach it
+     * decides nothing, so dropping it takes nothing away.
+     * <p>
+     * This is the one case whose answer changed with review v06's fix, from refuse to accept, and it is
+     * the same reasoning in the opposite direction: whoever holds Alice's identity alone is denied by both
+     * lists, and whoever also holds Edge's is allowed by both, at the entry that comes first. There is no
+     * token that can tell them apart. The previous implementation refused it on the blanket rule that
+     * losing any {@code DENY} widens access, which is over-conservative rather than unsafe — it refused
+     * configuration writes that disclose nothing. {@link AclComparisonOracleTest} is what makes changing it
+     * a measurement instead of an opinion.
+     */
+    @Test
+    public void losingADenialNothingCanReachGrantsNoMore() {
+        assertTrue(grantsNoMoreThan(
                 List.of(allow(EDGE, READ_WRITE)), List.of(allow(EDGE, READ_WRITE), deny(ALICE, READ))));
     }
 
-    /** Adding one is the other direction, and allowed. */
+    /** And losing one that does decide something is the widening the rule is there to catch. */
     @Test
-    public void addingADenialGrantsNoMore() {
-        assertTrue(grantsNoMoreThan(
-                List.of(allow(EDGE, READ_WRITE), deny(ALICE, READ)), List.of(allow(EDGE, READ_WRITE))));
+    public void losingADenialThatDecidesGrantsMore() {
+        assertFalse(
+                grantsNoMoreThan(List.of(allow(EDGE, READ_WRITE)), List.of(deny(ALICE, READ), allow(EDGE, READ_WRITE))),
+                "a token holding both identities meets the denial first in the reference and nothing in the"
+                        + " candidate");
+    }
+
+    // ----------------------------------------------------------------------------- structural properties
+
+    /** Whatever a store returns, it is never wider than itself. */
+    @Test
+    public void everyListGrantsNoMoreThanItself() {
+        for (final List<AclEntry> acl : AclComparisonFixture.assortedLists()) {
+            assertTrue(grantsNoMoreThan(acl, acl), () -> "not reflexive for " + acl);
+        }
     }
 
     /**
-     * The shape the whole change is about, end to end: the list a store might return after being asked for
-     * owner-only — reordered, flagged, and with the permissions merged differently — is accepted, while the
-     * same list with the directory's inherited entry still in it is not.
+     * A list of entries that mention no permission at all decides nothing. {@code AclEntry} allows an empty
+     * mask and a store is free to hand one back; it grants nothing and shadows nothing.
      */
     @Test
-    public void whatAStoreMayReturnAfterBeingAskedForOwnerOnly() {
-        final List<AclEntry> ownerOnly = List.of(allow(EDGE, READ_WRITE));
-        final AclEntry rewritten = AclEntry.newBuilder()
-                .setType(AclEntryType.ALLOW)
-                .setPrincipal(EDGE)
-                .setPermissions(READ_WRITE)
-                .setFlags(AclEntryFlag.NO_PROPAGATE_INHERIT)
-                .build();
+    public void anEntryMentioningNoPermissionDecidesNothing() {
+        final AclEntry nothing = AclComparisonFixture.entry(AclEntryType.ALLOW, ALICE, Set.of());
+        final AclEntry denyNothing = AclComparisonFixture.entry(AclEntryType.DENY, ALICE, Set.of());
 
-        assertTrue(grantsNoMoreThan(List.of(rewritten), ownerOnly), "a store that rewrote the entry did not widen it");
+        assertTrue(grantsNoMoreThan(List.of(nothing), List.of()), "an empty mask grants nothing");
         assertFalse(
-                grantsNoMoreThan(List.of(rewritten, allow(ADMINISTRATORS, READ)), ownerOnly),
-                "an inherited entry the store kept is exactly what the narrowing is for");
+                grantsNoMoreThan(List.of(denyNothing, allow(ALICE, READ)), List.of()),
+                "and takes nothing away from the entry behind it");
+        assertTrue(grantsNoMoreThan(List.of(nothing, allow(ALICE, READ)), List.of(allow(ALICE, READ))));
     }
 
-    /** A principal whose identity is its name, which is all the comparison treats it as. */
-    private record Principal(@NotNull String name) implements UserPrincipal {
+    /** The same entry twice is the same list: the second one was settled before it was reached. */
+    @Test
+    public void aRepeatedEntryChangesNothing() {
+        final List<AclEntry> once = List.of(allow(EDGE, READ_WRITE), deny(ALICE, READ));
+        final List<AclEntry> twice =
+                List.of(allow(EDGE, READ_WRITE), deny(ALICE, READ), allow(EDGE, READ_WRITE), deny(ALICE, READ));
 
-        @Override
-        public @NotNull String getName() {
-            return name;
+        assertTrue(grantsNoMoreThan(twice, once));
+        assertTrue(grantsNoMoreThan(once, twice));
+    }
+
+    /** A list that contradicts itself is not undefined: the entry that comes first is the one that counts. */
+    @Test
+    public void aListThatContradictsItselfIsSettledByItsFirstEntry() {
+        assertTrue(
+                grantsNoMoreThan(List.of(deny(ALICE, READ), allow(ALICE, READ)), List.of()),
+                "the denial comes first, so the list grants nothing and is no wider than an empty one");
+        assertFalse(
+                grantsNoMoreThan(List.of(allow(ALICE, READ), deny(ALICE, READ)), List.of()),
+                "the allow comes first, so it grants a read an empty list does not");
+    }
+
+    /** A list made only of entries that do not apply to the file grants nothing, whatever they say. */
+    @Test
+    public void aListOfEntriesThatDoNotApplyGrantsNothing() {
+        assertTrue(grantsNoMoreThan(
+                List.of(inheritOnly(allow(ALICE, READ_WRITE)), inheritOnly(allow(ADMINISTRATORS, READ_WRITE))),
+                List.of()));
+    }
+
+    /**
+     * No permission bit is special. The comparison is written in terms of {@code AclEntryPermission} and
+     * never in terms of a particular one, and the cases that matter give the same answers when the read and
+     * the write are swapped for the two bits that decide who may take the file over.
+     */
+    @Test
+    public void noPermissionBitIsTreatedDifferentlyFromAnother() {
+        final Set<AclEntryPermission> takeOwnership = Set.of(AclEntryPermission.WRITE_OWNER);
+        final Set<AclEntryPermission> changeTheList = Set.of(AclEntryPermission.WRITE_ACL);
+
+        assertFalse(
+                grantsNoMoreThan(
+                        List.of(allow(ADMINISTRATORS, takeOwnership), deny(ALICE, takeOwnership)),
+                        List.of(deny(ALICE, takeOwnership), allow(ADMINISTRATORS, takeOwnership))),
+                "review v06's shape, in a bit nothing else in these tests uses");
+        assertTrue(grantsNoMoreThan(
+                List.of(allow(EDGE, changeTheList)), List.of(allow(EDGE, changeTheList), allow(ALICE, READ))));
+        assertFalse(grantsNoMoreThan(List.of(allow(EDGE, changeTheList)), List.of(allow(EDGE, takeOwnership))));
+    }
+
+    /** The list the write path actually sets on a replacement: its owner, everything, and nobody else. */
+    @Test
+    public void theOwnerOnlyListTheWritePathSetsIsAcceptedAgainstItself() {
+        final List<AclEntry> ownerOnly = List.of(allow(EDGE, EnumSet.allOf(AclEntryPermission.class)));
+
+        assertTrue(grantsNoMoreThan(ownerOnly, ownerOnly));
+        assertFalse(
+                grantsNoMoreThan(
+                        List.of(allow(EDGE, EnumSet.allOf(AclEntryPermission.class)), allow(ALICE, READ)), ownerOnly),
+                "every bit granted to the owner still grants none of them to anybody else");
+    }
+
+    /**
+     * Length is not a special case. An inherited list on a long-lived installation tree can carry dozens of
+     * entries, and the one that decides is still the first one that applies.
+     */
+    @Test
+    public void aLongListIsStillDecidedByTheFirstEntryThatApplies() {
+        final List<AclEntry> padded = new ArrayList<>();
+        padded.add(deny(ALICE, READ));
+        for (int index = 0; index < 64; index++) {
+            padded.add(inheritOnly(allow(ALICE, READ_WRITE)));
+            padded.add(allow(ADMINISTRATORS, READ));
         }
+        padded.add(allow(ALICE, READ_WRITE));
+
+        assertTrue(
+                grantsNoMoreThan(padded, List.of(deny(ALICE, READ), allow(ADMINISTRATORS, READ), allow(ALICE, WRITE))),
+                "Alice's read was settled by the denial at the front, sixty-four entries ago");
+        assertFalse(
+                grantsNoMoreThan(padded, List.of(deny(ALICE, READ), allow(ALICE, WRITE))),
+                "the administrators' read is granted all the same");
+    }
+
+    /**
+     * A list that is not there is not a list that grants nothing. The caller has failed to read one, and the
+     * write it was about to authorise must not proceed on a cheerful answer.
+     */
+    @Test
+    public void aMissingListIsNotQuietlyAccepted() {
+        assertThrows(
+                NullPointerException.class, () -> AclComparison.grantsNoMoreThan(null, List.of(allow(EDGE, READ))));
+        assertThrows(
+                NullPointerException.class, () -> AclComparison.grantsNoMoreThan(List.of(allow(EDGE, READ)), null));
+    }
+
+    /**
+     * The property the write path relies on when it accepts the strong outcome: a list every one of whose
+     * deciding allows names the owner cannot let anyone else in, in any order, under any token. It is not a
+     * branch in the implementation — the general rule already decides it — but it is the invariant
+     * {@code narrowToItsOwner} is asserting when it asks whether the store took the owner-only list.
+     */
+    @Test
+    public void aListWhoseAllowsAllNameTheOwnerIsOwnerOnly() {
+        final List<AclEntry> ownerOnly = List.of(allow(EDGE, READ_WRITE));
+
+        assertTrue(grantsNoMoreThan(
+                List.of(deny(ALICE, READ_WRITE), allow(EDGE, READ), allow(EDGE, WRITE), deny(ADMINISTRATORS, READ)),
+                ownerOnly));
+        assertFalse(
+                grantsNoMoreThan(List.of(allow(EDGE, READ_WRITE), allow(ADMINISTRATORS, READ)), ownerOnly),
+                "one allow naming anyone else is the whole difference");
     }
 }
