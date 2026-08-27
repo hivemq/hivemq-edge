@@ -5,10 +5,9 @@ import java.io.File
 /**
  * A class that can be dispatched to a test JVM: its name, and the file it was found in.
  *
- * The FILE is kept because the scan below has it in hand. Looking it up again later -- one lookup per
- * class -- costs 166x the single walk that found them all: measured on the integration suite, 12ms to
- * walk once against 1991ms to resolve 700 classes one at a time, and far worse on a CI agent whose
- * filesystem cache is cold.
+ * The FILE is kept because the scan below has it in hand, so the caller can build its include pattern from
+ * it rather than searching for the class again by name. Tidiness rather than speed -- the whole ordering
+ * step runs in well under a second.
  */
 data class DispatchableClass(
     val name: String,

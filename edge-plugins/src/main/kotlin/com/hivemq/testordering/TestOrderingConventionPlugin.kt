@@ -33,8 +33,9 @@ import org.gradle.kotlin.dsl.withType
  *
  * LOCAL RUNS ONLY, by design -- it is switched off when `CI_RUN` is set. On CI the integration suite is
  * farmed out to remote executors that ignore dispatch order, and the unit suite, while it does use local
- * forks there, has never been on the critical path. Conveying an order is not free (see [orderTestClasses]),
- * so on CI it would be pure cost. This exists to make a developer's own test runs finish sooner.
+ * forks there, has never been on the critical path. This exists to make a developer's own test runs finish
+ * sooner; keeping it off CI also keeps a mechanism that decides what gets scanned for tests away from the
+ * shared pipeline.
  */
 class TestOrderingConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -76,21 +77,18 @@ internal fun orderTestClasses(
     task: Test,
     timingsFile: java.io.File
 ) {
-    // LOCAL RUNS ONLY. CI_RUN is the same switch the integration suite uses to turn on Develocity Test
-    // Distribution, so on CI this stays out of the way entirely.
+    // LOCAL RUNS ONLY -- this exists to make a developer's own test runs finish sooner. CI_RUN is the same
+    // switch the integration suite uses to turn on Develocity Test Distribution, so on CI this stays out of
+    // the way entirely.
     //
-    // Two reasons, and the second is why this is not merely an optimisation:
+    // It would not help there anyway. The integration suite is farmed out to remote executors, and that
+    // scheduler partitions by its own rolling average of per-class runtimes without ever looking at the
+    // order the classes arrive in. The unit suite does run in local forks on CI, but it has never been on
+    // the critical path -- it finishes alongside the far longer integration branch.
     //
-    //  - It would not help. The integration suite is farmed out to remote executors on CI, and that
-    //    scheduler partitions by its own rolling average of per-class runtimes without ever looking at
-    //    the order the classes arrive in. The unit suite does run in local forks on CI, but it has never
-    //    been on the critical path there -- it finishes alongside the far longer integration branch.
-    //
-    //  - It costs. Conveying an order through testClassesDirs means handing Gradle one FileTree per class,
-    //    several hundred of them, and resolving that collection is a traversal per element. Measured on a
-    //    build agent: 3 MINUTES of dispatch, on the critical path, for no gain. There is no cheaper
-    //    construction -- a single FileTree with the includes listed in order silently falls back to
-    //    directory order (verified: 12 classes requested in reverse came out forwards).
+    // Keeping it off CI also contains the blast radius: this manipulates testClassesDirs, which decides
+    // what gets scanned for tests, and a mistake there is the kind that stops tests running rather than
+    // failing loudly. Not worth that exposure on the shared pipeline for a benefit that is not there.
     if (System.getenv("CI_RUN") != null) {
         task.logger.info("Test class ordering: CI run, leaving the order alone")
         return
@@ -129,9 +127,9 @@ internal fun orderTestClasses(
     // class name from the file's path RELATIVE TO the tree's root, so a plain file has nothing to relativise
     // against and is not recognised as a test class at all ("No tests found for given includes").
     //
-    // The include pattern is built from the file the scan already found, so nothing is searched for twice.
-    // Resolving each class by NAME instead -- walking the directory once per class, which is what this used
-    // to do -- measured 1991ms against 12ms for a single walk, and cost 3 MINUTES of dispatch on a CI agent.
+    // The include pattern is built from the file the scan already found, rather than searching for the
+    // class again by name -- a small tidy-up, not a measured win: the whole ordering step completes in
+    // well under a second even on the integration suite's ~700 classes.
     var arranged: FileCollection = task.project.files()
     ordered.forEach { name ->
         val entry = byName[name] ?: return@forEach
