@@ -228,10 +228,14 @@ public class EnvVarUtilTest {
     }
 
     /**
-     * The branch R3-01 named. The span cannot be located -- the marshaller wrote it in a form the
-     * collector did not predict -- but the credential is unmistakably still in the document. Returning it
+     * The branch R3-01 named. The span cannot be located -- the marshaller wrote the value somewhere the
+     * restore is not anchored to -- but the credential is unmistakably still in the document. Returning it
      * is what the old code did; refusing the write is the only answer that keeps the secret off the disk,
      * and the write has not opened the file yet when this runs.
+     * <p>
+     * The value sits in an element of another name, which is what "unlocatable" means now that the span
+     * tolerates attributes: an element written as {@code <password attr="x">} is located and restored, and
+     * no longer reaches this branch.
      */
     @Test
     public void restorePlaceholders_whenACredentialIsPresentButUnlocatable_thenTheWriteIsRefused() {
@@ -241,7 +245,7 @@ public class EnvVarUtilTest {
         assertThrows(
                 UnrecoverableException.class,
                 () -> EnvVarUtil.restorePlaceholders(
-                        "<x><password xmlns=\"urn:other\">s3cr3t-do-not-write-me</password></x>",
+                        "<x><renamed-by-the-marshaller>s3cr3t-do-not-write-me</renamed-by-the-marshaller></x>",
                         java.util.List.of(placeholder)));
     }
 
@@ -266,7 +270,7 @@ public class EnvVarUtilTest {
         final var placeholder =
                 new EnvVarUtil.ElementPlaceholder("host", "${ENV:HOSTNAME}", "shared.example.com", false);
 
-        final String document = "<x><host xmlns=\"urn:other\">shared.example.com</host></x>";
+        final String document = "<x><renamed-by-the-marshaller>shared.example.com</renamed-by-the-marshaller></x>";
 
         assertEquals(document, EnvVarUtil.restorePlaceholders(document, java.util.List.of(placeholder)));
     }
@@ -447,6 +451,78 @@ public class EnvVarUtilTest {
                 () -> EnvVarUtil.restorePlaceholders(
                         "<x><password>" + SECRET + "</password><note>" + SECRET + "</note></x>", List.of(placeholder)),
                 "a credential still in the document when the restore finishes must refuse the write");
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v04, finding 1.2. The span was built as <name>value</name> and compared literally,
+    // so an element the marshaller wrote with an attribute was never found: a credential in one refused
+    // every configuration write, and a non-secret in one had its placeholder replaced by its value. No
+    // element in today's schema both carries an attribute and holds text -- the arbitrary XML in the file
+    // is unmarshalled into maps, which drop attributes before this ever sees them -- so what is pinned
+    // here is the trap, not a live disclosure.
+    // ---------------------------------------------------------------------------------------------
+
+    /** The element is located through its attributes, and keeps them. */
+    @Test
+    public void restorePlaceholders_putsBackASpanOnAnElementWithAnAttribute() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><password enc=\"aes\">" + SECRET + "</password></x>", List.of(placeholder));
+
+        assertEquals("<x><password enc=\"aes\">${ENV:PW}</password></x>", restored);
+    }
+
+    /** Several attributes, in the order the marshaller wrote them, including one holding a right angle bracket. */
+    @Test
+    public void restorePlaceholders_keepsEveryAttributeOfTheElementItRestores() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><password enc=\"aes\" note=\"a>b\" id=\"7\">" + SECRET + "</password></x>", List.of(placeholder));
+
+        assertEquals("<x><password enc=\"aes\" note=\"a>b\" id=\"7\">${ENV:PW}</password></x>", restored);
+    }
+
+    /** An attributed element and a bare one holding the same value are one group, and both are restored. */
+    @Test
+    public void restorePlaceholders_putsBackBothAnAttributedAndABareSpan() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+        final var second = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><password enc=\"aes\">" + SECRET + "</password><password>" + SECRET + "</password></x>",
+                List.of(placeholder, second));
+
+        assertEquals(
+                "<x><password enc=\"aes\">${ENV:PW}</password><password>${ENV:PW}</password></x>",
+                restored,
+                "the count check must see both spans, or it refuses a document it can restore");
+    }
+
+    /** What is written in place of an unrestorable credential lands in the element, not on top of it. */
+    @Test
+    public void restorePlaceholders_poisonsAnAttributedElementWithoutLosingItsAttributes() {
+        final var one = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+        final var other = new EnvVarUtil.ElementPlaceholder("password", "${ENV:OTHER_PW}", SECRET, false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><password enc=\"aes\">" + SECRET + "</password></x>", List.of(one, other));
+
+        assertEquals("<x><password enc=\"aes\">${ENV:EDGE_UNRESTORED_SECRET}</password></x>", restored);
+    }
+
+    /** A start tag is not a place to look for another element: the pattern stays inside one of them. */
+    @Test
+    public void restorePlaceholders_doesNotMatchAcrossElements() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        final String document = "<x><password>other</password><note>" + SECRET + "</note></x>";
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders(document, List.of(placeholder)),
+                "the span must not be found by matching one element's tag against another's text");
     }
 
     // ---------------------------------------------------------------------------------------------

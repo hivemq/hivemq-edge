@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -411,8 +412,8 @@ public class EnvVarUtil {
         for (final List<ElementPlaceholder> group : bySpanAndValue.values()) {
             final ElementPlaceholder first = group.get(0);
             final String literal = first.literal();
-            final String rendered = renderedSpan(first);
-            final int inDocument = countOccurrences(result, rendered);
+            final Pattern rendered = renderedSpan(first);
+            final int inDocument = countMatches(result, rendered);
 
             if (group.stream().anyMatch(placeholder -> !placeholder.literal().equals(literal))) {
                 result = giveUpOn(
@@ -481,7 +482,7 @@ public class EnvVarUtil {
                                 + " has " + inDocument + ", so which ones came from the variable cannot be told");
                 continue;
             }
-            result = result.replace(rendered, literalSpan(first));
+            result = rendered.matcher(result).replaceAll(literalSpan(first));
         }
         return refuseIfACredentialSurvived(result, placeholders);
     }
@@ -667,7 +668,7 @@ public class EnvVarUtil {
     private static @NotNull String giveUpOn(
             final @NotNull String document,
             final @NotNull ElementPlaceholder placeholder,
-            final @NotNull String rendered,
+            final @NotNull Pattern rendered,
             final @NotNull String reason) {
         if (!isSecretElement(placeholder.name())) {
             log.error(
@@ -687,14 +688,50 @@ public class EnvVarUtil {
                 placeholder.name(),
                 reason,
                 UNRESTORED_SECRET);
-        return document.replace(rendered, poisonedSpan(placeholder));
+        return rendered.matcher(document).replaceAll(poisonedSpan(placeholder));
     }
 
-    /** The span as the marshaller will have written it: what the restore searches the document for. */
-    private static @NotNull String renderedSpan(final @NotNull ElementPlaceholder placeholder) {
-        return placeholder.attribute()
-                ? placeholder.name() + "=\"" + escapeXmlAttribute(placeholder.value()) + "\""
-                : "<" + placeholder.name() + ">" + escapeXmlText(placeholder.value()) + "</" + placeholder.name() + ">";
+    /**
+     * Whatever the marshaller may have written between an element's name and the {@code >} that ends its
+     * start tag: nothing, or attributes.
+     * <p>
+     * Quoted values are stepped over rather than excluded, so an attribute holding a {@code >} does not
+     * end the tag early. Everything outside the quotes must be free of angle brackets, which is what keeps
+     * the pattern inside one start tag.
+     */
+    private static final @NotNull String START_TAG_REST = "(\\s(?:[^<>\"]|\"[^\"]*\")*)?";
+
+    /**
+     * The span as the marshaller will have written it: what the restore searches the document for.
+     * <p>
+     * <b>A pattern rather than a string, because an element may carry attributes.</b> The span was built
+     * as {@code <name>value</name>} and compared literally, so an element written as
+     * {@code <name attr="x">value</name>} was never found: the restore took the "not in the document"
+     * branch, which refuses the write outright when the element holds a credential and writes the value
+     * out when it does not. Nothing in today's schema puts an attribute on an element that also holds
+     * text -- the adapter and module configurations, which are the only arbitrary XML in the file, are
+     * unmarshalled into maps and lose their attributes long before this -- so it is a trap rather than a
+     * live defect, and it is one the next attribute added to a text-bearing element would spring silently
+     * (EDG-882 review v04). The attributes are matched, kept in a group, and written back unchanged.
+     */
+    private static @NotNull Pattern renderedSpan(final @NotNull ElementPlaceholder placeholder) {
+        if (placeholder.attribute()) {
+            return Pattern.compile(
+                    Pattern.quote(placeholder.name() + "=\"" + escapeXmlAttribute(placeholder.value()) + "\""));
+        }
+        return Pattern.compile("<" + Pattern.quote(placeholder.name()) + START_TAG_REST + ">"
+                + Pattern.quote(escapeXmlText(placeholder.value()))
+                + "</" + Pattern.quote(placeholder.name()) + ">");
+    }
+
+    /** How many spans of that shape the document holds. */
+    private static int countMatches(final @NotNull String text, final @NotNull Pattern pattern) {
+        final var matcher = pattern.matcher(text);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
     }
 
     /**
@@ -706,17 +743,24 @@ public class EnvVarUtil {
      * placeholder itself carries none of the escaped characters, so it passes through untouched.
      */
     private static @NotNull String literalSpan(final @NotNull ElementPlaceholder placeholder) {
-        return placeholder.attribute()
-                ? placeholder.name() + "=\"" + escapeXmlAttribute(placeholder.literal()) + "\""
-                : "<" + placeholder.name() + ">" + escapeXmlText(placeholder.literal()) + "</" + placeholder.name()
-                        + ">";
+        if (placeholder.attribute()) {
+            return Matcher.quoteReplacement(
+                    placeholder.name() + "=\"" + escapeXmlAttribute(placeholder.literal()) + "\"");
+        }
+        // $1 is whatever stood between the element's name and the end of its start tag, put back as it
+        // was: the restore replaces the value an element holds, not the element.
+        return "<" + placeholder.name() + "$1>"
+                + Matcher.quoteReplacement(escapeXmlText(placeholder.literal()))
+                + "</" + placeholder.name() + ">";
     }
 
     /** The same span with {@link #UNRESTORED_SECRET} in place of a credential that cannot be restored. */
     private static @NotNull String poisonedSpan(final @NotNull ElementPlaceholder placeholder) {
-        return placeholder.attribute()
-                ? placeholder.name() + "=\"" + UNRESTORED_SECRET + "\""
-                : "<" + placeholder.name() + ">" + UNRESTORED_SECRET + "</" + placeholder.name() + ">";
+        if (placeholder.attribute()) {
+            return Matcher.quoteReplacement(placeholder.name() + "=\"" + UNRESTORED_SECRET + "\"");
+        }
+        return "<" + placeholder.name() + "$1>" + Matcher.quoteReplacement(UNRESTORED_SECRET) + "</"
+                + placeholder.name() + ">";
     }
 
     /**
