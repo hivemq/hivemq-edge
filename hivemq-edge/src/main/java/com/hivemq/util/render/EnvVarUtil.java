@@ -214,7 +214,7 @@ public class EnvVarUtil {
         }
         final List<ElementPlaceholder> placeholders = new ArrayList<>();
         final int[] seen = {0};
-        walk(document, placeholders, seen);
+        visitValues(document, (name, value, attribute) -> collect(placeholders, seen, name, value, attribute), seen);
         return new CollectedPlaceholders(placeholders, inFile - seen[0]);
     }
 
@@ -254,24 +254,32 @@ public class EnvVarUtil {
         }
     }
 
+    /** What one element text or attribute value of a parsed document is, to the two passes that read them. */
+    private interface ValueVisitor {
+
+        void visit(@NotNull String name, @NotNull String value, boolean attribute);
+    }
+
     /**
-     * Visits every node, collecting the restorable spans and counting every placeholder token the
-     * document holds anywhere — including in comments and processing instructions, which are counted as
-     * seen but never restored.
+     * Visits every element text and attribute value of a parsed document.
      * <p>
-     * Counting them is what makes {@code unaccountedTokens} mean "somewhere this walk cannot reach"
-     * rather than "somewhere this walk chose not to restore".
+     * Values, never markup. Both readers of a configuration document want the same thing — what the
+     * unmarshaller would see — and neither wants element names, which is the whole of
+     * {@link #refuseIfACredentialSurvived}'s defect: a document containing {@code <admin-api>} read as a
+     * document containing the password {@code admin} (EDG-882 review v04).
+     * <p>
+     * {@code seenInComments} counts the placeholder tokens held in comments and processing instructions,
+     * for the collector, which needs {@code unaccountedTokens} to mean "somewhere this walk cannot reach"
+     * rather than "somewhere this walk chose not to restore". Null for callers that only want the values.
      */
-    private static void walk(
-            final @NotNull Node node,
-            final @NotNull List<ElementPlaceholder> placeholders,
-            final int @NotNull [] seen) {
+    private static void visitValues(
+            final @NotNull Node node, final @NotNull ValueVisitor visitor, final int @Nullable [] seenInComments) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             final Element element = (Element) node;
             final NamedNodeMap attributes = element.getAttributes();
             for (int i = 0; i < attributes.getLength(); i++) {
                 final Node attribute = attributes.item(i);
-                collect(placeholders, seen, attribute.getNodeName(), attribute.getNodeValue(), true);
+                visitor.visit(attribute.getNodeName(), attribute.getNodeValue(), true);
             }
             // Only the direct text children, joined: that is what the element's value is to the
             // unmarshaller, and what the marshaller writes back for it.
@@ -283,14 +291,16 @@ public class EnvVarUtil {
                     text.append(child.getNodeValue());
                 }
             }
-            collect(placeholders, seen, element.getTagName(), text.toString(), false);
-        } else if (node.getNodeType() == Node.COMMENT_NODE || node.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE) {
+            visitor.visit(element.getTagName(), text.toString(), false);
+        } else if (seenInComments != null
+                && (node.getNodeType() == Node.COMMENT_NODE
+                        || node.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE)) {
             // Seen, deliberately not restorable: neither reaches the marshalled document.
-            seen[0] += countOccurrences(requireNonNullElse(node.getNodeValue(), ""), ENV_TOKEN);
+            seenInComments[0] += countOccurrences(requireNonNullElse(node.getNodeValue(), ""), ENV_TOKEN);
         }
         final NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            walk(children.item(i), placeholders, seen);
+            visitValues(children.item(i), visitor, seenInComments);
         }
     }
 
@@ -424,12 +434,11 @@ public class EnvVarUtil {
                 // separates them, which is whether the value is still there at all. If it is, and it is a
                 // credential, refuse the write. Returning a document known to contain a secret the operator
                 // chose to keep out of it is not a decision this method gets to make (R3-01).
-                // Both forms, because the question is "is the secret in this document", not "is this exact
-                // string": a value the marshaller escaped is the same disclosure spelled differently. It is
-                // not reachable through ${ENV:...} today -- a value carrying an XML metacharacter is
-                // spliced in raw and makes the file unparseable long before this -- but a security check
-                // that only looks for one spelling is the kind that stops being true quietly.
-                if (result.contains(first.value()) || result.contains(escapeXmlText(first.value()))) {
+                // Of the document's values, not of its text: searching the serialised XML answered "the
+                // secret is still here" for a password of 'admin' in any file with an <admin-api> element,
+                // and refused every write from then on (EDG-882 review v04). Parsing also settles the
+                // escaping question the previous version handled by searching for two spellings.
+                if (isInTheDocumentAsAValue(result, first.value())) {
                     if (isSecretElement(first.name())) {
                         log.error(
                                 "The '{}' {} holds a credential supplied through '{}', and that value is in the"
@@ -506,6 +515,40 @@ public class EnvVarUtil {
     }
 
     /**
+     * Whether a value is in the document as data rather than as markup — the question both the
+     * unlocatable-span branch and {@link #refuseIfACredentialSurvived} ask of a finished document.
+     * <p>
+     * A document that cannot be parsed answers yes: this cannot see into it, and the caller's safe
+     * reading of "cannot tell" is the same as "it is in there".
+     */
+    private static boolean isInTheDocumentAsAValue(final @NotNull String document, final @NotNull String value) {
+        final Document parsed = parseOrNull(document);
+        if (parsed == null) {
+            return true;
+        }
+        final boolean[] found = {false};
+        visitValues(parsed, (name, spanValue, attribute) -> found[0] |= holdsValue(name, spanValue, value), null);
+        return found[0];
+    }
+
+    /**
+     * Whether one element text or attribute value of the finished document carries {@code value}.
+     * <p>
+     * Equal, or containing it where the span is a credential-bearing one. A value that <em>is</em> the
+     * secret is the secret written out wherever it sits; a value that merely contains it is a disclosure
+     * only where the credential belongs — {@code <password>prefix-s3cr3t</password>}, the concatenation
+     * case — because anywhere else it is the operator's own text with the secret inside it, and refusing
+     * on that is how {@code <port>1883</port>} came to reject a password of {@code 1}.
+     */
+    private static boolean holdsValue(
+            final @NotNull String spanName, final @NotNull String spanValue, final @NotNull String value) {
+        if (spanValue.isEmpty()) {
+            return false;
+        }
+        return spanValue.equals(value) || (isSecretElement(spanName) && spanValue.contains(value));
+    }
+
+    /**
      * The last word on whether a credential is going to disk, asked of the finished document rather than
      * of the branch that produced it.
      * <p>
@@ -516,33 +559,64 @@ public class EnvVarUtil {
      * believes it is finished is a bug in the restore, and shipping the document anyway would make it a
      * disclosure instead (EDG-882 review v03, R3-08).
      * <p>
-     * The one false positive it can have is an operator who wrote the same string that a credential
-     * variable resolves to somewhere else in the file, literally. Refusing that write is the right side of
+     * <b>Asked of the document's values, not of its text.</b> The first version searched the serialised
+     * XML with {@code String.contains}, which reads markup as content: a password of {@code admin} was
+     * "still present" because the file has an {@code <admin-api>} element, and every configuration write
+     * was refused from then on — the node stayed up and silently stopped being able to persist anything.
+     * Short values ({@code a}, {@code 1}, {@code true}) made it near-certain. So the finished document is
+     * parsed and only element text and attribute values are examined, which is where a credential would
+     * have to be to be disclosed (EDG-882 review v04).
+     * <p>
+     * <b>Whole values, except inside a credential-bearing span.</b> A value that <em>is</em> the secret is
+     * the secret written out, wherever it sits. A value that merely contains it is only a disclosure where
+     * the credential belongs — {@code <password>prefix-s3cr3t</password>}, the concatenation case — because
+     * anywhere else it is the operator's own text that happens to have the secret inside it, and refusing
+     * on that is how {@code <port>1883</port>} came to reject a password of {@code 1}.
+     * <p>
+     * The false positive it can still have is an operator who wrote the same string that a credential
+     * variable resolves to as the whole value of another element. Refusing that write is the right side of
      * the trade: the remedy is to stop writing the credential in plain text, and the message names the
      * element.
      */
     private static @NotNull String refuseIfACredentialSurvived(
             final @NotNull String document, final @NotNull List<ElementPlaceholder> placeholders) {
-        for (final ElementPlaceholder placeholder : placeholders) {
-            if (!isSecretElement(placeholder.name())) {
-                continue;
-            }
-            final String value = placeholder.value();
-            if (document.contains(value)
-                    || document.contains(escapeXmlText(value))
-                    || document.contains(escapeXmlAttribute(value))) {
-                log.error(
-                        "The value supplied to the '{}' {} through '{}' is still present in the configuration"
-                                + " being written after its placeholder was restored, so writing it would put a"
-                                + " credential on disk. The write has been refused: config.xml is unchanged, and"
-                                + " this node keeps running on the value it already holds. If that value is also"
-                                + " written literally somewhere else in the file, remove it there.",
-                        placeholder.name(),
-                        placeholder.attribute() ? "attribute" : "element",
-                        placeholder.literal());
-                throw new UnrecoverableException(false);
-            }
+        final List<ElementPlaceholder> secrets = placeholders.stream()
+                .filter(placeholder -> isSecretElement(placeholder.name()))
+                .toList();
+        if (secrets.isEmpty()) {
+            return document;
         }
+        final Document parsed = parseOrNull(document);
+        if (parsed == null) {
+            // The document about to be written cannot be read back, so this cannot say whether a credential
+            // is in it. Refusing keeps the previous config.xml, which parses.
+            log.error("The configuration being written could not be parsed to check that no credential"
+                    + " survived in it, so the write has been refused: config.xml is unchanged, and this node"
+                    + " keeps running on the configuration it already holds.");
+            throw new UnrecoverableException(false);
+        }
+        visitValues(
+                parsed,
+                (name, value, attribute) -> {
+                    for (final ElementPlaceholder secret : secrets) {
+                        if (holdsValue(name, value, secret.value())) {
+                            log.error(
+                                    "The value supplied to the '{}' {} through '{}' is still present in the"
+                                            + " configuration being written, in the '{}' {}, after its placeholder"
+                                            + " was restored -- so writing it would put a credential on disk. The"
+                                            + " write has been refused: config.xml is unchanged, and this node keeps"
+                                            + " running on the value it already holds. If that value is also written"
+                                            + " literally somewhere else in the file, remove it there.",
+                                    secret.name(),
+                                    secret.attribute() ? "attribute" : "element",
+                                    secret.literal(),
+                                    name,
+                                    attribute ? "attribute" : "element");
+                            throw new UnrecoverableException(false);
+                        }
+                    }
+                },
+                null);
         return document;
     }
 
