@@ -519,6 +519,58 @@ public class EnvVarUtilTest {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v04, finding 2.4. Two questions on this path are asked of the document's values
+    // rather than its text, and each one parsed the whole document again -- once per span the marshaller
+    // normalised, on every write. They are the same document; the parse is now kept for as long as the
+    // document has not changed, which is a change nothing above may notice.
+    // ---------------------------------------------------------------------------------------------
+
+    /** Several spans the restore cannot locate: each is still judged on its own, and each is reported. */
+    @Test
+    public void restorePlaceholders_whenSeveralSpansCannotBeLocated_thenEachIsStillReported() {
+        final var capture = LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(EnvVarUtil.class));
+        final var host = new EnvVarUtil.ElementPlaceholder("host", "${ENV:HOSTNAME}", "shared.example.com", false);
+        final var port = new EnvVarUtil.ElementPlaceholder("port", "${ENV:PORT}", "01883", false);
+        final String document = "<x><renamed>shared.example.com</renamed><port>1883</port></x>";
+
+        final String restored = EnvVarUtil.restorePlaceholders(document, List.of(host, port));
+
+        assertEquals(document, restored, "a non-secret that cannot be located keeps its value");
+        final List<String> errors = capture.getCapturedLogs().stream()
+                .filter(event -> event.getLevel() == Level.ERROR)
+                .map(ILoggingEvent::getFormattedMessage)
+                .toList();
+        assertEquals(2, errors.size(), errors.toString());
+        assertTrue(errors.stream().anyMatch(message -> message.contains("'host'")), errors.toString());
+        assertTrue(errors.stream().anyMatch(message -> message.contains("'port'")), errors.toString());
+    }
+
+    /**
+     * And the document the last question is asked of is the one the loop produced, not the one it started
+     * with — which is the whole risk of keeping a parse around.
+     * <p>
+     * The order is what makes this bite: the first placeholder cannot be located, so the document is parsed
+     * while the credential is still in it; the second is restored, which rewrites the document; and the
+     * sweep then has to look at the rewritten one. A parse kept across that rewrite would find the
+     * credential it had already replaced and refuse a write that is perfectly good.
+     */
+    @Test
+    public void restorePlaceholders_whenTheDocumentChangesAfterItWasParsed_thenTheSweepSeesTheChange() {
+        final var unlocatable =
+                new EnvVarUtil.ElementPlaceholder("host", "${ENV:HOSTNAME}", "shared.example.com", false);
+        final var credential = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><renamed>shared.example.com</renamed><password>" + SECRET + "</password></x>",
+                List.of(unlocatable, credential));
+
+        assertEquals(
+                "<x><renamed>shared.example.com</renamed><password>${ENV:PW}</password></x>",
+                restored,
+                "the sweep judged a document that no longer exists");
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // EDG-882 review v04, finding 1.6. A variable set to the empty string leaves nothing in the written
     // document for the placeholder to be put back into, so the operator's reference is dropped the next
     // time the configuration is written. Every other way of losing one is reported; this one was silent.
