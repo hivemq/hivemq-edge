@@ -68,6 +68,10 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
     @get:Optional
     abstract val actualForks: Property<Int>
 
+    /** `-Pmd` emits Markdown -- tables and headings, for pasting into a document. */
+    @get:Internal
+    val markdown: Boolean get() = project.hasProperty("md")
+
     init {
         group = "verification"
         description = "Report how well the last test run filled its forks, and whether a fresh ordering would help"
@@ -131,16 +135,28 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
     /** What the run consisted of, before any analysis of how it was spread. */
     private fun reportTotals() {
         val t = readRunTotals(resultsDir.get().asFile)
+        // Time in test methods is the sum of the individual testcase times. It is LESS than the class time
+        // in the occupancy section, which measures how long each class HELD its JVM and so also carries
+        // per-class setup and teardown.
         logger.lifecycle("")
-        // Sum of the individual test methods. Less than the fork-occupancy figure below, which measures
-        // how long each class HELD its JVM and so also carries per-class setup and teardown.
-        logger.lifecycle(
-            "Test run -- ${t.classes} classes, ${t.tests} tests, " +
-                "${fmt((t.seconds * 1000).toLong())} in test methods"
-        )
-        logger.lifecycle(
-            "  ${t.passed} passed, ${t.flaky} flaky, ${t.failed} failed, ${t.skipped} skipped"
-        )
+        if (markdown) {
+            logger.lifecycle("# Test concurrency report")
+            logger.lifecycle("")
+            logger.lifecycle("## The run")
+            logger.lifecycle("")
+            logger.lifecycle("| classes | tests | in test methods | passed | flaky | failed | skipped |")
+            logger.lifecycle("| --: | --: | --: | --: | --: | --: | --: |")
+            logger.lifecycle(
+                "| ${t.classes} | ${t.tests} | ${fmt((t.seconds * 1000).toLong())} | " +
+                    "${t.passed} | ${t.flaky} | ${t.failed} | ${t.skipped} |"
+            )
+        } else {
+            logger.lifecycle(
+                "Test run -- ${t.classes} classes, ${t.tests} tests, " +
+                    "${fmt((t.seconds * 1000).toLong())} in test methods"
+            )
+            logger.lifecycle("  ${t.passed} passed, ${t.flaky} flaky, ${t.failed} failed, ${t.skipped} skipped")
+        }
     }
 
     /**
@@ -203,29 +219,40 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         val window = (finish - start).coerceAtLeast(1)
         val work = spans.sumOf { it.second - it.first }
 
-        logger.lifecycle("")
-        logger.lifecycle("Fork occupancy through the test execution")
-        if (ignored > 0) {
-            logger.lifecycle("  ($ignored class record(s) from $otherRuns earlier run(s) in the same directory ignored)")
-        }
-        val labels = StringBuilder("  % of run   ")
-        val values = StringBuilder("  forks busy ")
-        for (i in 0 until 10) {
+        val busy = (0 until 10).map { i ->
             val lo = start + window * i / 10
             val hi = start + window * (i + 1) / 10
             val occupied = spans.sumOf { (a, b) -> (minOf(b, hi) - maxOf(a, lo)).coerceAtLeast(0) }
-            labels.append(String.format("%7d", (i + 1) * 10))
-            values.append(String.format("%7.1f", occupied.toDouble() / (hi - lo)))
+            occupied.toDouble() / (hi - lo)
         }
-        logger.lifecycle(labels.toString())
-        logger.lifecycle(values.toString())
-        logger.lifecycle("")
-        logger.lifecycle(
-            String.format(
-                "  %s of class time in %s of wall clock = %.1f effective average concurrency",
-                fmt(work), fmt(window), work.toDouble() / window
-            )
+        val summary = String.format(
+            "%s of class time in %s of wall clock = **%.1f** effective average concurrency",
+            fmt(work), fmt(window), work.toDouble() / window
         )
+
+        logger.lifecycle("")
+        if (markdown) {
+            logger.lifecycle("## Fork occupancy through the test execution")
+            logger.lifecycle("")
+            logger.lifecycle("| % of run |" + (1..10).joinToString("") { " ${it * 10} |" })
+            logger.lifecycle("| -- |" + " --: |".repeat(10))
+            logger.lifecycle("| forks busy |" + busy.joinToString("") { String.format(" %.1f |", it) })
+            logger.lifecycle("")
+            logger.lifecycle(summary)
+            if (ignored > 0) {
+                logger.lifecycle("")
+                logger.lifecycle("*$ignored class record(s) from $otherRuns earlier run(s) in the same directory ignored.*")
+            }
+        } else {
+            logger.lifecycle("Fork occupancy through the test execution")
+            if (ignored > 0) {
+                logger.lifecycle("  ($ignored class record(s) from $otherRuns earlier run(s) ignored)")
+            }
+            logger.lifecycle("  % of run   " + (1..10).joinToString("") { String.format("%7d", it * 10) })
+            logger.lifecycle("  forks busy " + busy.joinToString("") { String.format("%7.1f", it) })
+            logger.lifecycle("")
+            logger.lifecycle("  " + summary.replace("**", ""))
+        }
     }
 
     private fun reportSimulation(
@@ -237,48 +264,79 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         val onlyInRun = classes.filter { it !in committed }
         val onlyInCommitted = committed.keys.filter { it !in runtimes }
 
-        logger.lifecycle("")
-        logger.lifecycle("What a different ordering would give")
-        if (committedFile == null || committed.isEmpty()) {
-            logger.lifecycle("  No committed timings yet, so there is nothing to compare against.")
-        } else {
-            logger.lifecycle(
-                "  Committed file: ${committed.size} entries -- " +
-                    "${onlyInRun.size} class(es) it does not rank (they sort last), " +
-                    "${onlyInCommitted.size} it lists that did not run (ignored)"
-            )
-        }
-        logger.lifecycle("")
-
         val forks = forkCounts.get().sorted().distinct()
-        logger.lifecycle(
-            if (committed.isEmpty()) {
-                String.format("  %6s  %12s", "forks", "this run")
-            } else {
-                String.format("  %6s  %12s  %12s  %10s", "forks", "committed", "this run", "gain")
-            }
-        )
-
-        forks.forEach { n ->
-            val fromRun = simulate(arrange(classes, runtimes, n), runtimes, n)
-            if (committed.isEmpty()) {
-                logger.lifecycle(String.format("  %6d  %11.0fs", n, fromRun))
-            } else {
-                val fromCommitted = simulate(arrange(classes, committed, n), runtimes, n)
-                val marker = if (actualForks.orNull == n) "  <- this machine" else ""
-                logger.lifecycle(
-                    String.format(
-                        "  %6d  %11.0fs  %11.0fs  %9.0fs%s",
-                        n, fromCommitted, fromRun, fromCommitted - fromRun, marker
-                    )
-                )
-            }
+        val note = if (committedFile == null || committed.isEmpty()) {
+            "No committed timings yet, so there is nothing to compare against."
+        } else {
+            "Committed file: ${committed.size} entries -- " +
+                "${onlyInRun.size} class(es) it does not rank (they sort last), " +
+                "${onlyInCommitted.size} it lists that did not run (ignored)."
         }
 
         logger.lifecycle("")
-        logger.lifecycle("'gain' is what re-ordering would save. Adopt this run's ordering with:")
-        logger.lifecycle("  cp ${runTimings.get().asFile} ${committedFile ?: "<committed file>"}")
-        logger.lifecycle("then raise a PR -- the diff is a reordered CSV.")
+        if (markdown) {
+            logger.lifecycle("## What a different ordering would give")
+            logger.lifecycle("")
+            logger.lifecycle(note)
+            logger.lifecycle("")
+            if (committed.isEmpty()) {
+                logger.lifecycle("| forks | this run |")
+                logger.lifecycle("| --: | --: |")
+                forks.forEach { n ->
+                    logger.lifecycle("| $n | ${simulate(arrange(classes, runtimes, n), runtimes, n).toLong()}s |")
+                }
+            } else {
+                logger.lifecycle("| forks | committed | this run | gain | |")
+                logger.lifecycle("| --: | --: | --: | --: | -- |")
+                forks.forEach { n ->
+                    val fromRun = simulate(arrange(classes, runtimes, n), runtimes, n)
+                    val fromCommitted = simulate(arrange(classes, committed, n), runtimes, n)
+                    val marker = if (actualForks.orNull == n) "this machine" else ""
+                    logger.lifecycle(
+                        "| $n | ${fromCommitted.toLong()}s | ${fromRun.toLong()}s | " +
+                            "${(fromCommitted - fromRun).toLong()}s | $marker |"
+                    )
+                }
+            }
+            logger.lifecycle("")
+            logger.lifecycle("`gain` is what re-ordering would save. Adopt this run's ordering with:")
+            logger.lifecycle("")
+            logger.lifecycle("```bash")
+            logger.lifecycle("cp ${runTimings.get().asFile} ${committedFile ?: "<committed file>"}")
+            logger.lifecycle("```")
+            logger.lifecycle("")
+            logger.lifecycle("then raise a PR -- the diff is a reordered CSV.")
+        } else {
+            logger.lifecycle("What a different ordering would give")
+            logger.lifecycle("  $note")
+            logger.lifecycle("")
+            logger.lifecycle(
+                if (committed.isEmpty()) {
+                    String.format("  %6s  %12s", "forks", "this run")
+                } else {
+                    String.format("  %6s  %12s  %12s  %10s", "forks", "committed", "this run", "gain")
+                }
+            )
+            forks.forEach { n ->
+                val fromRun = simulate(arrange(classes, runtimes, n), runtimes, n)
+                if (committed.isEmpty()) {
+                    logger.lifecycle(String.format("  %6d  %11.0fs", n, fromRun))
+                } else {
+                    val fromCommitted = simulate(arrange(classes, committed, n), runtimes, n)
+                    val marker = if (actualForks.orNull == n) "  <- this machine" else ""
+                    logger.lifecycle(
+                        String.format(
+                            "  %6d  %11.0fs  %11.0fs  %9.0fs%s",
+                            n, fromCommitted, fromRun, fromCommitted - fromRun, marker
+                        )
+                    )
+                }
+            }
+            logger.lifecycle("")
+            logger.lifecycle("'gain' is what re-ordering would save. Adopt this run's ordering with:")
+            logger.lifecycle("  cp ${runTimings.get().asFile} ${committedFile ?: "<committed file>"}")
+            logger.lifecycle("then raise a PR -- the diff is a reordered CSV.")
+        }
         logger.lifecycle("")
     }
 
