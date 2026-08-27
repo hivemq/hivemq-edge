@@ -130,4 +130,39 @@ public class ConfigWriteFailureReportingTest extends AbstractConfigurationTest {
         assertThat(errorsLogged()).isEmpty();
         assertThat(Files.readString(config)).contains("edg-882-reporting-bridge");
     }
+
+    /**
+     * EDG-882 review v04, finding 2.2's other half. Replacing by move needs permission on the directory,
+     * not on the file, so a configuration an operator write-protected would be replaced anyway — and its
+     * owner quietly changed in the process. Writing in place refused that, and so does this.
+     */
+    @Test
+    public void whenTheConfigurationFileIsNotWritable_thenItIsNotReplaced() throws IOException {
+        Files.writeString(config, CONFIG);
+        reader.applyConfig();
+        Files.setPosixFilePermissions(config, PosixFilePermissions.fromString("r--r--r--"));
+
+        reader.writeConfigWithSync();
+
+        assertThat(Files.readString(config))
+                .as("a write-protected configuration was replaced")
+                .isEqualTo(CONFIG);
+        assertThat(errorsLogged()).anySatisfy(message -> assertThat(message).contains("not writable by this node"));
+    }
+
+    /** And nothing is left behind by the refusal — not even the backup that write would have taken. */
+    @Test
+    public void whenTheConfigurationFileIsNotWritable_thenNoBackupIsTaken() throws IOException {
+        Files.writeString(config, CONFIG);
+        reader.applyConfig();
+        Files.setPosixFilePermissions(config, PosixFilePermissions.fromString("r--r--r--"));
+
+        reader.writeConfigWithSync();
+
+        try (var listing = Files.list(config.getParent())) {
+            assertThat(listing.map(path -> path.getFileName().toString()).toList())
+                    .as("the refusal must come before anything is written")
+                    .containsExactly("config.xml");
+        }
+    }
 }

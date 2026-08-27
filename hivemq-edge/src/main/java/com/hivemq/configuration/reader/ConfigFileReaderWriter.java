@@ -455,7 +455,6 @@ public class ConfigFileReaderWriter {
             final StringWriter rendered = new StringWriter();
             writeConfigToXML(rendered);
 
-            backupConfig(file, doBackup); // write the backup of the file before rewriting
             // The real path, not the configured one: replacing a path is replacing whatever the last
             // component *is*, so when config.xml is a symbolic link -- a mounted configuration
             // directory, an operator's link into a versioned tree -- the move would delete the link and
@@ -464,6 +463,21 @@ public class ConfigFileReaderWriter {
             // which is what ATOMIC_MOVE needs.
             final Path configured = file.toPath();
             final Path target = Files.exists(configured) ? configured.toRealPath() : configured;
+            // Only a file this process could have written in place. Replacing by move needs permission on
+            // the directory, not on the file, so without this a configuration an operator write-protected
+            // -- root-owned, or read-only on purpose -- would be replaced anyway, and quietly change owner
+            // in the process. Writing in place refused it, and so does this (EDG-882 review v04).
+            if (Files.exists(target) && !Files.isWritable(target)) {
+                log.error(
+                        "The configuration file {} is not writable by this node, so the configuration has not"
+                                + " been persisted. The replacement is written beside it and moved onto it, which"
+                                + " needs no permission on the file itself -- overwriting one this node may not"
+                                + " change is not something to do quietly. This node keeps running on the"
+                                + " configuration it already holds.",
+                        target);
+                throw new UnrecoverableException(false);
+            }
+            backupConfig(file, doBackup); // write the backup of the file before rewriting
             replaceCarryingProtections(target, preservedAttributesOf(target), partial -> {
                 try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
                     writer.write(rendered.toString());
@@ -615,6 +629,12 @@ public class ConfigFileReaderWriter {
 
         boolean nothingToReproduce() {
             return permissions == null && owner == null && group == null && acl == null;
+        }
+
+        /** The same protections, minus a claim to have reproduced the owner. */
+        @NotNull
+        PreservedAttributes withoutOwner() {
+            return new PreservedAttributes(permissions, null, group, acl);
         }
     }
 
@@ -789,11 +809,19 @@ public class ConfigFileReaderWriter {
      * mode last. Setting the mode first would open a window in which the file is already group- or
      * world-readable but still owned by the wrong principals.
      * <p>
-     * Throws rather than warns, at every step. The alternative — carry what you can, move it either way —
-     * is what R3-07 and R3-09 reported between them: a failure leaves a file full of credentials with the
-     * umask's mode and the creating process's group, permanently, announced at debug level. Refusing the
-     * replacement keeps the previous configuration file, which is intact, correctly permissioned and
-     * still the one the running node matches.
+     * Throws rather than warns, at every step but one. The alternative — carry what you can, move it
+     * either way — is what R3-07 and R3-09 reported between them: a failure leaves a file full of
+     * credentials with the umask's mode and the creating process's group, permanently, announced at debug
+     * level. Refusing the replacement keeps the previous configuration file, which is intact, correctly
+     * permissioned and still the one the running node matches.
+     * <p>
+     * The exception is the owner, which is not the node's to set: changing it is privileged everywhere
+     * this runs, so refusing on it meant a configuration installed by one account and served by another
+     * could never be written at all. It falls back to this node's own account with a warning, because the
+     * account that just rendered the document already holds every credential in it — while the mode, the
+     * group and the access-control list, which are what decide who <em>else</em> can read the file, keep
+     * refusing. A file this node may not write in the first place never gets here: {@code writeConfigToXML}
+     * turns that away before anything is written.
      */
     @VisibleForTesting
     static void applyPreservedAttributes(final @NotNull Path partial, final @NotNull PreservedAttributes preserved)
@@ -801,6 +829,9 @@ public class ConfigFileReaderWriter {
         if (preserved.nothingToReproduce()) {
             return;
         }
+        // What the verification below is entitled to insist on: everything, unless the owner turned out
+        // not to be this node's to set.
+        PreservedAttributes proven = preserved;
         try {
             // Owner through the owner view, not the POSIX one: an ACL-only store has an owner and no
             // mode, and reading it through the POSIX view meant it was never restored there at all
@@ -817,7 +848,28 @@ public class ConfigFileReaderWriter {
                     throw new IOException("The replacement cannot carry an owner on this file store");
                 }
                 if (!preserved.owner().equals(partialOwner.getOwner())) {
-                    partialOwner.setOwner(preserved.owner());
+                    try {
+                        partialOwner.setOwner(preserved.owner());
+                    } catch (final UnsupportedOperationException | SecurityException | IOException notPermitted) {
+                        // The one protection that is not the node's to reproduce. Changing a file's owner
+                        // is privileged on every platform this runs on, so a configuration installed by
+                        // one account and served by another -- root-owned config.xml, service user running
+                        // Edge -- made every write fail, and the node silently stopped persisting anything
+                        // (EDG-882 review v04). The mode, the group and any access-control list are still
+                        // reproduced exactly or the write is refused, and those are what decide who else
+                        // can read the file; the owner it falls back to is the account that just rendered
+                        // the configuration and therefore already holds every credential in it.
+                        log.warn(
+                                "The replacement for {} could not be given the owner of the file it replaces"
+                                        + " ('{}'), so it is owned by this node's own account instead. Its mode,"
+                                        + " group and access-control list are unchanged, so no one else gains"
+                                        + " access -- but if the owner matters here, set it back and check what"
+                                        + " installed the file.",
+                                partial,
+                                preserved.owner().getName(),
+                                notPermitted);
+                        proven = preserved.withoutOwner();
+                    }
                 }
             }
             if (preserved.group() != null) {
@@ -848,7 +900,7 @@ public class ConfigFileReaderWriter {
                             + "the existing file has been left untouched",
                     e);
         }
-        verifyPreservedAttributes(partial, preserved);
+        verifyPreservedAttributes(partial, proven);
     }
 
     /**
