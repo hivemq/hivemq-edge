@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
@@ -65,6 +66,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.AclEntry;
 import java.nio.file.attribute.AclEntryPermission;
 import java.nio.file.attribute.AclEntryType;
@@ -103,7 +105,6 @@ import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import org.apache.commons.io.FileUtils;
 import org.glassfish.jaxb.runtime.v2.runtime.IllegalAnnotationsException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -440,15 +441,6 @@ public class ConfigFileReaderWriter {
             writeConfigToXML(rendered);
 
             backupConfig(file, doBackup); // write the backup of the file before rewriting
-            // Written beside the target and moved onto it, rather than opened and written in place.
-            // Rendering first closed the "schema validation fails half way" case; opening the real file
-            // still truncates it, so a crash, a full disk or a killed process between open and close left
-            // a config.xml cut off mid-element. There is a backup, but nothing restores it on its own and
-            // the node does not start (EDG-882 review v02, R2-08).
-            //
-            // Same directory on purpose: ATOMIC_MOVE is only guaranteed within a file store, and the
-            // temporary file has to be one the configuration watcher will not try to parse.
-            //
             // The real path, not the configured one: replacing a path is replacing whatever the last
             // component *is*, so when config.xml is a symbolic link -- a mounted configuration
             // directory, an operator's link into a versioned tree -- the move would delete the link and
@@ -457,51 +449,118 @@ public class ConfigFileReaderWriter {
             // which is what ATOMIC_MOVE needs.
             final Path configured = file.toPath();
             final Path target = Files.exists(configured) ? configured.toRealPath() : configured;
-            final Path partial = target.resolveSibling(target.getFileName() + ".partial");
-            try {
-                // The replacement's mode is settled before a single byte of it is written, not after.
-                //
-                // The rendered document holds bridge passwords, keystore and truststore passwords and
-                // adapter credentials. A file created by FileWriter takes this process's umask, so on a
-                // 022 umask the first version of this change created a world-readable 0644 file,
-                // populated it with every secret in the configuration, closed it, and only then narrowed
-                // it to the mode of the file it was about to replace. Any local principal reading the
-                // directory during that window got the lot -- on every REST write to any subsystem.
-                //
-                // That window did not exist before this branch: writing in place reused config.xml's own
-                // inode and therefore its own mode, so the secrets never touched a wider file. It is a
-                // disclosure this change would have introduced, which is why it fails closed rather than
-                // best-effort (EDG-882 review v03, R3-07).
-                final PreservedAttributes preserved = preservedAttributesOf(target);
-                createPartialFile(partial, preserved);
+            replaceCarryingProtections(target, preservedAttributesOf(target), partial -> {
                 try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
                     writer.write(rendered.toString());
                     writer.flush();
                 }
-                // Widened to exactly the target's protections only once the content is on disk, so the
-                // file is never wider than its eventual self while it is being filled. A failure here
-                // aborts the replacement: moving a file whose protections could not be reproduced would
-                // either widen a deliberately restricted config.xml or narrow one an operator shares
-                // deliberately, and the original on disk is still valid and still correct.
-                applyPreservedAttributes(partial, preserved);
-                try {
-                    Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (final AtomicMoveNotSupportedException atomicNotSupported) {
-                    // Some network and container file systems cannot do it. A non-atomic replace is still
-                    // better than truncating the original and writing into it, because the content being
-                    // moved is already complete on disk.
-                    log.debug("Atomic replace of {} is not supported here, falling back", file.getAbsolutePath());
-                    Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                Files.deleteIfExists(partial);
-            }
+            });
         } catch (final IOException e) {
             log.error("Error writing file:", e);
             throw new UnrecoverableException(false);
         } finally {
             lock.unlock();
         }
+    }
+
+    /** The bytes of one replacement, written into the narrow file that has just been created for them. */
+    @FunctionalInterface
+    @VisibleForTesting
+    interface ContentWriter {
+
+        void writeTo(@NotNull Path partial) throws IOException;
+    }
+
+    /**
+     * Replaces a file with content written beside it, under the protections it is given, and never wider
+     * than those while it holds the content.
+     * <p>
+     * <b>Written beside the target and moved onto it, rather than opened and written in place.</b>
+     * Rendering the document first closed the "schema validation fails half way" case; opening the real
+     * file still truncates it, so a crash, a full disk or a killed process between open and close left a
+     * config.xml cut off mid-element. There is a backup, but nothing restores it on its own and the node
+     * does not start (EDG-882 review v02, R2-08). Same directory on purpose: ATOMIC_MOVE is only
+     * guaranteed within a file store, and the temporary file has to be one the configuration watcher will
+     * not try to parse.
+     * <p>
+     * <b>The protections are settled before a single byte is written, not after.</b> The content holds
+     * bridge passwords, keystore and truststore passwords and adapter credentials. A file created by
+     * {@code FileWriter} takes this process's umask, so on a 022 umask the first version of this change
+     * created a world-readable 0644 file, populated it with every secret in the configuration, closed it,
+     * and only then narrowed it to the mode of the file it was about to replace. Any local principal
+     * reading the directory during that window got the lot -- on every REST write to any subsystem. That
+     * window did not exist before this branch: writing in place reused config.xml's own inode and
+     * therefore its own mode, so the secrets never touched a wider file. It is a disclosure this change
+     * would have introduced, which is why it fails closed rather than best-effort (EDG-882 review v03,
+     * R3-07).
+     * <p>
+     * <b>One sequence, both files.</b> The rolling backup goes through this too. It is a copy of the same
+     * document, made by the same write, and it used to be produced by a plain file copy that carried the
+     * mode and left the group to the process -- so a 0640 config.xml owned by one group was backed up
+     * into a 0640 file readable by another (EDG-882 review v04). Two paths that must not differ are one
+     * path.
+     */
+    @VisibleForTesting
+    static void replaceCarryingProtections(
+            final @NotNull Path target,
+            final @NotNull PreservedAttributes preserved,
+            final @NotNull ContentWriter content)
+            throws IOException {
+        final Path partial = target.resolveSibling(target.getFileName() + ".partial");
+        try {
+            createPartialFile(partial, preserved);
+            content.writeTo(partial);
+            // Widened to exactly the target's protections only once the content is on disk, so the file is
+            // never wider than its eventual self while it is being filled. A failure here aborts the
+            // replacement: moving a file whose protections could not be reproduced would either widen a
+            // deliberately restricted config.xml or narrow one an operator shares deliberately, and the
+            // original on disk is still valid and still correct.
+            applyPreservedAttributes(partial, preserved);
+            try {
+                Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (final AtomicMoveNotSupportedException atomicNotSupported) {
+                // Some network and container file systems cannot do it. A non-atomic replace is still
+                // better than truncating the original and writing into it, because the content being moved
+                // is already complete on disk.
+                log.debug("Atomic replace of {} is not supported here, falling back", target);
+                Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(partial);
+        }
+    }
+
+    /**
+     * Copies the configuration file to its rolling backup, under the protections of the file it copies.
+     * <p>
+     * <b>The source's protections, not the destination's.</b> The backup holds the source's content, so it
+     * is the source that decides who may read it; the file being overwritten is a previous backup whose
+     * protections are of no interest, and on the first rotation there is no destination at all -- which is
+     * how the plain copy this replaces ended up handing the backup to the process's own group.
+     *
+     * @throws IOException when the backup cannot be given the protections of the file it copies, which
+     *         aborts the write that asked for it: a backup of a configuration file is a second copy of
+     *         every credential in it.
+     */
+    private static void copyCarryingProtections(final @NotNull Path source, final @NotNull Path configured)
+            throws IOException {
+        final Path destination = Files.exists(configured) ? configured.toRealPath() : configured;
+        if (Files.exists(destination) && Files.isSameFile(source, destination)) {
+            // The rotation picked the configuration file itself, which would copy it onto itself through a
+            // temporary file. The copy this replaces refused that outright and so does this.
+            throw new IOException("The rolling backup of " + source + " resolves to the configuration file"
+                    + " itself, so taking it would overwrite the configuration being backed up");
+        }
+        final PreservedAttributes preserved = preservedAttributesOf(source);
+        replaceCarryingProtections(destination, preserved, partial -> {
+            try (final InputStream in = Files.newInputStream(source);
+                    final OutputStream out = Files.newOutputStream(
+                            partial, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                in.transferTo(out);
+            }
+            // Carried because the rotation picks the backup to overwrite by modification time.
+            Files.setLastModifiedTime(partial, Files.getLastModifiedTime(source));
+        });
     }
 
     /**
@@ -1018,7 +1077,7 @@ public class ConfigFileReaderWriter {
             if (log.isDebugEnabled()) {
                 log.debug("Rolling backup of configuration file to {}", copyFile.getName());
             }
-            FileUtils.copyFile(configFile, copyFile);
+            copyCarryingProtections(configFile.toPath(), copyFile.toPath());
         } else {
             log.error("Configuration folder {} does not exist or is not a directory", copyPath.getAbsolutePath());
             throw new UnrecoverableException(false);
