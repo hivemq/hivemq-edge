@@ -44,6 +44,7 @@ plugins {
     id("com.hivemq.spotless-convention")
     id("com.hivemq.errorprone-convention")
     id("com.hivemq.nullaway-convention")
+    id("com.hivemq.test-ordering-convention")
 }
 
 group = "com.hivemq"

@@ -46,6 +46,10 @@ gradlePlugin {
             id = "$group.$name"
             implementationClass = "$group.spotless.SpotlessConventionPlugin"
         }
+        create("test-ordering-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.testordering.TestOrderingConventionPlugin"
+        }
     }
 }
 
