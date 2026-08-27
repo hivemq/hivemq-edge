@@ -31,9 +31,10 @@ import org.gradle.kotlin.dsl.withType
  * That is what keeps the committed file safe to leave stale. It is an optimisation hint, and the failure mode
  * of a wrong or missing entry is a slightly worse distribution -- never a test that stops running.
  *
- * Applies to every `Test` task in the project. Where the tests are farmed out to remote executors rather than
- * run in local forks (Develocity Test Distribution, which schedules from its own runtime history), this has
- * nothing to act on and costs nothing.
+ * LOCAL RUNS ONLY, by design -- it is switched off when `CI_RUN` is set. On CI the integration suite is
+ * farmed out to remote executors that ignore dispatch order, and the unit suite, while it does use local
+ * forks there, has never been on the critical path. Conveying an order is not free (see [orderTestClasses]),
+ * so on CI it would be pure cost. This exists to make a developer's own test runs finish sooner.
  */
 class TestOrderingConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -75,6 +76,26 @@ internal fun orderTestClasses(
     task: Test,
     timingsFile: java.io.File
 ) {
+    // LOCAL RUNS ONLY. CI_RUN is the same switch the integration suite uses to turn on Develocity Test
+    // Distribution, so on CI this stays out of the way entirely.
+    //
+    // Two reasons, and the second is why this is not merely an optimisation:
+    //
+    //  - It would not help. The integration suite is farmed out to remote executors on CI, and that
+    //    scheduler partitions by its own rolling average of per-class runtimes without ever looking at
+    //    the order the classes arrive in. The unit suite does run in local forks on CI, but it has never
+    //    been on the critical path there -- it finishes alongside the far longer integration branch.
+    //
+    //  - It costs. Conveying an order through testClassesDirs means handing Gradle one FileTree per class,
+    //    several hundred of them, and resolving that collection is a traversal per element. Measured on a
+    //    build agent: 3 MINUTES of dispatch, on the critical path, for no gain. There is no cheaper
+    //    construction -- a single FileTree with the includes listed in order silently falls back to
+    //    directory order (verified: 12 classes requested in reverse came out forwards).
+    if (System.getenv("CI_RUN") != null) {
+        task.logger.info("Test class ordering: CI run, leaving the order alone")
+        return
+    }
+
     if (!timingsFile.isFile) {
         task.logger.info("Test class ordering: no ${timingsFile.name}, leaving the order to Gradle")
         return
@@ -91,30 +112,37 @@ internal fun orderTestClasses(
         return
     }
 
-    val classes = classDirs.flatMap { findDispatchableTestClasses(it) }.distinct()
+    val classes = classDirs.flatMap { findDispatchableTestClasses(it) }.distinctBy { it.name }
     if (classes.isEmpty()) {
         return
     }
 
     // The task's own fork count, read at execution time, so the snake always matches what actually runs.
     val forks = task.maxParallelForks.coerceAtLeast(1)
-    val ordered = arrange(classes, timings, forks)
+    val byName = classes.associateBy { it.name }
+    val ordered = arrange(classes.map { it.name }, timings, forks)
 
-    // An explicit FileCollection of individual .class files, in this order. Gradle's scanner walks a
-    // FileTree in the order its elements were added, so a union built one file at a time preserves it.
+    // A FileCollection of file TREES, one per class, in this order. Gradle's scanner walks the collection
+    // in the order its elements were added, so this preserves the arrangement.
+    //
+    // Each element must be a FileTree rooted at the class DIRECTORY, not a bare file: Gradle derives the
+    // class name from the file's path RELATIVE TO the tree's root, so a plain file has nothing to relativise
+    // against and is not recognised as a test class at all ("No tests found for given includes").
+    //
+    // The include pattern is built from the file the scan already found, so nothing is searched for twice.
+    // Resolving each class by NAME instead -- walking the directory once per class, which is what this used
+    // to do -- measured 1991ms against 12ms for a single walk, and cost 3 MINUTES of dispatch on a CI agent.
     var arranged: FileCollection = task.project.files()
-    ordered.forEach { className ->
-        val relative = className.replace('.', '/') + ".class"
-        classDirs.forEach { dir ->
-            arranged += task.project.fileTree(dir) { include(relative) }
-        }
+    ordered.forEach { name ->
+        val entry = byName[name] ?: return@forEach
+        arranged += task.project.fileTree(entry.root) { include(entry.relativePath) }
     }
+    task.testClassesDirs = arranged
 
     // testClassesDirs is what gets SCANNED for tests; it is not on the classpath by itself. Narrowing it to
     // individual files would hide every helper and inner class from the test JVM, so add the directories
-    // back to the classpath before replacing it.
+    // back to the classpath.
     task.classpath += task.project.files(classDirs)
-    task.testClassesDirs = arranged
 
     val untimed = ordered.count { it !in timings }
     val totalSeconds = ordered.sumOf { timings[it] ?: 0.0 }

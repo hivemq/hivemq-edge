@@ -3,7 +3,23 @@ package com.hivemq.testordering
 import java.io.File
 
 /**
- * Every non-abstract outer class under [root], as fully qualified names. NOT "every test class".
+ * A class that can be dispatched to a test JVM: its name, and the file it was found in.
+ *
+ * The FILE is kept because the scan below has it in hand. Looking it up again later -- one lookup per
+ * class -- costs 166x the single walk that found them all: measured on the integration suite, 12ms to
+ * walk once against 1991ms to resolve 700 classes one at a time, and far worse on a CI agent whose
+ * filesystem cache is cold.
+ */
+data class DispatchableClass(
+    val name: String,
+    /** The class-output directory this was found under -- the root a FileTree must be based on. */
+    val root: File,
+    /** Path of the class file relative to [root], which is how Gradle derives the class name. */
+    val relativePath: String
+)
+
+/**
+ * Every non-abstract outer class under [root]. NOT "every test class".
  *
  * This is what Gradle's own scanner does, and reproducing it exactly is the point: the list built here
  * REPLACES that scan, so anything it drops stops running.
@@ -25,7 +41,7 @@ import java.io.File
  *    separately would run those tests twice.
  *  - `module-info`, which is not a class at all.
  */
-fun findDispatchableTestClasses(root: File): List<String> =
+fun findDispatchableTestClasses(root: File): List<DispatchableClass> =
     root
         .walkTopDown()
         .filter { it.isFile && it.extension == "class" && it.name != "module-info.class" }
@@ -36,13 +52,14 @@ fun findDispatchableTestClasses(root: File): List<String> =
                 .contains('$')
         }.filter { isConcrete(it.readBytes()) }
         .map {
-            it
-                .relativeTo(root)
-                .path
-                .removeSuffix(".class")
-                .replace(File.separatorChar, '.')
+            val relative = it.relativeTo(root).path
+            DispatchableClass(
+                relative.removeSuffix(".class").replace(File.separatorChar, '.'),
+                root,
+                relative
+            )
         }.toList()
-        .sorted()
+        .sortedBy { it.name }
 
 private const val ACC_INTERFACE = 0x0200
 private const val ACC_ABSTRACT = 0x0400
