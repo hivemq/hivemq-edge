@@ -283,7 +283,9 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit)
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Compile-time, not runtime-only: util.ForkAttributionListener implements TestExecutionListener
+    // from this artifact (EDG-930).
+    testImplementation("org.junit.platform:junit-platform-launcher")
 
     testImplementation(libs.mockito.junit.jupiter)
 
@@ -299,12 +301,36 @@ dependencies {
     testImplementation(libs.systemstubs)
 }
 
+// One id per Gradle invocation, stamped onto every fork log so the concurrency report can tell this
+// run's logs from the previous one's. Computed here rather than inside the task so all forks agree.
+val forkLogRunId: String = System.currentTimeMillis().toString(36)
+
 tasks.test {
     useJUnitPlatform()
     // Run the unit tests in parallel JVMs, one per 2 cores, overridable with -PunitTestForks=N.
     // Same formula as the integration suite, so there is one rule rather than two to keep straight.
     maxParallelForks = (project.findProperty("unitTestForks") as String?)?.toIntOrNull()
         ?: (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+
+    // Record which test JVM ran which class, one file per JVM (EDG-930). Gradle merges the console
+    // output of the parallel forks into one stream and the JUnit XML carries a hostname rather than a
+    // process, so without this nothing says how the classes were distributed -- which is what
+    // reportTestConcurrency needs to show. Cheap enough to leave on (one appended line per class);
+    // -PnoForkLogs turns it off.
+    if (!project.hasProperty("noForkLogs")) {
+        systemProperty(
+            "forkLog.dir",
+            layout.buildDirectory
+                .dir("fork-logs")
+                .get()
+                .asFile.path
+        )
+        // Every fork of THIS task execution shares one id, so the report can tell one run's logs from
+        // the next. The directory is never cleared, and two back-to-back runs cannot be told apart by
+        // timing -- the idle gap while the build recompiles is as long as a slow test class.
+        systemProperty("forkLog.runId", forkLogRunId)
+    }
+
     minHeapSize = "128m"
     maxHeapSize = "2048m"
     jvmArgs(
