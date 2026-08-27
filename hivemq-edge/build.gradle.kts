@@ -44,6 +44,7 @@ plugins {
     id("com.hivemq.spotless-convention")
     id("com.hivemq.errorprone-convention")
     id("com.hivemq.nullaway-convention")
+    id("com.hivemq.test-ordering-convention")
 }
 
 group = "com.hivemq"
@@ -282,7 +283,9 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit)
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Compile-time, not runtime-only: util.ForkAttributionListener implements TestExecutionListener
+    // from this artifact (EDG-930).
+    testImplementation("org.junit.platform:junit-platform-launcher")
 
     testImplementation(libs.mockito.junit.jupiter)
 
@@ -304,6 +307,25 @@ tasks.test {
     // Same formula as the integration suite, so there is one rule rather than two to keep straight.
     maxParallelForks = (project.findProperty("unitTestForks") as String?)?.toIntOrNull()
         ?: (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+
+    // Record which test JVM ran which class, one file per JVM (EDG-930). Gradle merges the console
+    // output of the parallel forks into one stream and the JUnit XML carries a hostname rather than a
+    // process, so without this nothing says how the classes were distributed -- which is what
+    // reportTestConcurrency needs to show. Cheap enough to leave on (one appended line per class);
+    // -PnoForkLogs turns it off.
+    if (!project.hasProperty("noForkLogs")) {
+        systemProperty(
+            "forkLog.dir",
+            layout.buildDirectory
+                .dir("fork-logs")
+                .get()
+                .asFile.path
+        )
+        // Deliberately NO run id. Stamping one would mean a value that differs on every invocation, and a
+        // systemProperty is part of a test task's cache key -- the task could then never be restored from
+        // the build cache. reportTestConcurrency separates runs from the logs themselves instead.
+    }
+
     minHeapSize = "128m"
     maxHeapSize = "2048m"
     jvmArgs(
