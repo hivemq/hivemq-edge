@@ -448,4 +448,85 @@ public class EnvVarUtilTest {
                         "<x><password>" + SECRET + "</password><note>" + SECRET + "</note></x>", List.of(placeholder)),
                 "a credential still in the document when the restore finishes must refuse the write");
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v04, finding 2. That last word used to be asked of the serialised XML with
+    // String.contains, which reads markup as content: a password of 'admin' was "still present" in any
+    // configuration holding an <admin-api> element, so every write was refused from then on -- the node
+    // stayed up and silently stopped being able to persist anything. It is asked of the parsed
+    // document's element text and attribute values now.
+    // ---------------------------------------------------------------------------------------------
+
+    /** Sam's reproduction: the credential is an element name in the file, and nothing else. */
+    @Test
+    public void restorePlaceholders_whenAnElementNameContainsTheCredential_thenTheWriteProceeds() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", "admin", false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><admin-api><enabled>true</enabled></admin-api><password>admin</password></x>",
+                List.of(placeholder));
+
+        assertEquals(
+                "<x><admin-api><enabled>true</enabled></admin-api><password>${ENV:PW}</password></x>",
+                restored,
+                "an element name that contains the credential is markup, not a disclosure");
+    }
+
+    /** And an ordinary value that has the credential inside it is the operator's own text, not the secret. */
+    @Test
+    public void restorePlaceholders_whenAnUnrelatedValueContainsTheCredential_thenTheWriteProceeds() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", "1", false);
+
+        final String restored =
+                EnvVarUtil.restorePlaceholders("<x><port>1883</port><password>1</password></x>", List.of(placeholder));
+
+        assertEquals(
+                "<x><port>1883</port><password>${ENV:PW}</password></x>",
+                restored,
+                "a port of 1883 is not a disclosure of a password of 1");
+    }
+
+    /**
+     * The narrowing stops there. Inside a credential-bearing span, a value that merely contains the
+     * secret is the concatenation case and is exactly the disclosure this exists to catch.
+     */
+    @Test
+    public void restorePlaceholders_whenACredentialSurvivesInsideAnotherCredentialElement_thenTheWriteIsRefused() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders(
+                        "<x><password>" + SECRET + "</password><keystore-password>prefix-" + SECRET
+                                + "</keystore-password></x>",
+                        List.of(placeholder)),
+                "a credential left inside another credential element must refuse the write");
+    }
+
+    /** Attribute values are values too, and an attribute can be the credential-bearing span. */
+    @Test
+    public void restorePlaceholders_whenACredentialSurvivesInAnAttribute_thenTheWriteIsRefused() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders(
+                        "<x><password>" + SECRET + "</password><keystore password=\"prefix-" + SECRET + "\"/></x>",
+                        List.of(placeholder)),
+                "a credential left in an attribute must refuse the write");
+    }
+
+    /**
+     * A document that cannot be read back cannot be cleared of credentials either, and "cannot tell" is
+     * not "there is none". The previous config.xml is intact and parses.
+     */
+    @Test
+    public void restorePlaceholders_whenTheFinishedDocumentCannotBeParsed_thenTheWriteIsRefused() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders("<x><password>${ENV:PW}</password>", List.of(placeholder)),
+                "a document this cannot parse must refuse the write rather than assume it is clean");
+    }
 }

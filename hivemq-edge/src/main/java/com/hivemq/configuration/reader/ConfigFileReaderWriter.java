@@ -66,8 +66,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -522,7 +525,9 @@ public class ConfigFileReaderWriter {
      * @param permissions the POSIX mode, or {@code null} on a store with no POSIX view
      * @param owner       the owning principal, or {@code null} when the store exposes none
      * @param group       the owning group, or {@code null} on a store with no POSIX view
-     * @param acl         the access-control list, or {@code null} on a store that has no ACL view
+     * @param acl         the access-control list -- empty when the file has one that grants nobody
+     *                    anything, which is a protection in its own right -- or {@code null} on a store
+     *                    that has no ACL view
      */
     @VisibleForTesting
     record PreservedAttributes(
@@ -580,15 +585,14 @@ public class ConfigFileReaderWriter {
         final AclFileAttributeView aclView = Files.getFileAttributeView(path, AclFileAttributeView.class);
         if (aclView != null) {
             try {
-                final List<AclEntry> entries = aclView.getAcl();
-                // Only a non-empty list is worth carrying. Several stores expose an ACL view for every
-                // file and answer with an empty list when none is set; reproducing that would mean an
-                // otherwise pointless setAcl on the ordinary path, which can fail for its own reasons and
-                // would then refuse a write that had nothing to preserve in the first place.
-                acl = entries.isEmpty() ? null : entries;
-                if (owner == null) {
-                    owner = aclView.getOwner();
-                }
+                // An empty list is a value, not an absence. An access-control list that grants nobody
+                // anything is exactly what is on a file only its owner may read, and the previous version
+                // discarded it as "nothing to carry" -- which left the replacement with whatever the
+                // containing directory's inheritance produced, on the one file where that matters most
+                // (EDG-882 review v04). Reproducing it costs nothing on stores that answer empty for every
+                // file, because applyPreservedAttributes only calls setAcl when the replacement's own list
+                // differs.
+                acl = List.copyOf(aclView.getAcl());
             } catch (final NoSuchFileException absent) {
                 return PreservedAttributes.NONE;
             } catch (final IOException | SecurityException e) {
@@ -600,12 +604,30 @@ public class ConfigFileReaderWriter {
             }
         }
 
-        if (posixView == null && aclView == null) {
+        // Through the owner view rather than the POSIX one, because a store can have an owner without
+        // having a mode: on an ACL-only store the owner was previously read only as a side effect of the
+        // ACL block, and never restored at all (EDG-882 review v04).
+        final FileOwnerAttributeView ownerView = Files.getFileAttributeView(path, FileOwnerAttributeView.class);
+        if (owner == null && ownerView != null) {
+            try {
+                owner = ownerView.getOwner();
+            } catch (final NoSuchFileException absent) {
+                return PreservedAttributes.NONE;
+            } catch (final IOException | SecurityException e) {
+                throw new IOException(
+                        "Could not read the owner of the configuration file being replaced, so a replacement"
+                                + " carrying the same protections cannot be produced; the existing file has been"
+                                + " left untouched",
+                        e);
+            }
+        }
+
+        if (posixView == null && aclView == null && ownerView == null) {
             // A store that exposes neither view has no protections a replacement could get wrong.
             if (!Files.exists(path)) {
                 return PreservedAttributes.NONE;
             }
-            log.debug("{} is on a file store with no POSIX or ACL view; nothing to reproduce", path);
+            log.debug("{} is on a file store with no POSIX, ACL or owner view; nothing to reproduce", path);
             return PreservedAttributes.NONE;
         }
         return new PreservedAttributes(permissions, owner, group, acl);
@@ -620,6 +642,19 @@ public class ConfigFileReaderWriter {
      * the file exists and is readable by anyone else. With nothing to reproduce, it is created normally
      * and takes the umask, which is what a first-time configuration file would have had anyway.
      * <p>
+     * On a store with no mode at all — Windows and any other ACL-only file system — there is no such
+     * attribute to create it with, and the previous version simply created the file with whatever the
+     * containing directory's inheritance grants and wrote every credential in the configuration into it
+     * (EDG-882 review v04). It is instead narrowed to its own owner, in a file that is still empty,
+     * before any caller can write a byte of the configuration into it; the narrowing is proved before
+     * this returns, so a store that accepts the call and does something else does not get the secrets
+     * either.
+     * <p>
+     * That narrowing is not the target's own list: an access-control list naming a principal this
+     * process is not would either lock the writer out of the file it just created, or — where the target
+     * is readable by others — leave the replacement open to them for the whole write, which is the defect
+     * itself. The window that remains holds an empty file.
+     * <p>
      * A partial file left behind by a killed process is deleted rather than reused: reopening it would
      * inherit whatever mode <em>it</em> was left with.
      */
@@ -627,10 +662,48 @@ public class ConfigFileReaderWriter {
     static void createPartialFile(final @NotNull Path partial, final @NotNull PreservedAttributes preserved)
             throws IOException {
         Files.deleteIfExists(partial);
-        if (preserved.nothingToReproduce() || preserved.permissions() == null) {
-            Files.createFile(partial);
-        } else {
+        if (preserved.permissions() != null) {
             Files.createFile(partial, PosixFilePermissions.asFileAttribute(OWNER_ONLY));
+        } else {
+            // Nothing to reproduce, or a store that has no mode. The file takes the store's own default,
+            // exactly as a first-time configuration file would -- and is narrowed below when the store
+            // expresses protection as a list instead.
+            Files.createFile(partial);
+        }
+        if (preserved.acl() != null) {
+            narrowToItsOwner(partial);
+        }
+    }
+
+    /**
+     * Replaces the inherited access-control list of the just-created, still-empty replacement with one
+     * that grants its own owner everything and everyone else nothing, and refuses to go on if that did
+     * not take.
+     */
+    private static void narrowToItsOwner(final @NotNull Path partial) throws IOException {
+        final AclFileAttributeView view = Files.getFileAttributeView(partial, AclFileAttributeView.class);
+        if (view == null) {
+            throw new IOException("The replacement for the configuration file cannot be given an access-control"
+                    + " list on this file store, so it cannot be written without disclosing the configuration;"
+                    + " the existing file has been left untouched");
+        }
+        final List<AclEntry> ownerOnly = List.of(AclEntry.newBuilder()
+                .setType(AclEntryType.ALLOW)
+                .setPrincipal(view.getOwner())
+                .setPermissions(EnumSet.allOf(AclEntryPermission.class))
+                .build());
+        try {
+            view.setAcl(ownerOnly);
+        } catch (final UnsupportedOperationException | SecurityException | IOException e) {
+            throw new IOException(
+                    "The replacement for the configuration file could not be restricted to its owner before"
+                            + " being written; the existing file has been left untouched",
+                    e);
+        }
+        if (!ownerOnly.equals(view.getAcl())) {
+            throw new IOException("The replacement for the configuration file did not keep the access-control"
+                    + " list restricting it to its owner, so the configuration cannot be written into it;"
+                    + " the existing file has been left untouched");
         }
     }
 
@@ -655,18 +728,31 @@ public class ConfigFileReaderWriter {
             return;
         }
         try {
-            final PosixFileAttributeView partialPosix =
-                    Files.getFileAttributeView(partial, PosixFileAttributeView.class);
-            if (partialPosix != null) {
-                // Only when they differ. Changing owner is a privileged operation on every platform this
-                // runs on, and changing group requires membership; asking for a change that is already
-                // true would fail for no reason on the ordinary path, where the node replaces a file it
-                // owns.
-                final PosixFileAttributes current = partialPosix.readAttributes();
-                if (preserved.owner() != null && !preserved.owner().equals(current.owner())) {
-                    partialPosix.setOwner(preserved.owner());
+            // Owner through the owner view, not the POSIX one: an ACL-only store has an owner and no
+            // mode, and reading it through the POSIX view meant it was never restored there at all
+            // (EDG-882 review v04).
+            //
+            // Only when they differ, here and below. Changing owner is a privileged operation on every
+            // platform this runs on, and changing group requires membership; asking for a change that is
+            // already true would fail for no reason on the ordinary path, where the node replaces a file
+            // it owns.
+            if (preserved.owner() != null) {
+                final FileOwnerAttributeView partialOwner =
+                        Files.getFileAttributeView(partial, FileOwnerAttributeView.class);
+                if (partialOwner == null) {
+                    throw new IOException("The replacement cannot carry an owner on this file store");
                 }
-                if (preserved.group() != null && !preserved.group().equals(current.group())) {
+                if (!preserved.owner().equals(partialOwner.getOwner())) {
+                    partialOwner.setOwner(preserved.owner());
+                }
+            }
+            if (preserved.group() != null) {
+                final PosixFileAttributeView partialPosix =
+                        Files.getFileAttributeView(partial, PosixFileAttributeView.class);
+                if (partialPosix == null) {
+                    throw new IOException("The replacement cannot carry a group on this file store");
+                }
+                if (!preserved.group().equals(partialPosix.readAttributes().group())) {
                     partialPosix.setGroup(preserved.group());
                 }
             }
@@ -675,7 +761,9 @@ public class ConfigFileReaderWriter {
                 if (partialAcl == null) {
                     throw new IOException("The replacement cannot carry an access-control list on this file store");
                 }
-                partialAcl.setAcl(preserved.acl());
+                if (!preserved.acl().equals(partialAcl.getAcl())) {
+                    partialAcl.setAcl(preserved.acl());
+                }
             }
             if (preserved.permissions() != null) {
                 Files.setPosixFilePermissions(partial, preserved.permissions());
@@ -698,33 +786,52 @@ public class ConfigFileReaderWriter {
      * worth checking rather than assuming, because the cost of it being wrong is every credential in the
      * configuration.
      */
-    private static void verifyPreservedAttributes(
-            final @NotNull Path partial, final @NotNull PreservedAttributes preserved) throws IOException {
-        final PosixFileAttributeView view = Files.getFileAttributeView(partial, PosixFileAttributeView.class);
-        if (view == null) {
-            return;
+    @VisibleForTesting
+    static void verifyPreservedAttributes(final @NotNull Path partial, final @NotNull PreservedAttributes preserved)
+            throws IOException {
+        // Every attribute that was carried, whichever view expresses it. The previous version read the
+        // POSIX view and returned when there was none, so on an ACL-only store it verified nothing at all
+        // (EDG-882 review v04). The access-control list is checked here rather than where it is applied
+        // because the mode is set after it: on a store that has both, a chmod can rewrite the mask of the
+        // list that was just applied, and the file's protection is whatever survives that.
+        final PosixFileAttributeView posixView = Files.getFileAttributeView(partial, PosixFileAttributeView.class);
+        if (posixView != null) {
+            final PosixFileAttributes actual = posixView.readAttributes();
+            if (preserved.permissions() != null && !preserved.permissions().equals(actual.permissions())) {
+                throw new IOException("The replacement's permissions are "
+                        + PosixFilePermissions.toString(actual.permissions())
+                        + " but the configuration file being replaced has "
+                        + PosixFilePermissions.toString(preserved.permissions())
+                        + "; the existing file has been left untouched");
+            }
+            if (preserved.group() != null && !preserved.group().equals(actual.group())) {
+                throw new IOException(
+                        "The replacement's group is '" + actual.group().getName() + "' but the"
+                                + " configuration file being replaced has group '"
+                                + preserved.group().getName()
+                                + "'; the existing file has been left untouched");
+            }
         }
-        final PosixFileAttributes actual = view.readAttributes();
-        if (preserved.permissions() != null && !preserved.permissions().equals(actual.permissions())) {
-            throw new IOException("The replacement's permissions are "
-                    + PosixFilePermissions.toString(actual.permissions())
-                    + " but the configuration file being replaced has "
-                    + PosixFilePermissions.toString(preserved.permissions())
-                    + "; the existing file has been left untouched");
+        if (preserved.owner() != null) {
+            final FileOwnerAttributeView ownerView = Files.getFileAttributeView(partial, FileOwnerAttributeView.class);
+            final UserPrincipal actualOwner = ownerView == null ? null : ownerView.getOwner();
+            if (!preserved.owner().equals(actualOwner)) {
+                throw new IOException(
+                        "The replacement is owned by '" + (actualOwner == null ? "nobody" : actualOwner.getName())
+                                + "' but the configuration file being replaced is owned by '"
+                                + preserved.owner().getName()
+                                + "'; the existing file has been left untouched");
+            }
         }
-        if (preserved.owner() != null && !preserved.owner().equals(actual.owner())) {
-            throw new IOException(
-                    "The replacement is owned by '" + actual.owner().getName() + "' but the"
-                            + " configuration file being replaced is owned by '"
-                            + preserved.owner().getName()
-                            + "'; the existing file has been left untouched");
-        }
-        if (preserved.group() != null && !preserved.group().equals(actual.group())) {
-            throw new IOException(
-                    "The replacement's group is '" + actual.group().getName() + "' but the"
-                            + " configuration file being replaced has group '"
-                            + preserved.group().getName()
-                            + "'; the existing file has been left untouched");
+        if (preserved.acl() != null) {
+            final AclFileAttributeView aclView = Files.getFileAttributeView(partial, AclFileAttributeView.class);
+            final List<AclEntry> actualAcl = aclView == null ? null : aclView.getAcl();
+            if (!preserved.acl().equals(actualAcl)) {
+                throw new IOException(
+                        "The replacement's access-control list is " + actualAcl + " but the configuration file"
+                                + " being replaced has " + preserved.acl()
+                                + "; the existing file has been left untouched");
+            }
         }
     }
 
