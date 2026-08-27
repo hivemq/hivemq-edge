@@ -131,93 +131,76 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
      * What the run actually did, from the fork logs.
      *
      * Each line is `endEpochMs offsetFromJvmStart durationMs sequence className`, so a class occupied its
-     * JVM over [end - duration, end]. Counting how many of those intervals overlap a given instant gives the
-     * number of forks busy then. Sampled at deciles of the execution window rather than averaged, because
-     * the shape is the point: a run that is full for 80% of its length and then trails off on one fork is a
-     * different problem from one that never fills up at all.
+     * JVM over [end - duration, end]. Overlapping those intervals gives the number of forks busy at any
+     * moment.
+     *
+     * The window is FIRST CLASS START to LAST CLASS END -- test execution only. Everything before the first
+     * class (compilation, Gradle configuration, JVM startup) is not something the ordering can influence,
+     * and including it drags the concurrency down by a factor that has nothing to do with the balance.
+     *
+     * Concurrency is AVERAGED OVER EACH DECILE, not sampled at an instant. Sampling lands between classes
+     * often enough to print 0 in the middle of a fully busy run, which reads as a stall that never happened.
      */
     private fun reportOccupancy() {
         val dir = forkLogsDir.orNull?.asFile
         val files = dir?.listFiles { f -> f.isFile && f.name.endsWith(".log") }?.toList().orEmpty()
         if (files.isEmpty()) {
             logger.lifecycle("")
-            logger.lifecycle("Fork occupancy: no fork logs, skipping (the run predates them, or -PnoForkLogs was set)")
+            logger.lifecycle("Fork occupancy: no fork logs (the run predates them, or -PnoForkLogs was set)")
             return
         }
 
-        // (start, end) in epoch millis for every class that ran, per JVM.
-        val perJvm = files.mapNotNull { file ->
-            val spans = mutableListOf<Pair<Long, Long>>()
+        // (start, end) in epoch millis for every class that ran, across all JVMs.
+        val all = mutableListOf<Pair<Long, Long>>()
+        files.forEach { file ->
             file.forEachLine { line ->
                 if (line.startsWith("#")) return@forEachLine
                 val f = line.split(' ')
                 if (f.size < 5) return@forEachLine
                 val end = f[0].toLongOrNull() ?: return@forEachLine
                 val duration = f[2].toLongOrNull() ?: return@forEachLine
-                spans += (end - duration) to end
+                all += (end - duration) to end
             }
-            if (spans.isEmpty()) null else spans
         }
-
-        // The directory ACCUMULATES across runs -- Gradle does not clear it, so logs from days ago sit
-        // beside today's. Keep only the most recent run, cutting at the largest gap between consecutive
-        // JVM starts: within a run, JVMs start seconds apart; between runs, minutes at least. Without this
-        // the window spans every run ever recorded and the occupancy reads as ~0.
-        val ordered = perJvm.sortedBy { jvm -> jvm.minOf { it.first } }
-        val cut = (1 until ordered.size).maxByOrNull { i ->
-            ordered[i].minOf { it.first } - ordered[i - 1].minOf { it.first }
-        }
-        val gapBefore = cut?.let { ordered[it].minOf { s -> s.first } - ordered[it - 1].minOf { s -> s.first } } ?: 0
-        // Only treat it as a run boundary if the gap is minutes, not seconds.
-        val recent = if (cut != null && gapBefore > 120_000) ordered.drop(cut) else ordered
-        val skipped = ordered.size - recent.size
-
-        val spans = recent.flatten()
-        if (spans.isEmpty()) {
+        if (all.isEmpty()) {
             logger.lifecycle("")
             logger.lifecycle("Fork occupancy: fork logs present but empty")
             return
         }
+
+        // The directory ACCUMULATES across runs -- Gradle never clears it, so logs from days ago sit beside
+        // today's. Keep the last run only, cutting wherever no class started for five minutes: within a run
+        // the forks are never idle that long, between runs they always are.
+        val starts = all.map { it.first }.sorted()
+        val lastRunStart = starts.foldRight(starts.last()) { t, acc -> if (acc - t > RUN_GAP_MS) acc else t }
+        val spans = all.filter { it.first >= lastRunStart }
+        val ignored = all.size - spans.size
 
         val start = spans.minOf { it.first }
         val finish = spans.maxOf { it.second }
         val window = (finish - start).coerceAtLeast(1)
         val work = spans.sumOf { it.second - it.first }
 
-        val points = listOf(5, 15, 25, 35, 45, 55, 65, 75, 85, 95)
-        val busy = points.map { pct ->
-            val instant = start + window * pct / 100
-            spans.count { it.first <= instant && instant < it.second }
-        }
-        val peak = busy.max()
-
         logger.lifecycle("")
-        logger.lifecycle(
-            "What the run did -- ${spans.size} classes in ${recent.size} JVMs over ${fmt(window)}, " +
-                "${fmt(work)} of work"
-        )
-        if (skipped > 0) {
-            logger.lifecycle("  (ignored $skipped JVM log(s) from earlier runs in the same directory)")
+        logger.lifecycle("Fork occupancy over the test execution -- ${spans.size} classes in ${fmt(window)}")
+        if (ignored > 0) {
+            logger.lifecycle("  ($ignored class record(s) from earlier runs in the same directory ignored)")
         }
         logger.lifecycle("")
-        logger.lifecycle("  % of run   forks busy")
-        points.forEachIndexed { i, pct ->
-            logger.lifecycle(String.format("  %6d%%   %3d  %s", pct, busy[i], "#".repeat(busy[i])))
+        logger.lifecycle("  % of execution   forks busy")
+        for (i in 0 until 10) {
+            val lo = start + window * i / 10
+            val hi = start + window * (i + 1) / 10
+            val occupied = spans.sumOf { (a, b) -> (minOf(b, hi) - maxOf(a, lo)).coerceAtLeast(0) }
+            logger.lifecycle(String.format("  %6d-%3d%%       %.1f", i * 10, (i + 1) * 10, occupied.toDouble() / (hi - lo)))
         }
         logger.lifecycle("")
-        val average = work.toDouble() / window
         logger.lifecycle(
             String.format(
-                "  average concurrency %.1f  (%s of work / %s of wall clock), peak %d",
-                average, fmt(work), fmt(window), peak
+                "  average concurrency %.1f  (%s of work in %s of execution)",
+                work.toDouble() / window, fmt(work), fmt(window)
             )
         )
-        if (peak > 0) {
-            // The honest headline: how much of the fork-time this run had available went unused.
-            logger.lifecycle(
-                String.format("  %.0f%% of the available fork-time went unused", (1.0 - average / peak) * 100)
-            )
-        }
     }
 
     private fun reportSimulation(
@@ -272,6 +255,11 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         logger.lifecycle("  cp ${runTimings.get().asFile} ${committedFile ?: "<committed file>"}")
         logger.lifecycle("then raise a PR -- the diff is a reordered CSV.")
         logger.lifecycle("")
+    }
+
+    private companion object {
+        /** No class starts for this long => a run boundary. Forks are never idle this long mid-run. */
+        const val RUN_GAP_MS = 300_000L
     }
 
     private fun fmt(millis: Long): String {
