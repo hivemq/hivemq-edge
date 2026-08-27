@@ -300,6 +300,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Run the unit tests in parallel JVMs, one per 2 cores, overridable with -PunitTestForks=N.
+    // Same formula as the integration suite, so there is one rule rather than two to keep straight.
+    maxParallelForks = (project.findProperty("unitTestForks") as String?)?.toIntOrNull()
+        ?: (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     minHeapSize = "128m"
     maxHeapSize = "2048m"
     jvmArgs(
