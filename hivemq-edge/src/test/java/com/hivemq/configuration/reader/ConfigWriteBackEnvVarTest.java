@@ -439,4 +439,31 @@ public class ConfigWriteBackEnvVarTest extends AbstractConfigurationTest {
                 .as("the bridge that wrote the value literally must keep it")
                 .contains("<host>testhost</host>");
     }
+
+    /**
+     * EDG-882 review v04, finding 1.4. The survivor sweep used to ask whether the credential was anywhere
+     * in the finished document, so a bridge whose password variable resolved to its own host name could
+     * never be written again -- and the REST call that triggered the write still answered success. The
+     * question is asked of the elements where a credential belongs now, so this configuration writes.
+     */
+    @Test
+    public void whenThePasswordEqualsAnotherElementsValue_thenTheWriteStillHappens() throws IOException {
+        System.setProperty(PASSWORD_VAR, "testhost"); // the <host> of the bridge in this fixture
+        final String loaded = config("${ENV:" + PASSWORD_VAR + "}");
+
+        final String written = loadAndWriteBack(loaded);
+
+        // A refusal leaves the file exactly as it was loaded -- and it is swallowed by writeConfigWithSync,
+        // so the file is the only place the outcome shows. Comparing against the loaded text is what tells
+        // "the marshaller wrote this" from "nothing happened"; the placeholder survives either way.
+        assertThat(written).as("the configuration was not rewritten at all").isNotEqualTo(loaded);
+        assertThat(written).contains("${ENV:" + PASSWORD_VAR + "}");
+        assertThat(written).contains("<host>testhost</host>");
+        assertThat(logCapture.getCapturedLogs().stream()
+                        .filter(event -> event.getLevel() == Level.ERROR)
+                        .map(ILoggingEvent::getFormattedMessage)
+                        .toList())
+                .as("nothing about this configuration should have been refused")
+                .isEmpty();
+    }
 }

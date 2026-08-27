@@ -439,19 +439,64 @@ public class EnvVarUtilTest {
     }
 
     /**
-     * The last word, asked of the finished document rather than of the branch that produced it. Here the
-     * restore succeeds on the {@code <password>} element and the same value is also written literally in a
-     * second one, so the document still carries the credential when the restore believes it is done.
+     * The last word, asked of the finished document rather than of the branch that produced it, and asked
+     * of the spans where a credential belongs. Here the restore succeeds on the {@code <password>} element
+     * and the same string is also the whole value of an element the restore never touched -- which the
+     * restore cannot have put there, because it only ever replaces a span with its own literal. That is the
+     * operator's own text, and refusing over it is what left a bridge whose password equalled its host name
+     * unable to persist anything (EDG-882 review v04, finding 1.4).
      */
     @Test
-    public void restorePlaceholders_whenACredentialSurvivesTheRestore_thenTheWriteIsRefused() {
+    public void restorePlaceholders_whenAnUnrelatedElementHoldsTheSameValue_thenTheWriteProceeds() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><password>" + SECRET + "</password><note>" + SECRET + "</note></x>", List.of(placeholder));
+
+        assertEquals("<x><password>${ENV:PW}</password><note>" + SECRET + "</note></x>", restored);
+    }
+
+    /** The shape Sam's finding named, at unit level: a username that happens to equal the password. */
+    @Test
+    public void restorePlaceholders_whenAUsernameEqualsThePassword_thenTheWriteProceeds() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", "admin", false);
+
+        final String restored = EnvVarUtil.restorePlaceholders(
+                "<x><username>admin</username><password>admin</password></x>", List.of(placeholder));
+
+        assertEquals("<x><username>admin</username><password>${ENV:PW}</password></x>", restored);
+    }
+
+    /**
+     * And the narrowing stops at the credential elements. A second one holding the same value is the case
+     * the sweep is for: either the restore left it there, or the operator wrote the credential in plain
+     * text twice, and neither is a document to write.
+     */
+    @Test
+    public void restorePlaceholders_whenASecondCredentialElementHoldsTheSameValue_thenTheWriteIsRefused() {
         final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
 
         assertThrows(
                 UnrecoverableException.class,
                 () -> EnvVarUtil.restorePlaceholders(
-                        "<x><password>" + SECRET + "</password><note>" + SECRET + "</note></x>", List.of(placeholder)),
-                "a credential still in the document when the restore finishes must refuse the write");
+                        "<x><password>" + SECRET + "</password><private-key-password>" + SECRET
+                                + "</private-key-password></x>",
+                        List.of(placeholder)),
+                "a credential still in a credential element when the restore finishes must refuse the write");
+    }
+
+    /**
+     * The broad question is still asked where it is warranted: when the span itself has gone missing there
+     * is no telling where the marshaller put the value, so any element holding it refuses the write.
+     */
+    @Test
+    public void restorePlaceholders_whenTheSpanIsMissingAndAnyElementHoldsTheValue_thenTheWriteIsRefused() {
+        final var placeholder = new EnvVarUtil.ElementPlaceholder("password", "${ENV:PW}", SECRET, false);
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> EnvVarUtil.restorePlaceholders("<x><note>" + SECRET + "</note></x>", List.of(placeholder)),
+                "a vanished span with its value loose in the document must refuse the write");
     }
 
     // ---------------------------------------------------------------------------------------------

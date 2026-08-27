@@ -376,6 +376,21 @@ public class ConfigFileReaderWriter {
             if (entity.getGatewayConfig().isMutableConfigurationEnabled()) {
                 writeConfigToXML();
             }
+        } catch (final UnrecoverableException refused) {
+            // A deliberate refusal: something on the write path would have had to put a credential on disk,
+            // or replace a good configuration file with one whose protections it could not reproduce, and
+            // stopped instead. The reason is in the error logged immediately above this one by whichever
+            // check made the decision; what is added here is the consequence, because nothing else says it.
+            //
+            // The caller is not told. A REST change that cannot be persisted still answers success, and
+            // this log line is the only place an operator can learn that config.xml no longer matches the
+            // node. Telling the caller instead means deciding what every configuration endpoint should
+            // return when the file cannot be written, which is a larger change than this one (EDG-882
+            // review v04).
+            log.error("The configuration was not written to config.xml -- the reason is the error logged just"
+                    + " above. This node keeps running on the configuration it already holds and is correct,"
+                    + " but config.xml no longer matches it: a restart would come up on the older"
+                    + " configuration, and the change that triggered this write would be lost.");
         } catch (final Exception e) {
             log.error("Configuration file sync failed: ", e);
         } finally {
