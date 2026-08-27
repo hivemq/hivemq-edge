@@ -496,6 +496,7 @@ public class EnvVarUtil {
         }
 
         var result = renderedXml;
+        final ParsedOnce parses = new ParsedOnce();
         for (final List<ElementPlaceholder> group : bySpanAndValue.values()) {
             final ElementPlaceholder first = group.get(0);
             final String literal = first.literal();
@@ -526,7 +527,7 @@ public class EnvVarUtil {
                 // secret is still here" for a password of 'admin' in any file with an <admin-api> element,
                 // and refused every write from then on (EDG-882 review v04). Parsing also settles the
                 // escaping question the previous version handled by searching for two spellings.
-                if (isInTheDocumentAsAValue(result, first.value())) {
+                if (isInTheDocumentAsAValue(parses, result, first.value())) {
                     if (isSecretElement(first.name())) {
                         log.error(
                                 "The '{}' {} holds a credential supplied through '{}', and that value is in the"
@@ -571,7 +572,7 @@ public class EnvVarUtil {
             }
             result = rendered.matcher(result).replaceAll(literalSpan(first));
         }
-        return refuseIfACredentialSurvived(result, placeholders);
+        return refuseIfACredentialSurvived(result, placeholders, parses);
     }
 
     /**
@@ -603,14 +604,46 @@ public class EnvVarUtil {
     }
 
     /**
+     * The parsed form of the document being restored, kept for as long as the document has not changed.
+     * <p>
+     * Two questions on the write path are asked of the document's values rather than its text — whether a
+     * span the restore could not locate is still in it, and the final sweep for a surviving credential —
+     * and each one parsed the whole document again. A configuration whose spans the marshaller normalises
+     * therefore paid one parse per span, on every write (EDG-882 review v04). They are the same document
+     * and the same parse; only the questions differ.
+     * <p>
+     * Invalidated by identity, deliberately. Every rewrite in the loop produces a new {@code String}, so
+     * {@code !=} is exactly "the document has changed"; two equal instances would only cost a parse that
+     * was not needed, never return an answer about a document that no longer exists.
+     * <p>
+     * What it is not is a cheaper test. Deciding from the text — "the value does not appear anywhere, so
+     * skip the parse" — is the shortcut that let a numeric character reference carry a credential past
+     * this check once already, and no amount of it being faster makes it true.
+     */
+    private static final class ParsedOnce {
+
+        private @Nullable String source;
+        private @Nullable Document parsed;
+
+        private @Nullable Document of(final @NotNull String document) {
+            if (source != document) {
+                source = document;
+                parsed = parseOrNull(document);
+            }
+            return parsed;
+        }
+    }
+
+    /**
      * Whether a value is in the document as data rather than as markup — the question both the
      * unlocatable-span branch and {@link #refuseIfACredentialSurvived} ask of a finished document.
      * <p>
      * A document that cannot be parsed answers yes: this cannot see into it, and the caller's safe
      * reading of "cannot tell" is the same as "it is in there".
      */
-    private static boolean isInTheDocumentAsAValue(final @NotNull String document, final @NotNull String value) {
-        final Document parsed = parseOrNull(document);
+    private static boolean isInTheDocumentAsAValue(
+            final @NotNull ParsedOnce parses, final @NotNull String document, final @NotNull String value) {
+        final Document parsed = parses.of(document);
         if (parsed == null) {
             return true;
         }
@@ -688,14 +721,16 @@ public class EnvVarUtil {
      * writing the credential in plain text, and the message names both spans.
      */
     private static @NotNull String refuseIfACredentialSurvived(
-            final @NotNull String document, final @NotNull List<ElementPlaceholder> placeholders) {
+            final @NotNull String document,
+            final @NotNull List<ElementPlaceholder> placeholders,
+            final @NotNull ParsedOnce parses) {
         final List<ElementPlaceholder> secrets = placeholders.stream()
                 .filter(placeholder -> isSecretElement(placeholder.name()))
                 .toList();
         if (secrets.isEmpty()) {
             return document;
         }
-        final Document parsed = parseOrNull(document);
+        final Document parsed = parses.of(document);
         if (parsed == null) {
             // The document about to be written cannot be read back, so this cannot say whether a credential
             // is in it. Refusing keeps the previous config.xml, which parses.
