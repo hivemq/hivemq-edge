@@ -46,7 +46,46 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Util for handling system environment variables
+ * The two directions of {@code ${ENV:...}} in {@code config.xml}: resolving a placeholder when the file is
+ * read, and putting it back when the file is written.
+ * <p>
+ * <b>Why the second direction exists.</b> Rendering happens once, on the whole file, before it is parsed,
+ * so the configuration Edge holds in memory contains the <em>values</em>. Marshalling that back out — which
+ * any REST change to any subsystem does — used to write those values into {@code config.xml}, so a bridge
+ * password supplied through an environment variable ended up on disk in plain text and the indirection the
+ * operator chose was gone for good (EDG-882 QA round 2). Everything below the render exists to prevent
+ * that, and the rest of this note is what a reader needs to trust it.
+ * <p>
+ * <b>Three phases, in this order.</b>
+ * <ol>
+ *   <li><b>Render</b> — {@link #replaceEnvironmentVariablePlaceholders} substitutes each placeholder into
+ *       the file's text before anything parses it. Values go in as raw XML, which is what lets a fragment
+ *       bring in markup and what makes a value containing {@code <} or {@code &} unusable
+ *       ({@link #variablesWhoseValueIsNotText} explains that failure when it happens).</li>
+ *   <li><b>Collect</b> — {@link #collectPlaceholders} parses the file <em>before</em> the render and
+ *       records one span per element text or attribute value that holds a placeholder: the literal the
+ *       operator wrote, and what it resolves to. Parsed rather than pattern-matched, because the restore
+ *       compares against post-marshal output and the parser is what decides what a value <em>is</em>.</li>
+ *   <li><b>Restore</b> — {@link #restorePlaceholders} finds each span in the marshalled document and puts
+ *       the literal back, then checks the finished document for a credential that survived.</li>
+ * </ol>
+ * <p>
+ * <b>What it promises.</b> A credential supplied through a variable does not reach the disk. Where that
+ * cannot be guaranteed, the write is refused and the previous {@code config.xml} — intact, and still the
+ * one the running node matches — stays where it is. Nothing here decides to write a credential out except
+ * {@link #giveUpOn} for an element that holds no credential, which trades a lost indirection for a node
+ * that still starts.
+ * <p>
+ * <b>Where it can be wrong, deliberately.</b> The restore is anchored to an element or attribute name and
+ * count-checked; ambiguity is refused rather than guessed at. Two questions are asked of the parsed
+ * document's values rather than of its text, because markup is not content and a password of {@code admin}
+ * is not "still present" because the file has an {@code <admin-api>} element. A credential still sitting in
+ * a credential-bearing span is a bug in the restore; the same string in {@code <username>} is the
+ * operator's own text and is left alone.
+ * <p>
+ * <b>Reading it.</b> Every method is static and holds no state between calls; the one piece of mutable
+ * state, {@link ParsedOnce}, lives for a single restore. A {@code null} document from
+ * {@link #parseOrNull} means "cannot tell", and every caller of it treats that as the unsafe answer.
  *
  * @author Christoph Schäbel
  */
@@ -55,6 +94,44 @@ public class EnvVarUtil {
     private static final Logger log = LoggerFactory.getLogger(EnvVarUtil.class);
 
     private static final @NotNull String ENV_VAR_PATTERN = "\\$\\{ENV:(.*?)}";
+
+    private static final @NotNull Pattern ENV_PLACEHOLDER = Pattern.compile(ENV_VAR_PATTERN);
+
+    /** The token every placeholder starts with, used for the cheap "is there one in here at all" test. */
+    private static final @NotNull String ENV_TOKEN = "${ENV:";
+
+    /**
+     * What is written in place of a secret whose placeholder could not be restored.
+     * <p>
+     * Not the value, which is the whole point; not an empty element either, because some secret-bearing
+     * elements are {@code nonEmptyString} in the schema and an empty one would make the file unparseable
+     * on the next start — a worse failure than the one being avoided, and one that names the schema
+     * rather than the cause. This is a placeholder for a variable nobody sets, so the next start stops
+     * with {@code Environment Variable EDGE_UNRESTORED_SECRET for HiveMQ config.xml is not set} and the
+     * operator is told exactly where to look, while the node they are running now carries on with the
+     * secret it already holds in memory.
+     */
+    @VisibleForTesting
+    static final @NotNull String UNRESTORED_SECRET = "${ENV:EDGE_UNRESTORED_SECRET}";
+
+    /**
+     * Element names whose text is a credential. Matched as a suffix so that the adapter configurations —
+     * {@code xs:any} in the schema, so their element names are not knowable here — are covered by the
+     * same rule as {@code <password>}, {@code <client-secret>}, {@code <private-key-password>} and
+     * {@code <truststore-password>}.
+     */
+    private static final @NotNull List<String> SECRET_ELEMENT_SUFFIXES =
+            List.of("password", "secret", "passphrase", "token", "credentials");
+
+    /**
+     * Whatever the marshaller may have written between an element's name and the {@code >} that ends its
+     * start tag: nothing, or attributes.
+     * <p>
+     * Quoted values are stepped over rather than excluded, so an attribute holding a {@code >} does not
+     * end the tag early. Everything outside the quotes must be free of angle brackets, which is what keeps
+     * the pattern inside one start tag.
+     */
+    private static final @NotNull String START_TAG_REST = "(\\s(?:[^<>\"]|\"[^\"]*\")*)?";
 
     /**
      * Get a Java system property or system environment variable with the specified name.
@@ -83,17 +160,9 @@ public class EnvVarUtil {
     public static @NotNull String replaceEnvironmentVariablePlaceholders(final @NotNull String text) {
         final var resultString = new StringBuilder();
 
-        final var matcher = Pattern.compile(ENV_VAR_PATTERN).matcher(text);
+        final var matcher = ENV_PLACEHOLDER.matcher(text);
 
         while (matcher.find()) {
-
-            if (matcher.groupCount() < 1) {
-                // this should never happen as we declared 1 groups in the ENV_VAR_PATTERN
-                log.warn("Found unexpected environment variable placeholder in config.xml");
-                matcher.appendReplacement(resultString, "");
-                continue;
-            }
-
             final var varName = matcher.group(1);
 
             final var replacement = getValue(varName);
@@ -143,11 +212,6 @@ public class EnvVarUtil {
             this(name, literal, value, false);
         }
     }
-
-    private static final @NotNull Pattern ENV_PLACEHOLDER = Pattern.compile(ENV_VAR_PATTERN);
-
-    /** The token every placeholder starts with, used for the cheap "is there one in here at all" test. */
-    private static final @NotNull String ENV_TOKEN = "${ENV:";
 
     /**
      * What {@link #collectPlaceholders(String)} found: the spans that can be restored, and whether it was
@@ -306,9 +370,8 @@ public class EnvVarUtil {
      * Visits every element text and attribute value of a parsed document.
      * <p>
      * Values, never markup. Both readers of a configuration document want the same thing — what the
-     * unmarshaller would see — and neither wants element names, which is the whole of
-     * {@link #refuseIfACredentialSurvived}'s defect: a document containing {@code <admin-api>} read as a
-     * document containing the password {@code admin} (EDG-882 review v04).
+     * unmarshaller would see — and neither wants element names; {@link #refuseIfACredentialSurvived} is
+     * where that distinction is paid for.
      * <p>
      * {@code seenInComments} counts the placeholder tokens held in comments and processing instructions,
      * for the collector, which needs {@code unaccountedTokens} to mean "somewhere this walk cannot reach"
@@ -378,9 +441,9 @@ public class EnvVarUtil {
                             + " configuration write will leave that {} empty and the variable reference will be"
                             + " lost. Set the variable to a value if the reference is meant to survive.",
                     name,
-                    attribute ? "attribute" : "element",
+                    describe(attribute),
                     literal,
-                    attribute ? "attribute" : "element");
+                    describe(attribute));
             return;
         }
         // Accounted for either way: they were found, they are simply not restorable, which is not the same
@@ -535,7 +598,7 @@ public class EnvVarUtil {
                                         + " placeholder cannot be put back. The write has been refused: config.xml is"
                                         + " unchanged, and this node keeps running on the value it already holds.",
                                 first.name(),
-                                first.attribute() ? "attribute" : "element",
+                                describe(first.attribute()),
                                 literal);
                         throw new UnrecoverableException(false);
                     }
@@ -544,7 +607,7 @@ public class EnvVarUtil {
                                     + " locate, so its value is written out and the variable reference is lost; put it"
                                     + " back by hand.",
                             first.name(),
-                            first.attribute() ? "attribute" : "element",
+                            describe(first.attribute()),
                             literal);
                     continue;
                 }
@@ -557,7 +620,7 @@ public class EnvVarUtil {
                                 + " cannot be restored. If it was not removed, check the file for a value that should"
                                 + " have stayed a variable reference.",
                         first.name(),
-                        first.attribute() ? "attribute" : "element",
+                        describe(first.attribute()),
                         literal);
                 continue;
             }
@@ -648,7 +711,11 @@ public class EnvVarUtil {
             return true;
         }
         final boolean[] found = {false};
-        visitValues(parsed, (name, spanValue, attribute) -> found[0] |= holdsValue(name, spanValue, value), null);
+        // No early exit from the walk itself; the flag is what stops it doing any more work than reading.
+        visitValues(
+                parsed,
+                (name, spanValue, attribute) -> found[0] = found[0] || holdsValue(name, spanValue, value),
+                null);
         return found[0];
     }
 
@@ -656,11 +723,9 @@ public class EnvVarUtil {
      * Whether one element text or attribute value of the finished document carries {@code value} — the
      * broad question, asked when the span the restore was anchored to has gone missing.
      * <p>
-     * Equal, or inside a credential-bearing span. A value that <em>is</em> the secret is the secret
-     * written out wherever it sits, and when the anchor has vanished there is no telling where the
-     * marshaller put it; a value that merely contains it is a disclosure only where the credential
-     * belongs, because anywhere else it is the operator's own text with the secret inside it, and
-     * refusing on that is how {@code <port>1883</port>} came to reject a password of {@code 1}.
+     * Equal, or inside a credential-bearing span. When the anchor has vanished there is no telling where
+     * the marshaller put the value, so a value that <em>is</em> the secret counts wherever it sits. Mere
+     * containment counts only where a credential belongs — see {@link #isInACredentialSpan}.
      */
     private static boolean holdsValue(
             final @NotNull String spanName, final @NotNull String spanValue, final @NotNull String value) {
@@ -671,16 +736,11 @@ public class EnvVarUtil {
      * Whether a credential-bearing span is still holding a credential — the narrow question, and the only
      * shape a restore that believes it succeeded can actually have left behind.
      * <p>
-     * The restore replaces a span with its own literal; it cannot move a value into a span it never
-     * touched. So a credential appearing in some other element of the finished document is the operator's
-     * own text — a username that happens to equal the password, a host name a credential variable resolves
-     * to — and refusing the write over it means that configuration can never be persisted again while the
-     * coincidence lasts (EDG-882 review v04). What is left is the span where the credential belongs, still
-     * holding the value instead of the placeholder, whole or concatenated.
-     * <p>
-     * The residual is an operator who writes the same credential literally in a second credential element.
-     * That one is refused, the message names both spans, and the remedy — stop writing the credential in
-     * plain text — is the one worth having.
+     * The load-bearing argument: the restore replaces a span with its own literal and cannot move a value
+     * into a span it never touched. A credential appearing anywhere else in the finished document is
+     * therefore the operator's own text, and what is left to look for is the span where the credential
+     * belongs, still holding the value instead of the placeholder, whole or concatenated
+     * ({@link #refuseIfACredentialSurvived} has the reasoning and the residual case).
      */
     private static boolean isInACredentialSpan(
             final @NotNull String spanName, final @NotNull String spanValue, final @NotNull String value) {
@@ -752,10 +812,10 @@ public class EnvVarUtil {
                                             + " running on the value it already holds. If that value is also written"
                                             + " literally somewhere else in the file, remove it there.",
                                     secret.name(),
-                                    secret.attribute() ? "attribute" : "element",
+                                    describe(secret.attribute()),
                                     secret.literal(),
                                     name,
-                                    attribute ? "attribute" : "element");
+                                    describe(attribute));
                             throw new UnrecoverableException(false);
                         }
                     }
@@ -763,29 +823,6 @@ public class EnvVarUtil {
                 null);
         return document;
     }
-
-    /**
-     * What is written in place of a secret whose placeholder could not be restored.
-     * <p>
-     * Not the value, which is the whole point; not an empty element either, because some secret-bearing
-     * elements are {@code nonEmptyString} in the schema and an empty one would make the file unparseable
-     * on the next start — a worse failure than the one being avoided, and one that names the schema
-     * rather than the cause. This is a placeholder for a variable nobody sets, so the next start stops
-     * with {@code Environment Variable EDGE_UNRESTORED_SECRET for HiveMQ config.xml is not set} and the
-     * operator is told exactly where to look, while the node they are running now carries on with the
-     * secret it already holds in memory.
-     */
-    @VisibleForTesting
-    static final @NotNull String UNRESTORED_SECRET = "${ENV:EDGE_UNRESTORED_SECRET}";
-
-    /**
-     * Element names whose text is a credential. Matched as a suffix so that the adapter configurations —
-     * {@code xs:any} in the schema, so their element names are not knowable here — are covered by the
-     * same rule as {@code <password>}, {@code <client-secret>}, {@code <private-key-password>} and
-     * {@code <truststore-password>}.
-     */
-    private static final @NotNull List<String> SECRET_ELEMENT_SUFFIXES =
-            List.of("password", "secret", "passphrase", "token", "credentials");
 
     private static boolean isSecretElement(final @NotNull String element) {
         final String name = element.toLowerCase(Locale.ROOT);
@@ -833,16 +870,6 @@ public class EnvVarUtil {
                 UNRESTORED_SECRET);
         return rendered.matcher(document).replaceAll(poisonedSpan(placeholder));
     }
-
-    /**
-     * Whatever the marshaller may have written between an element's name and the {@code >} that ends its
-     * start tag: nothing, or attributes.
-     * <p>
-     * Quoted values are stepped over rather than excluded, so an attribute holding a {@code >} does not
-     * end the tag early. Everything outside the quotes must be free of angle brackets, which is what keeps
-     * the pattern inside one start tag.
-     */
-    private static final @NotNull String START_TAG_REST = "(\\s(?:[^<>\"]|\"[^\"]*\")*)?";
 
     /**
      * The span as the marshaller will have written it: what the restore searches the document for.
@@ -910,6 +937,11 @@ public class EnvVarUtil {
      * The characters a marshaller escapes inside an attribute value. Differs from element text by the
      * quote, which would otherwise close the attribute.
      */
+    /** What a span is called in a message: the two kinds this works on, spelled once. */
+    private static @NotNull String describe(final boolean attribute) {
+        return attribute ? "attribute" : "element";
+    }
+
     private static @NotNull String escapeXmlAttribute(final @NotNull String text) {
         return text.replace("&", "&amp;").replace("<", "&lt;").replace("\"", "&quot;");
     }
