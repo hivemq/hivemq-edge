@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.hivemq.exceptions.UnrecoverableException;
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -28,7 +30,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import util.LogbackCapturingAppender;
 
 public class EnvVarUtilTest {
 
@@ -497,6 +502,125 @@ public class EnvVarUtilTest {
                 UnrecoverableException.class,
                 () -> EnvVarUtil.restorePlaceholders("<x><note>" + SECRET + "</note></x>", List.of(placeholder)),
                 "a vanished span with its value loose in the document must refuse the write");
+    }
+
+    @AfterEach
+    public void releaseAnyLogCapture() {
+        LogbackCapturingAppender.Factory.cleanUp();
+    }
+
+    private static @NotNull List<String> warningsWhileCollecting(final @NotNull String xml) {
+        final var capture = LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(EnvVarUtil.class));
+        EnvVarUtil.collectPlaceholders(xml);
+        return capture.getCapturedLogs().stream()
+                .filter(event -> event.getLevel() == Level.WARN)
+                .map(ILoggingEvent::getFormattedMessage)
+                .toList();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v04, finding 1.6. A variable set to the empty string leaves nothing in the written
+    // document for the placeholder to be put back into, so the operator's reference is dropped the next
+    // time the configuration is written. Every other way of losing one is reported; this one was silent.
+    // ---------------------------------------------------------------------------------------------
+
+    /** The span is not restorable, and now says so before the write that will drop it. */
+    @Test
+    public void collectPlaceholders_whenAVariableResolvesToNothing_thenItIsReported() {
+        System.setProperty(PW, "");
+        try {
+            final List<String> warnings =
+                    warningsWhileCollecting("<x><description>${ENV:" + PW + "}</description></x>");
+
+            assertEquals(1, warnings.size(), warnings.toString());
+            assertTrue(warnings.get(0).contains("description"), warnings.get(0));
+            assertTrue(warnings.get(0).contains("${ENV:" + PW + "}"), warnings.get(0));
+        } finally {
+            System.clearProperty(PW);
+        }
+    }
+
+    /** It is still accounted for: not restorable is not the same as not seen. */
+    @Test
+    public void collectPlaceholders_whenAVariableResolvesToNothing_thenTheTokenIsStillAccountedFor() {
+        System.setProperty(PW, "");
+        try {
+            final var collected = EnvVarUtil.collectPlaceholders("<x><description>${ENV:" + PW + "}</description></x>");
+
+            assertEquals(0, collected.placeholders().size(), "an empty span gives the restore nothing to find");
+            assertEquals(0, collected.unaccountedTokens(), "and it must not read as a placeholder that was missed");
+        } finally {
+            System.clearProperty(PW);
+        }
+    }
+
+    /** An unset variable is not reported here: the whole-file render throws on it with a better message. */
+    @Test
+    public void collectPlaceholders_whenAVariableIsUnset_thenNothingIsReportedHere() {
+        assertEquals(
+                List.of(),
+                warningsWhileCollecting("<x><description>${ENV:EDG882_UNIT_NOT_SET}</description></x>"),
+                "the render's own error is the one the operator needs, and it comes moments later");
+    }
+
+    /** An ordinary placeholder says nothing at all. */
+    @Test
+    public void collectPlaceholders_whenAVariableResolvesToAValue_thenNothingIsReported() {
+        System.setProperty(PW, SECRET);
+        try {
+            assertEquals(List.of(), warningsWhileCollecting("<x><password>${ENV:" + PW + "}</password></x>"));
+        } finally {
+            System.clearProperty(PW);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // EDG-882 review v04, finding 1.7. A value is spliced into the file as raw text before it is parsed,
+    // so one containing '<' or '&' makes the document malformed and the node stops at a parser error
+    // about a line the operator never wrote. The splice is what lets a fragment bring in markup, so it
+    // stays; what is named here is which variable to look at.
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    public void variablesWhoseValueIsNotText_namesTheOnesThatCannotBeSpliced() {
+        System.setProperty(PW, "p@ss&word");
+        System.setProperty(OTHER, "ordinary");
+        try {
+            final List<String> named = EnvVarUtil.variablesWhoseValueIsNotText(
+                    "<x><password>${ENV:" + PW + "}</password><host>${ENV:" + OTHER + "}</host></x>");
+
+            assertEquals(List.of(PW), named);
+        } finally {
+            System.clearProperty(PW);
+            System.clearProperty(OTHER);
+        }
+    }
+
+    /** A value carrying a left angle bracket is the same problem, and an unset variable is not this one. */
+    @Test
+    public void variablesWhoseValueIsNotText_coversAngleBracketsAndIgnoresUnsetVariables() {
+        System.setProperty(PW, "<not-text/>");
+        try {
+            assertEquals(
+                    List.of(PW),
+                    EnvVarUtil.variablesWhoseValueIsNotText(
+                            "<x><a>${ENV:" + PW + "}</a><b>${ENV:EDG882_NONE}</b></x>"));
+        } finally {
+            System.clearProperty(PW);
+        }
+    }
+
+    /** Named once, however often it is used. */
+    @Test
+    public void variablesWhoseValueIsNotText_namesEachVariableOnce() {
+        System.setProperty(PW, "a&b");
+        try {
+            assertEquals(
+                    List.of(PW),
+                    EnvVarUtil.variablesWhoseValueIsNotText("<x><a>${ENV:" + PW + "}</a><b>${ENV:" + PW + "}</b></x>"));
+        } finally {
+            System.clearProperty(PW);
+        }
     }
 
     // ---------------------------------------------------------------------------------------------

@@ -361,13 +361,56 @@ public class EnvVarUtil {
         }
         tokens.forEach((variable, count) -> seen.merge(variable, count, Integer::sum));
         final String value = renderOrNull(literal);
-        // An empty rendered span gives the restore nothing to search for, and a span with an unset
-        // variable never reaches the marshalled document at all -- the render of the whole file
-        // throws first, which is the behaviour this must not change. Both are still accounted for
-        // above: they were found, they are simply not restorable, which is not the same as unseen.
-        if (value != null && !value.isEmpty()) {
-            placeholders.add(new ElementPlaceholder(name, literal, value, attribute));
+        if (value == null) {
+            // A span with an unset variable never reaches the marshalled document at all: the render of
+            // the whole file throws on the same variable moments from now, with the message the operator
+            // needs. Saying anything here would only precede it and describe it worse.
+            return;
         }
+        if (value.isEmpty()) {
+            // An empty rendered span gives the restore nothing to search for, so the placeholder is lost
+            // the next time the configuration is written -- silently, until now. Every other way of losing
+            // one is reported; this one was the exception, and it is the only one the operator can still
+            // do something about before it happens (EDG-882 review v04).
+            log.warn(
+                    "The '{}' {} is filled by '{}', which resolves to an empty value. There is nothing in the"
+                            + " written configuration for the placeholder to be put back into, so the next"
+                            + " configuration write will leave that {} empty and the variable reference will be"
+                            + " lost. Set the variable to a value if the reference is meant to survive.",
+                    name,
+                    attribute ? "attribute" : "element",
+                    literal,
+                    attribute ? "attribute" : "element");
+            return;
+        }
+        // Accounted for either way: they were found, they are simply not restorable, which is not the same
+        // as unseen.
+        placeholders.add(new ElementPlaceholder(name, literal, value, attribute));
+    }
+
+    /**
+     * The variables in the given configuration text whose value cannot be put into it as text.
+     * <p>
+     * {@link #replaceEnvironmentVariablePlaceholders} splices a value into the file before anything parses
+     * it, escaping only what the regular expression needs, so a value carrying {@code <} or {@code &}
+     * produces a document that is not well formed and the node stops at a parser error about a line the
+     * operator did not write -- a password of {@code p@ss&word} cannot be supplied this way at all, and
+     * nothing said so. Splicing is also what makes a fragment able to bring in whole elements, so the
+     * behaviour is not changed here; the failure is explained instead, on the path where it happens.
+     * <p>
+     * Names only. The values are the reason this exists and never go anywhere near a log.
+     */
+    public static @NotNull List<String> variablesWhoseValueIsNotText(final @NotNull String text) {
+        final List<String> names = new ArrayList<>();
+        final var matcher = ENV_PLACEHOLDER.matcher(text);
+        while (matcher.find()) {
+            final String name = matcher.group(1);
+            final String value = getValue(name);
+            if (value != null && (value.contains("<") || value.contains("&")) && !names.contains(name)) {
+                names.add(name);
+            }
+        }
+        return names;
     }
 
     /**
