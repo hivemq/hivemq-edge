@@ -278,6 +278,42 @@ public class ConfigWriteAclPermissionsTest {
         assertTrue(refused.getMessage().contains("access-control list"), refused.getMessage());
     }
 
+    /**
+     * EDG-882 review v04, finding 2.1. A replacement that grants <em>less</em> than the file it replaces is
+     * not the disclosure this check exists for, so it is reported rather than refused — demanding an
+     * identical list is what would have refused every write on a store that hands back an equivalent one.
+     */
+    @Test
+    public void verifyPreservedAttributes_whenTheReplacementIsNarrowerThanTheTarget_thenTheWriteGoesOn()
+            throws IOException {
+        Files.createFile(partial);
+        aclViewOf(partial).setAcl(List.of());
+
+        ConfigFileReaderWriter.verifyPreservedAttributes(
+                partial, new PreservedAttributes(null, null, null, readWriteFor(bob)));
+    }
+
+    /** And a list that merely says the same thing differently is not a failure either. */
+    @Test
+    public void verifyPreservedAttributes_whenTheStoreSplitTheEntries_thenTheWriteGoesOn() throws IOException {
+        Files.createFile(partial);
+        aclViewOf(partial)
+                .setAcl(List.of(
+                        AclEntry.newBuilder()
+                                .setType(AclEntryType.ALLOW)
+                                .setPrincipal(bob)
+                                .setPermissions(EnumSet.of(AclEntryPermission.READ_DATA))
+                                .build(),
+                        AclEntry.newBuilder()
+                                .setType(AclEntryType.ALLOW)
+                                .setPrincipal(bob)
+                                .setPermissions(EnumSet.of(AclEntryPermission.WRITE_DATA))
+                                .build()));
+
+        ConfigFileReaderWriter.verifyPreservedAttributes(
+                partial, new PreservedAttributes(null, null, null, readWriteFor(bob)));
+    }
+
     /** And it passes what it is meant to pass: the list the replacement actually carries. */
     @Test
     public void verifyPreservedAttributes_whenTheAclOnTheReplacementIsTheTargetsThenTheWriteGoesOn()
