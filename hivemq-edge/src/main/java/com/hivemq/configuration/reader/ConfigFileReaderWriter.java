@@ -922,6 +922,9 @@ public class ConfigFileReaderWriter {
         final List<ValidationEvent> validationErrors = Collections.synchronizedList(new ArrayList<>());
 
         lock.lock();
+        // Kept for the diagnostic in the catch below, which needs the placeholders as the operator wrote
+        // them rather than what they resolved to.
+        String beforeRendering = null;
         try {
 
             // replace environment variable placeholders
@@ -936,6 +939,7 @@ public class ConfigFileReaderWriter {
             // configuration still running, or the next write would marshal that older configuration --
             // with its resolved secrets -- against a map that no longer describes it.
             final EnvVarUtil.CollectedPlaceholders placeholders = EnvVarUtil.collectPlaceholders(content);
+            beforeRendering = content;
             content = EnvVarUtil.replaceEnvironmentVariablePlaceholders(content);
 
             fragmentToModificationTime.putAll(fragment.getFragmentToModificationTime());
@@ -974,6 +978,7 @@ public class ConfigFileReaderWriter {
                 }
             }
             log.error("Not able to parse configuration file because {}", sb);
+            reportValuesThatAreNotText(beforeRendering);
             throw new UnrecoverableException(false);
         } catch (final Exception e) {
             if (e.getCause() instanceof UnrecoverableException unrecoverableException) {
@@ -991,6 +996,34 @@ public class ConfigFileReaderWriter {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * Names the environment variables that made the configuration unparseable, when that is what happened.
+     * <p>
+     * A value is put into the file as raw text before it is parsed, so one containing {@code <} or
+     * {@code &} makes the document malformed -- and the parser then reports a line the operator never
+     * wrote, about content they cannot see, with no hint that a variable is responsible. A credential
+     * containing an ampersand is the ordinary way to arrive here (EDG-882 review v04).
+     * <p>
+     * Only when the parse actually failed, and only the variable names: a configuration that deliberately
+     * brings in markup through a variable keeps working and says nothing, and no value reaches the log.
+     */
+    private static void reportValuesThatAreNotText(final @Nullable String beforeRendering) {
+        if (beforeRendering == null) {
+            return;
+        }
+        final List<String> names = EnvVarUtil.variablesWhoseValueIsNotText(beforeRendering);
+        if (names.isEmpty()) {
+            return;
+        }
+        log.error(
+                "These environment variables resolve to a value containing '<' or '&': {}. Their values are put"
+                        + " into the configuration as raw XML before it is parsed, so a value containing either"
+                        + " only works when the value itself is well-formed XML -- a credential containing an"
+                        + " ampersand cannot be supplied this way. That is the likely cause of the parse error"
+                        + " above.",
+                names);
     }
 
     @VisibleForTesting

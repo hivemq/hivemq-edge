@@ -466,4 +466,49 @@ public class ConfigWriteBackEnvVarTest extends AbstractConfigurationTest {
                 .as("nothing about this configuration should have been refused")
                 .isEmpty();
     }
+
+    /**
+     * EDG-882 review v04, finding 1.7. A credential containing an ampersand cannot be supplied through an
+     * environment variable at all: the value is spliced into the file as raw text before it is parsed, so
+     * the document is malformed and the node stops. That is not changed here -- the same splice is what
+     * lets a fragment bring in whole elements -- but the parser's complaint about a line the operator never
+     * wrote is now followed by the name of the variable responsible.
+     */
+    @Test
+    public void whenAPasswordContainsAnAmpersand_thenTheParseFailureNamesTheVariable() throws IOException {
+        final var readerLog =
+                LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(ConfigFileReaderWriter.class));
+        System.setProperty(PASSWORD_VAR, "p@ss&word");
+        Files.write(config("${ENV:" + PASSWORD_VAR + "}").getBytes(UTF_8), xmlFile);
+
+        assertThatThrownBy(() -> reader.applyConfig()).isInstanceOf(UnrecoverableException.class);
+
+        final List<String> errors = readerLog.getCapturedLogs().stream()
+                .filter(event -> event.getLevel() == Level.ERROR)
+                .map(ILoggingEvent::getFormattedMessage)
+                .toList();
+        assertThat(errors)
+                .as("the parse error alone points at content the operator cannot see")
+                .anySatisfy(
+                        message -> assertThat(message).contains(PASSWORD_VAR).contains("raw XML"));
+        assertThat(errors).as("the value itself must never be logged").noneSatisfy(message -> assertThat(message)
+                .contains("p@ss&word"));
+    }
+
+    /** A configuration that parses says nothing of the sort, whatever its values contain. */
+    @Test
+    public void whenTheConfigurationParses_thenNoSuchDiagnosticIsLogged() throws IOException {
+        final var readerLog =
+                LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(ConfigFileReaderWriter.class));
+        System.setProperty(PASSWORD_VAR, SECRET);
+        Files.write(config("${ENV:" + PASSWORD_VAR + "}").getBytes(UTF_8), xmlFile);
+
+        reader.applyConfig();
+
+        assertThat(readerLog.getCapturedLogs().stream()
+                        .filter(event -> event.getLevel() == Level.ERROR)
+                        .map(ILoggingEvent::getFormattedMessage)
+                        .toList())
+                .isEmpty();
+    }
 }
