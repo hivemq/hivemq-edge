@@ -577,20 +577,38 @@ public class EnvVarUtil {
     }
 
     /**
-     * Whether one element text or attribute value of the finished document carries {@code value}.
+     * Whether one element text or attribute value of the finished document carries {@code value} — the
+     * broad question, asked when the span the restore was anchored to has gone missing.
      * <p>
-     * Equal, or containing it where the span is a credential-bearing one. A value that <em>is</em> the
-     * secret is the secret written out wherever it sits; a value that merely contains it is a disclosure
-     * only where the credential belongs — {@code <password>prefix-s3cr3t</password>}, the concatenation
-     * case — because anywhere else it is the operator's own text with the secret inside it, and refusing
-     * on that is how {@code <port>1883</port>} came to reject a password of {@code 1}.
+     * Equal, or inside a credential-bearing span. A value that <em>is</em> the secret is the secret
+     * written out wherever it sits, and when the anchor has vanished there is no telling where the
+     * marshaller put it; a value that merely contains it is a disclosure only where the credential
+     * belongs, because anywhere else it is the operator's own text with the secret inside it, and
+     * refusing on that is how {@code <port>1883</port>} came to reject a password of {@code 1}.
      */
     private static boolean holdsValue(
             final @NotNull String spanName, final @NotNull String spanValue, final @NotNull String value) {
-        if (spanValue.isEmpty()) {
-            return false;
-        }
-        return spanValue.equals(value) || (isSecretElement(spanName) && spanValue.contains(value));
+        return !spanValue.isEmpty() && (spanValue.equals(value) || isInACredentialSpan(spanName, spanValue, value));
+    }
+
+    /**
+     * Whether a credential-bearing span is still holding a credential — the narrow question, and the only
+     * shape a restore that believes it succeeded can actually have left behind.
+     * <p>
+     * The restore replaces a span with its own literal; it cannot move a value into a span it never
+     * touched. So a credential appearing in some other element of the finished document is the operator's
+     * own text — a username that happens to equal the password, a host name a credential variable resolves
+     * to — and refusing the write over it means that configuration can never be persisted again while the
+     * coincidence lasts (EDG-882 review v04). What is left is the span where the credential belongs, still
+     * holding the value instead of the placeholder, whole or concatenated.
+     * <p>
+     * The residual is an operator who writes the same credential literally in a second credential element.
+     * That one is refused, the message names both spans, and the remedy — stop writing the credential in
+     * plain text — is the one worth having.
+     */
+    private static boolean isInACredentialSpan(
+            final @NotNull String spanName, final @NotNull String spanValue, final @NotNull String value) {
+        return !spanValue.isEmpty() && isSecretElement(spanName) && spanValue.contains(value);
     }
 
     /**
@@ -612,16 +630,19 @@ public class EnvVarUtil {
      * parsed and only element text and attribute values are examined, which is where a credential would
      * have to be to be disclosed (EDG-882 review v04).
      * <p>
-     * <b>Whole values, except inside a credential-bearing span.</b> A value that <em>is</em> the secret is
-     * the secret written out, wherever it sits. A value that merely contains it is only a disclosure where
-     * the credential belongs — {@code <password>prefix-s3cr3t</password>}, the concatenation case — because
-     * anywhere else it is the operator's own text that happens to have the secret inside it, and refusing
-     * on that is how {@code <port>1883</port>} came to reject a password of {@code 1}.
+     * <b>Of the spans where a credential belongs, not of every value in the file.</b> The restore replaces
+     * a span with its own literal and cannot move a value into a span it never touched, so a credential
+     * still sitting in {@code <password>} is a bug in the restore and the same string sitting in
+     * {@code <username>} or {@code <host>} is the operator's own text. Asking the broad question refused
+     * every write for a bridge whose password happened to equal its own host name, which is an ordinary
+     * enough coincidence and left that node unable to persist a configuration change ever again (EDG-882
+     * review v04). Inside a credential-bearing span the question stays broad — containment, not equality —
+     * because {@code <password>prefix-s3cr3t</password>} is the concatenation case and is exactly what a
+     * half-done restore looks like.
      * <p>
-     * The false positive it can still have is an operator who wrote the same string that a credential
-     * variable resolves to as the whole value of another element. Refusing that write is the right side of
-     * the trade: the remedy is to stop writing the credential in plain text, and the message names the
-     * element.
+     * The false positive it can still have is an operator who writes the same credential literally in a
+     * second credential element. Refusing that write is the right side of the trade: the remedy is to stop
+     * writing the credential in plain text, and the message names both spans.
      */
     private static @NotNull String refuseIfACredentialSurvived(
             final @NotNull String document, final @NotNull List<ElementPlaceholder> placeholders) {
@@ -644,7 +665,7 @@ public class EnvVarUtil {
                 parsed,
                 (name, value, attribute) -> {
                     for (final ElementPlaceholder secret : secrets) {
-                        if (holdsValue(name, value, secret.value())) {
+                        if (isInACredentialSpan(name, value, secret.value())) {
                             log.error(
                                     "The value supplied to the '{}' {} through '{}' is still present in the"
                                             + " configuration being written, in the '{}' {}, after its placeholder"
