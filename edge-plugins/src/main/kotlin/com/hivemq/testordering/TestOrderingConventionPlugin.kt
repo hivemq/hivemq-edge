@@ -38,7 +38,9 @@ import org.gradle.kotlin.dsl.withType
 class TestOrderingConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val committed = project.layout.projectDirectory.file("gradle/test-class-timings.csv")
-        val generated = project.layout.buildDirectory.file("test-class-timings-run.csv")
+        // Same name as the committed file: the directory says which is which, and adopting an ordering is
+        // then a cp between two paths that differ only in their directory.
+        val generated = project.layout.buildDirectory.file("test-class-timings.csv")
 
         project.tasks.withType<Test>().configureEach {
             doFirst {
@@ -46,8 +48,9 @@ class TestOrderingConventionPlugin : Plugin<Project> {
             }
         }
 
-        project.tasks.register<SimulateTestOrderingTask>("simulateTestOrdering") {
+        project.tasks.register<ReportTestConcurrencyTask>("reportTestConcurrency") {
             resultsDir.set(project.layout.buildDirectory.dir("test-results/test"))
+            forkLogsDir.set(project.layout.buildDirectory.dir("fork-logs"))
             if (committed.asFile.isFile) {
                 committedTimings.set(committed)
             }
