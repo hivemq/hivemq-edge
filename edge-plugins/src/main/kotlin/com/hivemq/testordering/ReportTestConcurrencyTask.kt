@@ -183,12 +183,22 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         }
 
         // (start, end) in epoch millis for every class in every log file.
+        //
+        // NESTED CLASSES ARE SKIPPED, and they must be. A class with @Nested inner classes writes a
+        // line per nested class AND a line for the enclosing class whose duration already SPANS all
+        // of them, so counting every line charges that work twice: it inflated one real run's class
+        // time from 64m38s to 66m29s and the concurrency it implies from 4.8x to 5.0x. A nested
+        // class is also never dispatched on its own -- Gradle hands out the enclosing class and
+        // JUnit runs the nested ones inside it -- so the outer class is the only unit that
+        // corresponds to a fork being occupied. See ForkAttributionListener, which documents the
+        // same trap at the point the lines are written.
         val all = mutableListOf<Pair<Long, Long>>()
         files.forEach { file ->
             file.forEachLine { line ->
                 if (line.startsWith("#")) return@forEachLine
                 val f = line.split(' ')
                 if (f.size < 5) return@forEachLine
+                if (f[4].contains('$')) return@forEachLine
                 val end = f[0].toLongOrNull() ?: return@forEachLine
                 val duration = f[2].toLongOrNull() ?: return@forEachLine
                 all += (end - duration) to end
@@ -226,7 +236,14 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             busyUntil = maxOf(busyUntil, span.second)
         }
 
-        val spans = runs.last()
+        // THE LARGEST RUN, NOT THE LAST ONE. `runs.last()` looks right -- the newest burst of
+        // activity is presumably the run just finished -- but it is wrong whenever anything ran
+        // after the suite: re-running one failing class, or an IDE running a single test, appends a
+        // later and much smaller segment. Observed printing "8s of class time in 8s of wall clock =
+        // 1.0 effective average concurrency" for a run of 336 classes and over an hour of work,
+        // because a stray 9-second single-class invocation followed it. The suite outweighs such
+        // strays by two orders of magnitude, so size is the reliable signal.
+        val spans = runs.maxBy { it.size }
         val ignored = all.size - spans.size
         val otherRuns = runs.size - 1
 
