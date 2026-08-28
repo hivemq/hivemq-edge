@@ -25,30 +25,40 @@ import java.net.ServerSocket;
  * <h2>Before you blame this class</h2>
  * <b>This does not cause port collisions, and a test that fails to bind is almost never this class's
  * fault.</b> That claim has been made many times over the years and was false every time but one -- and that
- * one exception is fixed, below. Read the following before repeating it.
+ * one exception is fixed, below.
  * <p>
- * The usual accusation is the window between proving a port free and the caller actually binding it: the
- * socket is closed and the number returned, so in principle someone else could take it in between. In
- * principle. For that to actually happen, <b>two</b> independent things must go wrong:
+ * The accusation is always the same: the window between proving a port free and the caller actually binding
+ * it. The socket is closed and the number returned, so in principle someone else could take it in between.
+ * In principle. For that to actually happen, <b>two</b> independent things must go wrong:
  * <ol>
- *   <li>another acquisition must fall inside that window, <b>and</b>
- *   <li>it must draw the same number out of {@value #RANGE} candidates.
+ *   <li>another acquisition must fall inside that window -- microseconds to a few tens of milliseconds,
+ *       against a suite that runs for minutes, <b>and</b>
+ *   <li>out of {@value #RANGE} candidates it must draw <i>exactly</i> the number we are holding.
  * </ol>
- * Both are needed, and both are unlikely, which is why ~150 call sites coexist without trouble. The range also
- * stays clear of the ports the operating system hands out on its own (see {@link #LOWEST} / {@link #HIGHEST}),
- * so the most plausible outside source is excluded by construction.
+ * Neither is likely on its own and they are independent, so the product is remote. The range is also kept
+ * clear of the ports the kernel hands out for itself (see {@link #LOWEST} / {@link #HIGHEST}), which excludes
+ * the most plausible outside source by construction. That is why ~150 call sites coexist without trouble.
  * <p>
- * <b>So before claiming this class caused a failure, have real evidence: the port number in the log, and what
- * else held it.</b> If you have that, the two-protection argument above is how to make the case -- name which
- * protection failed and why. "There is a window, so this could happen" is not evidence; it is the shape of an
- * explanation, and it has been wrong nearly every time.
+ * <b>So a failure here is only this class's doing if the particular case escapes that argument, and saying
+ * how it escapes is the burden.</b> Which of the two conditions stopped being unlikely, and why? The one real
+ * instance below is the model: a caller took two ports in a row, so the second acquisition was not merely
+ * likely to fall inside the first one's window -- it was inside it, by construction, and the first condition
+ * ceased to be a condition at all. That is an explanation of <i>why the odds do not apply here</i>.
+ * <p>
+ * A port number and a stack trace are not that. They establish that a collision happened, not that this class
+ * produced it -- and a collision has other sources: a service left running, a container holding a published
+ * port, a previous test that never released. "There is a window, so this could happen" is not an argument
+ * either; it restates the possibility the odds above already account for, and it has been wrong nearly every
+ * time.
  *
  * <h2>The one exception, and its fix</h2>
- * A caller that takes two ports in a row removes the first protection <i>with certainty</i>: the second draw
- * is not merely likely to land inside the first one's window, it is inside it. Only the 1-in-{@value #RANGE}
- * remained, and across the ~800 embedded instances a CI build starts that became a ~2% chance per build. It
- * was observed once: one instance bound the same port for its MQTT listener and its HTTP API a millisecond
- * apart, and the test failed with "Address already in use" (EDG-956).
+ * The one case that ever escaped the argument, and how. A caller that takes two ports in a row makes the
+ * first condition certain rather than unlikely: the second acquisition is not merely at risk of landing
+ * inside the first one's window, it is inside it by construction. Only the 1-in-{@value #RANGE} was left, and
+ * across the ~800 embedded instances a CI build starts that is a ~2% chance per build -- which matches what
+ * was seen, one affected build in 28. The failure itself: one instance bound the same port for its MQTT
+ * listener and its HTTP API a millisecond apart, and the test failed with "Address already in use"
+ * (EDG-956).
  * <p>
  * That is now impossible. A number handed out is remembered, and neither it nor any number sharing its bucket
  * is issued again for the next {@value #BLOCK_FOR} requests. The record is a fixed array rather than a growing
