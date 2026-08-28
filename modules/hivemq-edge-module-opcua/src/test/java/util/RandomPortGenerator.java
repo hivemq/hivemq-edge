@@ -20,63 +20,83 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 
 /**
- * A free port for a test to bind.
+ * A free port for a test to bind. Drawn at random from {@link #LOWEST} to {@link #HIGHEST} and proven free
+ * at the moment it is handed out.
  *
- * <h2>Before you blame this class</h2>
- * <b>This does not cause port collisions, and a test that fails to bind is almost never this class's
- * fault.</b> That claim has been made many times over the years and was false every time but one -- and that
- * one exception is fixed, below.
+ * <pre>
+ *     int get()                    // TCP -- what almost everything wants
+ *     int get(Protocol protocol)   // TCP, UDP, or BOTH
+ * </pre>
+ *
+ * {@code protocol} says which port spaces must be free. TCP and UDP are independent address spaces: a number
+ * free for TCP can already be taken on UDP, and the reverse. Ask for {@link Protocol#BOTH} when the number
+ * goes somewhere that might claim either. That is rare -- of ~160 call sites, three pass {@code BOTH}, all
+ * for an MQTT-SN listener, which is UDP.
+ *
+ * <h2>How this is used, and why bind-to-zero is not an option</h2>
+ * The usual pattern is not "open a socket here and now". It is: take a number, write it into a configuration
+ * file, and let a service bind it during startup -- often seconds later. Other parties need the number too:
+ * the test connects a client to it, and the configuration must name it before anything starts.
  * <p>
- * The accusation is always the same: the window between proving a port free and the caller actually binding
- * it. The socket is closed and the number returned, so in principle someone else could take it in between.
- * In principle. For that to actually happen, <b>two</b> independent things must go wrong:
+ * That rules out asking the operating system for a free port by binding to port 0, which is otherwise the
+ * safest approach. Binding to 0 gives you a socket, and the number only afterwards, from a socket you are
+ * holding. Here the number must exist <i>before</i> anything binds, and must be knowable by someone other
+ * than the binder. Roughly 145 of ~150 call sites are shaped this way.
+ * <p>
+ * So there is unavoidably a gap between proving the number free and something actually binding it --
+ * sometimes a few seconds.
+ *
+ * <h2>That gap is not the problem you think it is</h2>
+ * <b>If you believe a bind failure was caused by this class, you are almost certainly mistaken.</b> That
+ * claim has been made many times over the years and was wrong every time but one -- and that one is fixed,
+ * below.
+ * <p>
+ * The burden is on the claim: explain why, in this particular situation, the argument that follows does not
+ * hold. Two things must <b>both</b> happen for a collision:
  * <ol>
- *   <li>another acquisition must fall inside that window -- microseconds to a few tens of milliseconds,
- *       against a suite that runs for minutes, <b>and</b>
- *   <li>out of {@value #RANGE} candidates it must draw <i>exactly</i> the number we are holding.
+ *   <li><b>Another acquisition must fall inside our gap.</b> Only a small slice of any run is spent inside
+ *       such a gap, so an arbitrary acquisition landing in ours is unlikely.
+ *   <li><b>It must draw exactly our number</b>, out of {@value #RANGE} candidates.
  * </ol>
- * Neither is likely on its own and they are independent, so the product is remote. The range is also kept
- * clear of the ports the kernel hands out for itself (see {@link #LOWEST} / {@link #HIGHEST}), which excludes
- * the most plausible outside source by construction. That is why ~150 call sites coexist without trouble.
+ * Each is unlikely by itself. They are independent, so together they are <i>very</i> unlikely -- which is why
+ * ~150 call sites coexist without trouble. The range is also kept below the block the kernel draws from when
+ * a program asks for any free port (see {@link #HIGHEST}), which removes the most plausible outside source
+ * entirely.
  * <p>
- * <b>So a failure here is only this class's doing if the particular case escapes that argument, and saying
- * how it escapes is the burden.</b> Which of the two conditions stopped being unlikely, and why? The one real
- * instance below is the model: a caller took two ports in a row, so the second acquisition was not merely
- * likely to fall inside the first one's window -- it was inside it, by construction, and the first condition
- * ceased to be a condition at all. That is an explanation of <i>why the odds do not apply here</i>.
+ * A port number and a stack trace do not meet the burden: they show that a collision happened, not that this
+ * class caused it. A leftover service, a container holding a published port, or a previous test that never
+ * released will all produce exactly that. Nor does "there is a gap, so this could happen" -- that restates
+ * the possibility the argument already accounts for.
+ *
+ * <h2>The one case that did escape the argument</h2>
+ * A caller that takes two ports in a row makes the first condition <b>certain</b> rather than unlikely: the
+ * second acquisition is not at risk of landing inside the first one's gap, it is inside it by construction.
+ * Only the 1-in-{@value #RANGE} remained, and across ~800 embedded instances per build that came to about 2%
+ * of builds -- matching what was seen, one affected build in 28. One instance bound the same number for its
+ * MQTT listener and its HTTP API a millisecond apart (EDG-956).
  * <p>
- * A port number and a stack trace are not that. They establish that a collision happened, not that this class
- * produced it -- and a collision has other sources: a service left running, a container holding a published
- * port, a previous test that never released. "There is a window, so this could happen" is not an argument
- * either; it restates the possibility the odds above already account for, and it has been wrong nearly every
- * time.
+ * That is the shape a valid claim has to take: naming which condition stopped being unlikely, and why.
  *
- * <h2>The one exception, and its fix</h2>
- * The one case that ever escaped the argument, and how. A caller that takes two ports in a row makes the
- * first condition certain rather than unlikely: the second acquisition is not merely at risk of landing
- * inside the first one's window, it is inside it by construction. Only the 1-in-{@value #RANGE} was left, and
- * across the ~800 embedded instances a CI build starts that is a ~2% chance per build -- which matches what
- * was seen, one affected build in 28. The failure itself: one instance bound the same port for its MQTT
- * listener and its HTTP API a millisecond apart, and the test failed with "Address already in use"
- * (EDG-956).
+ * <h2>How it works now</h2>
+ * A number handed out is remembered, and neither it nor any number sharing its bucket is issued again for the
+ * next {@value #BLOCK_FOR} requests, which makes the case above impossible. The record is a fixed array
+ * rather than a growing set, so a long-running JVM cannot fill it with ports released long ago -- every
+ * operation is constant-time, the memory is fixed, and entries expire on their own, so nothing needs
+ * resetting between tests. The array is consulted before any socket is opened, so a rejected candidate costs
+ * one array read.
  * <p>
- * That is now impossible. A number handed out is remembered, and neither it nor any number sharing its bucket
- * is issued again for the next {@value #BLOCK_FOR} requests. The record is a fixed array rather than a growing
- * set, so a long-running JVM cannot fill it up with ports released long ago; every operation is O(1), the
- * memory is constant, and entries expire on their own, so there is nothing to reset between tests.
+ * What remains is genuinely outside reach: another Gradle fork, or another process on the machine, could
+ * still take a number in the gap. That needs both conditions to hold, and no observed failure has ever
+ * matched it.
  *
- * <h2>What is left</h2>
- * The filter cannot see other processes, so a concurrent Gradle fork or something else on the machine could
- * still take a port between our probe and the caller's bind. That is the original risk with both protections
- * intact, and narrowing the range away from the operating system's own allocations removes its most likely
- * cause. No observed failure has ever matched this shape.
- *
- * <h2>Keeping the copies in step</h2>
- * <b>This file is duplicated in hivemq-edge and hivemq-edge-test and must stay line-for-line identical.</b>
- * The copies had drifted -- one probed UDP as well as TCP and the others did not, so the one improvement
- * anybody made reached a third of the call sites. Keep them in step until a single shared copy is possible.
- *
- * @author Georg Held
+ * <h2>There are three copies of this file</h2>
+ * <b>hivemq-edge-test, hivemq-edge, and hivemq-edge's OPC-UA module each carry one, and they must stay
+ * line-for-line identical.</b> They had already drifted once: only one probed UDP, so the single improvement
+ * anybody had made reached a third of the call sites.
+ * <p>
+ * <b>Delete two of them once the repositories are merged into a monorepo</b> -- a shared test-fixtures source
+ * set makes the duplication unnecessary, and it is only tolerated now because the copies live in different
+ * repositories.
  */
 public class RandomPortGenerator {
 
