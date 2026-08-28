@@ -224,8 +224,21 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
             try {
                 if (hiveMQServer != null) {
-                    hiveMQServer.stop();
+                    // Adapters FIRST, then the broker they publish into (EDG-951).
+                    //
+                    // The other order lets every adapter keep polling its device and publishing for the
+                    // whole duration of stop(), into a broker that is being dismantled underneath it. The
+                    // publish callback is registered with an executor; once that executor is shutting down
+                    // the callback cannot run, StandardPublishCallback.onFailure rethrows, and the publish's
+                    // completion future -- which is only ever completed INSIDE that callback -- is left
+                    // hanging. The visible symptom is a "RuntimeException while executing runnable
+                    // CallbackListener" error; the quiet one is an abandoned publish.
+                    //
+                    // shutdownProtocolAdapters() waits for each adapter to stop, bounded by
+                    // SHUTDOWN_STOP_TIMEOUT_SECONDS, so this also gives in-flight work time to drain
+                    // without risking a wedged shutdown.
                     hiveMQServer.shutdownProtocolAdapters();
+                    hiveMQServer.stop();
                 }
             } catch (final Exception ex) {
                 if (desiredState == State.CLOSED) {
