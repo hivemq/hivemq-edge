@@ -460,6 +460,28 @@ public class OpcUaClientConnection {
         final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
 
         if (subscriptionOptional.isEmpty()) {
+            // An empty answer says the subscription was not established. It does not say why, and the two
+            // reasons deserve different volumes: the server refused, or a teardown told the handler to stop.
+            // The second is the ordinary end of a connection that is closing anyway -- abandon() is what makes
+            // subscribe() give up between tags -- and reporting it as a fault is what made a shutdown look
+            // like a failure, to operators and to the tests that fail on any unexpected ERROR (EDG-942).
+            //
+            // Asking the handler rather than reading `closed` above: a teardown that arrived after that check
+            // still reaches the handler, and it is the handler's flag that actually stopped the work.
+            //
+            // The residual race is a genuine failure whose abandonment lands between subscribe() returning and
+            // this read -- a few instructions with no server call in them, against a failure path that spans
+            // at least one. Losing it downgrades one real fault to debug on a connection being torn down
+            // regardless. Carrying the reason out of subscribe() would close it, at the cost of a wider
+            // return type on every caller for a window this narrow.
+            if (subscriptionLifecycleHandler.isAbandoned()) {
+                log.debug(
+                        "Adapter '{}': no OPC UA subscription was established, the connection was closed while"
+                                + " it was being set up",
+                        adapterId);
+                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
+                return false;
+            }
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
             publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             eventService
