@@ -243,14 +243,17 @@ public class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
-        // Bound to this connection rather than shared with every other one the adapter makes. What arrives is
-        // a template carrying the adapter's settings; what this connection attaches to its own client is its
-        // own copy, which knows without being told that a fault reaching it belongs to this connection.
+        // This connection's own copy of the service-fault listener, which reports the errors an OPC UA server
+        // raises. The argument is a template holding the adapter's settings and is not used directly: every
+        // connection derives a copy that serves it alone and registers that on its own client. The copy can
+        // then recognise a fault raised by this connection on its way out -- a closing connection provokes
+        // faults that are expected rather than actionable -- which one listener shared between connections
+        // could not do reliably. See OpcUaServiceFaultListener#forConnection.
         //
-        // The method reference escapes `this` from a constructor, which is worth stating rather than leaving
-        // to be noticed: it is only stored here, never invoked, and the earliest it can run is a fault on a
-        // client this connection has not created yet. The state it reads is a field initializer, so it is
-        // already assigned before this line.
+        // Passing a method reference publishes `this` before the constructor has finished, which is safe only
+        // because nothing calls it yet: it is stored, and the earliest it can run is a fault on a client this
+        // connection has not created. The state it reads is assigned by a field initializer, so it is in
+        // place before this line runs.
         this.serviceFaultListener = serviceFaultListener.forConnection(this::handlerWasAbandoned);
         this.statusPublisher = statusPublisher;
         this.prepareForUse = prepareForUse;
@@ -467,23 +470,25 @@ public class OpcUaClientConnection {
         final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
 
         if (subscriptionOptional.isEmpty()) {
-            // An empty answer says the subscription was not established. It does not say why, and the two
-            // reasons deserve different volumes: the server refused, or a teardown told the handler to stop.
-            // The second is the ordinary end of a connection that is closing anyway -- abandon() is what makes
-            // subscribe() give up between tags -- and reporting it as a fault is what made a shutdown look
-            // like a failure, to operators and to the tests that fail on any unexpected ERROR (EDG-942).
+            // No subscription was established, and how loudly to say so depends on why. An empty answer has
+            // two causes that it does not distinguish: the server refused, or this connection was closed
+            // while the subscription was still being set up. The second is ordinary -- closing calls
+            // abandon(), which is what makes the tag-by-tag setup give up part way -- and reporting it as a
+            // fault made every shutdown look like a failure, to operators and to the integration tests that
+            // fail on any unexpected ERROR (EDG-942).
             //
-            // Asking the handler rather than reading `closed` above: a teardown that arrived after that check
-            // still reaches the handler, and it is the handler's flag that actually stopped the work.
+            // The handler is asked rather than this connection's own `closed` flag, checked further up: a
+            // teardown arriving after that check still reaches the handler, and the handler's flag is the one
+            // that actually stopped the work.
             //
-            // The residual race is a genuine failure whose abandonment lands between subscribe() returning and
-            // this read -- a few instructions with no server call in them, against a failure path that spans
-            // at least one. Losing it downgrades one real fault to debug on a connection being torn down
-            // regardless. Carrying the reason out of subscribe() would close it, at the cost of a wider
-            // return type on every caller for a window this narrow.
+            // Known gap: a genuine failure is reported quietly if the connection is closed in the moment
+            // between the answer arriving and this check -- a few instructions with no server call in them,
+            // against a failure path containing at least one. Closing it would mean carrying the reason out
+            // in the return type, widening every caller for a window this narrow, and the cost of losing the
+            // race is one real fault logged at debug on a connection that is being torn down anyway.
             //
-            // Only the reporting is conditional. The client is closed and the attempt fails either way, so
-            // the outcome does not depend on which branch answered -- and there is one copy of it to edit.
+            // Only the reporting differs between the branches. The client is closed and the attempt fails
+            // either way, so there is one copy of that below rather than one per branch.
             if (subscriptionLifecycleHandler.isAbandoned()) {
                 log.debug(
                         "Adapter '{}': no OPC UA subscription was established, the connection was closed while"
@@ -491,12 +496,13 @@ public class OpcUaClientConnection {
                         adapterId);
             } else {
                 log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
-                // Deliberately inside the else, and the one part of this that is state rather than a message.
-                // A teardown owns the adapter's final status: stop() leaves it to the wrapper, which drains
-                // the connection FSM back to Disconnected, and destroy() publishes DISCONNECTED as it
-                // releases the connection. Publishing ERROR from here during a close would overwrite one of
-                // those with a status describing an attempt nobody is waiting for. A failure with no teardown
-                // in progress is still the adapter's current condition, and still published.
+                // Publishing ERROR changes the adapter's visible status, so unlike the lines around it this
+                // is state rather than a message -- which is why it sits in this branch only. A close already
+                // owns the final status: stop() leaves it to the wrapper, which walks the connection state
+                // machine back to Disconnected, and destroy() publishes DISCONNECTED as it releases the
+                // connection. Publishing ERROR from a connection attempt that is being abandoned would
+                // overwrite that with a status describing an attempt nobody is waiting for. A failure with no
+                // close in progress is the adapter's actual condition and is still published.
                 publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                 eventService
                         .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
@@ -1005,14 +1011,20 @@ public class OpcUaClientConnection {
     }
 
     /**
-     * Whether a teardown has reached this connection's subscription handler -- that is, whether this
-     * connection has been discarded, by a shutdown or by a reconnect replacing it.
+     * Whether this connection is being discarded — closed either because the adapter is stopping or because
+     * a reconnect is replacing it.
      * <p>
-     * The one question both quiet paths ask. {@link #stop} and {@link #destroy} mark the handler before they
-     * disconnect anything, so this is true for the whole of a close rather than only at the end of it. Also
-     * read by the tests that pin that ordering: the mark can land while {@link #start} holds the monitor,
-     * which is the window in which it is worth anything and the one in which it previously could not be set
-     * at all.
+     * Errors raised while that is true are the expected noise of a close rather than faults to act on, so
+     * both places that report errors consult this before choosing how loudly to speak: the subscription
+     * setup in {@link #start}, and the service-fault listener this connection registers on its client.
+     * <p>
+     * The answer comes from the subscription handler, which {@link #stop} and {@link #destroy} mark before
+     * they disconnect anything — deliberately, so that work already in flight can stop early. Because the
+     * mark comes first, this reads true for the whole of a close and not merely at the end of it. False
+     * before a handler exists, since a connection that has not got that far has not been discarded either.
+     * <p>
+     * Also read by the tests covering that ordering: the mark can land while {@link #start} still holds this
+     * object's monitor, which is the window in which it earns its keep.
      */
     boolean handlerWasAbandoned() {
         final OpcUaSubscriptionLifecycleHandler handler = subscriptionHandler.get();

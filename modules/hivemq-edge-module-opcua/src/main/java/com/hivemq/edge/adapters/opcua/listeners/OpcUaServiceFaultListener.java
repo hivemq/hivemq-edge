@@ -31,6 +31,20 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Reports service faults raised by an OPC UA server, and recovers from the ones worth recovering from.
+ * <p>
+ * A service fault is how an OPC UA server rejects a request: the response carries a status code instead of a
+ * result. Milo hands every one of them to the listeners registered on the client that made the request. This
+ * listener counts them all, and then splits them. A handful of status codes mean the session or subscription
+ * no longer exists, so nothing will work again until the client reconnects — those are logged at ERROR, raise
+ * an adapter event, and trigger a reconnect. Everything else is logged at WARN with an event and no action.
+ * <p>
+ * <b>One instance is built per connection, not per adapter.</b> The adapter builds a template carrying its
+ * settings; each connection derives its own copy with {@link #forConnection} and registers that copy on its
+ * own client. The copy is bound at construction to the connection it serves, which is what lets it tell a
+ * genuine fault from the noise a closing connection makes — see {@link #discarded}.
+ */
 public class OpcUaServiceFaultListener implements ServiceFaultListener {
 
     private static final Logger log = LoggerFactory.getLogger(OpcUaServiceFaultListener.class);
@@ -41,17 +55,23 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     private final boolean reconnectOnServiceFault;
 
     /**
-     * Whether the connection whose client raised the fault has been discarded.
+     * Asks the connection this listener serves whether it has been discarded — that is, whether it is being
+     * closed, either because the adapter is stopping or because a reconnect is replacing it.
      * <p>
-     * A fault carries a status code and nothing else -- Milo's callback takes one argument, and the fault
-     * names neither the client nor the session it came from. So a listener cannot ask about the fault's
-     * origin; it can only know the connection it was <em>built for</em>. That is why {@link #forConnection}
-     * exists and why this is final: being called is the identification.
+     * Faults raised by a connection on its way out are expected rather than actionable. Closing a connection
+     * deletes its subscription while its client is still live, so a publish already in flight comes back
+     * {@code Bad_NoSubscription}: the ordinary end of a subscription that was deliberately removed. Before
+     * this existed, every shutdown produced errors that looked like failures to operators and failed
+     * whichever integration test happened to be finishing (EDG-942).
      * <p>
-     * What it asks is whether the connection marked its subscription handler abandoned, which a teardown
-     * does before it disconnects anything, so the answer covers the whole close rather than only its end.
-     * Always false on an instance nobody bound, which is the behaviour this class had before the
-     * distinction existed: a listener with no connection to ask reports at full volume.
+     * <b>Why a supplier rather than a reference to the connection:</b> the answer changes over the lifetime
+     * of the connection, so it has to be asked at the moment a fault arrives rather than read once. The
+     * connection answers from the mark its teardown sets on its subscription handler before disconnecting
+     * anything, so the answer is already true for the whole of a close rather than only at the end of it.
+     * <p>
+     * Final, because a listener serves exactly one connection for its whole life. On a template that no
+     * connection derived from, this is permanently false: with nobody to vouch for a fault being expected,
+     * the louder report is the safe answer.
      */
     private final @NotNull BooleanSupplier discarded;
 
@@ -86,19 +106,25 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     }
 
     /**
-     * A copy of this listener bound to one connection, for that connection's client alone.
+     * Derives a copy of this listener that serves one connection, to be registered on that connection's
+     * client. The copy keeps this listener's settings and adds the one thing it cannot infer: a way to ask
+     * that connection whether it is being closed.
      * <p>
-     * The adapter builds one of these and every connection derives its own, rather than all of them sharing
-     * the adapter's. Sharing was the defect: an adapter can have two connections alive at once -- a
-     * replacement starting while the connection it replaces is still finishing or closing -- so a single
-     * mutable pointer to "the connection to ask" is written by whichever starts last, not by whichever is
-     * current. A slow start could therefore redirect a live connection's reporting at a discarded one and
-     * silence real faults.
+     * Callers are connections. An adapter builds one listener and never registers it anywhere; every
+     * connection derives its own and registers that.
      * <p>
-     * Binding at construction removes the question rather than guarding it. Milo calls the listener attached
-     * to the client that raised the fault, and each connection attaches its own, so the instance receiving
-     * the call already identifies the connection. Nothing to overwrite, nothing to withdraw, no ordering to
-     * get right.
+     * <b>Why a copy per connection, when one listener would do:</b> a fault says nothing about where it came
+     * from. Milo's callback takes only the fault, and the fault names neither the client nor the session, so
+     * a listener cannot look up the connection that raised it. What it can know is the connection it was
+     * built for — Milo calls the listener registered on the client that faulted, so the instance receiving
+     * the call already identifies the connection, provided that instance serves only one.
+     * <p>
+     * <b>Why one shared listener would be wrong:</b> an adapter can have two connections alive at once, since
+     * a reconnect starts a replacement while the connection it replaces is still finishing or closing. A
+     * shared listener would need a mutable pointer to whichever connection to ask, and that pointer would be
+     * written by whichever connection set it last rather than by whichever is current. A slow start
+     * completing late could aim a live connection's reporting at a discarded one and silence real faults.
+     * Binding at construction removes the possibility instead of guarding against it.
      */
     public @NotNull OpcUaServiceFaultListener forConnection(final @NotNull BooleanSupplier connectionDiscarded) {
         return new OpcUaServiceFaultListener(
@@ -115,23 +141,18 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
         final StatusCode statusCode = serviceFault.getResponseHeader().getServiceResult();
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_SERVICE_FAULT_COUNT);
 
-        // The same fault means two different things depending on whether the connection it arrived on still
-        // matters. Discarding a connection deletes its subscription while this listener is still attached, so
-        // a publish already in flight comes back Bad_NoSubscription -- the expected end of a subscription that
-        // was deliberately removed, not a fault anyone can act on. Reporting it as a fault made every shutdown
-        // look like a failure, to operators and to the tests that fail on any unexpected ERROR (EDG-942).
+        // Faults from a connection that is closing are expected, so they are recorded quietly and nothing is
+        // recovered. Closing deletes the subscription while the client is still live, so a publish already in
+        // flight comes back Bad_NoSubscription -- the ordinary end of a subscription that was deliberately
+        // removed, and not something an operator can act on.
         //
-        // "Discarded" rather than "the adapter is stopping", because those differ: a reconnect discards a
-        // connection while the adapter stays up. Both cases want silence for the same reason -- a replacement
-        // is coming, or nothing is -- and in neither is the old connection's failure something to act on.
+        // Placed above the critical/non-critical split below, not inside it. Which branch a fault takes
+        // depends on `reconnectOnServiceFault`, which comes from the operator's autoReconnect setting; a
+        // check inside one branch would leave the identical shutdown fault noisy for anyone who turned
+        // auto-reconnect off. Whether a connection is closing has nothing to do with that setting.
         //
-        // Above the critical/non-critical split rather than inside it. Which branch a fault takes depends on
-        // `reconnectOnServiceFault`, an operator's autoReconnect setting -- so a check inside the critical
-        // branch would let the identical fault stay noisy for anyone who turned auto-reconnect off. Being
-        // discarded is a property of the connection, not of that setting.
-        //
-        // The reconnect the critical branch would have triggered is skipped with it, and that is right rather
-        // than merely harmless: a connection that has already been discarded is not the one to recover from.
+        // Returning here also skips the reconnect the critical branch would trigger, which is what should
+        // happen: a connection already being discarded is not one to recover.
         if (discarded.getAsBoolean()) {
             log.info(
                     "OPC UA service fault for adapter '{}' on a connection being closed: {}. Expected while"

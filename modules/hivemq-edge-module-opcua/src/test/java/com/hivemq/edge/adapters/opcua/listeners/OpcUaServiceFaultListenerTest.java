@@ -37,13 +37,18 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The reporting half of {@link OpcUaServiceFaultListener}: whether a fault is an operator-visible error or the
- * ordinary noise of a connection being discarded.
+ * Covers how {@link OpcUaServiceFaultListener} decides whether a fault from an OPC UA server is an
+ * operator-visible error or the ordinary noise of a connection being closed.
  * <p>
- * Discarding a connection deletes its subscription while its client is still live, so a publish already in
- * flight answers {@code Bad_NoSubscription}. Reporting that at ERROR made every shutdown look like a failure
- * (EDG-942). A fault names neither client nor session, so a listener cannot ask about the origin of the fault
- * -- it can only know the connection it was built for, which is what {@code forConnection} is for.
+ * Closing a connection deletes its subscription while its client is still live, so a publish already in
+ * flight comes back {@code Bad_NoSubscription}. Reporting that at ERROR made every shutdown look like a
+ * failure (EDG-942). The listener therefore asks the connection it serves whether it is being discarded, and
+ * stays quiet when it is.
+ * <p>
+ * Two groups of tests. Those named {@code onServiceFault_*} check that decision across the cases that reach
+ * it. Those named {@code forConnection_*} check that a listener serves exactly one connection: an adapter can
+ * have two alive at once during a reconnect, and each must answer only for its own, whatever order they are
+ * created in.
  */
 class OpcUaServiceFaultListenerTest {
 
