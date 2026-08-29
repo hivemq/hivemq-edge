@@ -91,25 +91,31 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
         final StatusCode statusCode = serviceFault.getResponseHeader().getServiceResult();
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_SERVICE_FAULT_COUNT);
 
+        // The same fault means two different things depending on whether this adapter is being torn down.
+        // Closing a connection deletes its subscription while this listener is still attached, so a publish
+        // already in flight comes back Bad_NoSubscription -- the expected end of a subscription that was
+        // deliberately removed, not a fault anyone can act on. Reporting it as a fault made every shutdown
+        // look like a failure, to operators and to the tests that fail on any unexpected ERROR (EDG-942).
+        //
+        // Above the critical/non-critical split rather than inside it. Which branch a fault takes depends on
+        // `reconnectOnServiceFault`, an operator's autoReconnect setting -- so a check inside the critical
+        // branch would let the identical shutdown fault stay noisy for anyone who turned auto-reconnect off.
+        // Teardown is a property of this adapter, not of that setting.
+        //
+        // The reconnect the critical branch would have triggered is skipped with it. That costs nothing: it
+        // reads the very same flag on entry and returns without doing anything. The two are one guard asked
+        // twice, not two independent ones.
+        if (stopping.getAsBoolean()) {
+            log.info(
+                    "OPC UA service fault for adapter '{}' while it is stopping: {}. Expected while the"
+                            + " connection is being closed.",
+                    adapterId,
+                    statusCode);
+            return;
+        }
+
         // Check if this is a critical fault requiring immediate reconnection
         if (reconnectOnServiceFault && isCriticalFault(statusCode)) {
-            // The same fault means two different things depending on whether this adapter is being torn down.
-            // Closing a connection deletes its subscription while this listener is still attached, so a
-            // publish already in flight comes back Bad_NoSubscription -- the expected end of a subscription
-            // that was deliberately removed, not a fault anyone can act on. Reporting it at ERROR made every
-            // shutdown look like a failure, to operators and to the tests that fail on any unexpected ERROR
-            // (EDG-942).
-            //
-            // Only the volume changes. The reconnect below is left exactly as it was: it already returns
-            // quietly when the adapter has been stopped, so the recovery half was never the problem.
-            if (stopping.getAsBoolean()) {
-                log.info(
-                        "OPC UA service fault for adapter '{}' while it is stopping: {}. Expected while the"
-                                + " connection is being closed.",
-                        adapterId,
-                        statusCode);
-                return;
-            }
             log.error("Critical OPC UA service fault detected for adapter '{}': {}", adapterId, statusCode);
 
             eventService

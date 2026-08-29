@@ -474,21 +474,29 @@ public class OpcUaClientConnection {
             // at least one. Losing it downgrades one real fault to debug on a connection being torn down
             // regardless. Carrying the reason out of subscribe() would close it, at the cost of a wider
             // return type on every caller for a window this narrow.
+            //
+            // Only the reporting is conditional. The client is closed and the attempt fails either way, so
+            // the outcome does not depend on which branch answered -- and there is one copy of it to edit.
             if (subscriptionLifecycleHandler.isAbandoned()) {
                 log.debug(
                         "Adapter '{}': no OPC UA subscription was established, the connection was closed while"
                                 + " it was being set up",
                         adapterId);
-                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
-                return false;
+            } else {
+                log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
+                // Deliberately inside the else, and the one part of this that is state rather than a message.
+                // A teardown owns the adapter's final status: stop() leaves it to the wrapper, which drains
+                // the connection FSM back to Disconnected, and destroy() publishes DISCONNECTED as it
+                // releases the connection. Publishing ERROR from here during a close would overwrite one of
+                // those with a status describing an attempt nobody is waiting for. A failure with no teardown
+                // in progress is still the adapter's current condition, and still published.
+                publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
             }
-            log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
-            publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-            eventService
-                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage("Failed to create or transfer OPC UA subscription. Closing client connection.")
-                    .withSeverity(Event.SEVERITY.ERROR)
-                    .fire();
             quietlyCloseClient(client, false, serviceFaultListener, activityListener);
             return false;
         }

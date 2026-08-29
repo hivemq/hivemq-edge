@@ -103,7 +103,20 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void onServiceFault_whenNotCritical_isUnaffectedByStopping() {
+    void onServiceFault_whileStoppingWithAutoReconnectOff_isStillQuiet() {
+        final OpcUaServiceFaultListener listener =
+                new OpcUaServiceFaultListener(metrics, events, "adapter", () -> {}, false, () -> true);
+
+        listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
+
+        // Whether a fault counts as critical depends on the operator's autoReconnect setting, so a teardown
+        // check inside the critical branch would leave the identical shutdown fault noisy for anyone who
+        // turned auto-reconnect off. Teardown is a property of the adapter, not of that setting.
+        verify(events, never()).createAdapterEvent(anyString(), anyString());
+    }
+
+    @Test
+    void onServiceFault_whenNotCriticalWhileRunning_keepsItsWarning() {
         final EventBuilder builder = mock(EventBuilder.class, RETURNS_DEEP_STUBS);
         when(events.createAdapterEvent(anyString(), anyString())).thenReturn(builder);
         when(builder.withSeverity(any())).thenReturn(builder);
@@ -111,13 +124,24 @@ class OpcUaServiceFaultListenerTest {
         when(builder.withMessage(anyString())).thenReturn(builder);
 
         final OpcUaServiceFaultListener listener =
+                new OpcUaServiceFaultListener(metrics, events, "adapter", () -> {}, true, () -> false);
+
+        listener.onServiceFault(faultWith(StatusCodes.Bad_Timeout));
+
+        // Outside teardown nothing changes for a non-critical fault: still a WARN, still an event.
+        verify(builder).withSeverity(Event.SEVERITY.WARN);
+    }
+
+    @Test
+    void onServiceFault_whenNotCriticalWhileStopping_isQuiet() {
+        final OpcUaServiceFaultListener listener =
                 new OpcUaServiceFaultListener(metrics, events, "adapter", () -> {}, true, () -> true);
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_Timeout));
 
-        // The teardown check guards the critical branch only. A non-critical fault keeps its WARN even during
-        // a shutdown, because nothing about closing a connection explains it.
-        verify(builder).withSeverity(Event.SEVERITY.WARN);
+        // A fault raised while the connection is being closed is teardown noise whatever its status code. The
+        // codes worth distinguishing are the ones that say what to recover from, and nothing is recovering.
+        verify(events, never()).createAdapterEvent(anyString(), anyString());
     }
 
     @Test
