@@ -42,13 +42,12 @@ import org.junit.jupiter.api.Test;
  * <p>
  * Closing a connection deletes its subscription while its client is still live, so a publish already in
  * flight comes back {@code Bad_NoSubscription}. Reporting that at ERROR made every shutdown look like a
- * failure (EDG-942). The listener therefore asks the connection it serves whether it is being discarded, and
- * stays quiet when it is.
+ * failure (EDG-942). A closing connection therefore calls {@code connectionDiscarded()} on the listener it
+ * owns, and everything after that is reported quietly.
  * <p>
  * Two groups of tests. Those named {@code onServiceFault_*} check that decision across the cases that reach
  * it. Those named {@code forConnection_*} check that a listener serves exactly one connection: an adapter can
- * have two alive at once during a reconnect, and each must answer only for its own, whatever order they are
- * created in.
+ * have two alive at once during a reconnect, and one falling quiet must not quieten the other.
  */
 class OpcUaServiceFaultListenerTest {
 
@@ -70,16 +69,18 @@ class OpcUaServiceFaultListenerTest {
         return builder;
     }
 
+    /** The adapter-level listener a connection would take its own copy from. */
     private @NotNull OpcUaServiceFaultListener template(
             final @NotNull Runnable reconnect, final boolean autoReconnect) {
         return new OpcUaServiceFaultListener(metrics, events, "adapter", reconnect, autoReconnect);
     }
 
     @Test
-    void onServiceFault_whenCriticalOnADiscardedConnection_firesNoEventAndDoesNotReconnect() {
+    void onServiceFault_whenCriticalAfterTheConnectionWasDiscarded_firesNoEventAndDoesNotReconnect() {
         final AtomicBoolean reconnected = new AtomicBoolean();
         final OpcUaServiceFaultListener listener =
-                template(() -> reconnected.set(true), true).forConnection(() -> true);
+                template(() -> reconnected.set(true), true).forConnection();
+        listener.connectionDiscarded();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -95,7 +96,7 @@ class OpcUaServiceFaultListenerTest {
         final AtomicBoolean reconnected = new AtomicBoolean();
         final EventBuilder builder = stubbedEventBuilder();
         final OpcUaServiceFaultListener listener =
-                template(() -> reconnected.set(true), true).forConnection(() -> false);
+                template(() -> reconnected.set(true), true).forConnection();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -106,8 +107,9 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void onServiceFault_onADiscardedConnectionWithAutoReconnectOff_isStillQuiet() {
-        final OpcUaServiceFaultListener listener = template(() -> {}, false).forConnection(() -> true);
+    void onServiceFault_afterDiscardWithAutoReconnectOff_isStillQuiet() {
+        final OpcUaServiceFaultListener listener = template(() -> {}, false).forConnection();
+        listener.connectionDiscarded();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -118,8 +120,9 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void onServiceFault_onADiscardedConnection_stillCountsTheFault() {
-        final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection(() -> true);
+    void onServiceFault_afterDiscard_stillCountsTheFault() {
+        final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
+        listener.connectionDiscarded();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -131,7 +134,7 @@ class OpcUaServiceFaultListenerTest {
     @Test
     void onServiceFault_whenNotCriticalOnALiveConnection_keepsItsWarning() {
         final EventBuilder builder = stubbedEventBuilder();
-        final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection(() -> false);
+        final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_Timeout));
 
@@ -140,40 +143,42 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void onServiceFault_whenNotCriticalOnADiscardedConnection_isQuiet() {
-        final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection(() -> true);
+    void onServiceFault_whenNotCriticalAfterDiscard_isQuiet() {
+        final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
+        listener.connectionDiscarded();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_Timeout));
 
-        // A fault raised while the connection is being discarded is noise whatever its status code. The codes
+        // A fault raised while the connection is being closed is noise whatever its status code. The codes
         // worth distinguishing are the ones that say what to recover from, and nothing is recovering.
         verify(events, never()).createAdapterEvent(anyString(), anyString());
     }
 
     @Test
-    void onServiceFault_onAnUnboundTemplate_reportsCriticalFaultsAsBefore() {
-        final EventBuilder builder = stubbedEventBuilder();
-        final OpcUaServiceFaultListener listener = template(() -> {}, true);
+    void connectionDiscarded_isIdempotent() {
+        final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
+        listener.connectionDiscarded();
+        listener.connectionDiscarded();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
-        // The adapter's template belongs to no connection, so nothing can say the fault is expected. The
-        // louder answer is the safe default: silence has to be earned by a connection taking responsibility
-        // for it. In production a template is never attached to a client, only derived from.
-        verify(builder).withSeverity(Event.SEVERITY.ERROR);
+        // stop() followed by destroy() reaches the same connection twice, so saying it again must not undo
+        // it. A discarded connection is never reopened.
+        verify(events, never()).createAdapterEvent(anyString(), anyString());
     }
 
     @Test
-    void forConnection_bindsEachCopyToItsOwnConnection() {
-        final OpcUaServiceFaultListener shared = template(() -> {}, true);
+    void forConnection_givesEachConnectionAListenerThatFallsQuietOnItsOwn() {
+        final OpcUaServiceFaultListener template = template(() -> {}, true);
 
-        // The defect this design removes. An adapter can have two connections alive at once -- a replacement
-        // starting while the connection it replaces is still closing -- and both derive from one template.
-        // Each copy answers for its own connection, so a discarded one going quiet cannot silence a live one.
-        final OpcUaServiceFaultListener onDiscarded = shared.forConnection(() -> true);
-        final OpcUaServiceFaultListener onLive = shared.forConnection(() -> false);
+        // The reason each connection needs its own. An adapter can have two alive at once -- a replacement
+        // starting while the connection it replaces is still closing -- and only the closing one should fall
+        // quiet. With a shared listener the closing connection would silence the live one's faults.
+        final OpcUaServiceFaultListener onClosing = template.forConnection();
+        final OpcUaServiceFaultListener onLive = template.forConnection();
+        onClosing.connectionDiscarded();
 
-        onDiscarded.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
+        onClosing.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
         verify(events, never()).createAdapterEvent(anyString(), anyString());
 
         final EventBuilder builder = stubbedEventBuilder();
@@ -182,17 +187,14 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void forConnection_derivingAgainDoesNotDisturbAnEarlierCopy() {
-        final OpcUaServiceFaultListener shared = template(() -> {}, true);
-        final OpcUaServiceFaultListener onLive = shared.forConnection(() -> false);
-
-        // Order independence is what makes this safe against a slow start. Deriving a second copy after the
-        // first -- the replacement attaching while the superseded connection is still starting -- must not
-        // reach back into the first. With a single shared pointer it did, and a late-starting discarded
-        // connection could silence the live one.
+    void forConnection_leavesTheTemplateUnaffected() {
+        final OpcUaServiceFaultListener template = template(() -> {}, true);
         final EventBuilder builder = stubbedEventBuilder();
-        final OpcUaServiceFaultListener unused = shared.forConnection(() -> true);
-        onLive.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
+
+        // Taking a copy and discarding it must not reach back into what it was copied from, or one closing
+        // connection would quieten every connection the adapter makes afterwards.
+        template.forConnection().connectionDiscarded();
+        template.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
         verify(builder).withSeverity(Event.SEVERITY.ERROR);
     }

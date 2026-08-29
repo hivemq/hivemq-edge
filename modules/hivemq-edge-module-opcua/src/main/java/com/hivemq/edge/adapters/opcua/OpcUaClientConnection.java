@@ -244,17 +244,12 @@ public class OpcUaClientConnection {
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
         // This connection's own copy of the service-fault listener, which reports the errors an OPC UA server
-        // raises. The argument is a template holding the adapter's settings and is not used directly: every
-        // connection derives a copy that serves it alone and registers that on its own client. The copy can
-        // then recognise a fault raised by this connection on its way out -- a closing connection provokes
-        // faults that are expected rather than actionable -- which one listener shared between connections
-        // could not do reliably. See OpcUaServiceFaultListener#forConnection.
-        //
-        // Passing a method reference publishes `this` before the constructor has finished, which is safe only
-        // because nothing calls it yet: it is stored, and the earliest it can run is a fault on a client this
-        // connection has not created. The state it reads is assigned by a field initializer, so it is in
-        // place before this line runs.
-        this.serviceFaultListener = serviceFaultListener.forConnection(this::handlerWasAbandoned);
+        // raises. The argument is a template holding the adapter's settings and is never registered anywhere:
+        // every connection takes a copy that serves it alone and registers that on its own client. Serving
+        // one connection is what lets markClosed() tell it to fall quiet, and one listener shared between
+        // connections could not do that -- a closing connection would silence a live one's faults. See
+        // OpcUaServiceFaultListener#forConnection.
+        this.serviceFaultListener = serviceFaultListener.forConnection();
         this.statusPublisher = statusPublisher;
         this.prepareForUse = prepareForUse;
         this.publishReady = publishReady;
@@ -906,6 +901,12 @@ public class OpcUaClientConnection {
      */
     private void markClosed() {
         closed.set(true);
+        // Forwarded here rather than left for the listener to ask about, and unconditionally, because this
+        // listener belongs to this connection alone and exists from construction -- there is nothing to check
+        // for and no ordering to get right. Told before anything is disconnected, so the faults a close
+        // provokes are already expected by the time they arrive: deleting the subscription answers any
+        // publish still in flight with Bad_NoSubscription, which is ordinary rather than actionable.
+        serviceFaultListener.connectionDiscarded();
         final FutureTask<Void> preparation = preparationTask.get();
         if (preparation != null) {
             preparation.cancel(true);
@@ -1011,20 +1012,13 @@ public class OpcUaClientConnection {
     }
 
     /**
-     * Whether this connection is being discarded — closed either because the adapter is stopping or because
-     * a reconnect is replacing it.
+     * Whether a close has reached this connection's subscription handler, telling it to stop verifying tags.
      * <p>
-     * Errors raised while that is true are the expected noise of a close rather than faults to act on, so
-     * both places that report errors consult this before choosing how loudly to speak: the subscription
-     * setup in {@link #start}, and the service-fault listener this connection registers on its client.
-     * <p>
-     * The answer comes from the subscription handler, which {@link #stop} and {@link #destroy} mark before
-     * they disconnect anything — deliberately, so that work already in flight can stop early. Because the
-     * mark comes first, this reads true for the whole of a close and not merely at the end of it. False
-     * before a handler exists, since a connection that has not got that far has not been discarded either.
-     * <p>
-     * Also read by the tests covering that ordering: the mark can land while {@link #start} still holds this
-     * object's monitor, which is the window in which it earns its keep.
+     * Visible for the tests covering the ordering this depends on: {@link #stop} and {@link #destroy} mark
+     * the handler before disconnecting anything, and that mark can land while {@link #start} still holds this
+     * object's monitor — the window in which it earns its keep, and the one in which it previously could not
+     * be set at all. False before a handler exists, since a connection that has not got that far has nothing
+     * to abandon.
      */
     boolean handlerWasAbandoned() {
         final OpcUaSubscriptionLifecycleHandler handler = subscriptionHandler.get();
