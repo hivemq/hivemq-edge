@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
  * <p>
  * Closing a connection deletes its subscription while its client is still live, so a publish already in
  * flight comes back {@code Bad_NoSubscription}. Reporting that at ERROR made every shutdown look like a
- * failure (EDG-942). A closing connection therefore calls {@code connectionDiscarded()} on the listener it
+ * failure (EDG-942). A closing connection therefore calls {@code connectionClosing()} on the listener it
  * owns, and everything after that is reported quietly.
  * <p>
  * Two groups of tests. Those named {@code onServiceFault_*} check that decision across the cases that reach
@@ -76,16 +76,16 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void onServiceFault_whenCriticalAfterTheConnectionWasDiscarded_firesNoEventAndDoesNotReconnect() {
+    void onServiceFault_whenCriticalOnAClosingConnection_firesNoEventAndDoesNotReconnect() {
         final AtomicBoolean reconnected = new AtomicBoolean();
         final OpcUaServiceFaultListener listener =
                 template(() -> reconnected.set(true), true).forConnection();
-        listener.connectionDiscarded();
+        listener.connectionClosing();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
         // The whole point: a fault raised by the close itself is not an operator's problem, so nothing
-        // reaches the event log that a shutdown would have to explain. And a connection already discarded is
+        // reaches the event log that a shutdown would have to explain. And a connection already closing is
         // not the one to recover, so no reconnect is triggered from it either.
         verify(events, never()).createAdapterEvent(anyString(), anyString());
         assertThat(reconnected).isFalse();
@@ -107,22 +107,22 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void onServiceFault_afterDiscardWithAutoReconnectOff_isStillQuiet() {
+    void onServiceFault_whileClosingWithAutoReconnectOff_isStillQuiet() {
         final OpcUaServiceFaultListener listener = template(() -> {}, false).forConnection();
-        listener.connectionDiscarded();
+        listener.connectionClosing();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
-        // Whether a fault counts as critical depends on the operator's autoReconnect setting, so a discard
-        // check inside the critical branch would leave the identical fault noisy for anyone who turned
-        // auto-reconnect off. Being discarded is a property of the connection, not of that setting.
+        // Whether a fault counts as critical depends on the operator's autoReconnect setting, so a check
+        // inside the critical branch would leave the identical fault noisy for anyone who turned
+        // auto-reconnect off. Whether a connection is closing has nothing to do with that setting.
         verify(events, never()).createAdapterEvent(anyString(), anyString());
     }
 
     @Test
-    void onServiceFault_afterDiscard_stillCountsTheFault() {
+    void onServiceFault_whileClosing_stillCountsTheFault() {
         final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
-        listener.connectionDiscarded();
+        listener.connectionClosing();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -143,27 +143,27 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void onServiceFault_whenNotCriticalAfterDiscard_isQuiet() {
+    void onServiceFault_whenNotCriticalOnAClosingConnection_isQuiet() {
         final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
-        listener.connectionDiscarded();
+        listener.connectionClosing();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_Timeout));
 
-        // A fault raised while the connection is being closed is noise whatever its status code. The codes
-        // worth distinguishing are the ones that say what to recover from, and nothing is recovering.
+        // A fault raised while the connection is closing is noise whatever its status code. The codes worth
+        // distinguishing are the ones that say what to recover from, and nothing is recovering.
         verify(events, never()).createAdapterEvent(anyString(), anyString());
     }
 
     @Test
-    void connectionDiscarded_isIdempotent() {
+    void connectionClosing_isIdempotent() {
         final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
-        listener.connectionDiscarded();
-        listener.connectionDiscarded();
+        listener.connectionClosing();
+        listener.connectionClosing();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
         // stop() followed by destroy() reaches the same connection twice, so saying it again must not undo
-        // it. A discarded connection is never reopened.
+        // it. A closed connection is never reopened.
         verify(events, never()).createAdapterEvent(anyString(), anyString());
     }
 
@@ -176,7 +176,7 @@ class OpcUaServiceFaultListenerTest {
         // quiet. With a shared listener the closing connection would silence the live one's faults.
         final OpcUaServiceFaultListener onClosing = template.forConnection();
         final OpcUaServiceFaultListener onLive = template.forConnection();
-        onClosing.connectionDiscarded();
+        onClosing.connectionClosing();
 
         onClosing.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
         verify(events, never()).createAdapterEvent(anyString(), anyString());
@@ -191,9 +191,9 @@ class OpcUaServiceFaultListenerTest {
         final OpcUaServiceFaultListener template = template(() -> {}, true);
         final EventBuilder builder = stubbedEventBuilder();
 
-        // Taking a copy and discarding it must not reach back into what it was copied from, or one closing
+        // Taking a copy and closing it must not reach back into what it was copied from, or one closing
         // connection would quieten every connection the adapter makes afterwards.
-        template.forConnection().connectionDiscarded();
+        template.forConnection().connectionClosing();
         template.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
         verify(builder).withSeverity(Event.SEVERITY.ERROR);

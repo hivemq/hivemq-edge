@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * <b>One instance is built per connection, not per adapter.</b> The adapter builds a template carrying its
  * settings; each connection takes its own copy with {@link #forConnection} and registers that on its own
  * client. The copy serves that connection alone, so when the connection begins closing it can call
- * {@link #connectionDiscarded()} and this listener knows the faults that follow are the ordinary noise of a
+ * {@link #connectionClosing()} and this listener knows the faults that follow are the ordinary noise of a
  * close rather than something to report or recover from.
  */
 public class OpcUaServiceFaultListener implements ServiceFaultListener {
@@ -56,9 +56,9 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     private final boolean reconnectOnServiceFault;
 
     /**
-     * Whether the connection this listener serves has been discarded — set by {@link #connectionDiscarded()}
-     * when that connection begins closing, either because the adapter is stopping or because a reconnect is
-     * replacing it.
+     * Whether the connection this listener serves is closing — set by {@link #connectionClosing()} when that
+     * connection begins closing, either because the adapter is stopping or because a reconnect is replacing
+     * it. The connection's own flag of the same name is what gets forwarded here.
      * <p>
      * Faults raised by a connection on its way out are expected rather than actionable. Closing a connection
      * deletes its subscription while its client is still live, so a publish already in flight comes back
@@ -70,7 +70,7 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
      * False until told otherwise, so a listener nobody claimed reports everything: with no connection to
      * vouch for a fault being expected, the louder report is the safe answer.
      */
-    private final @NotNull AtomicBoolean discarded = new AtomicBoolean();
+    private final @NotNull AtomicBoolean closed = new AtomicBoolean();
 
     public OpcUaServiceFaultListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -98,7 +98,7 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
      * <p>
      * It matters because an adapter can have two connections alive at once: a reconnect starts a replacement
      * while the connection it replaces is still finishing or closing. One shared listener would have a single
-     * discarded flag for both, so the closing connection would silence the live one's faults.
+     * closed flag for both, so the closing connection would silence the live one's faults.
      */
     public @NotNull OpcUaServiceFaultListener forConnection() {
         return new OpcUaServiceFaultListener(
@@ -106,15 +106,15 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     }
 
     /**
-     * Tells this listener that the connection it serves is being discarded, so that faults from here on are
-     * the expected noise of a close rather than something to report or recover from.
+     * Tells this listener that the connection it serves is closing, so that faults from here on are the
+     * expected noise of a close rather than something to report or recover from.
      * <p>
      * Called by that connection as it begins closing, before it disconnects anything — which is what makes
-     * this cover the whole close rather than only its end. One-way and idempotent: a discarded connection is
-     * never reopened.
+     * this cover the whole close rather than only its end. One-way and idempotent: a closed connection is
+     * never reopened, and a stop followed by a destroy reaches the same connection twice.
      */
-    public void connectionDiscarded() {
-        discarded.set(true);
+    public void connectionClosing() {
+        closed.set(true);
     }
 
     @Override
@@ -133,11 +133,11 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
         // auto-reconnect off. Whether a connection is closing has nothing to do with that setting.
         //
         // Returning here also skips the reconnect the critical branch would trigger, which is what should
-        // happen: a connection already being discarded is not one to recover.
-        if (discarded.get()) {
+        // happen: a connection that is already closing is not one to recover.
+        if (closed.get()) {
             log.info(
-                    "OPC UA service fault for adapter '{}' on a connection being closed: {}. Expected while"
-                            + " the connection is discarded.",
+                    "OPC UA service fault for adapter '{}' on a connection that is closing: {}. Expected"
+                            + " while the connection is closed.",
                     adapterId,
                     statusCode);
             return;

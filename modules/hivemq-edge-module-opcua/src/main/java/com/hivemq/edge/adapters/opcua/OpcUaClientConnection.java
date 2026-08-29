@@ -57,6 +57,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -906,7 +907,7 @@ public class OpcUaClientConnection {
         // for and no ordering to get right. Told before anything is disconnected, so the faults a close
         // provokes are already expected by the time they arrive: deleting the subscription answers any
         // publish still in flight with Bad_NoSubscription, which is ordinary rather than actionable.
-        serviceFaultListener.connectionDiscarded();
+        serviceFaultListener.connectionClosing();
         final FutureTask<Void> preparation = preparationTask.get();
         if (preparation != null) {
             preparation.cancel(true);
@@ -1020,6 +1021,7 @@ public class OpcUaClientConnection {
      * be set at all. False before a handler exists, since a connection that has not got that far has nothing
      * to abandon.
      */
+    @VisibleForTesting
     boolean handlerWasAbandoned() {
         final OpcUaSubscriptionLifecycleHandler handler = subscriptionHandler.get();
         return handler != null && handler.isAbandoned();
