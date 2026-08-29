@@ -902,12 +902,13 @@ public class OpcUaClientConnection {
      */
     private void markClosed() {
         closed.set(true);
-        // Forwarded here rather than left for the listener to ask about, and unconditionally, because this
-        // listener belongs to this connection alone and exists from construction -- there is nothing to check
-        // for and no ordering to get right. Told before anything is disconnected, so the faults a close
-        // provokes are already expected by the time they arrive: deleting the subscription answers any
-        // publish still in flight with Bad_NoSubscription, which is ordinary rather than actionable.
-        serviceFaultListener.connectionClosing();
+        // The same fact reaching a second object, which is why it carries the same name. Forwarded rather
+        // than left for the listener to ask about, and unconditionally: this listener belongs to this
+        // connection alone and exists from construction, so there is nothing to check for and no ordering to
+        // get right. Told before anything is disconnected, so the faults a close provokes are already
+        // expected by the time they arrive -- deleting the subscription answers any publish still in flight
+        // with Bad_NoSubscription, which is ordinary rather than actionable.
+        serviceFaultListener.markClosed();
         final FutureTask<Void> preparation = preparationTask.get();
         if (preparation != null) {
             preparation.cancel(true);

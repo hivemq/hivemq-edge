@@ -42,8 +42,8 @@ import org.junit.jupiter.api.Test;
  * <p>
  * Closing a connection deletes its subscription while its client is still live, so a publish already in
  * flight comes back {@code Bad_NoSubscription}. Reporting that at ERROR made every shutdown look like a
- * failure (EDG-942). A closing connection therefore calls {@code connectionClosing()} on the listener it
- * owns, and everything after that is reported quietly.
+ * failure (EDG-942). A closing connection therefore calls {@code markClosed()} on the listener it owns, and
+ * everything after that is reported quietly.
  * <p>
  * Two groups of tests. Those named {@code onServiceFault_*} check that decision across the cases that reach
  * it. Those named {@code forConnection_*} check that a listener serves exactly one connection: an adapter can
@@ -80,7 +80,7 @@ class OpcUaServiceFaultListenerTest {
         final AtomicBoolean reconnected = new AtomicBoolean();
         final OpcUaServiceFaultListener listener =
                 template(() -> reconnected.set(true), true).forConnection();
-        listener.connectionClosing();
+        listener.markClosed();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -109,7 +109,7 @@ class OpcUaServiceFaultListenerTest {
     @Test
     void onServiceFault_whileClosingWithAutoReconnectOff_isStillQuiet() {
         final OpcUaServiceFaultListener listener = template(() -> {}, false).forConnection();
-        listener.connectionClosing();
+        listener.markClosed();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -122,7 +122,7 @@ class OpcUaServiceFaultListenerTest {
     @Test
     void onServiceFault_whileClosing_stillCountsTheFault() {
         final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
-        listener.connectionClosing();
+        listener.markClosed();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -145,7 +145,7 @@ class OpcUaServiceFaultListenerTest {
     @Test
     void onServiceFault_whenNotCriticalOnAClosingConnection_isQuiet() {
         final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
-        listener.connectionClosing();
+        listener.markClosed();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_Timeout));
 
@@ -155,10 +155,10 @@ class OpcUaServiceFaultListenerTest {
     }
 
     @Test
-    void connectionClosing_isIdempotent() {
+    void markClosed_isIdempotent() {
         final OpcUaServiceFaultListener listener = template(() -> {}, true).forConnection();
-        listener.connectionClosing();
-        listener.connectionClosing();
+        listener.markClosed();
+        listener.markClosed();
 
         listener.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
@@ -176,7 +176,7 @@ class OpcUaServiceFaultListenerTest {
         // quiet. With a shared listener the closing connection would silence the live one's faults.
         final OpcUaServiceFaultListener onClosing = template.forConnection();
         final OpcUaServiceFaultListener onLive = template.forConnection();
-        onClosing.connectionClosing();
+        onClosing.markClosed();
 
         onClosing.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
         verify(events, never()).createAdapterEvent(anyString(), anyString());
@@ -193,7 +193,7 @@ class OpcUaServiceFaultListenerTest {
 
         // Taking a copy and closing it must not reach back into what it was copied from, or one closing
         // connection would quieten every connection the adapter makes afterwards.
-        template.forConnection().connectionClosing();
+        template.forConnection().markClosed();
         template.onServiceFault(faultWith(StatusCodes.Bad_NoSubscription));
 
         verify(builder).withSeverity(Event.SEVERITY.ERROR);

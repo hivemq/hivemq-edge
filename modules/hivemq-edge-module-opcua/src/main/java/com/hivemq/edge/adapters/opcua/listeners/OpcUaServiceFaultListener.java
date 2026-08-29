@@ -43,8 +43,8 @@ import org.slf4j.LoggerFactory;
  * <b>One instance is built per connection, not per adapter.</b> The adapter builds a template carrying its
  * settings; each connection takes its own copy with {@link #forConnection} and registers that on its own
  * client. The copy serves that connection alone, so when the connection begins closing it can call
- * {@link #connectionClosing()} and this listener knows the faults that follow are the ordinary noise of a
- * close rather than something to report or recover from.
+ * {@link #markClosed()} and this listener knows the faults that follow are the ordinary noise of a close
+ * rather than something to report or recover from.
  */
 public class OpcUaServiceFaultListener implements ServiceFaultListener {
 
@@ -56,7 +56,7 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     private final boolean reconnectOnServiceFault;
 
     /**
-     * Whether the connection this listener serves is closing — set by {@link #connectionClosing()} when that
+     * Whether the connection this listener serves is closing — set by {@link #markClosed()} when that
      * connection begins closing, either because the adapter is stopping or because a reconnect is replacing
      * it. The connection's own flag of the same name is what gets forwarded here.
      * <p>
@@ -106,14 +106,15 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     }
 
     /**
-     * Tells this listener that the connection it serves is closing, so that faults from here on are the
+     * Records that the connection this listener serves is closing, so that faults from here on are the
      * expected noise of a close rather than something to report or recover from.
      * <p>
-     * Called by that connection as it begins closing, before it disconnects anything — which is what makes
-     * this cover the whole close rather than only its end. One-way and idempotent: a closed connection is
-     * never reopened, and a stop followed by a destroy reaches the same connection twice.
+     * Called from the connection's own {@code markClosed()}, which is why it shares the name: it is the same
+     * fact reaching a second object. That happens before anything is disconnected, so this covers the whole
+     * close rather than only its end. One-way and idempotent — a closed connection is never reopened, and a
+     * stop followed by a destroy reaches the same connection twice.
      */
-    public void connectionClosing() {
+    public void markClosed() {
         closed.set(true);
     }
 
