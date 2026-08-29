@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.adapters.opcua.Constants;
+import java.util.function.BooleanSupplier;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -39,17 +40,50 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     private final @Nullable Runnable reconnectionCallback;
     private final boolean reconnectOnServiceFault;
 
+    /**
+     * Whether the adapter this listener belongs to is being torn down.
+     * <p>
+     * The listener is built once per adapter and attached to whichever client is current, so it cannot tell
+     * on its own that the connection a fault arrived on is closing. This is how it asks. Consulted only to
+     * choose the volume of the report, never to decide whether to act.
+     */
+    private final @NotNull BooleanSupplier stopping;
+
+    /**
+     * A listener for a connection that is never torn down, which is every caller that has no adapter to ask.
+     * <p>
+     * The default is "not stopping" rather than the reverse because that is the behaviour this class had
+     * before the distinction existed: every critical fault reported at ERROR. A caller that cannot say
+     * whether it is closing gets the louder answer, not the quieter one.
+     */
     public OpcUaServiceFaultListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
             @Nullable final Runnable reconnectionCallback,
             final boolean reconnectOnServiceFault) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                reconnectionCallback,
+                reconnectOnServiceFault,
+                () -> false);
+    }
+
+    public OpcUaServiceFaultListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @Nullable final Runnable reconnectionCallback,
+            final boolean reconnectOnServiceFault,
+            @NotNull final BooleanSupplier stopping) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.reconnectionCallback = reconnectionCallback;
         this.reconnectOnServiceFault = reconnectOnServiceFault;
+        this.stopping = stopping;
     }
 
     @Override
@@ -59,6 +93,23 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
 
         // Check if this is a critical fault requiring immediate reconnection
         if (reconnectOnServiceFault && isCriticalFault(statusCode)) {
+            // The same fault means two different things depending on whether this adapter is being torn down.
+            // Closing a connection deletes its subscription while this listener is still attached, so a
+            // publish already in flight comes back Bad_NoSubscription -- the expected end of a subscription
+            // that was deliberately removed, not a fault anyone can act on. Reporting it at ERROR made every
+            // shutdown look like a failure, to operators and to the tests that fail on any unexpected ERROR
+            // (EDG-942).
+            //
+            // Only the volume changes. The reconnect below is left exactly as it was: it already returns
+            // quietly when the adapter has been stopped, so the recovery half was never the problem.
+            if (stopping.getAsBoolean()) {
+                log.info(
+                        "OPC UA service fault for adapter '{}' while it is stopping: {}. Expected while the"
+                                + " connection is being closed.",
+                        adapterId,
+                        statusCode);
+                return;
+            }
             log.error("Critical OPC UA service fault detected for adapter '{}': {}", adapterId, statusCode);
 
             eventService
