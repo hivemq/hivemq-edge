@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -162,16 +161,6 @@ public class OpcUaClientConnection {
             new AtomicReference<>();
 
     /**
-     * This connection's answer to "have you been discarded?", handed to the shared fault listener.
-     * <p>
-     * A field rather than a method reference written at each use, because the listener withdraws it by
-     * identity: a fresh {@code this::handlerWasAbandoned} is a different object every time it is written, so
-     * the withdrawal would never match and a reconnect's replacement watch could be cleared by the connection
-     * it replaced.
-     */
-    private final @NotNull BooleanSupplier discarded = this::handlerWasAbandoned;
-
-    /**
      * Whether {@link #stop} or {@link #destroy} has been called on this connection.
      * <p>
      * One-way, and per connection object rather than per adapter: every attempt — first start, retry and
@@ -254,7 +243,15 @@ public class OpcUaClientConnection {
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
         this.tags = tags;
-        this.serviceFaultListener = serviceFaultListener;
+        // Bound to this connection rather than shared with every other one the adapter makes. What arrives is
+        // a template carrying the adapter's settings; what this connection attaches to its own client is its
+        // own copy, which knows without being told that a fault reaching it belongs to this connection.
+        //
+        // The method reference escapes `this` from a constructor, which is worth stating rather than leaving
+        // to be noticed: it is only stored here, never invoked, and the earliest it can run is a fault on a
+        // client this connection has not created yet. The state it reads is a field initializer, so it is
+        // already assigned before this line.
+        this.serviceFaultListener = serviceFaultListener.forConnection(this::handlerWasAbandoned);
         this.statusPublisher = statusPublisher;
         this.prepareForUse = prepareForUse;
         this.publishReady = publishReady;
@@ -378,10 +375,6 @@ public class OpcUaClientConnection {
                     endpointFilter,
                     ignore -> {},
                     new OpcUaClientConfigurator(adapterId, parsedConfig, config));
-            // Point the shared fault listener at this connection before its client can raise anything. A
-            // fault says nothing about whether the client it came from still matters; this connection knows,
-            // because a teardown marks its handler abandoned before it disconnects anything.
-            serviceFaultListener.watch(discarded);
             client.addFaultListener(serviceFaultListener);
             client.addSessionActivityListener(activityListener);
 
@@ -411,7 +404,7 @@ public class OpcUaClientConnection {
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                quietlyCloseClient(client, false, serviceFaultListener, null, discarded);
+                quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -422,7 +415,7 @@ public class OpcUaClientConnection {
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                quietlyCloseClient(client, false, serviceFaultListener, null, discarded);
+                quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             } catch (final ExecutionException e) {
                 final Throwable cause = e.getCause();
@@ -434,7 +427,7 @@ public class OpcUaClientConnection {
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 publishStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                quietlyCloseClient(client, false, serviceFaultListener, null, discarded);
+                quietlyCloseClient(client, false, serviceFaultListener, null);
                 return false;
             }
         } catch (final UaException e) {
@@ -511,7 +504,7 @@ public class OpcUaClientConnection {
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
             }
-            quietlyCloseClient(client, false, serviceFaultListener, activityListener, discarded);
+            quietlyCloseClient(client, false, serviceFaultListener, activityListener);
             return false;
         }
 
@@ -532,7 +525,7 @@ public class OpcUaClientConnection {
                     "OPC UA adapter '{}': the connection was closed while it was being established; "
                             + "discarding the client rather than publishing it",
                     adapterId);
-            quietlyCloseClient(client, false, serviceFaultListener, activityListener, discarded);
+            quietlyCloseClient(client, false, serviceFaultListener, activityListener);
             // Said here rather than left to the activity listener, which cannot say it: quietlyCloseClient
             // removes that listener before disconnecting, precisely so a teardown does not announce itself as
             // a fault. The initial onSessionActive deliberately does not report CONNECTED; the connection
@@ -590,7 +583,7 @@ public class OpcUaClientConnection {
         } catch (final CancellationException e) {
             if (closed.get()) {
                 log.debug("OPC UA metadata preparation was cancelled during teardown for adapter '{}'", adapterId);
-                quietlyCloseClient(client, false, serviceFaultListener, activityListener, discarded);
+                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
                 return false;
             }
             return continueWithoutBrowseMetadata("OPC UA metadata preparation was cancelled", e);
@@ -618,7 +611,7 @@ public class OpcUaClientConnection {
             // The session would then still be closing while the attempt returned and a retry was scheduled.
             // Catching InterruptedException cleared the flag for us, so the window to do the work is now.
             try {
-                quietlyCloseClient(client, false, serviceFaultListener, activityListener, discarded);
+                quietlyCloseClient(client, false, serviceFaultListener, activityListener);
             } finally {
                 Thread.currentThread().interrupt();
             }
@@ -945,7 +938,7 @@ public class OpcUaClientConnection {
     private synchronized void closeContext(final boolean keepSubscription) {
         final ConnectionContext ctx = context.getAndSet(null);
         if (ctx != null) {
-            quietlyCloseClient(ctx.client(), keepSubscription, ctx.faultListener(), ctx.activityListener(), discarded);
+            quietlyCloseClient(ctx.client(), keepSubscription, ctx.faultListener(), ctx.activityListener());
             publishStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
     }
@@ -1044,8 +1037,7 @@ public class OpcUaClientConnection {
             final @NotNull OpcUaClient client,
             final boolean keepSubscription,
             final @Nullable ServiceFaultListener faultListener,
-            final @Nullable SessionActivityListener activityListener,
-            final @NotNull BooleanSupplier withdraw) {
+            final @Nullable SessionActivityListener activityListener) {
 
         client.getSubscriptions().forEach(subscription -> {
             subscription.setSubscriptionListener(null);
@@ -1058,11 +1050,6 @@ public class OpcUaClientConnection {
                 client.removeFaultListener(faultListener);
             } catch (final Throwable e) {
                 log.error("Failed to remove fault listener {}: {}", faultListener, e.getMessage());
-            }
-            // Withdraw this connection's answer along with the listener, and only if it is still the one
-            // being consulted -- a reconnect's replacement may already have installed its own.
-            if (faultListener instanceof final OpcUaServiceFaultListener owned) {
-                owned.unwatch(withdraw);
             }
         }
         if (activityListener != null) {

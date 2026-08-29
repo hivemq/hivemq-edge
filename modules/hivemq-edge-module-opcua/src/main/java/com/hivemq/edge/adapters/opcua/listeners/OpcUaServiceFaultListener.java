@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.adapters.opcua.Constants;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -44,18 +43,17 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     /**
      * Whether the connection whose client raised the fault has been discarded.
      * <p>
-     * A fault arrives on a client, and this listener cannot tell from the fault alone whether that client
-     * still matters. The connection that owns the client can: it marks its subscription handler abandoned
-     * before it disconnects anything, precisely so that work already in flight can stop. That mark is what
-     * this asks for, and it is set early enough to cover the whole close.
+     * A fault carries a status code and nothing else -- Milo's callback takes one argument, and the fault
+     * names neither the client nor the session it came from. So a listener cannot ask about the fault's
+     * origin; it can only know the connection it was <em>built for</em>. That is why {@link #forConnection}
+     * exists and why this is final: being called is the identification.
      * <p>
-     * Settable rather than constructor-injected because this listener outlives a single connection -- the
-     * adapter builds one and hands it to each connection in turn -- so the connection to ask changes. Each
-     * connection points it at itself as it attaches, and clears it as it detaches. Answers false while
-     * unset, which is the behaviour this class had before the distinction existed: a caller that cannot say
-     * whether its connection is being discarded gets the louder report, not the quieter one.
+     * What it asks is whether the connection marked its subscription handler abandoned, which a teardown
+     * does before it disconnects anything, so the answer covers the whole close rather than only its end.
+     * Always false on an instance nobody bound, which is the behaviour this class had before the
+     * distinction existed: a listener with no connection to ask reports at full volume.
      */
-    private final @NotNull AtomicReference<BooleanSupplier> discarded = new AtomicReference<>();
+    private final @NotNull BooleanSupplier discarded;
 
     public OpcUaServiceFaultListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -63,41 +61,53 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
             @NotNull final String adapterId,
             @Nullable final Runnable reconnectionCallback,
             final boolean reconnectOnServiceFault) {
+        this(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                reconnectionCallback,
+                reconnectOnServiceFault,
+                () -> false);
+    }
+
+    private OpcUaServiceFaultListener(
+            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
+            @NotNull final EventService eventService,
+            @NotNull final String adapterId,
+            @Nullable final Runnable reconnectionCallback,
+            final boolean reconnectOnServiceFault,
+            @NotNull final BooleanSupplier discarded) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.reconnectionCallback = reconnectionCallback;
         this.reconnectOnServiceFault = reconnectOnServiceFault;
+        this.discarded = discarded;
     }
 
     /**
-     * Names the connection whose discard state this listener should consult.
+     * A copy of this listener bound to one connection, for that connection's client alone.
      * <p>
-     * Called by a connection as it attaches this listener to its client. The most recent caller wins, which
-     * is what a reconnect needs: the replacement connection attaches before the old one has finished closing,
-     * and it is the replacement whose faults matter from then on.
-     */
-    public void watch(final @NotNull BooleanSupplier connectionDiscarded) {
-        discarded.set(connectionDiscarded);
-    }
-
-    /**
-     * Stops consulting {@code connectionDiscarded}, if it is still the one being consulted.
+     * The adapter builds one of these and every connection derives its own, rather than all of them sharing
+     * the adapter's. Sharing was the defect: an adapter can have two connections alive at once -- a
+     * replacement starting while the connection it replaces is still finishing or closing -- so a single
+     * mutable pointer to "the connection to ask" is written by whichever starts last, not by whichever is
+     * current. A slow start could therefore redirect a live connection's reporting at a discarded one and
+     * silence real faults.
      * <p>
-     * Conditional, and that is the whole point. A connection clears its watch as it detaches, but a reconnect
-     * has the replacement attach <em>before</em> the old connection finishes closing -- so a blind clear here
-     * would wipe the live connection's watch and leave this listener answering "not discarded" for a
-     * connection that may since have been discarded. Clearing only what this connection itself installed
-     * leaves a newer watch alone.
+     * Binding at construction removes the question rather than guarding it. Milo calls the listener attached
+     * to the client that raised the fault, and each connection attaches its own, so the instance receiving
+     * the call already identifies the connection. Nothing to overwrite, nothing to withdraw, no ordering to
+     * get right.
      */
-    public void unwatch(final @NotNull BooleanSupplier connectionDiscarded) {
-        discarded.compareAndSet(connectionDiscarded, null);
-    }
-
-    /** Whether the connection that raised this fault is being discarded; false when nobody has said. */
-    private boolean isDiscarded() {
-        final BooleanSupplier source = discarded.get();
-        return source != null && source.getAsBoolean();
+    public @NotNull OpcUaServiceFaultListener forConnection(final @NotNull BooleanSupplier connectionDiscarded) {
+        return new OpcUaServiceFaultListener(
+                protocolAdapterMetricsService,
+                eventService,
+                adapterId,
+                reconnectionCallback,
+                reconnectOnServiceFault,
+                connectionDiscarded);
     }
 
     @Override
@@ -122,7 +132,7 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
         //
         // The reconnect the critical branch would have triggered is skipped with it, and that is right rather
         // than merely harmless: a connection that has already been discarded is not the one to recover from.
-        if (isDiscarded()) {
+        if (discarded.getAsBoolean()) {
             log.info(
                     "OPC UA service fault for adapter '{}' on a connection being closed: {}. Expected while"
                             + " the connection is discarded.",
