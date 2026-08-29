@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.adapters.opcua.Constants;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -41,49 +42,62 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     private final boolean reconnectOnServiceFault;
 
     /**
-     * Whether the adapter this listener belongs to is being torn down.
+     * Whether the connection whose client raised the fault has been discarded.
      * <p>
-     * The listener is built once per adapter and attached to whichever client is current, so it cannot tell
-     * on its own that the connection a fault arrived on is closing. This is how it asks. Consulted only to
-     * choose the volume of the report, never to decide whether to act.
+     * A fault arrives on a client, and this listener cannot tell from the fault alone whether that client
+     * still matters. The connection that owns the client can: it marks its subscription handler abandoned
+     * before it disconnects anything, precisely so that work already in flight can stop. That mark is what
+     * this asks for, and it is set early enough to cover the whole close.
+     * <p>
+     * Settable rather than constructor-injected because this listener outlives a single connection -- the
+     * adapter builds one and hands it to each connection in turn -- so the connection to ask changes. Each
+     * connection points it at itself as it attaches, and clears it as it detaches. Answers false while
+     * unset, which is the behaviour this class had before the distinction existed: a caller that cannot say
+     * whether its connection is being discarded gets the louder report, not the quieter one.
      */
-    private final @NotNull BooleanSupplier stopping;
+    private final @NotNull AtomicReference<BooleanSupplier> discarded = new AtomicReference<>();
 
-    /**
-     * A listener for a connection that is never torn down, which is every caller that has no adapter to ask.
-     * <p>
-     * The default is "not stopping" rather than the reverse because that is the behaviour this class had
-     * before the distinction existed: every critical fault reported at ERROR. A caller that cannot say
-     * whether it is closing gets the louder answer, not the quieter one.
-     */
     public OpcUaServiceFaultListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
             @Nullable final Runnable reconnectionCallback,
             final boolean reconnectOnServiceFault) {
-        this(
-                protocolAdapterMetricsService,
-                eventService,
-                adapterId,
-                reconnectionCallback,
-                reconnectOnServiceFault,
-                () -> false);
-    }
-
-    public OpcUaServiceFaultListener(
-            @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
-            @NotNull final EventService eventService,
-            @NotNull final String adapterId,
-            @Nullable final Runnable reconnectionCallback,
-            final boolean reconnectOnServiceFault,
-            @NotNull final BooleanSupplier stopping) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.reconnectionCallback = reconnectionCallback;
         this.reconnectOnServiceFault = reconnectOnServiceFault;
-        this.stopping = stopping;
+    }
+
+    /**
+     * Names the connection whose discard state this listener should consult.
+     * <p>
+     * Called by a connection as it attaches this listener to its client. The most recent caller wins, which
+     * is what a reconnect needs: the replacement connection attaches before the old one has finished closing,
+     * and it is the replacement whose faults matter from then on.
+     */
+    public void watch(final @NotNull BooleanSupplier connectionDiscarded) {
+        discarded.set(connectionDiscarded);
+    }
+
+    /**
+     * Stops consulting {@code connectionDiscarded}, if it is still the one being consulted.
+     * <p>
+     * Conditional, and that is the whole point. A connection clears its watch as it detaches, but a reconnect
+     * has the replacement attach <em>before</em> the old connection finishes closing -- so a blind clear here
+     * would wipe the live connection's watch and leave this listener answering "not discarded" for a
+     * connection that may since have been discarded. Clearing only what this connection itself installed
+     * leaves a newer watch alone.
+     */
+    public void unwatch(final @NotNull BooleanSupplier connectionDiscarded) {
+        discarded.compareAndSet(connectionDiscarded, null);
+    }
+
+    /** Whether the connection that raised this fault is being discarded; false when nobody has said. */
+    private boolean isDiscarded() {
+        final BooleanSupplier source = discarded.get();
+        return source != null && source.getAsBoolean();
     }
 
     @Override
@@ -91,24 +105,27 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
         final StatusCode statusCode = serviceFault.getResponseHeader().getServiceResult();
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_SERVICE_FAULT_COUNT);
 
-        // The same fault means two different things depending on whether this adapter is being torn down.
-        // Closing a connection deletes its subscription while this listener is still attached, so a publish
-        // already in flight comes back Bad_NoSubscription -- the expected end of a subscription that was
-        // deliberately removed, not a fault anyone can act on. Reporting it as a fault made every shutdown
+        // The same fault means two different things depending on whether the connection it arrived on still
+        // matters. Discarding a connection deletes its subscription while this listener is still attached, so
+        // a publish already in flight comes back Bad_NoSubscription -- the expected end of a subscription that
+        // was deliberately removed, not a fault anyone can act on. Reporting it as a fault made every shutdown
         // look like a failure, to operators and to the tests that fail on any unexpected ERROR (EDG-942).
+        //
+        // "Discarded" rather than "the adapter is stopping", because those differ: a reconnect discards a
+        // connection while the adapter stays up. Both cases want silence for the same reason -- a replacement
+        // is coming, or nothing is -- and in neither is the old connection's failure something to act on.
         //
         // Above the critical/non-critical split rather than inside it. Which branch a fault takes depends on
         // `reconnectOnServiceFault`, an operator's autoReconnect setting -- so a check inside the critical
-        // branch would let the identical shutdown fault stay noisy for anyone who turned auto-reconnect off.
-        // Teardown is a property of this adapter, not of that setting.
+        // branch would let the identical fault stay noisy for anyone who turned auto-reconnect off. Being
+        // discarded is a property of the connection, not of that setting.
         //
-        // The reconnect the critical branch would have triggered is skipped with it. That costs nothing: it
-        // reads the very same flag on entry and returns without doing anything. The two are one guard asked
-        // twice, not two independent ones.
-        if (stopping.getAsBoolean()) {
+        // The reconnect the critical branch would have triggered is skipped with it, and that is right rather
+        // than merely harmless: a connection that has already been discarded is not the one to recover from.
+        if (isDiscarded()) {
             log.info(
-                    "OPC UA service fault for adapter '{}' while it is stopping: {}. Expected while the"
-                            + " connection is being closed.",
+                    "OPC UA service fault for adapter '{}' on a connection being closed: {}. Expected while"
+                            + " the connection is discarded.",
                     adapterId,
                     statusCode);
             return;

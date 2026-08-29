@@ -180,12 +180,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 input.moduleServices().eventService(),
                 adapterId,
                 this::reconnect,
-                config.getConnectionOptions().autoReconnect(),
-                // `stopped` rather than the connection's own abandonment flag, because stop() and destroy()
-                // both release the connection reference before closing it -- so for the whole window in which
-                // the closing client can still raise a fault, there is no current connection left to ask.
-                // `stopped` is set before that release in both, and stays true across it.
-                () -> stopped);
+                config.getConnectionOptions().autoReconnect());
     }
 
     /**
