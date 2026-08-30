@@ -67,6 +67,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -121,6 +122,18 @@ public class ProtocolAdapterManager {
     private final @NotNull ExecutorService adapterLifecycleExecutor;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull AtomicInteger refreshTasksInProgress = new AtomicInteger(0);
+
+    /**
+     * Whether the most recently completed configuration change reconciled every adapter.
+     * <p>
+     * Set by each refresh as it finishes, so it describes whichever change completed last rather than any
+     * particular one. See {@link #awaitConfigApplied()}, which is the only thing that reads it and which
+     * explains why that is sufficient.
+     * <p>
+     * Starts true: an Edge that has applied no configuration has not failed to apply one.
+     */
+    private final @NotNull AtomicBoolean lastConfigApplied = new AtomicBoolean(true);
+
     private final @NotNull AtomicReference<ProtocolAdapterManagerState> managerState =
             new AtomicReference<>(ProtocolAdapterManagerState.Idle);
     /**
@@ -194,6 +207,44 @@ public class ProtocolAdapterManager {
      */
     public boolean isBusy() {
         return refreshTasksInProgress.get() > 0;
+    }
+
+    /**
+     * Blocks until every configuration change requested so far has taken effect, and reports whether the last
+     * of them reconciled every adapter.
+     * <p>
+     * A configuration change is acknowledged before it is enacted: the request records it, queues the work of
+     * reconciling the running adapters with it, and returns. A caller that changes something and immediately
+     * acts on it therefore races that work, and nothing in the API distinguishes "configured" from "in
+     * effect" — an adapter reports itself started and connected part-way through a restart, before writes
+     * begin working again.
+     * <p>
+     * Waiting is expressed as an empty task rather than as a flag to poll. Refreshes run on a single-threaded
+     * queue and nothing else submits to it, so a task placed on the end cannot run until every refresh ahead
+     * of it has finished. That is the whole mechanism: no progress state to keep in step, and no window in
+     * which a caller can observe "not busy" before its own work has been picked up.
+     * <p>
+     * The returned value describes whichever change completed last, not specifically the caller's. Nothing
+     * distinguishes them, and nothing needs to: configuration changes arrive only through the API, one at a
+     * time, so a caller waiting here is waiting on its own work. A future caller that cannot rely on that
+     * would need something finer.
+     *
+     * @return true if the last completed change reconciled every adapter; false if any adapter failed, the
+     *         refresh threw, or the queue is shutting down and the wait could not be placed
+     * @throws InterruptedException if interrupted while waiting
+     */
+    public boolean awaitConfigApplied() throws InterruptedException {
+        try {
+            executorService.submit(() -> {}).get();
+        } catch (final RejectedExecutionException e) {
+            // Shutting down: nothing further will be applied, so reporting success would be a lie.
+            return false;
+        } catch (final ExecutionException e) {
+            // The empty task itself cannot fail. Treated as unsettled rather than swallowed.
+            LOGGER.warn("Waiting for the adapter configuration to be applied failed", e);
+            return false;
+        }
+        return lastConfigApplied.get();
     }
 
     /**
@@ -694,6 +745,10 @@ public class ProtocolAdapterManager {
                     refreshCreatedAdapters(toBeCreatedProtocolAdapterIdSet, protocolAdapterConfigs, failedAdapterSet);
                     refreshUpdatedAdapters(toBeUpdatedProtocolAdapterIdSet, protocolAdapterConfigs, failedAdapterSet);
 
+                    // False when only one adapter of several was rejected, matching what the event below
+                    // reports: "this change did not fully take effect" is what a caller can act on, and
+                    // which part of it failed is in the log.
+                    lastConfigApplied.set(failedAdapterSet.isEmpty());
                     if (failedAdapterSet.isEmpty()) {
                         eventService
                                 .configurationEvent()
@@ -708,6 +763,7 @@ public class ProtocolAdapterManager {
                                 .fire();
                     }
                 } catch (final Exception e) {
+                    lastConfigApplied.set(false);
                     LOGGER.error("Failed refreshing adapters", e);
                 } finally {
                     final int remainingTasks = refreshTasksInProgress.decrementAndGet();
@@ -717,6 +773,8 @@ public class ProtocolAdapterManager {
                 }
             });
         } catch (final RejectedExecutionException e) {
+            // Never queued, so it will never be applied.
+            lastConfigApplied.set(false);
             final int remainingTasks = refreshTasksInProgress.decrementAndGet();
             if (remainingTasks == 0) {
                 managerState.set(ProtocolAdapterManagerState.Idle);
@@ -727,6 +785,7 @@ public class ProtocolAdapterManager {
                 throw e;
             }
         } catch (final RuntimeException e) {
+            lastConfigApplied.set(false);
             final int remainingTasks = refreshTasksInProgress.decrementAndGet();
             if (remainingTasks == 0) {
                 managerState.set(ProtocolAdapterManagerState.Idle);
