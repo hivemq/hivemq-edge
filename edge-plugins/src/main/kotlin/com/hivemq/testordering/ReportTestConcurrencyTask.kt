@@ -236,14 +236,20 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             busyUntil = maxOf(busyUntil, span.second)
         }
 
-        // THE LARGEST RUN, NOT THE LAST ONE. `runs.last()` looks right -- the newest burst of
-        // activity is presumably the run just finished -- but it is wrong whenever anything ran
-        // after the suite: re-running one failing class, or an IDE running a single test, appends a
-        // later and much smaller segment. Observed printing "8s of class time in 8s of wall clock =
-        // 1.0 effective average concurrency" for a run of 336 classes and over an hour of work,
-        // because a stray 9-second single-class invocation followed it. The suite outweighs such
-        // strays by two orders of magnitude, so size is the reliable signal.
-        val spans = runs.maxBy { it.size }
+        // THE LARGEST RUN, AND AMONG EQUALS THE NEWEST. `runs.last()` looks right -- the newest
+        // burst of activity is presumably the run just finished -- but it is wrong whenever
+        // anything ran after the suite: re-running one failing class, or an IDE running a single
+        // test, appends a later and much smaller segment. Observed printing "8s of class time in
+        // 8s of wall clock = 1.0 effective average concurrency" for a run of 336 classes and over
+        // an hour of work, because a stray 9-second single-class invocation followed it. The suite
+        // outweighs such strays by two orders of magnitude, so size rejects them reliably.
+        //
+        // SIZE ALONE IS NOT ENOUGH THOUGH, because every full run of the suite has the SAME size.
+        // `maxBy` keeps the FIRST maximum, so once the directory held several complete runs this
+        // reported the OLDEST one for as long as those logs survived -- a report of a run four days
+        // stale, presented as the run just finished, with no hint anything was wrong. Ties are
+        // broken by start time so a full run always beats its own history.
+        val spans = runs.maxWith(compareBy({ it.size }, { it.minOf { span -> span.first } }))
         val ignored = all.size - spans.size
         val otherRuns = runs.size - 1
 
