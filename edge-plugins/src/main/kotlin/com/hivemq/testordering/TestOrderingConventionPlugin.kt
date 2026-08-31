@@ -44,7 +44,36 @@ class TestOrderingConventionPlugin : Plugin<Project> {
         // then a cp between two paths that differ only in their directory.
         val generated = project.layout.buildDirectory.file("test-class-timings.csv")
 
+        // A default timeout for every test, so no single test can hang a build indefinitely.
+        //
+        // EDG-864 put this on the integration suite after a run of builds that hung for hours -- one for
+        // 22.4 hours before somebody killed it by hand. EDG-973 moved it here and gave the unit suite one
+        // too, which had none at all.
+        //
+        // WHY IT MATTERS BEYOND THE BUILD THAT HANGS: a test's runtime is written back into Test
+        // Distribution's per-class history, which keeps a rolling average (avg = avg * 0.9 + current * 0.1).
+        // The plugin sizes its executor request as ceil(total estimate / longest class estimate), so ONE
+        // 22-hour observation dragged a class average to ~2h and throttled EVERY later build to 3 executors
+        // until tens of clean runs diluted it out. That is what happened on 2026-08-03. A hang is not a
+        // one-build problem.
+        //
+        // EVERY PROJECT SETS ITS OWN VALUE in its gradle.properties, next to a note on why that number:
+        // 60s for the unit tests (slowest measured 5.2s), 10m for the integration suite (slowest whole
+        // class 67s). Both sit an order of magnitude above anything observed, so a healthy test cannot
+        // trip them while a runaway is caught long before it poisons anything. Explicit @Timeout
+        // annotations still win, so the deliberately long tests keep their own values.
+        //
+        // The fallback below is a backstop for a project that forgets, NOT a policy default. It matches the
+        // most generous value any suite here uses, so it cannot cut a legitimate test short, while still
+        // being far below the hours a hang costs. If you are reading this because a test failed at 10
+        // minutes, the fix is to set testTimeout in that project rather than to change this line.
+        //
+        // Set UNCONDITIONALLY, unlike the ordering below: this can only turn a hang into a named failure,
+        // and CI is exactly where the poisoned-history problem bites.
+        val timeout = project.findProperty("testTimeout") as String? ?: "10m"
+
         project.tasks.withType<Test>().configureEach {
+            systemProperty("junit.jupiter.execution.timeout.default", timeout)
             doFirst {
                 orderTestClasses(this as Test, committed.asFile)
             }
