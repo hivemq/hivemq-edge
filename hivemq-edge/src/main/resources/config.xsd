@@ -1063,7 +1063,13 @@
                         <xs:element name="servers" minOccurs="1" maxOccurs="1">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="ldap-server" minOccurs="1">
+                                    <xs:element name="ldap-server" minOccurs="1" maxOccurs="unbounded">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                LDAP server to authenticate against. Several may be given; connections
+                                                are distributed over them round-robin.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                         <xs:complexType>
                                             <xs:all>
                                                 <xs:element name="host" type="nonEmptyString"/>
