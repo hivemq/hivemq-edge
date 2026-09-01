@@ -539,11 +539,12 @@ public class ConfigFileReaderWriter {
         try {
             createPartialFile(partial, preserved);
             content.writeTo(partial);
-            // Widened to exactly the target's protections only once the content is on disk, so the file is
-            // never wider than its eventual self while it is being filled. A failure here aborts the
-            // replacement: moving a file whose protections could not be reproduced would either widen a
-            // deliberately restricted config.xml or narrow one an operator shares deliberately, and the
-            // original on disk is still valid and still correct.
+            // Widened to the target's protections only once the content is on disk, so the file is never
+            // wider than its eventual self while it is being filled. Never wider than the target either:
+            // a protection this node cannot set -- the owner, or a group it is not in -- narrows the
+            // replacement instead of widening it, and anything else aborts, because moving a file whose
+            // protections could not be reproduced would open a deliberately restricted config.xml while
+            // the original on disk is still valid and still correct.
             applyPreservedAttributes(partial, preserved);
             try {
                 Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
@@ -602,6 +603,14 @@ public class ConfigFileReaderWriter {
             Collections.unmodifiableSet(EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
 
     /**
+     * Everything a mode can grant to the file's group: what comes off it when the replacement could not be
+     * given the group of the file it replaces, so that the mode never grants to this node's own group what
+     * it was meant to grant to that one.
+     */
+    private static final @NotNull Set<PosixFilePermission> GROUP_PERMISSIONS = Collections.unmodifiableSet(EnumSet.of(
+            PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE, PosixFilePermission.GROUP_EXECUTE));
+
+    /**
      * Everything about the file being replaced that decides who can read it.
      * <p>
      * The mode alone is not that. {@code 0640} names a group without naming <em>which</em> group, and a
@@ -636,6 +645,38 @@ public class ConfigFileReaderWriter {
         PreservedAttributes withoutOwner() {
             return new PreservedAttributes(permissions, null, group, acl);
         }
+
+        /**
+         * The same protections, minus a claim to have reproduced the group <em>and</em> minus everything
+         * the mode would have granted through it.
+         * <p>
+         * The two are one protection. {@code 0640} says "the group may read" without saying which group,
+         * so dropping the group while keeping the mode is precisely R3-09: group-read of a file full of
+         * credentials, granted to whichever group this node happens to belong to instead of the one the
+         * operator chose. Dropping both leaves the replacement granting the group nothing, which is
+         * narrower than the file it replaces rather than wider.
+         * <p>
+         * Only the group's own bits come off. The owner's are this node's either way, and what the mode
+         * grants to others is granted to the same others on the file being replaced, so removing those
+         * would take away access the operator deliberately gave.
+         */
+        @NotNull
+        PreservedAttributes withoutGroupAccess() {
+            if (permissions == null) {
+                return new PreservedAttributes(null, owner, null, acl);
+            }
+            // Built empty and added to, rather than EnumSet.copyOf, which throws on an empty collection
+            // that is not itself an EnumSet -- and the mode of a file nobody may read is exactly that.
+            final EnumSet<PosixFilePermission> withoutTheGroups = EnumSet.noneOf(PosixFilePermission.class);
+            withoutTheGroups.addAll(permissions);
+            withoutTheGroups.removeAll(GROUP_PERMISSIONS);
+            return new PreservedAttributes(Collections.unmodifiableSet(withoutTheGroups), owner, null, acl);
+        }
+    }
+
+    /** Whether a mode grants the file's group anything at all. */
+    private static boolean grantsAnythingToGroup(final @Nullable Set<PosixFilePermission> permissions) {
+        return permissions != null && !Collections.disjoint(permissions, GROUP_PERMISSIONS);
     }
 
     /**
@@ -844,19 +885,38 @@ public class ConfigFileReaderWriter {
      * mode last. Setting the mode first would open a window in which the file is already group- or
      * world-readable but still owned by the wrong principals.
      * <p>
-     * Throws rather than warns, at every step but one. The alternative — carry what you can, move it
-     * either way — is what R3-07 and R3-09 reported between them: a failure leaves a file full of
-     * credentials with the umask's mode and the creating process's group, permanently, announced at debug
-     * level. Refusing the replacement keeps the previous configuration file, which is intact, correctly
-     * permissioned and still the one the running node matches.
+     * <b>What is guaranteed is that the replacement is never more accessible than the file it replaces —
+     * not that every protection is reproduced exactly.</b> Both extremes are defects and both have been
+     * shipped here. Carrying what you can and moving it either way is R3-07 and R3-09 between them: a
+     * failure left a file full of credentials with the umask's mode and the creating process's group,
+     * permanently, announced at debug level. Refusing the replacement outright is the other, and it is not
+     * free — it is the <em>write</em> that is refused, so the configuration the operator just asked for is
+     * not persisted, and the node goes on running correctly until a restart brings back the older file
+     * without it. Where a protection cannot be reproduced, this narrows instead: the replacement is given
+     * less than the file it replaces rather than more, and the write goes on.
      * <p>
-     * The exception is the owner, which is not the node's to set: changing it is privileged everywhere
-     * this runs, so refusing on it meant a configuration installed by one account and served by another
-     * could never be written at all. It falls back to this node's own account with a warning, because the
-     * account that just rendered the document already holds every credential in it — while the mode, the
-     * group and the access-control list, which are what decide who <em>else</em> can read the file, keep
-     * refusing. A file this node may not write in the first place never gets here: {@code writeConfigToXML}
-     * turns that away before anything is written.
+     * Two protections are not this node's to set, and each narrows in its own way.
+     * <ul>
+     * <li><b>The owner.</b> Changing it is privileged everywhere this runs, so refusing on it meant a
+     * configuration installed by one account and served by another could never be written at all
+     * (EDG-882 review v04). It falls back to this node's own account, which discloses nothing: the account
+     * that just rendered the document already holds every credential in it.</li>
+     * <li><b>The group.</b> Setting it requires membership of it, so the ordinary container case — a
+     * {@code config.xml} installed under one group, Edge running under another — failed here and stopped
+     * the node persisting anything at all, found in QA on this branch. Keeping the mode while the group
+     * falls back to this process's own is exactly R3-09's disclosure, so the group's permissions come off
+     * the mode with it: the replacement grants the group nothing rather than granting it to the wrong
+     * principals. Nobody gains, someone may lose, and that is said out loud.</li>
+     * </ul>
+     * <p>
+     * The mode and the access-control list keep refusing. Neither can fail the way those two do — both are
+     * set on a file this process created and owns, which is all either call asks for — so a failure there
+     * is the store saying something is wrong, not a privilege this node was never going to have.
+     * <p>
+     * What is applied is taken from what has been proved rather than from what was asked for, so a
+     * protection that could not be reproduced cannot be granted back through another one. A file this node
+     * may not write in the first place never gets here: {@code writeConfigToXML} turns that away before
+     * anything is written.
      */
     @VisibleForTesting
     static void applyPreservedAttributes(final @NotNull Path partial, final @NotNull PreservedAttributes preserved)
@@ -864,8 +924,8 @@ public class ConfigFileReaderWriter {
         if (preserved.nothingToReproduce()) {
             return;
         }
-        // What the verification below is entitled to insist on: everything, unless the owner turned out
-        // not to be this node's to set.
+        // What the verification below is entitled to insist on, and what the mode at the end is taken
+        // from: everything, less whatever turned out not to be this node's to set.
         PreservedAttributes proven = preserved;
         try {
             // Owner through the owner view, not the POSIX one: an ACL-only store has an owner and no
@@ -903,7 +963,7 @@ public class ConfigFileReaderWriter {
                                 partial,
                                 preserved.owner().getName(),
                                 notPermitted);
-                        proven = preserved.withoutOwner();
+                        proven = proven.withoutOwner();
                     }
                 }
             }
@@ -914,7 +974,44 @@ public class ConfigFileReaderWriter {
                     throw new IOException("The replacement cannot carry a group on this file store");
                 }
                 if (!preserved.group().equals(partialPosix.readAttributes().group())) {
-                    partialPosix.setGroup(preserved.group());
+                    try {
+                        partialPosix.setGroup(preserved.group());
+                    } catch (final UnsupportedOperationException | SecurityException | IOException notPermitted) {
+                        // Setting a file's group requires membership of it, so the ordinary container case
+                        // -- config.xml installed under one group, Edge running under another -- refused
+                        // the whole write here. The node then went on running correctly while persisting
+                        // nothing at all, and every REST change since the last restart was lost on the
+                        // next one (found in QA on this branch).
+                        //
+                        // Dropping the group takes the mode's group permissions with it. Keeping them
+                        // would grant group-read of every credential in the configuration to whichever
+                        // group this node belongs to, which is R3-09 in the one place it still could
+                        // happen. The verification below is told not to insist on either.
+                        proven = proven.withoutGroupAccess();
+                        if (grantsAnythingToGroup(preserved.permissions())) {
+                            log.warn(
+                                    "The replacement for {} could not be given the group of the file it replaces"
+                                            + " ('{}'), so the permissions that mode grants to the group have been"
+                                            + " removed from it rather than handed to this node's own group. The"
+                                            + " configuration is still written and nobody gains access, but"
+                                            + " principals that could read it through that group no longer can."
+                                            + " Add this node's account to that group, or give the file a group it"
+                                            + " is already in, to keep it readable.",
+                                    partial,
+                                    preserved.group().getName(),
+                                    notPermitted);
+                        } else {
+                            // The mode grants the group nothing, so which group it names decides nobody's
+                            // access and dropping it costs nothing. Not worth a warning on every write.
+                            log.debug(
+                                    "The replacement for {} could not be given the group of the file it replaces"
+                                            + " ('{}'). That file's mode grants its group nothing, so no principal"
+                                            + " gains or loses access.",
+                                    partial,
+                                    preserved.group().getName(),
+                                    notPermitted);
+                        }
+                    }
                 }
             }
             if (preserved.acl() != null) {
@@ -926,8 +1023,10 @@ public class ConfigFileReaderWriter {
                     partialAcl.setAcl(preserved.acl());
                 }
             }
-            if (preserved.permissions() != null) {
-                Files.setPosixFilePermissions(partial, preserved.permissions());
+            // From what was proved, not from what was asked for: if the group could not be reproduced, the
+            // permissions it would have had are no longer in here to grant.
+            if (proven.permissions() != null) {
+                Files.setPosixFilePermissions(partial, proven.permissions());
             }
         } catch (final UnsupportedOperationException | SecurityException | IOException e) {
             throw new IOException(

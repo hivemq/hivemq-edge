@@ -16,6 +16,8 @@
 package com.hivemq.configuration.reader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,8 +62,13 @@ import org.junit.jupiter.api.io.TempDir;
  * was treated as "there are none" and the write proceeded on the umask (R3-09).
  * <p>
  * That window did not exist before the branch that introduced it: writing in place reused the file's own
- * inode and therefore its own mode, group and ACL. It is a regression, which is why the behaviour here is
- * fail-closed rather than best-effort.
+ * inode and therefore its own mode, group and ACL. It is a regression, which is why the behaviour here
+ * fails closed rather than best-effort.
+ * <p>
+ * Fails closed on <em>access</em>, which is not the same as refusing the write. A protection this node was
+ * never going to be able to set — an owner it may not assign, a group it is not a member of — narrows the
+ * replacement instead of aborting it, because aborting means the configuration the operator just asked for
+ * is not persisted and comes back missing on the next restart. Both halves are pinned below.
  * <p>
  * The creation-time property is the one that matters and it cannot be observed end to end — the write is
  * synchronous and the temporary file is gone by the time any assertion could run — so it is pinned
@@ -350,13 +357,26 @@ public class ConfigWritePermissionsTest {
         assertEquals(attributes.group(), actual.group(), "and so is the group, which is who else can read it");
     }
 
+    // ------------------------------------------------- EDG-882 QA: a group this node is not a member of
+
     /**
-     * The other half of that trade: the protections that decide who <em>else</em> can read the file keep
-     * refusing. A group this account cannot assign aborts the replacement rather than granting group-read
-     * to whichever group the node happens to belong to.
+     * The regression this closes, and it is the same shape as the owner one above. Setting a file's group
+     * requires membership of it, so a {@code config.xml} installed under one group and served by a node
+     * running under another — the ordinary container case — failed here, and failing here refused the
+     * whole <em>write</em>. Edge went on running correctly on the configuration it already had, so nothing
+     * looked broken until a restart came up on the older file with every REST change since missing.
+     * <p>
+     * The first fix for it aborted rather than granted, because a mode names a group without naming which
+     * one, and reproducing {@code 0640} while the group falls back to this node's own hands group-read of
+     * every credential in the configuration to the wrong principals (R3-09). Narrowing does neither: the
+     * group's permissions come off the mode with the group, so the replacement grants the group nothing.
+     * <p>
+     * Provoked with a group this account is not in, which every POSIX system has and which no ordinary
+     * account may assign. Skipped when the build runs as a superuser, for whom the call succeeds.
      */
     @Test
-    public void applyPreservedAttributes_whenTheGroupCannotBeSet_thenTheWriteIsStillAborted() throws IOException {
+    public void applyPreservedAttributes_whenTheGroupCannotBeSet_thenTheGroupsAccessComesOffTheMode()
+            throws IOException {
         assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any group");
         final Path target = targetWith(GROUP_READABLE);
         final PosixFileAttributes attributes = Files.readAttributes(target, PosixFileAttributes.class);
@@ -365,11 +385,167 @@ public class ConfigWritePermissionsTest {
         final PreservedAttributes elsewhere =
                 new PreservedAttributes(attributes.permissions(), attributes.owner(), foreign, null);
         ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+        Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
+
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+
+        final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
+        assertEquals(
+                OWNER_ONLY,
+                actual.permissions(),
+                "the group's permissions stayed on a mode whose group is now this node's own, which is R3-09");
+        assertNotEquals(foreign, actual.group(), "the group cannot have been set, or this test proves nothing");
+        assertEquals(attributes.owner(), actual.owner(), "the owner is this account either way and must be unchanged");
+    }
+
+    /**
+     * And only the group's own bits come off. What the mode grants to others is granted to the same others
+     * on the file being replaced, so removing it would take away access the operator deliberately gave —
+     * a narrowing nobody asked for is still a change nobody asked for.
+     */
+    @Test
+    public void applyPreservedAttributes_whenTheGroupCannotBeSet_thenOthersKeepWhatTheModeGaveThem()
+            throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any group");
+        final Path target = targetWith(WORLD_READABLE);
+        final PosixFileAttributes attributes = Files.readAttributes(target, PosixFileAttributes.class);
+        final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
+        assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
+        final PreservedAttributes elsewhere =
+                new PreservedAttributes(attributes.permissions(), attributes.owner(), foreign, null);
+        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+
+        assertEquals(
+                PosixFilePermissions.fromString("rw----r--"),
+                Files.getPosixFilePermissions(partial),
+                "only the group's permissions come off; the world's are the same world the target grants");
+    }
+
+    /**
+     * A group that decides nobody's access. When the mode grants the group nothing, which group the file
+     * names is decoration, and dropping it must change the mode not at all — the narrowing is of access,
+     * not of bits.
+     */
+    @Test
+    public void applyPreservedAttributes_whenTheGroupCannotBeSetAndGrantsNothing_thenTheModeIsUntouched()
+            throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any group");
+        final Path target = targetWith(OWNER_ONLY);
+        final PosixFileAttributes attributes = Files.readAttributes(target, PosixFileAttributes.class);
+        final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
+        assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
+        final PreservedAttributes elsewhere =
+                new PreservedAttributes(attributes.permissions(), attributes.owner(), foreign, null);
+        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+
+        assertEquals(
+                OWNER_ONLY,
+                Files.getPosixFilePermissions(partial),
+                "a group that grants nothing must not change the mode when it is dropped");
+    }
+
+    /**
+     * A mode that grants nobody anything is a legal mode, and the set expressing it is empty. Building the
+     * narrowed mode with {@code EnumSet.copyOf} would throw {@code IllegalArgumentException} on exactly
+     * that set — an empty collection that is not itself an {@code EnumSet} — turning a protection this
+     * code is meant to keep into the one input that breaks it.
+     */
+    @Test
+    public void applyPreservedAttributes_whenTheGroupCannotBeSetOnAFileNobodyMayRead_thenItStillGoesOn()
+            throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any group");
+        final Path target = targetWith(OWNER_ONLY);
+        final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
+        assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
+        final PreservedAttributes unreadable = new PreservedAttributes(Set.of(), Files.getOwner(target), foreign, null);
+        ConfigFileReaderWriter.createPartialFile(partial, unreadable);
+
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, unreadable);
+
+        assertEquals(
+                Set.<PosixFilePermission>of(),
+                Files.getPosixFilePermissions(partial),
+                "a file nobody may read must be replaced by one nobody may read");
+    }
+
+    /**
+     * Neither of the two fallbacks may cancel the other. An owner this account cannot set <em>and</em> a
+     * group it is not in is the root-installed configuration served by a service user, which is the
+     * deployment both findings came from; the replacement must end up owned by this account, granting its
+     * group nothing, and written.
+     */
+    @Test
+    public void applyPreservedAttributes_whenNeitherOwnerNorGroupCanBeSet_thenBothNarrowAndTheWriteGoesOn()
+            throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any owner or group");
+        final Path target = targetWith(GROUP_READABLE);
+        final UserPrincipal root =
+                directory.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName("root");
+        final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
+        assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
+        final PreservedAttributes elsewhere = new PreservedAttributes(GROUP_READABLE, root, foreign, null);
+        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+        Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
+
+        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+
+        final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
+        assertEquals(Files.getOwner(target), actual.owner(), "the replacement is owned by the account that wrote it");
+        assertEquals(OWNER_ONLY, actual.permissions(), "the unreproducible group must not keep its permissions");
+    }
+
+    /**
+     * End to end, which is the failure QA actually saw: an adapter created through REST, the node
+     * restarted, the adapter gone. The write must complete and the content must reach the target.
+     */
+    @Test
+    public void replaceCarryingProtections_whenTheGroupCannotBeSet_thenTheConfigurationIsStillWritten()
+            throws IOException {
+        assumeTrue(!"root".equals(System.getProperty("user.name")), "a superuser may set any group");
+        final Path target = targetWith(GROUP_READABLE);
+        final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
+        assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
+        final PreservedAttributes elsewhere =
+                new PreservedAttributes(GROUP_READABLE, Files.getOwner(target), foreign, null);
+
+        ConfigFileReaderWriter.replaceCarryingProtections(
+                target,
+                elsewhere,
+                written -> Files.writeString(written, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>"));
+
+        assertEquals(
+                "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>",
+                Files.readString(target),
+                "the configuration was not persisted, which is the defect: a restart would lose the change");
+        assertEquals(
+                OWNER_ONLY,
+                Files.getPosixFilePermissions(target),
+                "the mode kept permissions for a group the replacement could not be given");
+        assertFalse(
+                Files.exists(target.resolveSibling(target.getFileName() + ".partial")),
+                "a partial file was left beside the target");
+    }
+
+    /**
+     * The other half of the trade is unchanged: a protection that fails for any reason other than a
+     * privilege this node was never going to have still aborts. Provoked by removing the replacement, so
+     * that nothing about it can be set or read.
+     */
+    @Test
+    public void applyPreservedAttributes_whenTheReplacementIsGone_thenTheWriteIsStillAborted() throws IOException {
+        final Path target = targetWith(GROUP_READABLE);
+        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        Files.delete(partial);
 
         assertThrows(
                 IOException.class,
-                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere),
-                "a group that cannot be reproduced decides who else can read the file, so it must abort");
+                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved),
+                "a store failure is not a privilege this node lacks, and must not be narrowed past");
     }
 
     /** A group this account cannot set on a file it owns, or {@code null} when every named group works. */
