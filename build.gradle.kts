@@ -127,12 +127,15 @@ dependencies {
     edgeModule("com.hivemq:hivemq-edge-module-etherip")
     edgeModule("com.hivemq:hivemq-edge-module-etherip-cip-odva")
     edgeModule("com.hivemq:hivemq-edge-module-file")
+    edgeModule("com.hivemq:hivemq-edge-module-file-v2")
     edgeModule("com.hivemq:hivemq-edge-module-http")
+    edgeModule("com.hivemq:hivemq-edge-module-http-v2")
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
     edgeModule("com.hivemq:hivemq-edge-module-mtconnect")
     edgeModule("com.hivemq:hivemq-edge-module-databases")
+    edgeModule("com.hivemq:hivemq-edge-module-databases-v2")
 }
 
 val hivemqEdgeZip by tasks.registering(Zip::class) {
@@ -160,10 +163,13 @@ val edgeProjectsToUpdate = setOf(
     "hivemq-edge-module-etherip",
     "hivemq-edge-module-etherip-cip-odva",
     "hivemq-edge-module-file",
+    "hivemq-edge-module-file-v2",
     "hivemq-edge-module-http",
+    "hivemq-edge-module-http-v2",
     "hivemq-edge-module-modbus",
     "hivemq-edge-module-mtconnect",
     "hivemq-edge-module-databases",
+    "hivemq-edge-module-databases-v2",
     "hivemq-edge-module-opcua",
     "hivemq-edge-module-plc4x"
 )

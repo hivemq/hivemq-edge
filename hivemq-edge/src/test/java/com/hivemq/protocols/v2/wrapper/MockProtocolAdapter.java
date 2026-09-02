@@ -1,0 +1,224 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.protocols.v2.wrapper;
+
+import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
+import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
+import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
+import com.hivemq.adapter.sdk.api.v2.node.Node;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * A hand-rolled, scriptable {@link ProtocolAdapter} for the adapter-machine tests. It records every command and
+ * answers each through the {@link ProtocolAdapterOutput} tell-façade, so its replies travel back through the
+ * wrapper mailbox exactly as a real adapter's would.
+ * <p>
+ * Replies are scriptable per command. The default is to acknowledge every command successfully; a {@link Reply}
+ * of {@code DROP} makes the adapter silent (so the wrapper parks in the waiting state until its watchdog fires),
+ * and {@code FAIL_*} reports an error. {@code connect()} additionally drains {@link #connectReplies} so a test can
+ * fail the first attempt and succeed the next.
+ */
+final class MockProtocolAdapter implements ProtocolAdapter {
+
+    enum Reply {
+        ACK,
+        FAIL_ADAPTER,
+        FAIL_CONNECTION,
+        DROP
+    }
+
+    private final @NotNull String adapterId;
+    private final @NotNull ProtocolAdapterOutput output;
+
+    final @NotNull List<String> commands = new ArrayList<>();
+    final @NotNull Deque<Reply> connectReplies = new ArrayDeque<>();
+
+    /**
+     * Node ids carried by every subscription command, in order. The bare command names cannot express a per-NODE
+     * claim, and EDG-824 #18 is exactly that — "the commands for s3 were never issued anywhere" — so a reload that
+     * silently drops a tag from the shadow set is invisible without these.
+     */
+    final @NotNull List<String> verifiedNodes = new ArrayList<>();
+
+    final @NotNull List<String> subscriptionAdds = new ArrayList<>();
+    final @NotNull List<String> subscriptionRemovals = new ArrayList<>();
+
+    @NotNull
+    Reply startReply = Reply.ACK;
+
+    @NotNull
+    Reply stopReply = Reply.ACK;
+
+    @NotNull
+    Reply connectReply = Reply.ACK;
+
+    @NotNull
+    Reply disconnectReply = Reply.ACK;
+
+    @NotNull
+    VerifyOutcome verifyOutcome = new VerifyOutcome.Success();
+
+    boolean verifyDrop;
+
+    /** When set, {@link #browseCancel(int)} does real synchronous work that throws — the raw-adapter case EDG-785. */
+    boolean browseCancelThrows;
+
+    /** When set, {@link #stop()} throws instead of answering — the third shape of a stop that never lands (#19). */
+    boolean stopThrows;
+
+    MockProtocolAdapter(final @NotNull String adapterId, final @NotNull ProtocolAdapterOutput output) {
+        this.adapterId = adapterId;
+        this.output = output;
+    }
+
+    @Override
+    public @NotNull String adapterId() {
+        return adapterId;
+    }
+
+    @Override
+    public void start() {
+        commands.add("start");
+        switch (startReply) {
+            case ACK -> output.started();
+            case FAIL_ADAPTER -> output.error(ErrorScope.ADAPTER, "start failed");
+            case FAIL_CONNECTION, DROP -> {}
+        }
+    }
+
+    @Override
+    public void stop() {
+        commands.add("stop");
+        if (stopThrows) {
+            throw new IllegalStateException("simulated adapter fault in stop()");
+        }
+        switch (stopReply) {
+            case ACK -> output.stopped();
+            case FAIL_ADAPTER -> output.error(ErrorScope.ADAPTER, "stop failed");
+            case FAIL_CONNECTION, DROP -> {}
+        }
+    }
+
+    @Override
+    public void connect() {
+        commands.add("connect");
+        final Reply reply = connectReplies.isEmpty() ? connectReply : connectReplies.poll();
+        switch (reply) {
+            case ACK -> output.connected();
+            case FAIL_CONNECTION -> output.error(ErrorScope.CONNECTION, "connect failed");
+            case FAIL_ADAPTER -> output.error(ErrorScope.ADAPTER, "adapter failed");
+            case DROP -> {}
+        }
+    }
+
+    @Override
+    public void disconnect() {
+        commands.add("disconnect");
+        switch (disconnectReply) {
+            case ACK -> output.disconnected();
+            case FAIL_ADAPTER -> output.error(ErrorScope.ADAPTER, "disconnect failed");
+            case FAIL_CONNECTION, DROP -> {}
+        }
+    }
+
+    @Override
+    public void verifyBatch(final @NotNull List<Node> nodes) {
+        commands.add("verifyBatch");
+        for (final Node node : nodes) {
+            verifiedNodes.add(node.nodeId());
+        }
+        if (verifyDrop) {
+            return;
+        }
+        for (final Node node : nodes) {
+            output.verifyResult(node, verifyOutcome);
+        }
+    }
+
+    /** When set, {@link #pollBatch(List)} throws — the contract-violating adapter case (EDG-824 #7). */
+    boolean pollThrow;
+
+    /**
+     * When set, {@link #pollBatch(List)} raises a fatal JVM condition. {@link InternalError} is a
+     * {@link VirtualMachineError} that can be constructed and thrown without endangering the build JVM — unlike a
+     * real {@code OutOfMemoryError}, which would need a forked process to provoke. The containment boundaries must
+     * treat it exactly as they would an out-of-memory: rethrow, never scope it to the adapter.
+     */
+    boolean pollFatalThrow;
+
+    @Override
+    public void pollBatch(final @NotNull List<Node> nodes) {
+        commands.add("pollBatch");
+        if (pollFatalThrow) {
+            throw new InternalError("simulated fatal JVM condition from pollBatch");
+        }
+        if (pollThrow) {
+            throw new IllegalStateException("misbehaving adapter: pollBatch blew up");
+        }
+    }
+
+    @Override
+    public void addSubscriptionBatch(final @NotNull List<Node> nodes) {
+        commands.add("addSubscriptionBatch");
+        for (final Node node : nodes) {
+            subscriptionAdds.add(node.nodeId());
+        }
+    }
+
+    @Override
+    public void removeSubscriptionBatch(final @NotNull List<Node> nodes) {
+        commands.add("removeSubscriptionBatch");
+        for (final Node node : nodes) {
+            subscriptionRemovals.add(node.nodeId());
+        }
+    }
+
+    @Override
+    public void writeBatch(final @NotNull List<WriteEntry> entries) {
+        commands.add("writeBatch");
+    }
+
+    @Override
+    public void browse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {
+        commands.add("browse");
+    }
+
+    @Override
+    public void browseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
+        commands.add("browseNext");
+    }
+
+    @Override
+    public void browseCancel(final int requestId) {
+        commands.add("browseCancel");
+        if (browseCancelThrows) {
+            throw new IllegalStateException("browseCancel failed");
+        }
+    }
+
+    @Override
+    public void readNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
+        commands.add("readNodeAttributes");
+    }
+}

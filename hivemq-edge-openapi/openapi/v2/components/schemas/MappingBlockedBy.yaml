@@ -1,0 +1,9 @@
+type: object
+description: The root cause of a mapping that is not ACTIVE.
+properties:
+  adapterId:
+    type: string
+  direction:
+    $ref: ./AdapterDirection.yaml
+  tagName:
+    type: string

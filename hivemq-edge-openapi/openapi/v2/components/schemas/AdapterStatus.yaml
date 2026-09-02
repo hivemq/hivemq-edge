@@ -1,0 +1,28 @@
+type: object
+description: >-
+  The runtime status of a v2 adapter — a pure function of the immutable snapshot the adapter wrapper publishes.
+required:
+  - id
+properties:
+  id:
+    type: string
+    description: The adapter instance id.
+  color:
+    $ref: ./AdapterStatusColor.yaml
+  stateMachineState:
+    $ref: ./AdapterMachineState.yaml
+  northboundActivated:
+    type: boolean
+    description: Whether the northbound (read) direction is activated (the live goal).
+  southboundActivated:
+    type: boolean
+    description: Whether the southbound (write) direction is activated (the live goal).
+  tags:
+    $ref: ./TagSummary.yaml
+  message:
+    type: string
+    description: A human-readable message — the last error reason when in error.
+  lastTransitionAt:
+    type: string
+    format: date-time
+    description: The time of the last state machine transition.

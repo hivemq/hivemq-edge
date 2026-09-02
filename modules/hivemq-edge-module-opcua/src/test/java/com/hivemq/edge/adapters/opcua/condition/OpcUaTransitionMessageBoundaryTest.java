@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -94,8 +95,11 @@ class OpcUaTransitionMessageBoundaryTest {
 
         final ObjectMapper objectMapper = new ObjectMapper();
         final ProtocolAdapterWrapper protocolAdapter = mock(ProtocolAdapterWrapper.class);
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
         when(protocolAdapter.getId()).thenReturn(ADAPTER_ID);
         when(protocolAdapter.getAdapter()).thenReturn(mock(ProtocolAdapter.class));
+        when(protocolAdapter.getAdapterInformation()).thenReturn(adapterInformation);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
 
         final ProtocolAdapterPublishServiceImpl publishService = mock(ProtocolAdapterPublishServiceImpl.class);
         final ProtocolAdapterPublishBuilder publishBuilder = mock(ProtocolAdapterPublishBuilder.class);

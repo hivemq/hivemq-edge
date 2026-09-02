@@ -1,0 +1,103 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.protocols.v2.wrapper;
+
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * How the wrapper notifies its supervisor of health transitions — the seam to the
+ * manager (a later task). The wrapper tells its supervisor when it has started, stopped, or entered {@code ERROR};
+ * the manager records the health and, in this project, performs no automatic recreate (manual recovery).
+ * <p>
+ * Defined as a small listener so this task carries no dependency on the manager package. A later task supplies an
+ * implementation that tells the corresponding manager message; tests supply a recording implementation.
+ * <p>
+ * Every method runs on the wrapper's dispatch thread.
+ */
+public interface ProtocolAdapterWrapperEventListener {
+
+    /**
+     * A listener that ignores every notification — the default when no supervisor is attached.
+     */
+    @NotNull
+    ProtocolAdapterWrapperEventListener NONE = new ProtocolAdapterWrapperEventListener() {
+        @Override
+        public void wrapperStarted(final @NotNull String adapterId) {}
+
+        @Override
+        public void wrapperStopped(final @NotNull String adapterId) {}
+
+        @Override
+        public void wrapperError(final @NotNull String adapterId, final @NotNull String reason) {}
+
+        @Override
+        public void wrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {}
+
+        @Override
+        public void wrapperDied(final @NotNull String adapterId, final @NotNull String reason) {}
+    };
+
+    /**
+     * The adapter reached {@code CONNECTED}.
+     *
+     * @param adapterId the adapter instance id.
+     */
+    void wrapperStarted(@NotNull String adapterId);
+
+    /**
+     * The adapter reached {@code STOPPED}.
+     *
+     * @param adapterId the adapter instance id.
+     */
+    void wrapperStopped(@NotNull String adapterId);
+
+    /**
+     * The adapter entered {@code ERROR}.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of why.
+     */
+    void wrapperError(@NotNull String adapterId, @NotNull String reason);
+
+    /**
+     * The adapter was commanded to stop and could not be: its goal-driven {@code stop()} was spent without ever
+     * reaching {@code STOPPED}, so the machine has settled in {@code ERROR} and will issue no further stop
+     * (EDG-824 #19). Fired <b>once</b> per adapter life, and always after {@link #wrapperError} for the same
+     * incident.
+     * <p>
+     * It is the counterpart of {@link #wrapperStopped} for a supervisor that is waiting on a stop it will never
+     * get — without it a stop-and-discard or full recreate waits forever, holding the adapter's resources and
+     * silently never applying the configuration that replaces it.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of why the stop did not complete.
+     */
+    void wrapperStopFailed(@NotNull String adapterId, @NotNull String reason);
+
+    /**
+     * The adapter's actor is gone: a fatal JVM condition ended its dispatch loop, so no message told to it will ever
+     * be processed again (Sam round 3, finding 2). The wrapper has already replaced its published status with a
+     * terminal one; this is the supervisor's chance to release what the dead actor can no longer use — above all the
+     * periodic tick, which would otherwise keep filling a mailbox nobody drains.
+     * <p>
+     * Told from the dying thread, immediately before the fatal is rethrown. Unlike every other callback here it is
+     * <b>not</b> a state transition: the machine never left the state it was in.
+     *
+     * @param adapterId the adapter instance id.
+     * @param reason    a human-readable description of what ended the dispatch loop.
+     */
+    void wrapperDied(@NotNull String adapterId, @NotNull String reason);
+}

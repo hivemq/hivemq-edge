@@ -156,6 +156,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull ConcurrentMap<Path, Long> fragmentToModificationTime;
     private final @NotNull BridgeExtractor bridgeExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
+    private final @NotNull com.hivemq.protocols.v2.config.ProtocolAdapterExtractor v2ProtocolAdapterExtractor;
     private final @NotNull DataCombiningExtractor dataCombiningExtractor;
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
@@ -178,6 +179,9 @@ public class ConfigFileReaderWriter {
         this.configurators = configurators;
         this.bridgeExtractor = new BridgeExtractor(this);
         this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
+        // The read-only v2 extractor reads the disjoint <v2> section beside the legacy
+        // <protocol-adapters> one; the two never interact (touchpoint 2).
+        this.v2ProtocolAdapterExtractor = new com.hivemq.protocols.v2.config.ProtocolAdapterExtractor();
         this.dataCombiningExtractor = new DataCombiningExtractor(this);
         this.assetMappingExtractor = new AssetMappingExtractor(this);
         this.pulseExtractor = new PulseExtractor(this);
@@ -185,6 +189,7 @@ public class ConfigFileReaderWriter {
         this.extractors = List.of(
                 this.bridgeExtractor,
                 this.protocolAdapterExtractor,
+                this.v2ProtocolAdapterExtractor,
                 this.dataCombiningExtractor,
                 this.assetMappingExtractor,
                 this.pulseExtractor,
@@ -297,6 +302,10 @@ public class ConfigFileReaderWriter {
         return protocolAdapterExtractor;
     }
 
+    public @NotNull com.hivemq.protocols.v2.config.ProtocolAdapterExtractor getV2ProtocolAdapterExtractor() {
+        return v2ProtocolAdapterExtractor;
+    }
+
     public @NotNull PulseExtractor getPulseExtractor() {
         return pulseExtractor;
     }
@@ -314,8 +323,15 @@ public class ConfigFileReaderWriter {
     }
 
     public @NotNull HiveMQConfigEntity applyConfig() {
-        if (!loadConfigFromXML(getConfigFileOrFail())) {
-            log.error("Unable to apply the given configuration.");
+        final ReloadOutcome outcome = loadConfigFromXML(getConfigFileOrFail());
+        if (outcome != ReloadOutcome.APPLIED) {
+            // A REJECTED_INVALID load has already logged the detailed validation errors inside
+            // loadConfigFromXML; emitting a second, generic line here would bury that detail (which is the
+            // message operators — and PulseExtractorTest — rely on being the surfaced one). Only NEEDS_RESTART
+            // has nothing more specific to report.
+            if (outcome == ReloadOutcome.NEEDS_RESTART) {
+                log.error("Unable to apply the given configuration.");
+            }
             throw new UnrecoverableException(false);
         }
         final HiveMQConfigEntity entity = configEntity.get();
@@ -413,8 +429,21 @@ public class ConfigFileReaderWriter {
         });
     }
 
+    /**
+     * Outcome of a configuration (re)load.
+     * <p>
+     * {@link #REJECTED_INVALID} distinguishes a config that could not be parsed/validated (recoverable
+     * on reload: keep the previously applied configuration and carry on) from {@link #NEEDS_RESTART},
+     * a config that parsed and applied cleanly but cannot be hot-reloaded and requires a restart.
+     */
+    public enum ReloadOutcome {
+        APPLIED,
+        NEEDS_RESTART,
+        REJECTED_INVALID
+    }
+
     @VisibleForTesting
-    boolean loadConfigFromXML(final @NotNull File configFile) {
+    ReloadOutcome loadConfigFromXML(final @NotNull File configFile) {
         log.info("Reading configuration file {}", configFile);
         final List<ValidationEvent> validationErrors = Collections.synchronizedList(new ArrayList<>());
 
@@ -447,7 +476,7 @@ public class ConfigFileReaderWriter {
                 }
 
                 configEntity.set(entity);
-                return internalApplyConfig(entity);
+                return internalApplyConfig(entity) ? ReloadOutcome.APPLIED : ReloadOutcome.NEEDS_RESTART;
             }
         } catch (final JAXBException | IOException e) {
             final StringBuilder sb = new StringBuilder();
@@ -461,7 +490,7 @@ public class ConfigFileReaderWriter {
                 }
             }
             log.error("Not able to parse configuration file because {}", sb);
-            throw new UnrecoverableException(false);
+            return ReloadOutcome.REJECTED_INVALID;
         } catch (final Exception e) {
             if (e.getCause() instanceof UnrecoverableException unrecoverableException) {
                 if (unrecoverableException.isShowException()) {
@@ -663,12 +692,19 @@ public class ConfigFileReaderWriter {
             }
             if (modified > fileModified.get()) {
                 fileModified.set(modified);
-                if (!loadConfigFromXML(configFile)) {
-                    if (!isDevMode) {
-                        log.error("Restarting because new config can't be hot-reloaded");
-                        System.exit(0);
-                    } else {
-                        log.error("TEST MODE, NOT RESTARTING");
+                switch (loadConfigFromXML(configFile)) {
+                    case APPLIED -> {}
+                    case REJECTED_INVALID ->
+                        log.error("Configuration reload rejected because the new configuration is invalid; "
+                                + "keeping the previously applied configuration. "
+                                + "Fix the reported errors above and save the file again.");
+                    case NEEDS_RESTART -> {
+                        if (!isDevMode) {
+                            log.error("Restarting because new config can't be hot-reloaded");
+                            System.exit(0);
+                        } else {
+                            log.error("TEST MODE, NOT RESTARTING");
+                        }
                     }
                 }
             }

@@ -1,0 +1,550 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.protocols.v2.manager;
+
+import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.adapter;
+import static com.hivemq.protocols.v2.manager.ProtocolAdapterManagerTestSupport.tag;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.hivemq.adapter.sdk.api.v2.ProtocolAdapterCapability;
+import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
+import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
+import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
+import com.hivemq.protocols.v2.config.RejectedAdapterEntity;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ActivateAdapter;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ConfigurationChanged;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.DeactivateAdapter;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.ProtocolAdapterManagerTick;
+import com.hivemq.protocols.v2.runtime.FakeClock;
+import com.hivemq.protocols.v2.runtime.ManualDispatcher;
+import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterDirection;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * The supervisor actor driven through its mailbox on a {@link ManualDispatcher}: configuration
+ * add/remove, the four gentlest transitions, REST live-goal and retry routing, unknown-type handling, manual-only
+ * recovery, and the health summary. The wrapper is the {@link RecordingWrapperFactory} double so these tests prove
+ * the manager's own logic; the real wrapper wiring has its own test.
+ */
+class ProtocolAdapterManagerTest {
+
+    private FakeClock clock;
+    private ManualDispatcher dispatcher;
+    private Mailbox<ProtocolAdapterManagerMessage> mailbox;
+    private ProtocolAdapterHandleRegistry handleRegistry;
+    private RecordingWrapperFactory wrapperFactory;
+    private ProtocolAdapterManager manager;
+
+    @BeforeEach
+    void setUp() {
+        clock = new FakeClock();
+        dispatcher = new ManualDispatcher();
+        mailbox = new DefaultMailbox<>();
+        handleRegistry = new ProtocolAdapterHandleRegistry();
+        wrapperFactory = new RecordingWrapperFactory();
+        final ProtocolAdapterFactoryRegistry factories = new ProtocolAdapterFactoryRegistry(Set.of(
+                new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
+                        ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID),
+                // a capability-less type (declares neither WRITE nor SUBSCRIPTIONS) for the EDG-824 #17 tests
+                new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
+                        "capability-less", EnumSet.noneOf(ProtocolAdapterCapability.class))));
+        manager = new ProtocolAdapterManager(factories, handleRegistry, wrapperFactory, clock);
+        dispatcher.attach(mailbox, manager);
+        manager.bindSelf(mailbox);
+    }
+
+    @Test
+    void configurationAdd_createsRegistersAndStartsTheAdapter() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+        // The config-declared activation is applied to bring the freshly-created wrapper to its goal.
+        assertThat(wrapperFactory.commands("a"))
+                .last()
+                .isInstanceOf(ProtocolAdapterWrapperCommand.ApplyActivation.class);
+    }
+
+    @Test
+    void configurationRemove_stopsAndDiscardsARunningAdapter() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of()));
+
+        assertThat(wrapperFactory.commands("a"))
+                .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.StopAdapter.class);
+        assertThat(handleRegistry.find("a")).isNull();
+
+        // The wrapper reports stopped; teardown completes and there is no recreate.
+        fireWrapperStopped("a");
+        assertThat(handleRegistry.find("a")).isNull();
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+    }
+
+    @Test
+    void configurationRemove_tearsDownImmediatelyWhenAlreadyStopped() {
+        send(new ConfigurationChanged(List.of(adapter("a").build()))); // snapshot starts STOPPED
+
+        send(new ConfigurationChanged(List.of()));
+
+        assertThat(handleRegistry.find("a")).isNull();
+        assertThat(wrapperFactory.commands("a")).noneMatch(ProtocolAdapterWrapperCommand.StopAdapter.class::isInstance);
+    }
+
+    @Test
+    void restActivationAndDeactivation_forwardLiveGoalCommands() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        send(new ActivateAdapter("a", ProtocolAdapterDirection.SOUTHBOUND));
+        send(new DeactivateAdapter("a", ProtocolAdapterDirection.NORTHBOUND));
+
+        assertThat(wrapperFactory.commands("a"))
+                .anyMatch(command -> command instanceof ProtocolAdapterWrapperCommand.ActivateDirection activate
+                        && activate.direction() == ProtocolAdapterDirection.SOUTHBOUND)
+                .anyMatch(command -> command instanceof ProtocolAdapterWrapperCommand.DeactivateDirection deactivate
+                        && deactivate.direction() == ProtocolAdapterDirection.NORTHBOUND);
+    }
+
+    @Test
+    void reloadWithUnchangedFlags_isNoChange_andPreservesTheRestLiveGoal() {
+        final ProtocolAdapterEntity config = adapter("a").build();
+        send(new ConfigurationChanged(List.of(config)));
+        send(new DeactivateAdapter("a", ProtocolAdapterDirection.NORTHBOUND));
+        final int commandsBefore = wrapperFactory.commands("a").size();
+
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        // NO_CHANGE sends nothing, so the REST live goal (deactivated northbound) is not clobbered.
+        assertThat(wrapperFactory.commands("a")).hasSize(commandsBefore);
+    }
+
+    @Test
+    void reloadActivationOnly_appliesAnActivationCommand() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").southboundActivated(false).build())));
+        final int commandsBefore = wrapperFactory.commands("a").size();
+
+        send(new ConfigurationChanged(
+                List.of(adapter("a").southboundActivated(true).build())));
+
+        assertThat(wrapperFactory.commands("a")).hasSizeGreaterThan(commandsBefore);
+        assertThat(wrapperFactory.commands("a"))
+                .last()
+                .isInstanceOf(ProtocolAdapterWrapperCommand.ApplyActivation.class);
+    }
+
+    @Test
+    void reloadTagsOnly_appliesAnUpdateTagSetCommand() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").tags(tag("temperature").build()).build())));
+
+        send(new ConfigurationChanged(List.of(adapter("a")
+                .tags(tag("temperature").build(), tag("pressure").build())
+                .build())));
+
+        assertThat(wrapperFactory.commands("a"))
+                .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.UpdateTagSet.class);
+        assertThat(wrapperFactory.translateNodesAdapterIds()).contains("a");
+    }
+
+    @Test
+    void reloadFullRecreate_stopsThenRecreates() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "a")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "b")).build())));
+
+        assertThat(wrapperFactory.commands("a"))
+                .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.StopAdapter.class);
+        assertThat(handleRegistry.find("a")).isNull();
+
+        fireWrapperStopped("a");
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void wrapperError_isRecordedWithoutAutomaticRecreate() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        final int createdBefore = wrapperFactory.createdAdapterIds().size();
+
+        fireWrapperError("a", "boom");
+
+        assertThat(wrapperFactory.createdAdapterIds()).hasSize(createdBefore);
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void configurationRemove_completesTheTeardownWhenTheWrapperCannotBeStopped() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(List.of()));
+        assertThat(handleRegistry.find("a")).isNull();
+
+        // The stopped() ack is never coming: without the stop-failure signal the pending removal would hold the
+        // adapter's resources for the lifetime of the JVM (EDG-824 #19).
+        fireWrapperStopFailed("a", "watchdog timeout while in WAITING_FOR_STOPPED");
+
+        assertThat(wrapperFactory.closedAdapterIds()).contains("a");
+        assertThat(handleRegistry.find("a")).isNull();
+    }
+
+    @Test
+    void reloadFullRecreate_recreatesEvenWhenTheOldWrapperCannotBeStopped() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "a")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "b")).build())));
+        assertThat(handleRegistry.find("a")).isNull();
+
+        // The replacement configuration must still be applied: an adapter that will not stop cannot be allowed to
+        // veto its own reconfiguration.
+        fireWrapperStopFailed("a", "watchdog timeout while in WAITING_FOR_STOPPED");
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void wrapperStopFailed_withNoPendingRemoval_leavesTheAdapterManagedForManualRecovery() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        final int createdBefore = wrapperFactory.createdAdapterIds().size();
+
+        // Both directions deactivated on an adapter that cannot stop: nothing is being discarded, so the adapter
+        // stays registered and visible in ERROR rather than being torn down behind the operator's back.
+        fireWrapperStopFailed("a", "watchdog timeout while in WAITING_FOR_STOPPED");
+
+        assertThat(wrapperFactory.createdAdapterIds()).hasSize(createdBefore);
+        assertThat(handleRegistry.find("a")).isNotNull();
+        assertThat(wrapperFactory.closedAdapterIds()).doesNotContain("a");
+    }
+
+    @Test
+    void wrapperDied_releasesTheDeadActorsResources_butKeepsItVisibleInError() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        final int commandsBeforeDeath = wrapperFactory.commands("a").size();
+
+        fireWrapperDied("a", "the adapter's dispatch loop was ended by InternalError: simulated");
+
+        // Released: above all the periodic tick, which runs on the clock's scheduler and would otherwise keep
+        // telling a mailbox nobody drains for the lifetime of the process.
+        assertThat(wrapperFactory.closedAdapterIds()).contains("a");
+        // Still visible: Edge carries on and reports the failure rather than hiding the adapter.
+        assertThat(handleRegistry.find("a")).isNotNull();
+        // And nothing is told to the dead mailbox any more — a forwarded command would only accumulate there.
+        send(new DeactivateAdapter("a", ProtocolAdapterDirection.NORTHBOUND));
+        assertThat(wrapperFactory.commands("a")).hasSize(commandsBeforeDeath);
+    }
+
+    @Test
+    void anAdapterThatDied_isRecreatedByAConfigurationChange() {
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "a")).build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        fireWrapperDied("a", "the adapter's dispatch loop was ended by InternalError: simulated");
+
+        // The recovery path for a dead actor is the same one every un-runnable adapter has: change its
+        // configuration. Nothing recreates it behind the operator's back.
+        send(new ConfigurationChanged(
+                List.of(adapter("a").adapterConfiguration(Map.of("host", "b")).build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
+        assertThat(handleRegistry.find("a")).isNotNull();
+    }
+
+    @Test
+    void recovery_deactivateThenActivate_areForwardedAsLiveGoalCommands() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        send(new DeactivateAdapter("a", ProtocolAdapterDirection.BOTH));
+        send(new ActivateAdapter("a", ProtocolAdapterDirection.BOTH));
+
+        assertThat(wrapperFactory.commands("a"))
+                .anyMatch(command -> command instanceof ProtocolAdapterWrapperCommand.DeactivateDirection deactivate
+                        && deactivate.direction() == ProtocolAdapterDirection.BOTH)
+                .anyMatch(command -> command instanceof ProtocolAdapterWrapperCommand.ActivateDirection activate
+                        && activate.direction() == ProtocolAdapterDirection.BOTH);
+    }
+
+    @Test
+    void retryTag_isForwardedToTheWrapper() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        send(new ProtocolAdapterManagerMessage.RetryTag("a", "temperature"));
+
+        assertThat(wrapperFactory.commands("a"))
+                .anyMatch(command -> command instanceof ProtocolAdapterWrapperCommand.RetryTag retry
+                        && retry.tagName().equals("temperature"));
+    }
+
+    @Test
+    void unknownProtocolId_isSurfacedAsAnErrorHandleWithNoWrapper() {
+        send(new ConfigurationChanged(
+                List.of(adapter("ghost").protocolId("nope").build())));
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("ghost");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("no registered adapter type");
+        assertThat(wrapperFactory.createdAdapterIds()).doesNotContain("ghost");
+    }
+
+    @Test
+    void restCommandToUnknownAdapter_isDroppedSafely() {
+        send(new ActivateAdapter("ghost", ProtocolAdapterDirection.BOTH));
+
+        assertThat(handleRegistry.find("ghost")).isNull();
+    }
+
+    @Test
+    void managerTick_publishesAHealthSummaryFoldedFromTheRegistry() {
+        send(new ConfigurationChanged(List.of(adapter("a").build(), adapter("b").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ProtocolAdapterManagerTick(123L));
+
+        final ProtocolAdapterManagerSnapshot summary = manager.healthSummary();
+        assertThat(summary.totalAdapters()).isEqualTo(2);
+        assertThat(summary.connectedAdapters()).isEqualTo(1);
+        assertThat(summary.stoppedAdapters()).isEqualTo(1);
+        assertThat(summary.lastUpdatedAtMillis()).isEqualTo(123L);
+    }
+
+    // EDG-824 #17: the capability declaration is enforced at config acceptance — a type declaring no WRITE is
+    // refused a configuration with southbound mappings and surfaces ERROR instead of starting normally.
+    @Test
+    void configDemandingWriteFromACapabilityLessType_isRefusedAsAnErrorAdapter() {
+        send(new ConfigurationChanged(List.of(adapter("subonly")
+                .protocolId("capability-less")
+                .southboundMapping("plant/a/setpoint", "temperature")
+                .build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+        final ProtocolAdapterHandle handle = handleRegistry.find("subonly");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("WRITE");
+    }
+
+    @Test
+    void configDemandingSubscriptionsFromACapabilityLessType_isRefusedAsAnErrorAdapter() {
+        send(new ConfigurationChanged(List.of(adapter("subonly")
+                .protocolId("capability-less")
+                .tags(tag("temperature").subscribable(true).build())
+                .build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+        final ProtocolAdapterHandle handle = handleRegistry.find("subonly");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("SUBSCRIPTIONS");
+    }
+
+    @Test
+    void configWithinTheDeclaredCapabilities_startsNormallyOnTheCapabilityLessType() {
+        // polled-only northbound demands neither WRITE nor SUBSCRIPTIONS — the capability-less type serves it.
+        send(new ConfigurationChanged(
+                List.of(adapter("polled").protocolId("capability-less").build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("polled");
+    }
+
+    @Test
+    void tagsOnlyReloadIntroducingAnUnservableDemand_isRefusedViaTheRecreatePath() {
+        send(new ConfigurationChanged(
+                List.of(adapter("polled").protocolId("capability-less").build())));
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("polled");
+
+        // the reload adds a subscribable tag the type cannot serve
+        send(new ConfigurationChanged(List.of(adapter("polled")
+                .protocolId("capability-less")
+                .tags(tag("temperature").subscribable(true).build())
+                .build())));
+        fireWrapperStopped("polled");
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("polled");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("SUBSCRIPTIONS");
+    }
+
+    // EDG-824 #4: an invalid new adapter arrives pre-scoped in the rejected list and surfaces as an ERROR handle —
+    // the sibling runs, nothing shuts down.
+    @Test
+    void rejectedAdapter_isSurfacedAsAnErrorHandleWhileSiblingsRun() {
+        send(new ConfigurationChanged(
+                List.of(adapter("good").build()),
+                List.of(new RejectedAdapterEntity(adapter("bad").build(), "duplicate tag name [temperature]"))));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("good");
+        final ProtocolAdapterHandle handle = handleRegistry.find("bad");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("duplicate tag name");
+    }
+
+    @Test
+    void rejectedAdapter_keepsItsErrorHandleWithTheFreshReasonAcrossReloads() {
+        send(new ConfigurationChanged(
+                List.of(), List.of(new RejectedAdapterEntity(adapter("bad").build(), "reason-1"))));
+        send(new ConfigurationChanged(
+                List.of(), List.of(new RejectedAdapterEntity(adapter("bad").build(), "reason-2"))));
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("bad");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.lastErrorReason()).contains("reason-2");
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+    }
+
+    @Test
+    void rejectedAdapter_fixedOnTheNextReload_becomesARunningAdapter() {
+        send(new ConfigurationChanged(
+                List.of(),
+                List.of(new RejectedAdapterEntity(
+                        adapter("a")
+                                .adapterConfiguration(Map.of("broken", true))
+                                .build(),
+                        "reason"))));
+        assertThat(wrapperFactory.createdAdapterIds()).isEmpty();
+
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+        final ProtocolAdapterHandle handle = handleRegistry.find("a");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isNotEqualTo(ProtocolAdapterWrapperState.ERROR);
+    }
+
+    // Defensive: the extractor keeps the previous configuration for a known id, so a rejected id colliding with a
+    // running adapter is a contract violation — the running instance must never be clobbered.
+    @Test
+    void rejectedIdCollidingWithARunningAdapter_neverClobbersTheRunningInstance() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+
+        send(new ConfigurationChanged(
+                List.of(adapter("a").build()),
+                List.of(new RejectedAdapterEntity(adapter("a").build(), "bogus"))));
+
+        final ProtocolAdapterHandle handle = handleRegistry.find("a");
+        assertThat(handle).isNotNull();
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.CONNECTED);
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
+    }
+
+    // EDG-824 #4/R1: a mispackaged adapter jar throws a LinkageError (an Error) from create. The reconcile guard is
+    // Throwable, not RuntimeException, so the failure is scoped to that adapter — the sibling declared after it still
+    // starts, and the thrower surfaces as an ERROR handle instead of aborting the whole reconcile pass.
+    @Test
+    void reconcile_whenAnAdapterFactoryThrowsALinkageError_scopesItAndKeepsSiblingsRunning() {
+        wrapperFactory.throwOnCreate("bad", new NoClassDefFoundError("com/example/Missing"));
+
+        send(new ConfigurationChanged(
+                List.of(adapter("bad").build(), adapter("good").build())));
+
+        // The sibling declared after the throwing adapter is still created and registered.
+        assertThat(wrapperFactory.createdAdapterIds()).containsExactly("good");
+        assertThat(handleRegistry.find("good")).isNotNull();
+        // The thrower is surfaced as an ERROR handle, not silently dropped.
+        final ProtocolAdapterHandle bad = handleRegistry.find("bad");
+        assertThat(bad).isNotNull();
+        final AdapterStatusSnapshot snapshot = bad.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("NoClassDefFoundError");
+    }
+
+    // EDG-824 #4/R2: the recreate after a full-recreate reload runs outside the reconcile guard. A LinkageError from a
+    // mispackaged jar on that recreate is scoped to the adapter — it surfaces as an ERROR handle instead of escaping
+    // the manager's dispatch thread.
+    @Test
+    void recreateAfterStop_whenTheFactoryThrowsALinkageError_scopesItToAnErrorHandle() {
+        send(new ConfigurationChanged(List.of(adapter("a").build())));
+        wrapperFactory.setMachineState("a", ProtocolAdapterWrapperState.CONNECTED);
+        wrapperFactory.throwOnCreate("a", new NoClassDefFoundError("com/example/Missing"));
+
+        // A connection-critical change forces a full recreate: stop now, recreate on the stop ack.
+        send(new ConfigurationChanged(List.of(
+                adapter("a").adapterConfiguration(Map.of("changed", true)).build())));
+        fireWrapperStopped("a");
+
+        final ProtocolAdapterHandle a = handleRegistry.find("a");
+        assertThat(a).isNotNull();
+        final AdapterStatusSnapshot snapshot = a.snapshot().get();
+        assertThat(snapshot).isNotNull();
+        assertThat(snapshot.machineState()).isEqualTo(ProtocolAdapterWrapperState.ERROR);
+        assertThat(snapshot.lastErrorReason()).contains("NoClassDefFoundError");
+    }
+
+    private void send(final @NotNull ProtocolAdapterManagerMessage message) {
+        mailbox.tell(message);
+        dispatcher.drainAll();
+    }
+
+    private void fireWrapperStopped(final @NotNull String adapterId) {
+        wrapperFactory.healthListener().wrapperStopped(adapterId);
+        dispatcher.drainAll();
+    }
+
+    private void fireWrapperDied(final @NotNull String adapterId, final @NotNull String reason) {
+        wrapperFactory.healthListener().wrapperDied(adapterId, reason);
+        dispatcher.drainAll();
+    }
+
+    private void fireWrapperStopFailed(final @NotNull String adapterId, final @NotNull String reason) {
+        wrapperFactory.healthListener().wrapperStopFailed(adapterId, reason);
+        dispatcher.drainAll();
+    }
+
+    private void fireWrapperError(final @NotNull String adapterId, final @NotNull String reason) {
+        wrapperFactory.healthListener().wrapperError(adapterId, reason);
+        dispatcher.drainAll();
+    }
+}
