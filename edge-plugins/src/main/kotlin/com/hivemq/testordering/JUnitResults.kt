@@ -89,9 +89,30 @@ fun readRunTotals(xmlDir: File): RunTotals {
  * class inside it there, so a nested class is never scheduled independently. Nested entries are folded into
  * their enclosing class.
  *
- * Durations are summed from the individual `<testcase time=>` values, never taken from the `<testsuite time=>`
- * attribute. That attribute spans first-attempt-start to last-attempt-end, so for a class that was retried it
- * includes the idle gap between attempts and can overstate the work by an order of magnitude.
+ * WHICH DURATION. What the ordering needs is how long a class OCCUPIES a fork, because that is what has to be
+ * packed. Neither attribute gives that on its own:
+ *
+ *  - `<testsuite time=>` is the right quantity -- it covers per-class setup and teardown, which for a class
+ *    that starts a container is nearly all of its cost. But when a class was RETRIED it spans
+ *    first-attempt-start to last-attempt-end, including the idle gap between attempts, and can overstate by an
+ *    order of magnitude (one retried class read 462s against 25s of actual work).
+ *  - Summing `<testcase time=>` is immune to that gap, but counts only time inside test METHODS. A class whose
+ *    work happens in `@BeforeAll`/`@BeforeEach` measures as near zero: `OidcServiceKeycloakIT` spends 25s
+ *    starting a Keycloak container and recorded 1.3s, so the ordering put the tenth-slowest class in the suite
+ *    last, where nothing was left to overlap it (EDG-987).
+ *
+ * So: use the suite time, EXCEPT where a retry makes it untrustworthy, and there fall back to the sum.
+ *
+ * DETECTING A RETRY. Not by repeated `<testcase name=>` -- a parameterised test writes the same name under
+ * several methods (`LdapDirectoryDescentIT` has `[1] OpenLDAP` six times and was never retried), and the XML
+ * carries no method attribute to separate the two. The usable signal is that a retry only happens after a
+ * FAILURE, so a class that recorded one or more failures may have been retried and its suite time may span an
+ * idle gap. A class with no failures cannot have been retried, whatever its names look like.
+ *
+ * That is deliberately conservative in one direction: a class that failed outright, with no retry, also falls
+ * back to the sum and is understated. That is the safe error -- it is the number this task used for every
+ * class before, and a failing class's timing is disturbed anyway (the task already warns that a failing class
+ * stops early and understates its real time).
  */
 fun readRunResults(xmlDir: File): Map<String, ClassResult> {
     val results = mutableMapOf<String, ClassResult>()
@@ -102,30 +123,53 @@ fun readRunResults(xmlDir: File): Map<String, ClassResult> {
     files.forEach { file ->
         val doc = runCatching { builder.parse(file) }.getOrNull() ?: return@forEach
         val cases = doc.getElementsByTagName("testcase")
+
+        // Per FILE, because the duration we want lives on the file's <testsuite> element.
+        var caseSeconds = 0.0
+        var failures = 0
+        var outerClass: String? = null
+
         for (i in 0 until cases.length) {
             val case = cases.item(i)
             val attrs = case.attributes ?: continue
             val rawClass = attrs.getNamedItem("classname")?.nodeValue ?: continue
             // Fold nested classes into the enclosing one -- only the outer class is ever dispatched.
-            val outer = rawClass.substringBefore('$')
-            val seconds = attrs.getNamedItem("time")?.nodeValue?.toDoubleOrNull() ?: 0.0
+            if (outerClass == null) {
+                outerClass = rawClass.substringBefore('$')
+            }
+            caseSeconds += attrs.getNamedItem("time")?.nodeValue?.toDoubleOrNull() ?: 0.0
 
-            var failures = 0
             val children = case.childNodes
             for (c in 0 until children.length) {
                 when (children.item(c).nodeName) {
                     "failure", "error" -> failures += 1
                 }
             }
-
-            val previous = results[outer]
-            results[outer] =
-                if (previous == null) {
-                    ClassResult(seconds, failures)
-                } else {
-                    ClassResult(previous.seconds + seconds, previous.failures + failures)
-                }
         }
+
+        val outer = outerClass ?: return@forEach
+        val suiteSeconds = doc.documentElement
+            ?.takeIf { it.nodeName == "testsuite" }
+            ?.getAttribute("time")
+            ?.toDoubleOrNull()
+
+        // Suite time unless something makes it untrustworthy: a failure (which may have been retried, and a
+        // retry's suite time spans the idle gap between attempts), or a suite time BELOW the work it
+        // contains, which no honest run produces.
+        val seconds = if (failures > 0 || suiteSeconds == null || suiteSeconds < caseSeconds) {
+            caseSeconds
+        } else {
+            suiteSeconds
+        }
+
+        val previous = results[outer]
+        results[outer] =
+            if (previous == null) {
+                ClassResult(seconds, failures)
+            } else {
+                // Nested classes write one file each; their durations add up to the enclosing class's cost.
+                ClassResult(previous.seconds + seconds, previous.failures + failures)
+            }
     }
     return results
 }
