@@ -17,6 +17,8 @@ package util;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 
 /**
@@ -48,8 +50,8 @@ import java.net.ServerSocket;
  *
  * <h2>That gap is not the problem you think it is</h2>
  * <b>If you believe a bind failure was caused by this class, you are almost certainly mistaken.</b> That
- * claim has been made many times over the years and was wrong every time but one -- and that one is fixed,
- * below.
+ * claim has been made many times over the years and was wrong every time but two -- and both of those are
+ * fixed, below.
  * <p>
  * The burden is on the claim: explain why, in this particular situation, the argument that follows does not
  * hold. Two things must <b>both</b> happen for a collision:
@@ -76,6 +78,21 @@ import java.net.ServerSocket;
  * MQTT listener and its HTTP API a millisecond apart (EDG-956).
  * <p>
  * That is the shape a valid claim has to take: naming which condition stopped being unlikely, and why.
+ *
+ * <h2>The second case that escaped it: the probe tested the wrong address</h2>
+ * A claim did meet the burden a second time (EDG-986), and it did not involve the gap at all. The probe used
+ * {@code new ServerSocket(port)}, which binds the <b>wildcard</b> address. Many callers bind {@code 127.0.0.1}
+ * instead -- the XML templates under {@code src/test/resources}, the OPC-UA test server, Jersey's
+ * {@code localhost} default. <b>On macOS a wildcard bind and a loopback bind on the same port do not
+ * conflict.</b> So the probe could report a port free while it was held on loopback, and would have done so at
+ * any moment during the hold, not only inside the gap.
+ * <p>
+ * Observed: an OPC-UA test server held {@code 127.0.0.1:22217} for 26 seconds; ten seconds in, another fork was
+ * handed 22217 and its HTTP API failed to bind. Neither of the two conditions above was involved -- the first
+ * did not apply, because there was no gap to land in.
+ * <p>
+ * {@link #isFree} now probes both addresses. Linux enforces the conflict, which is why CI rarely saw this and
+ * the wildcard-only probe looked sufficient for years.
  *
  * <h2>How it works now</h2>
  * A number handed out is remembered, and neither it nor any number sharing its bucket is issued again for the
@@ -131,6 +148,9 @@ public class RandomPortGenerator {
     /** Number of candidates, {@value #LOWEST} to {@value #HIGHEST} inclusive. */
     private static final int RANGE = HIGHEST - LOWEST + 1;
 
+    /** The one non-wildcard address tests bind. Every other bind in the suite is the wildcard address. */
+    private static final String LOOPBACK = "127.0.0.1";
+
     /** How many subsequent requests a returned number, and its bucket siblings, stay blocked for. */
     private static final int BLOCK_FOR = 32;
 
@@ -171,24 +191,65 @@ public class RandomPortGenerator {
         throw new RuntimeException("Random port not found");
     }
 
+    /**
+     * Probes the wildcard address <b>and</b> {@value #LOOPBACK}, because a port free on one can be taken on the
+     * other. Callers bind one or the other -- roughly 100 of ~160 call sites end up on the wildcard address
+     * (the {@code EmbeddedHiveMQExtension} default config and the entity defaults behind it), and roughly 58 on
+     * {@value #LOOPBACK} (the XML templates under {@code src/test/resources}, the OPC-UA test server, and
+     * Jersey's {@code localhost} default). Probing only one leaves the other half unprotected.
+     * <p>
+     * On Linux the two conflict, so the wildcard probe alone happened to cover both. <b>On macOS they do
+     * not.</b> A wildcard bind succeeds while {@value #LOOPBACK} is held, and the reverse, so the old probe
+     * reported a port free that was in use for the whole of a 26-second hold -- not a race in a narrow window,
+     * but a check that answered a different question than the one that mattered (EDG-986).
+     */
     private static boolean isFree(final int port, final Protocol protocol) {
-        try {
-            if (protocol == Protocol.TCP) {
-                try (final ServerSocket ignored = new ServerSocket(port)) {
-                    return true;
-                }
+        if (protocol == Protocol.TCP || protocol == Protocol.BOTH) {
+            if (!isTcpFree(port)) {
+                return false;
             }
-            if (protocol == Protocol.UDP) {
-                try (final DatagramSocket ignored = new DatagramSocket(port)) {
-                    return true;
-                }
-            }
-            try (final ServerSocket ignoredTcp = new ServerSocket(port);
-                    final DatagramSocket ignoredUdp = new DatagramSocket(port)) {
-                return true;
-            }
+        }
+        if (protocol == Protocol.UDP || protocol == Protocol.BOTH) {
+            return isUdpFree(port);
+        }
+        return true;
+    }
+
+    /**
+     * The two probes are <b>sequential, never held at once</b>. Where the addresses do conflict -- UDP on every
+     * platform, TCP on Linux -- holding the first open makes the second fail by construction, and every port
+     * would be rejected. Each probe must open and close before the next begins.
+     */
+    private static boolean isTcpFree(final int port) {
+        try (final ServerSocket ignored = new ServerSocket(port)) {
+            // closed here, before the loopback probe
         } catch (final IOException ex) {
             return false;
         }
+        try (final ServerSocket ignored = boundTo(LOOPBACK, port)) {
+            return true;
+        } catch (final IOException ex) {
+            return false;
+        }
+    }
+
+    private static boolean isUdpFree(final int port) {
+        try (final DatagramSocket ignored = new DatagramSocket(port)) {
+            // closed here, before the loopback probe
+        } catch (final IOException ex) {
+            return false;
+        }
+        try (final DatagramSocket ignored = new DatagramSocket(port, InetAddress.getByName(LOOPBACK))) {
+            return true;
+        } catch (final IOException ex) {
+            return false;
+        }
+    }
+
+    /** A TCP socket bound to one address rather than the wildcard, which is what {@code new ServerSocket(port)} does. */
+    private static ServerSocket boundTo(final String host, final int port) throws IOException {
+        final ServerSocket socket = new ServerSocket();
+        socket.bind(new InetSocketAddress(InetAddress.getByName(host), port));
+        return socket;
     }
 }
