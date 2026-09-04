@@ -101,9 +101,15 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         val committedFile = committedTimings.orNull?.asFile
         val committed = committedFile?.let { readTimings(it) } ?: emptyMap()
 
+        // What gets WRITTEN is smoothed against the committed value: a class that got slower is believed at
+        // once, one that got faster comes down gradually (see `smooth`). What gets SIMULATED below is this
+        // run's raw durations -- the two orderings must be scored against the same clock, or the comparison
+        // measures the smoothing rather than the ordering.
+        val smoothed = runtimes.mapValues { (name, seconds) -> smooth(committed[name], seconds) }
+
         writeTimings(
             runTimings.get().asFile,
-            runtimes,
+            smoothed,
             // ONE header, because adopting a new ordering is a plain `cp` of this file over the committed
             // one. So it has to read as the committed file -- that is where someone will find it and wonder.
             // Short by design: the explanation lives in the Edge Lore, not in a data file.
@@ -123,8 +129,14 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
                 "If it shows a real gain, adopt this ordering and raise a PR:",
                 "  cp build/test-class-timings.csv gradle/test-class-timings.csv",
                 "",
+                "Columns: 'seconds' orders the classes and is smoothed -- a class that got",
+                "slower takes its new time at once, one that got faster moves halfway there,",
+                "so a single fast run cannot undo a real cost. 'measured' is what the last run",
+                "actually recorded, and is informational. Only the first number is read back.",
+                "",
                 "https://hivemq.github.io/hivemq-edge-lore/3-Quality-and-Testing/balancing-the-parallel-forks/"
-            )
+            ),
+            measured = runtimes
         )
 
         reportTotals()
