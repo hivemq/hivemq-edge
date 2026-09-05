@@ -97,7 +97,22 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         }
 
         // R -- this run. The durations here are the ONLY durations used anywhere below.
-        val runtimes = results.mapValues { it.value.seconds }
+        //
+        // FROM THE FORK LOGS, NOT THE JUNIT XML. The XML is authoritative for pass/fail (above) and for
+        // test counts, and is not a timing source: its per-class time either spans a retry's idle gap or,
+        // summed per test method, omits the fixture work that dominates a container-backed class -- and it
+        // has no entry at all for a class with @Nested members. See ForkLogs.kt, which documents all four
+        // traps and is the single reader every consumer of these timings goes through.
+        //
+        // Falls back to the XML only when the logs are absent (-PnoForkLogs, or a run predating them), so
+        // the task still produces something rather than failing.
+        val run = newestRun(forkLogsDir.get().asFile)
+        val runtimes = run?.longestPerClass() ?: results.mapValues { it.value.seconds }
+        if (run == null) {
+            logger.warn("")
+            logger.warn("No fork logs found -- falling back to JUnit XML timings, which understate any")
+            logger.warn("class whose cost is in its fixture. Re-run without -PnoForkLogs for real numbers.")
+        }
         val committedFile = committedTimings.orNull?.asFile
         val committed = committedFile?.let { readTimings(it) } ?: emptyMap()
 
@@ -187,98 +202,39 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
      */
     private fun reportOccupancy() {
         val dir = forkLogsDir.orNull?.asFile
-        val files = dir?.listFiles { f -> f.isFile && f.name.endsWith(".log") }?.toList().orEmpty()
-        if (files.isEmpty()) {
+        // Reading, run separation, nested-class handling and "which run is this" all live in ForkLogs.kt,
+        // so this section and the timings written above cannot disagree about what the run was.
+        val allRuns = dir?.let { readRuns(it) }.orEmpty()
+        val spans = allRuns.maxByOrNull { it.startMillis }
+        if (spans == null) {
             logger.lifecycle("")
             logger.lifecycle("Fork occupancy: no fork logs (the run predates them, or -PnoForkLogs was set)")
             return
         }
+        val ignored = allRuns.sumOf { it.classes.size } - spans.classes.size
+        val otherRuns = allRuns.size - 1
 
-        // (start, end) in epoch millis for every class in every log file.
-        //
-        // NESTED CLASSES ARE SKIPPED, and they must be. A class with @Nested inner classes writes a
-        // line per nested class AND a line for the enclosing class whose duration already SPANS all
-        // of them, so counting every line charges that work twice: it inflated one real run's class
-        // time from 64m38s to 66m29s and the concurrency it implies from 4.8x to 5.0x. A nested
-        // class is also never dispatched on its own -- Gradle hands out the enclosing class and
-        // JUnit runs the nested ones inside it -- so the outer class is the only unit that
-        // corresponds to a fork being occupied. See ForkAttributionListener, which documents the
-        // same trap at the point the lines are written.
-        val all = mutableListOf<Pair<Long, Long>>()
-        files.forEach { file ->
-            file.forEachLine { line ->
-                if (line.startsWith("#")) return@forEachLine
-                val f = line.split(' ')
-                if (f.size < 5) return@forEachLine
-                if (f[4].contains('$')) return@forEachLine
-                val end = f[0].toLongOrNull() ?: return@forEachLine
-                val duration = f[2].toLongOrNull() ?: return@forEachLine
-                all += (end - duration) to end
-            }
-        }
-        if (all.isEmpty()) {
-            logger.lifecycle("")
-            logger.lifecycle("Fork occupancy: fork logs present but empty")
-            return
-        }
+        val start = spans.startMillis
+        val window = spans.wallClockMillis
+        val work = spans.workMillis
 
-        // SPLIT THE RUNS BY ACTIVITY, not by wall-clock gaps between class starts.
-        //
-        // The directory accumulates -- Gradle never clears it -- so earlier runs sit beside this one's.
-        // Within a run the forks are essentially never ALL idle: Gradle hands the next class to a fork
-        // the moment one frees up. Between runs everything stops while the build recompiles. So a run
-        // boundary is a stretch where NO class is running, which is a much cleaner signal than the gap
-        // between consecutive class starts -- that one cannot tell a slow class from a pause, and a
-        // five-minute threshold once merged three runs into a single 37-minute "run" of 714 classes.
-        //
-        // Verified on real logs: this recovers both full runs at exactly 353 classes, the true suite size.
-        //
-        // If it ever does merge two runs the cost is a slightly misdrawn occupancy chart in a diagnostic
-        // report -- which is why this is preferable to stamping a run id from the build, where the id
-        // would have to differ per invocation and would make the test task permanently uncacheable.
-        val sorted = all.sortedBy { it.first }
-        val runs = mutableListOf(mutableListOf(sorted.first()))
-        var busyUntil = sorted.first().second
-        sorted.drop(1).forEach { span ->
-            if (span.first > busyUntil + IDLE_GAP_MS) {
-                runs += mutableListOf(span)
-            } else {
-                runs.last() += span
-            }
-            busyUntil = maxOf(busyUntil, span.second)
-        }
-
-        // THE LARGEST RUN, AND AMONG EQUALS THE NEWEST. `runs.last()` looks right -- the newest
-        // burst of activity is presumably the run just finished -- but it is wrong whenever
-        // anything ran after the suite: re-running one failing class, or an IDE running a single
-        // test, appends a later and much smaller segment. Observed printing "8s of class time in
-        // 8s of wall clock = 1.0 effective average concurrency" for a run of 336 classes and over
-        // an hour of work, because a stray 9-second single-class invocation followed it. The suite
-        // outweighs such strays by two orders of magnitude, so size rejects them reliably.
-        //
-        // SIZE ALONE IS NOT ENOUGH THOUGH, because every full run of the suite has the SAME size.
-        // `maxBy` keeps the FIRST maximum, so once the directory held several complete runs this
-        // reported the OLDEST one for as long as those logs survived -- a report of a run four days
-        // stale, presented as the run just finished, with no hint anything was wrong. Ties are
-        // broken by start time so a full run always beats its own history.
-        val spans = runs.maxWith(compareBy({ it.size }, { it.minOf { span -> span.first } }))
-        val ignored = all.size - spans.size
-        val otherRuns = runs.size - 1
-
-        val start = spans.minOf { it.first }
-        val finish = spans.maxOf { it.second }
-        val window = (finish - start).coerceAtLeast(1)
-        val work = spans.sumOf { it.second - it.first }
-
+        // Concurrency is AVERAGED OVER EACH DECILE, not sampled at an instant -- sampling lands between
+        // classes often enough to print 0 in the middle of a fully busy run.
         val busy = (0 until 10).map { i ->
             val lo = start + window * i / 10
             val hi = start + window * (i + 1) / 10
-            val occupied = spans.sumOf { (a, b) -> (minOf(b, hi) - maxOf(a, lo)).coerceAtLeast(0) }
+            val occupied = spans.classes.sumOf { c ->
+                (minOf(c.endMillis, hi) - maxOf(c.startMillis, lo)).coerceAtLeast(0)
+            }
             occupied.toDouble() / (hi - lo)
         }
+        // The class count is on this line deliberately. The newest burst of activity is taken to be the
+        // run being reported on, which is right when this task is invoked after a suite and wrong if
+        // something small ran in between -- one class from an IDE, say. Naming the count makes that
+        // visible at a glance ("1 class") instead of hiding behind a plausible-looking total.
         val summary = String.format(
-            "%s of class time in %s of wall clock = **%.1f** effective average concurrency",
-            fmt(work), fmt(window), work.toDouble() / window
+            "%d classes: %s of class time in %s of wall clock = **%.1f** effective average concurrency",
+            spans.classes.size, fmt(work), fmt(window), work.toDouble() / window
         )
 
         logger.lifecycle("")
@@ -391,19 +347,15 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         logger.lifecycle("")
     }
 
-    private companion object {
-        /**
-         * No class running for this long => a run boundary.
-         *
-         * Deliberately short. Within a run the forks are never all idle for seconds at a time, so 5s is
-         * already generous; raising it starts merging genuinely separate runs. Measured across several
-         * values, 5s recovered both full runs at their exact class count where 15s and above did not.
-         */
-        const val IDLE_GAP_MS = 5_000L
-    }
-
+    /**
+     * A duration as `m:ss`, or `s` below a minute.
+     *
+     * Colon-separated rather than `40m14s`: the report is read as a column of times to compare against
+     * each other, and `41:47` versus `43:32` is a subtraction the eye can do where `41m47s` versus
+     * `43m32s` is not.
+     */
     private fun fmt(millis: Long): String {
         val seconds = millis / 1000
-        return if (seconds < 60) "${seconds}s" else "${seconds / 60}m${"%02d".format(seconds % 60)}s"
+        return if (seconds < 60) "${seconds}s" else "${seconds / 60}:${"%02d".format(seconds % 60)}"
     }
 }
