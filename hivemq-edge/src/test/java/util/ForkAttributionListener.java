@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.support.descriptor.ClassSource;
+import org.junit.platform.engine.support.descriptor.MethodSource;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 
@@ -52,14 +53,28 @@ import org.junit.platform.launcher.TestIdentifier;
  * {@code <endEpochMillis> <startOffsetInThisJvm> <durationMillis> <sequence> <className>}, where
  * {@code sequence} is the n-th class this JVM was handed.
  * <p>
- * And to <b>standard output</b>, as two kinds of line:
+ * And to <b>standard output</b>, as three kinds of line sharing ONE FIELD GRAMMAR:
  * <pre>
- *   TESTJVM   &lt;jvmStartMillis&gt; &lt;pid&gt; &lt;worker&gt;                                  once, when the JVM starts
- *   TESTCLASS &lt;class&gt; &lt;PASSED|FAILED&gt; &lt;endMillis&gt; &lt;durationMillis&gt; &lt;pid&gt; &lt;worker&gt;   once per class
+ *   $1 kind   $2 name    $3 parent   $4 endMillis   $5 outcome        $6 durationMillis
+ *   ---------------------------------------------------------------------------------------
+ *   JVM       &lt;pid&gt;      &lt;worker&gt;    &lt;nowMillis&gt;    --                --
+ *   TESTCLASS &lt;class&gt;    &lt;pid&gt;       &lt;endMillis&gt;    PASSED|FAILED     &lt;durationMillis&gt;
+ *   TEST      &lt;method&gt;   &lt;class&gt;     &lt;endMillis&gt;    PASSED|FAILED     &lt;durationMillis&gt;
  * </pre>
+ * Every line is {@code kind name parent when [outcome duration]}, so one split on whitespace reads all three
+ * and {@code $3} always names the enclosing thing: a test's class, a class's JVM, a JVM's executor. That is
+ * what makes the chain walkable -- a TEST line does not repeat the JVM because its class already carries it.
+ * A JVM has no outcome and no duration, and simply stops after {@code $4} rather than padding.
+ * <p>
  * The file never reaches CI -- it is written to a remote executor's own disk and discarded when the executor
  * is released -- whereas stdout from a remote executor IS forwarded into the Jenkins console. So these lines
- * are what make class timing available on CI at all (EDG-990). The pid ties the two kinds together.
+ * are what make class timing available on CI at all (EDG-990). The pid ties the three kinds together.
+ * <p>
+ * The TEST line duplicates what Gradle's own {@code SomeIT > someTest() PASSED} events already say, and is
+ * printed anyway because those events carry NO TIMESTAMP OF THEIR OWN. On Jenkins that is invisible, because
+ * Jenkins stamps every console line as it arrives; on a local run the same log yields nothing, so the two
+ * environments needed two different readers. Emitting the time in the text makes one log format, read one
+ * way, everywhere. The cost is about 2,300 lines on a console log that already runs to 520,000.
  * <p>
  * The process id is the only identifier both stable within a JVM and distinct across concurrent ones. A
  * {@code forkEvery} restart yields a NEW pid: a run of 332 classes over 5 lanes used 15 JVMs, three per lane
@@ -105,16 +120,50 @@ public class ForkAttributionListener implements TestExecutionListener {
         //
         // The same value goes into the file header as `jvmStart`; this is that header's console twin,
         // for the same reason as the TESTCLASS line -- the file never leaves a remote executor.
-        System.out.println(String.format("TESTJVM %d %d %s", jvmStart, PID, GRADLE_WORKER));
+        //
+        // Fields follow the shared grammar: name is the pid, PARENT is the Gradle worker -- the lane
+        // this JVM was started for -- and then the time. There is no outcome and no duration, so the
+        // line stops at $4 rather than padding to six.
+        System.out.println(String.format("JVM %d %s %d", PID, GRADLE_WORKER, jvmStart));
     }
 
     @Override
     public void executionStarted(final @NotNull TestIdentifier identifier) {
-        className(identifier).ifPresent(name -> startedAt.put(name, System.currentTimeMillis()));
+        final long now = System.currentTimeMillis();
+        className(identifier).ifPresent(name -> startedAt.put(name, now));
+        // A METHOD IS KEYED ON CLASS AND METHOD TOGETHER, never the method name alone: two classes in
+        // one JVM routinely share a method name, and a parameterised method repeats its own name once
+        // per case. The identifier's unique id would also serve, but it is verbose and not printable
+        // as a single field.
+        methodKey(identifier).ifPresent(key -> startedAt.put(key, now));
     }
 
     @Override
     public void executionFinished(final @NotNull TestIdentifier identifier, final @NotNull TestExecutionResult result) {
+        methodKey(identifier).ifPresent(key -> {
+            final Long start = startedAt.remove(key);
+            if (start == null) {
+                return;
+            }
+            final long now = System.currentTimeMillis();
+            final int split = key.indexOf(' ');
+
+            // ONE LINE PER TEST METHOD, carrying its own absolute time.
+            //
+            // Gradle already prints `SomeIT > someTest() PASSED` for every test, so this looks
+            // redundant -- and on CI it nearly is, because Jenkins stamps every console line as it
+            // arrives. A LOCAL Gradle run has no such stamp, so the identical log yields no times at
+            // all and local and CI needed two different readers, measuring two different things. That
+            // divergence is what produced a string of contradictory numbers. Putting the time IN the
+            // text removes the difference between the two environments rather than compensating for it.
+            //
+            // The parent is the class that DECLARES the method, so a @Nested test names the nested
+            // class -- matching the TESTCLASS line emitted for that same nested class, and letting a
+            // reader roll methods up to whichever level it wants.
+            System.out.println(String.format(
+                    "TEST %s %s %d %s %d",
+                    key.substring(split + 1), key.substring(0, split), now, outcome(result), now - start));
+        });
         className(identifier).ifPresent(name -> {
             final Long start = startedAt.remove(name);
             if (start == null) {
@@ -122,7 +171,7 @@ public class ForkAttributionListener implements TestExecutionListener {
             }
             final long now = System.currentTimeMillis();
             final long duration = now - start;
-            final String outcome = result.getStatus() == TestExecutionResult.Status.SUCCESSFUL ? "PASSED" : "FAILED";
+            final String outcome = outcome(result);
 
             // seq is the n-th class this JVM was handed. Gradle deals round robin, so within one
             // JVM the classes sit at a constant stride in the dispatch order -- that stride is what
@@ -153,9 +202,16 @@ public class ForkAttributionListener implements TestExecutionListener {
             //
             // The start time is DERIVED by readers as end - duration rather than printed: two
             // independently written fields can disagree, a derived one cannot.
-            System.out.println(
-                    String.format("TESTCLASS %s %s %d %d %d %s", name, outcome, now, duration, PID, GRADLE_WORKER));
+            //
+            // The PARENT is the pid alone. The Gradle worker number was printed here too and is now
+            // dropped: the JVM line already pairs this pid with its worker, so repeating it made the
+            // same fact writable from two places, which is how they come to disagree.
+            System.out.println(String.format("TESTCLASS %s %d %d %s %d", name, PID, now, outcome, duration));
         });
+    }
+
+    private static @NotNull String outcome(final @NotNull TestExecutionResult result) {
+        return result.getStatus() == TestExecutionResult.Status.SUCCESSFUL ? "PASSED" : "FAILED";
     }
 
     private @NotNull java.util.Optional<String> className(final @NotNull TestIdentifier identifier) {
@@ -163,6 +219,24 @@ public class ForkAttributionListener implements TestExecutionListener {
                 .getSource()
                 .filter(source -> source instanceof ClassSource)
                 .map(source -> ((ClassSource) source).getClassName());
+    }
+
+    /**
+     * {@code "<declaringClass> <methodName>"} for a test method, empty for anything else.
+     * <p>
+     * Two values in one string because they are needed together in both places that use them -- as a map key
+     * that cannot collide across classes, and as the two name fields of the TEST line.
+     * <p>
+     * Class and method are read from the {@link MethodSource} rather than from the display name. A display
+     * name CONTAINS SPACES for a parameterised or repeated test -- {@code method(QoS) > [1] QoS_is_Absent} --
+     * which would break the field positions of every line after it.
+     */
+    private @NotNull java.util.Optional<String> methodKey(final @NotNull TestIdentifier identifier) {
+        return identifier
+                .getSource()
+                .filter(source -> source instanceof MethodSource)
+                .map(source -> (MethodSource) source)
+                .map(source -> source.getClassName() + " " + source.getMethodName());
     }
 
     private void write(final @NotNull String line) {
