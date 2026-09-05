@@ -52,10 +52,14 @@ import org.junit.platform.launcher.TestIdentifier;
  * {@code <endEpochMillis> <startOffsetInThisJvm> <durationMillis> <sequence> <className>}, where
  * {@code sequence} is the n-th class this JVM was handed.
  * <p>
- * And to <b>standard output</b>, as {@code TESTCLASS <class> <PASSED|FAILED> <endMillis> <durationMillis>
- * <pid> <worker>}. The file never reaches CI -- it is written to a remote executor's own disk and discarded
- * when the executor is released -- whereas stdout from a remote executor IS forwarded into the Jenkins
- * console. So the console line is what makes class timing available on CI at all (EDG-990).
+ * And to <b>standard output</b>, as two kinds of line:
+ * <pre>
+ *   TESTJVM   &lt;jvmStartMillis&gt; &lt;pid&gt; &lt;worker&gt;                                  once, when the JVM starts
+ *   TESTCLASS &lt;class&gt; &lt;PASSED|FAILED&gt; &lt;endMillis&gt; &lt;durationMillis&gt; &lt;pid&gt; &lt;worker&gt;   once per class
+ * </pre>
+ * The file never reaches CI -- it is written to a remote executor's own disk and discarded when the executor
+ * is released -- whereas stdout from a remote executor IS forwarded into the Jenkins console. So these lines
+ * are what make class timing available on CI at all (EDG-990). The pid ties the two kinds together.
  * <p>
  * The process id is the only identifier both stable within a JVM and distinct across concurrent ones. A
  * {@code forkEvery} restart yields a NEW pid: a run of 332 classes over 5 lanes used 15 JVMs, three per lane
@@ -88,6 +92,21 @@ public class ForkAttributionListener implements TestExecutionListener {
     private final long jvmStart = System.currentTimeMillis();
     private final @NotNull java.util.concurrent.atomic.AtomicInteger sequence =
             new java.util.concurrent.atomic.AtomicInteger();
+
+    @Override
+    public void testPlanExecutionStarted(final @NotNull org.junit.platform.launcher.TestPlan testPlan) {
+        // WHEN THIS JVM CAME UP, printed once per JVM before it runs anything.
+        //
+        // The TESTCLASS records below say when each CLASS started, which is not the same thing: the
+        // difference between this line and the first class in the same JVM is the JVM's own startup,
+        // and `forkEvery` pays that repeatedly -- a 332-class run over 5 lanes uses 15 JVMs, so it is
+        // paid 15 times. Roughly 20 seconds each by the note in the build file, but that figure has
+        // never been measured on CI because nothing recorded it there.
+        //
+        // The same value goes into the file header as `jvmStart`; this is that header's console twin,
+        // for the same reason as the TESTCLASS line -- the file never leaves a remote executor.
+        System.out.println(String.format("TESTJVM %d %d %s", jvmStart, PID, GRADLE_WORKER));
+    }
 
     @Override
     public void executionStarted(final @NotNull TestIdentifier identifier) {
