@@ -299,6 +299,7 @@ dependencies {
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
     testImplementation(libs.systemstubs)
+    testImplementation(libs.jimfs)
 }
 
 tasks.test {

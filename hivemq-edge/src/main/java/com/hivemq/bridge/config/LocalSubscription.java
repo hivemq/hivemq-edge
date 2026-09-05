@@ -26,8 +26,10 @@ import org.jetbrains.annotations.Nullable;
 
 public class LocalSubscription {
     private final @NotNull List<String> filters;
+    private final @NotNull List<String> configuredFilters;
     private final @Nullable String destination;
     private final @NotNull List<String> excludes;
+    private final @NotNull List<String> configuredExcludes;
     private final @NotNull List<CustomUserProperty> customUserProperties;
     private final boolean preserveRetain;
     private final int maxQoS;
@@ -35,9 +37,11 @@ public class LocalSubscription {
     private final @Nullable Long queueLimit;
 
     public LocalSubscription(final @NotNull List<String> filters, final @Nullable String destination) {
-        this.filters = filters;
+        this.filters = canonical(filters);
+        this.configuredFilters = List.copyOf(filters);
         this.destination = destination;
         this.excludes = List.of();
+        this.configuredExcludes = List.of();
         this.customUserProperties = List.of();
         this.maxQoS = 2;
         this.preserveRetain = false;
@@ -53,17 +57,66 @@ public class LocalSubscription {
             final int maxQoS,
             final @Nullable Long queueLimit) {
 
-        this.filters = filters;
+        this.filters = canonical(filters);
+        this.configuredFilters = List.copyOf(filters);
         this.destination = destination;
-        this.excludes = excludes;
+        this.excludes = canonical(excludes);
+        this.configuredExcludes = List.copyOf(excludes);
         this.customUserProperties = customUserProperties;
         this.maxQoS = maxQoS;
         this.preserveRetain = preserveRetain;
         this.queueLimit = queueLimit;
     }
 
+    /**
+     * Sorts a list of topic filters, so that two subscriptions differing only in the order they were
+     * written in are one subscription (EDG-882 F-05's sibling, F-07).
+     * <p>
+     * Order carries no meaning for either list: the filters are what the forwarder subscribes to, and
+     * the excludes are a match-any test. But {@link #equals(Object)} compared them positionally while
+     * {@link #calculateUniqueId()} sorted them, so reordering a filter in the configuration file
+     * produced a subscription that was "changed" for the reload path and identical for the queue
+     * naming — and the reload path answers a change by restarting the bridge in the mode that clears
+     * its queues. A formatting edit destroyed every message waiting to be forwarded.
+     * <p>
+     * <b>Sorted, not de-duplicated.</b> The digest that names every persisted queue is taken over the
+     * sorted filters <i>including</i> repeats, so collapsing {@code ["a", "a"]} to {@code ["a"]} would
+     * change that name and strand the messages already queued under the old one on upgrade — the same
+     * trade this ticket refused for the encoding itself. Repeats stay, and two configurations that
+     * differ by one are still different.
+     * <p>
+     * {@code customUserProperties} is deliberately left alone: MQTT user properties are ordered, and
+     * two properties with the same key are legal, so their order is part of the configuration rather
+     * than an accident of how it was written.
+     */
+    private static @NotNull List<String> canonical(final @NotNull List<String> topicFilters) {
+        return topicFilters.stream().sorted().toList();
+    }
+
     public @NotNull List<String> getFilters() {
         return filters;
+    }
+
+    /**
+     * The filters in the order they were configured, for writing the configuration back out.
+     * <p>
+     * Canonicalisation exists so that reordering a filter is not a configuration change; it was never
+     * meant to reorder the operator's file. Every write of {@code config.xml} rebuilds the bridge
+     * entities from these objects, and any REST write of any subsystem triggers one, so returning the
+     * sorted list here rewrote {@code <mqtt-topic-filter>} elements the operator had put in a
+     * deliberate order — in a file that is usually under version control (EDG-882 QA round 2).
+     * <p>
+     * Deliberately not part of {@link #equals(Object)} or {@link #hashCode()}: two subscriptions that
+     * differ only in the order they were written in are one subscription, which is the whole point of
+     * {@link #canonical(List)}.
+     */
+    public @NotNull List<String> getConfiguredFilters() {
+        return configuredFilters;
+    }
+
+    /** The excludes in the order they were configured; see {@link #getConfiguredFilters()}. */
+    public @NotNull List<String> getConfiguredExcludes() {
+        return configuredExcludes;
     }
 
     public @Nullable String getDestination() {
@@ -90,6 +143,21 @@ public class LocalSubscription {
         return queueLimit;
     }
 
+    /**
+     * Compares the configured state only.
+     * <p>
+     * {@code uniqueId} is deliberately excluded: it is derived data — a digest over {@link #filters}
+     * and {@link #destination}, both of which are compared here — and it is computed lazily by
+     * {@link #calculateUniqueId()} rather than at construction. A running bridge has therefore had it
+     * filled in, while a subscription freshly read from the configuration file has not, so including
+     * it made two identical configurations compare as different (EDG-882's sibling defect, EDG-884).
+     * The config-reload path takes that as "the bridge changed", restarts the bridge in the mode that
+     * discards its queue, and destroys every message waiting to be forwarded — under an identity that
+     * recomputes to exactly the same value.
+     * <p>
+     * Excluding it is behaviour-preserving for genuine configuration changes: any change that would
+     * alter the digest necessarily alters {@code filters} or {@code destination} first.
+     */
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -101,10 +169,11 @@ public class LocalSubscription {
         if (!Objects.equals(destination, that.destination)) return false;
         if (!excludes.equals(that.excludes)) return false;
         if (!customUserProperties.equals(that.customUserProperties)) return false;
-        if (!Objects.equals(uniqueId, that.uniqueId)) return false;
         return Objects.equals(queueLimit, that.queueLimit);
     }
 
+    /** Mirrors {@link #equals(Object)}: {@code uniqueId} is excluded, so the hash is stable over the
+     * object's lifetime rather than changing the first time the digest is memoised. */
     @Override
     public int hashCode() {
         int result = filters.hashCode();
@@ -113,11 +182,32 @@ public class LocalSubscription {
         result = 31 * result + customUserProperties.hashCode();
         result = 31 * result + (preserveRetain ? 1 : 0);
         result = 31 * result + maxQoS;
-        result = 31 * result + (uniqueId != null ? uniqueId.hashCode() : 0);
         result = 31 * result + (queueLimit != null ? queueLimit.hashCode() : 0);
         return result;
     }
 
+    /**
+     * The identity a bridge forwarder — and therefore the name of every queue it owns — is derived
+     * from: an MD5 digest over the sorted filters and the destination, rendered in standard Base64.
+     * <p>
+     * <b>This function is not injective, deliberately so.</b> The filters are joined with an
+     * <em>empty</em> separator, so any two filter lists with the same sorted concatenation hash to the
+     * same value: {@code ["ab", "c"]} and {@code ["a", "bc"]} both digest the bytes {@code abc}. Two
+     * such subscriptions on one bridge would own queues under a single identity, and registering the
+     * second would take the first's queues out of the ownership index — leaving live queues looking
+     * orphaned to the periodic clean-up, which is exactly the EDG-882 message-loss path.
+     * <p>
+     * The ambiguity is <b>not</b> fixed here, and must not be: any change to this encoding — a
+     * separator, length prefixes, a URL-safe alphabet — changes the digest of <em>every</em>
+     * configuration, renaming every persisted bridge queue on upgrade and stranding the messages
+     * already sitting in them. Trading silent loss for loss-on-upgrade is not a fix; EDG-882 rejected
+     * re-encoding for that reason. Removing the ambiguity requires versioned identities with a
+     * migration or dual lookup, which is a change of its own.
+     * <p>
+     * What guards the defect instead is {@link com.hivemq.bridge.mqtt.BridgeMqttClient#createForwarders()},
+     * which refuses to start a bridge whose local subscriptions do not resolve to distinct forwarder
+     * ids. An operator sees a startup error naming both subscriptions; nothing is silently discarded.
+     */
     public @NotNull String calculateUniqueId() {
         if (uniqueId != null) {
             return uniqueId;
@@ -127,7 +217,10 @@ public class LocalSubscription {
         final byte[] digestOverAll = new byte[digestSize];
 
         if (!filters.isEmpty()) {
-            // input list is immutable, need mutable list
+            // Sorted again rather than trusting the constructor's canonical order: this digest names
+            // every persisted queue of the subscription, so it must not become sensitive to how the
+            // list arrived here if a future path ever bypasses canonicalisation. Sorting a sorted list
+            // costs nothing and the digest is unchanged either way.
             final ArrayList<String> strings = new ArrayList<>(filters);
             strings.sort(String::compareTo);
             final byte[] filtersAsBytes = String.join("", strings).getBytes(StandardCharsets.UTF_8);

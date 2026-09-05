@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.reader;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bridge.config.BridgeTls;
 import com.hivemq.bridge.config.BridgeWebsocketConfig;
@@ -68,6 +70,21 @@ public class BridgeExtractor
         this.configFileReaderWriter = configFileReaderWriter;
     }
 
+    /**
+     * These three mutators hold the extractor's monitor across {@code writeConfigWithSync()}, and that
+     * is deliberate even though it is a lock-order inversion against the configuration watcher, which
+     * takes {@code ConfigFileReaderWriter}'s lock first and then calls into {@link #updateConfig}.
+     * <p>
+     * Releasing the monitor before the write — tried in EDG-882 QA round 3 to close that inversion —
+     * opens a worse window: {@code updateConfig} is itself synchronized, so between the model mutation
+     * and the file write the watcher can read the not-yet-written file, overwrite {@code bridgeEntities}
+     * with the pre-edit configuration and notify the bridge subsystem, which reverts the operator's
+     * change and clears the queues of whatever the reverted configuration no longer contains. Trading a
+     * pre-existing deadlock for a new path that silently discards a REST change and its messages is not
+     * a fix. Closing both properly needs one configuration-transition lock shared by the reload and the
+     * mutators, which is a change to the shared configuration subsystem and belongs to its own ticket
+     * (EDG-882 QA round 4).
+     */
     public synchronized void addBridge(final @NotNull MqttBridge mqttBridge) {
         if (!mqttBridge.isPersist()) {
             log.info(
@@ -86,6 +103,89 @@ public class BridgeExtractor
 
     public @NotNull List<MqttBridge> getBridges() {
         return new ImmutableList.Builder<MqttBridge>().addAll(bridgeEntities).build();
+    }
+
+    /**
+     * Replaces the configuration of one bridge in place, as a single configuration transition.
+     * <p>
+     * An update used to be expressed as {@link #removeBridge(String)} followed by
+     * {@link #addBridge(MqttBridge)}. Each of those notifies the consumer, so
+     * {@code BridgeService.updateBridges} saw the bridge disappear from the configuration and treated
+     * it as a removal: {@code internalStopBridge(active, clearQueue = true, retain = List.of())} —
+     * an empty retain list, so every forwarder queue of the bridge was cleared, including the
+     * subscriptions the operator had not touched. Editing one subscription through the API destroyed
+     * the backlog of all the others, which is exactly the loss EDG-882 exists to stop, arrived at
+     * through the path the UI uses (EDG-882 QA round 1).
+     * <p>
+     * Replacing in place keeps the bridge present across the transition, so it is classified as an
+     * update and goes through {@code restartBridge}, which retains the queues of the forwarders that
+     * survive into the new configuration and holds them across the hand-over.
+     *
+     * @return {@code false} if no bridge with that id is configured, in which case nothing changed.
+     */
+    public synchronized boolean replaceBridge(final @NotNull String id, final @NotNull MqttBridge mqttBridge) {
+        // The contract enforced where it is relied upon (EDG-882 review v02, R2-09). The REST layer
+        // rejects an id change, so today the two always agree; a caller that passed a body with a
+        // different id would leave the list without the old id and with a new one, which updateBridges
+        // classifies as remove + add -- and the removal clears every queue of the old bridge, silently.
+        // That is the defect this method exists to prevent, arrived at from the other side.
+        checkArgument(
+                id.equals(mqttBridge.getId()),
+                "Cannot replace bridge '%s' with a configuration carrying id '%s': replacing in place is"
+                        + " what keeps the bridge present across the transition, and a different id makes"
+                        + " it a removal followed by an addition, which clears the queues of the bridge"
+                        + " being replaced.",
+                id,
+                mqttBridge.getId());
+        if (bridgeEntities.stream().noneMatch(entry -> entry.getId().equals(id))) {
+            return false;
+        }
+        if (!mqttBridge.isPersist()) {
+            log.info(
+                    "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
+                    mqttBridge.getId());
+        }
+
+        bridgeEntities = bridgeEntities.stream()
+                .map(entry -> entry.getId().equals(id) ? mqttBridge : entry)
+                .collect(ImmutableList.toImmutableList());
+
+        notifyConsumer();
+        configFileReaderWriter.writeConfigWithSync();
+        return true;
+    }
+
+    /**
+     * Names a credential that carries leading or trailing whitespace, because nothing else will.
+     * <p>
+     * An element's text is its text: {@code <password>\n    ${ENV:PW}\n</password>} is rendered before
+     * the file is parsed, so the value the bridge ends up sending carries the operator's indentation.
+     * The remote rejects it, the log says the credentials were refused, and the configuration looks
+     * correct to anyone reading it — the difference is invisible in a diff and in the REST response
+     * alike. Writing a placeholder on its own indented line is the natural way to write one, so this is
+     * a trap an operator falls into by formatting their file tidily (EDG-882 QA, 2026-08-25).
+     * <p>
+     * <b>Reported, not trimmed</b>, for two reasons. Whitespace is legal in an MQTT password and
+     * trimming would silently break anyone who means it, with no way to opt out. And the placeholder
+     * restore that keeps this credential out of {@code config.xml} on write-back
+     * ({@link com.hivemq.util.render.EnvVarUtil#restorePlaceholders}) anchors on the element's text
+     * exactly as the marshaller writes it: trimming here would make the search string miss, the restore
+     * give up, and the secret land on disk — trading a failed connection for a disclosure. Whether to
+     * trim is a product decision about every string in {@code config.xml}, not a repair to this method.
+     */
+    private static void warnIfPadded(
+            final @NotNull String bridgeId, final @NotNull String element, final @Nullable String value) {
+        if (value == null || value.isEmpty() || value.equals(value.strip())) {
+            return;
+        }
+        log.warn(
+                "The <{}> of bridge '{}' begins or ends with whitespace, and that whitespace is part of the"
+                        + " value the bridge sends. If the element was written across several lines -- a"
+                        + " '${ENV:...}' placeholder indented on its own line, for instance -- the indentation"
+                        + " is in the credential and the remote broker will refuse the connection. Put the value"
+                        + " on the same line as its element, or remove the padding.",
+                element,
+                bridgeId);
     }
 
     public synchronized void removeBridge(final @NotNull String id) {
@@ -184,14 +284,17 @@ public class BridgeExtractor
 
                     if (remoteBroker.getAuthentication() != null
                             && remoteBroker.getAuthentication().getMqttSimpleAuthenticationEntity() != null) {
-                        builder.withUsername(remoteBroker
-                                        .getAuthentication()
-                                        .getMqttSimpleAuthenticationEntity()
-                                        .getUser())
-                                .withPassword(remoteBroker
-                                        .getAuthentication()
-                                        .getMqttSimpleAuthenticationEntity()
-                                        .getPassword());
+                        final String user = remoteBroker
+                                .getAuthentication()
+                                .getMqttSimpleAuthenticationEntity()
+                                .getUser();
+                        final String password = remoteBroker
+                                .getAuthentication()
+                                .getMqttSimpleAuthenticationEntity()
+                                .getPassword();
+                        warnIfPadded(bridgeConfig.getId(), "username", user);
+                        warnIfPadded(bridgeConfig.getId(), "password", password);
+                        builder.withUsername(user).withPassword(password);
                     }
 
                     if (remoteBroker.getMqtt().getClientId() != null) {
@@ -397,9 +500,9 @@ public class BridgeExtractor
         for (final RemoteSubscription subscription : remoteSubscriptionList) {
             final RemoteSubscriptionEntity subscriptionEntity = new RemoteSubscriptionEntity();
             subscriptionEntity.setDestination(subscription.getDestination());
-            if (subscription.getFilters() != null) {
-                subscriptionEntity.setFilters(new ArrayList<>(subscription.getFilters()));
-            }
+            // The configured order, not the canonical one: sorting exists so that a reorder is not a
+            // configuration change, not so that writing the file reorders the operator's elements.
+            subscriptionEntity.setFilters(new ArrayList<>(subscription.getConfiguredFilters()));
             subscriptionEntity.setPreserveRetain(subscription.isPreserveRetain());
             subscriptionEntity.setMaxQoS(subscription.getMaxQoS());
             if (subscription.getCustomUserProperties() != null) {
@@ -419,14 +522,30 @@ public class BridgeExtractor
         for (final LocalSubscription subscription : localSubscriptionList) {
             final ForwardedTopicEntity forwardedTopicEntity = new ForwardedTopicEntity();
             forwardedTopicEntity.setDestination(subscription.getDestination());
-            if (subscription.getExcludes() != null) {
-                forwardedTopicEntity.setExcludes(new ArrayList<>(subscription.getExcludes()));
-            }
-            if (subscription.getFilters() != null) {
-                forwardedTopicEntity.setFilters(new ArrayList<>(subscription.getFilters()));
-            }
+            // The configured order, not the canonical one: sorting exists so that a reorder is not a
+            // configuration change, not so that writing the file reorders the operator's elements.
+            forwardedTopicEntity.setExcludes(new ArrayList<>(subscription.getConfiguredExcludes()));
+            forwardedTopicEntity.setFilters(new ArrayList<>(subscription.getConfiguredFilters()));
             forwardedTopicEntity.setMaxQoS(subscription.getMaxQoS());
             forwardedTopicEntity.setPreserveRetain(subscription.isPreserveRetain());
+            // Dropped silently until now, so any write of config.xml deleted the operator's
+            // <queue-limit> and the reload that followed restarted the bridge for a change nobody made.
+            //
+            // Only when it fits the element: config.xsd declares queue-limit as xs:int, and the REST API
+            // takes an int64 that nothing bounds, so a larger value would fail schema-validated
+            // marshalling -- and writeConfigWithSync logs that failure and carries on, which would lose
+            // the whole write, including whatever unrelated subsystem triggered it (EDG-882 QA round 3).
+            final Long queueLimit = subscription.getQueueLimit();
+            if (queueLimit != null && (queueLimit > Integer.MAX_VALUE || queueLimit < Integer.MIN_VALUE)) {
+                log.warn(
+                        "The queue limit {} of the forwarded topic with destination '{}' does not fit the"
+                                + " configuration file's queue-limit element and cannot be written to it; the"
+                                + " limit stays in effect for this node but will not survive a restart.",
+                        queueLimit,
+                        subscription.getDestination());
+            } else {
+                forwardedTopicEntity.setQueueLimit(queueLimit);
+            }
             if (subscription.getCustomUserProperties() != null) {
                 forwardedTopicEntity.setCustomUserProperties(subscription.getCustomUserProperties().stream()
                         .map(this::unconvertCustomUserProperty)
@@ -453,12 +572,25 @@ public class BridgeExtractor
         // Bridge MqttEntity
         final BridgeMqttEntity bridgeMqttEntity = new BridgeMqttEntity();
         bridgeMqttEntity.setCleanStart(from.isCleanStart());
-        bridgeMqttEntity.setClientId(from.getClientId());
+        // Only when it is not the default. convertBridgeConfigs fills the client id in from the bridge
+        // id when the element is absent, so writing it back unconditionally added a <client-id> element
+        // to the operator's file that they never wrote -- on every REST write of any subsystem
+        // (EDG-882 QA round 2). Same configuration either way; the file just stops growing elements.
+        if (!from.getId().equals(from.getClientId())) {
+            bridgeMqttEntity.setClientId(from.getClientId());
+        }
         bridgeMqttEntity.setKeepAlive(from.getKeepAlive());
         bridgeMqttEntity.setSessionExpiry(from.getSessionExpiry());
         remoteBrokerEntity.setMqtt(bridgeMqttEntity);
 
         // Authentication
+        // Both halves, because config.xsd requires both elements: a bridge created over REST with a
+        // username and no password -- legal MQTT, and rejected nowhere -- has its username silently
+        // dropped here, and the reload that follows reads a changed bridge and restarts it for a change
+        // nobody made. Writing the element with one half would fail schema-validated marshalling and
+        // abort the whole configuration write instead, which is worse. Closing this properly means
+        // either relaxing the schema or refusing the combination at the API; both are decisions of their
+        // own and neither belongs to EDG-882 (QA round 3).
         if (from.getUsername() != null && from.getPassword() != null) {
             final BridgeAuthenticationEntity authentication = new BridgeAuthenticationEntity();
             final MqttSimpleAuthenticationEntity simpleAuthenticationEntity = new MqttSimpleAuthenticationEntity();
