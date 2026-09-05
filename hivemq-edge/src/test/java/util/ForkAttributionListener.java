@@ -130,6 +130,32 @@ public class ForkAttributionListener implements TestExecutionListener {
         emit(String.format("JVM %d %s %d", PID, GRADLE_WORKER, jvmStart));
     }
 
+    /**
+     * A test JUnit never ran -- {@code @Disabled}, or an {@code assumeTrue} that did not hold.
+     * <p>
+     * Recorded because otherwise a skip is INVISIBLE: {@code executionStarted} never fires for it, so
+     * without this the records could not say how many tests were skipped and that one number had to come
+     * from the JUnit XML -- which meant two sources in one report, disagreeing about what they counted.
+     * <p>
+     * Duration is always 0. A skipped test consumes no time, so the field is present for the grammar's
+     * sake rather than to carry information; the outcome is what matters.
+     */
+    @Override
+    public void executionSkipped(final @NotNull TestIdentifier identifier, final @NotNull String reason) {
+        methodKey(identifier).ifPresent(key -> {
+            final int split = key.indexOf(' ');
+            emit(String.format(
+                    "TEST %s %s %d SKIPPED 0",
+                    key.substring(split + 1), key.substring(0, split), System.currentTimeMillis()));
+        });
+        // A whole class can be skipped too -- @Disabled on the type. It occupies no JVM, so it gets no
+        // TESTCLASS record and correctly does not appear in any timing; this line is what lets a reader
+        // still see that it was part of the run rather than silently missing.
+        className(identifier)
+                .ifPresent(name ->
+                        emit(String.format("TESTCLASS %s %d %d SKIPPED 0", name, PID, System.currentTimeMillis())));
+    }
+
     @Override
     public void executionStarted(final @NotNull TestIdentifier identifier) {
         final long now = System.currentTimeMillis();
@@ -222,7 +248,19 @@ public class ForkAttributionListener implements TestExecutionListener {
     }
 
     private static @NotNull String outcome(final @NotNull TestExecutionResult result) {
-        return result.getStatus() == TestExecutionResult.Status.SUCCESSFUL ? "PASSED" : "FAILED";
+        // THREE OUTCOMES, NOT TWO. JUnit distinguishes SUCCESSFUL, ABORTED and FAILED, and collapsing the
+        // last two reports a test that never really ran as a failure: the TLS 1.1 tests abort on a failed
+        // assumption when the JDK has the protocol disabled, and were reported as six hard failures in a
+        // green suite. An abort is JUnit's "skipped at runtime" -- the JUnit XML files it under <skipped>
+        // -- so it is recorded as SKIPPED here, matching what a skipped test means everywhere else.
+        switch (result.getStatus()) {
+            case SUCCESSFUL:
+                return "PASSED";
+            case ABORTED:
+                return "SKIPPED";
+            default:
+                return "FAILED";
+        }
     }
 
     /**
