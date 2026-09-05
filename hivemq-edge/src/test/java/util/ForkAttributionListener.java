@@ -124,7 +124,7 @@ public class ForkAttributionListener implements TestExecutionListener {
         // Fields follow the shared grammar: name is the pid, PARENT is the Gradle worker -- the lane
         // this JVM was started for -- and then the time. There is no outcome and no duration, so the
         // line stops at $4 rather than padding to six.
-        System.out.println(String.format("JVM %d %s %d", PID, GRADLE_WORKER, jvmStart));
+        emit(String.format("JVM %d %s %d", PID, GRADLE_WORKER, jvmStart));
     }
 
     @Override
@@ -160,7 +160,12 @@ public class ForkAttributionListener implements TestExecutionListener {
             // The parent is the class that DECLARES the method, so a @Nested test names the nested
             // class -- matching the TESTCLASS line emitted for that same nested class, and letting a
             // reader roll methods up to whichever level it wants.
-            System.out.println(String.format(
+            //
+            // WRITTEN TO BOTH PLACES, in the SAME words. The file is what a local run keeps -- the
+            // console scrolls past and nobody captures it -- while on CI only the console survives.
+            // Emitting one identical line to each means neither environment needs a capture step and
+            // neither needs its own reader.
+            emit(String.format(
                     "TEST %s %s %d %s %d",
                     key.substring(split + 1), key.substring(0, split), now, outcome(result), now - start));
         });
@@ -206,12 +211,39 @@ public class ForkAttributionListener implements TestExecutionListener {
             // The PARENT is the pid alone. The Gradle worker number was printed here too and is now
             // dropped: the JVM line already pairs this pid with its worker, so repeating it made the
             // same fact writable from two places, which is how they come to disagree.
-            System.out.println(String.format("TESTCLASS %s %d %d %s %d", name, PID, now, outcome, duration));
+            //
+            // TO BOTH PLACES, as with TEST above. The positional line written just before stays as it
+            // is because ForkLogs.kt and testrun-condense.py parse it; this adds the same fact in the
+            // shared grammar, so a fork file and a Jenkins console can be read by ONE reader.
+            //
+            // The two lines describe the same class execution, which is safe only because BOTH
+            // existing parsers require a NUMERIC first field -- `f[0].toLongOrNull() ?: return` in
+            // ForkLogs.kt, `int(parts[0])` under a try/except in testrun-condense.py -- so a line
+            // beginning `TESTCLASS` is skipped rather than counted a second time. Verified in both
+            // before adding this; a parser without that guard would double every class.
+            emit(String.format("TESTCLASS %s %d %d %s %d", name, PID, now, outcome, duration));
         });
     }
 
     private static @NotNull String outcome(final @NotNull TestExecutionResult result) {
         return result.getStatus() == TestExecutionResult.Status.SUCCESSFUL ? "PASSED" : "FAILED";
+    }
+
+    /**
+     * One record, to BOTH the console and the fork-log file, in identical words.
+     * <p>
+     * Each destination survives where the other does not. On CI the file is written to a remote executor's
+     * own disk and discarded when the executor is released, so only the console comes back. Locally the
+     * console scrolls past unrecorded -- nothing captures it, and requiring a capture step would be a new
+     * demand on whoever runs the suite -- while the file sits in {@code build/} where the existing
+     * collection script already picks it up.
+     * <p>
+     * Writing the same line to both is what makes ONE reader enough for both environments. It also means a
+     * local run needs no change in how it is invoked: run the tests as always, and the records are on disk.
+     */
+    private void emit(final @NotNull String line) {
+        System.out.println(line);
+        write(line + System.lineSeparator());
     }
 
     private @NotNull java.util.Optional<String> className(final @NotNull TestIdentifier identifier) {
