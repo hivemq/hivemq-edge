@@ -63,6 +63,17 @@ data class TestRun(
      * A retried class occupies a fork twice, but the ordering decides where to place ONE dispatch, and a
      * class that failed and was retried is not a class that reliably costs the total of both. The longest
      * attempt is what a fork must be able to absorb.
+     *
+     * WHY `max` IS RIGHT HERE AND WRONG IN THE JENKINS READER. One fork-log record is one COMPLETE class
+     * execution -- `ForkAttributionListener` writes a line when the class finishes, not per test method --
+     * so several records for one class mean several attempts, and `max` picks one of them. The Jenkins
+     * console log carries one event pair per TEST METHOD instead, so the same rule applied there reports a
+     * class at its longest single method: `BridgeReconnectCyclesIT` read 17.1s for 55.2s of occupancy,
+     * making a whole CI run look 40% cheaper. That reader sums its segments and excludes only a retry's
+     * idle gap; see `CLAUDE/_scripts/jenkins-classtimes.py` and its fixture tests.
+     *
+     * The rule is the same in both -- charge the fork for the work, never for the gap -- but the unit of
+     * input differs, so the code cannot. Check which one you are holding before copying either.
      */
     fun longestPerClass(): Map<String, Double> =
         classes.groupBy { it.className }
