@@ -42,10 +42,6 @@ import org.gradle.api.tasks.TaskAction
  * ignoring real work, and the comparison would be rigged.
  */
 abstract class ReportTestConcurrencyTask : DefaultTask() {
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val resultsDir: DirectoryProperty
-
     /**
      * Per-JVM logs from ForkAttributionListener. Not an @InputDirectory: the suite that has no listener
      * never creates it, and a missing @InputDirectory fails the task rather than skipping the section.
@@ -80,18 +76,28 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
 
     @TaskAction
     fun run() {
-        val results = readRunResults(resultsDir.get().asFile)
-        if (results.isEmpty()) {
-            throw GradleException(
-                "No JUnit XML found in ${resultsDir.get().asFile}. Run the test suite first -- " +
-                    "this reports on a run that has happened."
+        // ONE SOURCE: the listener's records, for timings AND for pass/fail AND for counts.
+        //
+        // The JUnit XML used to supply the headline while the records supplied the timings, and the two
+        // disagreed in the same report -- 337 classes on one line, 333 on the next. They count different
+        // things: the XML has an entry for a class that was entirely @Disabled, which JUnit never starts
+        // and which therefore occupies no JVM and produces no record. Neither number was wrong; printing
+        // both without saying so was.
+        //
+        // The records answer all of it. A TEST line carries PASSED|FAILED, so outcomes come from the same
+        // bytes as the durations, and a retry is visible as a second attempt of the same method -- which
+        // is what separates FLAKY from FAILED. A class that ran nothing is simply absent, which is the
+        // honest answer to "what did this run cost".
+        val run = newestRun(forkLogsDir.get().asFile)
+            ?: throw GradleException(
+                "No test records found in ${forkLogsDir.get().asFile}. Run the test suite first -- " +
+                    "this reports on a run that has happened. (-PnoForkLogs disables the records.)"
             )
-        }
 
-        val failed = results.filterValues { it.failures > 0 }
-        if (failed.isNotEmpty()) {
+        val failedClasses = run.failedClasses
+        if (failedClasses.isNotEmpty()) {
             logger.warn("")
-            logger.warn("WARNING: ${failed.size} class(es) failed in this run.")
+            logger.warn("WARNING: ${failedClasses.size} class(es) failed in this run.")
             logger.warn("A failing class stops early, so its measured time understates the real one.")
             logger.warn("Treat the numbers below as provisional until the suite is green.")
         }
@@ -106,13 +112,7 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         //
         // Falls back to the XML only when the logs are absent (-PnoForkLogs, or a run predating them), so
         // the task still produces something rather than failing.
-        val run = newestRun(forkLogsDir.get().asFile)
-        val runtimes = run?.longestPerClass() ?: results.mapValues { it.value.seconds }
-        if (run == null) {
-            logger.warn("")
-            logger.warn("No fork logs found -- falling back to JUnit XML timings, which understate any")
-            logger.warn("class whose cost is in its fixture. Re-run without -PnoForkLogs for real numbers.")
-        }
+        val runtimes = run.longestPerClass()
         val committedFile = committedTimings.orNull?.asFile
         val committed = committedFile?.let { readTimings(it) } ?: emptyMap()
 
@@ -154,17 +154,24 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             measured = runtimes
         )
 
-        reportTotals()
+        reportTotals(run)
         reportOccupancy()
         reportSimulation(runtimes, committed, committedFile)
     }
 
-    /** What the run consisted of, before any analysis of how it was spread. */
-    private fun reportTotals() {
-        val t = readRunTotals(resultsDir.get().asFile)
-        // Time in test methods is the sum of the individual testcase times. It is LESS than the class time
-        // in the occupancy section, which measures how long each class HELD its JVM and so also carries
-        // per-class setup and teardown.
+    /**
+     * What the run consisted of, before any analysis of how it was spread.
+     *
+     * EVERY NUMBER FROM THE RECORDS. The class count here is the same one the occupancy section uses --
+     * classes that actually ran -- so the two cannot disagree. They used to: this line came from the
+     * JUnit XML and read 337 while the next said 333, because the XML has an entry for a class that was
+     * entirely @Disabled and never started, and so never occupied a JVM.
+     *
+     * Time in test methods is the sum of the individual test durations. It is LESS than the class time in
+     * the occupancy section, which measures how long each class HELD its JVM and so also carries
+     * per-class setup and teardown -- the difference between the two is exactly the setup figure.
+     */
+    private fun reportTotals(run: TestRun) {
         logger.lifecycle("")
         if (markdown) {
             logger.lifecycle("# Test concurrency report")
@@ -174,15 +181,19 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             logger.lifecycle("| classes | tests | in test methods | passed | flaky | failed | skipped |")
             logger.lifecycle("| --: | --: | --: | --: | --: | --: | --: |")
             logger.lifecycle(
-                "| ${t.classes} | ${t.tests} | ${fmt((t.seconds * 1000).toLong())} | " +
-                    "${t.passed} | ${t.flaky} | ${t.failed} | ${t.skipped} |"
+                "| ${run.classes.map { it.className }.distinct().size} | ${run.executedCount} | " +
+                    "${fmt(run.inTestsMillis)} | ${run.passedCount} | ${run.flakyCount} | " +
+                    "${run.failedCount} | ${run.skippedCount} |"
             )
         } else {
             logger.lifecycle(
-                "Test run -- ${t.classes} classes, ${t.tests} tests, " +
-                    "${fmt((t.seconds * 1000).toLong())} in test methods"
+                "Test run -- ${run.classes.map { it.className }.distinct().size} classes, " +
+                    "${run.executedCount} tests, ${fmt(run.inTestsMillis)} in test methods"
             )
-            logger.lifecycle("  ${t.passed} passed, ${t.flaky} flaky, ${t.failed} failed, ${t.skipped} skipped")
+            logger.lifecycle(
+                "  ${run.passedCount} passed, ${run.flakyCount} flaky, " +
+                    "${run.failedCount} failed, ${run.skippedCount} skipped"
+            )
         }
     }
 
@@ -232,9 +243,34 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
         // run being reported on, which is right when this task is invoked after a suite and wrong if
         // something small ran in between -- one class from an IDE, say. Naming the count makes that
         // visible at a glance ("1 class") instead of hiding behind a plausible-looking total.
+        //
+        // EXECUTIONS, NOT CLASSES, and said so. A RETRIED class is dispatched twice and occupies a fork
+        // twice, so both executions belong in this section's arithmetic -- while the header above counts
+        // DISTINCT classes, which is what "how big is the suite" means. The two therefore differ by the
+        // number of retries, and printing both as a bare "N classes" made the report contradict itself:
+        // one run showed 332 on one line and 333 on the next, with nothing to say why.
+        val executions = spans.classes.size
+        val distinct = spans.classes.map { it.className }.distinct().size
+        val unit = if (executions == distinct) {
+            "$distinct classes"
+        } else {
+            "$distinct classes in $executions executions (${executions - distinct} retried)"
+        }
         val summary = String.format(
-            "%d classes: %s of class time in %s of wall clock = **%.1f** effective average concurrency",
-            spans.classes.size, fmt(work), fmt(window), work.toDouble() / window
+            "%s: %s of class time in %s of wall clock = **%.1f** effective average concurrency",
+            unit, fmt(work), fmt(window), work.toDouble() / window
+        )
+
+        // SETUP -- what the classes spent OUTSIDE their test methods: container startup, fixture
+        // construction, teardown. Reported because it is the actionable half of a slow class: a class that
+        // is mostly setup is a shared-fixture candidate, while one that is slow inside its tests is simply
+        // doing work. Nothing could measure it until the listener began recording each TEST with its own
+        // duration next to each TESTCLASS; a reader working from per-method events alone cannot see it,
+        // which is how a class holding its JVM for 9.5s came to be scheduled as though it took 0.3s.
+        val setups = spans.classes.mapNotNull { it.setupMillis }
+        val setupSummary = if (setups.isEmpty()) null else String.format(
+            "of which %s is setup outside test methods (%.0f%% over %d of %d classes)",
+            fmt(setups.sum()), 100.0 * setups.sum() / work, setups.size, spans.classes.size
         )
 
         logger.lifecycle("")
@@ -246,6 +282,7 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             logger.lifecycle("| forks busy |" + busy.joinToString("") { String.format(" %.1f |", it) })
             logger.lifecycle("")
             logger.lifecycle(summary)
+            setupSummary?.let { logger.lifecycle("") ; logger.lifecycle(it) }
             if (ignored > 0) {
                 logger.lifecycle("")
                 logger.lifecycle("*$ignored class record(s) from $otherRuns earlier run(s) in the same directory ignored.*")
@@ -259,6 +296,7 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             logger.lifecycle("  forks busy " + busy.joinToString("") { String.format("%7.1f", it) })
             logger.lifecycle("")
             logger.lifecycle("  " + summary.replace("**", ""))
+            setupSummary?.let { logger.lifecycle("  " + it) }
         }
     }
 

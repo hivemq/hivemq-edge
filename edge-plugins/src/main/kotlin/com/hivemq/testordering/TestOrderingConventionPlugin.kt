@@ -80,7 +80,6 @@ class TestOrderingConventionPlugin : Plugin<Project> {
         }
 
         project.tasks.register<ReportTestConcurrencyTask>("reportTestConcurrency") {
-            resultsDir.set(project.layout.buildDirectory.dir("test-results/test"))
             forkLogsDir.set(project.layout.buildDirectory.dir("fork-logs"))
             if (committed.asFile.isFile) {
                 committedTimings.set(committed)

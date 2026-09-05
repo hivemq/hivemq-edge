@@ -22,13 +22,30 @@ import java.io.File
  *     was scheduled as trivially fast, and ran last where nothing could overlap it.
  *  4. SUMMING ACROSS RUNS. The fork-log directory is never cleared, so it holds months of runs.
  *
- * THE FORK LOGS ARE THE AUTHORITY, not the JUnit XML. They are written by `ForkAttributionListener` from
- * JUnit's own `executionStarted`/`executionFinished` callbacks, so a record is wall-clock time for one
- * attempt of one class in one JVM: setup and teardown included (fixing 2), the outer class present as its
- * own record (fixing 3), and a retry appearing as a SEPARATE record in a different JVM rather than one
- * span across the gap (fixing 1). Run separation is handled here (fixing 4).
+ * THE LISTENER'S RECORDS ARE THE AUTHORITY, not the JUnit XML. They are written by
+ * `ForkAttributionListener` from JUnit's own `executionStarted`/`executionFinished` callbacks, so a record
+ * is wall-clock time for one attempt of one class in one JVM: setup and teardown included (fixing 2), the
+ * outer class present as its own record (fixing 3), and a retry appearing as a SEPARATE record in a
+ * different JVM rather than one span across the gap (fixing 1). Run separation is handled here (fixing 4).
  *
  * The JUnit XML remains the authority for PASS/FAIL and for test counts. It is not a timing source.
+ *
+ * ONE PIPELINE, ONE GRAMMAR. The listener prints the same records to standard output AND to these files,
+ * so a Jenkins console and a local fork log carry identical lines and every consumer -- this task, and the
+ * vault's testrun-records.py / testrun-condense.py / testrun-report.py -- reads the same bytes the same
+ * way. Before that, local and CI were read by different code from different artefacts, and the two
+ * measured subtly different things; that split is where a month of contradictory timing numbers came from.
+ *
+ *     $1 kind     $2 name     $3 parent   $4 endMillis    $5 outcome      $6 durationMillis
+ *     -------------------------------------------------------------------------------------
+ *     JVM         <pid>       <worker>    <nowMillis>     --              --
+ *     TESTCLASS   <class>     <pid>       <endMillis>     PASSED|FAILED   <durationMillis>
+ *     TEST        <method>    <class>     <endMillis>     PASSED|FAILED   <durationMillis>
+ *
+ * `$3` always names the ENCLOSING thing -- a test's class, a class's JVM, a JVM's executor -- so the chain
+ * is walkable and no fact is written twice. The TEST lines are what make SETUP knowable: a class's own
+ * duration minus the sum of its tests is everything it did around them, which is invisible to any reader
+ * working from per-method events alone.
  */
 
 /** One class's stay in one test JVM: wall-clock, one attempt, setup and teardown included. */
@@ -36,15 +53,78 @@ data class ClassRun(
     val className: String,
     val startMillis: Long,
     val endMillis: Long,
-    val jvmPid: String
+    val jvmPid: String,
+    /**
+     * Time spent INSIDE this class's test methods, or null when unmeasured.
+     *
+     * `durationMillis - inTestsMillis` is SETUP: container startup, fixture construction, teardown --
+     * everything a class does around its tests. It is the number that explains why a class is expensive,
+     * as opposed to merely how expensive it is, and nothing could compute it until the listener began
+     * recording each test with its own duration alongside each class.
+     */
+    val inTestsMillis: Long? = null
 ) {
     val durationMillis: Long get() = endMillis - startMillis
+
+    /** Setup and teardown: the class's own time minus the time inside its tests. Null when unmeasured. */
+    val setupMillis: Long?
+        get() = inTestsMillis?.let { inside ->
+            // A class shorter than the tests inside it is impossible and means the two numbers came from
+            // different runs. Report nothing rather than a figure that cannot be true.
+            (durationMillis - inside).takeIf { it >= 0 }
+        }
+}
+
+/** One TEST record: a single attempt of one test method. */
+private data class TestEvent(
+    val className: String,
+    val methodName: String,
+    val endMillis: Long,
+    val durationMillis: Long,
+    val outcome: String
+)
+
+/**
+ * One test method's outcome, as the records state it.
+ *
+ * Kept per (class, method) rather than per line because a RETRY emits a second record for the same
+ * method: a method that failed and then passed is FLAKY, not failed, and only the sequence of its
+ * attempts distinguishes the two.
+ */
+data class TestRuns(
+    val className: String,
+    val methodName: String,
+    val outcomes: List<String>
+) {
+    val skipped: Boolean get() = outcomes.all { it == "SKIPPED" }
+    val passed: Boolean get() = outcomes.any { it == "PASSED" }
+    val flaky: Boolean get() = passed && outcomes.any { it == "FAILED" }
+
+    /** Failed on every attempt. A skipped test never ran, so it is neither passed nor failed. */
+    val failed: Boolean get() = !passed && !skipped
 }
 
 /** Every class record of a single test run, already separated from the other runs in the directory. */
 data class TestRun(
-    val classes: List<ClassRun>
+    val classes: List<ClassRun>,
+    /** Every test method of this run, with all of its attempts. Empty for a run with no TEST records. */
+    val tests: List<TestRuns> = emptyList()
 ) {
+    /** Classes that ended in failure on their last attempt -- the ones whose timings are unreliable. */
+    val failedClasses: List<String>
+        get() = tests.filter { it.failed }.map { it.className }.distinct()
+
+    val passedCount: Int get() = tests.count { it.passed && !it.flaky }
+    val flakyCount: Int get() = tests.count { it.flaky }
+    val failedCount: Int get() = tests.count { it.failed }
+    val skippedCount: Int get() = tests.count { it.skipped }
+
+    /** Tests that actually EXECUTED. A skip is counted separately, never as part of the total. */
+    val executedCount: Int get() = tests.count { !it.skipped }
+
+    /** Time inside test methods, summed over every attempt. */
+    val inTestsMillis: Long get() = classes.sumOf { it.inTestsMillis ?: 0L }
+
     val startMillis: Long get() = classes.minOf { it.startMillis }
     val endMillis: Long get() = classes.maxOf { it.endMillis }
 
@@ -99,17 +179,41 @@ const val RUN_BOUNDARY_MILLIS = 5_000L
 fun readRuns(dir: File): List<TestRun> {
     val files = dir.listFiles { f -> f.isFile && f.name.endsWith(".log") }?.toList().orEmpty()
     val all = mutableListOf<ClassRun>()
+    // Time inside test methods, summed per class and folded at '$' so a @Nested test counts towards the
+    // class that was actually dispatched. Summing STATED durations cannot charge a retry's idle gap.
+    // One TEST record. The end time is kept so these can be split into runs alongside the class
+    // records, rather than folded in globally and attributed to whichever run asks.
+    val testEvents = mutableListOf<TestEvent>()
     files.forEach { file ->
-        val pid = file.nameWithoutExtension.removePrefix("fork-")
         file.forEachLine { line ->
             if (line.startsWith("#")) return@forEachLine
             val f = line.split(' ')
-            if (f.size < 5) return@forEachLine
-            val name = f[4]
-            if (name.contains('$')) return@forEachLine
-            val end = f[0].toLongOrNull() ?: return@forEachLine
-            val duration = f[2].toLongOrNull() ?: return@forEachLine
-            all += ClassRun(name, end - duration, end, pid)
+            if (f.size != 6) return@forEachLine
+            when (f[0]) {
+                "TEST" -> {
+                    val duration = f[5].toLongOrNull() ?: return@forEachLine
+                    val end = f[3].toLongOrNull() ?: return@forEachLine
+                    // FOLDED AT '$': a @Nested test's record names the nested class, but its time and
+                    // its outcome belong to the class that was actually dispatched.
+                    testEvents += TestEvent(f[2].substringBefore('$'), f[1], end, duration, f[4])
+                }
+                "TESTCLASS" -> {
+                    val name = f[1]
+                    if (name.contains('$')) return@forEachLine
+                    val end = f[3].toLongOrNull() ?: return@forEachLine
+                    val duration = f[5].toLongOrNull() ?: return@forEachLine
+                    // A class SKIPPED WITH ZERO DURATION never ran -- @Disabled on the type -- so it
+                    // occupied no JVM and belongs in no timing; it is recorded only so a reader can see it
+                    // was part of the run. A class whose tests ABORTED also reads SKIPPED but has a real
+                    // duration, because it did start, did hold its JVM, and must be counted. Keying on the
+                    // outcome alone would silently drop that occupancy.
+                    if (f[4] == "SKIPPED" && duration == 0L) return@forEachLine
+                    // The pid comes from the RECORD, not the file name: the two agree today, but a
+                    // record carrying its own identity is what lets the same reader work on a Jenkins
+                    // console, where there are no per-JVM files at all.
+                    all += ClassRun(name, end - duration, end, f[2])
+                }
+            }
         }
     }
     if (all.isEmpty()) return emptyList()
@@ -127,7 +231,22 @@ fun readRuns(dir: File): List<TestRun> {
         }
         busyUntil = maxOf(busyUntil, run.endMillis)
     }
-    return runs.map { TestRun(it) }
+
+    // TESTS ARE ASSIGNED TO A RUN BY WHEN THEY FINISHED, not folded in globally. The directory holds
+    // every run ever made -- Gradle never clears it -- so a class name that appears in three runs has
+    // three sets of tests, and attributing all of them to one run inflates its in-test time and can
+    // make setup come out negative.
+    return runs.map { classRuns ->
+        val from = classRuns.minOf { it.startMillis }
+        val to = classRuns.maxOf { it.endMillis }
+        val mine = testEvents.filter { it.endMillis in from..to }
+        val inTests = mine.groupBy { it.className }.mapValues { (_, e) -> e.sumOf { it.durationMillis } }
+        TestRun(
+            classRuns.map { it.copy(inTestsMillis = inTests[it.className]) },
+            mine.groupBy { it.className to it.methodName }
+                .map { (key, e) -> TestRuns(key.first, key.second, e.map { it.outcome }) }
+        )
+    }
 }
 
 /**
