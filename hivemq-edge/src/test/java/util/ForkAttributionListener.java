@@ -47,13 +47,14 @@ import org.junit.platform.launcher.TestIdentifier;
  * A record here is wall clock for ONE ATTEMPT of ONE class in ONE JVM -- setup and teardown included, the
  * outer class present as its own record, and a retry appearing as a second record rather than one span.
  * <p>
- * <b>Written twice, to two places, deliberately.</b>
+ * <b>ONE GRAMMAR, WRITTEN TO TWO PLACES.</b> Every record goes both to standard output and to
+ * {@code build/fork-logs/fork-<pid>.log}, in identical words, because each destination survives where the
+ * other does not: on CI the file is written to a remote executor's own disk and discarded when the executor
+ * is released, while locally the console scrolls past unrecorded and the file is what gets collected.
+ * Writing the same line to both is what lets ONE reader serve both environments -- and a local run needs no
+ * capture step, because the records are on disk when it finishes.
  * <p>
- * To {@code build/fork-logs/fork-<pid>.log}, one line per class:
- * {@code <endEpochMillis> <startOffsetInThisJvm> <durationMillis> <sequence> <className>}, where
- * {@code sequence} is the n-th class this JVM was handed.
- * <p>
- * And to <b>standard output</b>, as three kinds of line sharing ONE FIELD GRAMMAR:
+ * Three kinds of line share the grammar:
  * <pre>
  *   $1 kind   $2 name    $3 parent   $4 endMillis   $5 outcome        $6 durationMillis
  *   ---------------------------------------------------------------------------------------
@@ -66,9 +67,13 @@ import org.junit.platform.launcher.TestIdentifier;
  * what makes the chain walkable -- a TEST line does not repeat the JVM because its class already carries it.
  * A JVM has no outcome and no duration, and simply stops after {@code $4} rather than padding.
  * <p>
- * The file never reaches CI -- it is written to a remote executor's own disk and discarded when the executor
- * is released -- whereas stdout from a remote executor IS forwarded into the Jenkins console. So these lines
- * are what make class timing available on CI at all (EDG-990). The pid ties the three kinds together.
+ * Stdout from a remote executor IS forwarded into the Jenkins console, so these lines are what make class
+ * timing available on CI at all (EDG-990). The pid ties the three kinds together.
+ * <p>
+ * Every consumer reads these records and nothing else: the Gradle {@code reportTestConcurrency} task via
+ * {@code ForkLogs.kt}, and the vault's {@code testrun-records.py} / {@code testrun-condense.py} /
+ * {@code testrun-report.py}. An older positional line used to be written here as well and was removed once
+ * the last reader moved over -- two formats for one fact is how the readers drifted apart in the first place.
  * <p>
  * The TEST line duplicates what Gradle's own {@code SomeIT > someTest() PASSED} events already say, and is
  * printed anyway because those events carry NO TIMESTAMP OF THEIR OWN. On Jenkins that is invisible, because
@@ -105,8 +110,6 @@ public class ForkAttributionListener implements TestExecutionListener {
     private final @NotNull ConcurrentHashMap<String, Long> startedAt = new ConcurrentHashMap<>();
     private final @NotNull AtomicReference<Writer> writer = new AtomicReference<>();
     private final long jvmStart = System.currentTimeMillis();
-    private final @NotNull java.util.concurrent.atomic.AtomicInteger sequence =
-            new java.util.concurrent.atomic.AtomicInteger();
 
     @Override
     public void testPlanExecutionStarted(final @NotNull org.junit.platform.launcher.TestPlan testPlan) {
@@ -178,10 +181,6 @@ public class ForkAttributionListener implements TestExecutionListener {
             final long duration = now - start;
             final String outcome = outcome(result);
 
-            // seq is the n-th class this JVM was handed. Gradle deals round robin, so within one
-            // JVM the classes sit at a constant stride in the dispatch order -- that stride is what
-            // identifies the fork slot, and seq makes it readable without inferring it.
-            //
             // NESTED CLASSES ARE LOGGED BUT MUST BE IGNORED WHEN AGGREGATING. A class with @Nested
             // inner classes produces a line per nested class AND a line for the enclosing class
             // whose duration already spans all of them, so summing every line double-counts:
@@ -189,9 +188,6 @@ public class ForkAttributionListener implements TestExecutionListener {
             // scheduled on its own -- Gradle dispatches the outer class and JUnit runs the nested
             // ones inside it -- so the outer class is the only meaningful unit for timing,
             // distribution and counting. Filter on '$' in the name.
-            write(String.format("%d %d %d %d %s%n", now, start - jvmStart, duration, sequence.incrementAndGet(), name));
-
-            // The SAME record, to stdout, so it survives where the file does not.
             //
             // On CI the file above is written to a remote executor's own disk and thrown away when the
             // executor is released, so class-level timing has never reached a Jenkins log -- forcing

@@ -237,6 +237,18 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             spans.classes.size, fmt(work), fmt(window), work.toDouble() / window
         )
 
+        // SETUP -- what the classes spent OUTSIDE their test methods: container startup, fixture
+        // construction, teardown. Reported because it is the actionable half of a slow class: a class that
+        // is mostly setup is a shared-fixture candidate, while one that is slow inside its tests is simply
+        // doing work. Nothing could measure it until the listener began recording each TEST with its own
+        // duration next to each TESTCLASS; a reader working from per-method events alone cannot see it,
+        // which is how a class holding its JVM for 9.5s came to be scheduled as though it took 0.3s.
+        val setups = spans.classes.mapNotNull { it.setupMillis }
+        val setupSummary = if (setups.isEmpty()) null else String.format(
+            "of which %s is setup outside test methods (%.0f%% over %d of %d classes)",
+            fmt(setups.sum()), 100.0 * setups.sum() / work, setups.size, spans.classes.size
+        )
+
         logger.lifecycle("")
         if (markdown) {
             logger.lifecycle("## Fork occupancy through the test execution")
@@ -246,6 +258,7 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             logger.lifecycle("| forks busy |" + busy.joinToString("") { String.format(" %.1f |", it) })
             logger.lifecycle("")
             logger.lifecycle(summary)
+            setupSummary?.let { logger.lifecycle("") ; logger.lifecycle(it) }
             if (ignored > 0) {
                 logger.lifecycle("")
                 logger.lifecycle("*$ignored class record(s) from $otherRuns earlier run(s) in the same directory ignored.*")
@@ -259,6 +272,7 @@ abstract class ReportTestConcurrencyTask : DefaultTask() {
             logger.lifecycle("  forks busy " + busy.joinToString("") { String.format("%7.1f", it) })
             logger.lifecycle("")
             logger.lifecycle("  " + summary.replace("**", ""))
+            setupSummary?.let { logger.lifecycle("  " + it) }
         }
     }
 

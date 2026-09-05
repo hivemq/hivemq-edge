@@ -22,13 +22,30 @@ import java.io.File
  *     was scheduled as trivially fast, and ran last where nothing could overlap it.
  *  4. SUMMING ACROSS RUNS. The fork-log directory is never cleared, so it holds months of runs.
  *
- * THE FORK LOGS ARE THE AUTHORITY, not the JUnit XML. They are written by `ForkAttributionListener` from
- * JUnit's own `executionStarted`/`executionFinished` callbacks, so a record is wall-clock time for one
- * attempt of one class in one JVM: setup and teardown included (fixing 2), the outer class present as its
- * own record (fixing 3), and a retry appearing as a SEPARATE record in a different JVM rather than one
- * span across the gap (fixing 1). Run separation is handled here (fixing 4).
+ * THE LISTENER'S RECORDS ARE THE AUTHORITY, not the JUnit XML. They are written by
+ * `ForkAttributionListener` from JUnit's own `executionStarted`/`executionFinished` callbacks, so a record
+ * is wall-clock time for one attempt of one class in one JVM: setup and teardown included (fixing 2), the
+ * outer class present as its own record (fixing 3), and a retry appearing as a SEPARATE record in a
+ * different JVM rather than one span across the gap (fixing 1). Run separation is handled here (fixing 4).
  *
  * The JUnit XML remains the authority for PASS/FAIL and for test counts. It is not a timing source.
+ *
+ * ONE PIPELINE, ONE GRAMMAR. The listener prints the same records to standard output AND to these files,
+ * so a Jenkins console and a local fork log carry identical lines and every consumer -- this task, and the
+ * vault's testrun-records.py / testrun-condense.py / testrun-report.py -- reads the same bytes the same
+ * way. Before that, local and CI were read by different code from different artefacts, and the two
+ * measured subtly different things; that split is where a month of contradictory timing numbers came from.
+ *
+ *     $1 kind     $2 name     $3 parent   $4 endMillis    $5 outcome      $6 durationMillis
+ *     -------------------------------------------------------------------------------------
+ *     JVM         <pid>       <worker>    <nowMillis>     --              --
+ *     TESTCLASS   <class>     <pid>       <endMillis>     PASSED|FAILED   <durationMillis>
+ *     TEST        <method>    <class>     <endMillis>     PASSED|FAILED   <durationMillis>
+ *
+ * `$3` always names the ENCLOSING thing -- a test's class, a class's JVM, a JVM's executor -- so the chain
+ * is walkable and no fact is written twice. The TEST lines are what make SETUP knowable: a class's own
+ * duration minus the sum of its tests is everything it did around them, which is invisible to any reader
+ * working from per-method events alone.
  */
 
 /** One class's stay in one test JVM: wall-clock, one attempt, setup and teardown included. */
@@ -36,9 +53,26 @@ data class ClassRun(
     val className: String,
     val startMillis: Long,
     val endMillis: Long,
-    val jvmPid: String
+    val jvmPid: String,
+    /**
+     * Time spent INSIDE this class's test methods, or null when unmeasured.
+     *
+     * `durationMillis - inTestsMillis` is SETUP: container startup, fixture construction, teardown --
+     * everything a class does around its tests. It is the number that explains why a class is expensive,
+     * as opposed to merely how expensive it is, and nothing could compute it until the listener began
+     * recording each test with its own duration alongside each class.
+     */
+    val inTestsMillis: Long? = null
 ) {
     val durationMillis: Long get() = endMillis - startMillis
+
+    /** Setup and teardown: the class's own time minus the time inside its tests. Null when unmeasured. */
+    val setupMillis: Long?
+        get() = inTestsMillis?.let { inside ->
+            // A class shorter than the tests inside it is impossible and means the two numbers came from
+            // different runs. Report nothing rather than a figure that cannot be true.
+            (durationMillis - inside).takeIf { it >= 0 }
+        }
 }
 
 /** Every class record of a single test run, already separated from the other runs in the directory. */
@@ -99,20 +133,37 @@ const val RUN_BOUNDARY_MILLIS = 5_000L
 fun readRuns(dir: File): List<TestRun> {
     val files = dir.listFiles { f -> f.isFile && f.name.endsWith(".log") }?.toList().orEmpty()
     val all = mutableListOf<ClassRun>()
+    // Time inside test methods, summed per class and folded at '$' so a @Nested test counts towards the
+    // class that was actually dispatched. Summing STATED durations cannot charge a retry's idle gap.
+    val inTests = mutableMapOf<String, Long>()
     files.forEach { file ->
-        val pid = file.nameWithoutExtension.removePrefix("fork-")
         file.forEachLine { line ->
             if (line.startsWith("#")) return@forEachLine
             val f = line.split(' ')
-            if (f.size < 5) return@forEachLine
-            val name = f[4]
-            if (name.contains('$')) return@forEachLine
-            val end = f[0].toLongOrNull() ?: return@forEachLine
-            val duration = f[2].toLongOrNull() ?: return@forEachLine
-            all += ClassRun(name, end - duration, end, pid)
+            if (f.size != 6) return@forEachLine
+            when (f[0]) {
+                "TEST" -> {
+                    val outer = f[2].substringBefore('$')
+                    val duration = f[5].toLongOrNull() ?: return@forEachLine
+                    inTests[outer] = (inTests[outer] ?: 0L) + duration
+                }
+                "TESTCLASS" -> {
+                    val name = f[1]
+                    if (name.contains('$')) return@forEachLine
+                    val end = f[3].toLongOrNull() ?: return@forEachLine
+                    val duration = f[5].toLongOrNull() ?: return@forEachLine
+                    // The pid comes from the RECORD, not the file name: the two agree today, but a
+                    // record carrying its own identity is what lets the same reader work on a Jenkins
+                    // console, where there are no per-JVM files at all.
+                    all += ClassRun(name, end - duration, end, f[2])
+                }
+            }
         }
     }
     if (all.isEmpty()) return emptyList()
+    val withTests = all.map { it.copy(inTestsMillis = inTests[it.className]) }
+    all.clear()
+    all += withTests
 
     // A run boundary is a stretch where NOTHING was running -- not a gap between consecutive starts,
     // which cannot tell a slow class from a pause and once merged three runs into one.
