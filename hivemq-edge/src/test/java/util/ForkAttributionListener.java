@@ -56,16 +56,24 @@ import org.junit.platform.launcher.TestIdentifier;
  * <p>
  * Three kinds of line share the grammar:
  * <pre>
- *   $1 kind   $2 name    $3 parent   $4 endMillis   $5 outcome        $6 durationMillis
- *   ---------------------------------------------------------------------------------------
- *   JVM       &lt;pid&gt;      &lt;worker&gt;    &lt;nowMillis&gt;    --                --
- *   TESTCLASS &lt;class&gt;    &lt;pid&gt;       &lt;endMillis&gt;    PASSED|FAILED     &lt;durationMillis&gt;
- *   TEST      &lt;method&gt;   &lt;class&gt;     &lt;endMillis&gt;    PASSED|FAILED     &lt;durationMillis&gt;
+ *   $1 kind        $2 name    $3 parent  $4 endMillis  $5 outcome              $6 durationMillis
+ *   --------------------------------------------------------------------------------------------
+ *   UME-JVM        &lt;pid&gt;      &lt;worker&gt;   &lt;nowMillis&gt;   --                      --
+ *   UME-TESTCLASS  &lt;class&gt;    &lt;pid&gt;      &lt;endMillis&gt;   PASSED|FAILED|SKIPPED   &lt;durationMillis&gt;
+ *   UME-TEST       &lt;method&gt;   &lt;class&gt;    &lt;endMillis&gt;   PASSED|FAILED|SKIPPED   &lt;durationMillis&gt;
  * </pre>
  * Every line is {@code kind name parent when [outcome duration]}, so one split on whitespace reads all three
  * and {@code $3} always names the enclosing thing: a test's class, a class's JVM, a JVM's executor. That is
- * what makes the chain walkable -- a TEST line does not repeat the JVM because its class already carries it.
- * A JVM has no outcome and no duration, and simply stops after {@code $4} rather than padding.
+ * what makes the chain walkable -- a test line does not repeat the JVM because its class already carries it.
+ * A JVM line has no outcome and no duration, and simply stops after {@code $4} rather than padding.
+ * <p>
+ * <b>WHY THE {@code UME-} PREFIX.</b> These lines are selected out of a build log by pattern, and the words
+ * {@code TEST} and {@code JVM} are far too common to anchor on: {@code TEST} is a prefix of
+ * {@code TESTCLASS}, a substring of most class names in the suite, and a word any product log line might
+ * shout. A distinctive prefix makes the pattern {@code ^UME-} and removes the ambiguity for every reader,
+ * including a person grepping by hand. It matters more than it looks: the console filter keeps ONLY matching
+ * lines and discards half a million others, so a pattern that could match product output would silently pull
+ * noise into the records. (Named for the Ume, the river through Umea that carried the log drives.)
  * <p>
  * Stdout from a remote executor IS forwarded into the Jenkins console, so these lines are what make class
  * timing available on CI at all (EDG-990). The pid ties the three kinds together.
@@ -127,7 +135,7 @@ public class ForkAttributionListener implements TestExecutionListener {
         // Fields follow the shared grammar: name is the pid, PARENT is the Gradle worker -- the lane
         // this JVM was started for -- and then the time. There is no outcome and no duration, so the
         // line stops at $4 rather than padding to six.
-        emit(String.format("JVM %d %s %d", PID, GRADLE_WORKER, jvmStart));
+        emit(String.format("UME-JVM %d %s %d", PID, GRADLE_WORKER, jvmStart));
     }
 
     /**
@@ -145,7 +153,7 @@ public class ForkAttributionListener implements TestExecutionListener {
         methodKey(identifier).ifPresent(key -> {
             final int split = key.indexOf(' ');
             emit(String.format(
-                    "TEST %s %s %d SKIPPED 0",
+                    "UME-TEST %s %s %d SKIPPED 0",
                     key.substring(split + 1), key.substring(0, split), System.currentTimeMillis()));
         });
         // A whole class can be skipped too -- @Disabled on the type. It occupies no JVM, so it gets no
@@ -153,7 +161,7 @@ public class ForkAttributionListener implements TestExecutionListener {
         // still see that it was part of the run rather than silently missing.
         className(identifier)
                 .ifPresent(name ->
-                        emit(String.format("TESTCLASS %s %d %d SKIPPED 0", name, PID, System.currentTimeMillis())));
+                        emit(String.format("UME-TESTCLASS %s %d %d SKIPPED 0", name, PID, System.currentTimeMillis())));
     }
 
     @Override
@@ -195,7 +203,7 @@ public class ForkAttributionListener implements TestExecutionListener {
             // Emitting one identical line to each means neither environment needs a capture step and
             // neither needs its own reader.
             emit(String.format(
-                    "TEST %s %s %d %s %d",
+                    "UME-TEST %s %s %d %s %d",
                     key.substring(split + 1), key.substring(0, split), now, outcome(result), now - start));
         });
         className(identifier).ifPresent(name -> {
@@ -243,7 +251,7 @@ public class ForkAttributionListener implements TestExecutionListener {
             // ForkLogs.kt, `int(parts[0])` under a try/except in testrun-condense.py -- so a line
             // beginning `TESTCLASS` is skipped rather than counted a second time. Verified in both
             // before adding this; a parser without that guard would double every class.
-            emit(String.format("TESTCLASS %s %d %d %s %d", name, PID, now, outcome, duration));
+            emit(String.format("UME-TESTCLASS %s %d %d %s %d", name, PID, now, outcome, duration));
         });
     }
 

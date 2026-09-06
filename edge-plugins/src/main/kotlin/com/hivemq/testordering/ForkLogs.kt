@@ -36,11 +36,15 @@ import java.io.File
  * way. Before that, local and CI were read by different code from different artefacts, and the two
  * measured subtly different things; that split is where a month of contradictory timing numbers came from.
  *
- *     $1 kind     $2 name     $3 parent   $4 endMillis    $5 outcome      $6 durationMillis
- *     -------------------------------------------------------------------------------------
- *     JVM         <pid>       <worker>    <nowMillis>     --              --
- *     TESTCLASS   <class>     <pid>       <endMillis>     PASSED|FAILED   <durationMillis>
- *     TEST        <method>    <class>     <endMillis>     PASSED|FAILED   <durationMillis>
+ *     $1 kind         $2 name    $3 parent  $4 endMillis  $5 outcome              $6 durationMillis
+ *     ----------------------------------------------------------------------------------------------
+ *     UME-JVM         <pid>      <worker>   <nowMillis>   --                      --
+ *     UME-TESTCLASS   <class>    <pid>      <endMillis>   PASSED|FAILED|SKIPPED   <durationMillis>
+ *     UME-TEST        <method>   <class>    <endMillis>   PASSED|FAILED|SKIPPED   <durationMillis>
+ *
+ * The `UME-` prefix exists so these lines can be selected out of a build log by pattern without ambiguity --
+ * `TEST` alone is a prefix of `TESTCLASS`, a substring of most class names, and a word any product log line
+ * might shout. Named for the Ume, the river through Umea that carried the log drives.
  *
  * `$3` always names the ENCLOSING thing -- a test's class, a class's JVM, a JVM's executor -- so the chain
  * is walkable and no fact is written twice. The TEST lines are what make SETUP knowable: a class's own
@@ -204,14 +208,14 @@ fun readRuns(dir: File): List<TestRun> {
             val f = line.split(' ')
             if (f.size != 6) return@forEachLine
             when (f[0]) {
-                "TEST" -> {
+                "UME-TEST" -> {
                     val duration = f[5].toLongOrNull() ?: return@forEachLine
                     val end = f[3].toLongOrNull() ?: return@forEachLine
                     // FOLDED AT '$': a @Nested test's record names the nested class, but its time and
                     // its outcome belong to the class that was actually dispatched.
                     testEvents += TestEvent(f[2].substringBefore('$'), f[1], end, duration, f[4])
                 }
-                "TESTCLASS" -> {
+                "UME-TESTCLASS" -> {
                     val name = f[1]
                     if (name.contains('$')) return@forEachLine
                     val end = f[3].toLongOrNull() ?: return@forEachLine
