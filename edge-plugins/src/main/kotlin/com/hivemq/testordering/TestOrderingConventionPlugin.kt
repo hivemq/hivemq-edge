@@ -4,7 +4,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.testing.Test
-import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 
 /**
@@ -71,6 +70,16 @@ class TestOrderingConventionPlugin : Plugin<Project> {
 
         project.tasks.withType<Test>().configureEach {
             systemProperty("junit.jupiter.execution.timeout.default", timeout)
+
+            // THE RECORDS GO TO THE CONSOLE, and that is the whole of it. The test JVMs' own output is not
+            // echoed (`showStandardStreams = false`), because it was 96% of a 78 MB build log; these lines
+            // are re-printed through `onOutput`, which sees a remote executor's output exactly as it sees a
+            // local fork's. So a plain `gradlew test` prints roughly 1500 records and nothing else, in both
+            // environments, and one build log is the complete account of one run.
+            //
+            // Applied here rather than in each build file so the suites cannot drift apart. They had: the
+            // integration suite echoed its records to the console while the unit suite did not.
+            umeRecordsToConsole(this)
             doFirst {
                 orderTestClasses(this as Test, committed.asFile)
             }
@@ -178,35 +187,27 @@ internal fun orderTestClasses(
     // 332-class suite needs 30 processes rather than 15 (see `arrange`), and a reader that saw only the
     // classes which reported a result could never account for the difference.
     //
-    // WRITTEN TO BOTH DESTINATIONS, exactly as the listener writes its own records and for the same reason:
-    // each survives where the other does not. On CI the fork files are written to a remote executor's own
-    // disk and discarded when it is released, so only the console remains; locally the console scrolls past
-    // unrecorded, so only the file remains. Writing both is what lets ONE reader serve both -- and it is what
-    // makes a local run need no capture step at all, since `build/fork-logs/` is complete when it finishes.
+    // ONE RECORD PER DISPATCHED CLASS, carrying the time this schedule assumed for it.
     //
-    // The file sits beside the per-process ones rather than among them. It is not a process's output: it is
-    // written before any test JVM exists, and naming it `fork-<pid>.log` would invite a reader to attribute
-    // it to a process that never wrote it.
+    // These are half of what makes the schedule judgeable: without them a log says what the run COST but not
+    // what it expected to cost, and comparing the two is the entire question. Reading them from the timings
+    // file instead would tie the analysis to a working copy on somebody's machine -- unreachable from a CI
+    // log, and already stale by the time anyone looked, since that file is rewritten whenever a run is
+    // adopted.
     //
-    // On the console it goes to `info`, so an ordinary build does not carry several hundred lines nobody
-    // reads. The file has no such constraint and always gets them. The format is the shared six-field grammar
-    // -- see the "READING THE RECORDS" reference in ForkAttributionListener, which these must stay
-    // consistent with.
+    // Emitted for EVERY dispatched class, including the two thirds that hold no test at all. Those are why a
+    // 332-class suite needs 30 processes rather than 15 (see `arrange`), and a reader that saw only the
+    // classes which reported a result could never account for the difference.
+    //
+    // To the console at `lifecycle` and to the task's record file, like every other record -- not behind
+    // `--info`, or an ordinary `gradlew test` log could not answer the question these exist to answer. The
+    // format is the shared six-field grammar; see the "READING THE RECORDS" reference in
+    // ForkAttributionListener, which these must stay consistent with.
     val now = System.currentTimeMillis()
     val lines = ordered.map { name ->
         "UME-PREDICTED $name ${task.path} $now -- ${((timings[name] ?: 0.0) * 1000).toLong()}"
     }
-    lines.forEach { task.logger.info(it) }
-    // FAIL-SOFT, like everything else here: this is a diagnostic, and a build must not fail because a
-    // directory could not be created. A missing file costs the schedule comparison in the report, nothing
-    // more, and the console copy may well have survived anyway.
-    runCatching {
-        val dir = task.project.layout.buildDirectory.dir("fork-logs").get().asFile
-        dir.mkdirs()
-        dir.resolve("predicted.log").writeText(lines.joinToString("\n", postfix = "\n"))
-    }.onFailure {
-        task.logger.info("Test class ordering: could not write predicted.log (${it.message})")
-    }
+    lines.forEach { task.logger.lifecycle(it) }
 
     val untimed = ordered.count { it !in timings }
     val totalSeconds = ordered.sumOf { timings[it] ?: 0.0 }

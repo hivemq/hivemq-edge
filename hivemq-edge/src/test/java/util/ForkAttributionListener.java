@@ -15,16 +15,7 @@
  */
 package util;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.support.descriptor.ClassSource;
@@ -47,12 +38,17 @@ import org.junit.platform.launcher.TestIdentifier;
  * A record here is wall clock for ONE ATTEMPT of ONE class in ONE JVM -- setup and teardown included, the
  * outer class present as its own record, and a retry appearing as a second record rather than one span.
  * <p>
- * <b>ONE GRAMMAR, WRITTEN TO TWO PLACES.</b> Every record goes both to standard output and to
- * {@code build/fork-logs/fork-<pid>.log}, in identical words, because each destination survives where the
- * other does not: on CI the file is written to a remote executor's own disk and discarded when the executor
- * is released, while locally the console scrolls past unrecorded and the file is what gets collected.
- * Writing the same line to both is what lets ONE reader serve both environments -- and a local run needs no
- * capture step, because the records are on disk when it finishes.
+ * <b>ONE GRAMMAR, ONE DESTINATION: THE CONSOLE.</b> Every record goes to standard output and nowhere else,
+ * and one build log is a complete account of one run. That works because a record states its own absolute
+ * time and its own parent, so nothing has to be inferred from where a line appeared or which file it was in.
+ * Gradle forwards a remote executor's stdout into the build log exactly as it forwards a local fork's, so the
+ * SAME log serves a 40-executor CI run and a five-fork local one, read by ONE reader.
+ * <p>
+ * These records were once written to a per-JVM file as well, on the reasoning that a local console scrolls
+ * past unrecorded. It bought nothing and cost correctness: the directory was never cleared between runs -- a
+ * run id in the path would have made the test task uncacheable -- so reading it meant separating one run out
+ * of an accumulated pile, and getting that subtly wrong folded one run's tests into another, reading 9590
+ * tests for a 4795-test suite. A build log has no such problem: it IS one run.
  * <p>
  * Four kinds of line share the grammar:
  * <pre>
@@ -188,7 +184,7 @@ import org.junit.platform.launcher.TestIdentifier;
  * timing available on CI at all (EDG-990). The pid ties the three kinds together.
  * <p>
  * ONE CONSUMER READS THESE RECORDS, and it reads nothing else: the {@code jenkins-report} tool, which takes
- * either a CI console log or a local {@code build/fork-logs/} directory and applies the rules below in one
+ * a build log from either environment and applies the rules below in one
  * place. The build used to carry a second reader of its own, and the two disagreed inside a single report --
  * 337 classes on one line and 333 on the next, neither number wrong, because they counted different things
  * and neither said so. An older positional record was written here as well, and went the same way: two
@@ -205,12 +201,10 @@ import org.junit.platform.launcher.TestIdentifier;
  * in sequence. So JVMs are not lanes -- grouping them into lanes is a question of overlapping time ranges,
  * which the timestamps support.
  * <p>
- * Diagnostic only, and deliberately cheap: one line per class, appended, no locking beyond the file handle.
- * Nothing reads it during the build.
+ * Diagnostic only, and deliberately cheap: one line per class and one per test, printed and forgotten.
+ * Nothing reads them during the build.
  */
 public class ForkAttributionListener implements TestExecutionListener {
-
-    private static final @NotNull String OUTPUT_DIR_PROPERTY = "forkLog.dir";
 
     /**
      * Which JVM this is, and which lane it belongs to. Both are needed, and neither alone suffices.
@@ -227,7 +221,6 @@ public class ForkAttributionListener implements TestExecutionListener {
     private static final @NotNull String GRADLE_WORKER = System.getProperty("org.gradle.test.worker", "?");
 
     private final @NotNull ConcurrentHashMap<String, Long> startedAt = new ConcurrentHashMap<>();
-    private final @NotNull AtomicReference<Writer> writer = new AtomicReference<>();
     private final long jvmStart = System.currentTimeMillis();
 
     @Override
@@ -240,8 +233,9 @@ public class ForkAttributionListener implements TestExecutionListener {
         // paid 15 times. Roughly 20 seconds each by the note in the build file, but that figure has
         // never been measured on CI because nothing recorded it there.
         //
-        // The same value goes into the file header as `jvmStart`; this is that header's console twin,
-        // for the same reason as the TESTCLASS line -- the file never leaves a remote executor.
+        // A JVM HANDED ONLY EMPTY CLASSES emits nothing else at all, so this is the only evidence it
+        // existed -- and those are two thirds of the dispatched classes, which is why a suite needs far
+        // more processes than its class count suggests. Without this record the count is inexplicable.
         //
         // Fields follow the shared grammar: name is the pid, PARENT is the Gradle worker -- the lane
         // this JVM was started for -- and then the time. There is no outcome and no duration, so the
@@ -334,13 +328,12 @@ public class ForkAttributionListener implements TestExecutionListener {
             // ones inside it -- so the outer class is the only meaningful unit for timing,
             // distribution and counting. Filter on '$' in the name.
             //
-            // On CI the file above is written to a remote executor's own disk and thrown away when the
-            // executor is released, so class-level timing has never reached a Jenkins log -- forcing
-            // readers to reconstruct it from per-method events, which cannot see anything a class does
-            // outside a test method. OpenLdapIT read 0.3s that way for a class that occupies its JVM
-            // for 9.5s, was scheduled as trivially fast, and ran last where nothing could overlap it.
-            // Stdout from a remote executor IS forwarded into the console, so this closes that gap
-            // without an artifact-collection step (EDG-990).
+            // CLASS-LEVEL TIMING EXISTS NOWHERE ELSE. Before this record it had to be reconstructed from
+            // per-method events, which cannot see anything a class does outside a test method: OpenLdapIT
+            // read 0.3s that way for a class that occupies its JVM for 9.5s, was scheduled as trivially
+            // fast, and ran last where nothing could overlap it. Stdout from a remote executor IS
+            // forwarded into the console, so one line here closes that gap on CI and locally alike, with
+            // no artifact collection anywhere (EDG-990).
             //
             // ONE LINE PER ATTEMPT, and the outcome is what makes a retry recognisable: two records for
             // one class otherwise mean either a retry or two separate invocations, and those are
@@ -376,20 +369,22 @@ public class ForkAttributionListener implements TestExecutionListener {
     }
 
     /**
-     * One record, to BOTH the console and the fork-log file, in identical words.
+     * One record, to standard output. That is the only destination, and it is enough.
      * <p>
-     * Each destination survives where the other does not. On CI the file is written to a remote executor's
-     * own disk and discarded when the executor is released, so only the console comes back. Locally the
-     * console scrolls past unrecorded -- nothing captures it, and requiring a capture step would be a new
-     * demand on whoever runs the suite -- while the file sits in {@code build/} where the existing
-     * collection script already picks it up.
+     * THE CONSOLE IS THE RECORD. Every record states its own absolute time and its own parent, so a class
+     * knows its process and a test knows its class -- which means the console alone is a complete account of
+     * a run, with nothing to reconstruct from what a reader knows about how the lines were arranged. Gradle
+     * forwards a remote executor's stdout into the build log exactly as it forwards a local fork's, so the
+     * same log serves a 40-executor CI run and a five-fork local one.
      * <p>
-     * Writing the same line to both is what makes ONE reader enough for both environments. It also means a
-     * local run needs no change in how it is invoked: run the tests as always, and the records are on disk.
+     * These records USED to be written to a per-JVM file as well, on the reasoning that a local console
+     * scrolls past unrecorded. That turned out to buy nothing and cost real correctness: the directory was
+     * never cleared between runs, so reading it needed the run separated out of an accumulated pile, and
+     * getting that subtly wrong folded one run's tests into another -- a 4795-test suite read 9590. The
+     * console has no such problem, because a build log IS one run.
      */
     private void emit(final @NotNull String line) {
         System.out.println(line);
-        write(line + System.lineSeparator());
     }
 
     private @NotNull java.util.Optional<String> className(final @NotNull TestIdentifier identifier) {
@@ -415,48 +410,5 @@ public class ForkAttributionListener implements TestExecutionListener {
                 .filter(source -> source instanceof MethodSource)
                 .map(source -> (MethodSource) source)
                 .map(source -> source.getClassName() + " " + source.getMethodName());
-    }
-
-    private void write(final @NotNull String line) {
-        try {
-            Writer out = writer.get();
-            if (out == null) {
-                synchronized (this) {
-                    out = writer.get();
-                    if (out == null) {
-                        final String dir = System.getProperty(OUTPUT_DIR_PROPERTY);
-                        if (dir == null) {
-                            return; // not enabled for this run
-                        }
-                        // No run id is stamped here. The build deliberately does not pass one: it would
-                        // have to differ on every invocation, and a system property is part of a test
-                        // task's cache key, so the task could then never be restored from the build
-                        // cache. Separating runs is left to the reader of these logs, which can do it
-                        // from the timings -- within a run the forks are essentially never all idle at
-                        // once, so a stretch with nothing running is a run boundary.
-                        final Path path = Paths.get(dir);
-                        Files.createDirectories(path);
-                        out = Files.newBufferedWriter(
-                                path.resolve("fork-" + PID + ".log"),
-                                StandardCharsets.UTF_8,
-                                StandardOpenOption.CREATE,
-                                StandardOpenOption.APPEND);
-                        // Header: when this JVM started and the worker number Gradle gave it. The worker
-                        // number counts JVMs, not slots (a forkEvery restart gets a new one), so it does
-                        // NOT identify the fork -- recorded because it is free and pins this file to a
-                        // line in Gradle's own output.
-                        out.write(
-                                String.format("# jvmStart=%d pid=%d gradleWorker=%s%n", jvmStart, PID, GRADLE_WORKER));
-                        writer.set(out);
-                    }
-                }
-            }
-            synchronized (this) {
-                out.write(line);
-                out.flush();
-            }
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }
