@@ -102,6 +102,18 @@ data class TestRuns(
 
     /** Failed on every attempt. A skipped test never ran, so it is neither passed nor failed. */
     val failed: Boolean get() = !passed && !skipped
+
+    /**
+     * How many TESTS these attempts represent -- which is not always one.
+     *
+     * A REPEATED METHOD NAME IS EITHER A PARAMETERISED CASE OR A RETRY. A `@ParameterizedTest` emits one
+     * record per case under ONE method name (ten, for one adapter schema test), and every case is a real
+     * separate test. A retry also repeats the name, but only after a FAILURE -- that is what the retry
+     * plugin re-runs. So attempts with no failure among them are independent cases and each counts;
+     * anything else is one test that was retried. Counting every repeat as one test undercounted a real
+     * CI build by 57 of 1182.
+     */
+    val count: Int get() = if (outcomes.none { it == "FAILED" }) outcomes.size else 1
 }
 
 /** Every class record of a single test run, already separated from the other runs in the directory. */
@@ -114,13 +126,15 @@ data class TestRun(
     val failedClasses: List<String>
         get() = tests.filter { it.failed }.map { it.className }.distinct()
 
-    val passedCount: Int get() = tests.count { it.passed && !it.flaky }
+    // Each of these counts CASES, not method names -- see TestRuns.count, which is 1 for an ordinary
+    // test or a retry and n for a parameterised method's n cases.
+    val passedCount: Int get() = tests.filter { it.passed && !it.flaky }.sumOf { it.count }
     val flakyCount: Int get() = tests.count { it.flaky }
     val failedCount: Int get() = tests.count { it.failed }
-    val skippedCount: Int get() = tests.count { it.skipped }
+    val skippedCount: Int get() = tests.filter { it.skipped }.sumOf { it.count }
 
     /** Tests that actually EXECUTED. A skip is counted separately, never as part of the total. */
-    val executedCount: Int get() = tests.count { !it.skipped }
+    val executedCount: Int get() = tests.filter { !it.skipped }.sumOf { it.count }
 
     /** Time inside test methods, summed over every attempt. */
     val inTestsMillis: Long get() = classes.sumOf { it.inTestsMillis ?: 0L }
