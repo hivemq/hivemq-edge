@@ -40,9 +40,6 @@ import org.gradle.kotlin.dsl.withType
 class TestOrderingConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val committed = project.layout.projectDirectory.file("gradle/test-class-timings.csv")
-        // Same name as the committed file: the directory says which is which, and adopting an ordering is
-        // then a cp between two paths that differ only in their directory.
-        val generated = project.layout.buildDirectory.file("test-class-timings.csv")
 
         // A default timeout for every test, so no single test can hang a build indefinitely.
         //
@@ -79,19 +76,18 @@ class TestOrderingConventionPlugin : Plugin<Project> {
             }
         }
 
-        project.tasks.register<ReportTestConcurrencyTask>("reportTestConcurrency") {
-            forkLogsDir.set(project.layout.buildDirectory.dir("fork-logs"))
-            if (committed.asFile.isFile) {
-                committedTimings.set(committed)
-            }
-            runTimings.set(generated)
-            // A spread around the plausible range, plus whatever this machine would actually use.
-            forkCounts.set(listOf(2, 5, 10, 20))
-            val local = project.tasks.withType(Test::class.java).firstOrNull()?.maxParallelForks
-            if (local != null) {
-                actualForks.set(local)
-            }
-        }
+        // THERE IS NO REPORTING TASK HERE ANY MORE, deliberately. Reading the records, measuring occupancy,
+        // simulating an ordering and writing the timings file all live in the jenkins-report tool, which
+        // reads the same records from a CI console log and from `build/fork-logs/` alike. A copy inside the
+        // build could only ever read the local half, and two implementations of the same rules is exactly how
+        // the readers came to disagree -- one reporting 337 classes where the other said 333, neither wrong.
+        //
+        //   ./gradlew test
+        //   ../jenkins-report/bin/edge_report.py build/fork-logs --timings gradle/test-class-timings.csv
+        //
+        // The report says what the new ordering would save and writes the file; committing it adopts it.
+        // What the build still owns is the ordering itself -- reading the committed file, arranging the
+        // classes, and recording what it assumed -- because only the build can act on that.
     }
 }
 
@@ -182,13 +178,34 @@ internal fun orderTestClasses(
     // 332-class suite needs 30 processes rather than 15 (see `arrange`), and a reader that saw only the
     // classes which reported a result could never account for the difference.
     //
-    // At `info`, so the ordinary console does not carry ~700 lines nobody reads; the analysis runs against a
-    // log captured with --info. The format is the shared six-field grammar -- see the "READING THE RECORDS"
-    // reference in ForkAttributionListener, which these must stay consistent with.
+    // WRITTEN TO BOTH DESTINATIONS, exactly as the listener writes its own records and for the same reason:
+    // each survives where the other does not. On CI the fork files are written to a remote executor's own
+    // disk and discarded when it is released, so only the console remains; locally the console scrolls past
+    // unrecorded, so only the file remains. Writing both is what lets ONE reader serve both -- and it is what
+    // makes a local run need no capture step at all, since `build/fork-logs/` is complete when it finishes.
+    //
+    // The file sits beside the per-process ones rather than among them. It is not a process's output: it is
+    // written before any test JVM exists, and naming it `fork-<pid>.log` would invite a reader to attribute
+    // it to a process that never wrote it.
+    //
+    // On the console it goes to `info`, so an ordinary build does not carry several hundred lines nobody
+    // reads. The file has no such constraint and always gets them. The format is the shared six-field grammar
+    // -- see the "READING THE RECORDS" reference in ForkAttributionListener, which these must stay
+    // consistent with.
     val now = System.currentTimeMillis()
-    ordered.forEach { name ->
-        val predicted = ((timings[name] ?: 0.0) * 1000).toLong()
-        task.logger.info("UME-PREDICTED $name ${task.path} $now -- $predicted")
+    val lines = ordered.map { name ->
+        "UME-PREDICTED $name ${task.path} $now -- ${((timings[name] ?: 0.0) * 1000).toLong()}"
+    }
+    lines.forEach { task.logger.info(it) }
+    // FAIL-SOFT, like everything else here: this is a diagnostic, and a build must not fail because a
+    // directory could not be created. A missing file costs the schedule comparison in the report, nothing
+    // more, and the console copy may well have survived anyway.
+    runCatching {
+        val dir = task.project.layout.buildDirectory.dir("fork-logs").get().asFile
+        dir.mkdirs()
+        dir.resolve("predicted.log").writeText(lines.joinToString("\n", postfix = "\n"))
+    }.onFailure {
+        task.logger.info("Test class ordering: could not write predicted.log (${it.message})")
     }
 
     val untimed = ordered.count { it !in timings }

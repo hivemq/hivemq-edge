@@ -310,9 +310,12 @@ tasks.test {
 
     // Record which test JVM ran which class, one file per JVM (EDG-930). Gradle merges the console
     // output of the parallel forks into one stream and the JUnit XML carries a hostname rather than a
-    // process, so without this nothing says how the classes were distributed -- which is what
-    // reportTestConcurrency needs to show. Cheap enough to leave on (one appended line per class);
-    // -PnoForkLogs turns it off.
+    // process, so without this nothing says how the classes were distributed -- which is what the
+    // report has to show. Cheap enough to leave on (one appended line per class); -PnoForkLogs turns
+    // it off.
+    //
+    // These files ARE the local run's record, so no capture step is needed:
+    //   ../jenkins-report/bin/edge_report.py build/fork-logs --timings gradle/test-class-timings.csv
     if (!project.hasProperty("noForkLogs")) {
         systemProperty(
             "forkLog.dir",
@@ -323,7 +326,7 @@ tasks.test {
         )
         // Deliberately NO run id. Stamping one would mean a value that differs on every invocation, and a
         // systemProperty is part of a test task's cache key -- the task could then never be restored from
-        // the build cache. reportTestConcurrency separates runs from the logs themselves instead.
+        // the build cache. The reader separates runs by the idle gap between them instead.
     }
 
     minHeapSize = "128m"

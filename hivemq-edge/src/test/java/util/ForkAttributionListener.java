@@ -87,11 +87,11 @@ import org.junit.platform.launcher.TestIdentifier;
  *
  * <h2>READING THE RECORDS -- the reference every consumer follows</h2>
  *
- * THIS SECTION IS THE SINGLE SOURCE FOR HOW THESE RECORDS MUST BE INTERPRETED. Every reader points here
- * rather than restating the rules: {@code ForkLogs.kt} and {@code ReportTestConcurrencyTask.kt} in the
- * build, and {@code jenkins-classtimes.py} / {@code testrun-condense.py} / {@code jenkins-report.py} in the
- * reporting tools. Each rule below was got wrong at least once and produced numbers that looked entirely
- * plausible, which is why they are written down rather than left to be re-derived.
+ * THIS SECTION IS THE SINGLE SOURCE FOR HOW THESE RECORDS MUST BE INTERPRETED. It is written next to the
+ * emitter because that is the one place guaranteed to be found by anyone changing the record format; the
+ * reader that applies these rules is {@code records.py} in {@code jenkins-report}, and it implements them
+ * once, for every consumer. Each rule below was got wrong at least once and produced numbers that looked
+ * entirely plausible, which is why they are written down rather than left to be re-derived.
  *
  * <h3>The records form a tree, and {@code $3} is the edge</h3>
  *
@@ -122,7 +122,7 @@ import org.junit.platform.launcher.TestIdentifier;
  * <ul>
  *   <li>For SCHEDULING, take the LONGEST attempt, never the sum. The ordering places one dispatch, and a
  *       class that failed and was retried does not reliably cost both. (This is what
- *       {@code longestPerClass()} does.)
+ *       {@code Run.measured()} does.)
  *   <li>For OCCUPANCY, both attempts count -- the JVMs really were busy twice.
  *   <li>NEVER measure from first start to last end. That spans the idle gap between attempts and counts
  *       time when nothing was running: one class read 462s against 25s of real work, and was twice
@@ -187,10 +187,12 @@ import org.junit.platform.launcher.TestIdentifier;
  * Stdout from a remote executor IS forwarded into the Jenkins console, so these lines are what make class
  * timing available on CI at all (EDG-990). The pid ties the three kinds together.
  * <p>
- * Every consumer reads these records and nothing else: the Gradle {@code reportTestConcurrency} task via
- * {@code ForkLogs.kt}, and the vault's {@code testrun-records.py} / {@code testrun-condense.py} /
- * {@code testrun-report.py}. An older positional line used to be written here as well and was removed once
- * the last reader moved over -- two formats for one fact is how the readers drifted apart in the first place.
+ * ONE CONSUMER READS THESE RECORDS, and it reads nothing else: the {@code jenkins-report} tool, which takes
+ * either a CI console log or a local {@code build/fork-logs/} directory and applies the rules below in one
+ * place. The build used to carry a second reader of its own, and the two disagreed inside a single report --
+ * 337 classes on one line and 333 on the next, neither number wrong, because they counted different things
+ * and neither said so. An older positional record was written here as well, and went the same way: two
+ * formats for one fact is how the readers drifted apart in the first place.
  * <p>
  * The TEST line duplicates what Gradle's own {@code SomeIT > someTest() PASSED} events already say, and is
  * printed anyway because those events carry NO TIMESTAMP OF THEIR OWN. On Jenkins that is invisible, because
@@ -351,15 +353,8 @@ public class ForkAttributionListener implements TestExecutionListener {
             // dropped: the JVM line already pairs this pid with its worker, so repeating it made the
             // same fact writable from two places, which is how they come to disagree.
             //
-            // TO BOTH PLACES, as with TEST above. The positional line written just before stays as it
-            // is because ForkLogs.kt and testrun-condense.py parse it; this adds the same fact in the
-            // shared grammar, so a fork file and a Jenkins console can be read by ONE reader.
-            //
-            // The two lines describe the same class execution, which is safe only because BOTH
-            // existing parsers require a NUMERIC first field -- `f[0].toLongOrNull() ?: return` in
-            // ForkLogs.kt, `int(parts[0])` under a try/except in testrun-condense.py -- so a line
-            // beginning `TESTCLASS` is skipped rather than counted a second time. Verified in both
-            // before adding this; a parser without that guard would double every class.
+            // TO BOTH PLACES, as with TEST above: the fork file, which is all a local run leaves, and
+            // stdout, which is all a remote executor leaves. One grammar, so one reader serves both.
             emit(String.format("UME-TESTCLASS %s %d %d %s %d", name, PID, now, outcome, duration));
         });
     }
