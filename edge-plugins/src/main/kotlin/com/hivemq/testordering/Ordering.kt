@@ -15,17 +15,48 @@ fun snake(
     names.chunked(forks).mapIndexed { index, group -> if (index % 2 == 1) group.reversed() else group }.flatten()
 
 /**
+ * The weight a KNOWN test gets when its measurement rounds to zero.
+ *
+ * Any positive value works; it only has to beat the 0.0 of a class nobody has measured. A tenth of a second
+ * is also roughly honest -- a test that runs at all costs about this much.
+ */
+const val KNOWN_TEST_FLOOR = 0.1
+
+/**
  * Sort [classes] slowest-first according to [timings], then snake them over [forks].
  *
- * A class with no recorded time is worth 0 and therefore sorts LAST. That is the whole rule -- there is no
- * separate bucket for them. A helper is untimed, sorts to the end, and JUnit finds nothing in it; a NEW test
- * is also untimed and still runs. Sorting by name within an equal time keeps the order stable run to run.
+ * A class ABSENT from [timings] is worth 0 and sorts LAST. A class PRESENT but measured at 0.0 is worth
+ * [KNOWN_TEST_FLOOR] and sorts ahead of it. That distinction is the whole point, and it is not cosmetic.
+ *
+ * WHY. What gets dispatched is every concrete outer class in the test output directory -- 711 of them here,
+ * of which only 337 contain a runnable test. Deciding test-ness up front is deliberately not attempted (see
+ * `findDispatchableTestClasses`): a class may inherit its tests from an abstract base or hold them in
+ * @Nested members, so guessing risks silently never running a real test. The 374 non-tests are dispatched,
+ * JUnit finds nothing in them, and each still consumes one slot of the `forkEvery` recycling count.
+ *
+ * Those 374 are absent from the timings file, so they weigh 0. Without a floor, the handful of REAL tests
+ * whose measurement rounds to 0.0 weigh 0 too, and get shuffled in among them by name -- landing at the very
+ * end of a run, behind hundreds of empty classes. Measured: a slot then hits its 24-class limit while a
+ * genuine test is still queued, retires its process, and starts a FRESH JVM to run one 0.1-second test.
+ * Two such JVMs in one run, each costing more to start than the test it ran.
+ *
+ * NOTHING IS EXCLUDED. An unmeasured class still sorts last and still runs -- which is exactly how a NEWLY
+ * ADDED test is picked up, since it has no entry either. The floor changes the ORDER of known tests, never
+ * the membership of the run.
+ *
+ * Sorting by name within an equal weight keeps the order stable run to run.
  */
 fun arrange(
     classes: List<String>,
     timings: Map<String, Double>,
     forks: Int
-): List<String> = snake(classes.sortedWith(compareByDescending<String> { timings[it] ?: 0.0 }.thenBy { it }), forks)
+): List<String> =
+    snake(
+        classes.sortedWith(
+            compareByDescending<String> { timings[it]?.coerceAtLeast(KNOWN_TEST_FLOOR) ?: 0.0 }.thenBy { it }
+        ),
+        forks
+    )
 
 /**
  * How much of the distance to a lower measurement is given up each time this file is adopted.
