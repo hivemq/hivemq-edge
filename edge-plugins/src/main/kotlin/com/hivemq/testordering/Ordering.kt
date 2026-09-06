@@ -86,6 +86,10 @@ const val DECAY = 0.5
  * This is not what fixed EDG-987 -- that was a measurement reading the wrong attribute, and no amount of
  * smoothing repairs a number that is wrong every time. It guards the different case of a class whose cost
  * genuinely varies between runs, where the schedule should plan for the bad case.
+ *
+ * WHAT MAY BE FED IN IS NOT DECIDED HERE. Only a class that PASSED is a sound measurement -- see rule 5 of
+ * the "READING THE RECORDS" reference in `ForkAttributionListener`, enforced by `longestPerClass()`. This
+ * function smooths whatever it is given and asks no questions about it.
  */
 fun smooth(
     previous: Double?,

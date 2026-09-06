@@ -170,6 +170,27 @@ internal fun orderTestClasses(
     // back to the classpath.
     task.classpath += task.project.files(classDirs)
 
+    // ONE RECORD PER DISPATCHED CLASS, carrying the time this schedule assumed for it.
+    //
+    // WITHOUT THESE the log says what the run cost but not what it expected to cost, and the two together are
+    // what make the schedule judgeable: comparing the ordering that was used against the one the measurements
+    // argue for needs both halves. Reading the predictions from the timings file instead would tie the
+    // analysis to a working copy on somebody's machine -- unreachable from a CI log, and already stale by the
+    // time anyone looked, since the file is rewritten whenever a run is adopted.
+    //
+    // Emitted for EVERY dispatched class, including the ~370 that hold no test at all. Those are the reason a
+    // 332-class suite needs 30 processes rather than 15 (see `arrange`), and a reader that saw only the
+    // classes which reported a result could never account for the difference.
+    //
+    // At `info`, so the ordinary console does not carry ~700 lines nobody reads; the analysis runs against a
+    // log captured with --info. The format is the shared six-field grammar -- see the "READING THE RECORDS"
+    // reference in ForkAttributionListener, which these must stay consistent with.
+    val now = System.currentTimeMillis()
+    ordered.forEach { name ->
+        val predicted = ((timings[name] ?: 0.0) * 1000).toLong()
+        task.logger.info("UME-PREDICTED $name ${task.path} $now -- $predicted")
+    }
+
     val untimed = ordered.count { it !in timings }
     val totalSeconds = ordered.sumOf { timings[it] ?: 0.0 }
     task.logger.lifecycle(

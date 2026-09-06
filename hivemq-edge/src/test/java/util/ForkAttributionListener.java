@@ -54,18 +54,28 @@ import org.junit.platform.launcher.TestIdentifier;
  * Writing the same line to both is what lets ONE reader serve both environments -- and a local run needs no
  * capture step, because the records are on disk when it finishes.
  * <p>
- * Three kinds of line share the grammar:
+ * Four kinds of line share the grammar:
  * <pre>
  *   $1 kind        $2 name    $3 parent  $4 endMillis  $5 outcome              $6 durationMillis
  *   --------------------------------------------------------------------------------------------
  *   UME-JVM        &lt;pid&gt;      &lt;worker&gt;   &lt;nowMillis&gt;   --                      --
  *   UME-TESTCLASS  &lt;class&gt;    &lt;pid&gt;      &lt;endMillis&gt;   PASSED|FAILED|SKIPPED   &lt;durationMillis&gt;
  *   UME-TEST       &lt;method&gt;   &lt;class&gt;    &lt;endMillis&gt;   PASSED|FAILED|SKIPPED   &lt;durationMillis&gt;
+ *   UME-PREDICTED  &lt;class&gt;    &lt;task&gt;     &lt;nowMillis&gt;   --                      &lt;predictedMillis&gt;
  * </pre>
- * Every line is {@code kind name parent when [outcome duration]}, so one split on whitespace reads all three
+ * Every line is {@code kind name parent when [outcome duration]}, so one split on whitespace reads all four
  * and {@code $3} always names the enclosing thing: a test's class, a class's JVM, a JVM's executor. That is
  * what makes the chain walkable -- a test line does not repeat the JVM because its class already carries it.
  * A JVM line has no outcome and no duration, and simply stops after {@code $4} rather than padding.
+ * <p>
+ * <b>{@code UME-PREDICTED} IS NOT WRITTEN HERE.</b> It comes from the Gradle ordering step
+ * ({@code TestOrderingConventionPlugin}), which runs before any test JVM exists, and it states the time the
+ * schedule ASSUMED for a class rather than anything measured. It shares the grammar so that one reader
+ * covers the whole log, and it is listed here because this is where the grammar is defined -- but a change
+ * to its shape belongs in the plugin. It is emitted for every DISPATCHED class, including the roughly two
+ * thirds that contain no test at all and therefore never produce a {@code UME-TESTCLASS} record; those are
+ * why the suite needs about twice as many processes as its class count suggests, and a reader that saw only
+ * the classes reporting a result could never account for the difference.
  * <p>
  * <b>WHY THE {@code UME-} PREFIX.</b> These lines are selected out of a build log by pattern, and the words
  * {@code TEST} and {@code JVM} are far too common to anchor on: {@code TEST} is a prefix of
@@ -74,6 +84,105 @@ import org.junit.platform.launcher.TestIdentifier;
  * including a person grepping by hand. It matters more than it looks: the console filter keeps ONLY matching
  * lines and discards half a million others, so a pattern that could match product output would silently pull
  * noise into the records. (Named for the Ume, the river through Umea that carried the log drives.)
+ *
+ * <h2>READING THE RECORDS -- the reference every consumer follows</h2>
+ *
+ * THIS SECTION IS THE SINGLE SOURCE FOR HOW THESE RECORDS MUST BE INTERPRETED. Every reader points here
+ * rather than restating the rules: {@code ForkLogs.kt} and {@code ReportTestConcurrencyTask.kt} in the
+ * build, and {@code jenkins-classtimes.py} / {@code testrun-condense.py} / {@code jenkins-report.py} in the
+ * reporting tools. Each rule below was got wrong at least once and produced numbers that looked entirely
+ * plausible, which is why they are written down rather than left to be re-derived.
+ *
+ * <h3>The records form a tree, and {@code $3} is the edge</h3>
+ *
+ * A test's parent is its class; a class's parent is its JVM; a JVM's parent is the Gradle worker. Nothing is
+ * repeated -- a TEST line does not name the JVM, because its class already does. So attributing a test to a
+ * JVM means two hops, and a reader that wants per-JVM test counts must walk the chain rather than expect a
+ * field. This is also why the records can be read from a Jenkins console where forty machines interleave
+ * their output: every line carries enough identity to be reattached to its own branch.
+ *
+ * <h3>1. Nested classes -- the trap that cuts both ways</h3>
+ *
+ * A class with {@code @Nested} members emits a record for EACH nested class AND one for the enclosing class
+ * whose duration ALREADY SPANS them. Both mistakes have been made here:
+ * <ul>
+ *   <li>SUMMING every class record double-counts. {@code EtherIpCipOdvaIT} read 176s for 88s of work.
+ *   <li>Reading only the nested ones loses the outer class entirely, and with it everything the class did
+ *       around its nested members.
+ * </ul>
+ * The rule: for TIMING, COUNTING and SCHEDULING, only the OUTER class exists -- filter on {@code '$'} in the
+ * name. A nested class is never dispatched on its own; Gradle hands out the enclosing class and JUnit runs
+ * the nested ones inside it. But a nested class's TEST records still belong to the run: fold them into the
+ * enclosing class by truncating at {@code '$'}, or the outer class reports zero tests.
+ *
+ * <h3>2. Retries -- one record per ATTEMPT, and the gap is not work</h3>
+ *
+ * The retry plugin re-runs a failed class, so a retried class emits TWO class records, usually in different
+ * JVMs and separated by an idle gap. Three consequences:
+ * <ul>
+ *   <li>For SCHEDULING, take the LONGEST attempt, never the sum. The ordering places one dispatch, and a
+ *       class that failed and was retried does not reliably cost both. (This is what
+ *       {@code longestPerClass()} does.)
+ *   <li>For OCCUPANCY, both attempts count -- the JVMs really were busy twice.
+ *   <li>NEVER measure from first start to last end. That spans the idle gap between attempts and counts
+ *       time when nothing was running: one class read 462s against 25s of real work, and was twice
+ *       reported as a stall that never happened.
+ * </ul>
+ * A retry is recognisable because a FAILED record for a class is followed by another record for the same
+ * class. Without the outcome field the two are indistinguishable from one class dispatched twice.
+ *
+ * <h3>3. A repeated method name is EITHER a parameterised case OR a retry</h3>
+ *
+ * A {@code @ParameterizedTest} emits one TEST record per case, all under the SAME method name -- ten of them
+ * for one adapter schema test. A retried test also repeats its name. The outcomes tell them apart: the retry
+ * plugin only re-runs what FAILED, so attempts with no failure among them are independent cases and each
+ * counts as a test; anything else is one test that was retried and counts once. Collapsing every repeat into
+ * one test undercounted a real CI build by 57 of 1182.
+ *
+ * <h3>4. Skipped, and the two very different things it means</h3>
+ *
+ * {@code SKIPPED} covers two situations that must not be treated alike, and the DURATION separates them:
+ * <ul>
+ *   <li>{@code SKIPPED} with duration 0 -- {@code @Disabled} on the type. JUnit never started the class, so
+ *       it occupied no JVM. It must be EXCLUDED from timing and from concurrency, and its record exists
+ *       only so a reader can see it was part of the run. A tally taken from the records will therefore
+ *       report fewer skips than the build tool does, because the tests inside such a class never produce
+ *       records at all -- JUnit fires its skip callback on the CONTAINER.
+ *   <li>{@code SKIPPED} with a real duration -- a test that ABORTED, typically a failed assumption. It DID
+ *       run and DID hold its JVM, so it must be counted in occupancy. Recording an abort as FAILED, which
+ *       an earlier version did, turned six such tests into six hard failures in a green suite.
+ * </ul>
+ *
+ * <h3>5. What may update the timings file</h3>
+ *
+ * The timings file drives the schedule for the NEXT run, so it must record what a class COSTS when it works
+ * -- not what it cost while going wrong. Only a class whose record reads PASSED is a sound measurement:
+ * <ul>
+ *   <li>A FAILED class usually stops early, so its duration understates the real cost. Feeding that in makes
+ *       the scheduler believe a class is cheap, place it late, and pay for it on the critical path.
+ *   <li>A class that ABORTED ran only part of its tests, for the same reason.
+ *   <li>A class SKIPPED at zero cost measures nothing at all.
+ * </ul>
+ * A class absent from the file is not excluded from running -- it simply sorts last, which is exactly how a
+ * newly added test is picked up. But a class PRESENT in the file gets a small positive floor, so that a real
+ * test measured at 0.0s still sorts ahead of the several hundred dispatched classes that contain no test.
+ *
+ * <h3>6. Setup is a subtraction, and it can only be done here</h3>
+ *
+ * A class's own duration minus the SUM of its tests' durations is everything it did outside test methods:
+ * container startup, fixture construction, teardown. Summing STATED durations cannot mis-handle a retry's
+ * idle gap, which is what reconstructing from intervals repeatedly got wrong. A negative result is
+ * impossible and means the two numbers came from different runs -- report nothing rather than a figure that
+ * cannot be true. This subtraction is the reason the TEST records exist at all: no other source sees what a
+ * class does around its tests, and one class read 0.3s that way for a class holding its JVM for 9.5s.
+ *
+ * <h3>7. Runs accumulate; a file or a log may hold several</h3>
+ *
+ * Nothing clears the per-JVM files, and one Gradle daemon log holds many builds. Runs are separated by a
+ * stretch where NOTHING was running -- within a run the JVMs are essentially never all idle at once. Five
+ * seconds is the agreed boundary. Deliberately no run id is stamped on the records: it would have to differ
+ * on every invocation, and a system property is part of a test task's cache key, so the task could never be
+ * restored from the build cache.
  * <p>
  * Stdout from a remote executor IS forwarded into the Jenkins console, so these lines are what make class
  * timing available on CI at all (EDG-990). The pid ties the three kinds together.

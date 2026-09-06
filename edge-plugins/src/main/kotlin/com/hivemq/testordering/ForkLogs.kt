@@ -50,6 +50,26 @@ import java.io.File
  * is walkable and no fact is written twice. The TEST lines are what make SETUP knowable: a class's own
  * duration minus the sum of its tests is everything it did around them, which is invisible to any reader
  * working from per-method events alone.
+ *
+ * ================================================================================================
+ * HOW TO INTERPRET THESE RECORDS IS DOCUMENTED IN ONE PLACE, AND IT IS NOT HERE.
+ *
+ * See the "READING THE RECORDS" section of `ForkAttributionListener` (hivemq-edge-test, and the copy in
+ * hivemq-edge, under src/test/java/util). It is the reference for every consumer -- this file, the
+ * reporting task beside it, and jenkins-classtimes.py / testrun-condense.py / jenkins-report.py in the
+ * reporting tools. Seven rules, each of which was got wrong at least once and produced numbers that looked
+ * entirely plausible:
+ *
+ *   1. nested classes -- the outer record already spans them, and the trap cuts both ways
+ *   2. retries -- one record per attempt; longest for scheduling, both for occupancy, never the span
+ *   3. a repeated method name is a parameterised case OR a retry, and the outcomes tell them apart
+ *   4. SKIPPED means two different things, separated by the duration
+ *   5. only a PASSED class may update the timings file  <- enforced by longestPerClass() below
+ *   6. setup is a subtraction, and a negative result is impossible
+ *   7. runs accumulate in a directory or a log, and are separated by an idle gap
+ *
+ * Add a rule there, not here. A second copy of these rules is how the readers came to disagree.
+ * ================================================================================================
  */
 
 /** One class's stay in one test JVM: wall-clock, one attempt, setup and teardown included. */
@@ -66,7 +86,16 @@ data class ClassRun(
      * as opposed to merely how expensive it is, and nothing could compute it until the listener began
      * recording each test with its own duration alongside each class.
      */
-    val inTestsMillis: Long? = null
+    val inTestsMillis: Long? = null,
+    /**
+     * PASSED, FAILED or SKIPPED, as the record states it.
+     *
+     * Kept because it decides whether this attempt may update the timings file -- only a PASSED class is a
+     * sound measurement (rule 5 of the record reference in `ForkAttributionListener`). It also separates
+     * the two meanings of SKIPPED when read together with the duration: zero means the class never started,
+     * non-zero means its tests aborted after it had already been running.
+     */
+    val outcome: String = "PASSED"
 ) {
     val durationMillis: Long get() = endMillis - startMillis
 
@@ -174,7 +203,17 @@ data class TestRun(
      * input differs, so the code cannot. Check which one you are holding before copying either.
      */
     fun longestPerClass(): Map<String, Double> =
-        classes.groupBy { it.className }
+        classes
+            // ONLY A CLASS THAT PASSED IS A SOUND MEASUREMENT. See rule 5 of the record reference in
+            // ForkAttributionListener: the timings file drives the NEXT run's schedule, so it must record
+            // what a class costs when it WORKS. A failed class usually stops early and a class whose tests
+            // aborted ran only part of them, so both understate the cost -- feeding either in makes the
+            // scheduler believe a class is cheap, place it late, and pay for it on the critical path.
+            //
+            // A class with no passing attempt simply keeps its previous value, which is the honest
+            // outcome: this run measured nothing usable about it.
+            .filter { it.outcome == "PASSED" }
+            .groupBy { it.className }
             .mapValues { (_, runs) -> runs.maxOf { it.durationMillis } / 1000.0 }
 }
 
@@ -229,7 +268,7 @@ fun readRuns(dir: File): List<TestRun> {
                     // The pid comes from the RECORD, not the file name: the two agree today, but a
                     // record carrying its own identity is what lets the same reader work on a Jenkins
                     // console, where there are no per-JVM files at all.
-                    all += ClassRun(name, end - duration, end, f[2])
+                    all += ClassRun(name, end - duration, end, f[2], outcome = f[4])
                 }
             }
         }
