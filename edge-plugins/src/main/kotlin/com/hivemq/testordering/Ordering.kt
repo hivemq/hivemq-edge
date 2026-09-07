@@ -83,7 +83,7 @@ fun readTimings(file: File): Map<String, Double> {
 
 // WRITING THIS FILE IS NOT THE BUILD'S JOB, and neither is simulating an ordering or smoothing a
 // measurement into one. Those belong to whatever reads a finished run, and that is the jenkins-report tool,
-// which does it for a CI console log and a local `build/fork-logs/` with the same code. The build only ever
+// which does it for a Jenkins console log and a local run with the same code. The build only ever
 // READS this file, to decide an order it is about to act on.
 //
 // It used to do both, and the duplication was not free: two implementations of the same rules disagreed in

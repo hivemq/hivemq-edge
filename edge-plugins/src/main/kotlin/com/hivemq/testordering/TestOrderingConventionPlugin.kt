@@ -87,12 +87,12 @@ class TestOrderingConventionPlugin : Plugin<Project> {
 
         // THERE IS NO REPORTING TASK HERE ANY MORE, deliberately. Reading the records, measuring occupancy,
         // simulating an ordering and writing the timings file all live in the jenkins-report tool, which
-        // reads the same records from a CI console log and from `build/fork-logs/` alike. A copy inside the
+        // reads the same records from a Jenkins console log and from a local run alike. A copy inside the
         // build could only ever read the local half, and two implementations of the same rules is exactly how
         // the readers came to disagree -- one reporting 337 classes where the other said 333, neither wrong.
         //
-        //   ./gradlew test
-        //   ../jenkins-report/bin/edge_report.py build/fork-logs --timings gradle/test-class-timings.csv
+        //   ./gradlew test | tee /tmp/run.log
+        //   ../jenkins-report/bin/edge_report.py /tmp/run.log --timings gradle/test-class-timings.csv
         //
         // The report says what the new ordering would save and writes the file; committing it adopts it.
         // What the build still owns is the ordering itself -- reading the committed file, arranging the
