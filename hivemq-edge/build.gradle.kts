@@ -308,23 +308,16 @@ tasks.test {
     maxParallelForks = (project.findProperty("unitTestForks") as String?)?.toIntOrNull()
         ?: (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 
-    // Record which test JVM ran which class, one file per JVM (EDG-930). Gradle merges the console
-    // output of the parallel forks into one stream and the JUnit XML carries a hostname rather than a
-    // process, so without this nothing says how the classes were distributed -- which is what
-    // reportTestConcurrency needs to show. Cheap enough to leave on (one appended line per class);
-    // -PnoForkLogs turns it off.
-    if (!project.hasProperty("noForkLogs")) {
-        systemProperty(
-            "forkLog.dir",
-            layout.buildDirectory
-                .dir("fork-logs")
-                .get()
-                .asFile.path
-        )
-        // Deliberately NO run id. Stamping one would mean a value that differs on every invocation, and a
-        // systemProperty is part of a test task's cache key -- the task could then never be restored from
-        // the build cache. reportTestConcurrency separates runs from the logs themselves instead.
-    }
+    // The records that say which JVM ran which class go to the CONSOLE and nowhere else (EDG-930,
+    // EDG-990). Gradle merges the parallel forks' output into one stream and the JUnit XML carries a
+    // hostname rather than a process, so without them nothing says how the classes were distributed --
+    // but each record names its own process and its own time, so one build log is the whole account:
+    //
+    //   ./gradlew test | tee /tmp/run.log
+    //   ../jenkins-report/bin/edge_report.py /tmp/run.log --timings gradle/test-class-timings.csv
+    //
+    // The convention plugin turns the fork's own stdout off and re-prints only these lines, so the log
+    // carries roughly 1500 of them rather than the half million it used to.
 
     minHeapSize = "128m"
     maxHeapSize = "2048m"
