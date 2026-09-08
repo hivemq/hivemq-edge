@@ -126,6 +126,12 @@ import org.junit.platform.launcher.TestIdentifier;
  * </ul>
  * A retry is recognisable because a FAILED record for a class is followed by another record for the same
  * class. Without the outcome field the two are indistinguishable from one class dispatched twice.
+ * <p>
+ * A CLASS RECORD REPORTS ITS TESTS' OUTCOME, not the JUnit container's. The two differ exactly where it
+ * matters: a container whose test failed still finishes {@code SUCCESSFUL}, so writing the container's own
+ * result -- as this listener first did -- yields a class record that can never be {@code FAILED}, and the
+ * paragraph above becomes untrue. The container's result still decides the rest, and is what reports a class
+ * that failed in {@code @BeforeAll}, where no test ran to fail on its own.
  *
  * <h3>3. A repeated method name is EITHER a parameterised case OR a retry</h3>
  *
@@ -221,6 +227,28 @@ public class ForkAttributionListener implements TestExecutionListener {
     private static final @NotNull String GRADLE_WORKER = System.getProperty("org.gradle.test.worker", "?");
 
     private final @NotNull ConcurrentHashMap<String, Long> startedAt = new ConcurrentHashMap<>();
+
+    /**
+     * Classes with at least one failing test in this JVM, so the class record can say so.
+     *
+     * <p><b>A CONTAINER'S OWN RESULT IS NOT ITS TESTS' RESULT.</b> JUnit reports a class as
+     * {@code SUCCESSFUL} whenever the class itself completed -- a failing test reports its own failure and
+     * does not fail its container. So writing {@code outcome(result)} on the class line, as this listener
+     * did, produced a record that is never {@code FAILED}: measured across 102 build logs, 4033 class
+     * records, not one of them failed, against test records that failed as expected.
+     *
+     * <p>That silently disabled two rules downstream. A retry is meant to be recognisable as a FAILED record
+     * followed by a PASSED one; with no FAILED record it is indistinguishable from one class dispatched
+     * twice. And the scheduler is meant to take a class's longest PASSING attempt -- with every attempt
+     * marked passing it takes the longest attempt outright, which for a flaky class is the FAILING one,
+     * because failing slowly is what made it longest. {@code MySQLLifecycleIT} was proposed to the schedule
+     * at its 76.7s failure rather than its 30.2s pass.
+     *
+     * <p>Keyed on the class name and removed when that class's record is written, so the map holds only
+     * classes currently running in this JVM -- at most one per thread.
+     */
+    private final @NotNull ConcurrentHashMap<String, Boolean> failedTests = new ConcurrentHashMap<>();
+
     private final long jvmStart = System.currentTimeMillis();
 
     @Override
@@ -307,9 +335,18 @@ public class ForkAttributionListener implements TestExecutionListener {
             // console scrolls past and nobody captures it -- while on CI only the console survives.
             // Emitting one identical line to each means neither environment needs a capture step and
             // neither needs its own reader.
+            final String methodOutcome = outcome(result);
+
+            // REMEMBERED FOR THE CLASS LINE, which is written a few lines below in this same callback --
+            // methods finish before their container does. This is the only point at which a failure is
+            // visible: the container's own result will not carry it. See `failedTests`.
+            if ("FAILED".equals(methodOutcome)) {
+                failedTests.put(key.substring(0, split), Boolean.TRUE);
+            }
+
             emit(String.format(
                     "UME-TEST %s %s %d %s %d",
-                    key.substring(split + 1), key.substring(0, split), now, outcome(result), now - start));
+                    key.substring(split + 1), key.substring(0, split), now, methodOutcome, now - start));
         });
         className(identifier).ifPresent(name -> {
             final Long start = startedAt.remove(name);
@@ -318,7 +355,11 @@ public class ForkAttributionListener implements TestExecutionListener {
             }
             final long now = System.currentTimeMillis();
             final long duration = now - start;
-            final String outcome = outcome(result);
+
+            // A CLASS FAILS WHEN ONE OF ITS TESTS DOES, which its own result does not say -- see
+            // `failedTests`. The container's result still decides everything else: it is what reports a
+            // class that failed in @BeforeAll, where no test ever ran to record a failure of its own.
+            final String outcome = failedTests.remove(name) != null ? "FAILED" : outcome(result);
 
             // NESTED CLASSES ARE LOGGED BUT MUST BE IGNORED WHEN AGGREGATING. A class with @Nested
             // inner classes produces a line per nested class AND a line for the enclosing class
@@ -338,6 +379,10 @@ public class ForkAttributionListener implements TestExecutionListener {
             // ONE LINE PER ATTEMPT, and the outcome is what makes a retry recognisable: two records for
             // one class otherwise mean either a retry or two separate invocations, and those are
             // indistinguishable. A FAILED record followed by a PASSED one is a retry.
+            //
+            // THE OUTCOME IS THE TESTS', NOT THE CONTAINER'S. Reporting `outcome(result)` here made that
+            // sentence false in every log written so far -- a container whose test failed is still
+            // SUCCESSFUL, so no class record ever failed and no retry was recognisable by outcome.
             //
             // The start time is DERIVED by readers as end - duration rather than printed: two
             // independently written fields can disagree, a derived one cannot.

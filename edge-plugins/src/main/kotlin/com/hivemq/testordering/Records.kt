@@ -7,12 +7,16 @@ import org.gradle.api.tasks.testing.TestOutputListener
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Re-print the test JVMs' `UME-` records to the console, and nothing else (EDG-990).
+ * Keep the test JVMs' `UME-` records, and discard everything else they print (EDG-990, EDG-992).
  *
- * THE CONSOLE IS THE RECORD. Everything a reader needs is in the records themselves -- each names its own
+ * ONE LOG IS THE WHOLE ACCOUNT. Everything a reader needs is in the records themselves -- each names its own
  * absolute time and its own parent, so a class knows its process and a test knows its class -- which means one
- * console log is a complete account of a run and nothing has to be collected from disk afterwards. That holds
- * for a local run and a CI run alike, and it is what lets one reader serve both.
+ * log is a complete account of a run and nothing has to be reconstructed from how the lines were arranged.
+ * That holds for a local run and a CI run alike, and it is what lets one reader serve both.
+ *
+ * The records go to TWO destinations, and neither is a copy of the other: the console, which is all that comes
+ * back from a remote executor, and the task's record file, which is what a local run leaves behind without
+ * anyone having to capture anything. See `RecordFile` for why the file is not redundant.
  *
  * The test JVMs' own output is NOT echoed (`showStandardStreams = false`), because it was 96% of a 78 MB build
  * log and none of it was what anyone measured. The `UME-` records are what everything measures, and they come
@@ -33,7 +37,10 @@ import java.util.concurrent.ConcurrentHashMap
  * left nothing on the console and its analysis had to read the per-JVM files instead -- two inputs for one
  * question, which is the thing this design exists to avoid.
  */
-internal fun umeRecordsToConsole(task: Test) {
+internal fun umeRecordsToConsole(
+    task: Test,
+    records: RecordFile
+) {
     // PER TEST DESCRIPTOR, not one shared buffer. Test JVMs run concurrently -- five locally, up to 40 on
     // CI -- and their chunks arrive interleaved. A single buffer would splice two JVMs' half-lines together
     // and produce records that never existed.
@@ -52,7 +59,11 @@ internal fun umeRecordsToConsole(task: Test) {
                         val line = buffer.substring(0, cut).trimEnd('\r')
                         buffer.delete(0, cut + 1)
                         if (line.startsWith("UME-")) {
+                            // TO BOTH, and in this order. The console is what CI keeps; the file is what a
+                            // local run keeps. Neither is a copy of the other, because each survives where the
+                            // other does not -- see `RecordFile`.
                             task.logger.lifecycle(line)
+                            records.append(line)
                         }
                         cut = buffer.indexOf("\n")
                     }

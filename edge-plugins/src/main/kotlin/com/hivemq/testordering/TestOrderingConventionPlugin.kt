@@ -71,17 +71,34 @@ class TestOrderingConventionPlugin : Plugin<Project> {
         project.tasks.withType<Test>().configureEach {
             systemProperty("junit.jupiter.execution.timeout.default", timeout)
 
-            // THE RECORDS GO TO THE CONSOLE, and that is the whole of it. The test JVMs' own output is not
-            // echoed (`showStandardStreams = false`), because it was 96% of a 78 MB build log; these lines
-            // are re-printed through `onOutput`, which sees a remote executor's output exactly as it sees a
-            // local fork's. So a plain `gradlew test` prints roughly 1500 records and nothing else, in both
-            // environments, and one build log is the complete account of one run.
+            // THE RECORDS GO TO TWO PLACES, and neither is redundant.
+            //
+            // The CONSOLE is what CI keeps: the tests run on up to 40 remote executors whose disks are
+            // discarded when they are released, so a Jenkins log is all that comes back. The test JVMs' own
+            // output is not echoed (`showStandardStreams = false`), because it was 96% of a 78 MB build log;
+            // these lines are re-printed through `onOutput`, which sees a remote executor's output exactly as
+            // it sees a local fork's, so a plain `gradlew test` prints roughly 1500 records and nothing else.
+            //
+            // The FILE is what a local run keeps, so reporting on one needs no capture step -- no `tee` to
+            // remember before a run that takes twelve minutes. It is not a copy of the console: the ordering
+            // step's UME-PREDICTED records never pass through `onOutput` at all, so Gradle's own stored copy
+            // of the test output does not contain them. See `RecordFile`.
             //
             // Applied here rather than in each build file so the suites cannot drift apart. They had: the
             // integration suite echoed its records to the console while the unit suite did not.
-            umeRecordsToConsole(this)
+            val records = RecordFile(
+                project.layout.buildDirectory.file("test-records/$name.log").get().asFile,
+                logger
+            )
+            umeRecordsToConsole(this, records)
             doFirst {
-                orderTestClasses(this as Test, committed.asFile)
+                // FIRST, and unconditionally -- see `RecordFile.begin`. The ordering step below returns early
+                // in several cases, so it cannot be what guarantees the file holds a single run.
+                records.begin()
+                orderTestClasses(this as Test, committed.asFile, records)
+            }
+            doLast {
+                records.end()
             }
         }
 
@@ -91,8 +108,9 @@ class TestOrderingConventionPlugin : Plugin<Project> {
         // build could only ever read the local half, and two implementations of the same rules is exactly how
         // the readers came to disagree -- one reporting 337 classes where the other said 333, neither wrong.
         //
-        //   ./gradlew test | tee /tmp/run.log
-        //   ../jenkins-report/bin/edge_report.py /tmp/run.log --timings gradle/test-class-timings.csv
+        //   ./gradlew test
+        //   ../jenkins-report/bin/edge_report.py build/test-records/test.log \
+        //       --timings gradle/test-class-timings.csv
         //
         // The report says what the new ordering would save and writes the file; committing it adopts it.
         // What the build still owns is the ordering itself -- reading the committed file, arranging the
@@ -108,7 +126,8 @@ class TestOrderingConventionPlugin : Plugin<Project> {
  */
 internal fun orderTestClasses(
     task: Test,
-    timingsFile: java.io.File
+    timingsFile: java.io.File,
+    records: RecordFile
 ) {
     // LOCAL RUNS ONLY -- this exists to make a developer's own test runs finish sooner. CI_RUN is the same
     // switch the integration suite uses to turn on Develocity Test Distribution, so on CI this stays out of
@@ -207,7 +226,13 @@ internal fun orderTestClasses(
     val lines = ordered.map { name ->
         "UME-PREDICTED $name ${task.path} $now -- ${((timings[name] ?: 0.0) * 1000).toLong()}"
     }
-    lines.forEach { task.logger.lifecycle(it) }
+    // TO BOTH DESTINATIONS, as every other record goes. These are the ONLY records that do not pass through
+    // `onOutput` -- they are written by the build, before any test process exists -- which is exactly why the
+    // file has to exist: Gradle's own store of the test output cannot contain them.
+    lines.forEach {
+        task.logger.lifecycle(it)
+        records.append(it)
+    }
 
     val untimed = ordered.count { it !in timings }
     val totalSeconds = ordered.sumOf { timings[it] ?: 0.0 }
