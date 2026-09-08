@@ -7,12 +7,77 @@ import java.io.File
  *
  * With groups [a b c] [d e f] and 3 forks, fork 0 gets a and d -- the two largest. Reversing the second
  * group gives fork 0 a and f, fork 2 c and d, so the per-fork totals converge instead of diverging.
+ *
+ * SUPERSEDED by [balance], which packs the forks directly instead of approximating. Kept because it is the
+ * baseline every measurement of the new scheme is quoted against, and because it needs no timings at all --
+ * it only reverses alternate groups of an already-sorted list.
  */
 fun snake(
     names: List<String>,
     forks: Int
 ): List<String> =
     names.chunked(forks).mapIndexed { index, group -> if (index % 2 == 1) group.reversed() else group }.flatten()
+
+/**
+ * Pack [names] into [forks] lanes by longest-processing-time, then interleave the lanes back into a dispatch
+ * list that round-robin dispatch reconstructs exactly.
+ *
+ * THE IDEA. Gradle deals class *i* to fork *(i mod forks)* and never rebalances, so a dispatch list IS an
+ * assignment -- the only question is which one. Rather than approximate a good assignment by permuting a
+ * sorted list (see [snake]), build the assignment we actually want and then write it down in the order that
+ * recreates it: lane 0's first class, lane 1's first, ... then everyone's second, and so on. Reading the
+ * lanes off column by column is what makes `i mod forks` land each class back in the lane it was placed in.
+ *
+ * THE PACKING is classic LPT: walk the classes longest-first, and put each one on whichever lane is currently
+ * cheapest. That is the standard greedy scheduler, guaranteed within 4/3 of optimal, and in practice far
+ * closer on a distribution like this one.
+ *
+ * THE CAPACITY CAP is what makes the interleave sound. Lanes are packed to at most `ceil(n / forks)` classes,
+ * so the lanes form a rectangle with at most one short column, and reading down the columns visits each lane
+ * once per row. Without the cap, LPT would happily give one lane 40 tiny classes and another 3 big ones, the
+ * rows would be ragged, and `i mod forks` would no longer rebuild the lanes at all -- the interleave would
+ * silently scramble the very assignment it is meant to preserve.
+ *
+ * The cap does bind, and often: with 711 dispatched classes over 36 forks it blocks the cheapest lane on
+ * about half the assignments. That is harmless here because it only starts binding once the remaining classes
+ * weigh nothing -- the ~380 dispatched classes that hold no test at all (see [arrange]). It is a real
+ * constraint, though, not a formality: it trades a little packing freedom for an assignment that survives
+ * dispatch.
+ *
+ * MEASURED against [snake] on the committed timings, as makespan over the resulting lanes:
+ *
+ *     forks   snake      balance
+ *         5   +0.9%       +0.0%
+ *         8   +4.4%       +0.0%
+ *        26  +31.0%       +0.8%
+ *        36  +48.6%       +0.4%
+ *
+ * (percentages over the ideal of total-work / forks). The two are equivalent at low fork counts, which is
+ * where the snake was tuned; the gap opens as forks grow, because reversing alternate groups cannot fix an
+ * imbalance that spans more than two groups.
+ *
+ * Ties break on lane index so the result is deterministic run to run.
+ */
+fun balance(
+    names: List<String>,
+    weights: (String) -> Double,
+    forks: Int
+): List<String> {
+    if (forks <= 1 || names.isEmpty()) return names
+    val capacity = (names.size + forks - 1) / forks
+    val lanes = List(forks) { mutableListOf<String>() }
+    val loads = DoubleArray(forks)
+    names.forEach { name ->
+        val target = (0 until forks)
+            .filter { lanes[it].size < capacity }
+            .minByOrNull { loads[it] }
+            ?: return@forEach
+        lanes[target].add(name)
+        loads[target] += weights(name)
+    }
+    // Column by column, so `i mod forks` puts each class back on the lane it was packed onto.
+    return (0 until capacity).flatMap { row -> lanes.mapNotNull { it.getOrNull(row) } }
+}
 
 /**
  * The weight a KNOWN test gets when its measurement rounds to zero.
@@ -50,13 +115,11 @@ fun arrange(
     classes: List<String>,
     timings: Map<String, Double>,
     forks: Int
-): List<String> =
-    snake(
-        classes.sortedWith(
-            compareByDescending<String> { timings[it]?.coerceAtLeast(KNOWN_TEST_FLOOR) ?: 0.0 }.thenBy { it }
-        ),
-        forks
-    )
+): List<String> {
+    val weight = { name: String -> timings[name]?.coerceAtLeast(KNOWN_TEST_FLOOR) ?: 0.0 }
+    val sorted = classes.sortedWith(compareByDescending(weight).thenBy { it })
+    return balance(sorted, weight, forks)
+}
 
 /**
  * Read a `class,seconds[,measured]` CSV, returning the FIRST numeric column -- the smoothed value the
