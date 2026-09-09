@@ -45,6 +45,7 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberFactory;
 import com.hivemq.persistence.clientqueue.QueuePolicy;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
@@ -90,6 +91,8 @@ public class PublishDistributorImplTest {
         publishDistributor = new PublishDistributorImpl(
                 clientQueuePersistence,
                 () -> clientSessionPersistence,
+                // Only consulted for an internal subscriber's queue; these tests use ordinary client ids.
+                () -> mock(InternalTopicFilterSubscriberFactory.class),
                 configurationService,
                 () -> samplingService,
                 () -> messageForwarder);

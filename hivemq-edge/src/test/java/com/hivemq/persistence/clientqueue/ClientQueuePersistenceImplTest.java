@@ -122,6 +122,8 @@ public class ClientQueuePersistenceImplTest {
                 topicTree,
                 connectionPersistence,
                 () -> publishPollService,
+                // Only consulted for an internal subscriber's queue; these tests use ordinary client ids.
+                () -> mock(InternalTopicFilterSubscriberFactory.class),
                 messageForwarder,
                 shutdownHooks);
     }
@@ -266,6 +268,85 @@ public class ClientQueuePersistenceImplTest {
                         eq(QueuedMessagesStrategy.DISCARD_OLDEST),
                         anyBoolean(),
                         eq(true),
+                        anyInt());
+    }
+
+    @Test
+    @Timeout(5)
+    public void anInternalSubscribersDeclaredOverflowStrategyIsUsed() throws Exception {
+        // The consumption end of withQueueOverflow. Without this the subscriber would carry a value nothing
+        // reads, and the queue would silently keep the broker default -- DISCARD, which for a command queue
+        // rejects the FRESH message in favour of a backlog of stale ones.
+        final InternalTopicFilterSubscriber subscriber = mock(InternalTopicFilterSubscriber.class);
+        when(subscriber.queueOverflow()).thenReturn(QueuedMessagesStrategy.DISCARD_OLDEST);
+        final InternalTopicFilterSubscriberFactory subscriberFactory = mock(InternalTopicFilterSubscriberFactory.class);
+        final String queueId = InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX + "test::declares-overflow";
+        when(subscriberFactory.getSubscriber(queueId)).thenReturn(subscriber);
+
+        final ClientQueuePersistenceImpl persistence = new ClientQueuePersistenceImpl(
+                localPersistence,
+                singleWriterService,
+                mqttConfigurationService,
+                clientSessionLocalPersistence,
+                messageDroppedService,
+                topicTree,
+                connectionPersistence,
+                () -> publishPollService,
+                () -> subscriberFactory,
+                messageForwarder,
+                shutdownHooks);
+
+        persistence
+                .add(queueId, false, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L, QueuePolicy.DEFAULT)
+                .get();
+
+        verify(localPersistence)
+                .add(
+                        eq(queueId),
+                        eq(false),
+                        any(PUBLISH.class),
+                        eq(1000L),
+                        eq(QueuedMessagesStrategy.DISCARD_OLDEST), // declared, not the broker's DISCARD
+                        anyBoolean(),
+                        eq(false), // applyMaxToQos0 stays the policy's business, and this is DEFAULT
+                        anyInt());
+    }
+
+    @Test
+    @Timeout(5)
+    public void anInternalSubscriberThatDeclaresNoOverflowStrategyGetsTheBrokerDefault() throws Exception {
+        final InternalTopicFilterSubscriber subscriber = mock(InternalTopicFilterSubscriber.class);
+        when(subscriber.queueOverflow()).thenReturn(null);
+        final InternalTopicFilterSubscriberFactory subscriberFactory = mock(InternalTopicFilterSubscriberFactory.class);
+        final String queueId = InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX + "test::no-opinion";
+        when(subscriberFactory.getSubscriber(queueId)).thenReturn(subscriber);
+
+        final ClientQueuePersistenceImpl persistence = new ClientQueuePersistenceImpl(
+                localPersistence,
+                singleWriterService,
+                mqttConfigurationService,
+                clientSessionLocalPersistence,
+                messageDroppedService,
+                topicTree,
+                connectionPersistence,
+                () -> publishPollService,
+                () -> subscriberFactory,
+                messageForwarder,
+                shutdownHooks);
+
+        persistence
+                .add(queueId, false, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L, QueuePolicy.DEFAULT)
+                .get();
+
+        verify(localPersistence)
+                .add(
+                        eq(queueId),
+                        eq(false),
+                        any(PUBLISH.class),
+                        eq(1000L),
+                        eq(QueuedMessagesStrategy.DISCARD), // the broker-wide setting
+                        anyBoolean(),
+                        eq(false), // applyMaxToQos0 stays the policy's business, and this is DEFAULT
                         anyInt());
     }
 
