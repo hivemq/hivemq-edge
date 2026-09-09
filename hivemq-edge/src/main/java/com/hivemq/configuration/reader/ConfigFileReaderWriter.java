@@ -954,15 +954,19 @@ public class ConfigFileReaderWriter {
                         // reproduced exactly or the write is refused, and those are what decide who else
                         // can read the file; the owner it falls back to is the account that just rendered
                         // the configuration and therefore already holds every credential in it.
+                        //
+                        // The store's message, not the throwable: this is handled, and a stack trace on
+                        // every write reads as a failure to anything scanning the log -- Pulse's system
+                        // tests fail a test on any "Exception" line, and did, on every config write.
                         log.warn(
                                 "The replacement for {} could not be given the owner of the file it replaces"
                                         + " ('{}'), so it is owned by this node's own account instead. Its mode,"
                                         + " group and access-control list are unchanged, so no one else gains"
                                         + " access -- but if the owner matters here, set it back and check what"
-                                        + " installed the file.",
+                                        + " installed the file. The store said: {}",
                                 partial,
                                 preserved.owner().getName(),
-                                notPermitted);
+                                notPermitted.getMessage());
                         proven = proven.withoutOwner();
                     }
                 }
@@ -996,20 +1000,20 @@ public class ConfigFileReaderWriter {
                                             + " configuration is still written and nobody gains access, but"
                                             + " principals that could read it through that group no longer can."
                                             + " Add this node's account to that group, or give the file a group it"
-                                            + " is already in, to keep it readable.",
+                                            + " is already in, to keep it readable. The store said: {}",
                                     partial,
                                     preserved.group().getName(),
-                                    notPermitted);
+                                    notPermitted.getMessage());
                         } else {
                             // The mode grants the group nothing, so which group it names decides nobody's
                             // access and dropping it costs nothing. Not worth a warning on every write.
                             log.debug(
                                     "The replacement for {} could not be given the group of the file it replaces"
                                             + " ('{}'). That file's mode grants its group nothing, so no principal"
-                                            + " gains or loses access.",
+                                            + " gains or loses access. The store said: {}",
                                     partial,
                                     preserved.group().getName(),
-                                    notPermitted);
+                                    notPermitted.getMessage());
                         }
                     }
                 }
