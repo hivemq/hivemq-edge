@@ -18,18 +18,23 @@ package com.hivemq.sampling;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.ioc.annotation.Persistence;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,9 +67,14 @@ public class SamplingService {
 
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
+    private final @Nullable ListeningScheduledExecutorService scheduledExecutorService;
+    private final @NotNull LongSupplier nanoClock;
 
     /**
-     * The topics currently sampled. A set, not a count of watchers.
+     * The topics currently sampled, each with the {@link #nanoClock} reading of the last time somebody
+     * asked for it — a start or a read of its samples. That reading is the lease (EDG-885).
+     * <p>
+     * A set of leases, not a count of watchers.
      * <p>
      * Counting was the wrong shape while nothing releases: {@link #startSampling(String)} is reached
      * from an HTTP POST that carries no watcher identity, so retries, a remounted panel and a second
@@ -73,51 +83,95 @@ public class SamplingService {
      * which acquire it was balancing — and it read as a lifecycle that was being managed when it was
      * not (EDG-882 F-06).
      * <p>
-     * <b>What this does not fix:</b> nothing in production stops sampling, so a sampled topic keeps its
-     * subscription, and its ten-message queue, for the life of the node. Making that finite needs
-     * either a release the caller can be identified by — a DELETE endpoint with a watcher token — or a
-     * lease that expires unless refreshed, and the second changes what an idle-but-open editor panel
-     * sees. Both are decisions about the product's API surface rather than repairs to this class, and
-     * they belong to EDG-885.
+     * <b>What makes it finite</b> is the lease. A release the caller could be identified by — a DELETE
+     * with a watcher token — would need a new endpoint and a UI that remembers to call it on every way
+     * a panel can go away, and a tab that crashes never would. The lease needs neither: it is renewed
+     * by the calls the UI already makes, and {@link #expireLeases()} releases whatever has not been
+     * asked about for {@link InternalConfigurations#SAMPLING_LEASE_TTL_SEC}. What a panel left open
+     * past the lease sees is covered in {@link #getSamples(String)}.
      */
-    private final @NotNull Map<String, Boolean> sampledTopics = new ConcurrentHashMap<>(0);
+    private final @NotNull Map<String, Long> sampledTopics = new ConcurrentHashMap<>(0);
 
     @Inject
     public SamplingService(
             final @NotNull LocalTopicTree localTopicTree,
+            final @NotNull ClientQueuePersistence clientQueuePersistence,
+            final @NotNull @Persistence ListeningScheduledExecutorService scheduledExecutorService) {
+        this(localTopicTree, clientQueuePersistence, scheduledExecutorService, System::nanoTime);
+    }
+
+    /** No sweep is scheduled: tests drive {@link #expireLeases()} themselves. */
+    @VisibleForTesting
+    SamplingService(
+            final @NotNull LocalTopicTree localTopicTree,
             final @NotNull ClientQueuePersistence clientQueuePersistence) {
+        this(localTopicTree, clientQueuePersistence, null, System::nanoTime);
+    }
+
+    @VisibleForTesting
+    SamplingService(
+            final @NotNull LocalTopicTree localTopicTree,
+            final @NotNull ClientQueuePersistence clientQueuePersistence,
+            final @Nullable ListeningScheduledExecutorService scheduledExecutorService,
+            final @NotNull LongSupplier nanoClock) {
         this.localTopicTree = localTopicTree;
         this.clientQueuePersistence = clientQueuePersistence;
+        this.scheduledExecutorService = scheduledExecutorService;
+        this.nanoClock = nanoClock;
     }
 
     /**
-     * Starts sampling a topic, subscribing the first time it is asked for.
+     * Schedules the lease sweep. Method injection: Dagger calls this once, right after construction.
      * <p>
-     * Idempotent: asking again while the topic is already sampled changes nothing. That is the honest
-     * shape for a call reached from a POST with no watcher identity — retries, a remounted panel and a
-     * second tab all mean the same thing here, "somebody wants samples of this topic".
+     * The persistence scheduler is used rather than a thread of this class's own because the sweep is
+     * a sibling of the periodic clean-up that reclaims the released queues, and because that executor
+     * already has a shutdown hook; the sweep dies with it. Nothing is scheduled on an executor that is
+     * already shut down, which is where a late construction during shutdown would otherwise throw.
+     */
+    @Inject
+    public void postConstruct() {
+        if (scheduledExecutorService == null || scheduledExecutorService.isShutdown()) {
+            return;
+        }
+        final int interval = InternalConfigurations.SAMPLING_LEASE_SWEEP_INTERVAL_SEC.get();
+        // The future is not kept: the sweep runs until the executor is shut down, and there is no
+        // earlier point at which anything would cancel it.
+        final var unused = scheduledExecutorService.scheduleWithFixedDelay(
+                this::expireLeases, interval, interval, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Starts sampling a topic, subscribing the first time it is asked for, and renews its lease.
      * <p>
-     * The subscribe happens <b>inside</b> the map update rather than after it. {@code computeIfAbsent}
-     * is atomic for a key, so a concurrent {@link #stopSampling(String)} cannot interleave between the
-     * entry appearing and the subscriber being added. Without that, a stop could remove the subscriber
-     * a start had just added, leaving this map saying "sampled" while the topic tree says "not
-     * subscribed" — no samples would ever arrive, the clean-up would rightly reclaim the queue, and
-     * nothing would re-register until the topic changed. Silent, sticky, and invisible to any
-     * single-threaded test.
+     * Idempotent on the subscription: asking again while the topic is already sampled subscribes
+     * nothing. That is the honest shape for a call reached from a POST with no watcher identity —
+     * retries, a remounted panel and a second tab all mean the same thing here, "somebody wants
+     * samples of this topic". What a repeated start does change is the lease: it is what keeps a
+     * topic the UI keeps coming back to from expiring under it.
+     * <p>
+     * The subscribe happens <b>inside</b> the map update rather than after it. {@code compute} is
+     * atomic for a key, so a concurrent {@link #stopSampling(String)} or {@link #expireLeases()}
+     * cannot interleave between the entry appearing and the subscriber being added. Without that, a
+     * stop could remove the subscriber a start had just added, leaving this map saying "sampled" while
+     * the topic tree says "not subscribed" — no samples would ever arrive, the clean-up would rightly
+     * reclaim the queue, and nothing would re-register until the topic changed. Silent, sticky, and
+     * invisible to any single-threaded test.
      */
     public void startSampling(final @NotNull String topic) {
-        sampledTopics.computeIfAbsent(topic, sampledTopic -> {
-            subscribe(sampledTopic);
-            return Boolean.TRUE;
+        sampledTopics.compute(topic, (sampledTopic, lease) -> {
+            if (lease == null) {
+                subscribe(sampledTopic);
+            }
+            return nanoClock.getAsLong();
         });
     }
 
     /**
      * Stops sampling a topic and unsubscribes.
      * <p>
-     * <b>Nothing in production calls this yet</b>; it is the entry point a release path will use, and
-     * what the tests drive. Stopping a topic nobody is sampling is a no-op, so a duplicate stop cannot
-     * make a later {@link #startSampling(String)} fail to subscribe.
+     * In production this is reached through {@link #expireLeases()}; nothing calls it for a named
+     * topic, because nothing can name a watcher. Stopping a topic nobody is sampling is a no-op, so a
+     * duplicate stop cannot make a later {@link #startSampling(String)} fail to subscribe.
      * <p>
      * Once the subscriber is gone the periodic clean-up reclaims the queue on its next sweep with no
      * further help — {@code ClientQueuePersistenceImpl.isOrphaned} stops finding an owner for it. If
@@ -131,6 +185,45 @@ public class SamplingService {
             unsubscribe(sampledTopic);
             return null;
         });
+    }
+
+    /**
+     * Releases every topic whose lease has run out: nobody started or read it for
+     * {@link InternalConfigurations#SAMPLING_LEASE_TTL_SEC}. Run periodically from
+     * {@link #postConstruct()}; public so a test can drive it against its own clock.
+     * <p>
+     * The expiry check runs <b>inside</b> the per-key update, so a renewal that lands while the sweep
+     * is looking at that key is seen — the entry is either renewed or removed, and the subscriber
+     * follows the entry either way. A snapshot-then-remove would let a renewal slip between the two
+     * and release a topic that had just been asked for.
+     * <p>
+     * A failure on one topic is logged and the sweep goes on; a periodic task that throws would
+     * silently never run again, which would put the leak back.
+     */
+    @VisibleForTesting
+    public void expireLeases() {
+        final long now = nanoClock.getAsLong();
+        final long ttlNanos = TimeUnit.SECONDS.toNanos(InternalConfigurations.SAMPLING_LEASE_TTL_SEC.get());
+        for (final String topic : sampledTopics.keySet()) {
+            try {
+                sampledTopics.computeIfPresent(topic, (sampledTopic, lease) -> {
+                    if (now - lease < ttlNanos) {
+                        return lease;
+                    }
+                    log.debug(
+                            "Releasing sampling for topic '{}': nobody asked for it for {} s",
+                            sampledTopic,
+                            InternalConfigurations.SAMPLING_LEASE_TTL_SEC.get());
+                    unsubscribe(sampledTopic);
+                    return null;
+                });
+            } catch (final RuntimeException e) {
+                log.warn(
+                        "Failed to release sampling for topic '{}'; it will be tried again on the next sweep",
+                        topic,
+                        e);
+            }
+        }
     }
 
     /**
@@ -219,7 +312,19 @@ public class SamplingService {
         return queueId.substring(topicStart, separator);
     }
 
+    /**
+     * The samples collected for a topic, most recent last.
+     * <p>
+     * Reading renews the lease, and a read of a topic that is no longer sampled starts it again. That
+     * is what a panel left open past the lease sees: its next refresh comes back empty — the released
+     * queue was reclaimed — and sampling is running again by the time it returns, so the refresh after
+     * that has samples. The same thing the panel saw when it first opened, and the same thing it
+     * would see after a node restart; nothing to handle that the UI does not handle already. Making
+     * the read revive rather than only renew is what keeps a GET from ever answering "no samples"
+     * for a topic that was sampled a moment ago and stays that way.
+     */
     public @NotNull List<byte[]> getSamples(final @NotNull String topic) {
+        startSampling(topic);
         final String queueId = createQueueId(topic);
         final ListenableFuture<ImmutableList<PUBLISH>> publishes =
                 clientQueuePersistence.peek(queueId, true, BYTE_LIMIT_SAMPLES, SAMPLE_SIZE);
