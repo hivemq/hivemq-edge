@@ -101,6 +101,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -194,6 +195,12 @@ public class ConfigFileReaderWriter {
     private final @NotNull Lock lock;
     private final @NotNull AtomicReference<ScheduledExecutorService> executorService;
     private boolean defaultBackupConfig;
+
+    /**
+     * What the configuration watcher does when the node has to restart to apply a change. The process
+     * exit in production; replaced in tests so the decision can be observed instead of ending the JVM.
+     */
+    private volatile @NotNull Runnable restartHook = () -> System.exit(0);
 
     public ConfigFileReaderWriter(
             final @NotNull SystemInformation sysInfo,
@@ -340,9 +347,26 @@ public class ConfigFileReaderWriter {
         this.defaultBackupConfig = defaultBackupConfig;
     }
 
+    @VisibleForTesting
+    void setRestartHook(final @NotNull Runnable restartHook) {
+        this.restartHook = restartHook;
+    }
+
+    /** The configuration this node currently runs on; null before the first successful load. */
+    @VisibleForTesting
+    @Nullable
+    HiveMQConfigEntity getConfigEntity() {
+        return configEntity.get();
+    }
+
     public @NotNull HiveMQConfigEntity applyConfig() {
-        if (!loadConfigFromXML(getConfigFileOrFail())) {
-            log.error("Unable to apply the given configuration.");
+        final ReloadOutcome outcome = loadConfigFromXML(getConfigFileOrFail());
+        if (outcome != ReloadOutcome.APPLIED) {
+            // A REJECTED_INVALID load has already logged the validation errors inside loadConfigFromXML;
+            // a second, generic line here would bury them. Only NEEDS_RESTART has nothing more specific.
+            if (outcome == ReloadOutcome.NEEDS_RESTART) {
+                log.error("Unable to apply the given configuration.");
+            }
             throw new UnrecoverableException(false);
         }
         final HiveMQConfigEntity entity = configEntity.get();
@@ -376,6 +400,11 @@ public class ConfigFileReaderWriter {
             if (entity.getGatewayConfig().isMutableConfigurationEnabled()) {
                 writeConfigToXML();
             }
+            // Stamped only once everything above has succeeded. It is what the configuration service
+            // reports as the last update time, and a refused write used to move it as well -- so the node
+            // reported the configuration as freshly written at the moment its own log said config.xml no
+            // longer matched it (EDG-949).
+            lastWrite.set(System.currentTimeMillis());
         } catch (final UnrecoverableException refused) {
             // A deliberate refusal: something on the write path would have had to put a credential on disk,
             // or replace a good configuration file with one whose protections it could not reproduce, and
@@ -393,8 +422,6 @@ public class ConfigFileReaderWriter {
                     + " configuration, and the change that triggered this write would be lost.");
         } catch (final Exception e) {
             log.error("Configuration file sync failed: ", e);
-        } finally {
-            lastWrite.set(System.currentTimeMillis());
         }
     }
 
@@ -477,13 +504,23 @@ public class ConfigFileReaderWriter {
                         target);
                 throw new UnrecoverableException(false);
             }
-            backupConfig(file, doBackup); // write the backup of the file before rewriting
-            replaceCarryingProtections(target, preservedAttributesOf(target), partial -> {
-                try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
-                    writer.write(rendered.toString());
-                    writer.flush();
-                }
-            });
+            // Read before anything is created or rotated: it is a pure read, and it is the most likely of
+            // the refusals below. The backup itself is taken inside the replace, once the replacement is
+            // complete on disk and carries its protections, and just before the move -- so a write that is
+            // refused at any point consumes no backup slot. Rotating first meant that on a node where every
+            // write is refused, four refusals turned every backup into a copy of the same unchanged file
+            // and the earlier history was gone, on exactly the node where an operator wants it (EDG-949).
+            final PreservedAttributes preserved = preservedAttributesOf(target);
+            replaceCarryingProtections(
+                    target,
+                    preserved,
+                    partial -> {
+                        try (final FileWriter writer = new FileWriter(partial.toFile(), StandardCharsets.UTF_8)) {
+                            writer.write(rendered.toString());
+                            writer.flush();
+                        }
+                    },
+                    () -> backupConfig(file, doBackup));
         } catch (final IOException e) {
             log.error("Error writing file:", e);
             throw new UnrecoverableException(false);
@@ -535,6 +572,23 @@ public class ConfigFileReaderWriter {
             final @NotNull PreservedAttributes preserved,
             final @NotNull ContentWriter content)
             throws IOException {
+        replaceCarryingProtections(target, preserved, content, () -> {});
+    }
+
+    /** Work that must happen once the replacement is complete and proven, and just before it lands. */
+    @FunctionalInterface
+    @VisibleForTesting
+    interface BeforeMove {
+
+        void run() throws IOException;
+    }
+
+    static void replaceCarryingProtections(
+            final @NotNull Path target,
+            final @NotNull PreservedAttributes preserved,
+            final @NotNull ContentWriter content,
+            final @NotNull BeforeMove beforeMove)
+            throws IOException {
         final Path partial = target.resolveSibling(target.getFileName() + ".partial");
         try {
             createPartialFile(partial, preserved);
@@ -546,6 +600,7 @@ public class ConfigFileReaderWriter {
             // protections could not be reproduced would open a deliberately restricted config.xml while
             // the original on disk is still valid and still correct.
             applyPreservedAttributes(partial, preserved);
+            beforeMove.run();
             try {
                 Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             } catch (final AtomicMoveNotSupportedException atomicNotSupported) {
@@ -556,7 +611,14 @@ public class ConfigFileReaderWriter {
                 Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING);
             }
         } finally {
-            Files.deleteIfExists(partial);
+            // The outcome of the replace is what the caller must see. A failure to remove the working file
+            // -- normally already moved away -- must neither turn a successful write into a reported
+            // failure nor hide the real cause of a failed one (EDG-949).
+            try {
+                Files.deleteIfExists(partial);
+            } catch (final IOException cleanup) {
+                log.warn("Could not remove the working file {} left beside the configuration", partial, cleanup);
+            }
         }
     }
 
@@ -1112,8 +1174,20 @@ public class ConfigFileReaderWriter {
         });
     }
 
+    /**
+     * Outcome of a configuration (re)load. {@link #REJECTED_INVALID} is a file that could not be read,
+     * parsed or validated -- recoverable on a reload, by keeping the configuration already applied --
+     * as opposed to {@link #NEEDS_RESTART}, a file that parsed and applied but cannot take effect
+     * without a restart.
+     */
+    public enum ReloadOutcome {
+        APPLIED,
+        NEEDS_RESTART,
+        REJECTED_INVALID
+    }
+
     @VisibleForTesting
-    boolean loadConfigFromXML(final @NotNull File configFile) {
+    ReloadOutcome loadConfigFromXML(final @NotNull File configFile) {
         log.info("Reading configuration file {}", configFile);
         final List<ValidationEvent> validationErrors = Collections.synchronizedList(new ArrayList<>());
 
@@ -1138,8 +1212,6 @@ public class ConfigFileReaderWriter {
             beforeRendering = content;
             content = EnvVarUtil.replaceEnvironmentVariablePlaceholders(content);
 
-            fragmentToModificationTime.putAll(fragment.getFragmentToModificationTime());
-
             try (final ByteArrayInputStream is = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
                 final JAXBElement<? extends HiveMQConfigEntity> unmarshalled =
                         createUnmarshaller(validationErrors).unmarshal(new StreamSource(is), HiveMQConfigEntity.class);
@@ -1160,7 +1232,14 @@ public class ConfigFileReaderWriter {
                 // Only now: this configuration is the one that will be written back out, so these are
                 // the placeholders that describe it.
                 envPlaceholders.set(placeholders);
-                return internalApplyConfig(entity);
+                // And only now the fragments it pulls in are the ones to watch. Replaced, not added to:
+                // the set used to grow on every reload and never shrink, so a fragment taken out of the
+                // configuration and deleted from disk was still watched, and the watcher died trying to
+                // read it (EDG-949).
+                final Map<Path, Long> fragments = fragment.getFragmentToModificationTime();
+                fragmentToModificationTime.keySet().retainAll(fragments.keySet());
+                fragmentToModificationTime.putAll(fragments);
+                return internalApplyConfig(entity) ? ReloadOutcome.APPLIED : ReloadOutcome.NEEDS_RESTART;
             }
         } catch (final JAXBException | IOException e) {
             final StringBuilder sb = new StringBuilder();
@@ -1175,7 +1254,7 @@ public class ConfigFileReaderWriter {
             }
             log.error("Not able to parse configuration file because {}", sb);
             reportValuesThatAreNotText(beforeRendering);
-            throw new UnrecoverableException(false);
+            return ReloadOutcome.REJECTED_INVALID;
         } catch (final Exception e) {
             if (e.getCause() instanceof UnrecoverableException unrecoverableException) {
                 if (unrecoverableException.isShowException()) {
@@ -1307,13 +1386,18 @@ public class ConfigFileReaderWriter {
             do {
                 final String copyFilename = fileNameNoExt + '_' + idx++ + (fileExt != null ? "." + fileExt : "");
                 copyFile = new File(copyPath, copyFilename);
-            } while (idx < MAX_BACK_FILES && copyFile.exists());
+            } while (idx <= MAX_BACK_FILES && copyFile.exists());
 
             if (copyFile.exists()) {
-                // -- use the oldest available backup index
-                final File[] backupFiles = copyPath.listFiles(child -> child.isFile()
-                        && child.getName().startsWith(fileNameNoExt)
-                        && (fileExt == null || child.getName().endsWith(fileExt)));
+                // -- every slot is taken: overwrite the oldest of the backups this node wrote. Only those:
+                // the previous prefix-and-suffix match took any "config*xml" in the directory, so an
+                // operator's own archived copy was the oldest match and was silently replaced by a routine
+                // backup, and the live configuration file matched too (EDG-949).
+                final Pattern ownBackup = Pattern.compile(Pattern.quote(fileNameNoExt)
+                        + "_\\d+"
+                        + (fileExt != null ? "\\." + Pattern.quote(fileExt) : ""));
+                final File[] backupFiles = copyPath.listFiles(child ->
+                        child.isFile() && ownBackup.matcher(child.getName()).matches());
                 assert backupFiles != null;
                 Arrays.sort(backupFiles, Comparator.comparingLong(File::lastModified));
                 copyFile = backupFiles[0];
@@ -1350,7 +1434,20 @@ public class ConfigFileReaderWriter {
             // executorService was just set via compareAndSet, so it cannot be null here
             final ScheduledExecutorService scheduler = Objects.requireNonNull(executorService.get());
             scheduler.scheduleAtFixedRate(
-                    () -> scheduledTask.executePeriodicTask(configFile, fileModified, fileModificationTimestamps),
+                    () -> {
+                        // A scheduled task that throws is never run again, silently: the watcher was lost
+                        // to the first unreadable or unparseable file and nothing said so (EDG-949).
+                        // Whatever escapes the check is logged and the next tick runs.
+                        try {
+                            scheduledTask.executePeriodicTask(configFile, fileModified, fileModificationTimestamps);
+                        } catch (final Throwable t) {
+                            log.error(
+                                    "The configuration watcher failed to check {}; it will try again in {} ms",
+                                    configFile,
+                                    interval,
+                                    t);
+                        }
+                    },
                     0,
                     interval,
                     TimeUnit.MILLISECONDS);
@@ -1360,7 +1457,8 @@ public class ConfigFileReaderWriter {
         }
     }
 
-    private void stopWatching() {
+    @VisibleForTesting
+    void stopWatching() {
         final ScheduledExecutorService es = executorService.getAndSet(null);
         if (es != null) {
             es.shutdownNow();
@@ -1370,52 +1468,74 @@ public class ConfigFileReaderWriter {
     private void checkMonitoredFilesForChanges(
             final @NotNull File configFile,
             final @NotNull AtomicLong fileModified,
-            final @NotNull Map<Path, Long> fileModificationTimestamps) {
-        try {
-            final boolean isDevMode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
-            if (!isDevMode) {
-                final Map<Path, Long> pathsToCheck = new HashMap<>(fragmentToModificationTime);
-                pathsToCheck.putAll(fileModificationTimestamps);
-                pathsToCheck.forEach((key, value) -> {
-                    try {
-                        if (!key.toString().equals(CONFIG_FRAGMENT_PATH)
-                                && Files.getFileAttributeView(
-                                                        key.toRealPath(LinkOption.NOFOLLOW_LINKS),
-                                                        BasicFileAttributeView.class)
-                                                .readAttributes()
-                                                .lastModifiedTime()
-                                                .toMillis()
-                                        > value) {
-                            log.error("Restarting because a required file was updated: {}", key);
-                            System.exit(0);
-                        }
-                    } catch (final IOException e) {
-                        throw new RuntimeException("Unable to read last modified time for " + key, e);
-                    }
-                });
+            final @NotNull Map<Path, Long> fileModificationTimestamps)
+            throws IOException {
+        final boolean isDevMode = "true".equals(System.getProperty(HiveMQEdgeConstants.DEVELOPMENT_MODE));
+        if (!isDevMode) {
+            final Map<Path, Long> pathsToCheck = new HashMap<>(fragmentToModificationTime);
+            pathsToCheck.putAll(fileModificationTimestamps);
+            for (final Map.Entry<Path, Long> watched : pathsToCheck.entrySet()) {
+                final Path key = watched.getKey();
+                if (key.toString().equals(CONFIG_FRAGMENT_PATH)) {
+                    continue;
+                }
+                final long lastModified;
+                try {
+                    lastModified = Files.getFileAttributeView(
+                                    key.toRealPath(LinkOption.NOFOLLOW_LINKS), BasicFileAttributeView.class)
+                            .readAttributes()
+                            .lastModifiedTime()
+                            .toMillis();
+                } catch (final NoSuchFileException gone) {
+                    // A fragment or keystore that was removed. It is dropped from the watch rather than
+                    // ending it: the configuration that referenced it will be re-read when it changes, and
+                    // a file the node no longer has is not a reason to stop noticing the ones it does.
+                    log.warn("The watched file {} no longer exists; it is no longer watched", key);
+                    fragmentToModificationTime.remove(key);
+                    continue;
+                } catch (final IOException unreadable) {
+                    // Momentary: a network file system, or a tool rewriting the file. Next tick.
+                    log.warn("Could not read the modification time of the watched file {}", key, unreadable);
+                    continue;
+                }
+                if (lastModified > watched.getValue()) {
+                    log.error("Restarting because a required file was updated: {}", key);
+                    restartHook.run();
+                    return;
+                }
             }
+        }
 
-            final long modified;
-            if (new File(CONFIG_FRAGMENT_PATH).exists()) {
-                modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath())
-                        .toMillis();
-            } else {
-                log.warn("No fragment found, checking the full config, only used for testing");
-                modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
-            }
-            if (modified > fileModified.get()) {
-                fileModified.set(modified);
-                if (!loadConfigFromXML(configFile)) {
+        final long modified;
+        if (new File(CONFIG_FRAGMENT_PATH).exists()) {
+            modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath())
+                    .toMillis();
+        } else {
+            log.warn("No fragment found, checking the full config, only used for testing");
+            modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();
+        }
+        if (modified > fileModified.get()) {
+            // Recorded before the load: a file that is rejected is not re-parsed on every tick, and the
+            // operator's correction moves the time again.
+            fileModified.set(modified);
+            switch (loadConfigFromXML(configFile)) {
+                case APPLIED -> {}
+                case REJECTED_INVALID ->
+                    // Deliberately not a restart: a node restarted onto a file that cannot be parsed does
+                    // not come back. The node keeps the configuration it has, says so, and the watcher
+                    // stays alive to pick up the correction -- which is what used to be lost (EDG-949).
+                    log.error("Configuration reload rejected because the new configuration is invalid;"
+                            + " keeping the previously applied configuration."
+                            + " Fix the reported errors above and save the file again.");
+                case NEEDS_RESTART -> {
                     if (!isDevMode) {
                         log.error("Restarting because new config can't be hot-reloaded");
-                        System.exit(0);
+                        restartHook.run();
                     } else {
                         log.error("TEST MODE, NOT RESTARTING");
                     }
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -1424,6 +1544,7 @@ public class ConfigFileReaderWriter {
         void executePeriodicTask(
                 final @NotNull File configFile,
                 final @NotNull AtomicLong fileModified,
-                final @NotNull Map<Path, Long> fileModificationTimestamps);
+                final @NotNull Map<Path, Long> fileModificationTimestamps)
+                throws IOException;
     }
 }
