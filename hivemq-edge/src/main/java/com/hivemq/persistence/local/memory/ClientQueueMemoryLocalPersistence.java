@@ -145,6 +145,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final long max,
             final @NotNull QueuedMessagesStrategy strategy,
             final boolean retained,
+            final boolean applyMaxToQos0,
             final int bucketIndex) {
 
         checkNotNull(queueId, "Queue ID must not be null");
@@ -152,7 +153,23 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         checkNotNull(strategy, "Strategy must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
-        add(queueId, shared, List.of(publish), max, strategy, retained, bucketIndex);
+        add(queueId, shared, List.of(publish), max, strategy, retained, applyMaxToQos0, bucketIndex);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @ExecuteInSingleWriter
+    public void add(
+            final @NotNull String queueId,
+            final boolean shared,
+            final @NotNull PUBLISH publish,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final int bucketIndex) {
+        add(queueId, shared, publish, max, strategy, retained, false, bucketIndex);
     }
 
     /**
@@ -168,6 +185,23 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final @NotNull QueuedMessagesStrategy strategy,
             final boolean retained,
             final int bucketIndex) {
+        add(queueId, shared, publishes, max, strategy, retained, false, bucketIndex);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @ExecuteInSingleWriter
+    public void add(
+            final @NotNull String queueId,
+            final boolean shared,
+            final @NotNull List<PUBLISH> publishes,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final boolean applyMaxToQos0,
+            final int bucketIndex) {
 
         checkNotNull(queueId, "Queue ID must not be null");
         checkNotNull(publishes, "Publishes must not be null");
@@ -180,7 +214,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         for (final PUBLISH publish : publishes) {
             final PublishWithRetained publishWithRetained = new PublishWithRetained(publish, retained);
             if (publish.getQoS() == QoS.AT_MOST_ONCE) {
-                addQos0Publish(queueId, shared, messages, publishWithRetained);
+                addQos0Publish(queueId, shared, messages, publishWithRetained, max, applyMaxToQos0);
             } else {
                 final int qos1And2QueueSize = messages.qos1Or2Messages.size() - messages.retainedQos1Or2Messages;
                 if ((qos1And2QueueSize >= max) && !retained) {
@@ -224,10 +258,43 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final @NotNull String queueId,
             final boolean shared,
             final @NotNull Messages messages,
-            final @NotNull PublishWithRetained publishWithRetained) {
+            final @NotNull PublishWithRetained publishWithRetained,
+            final long max,
+            final boolean applyMaxToQos0) {
+
+        // Only callers that asked for it (sampler queues today) bound QoS 0 by count. Everything else
+        // keeps the historical behaviour of being held solely by the node-wide QoS 0 memory budget --
+        // imposing a count limit here would silently shrink the outage buffer of every persist=false
+        // bridge, which is a separate decision from EDG-885.
+        //
+        // Admission and eviction are ONE decision, and nothing is mutated until it has been made.
+        //
+        // The count bound used to trim first and check the memory guards afterwards, which reads
+        // correctly for the case it was written for -- the evicted sample releases the space its
+        // replacement needs, so a ring keeps rotating at the node-wide ceiling. It is wrong for the case
+        // where the pressure belongs to somebody else: unrelated QoS 0 traffic holds the node over the
+        // ceiling, the incoming sample is rejected *after* the old one has already been destroyed, and a
+        // ring of one empties itself. Every sample after it repeats the trade, so the diagnostic this
+        // bound exists to protect ends up showing nothing at all (EDG-882 review v03, R3-05).
+        //
+        // So: work out what the trim would evict and what that would free, decide admission against the
+        // post-trim figures, and only then touch the deque.
+        int victimCount = 0;
+        long freedByTrim = 0;
+        if (applyMaxToQos0 && max > 0) {
+            for (final PublishWithRetained candidate : messages.qos0Messages) {
+                if (messages.qos0Messages.size() - victimCount < max) {
+                    break;
+                }
+                victimCount++;
+                freedByTrim += candidate.getEstimatedSize();
+            }
+        }
 
         final long currentQos0MessagesMemory = qos0MessagesMemory.get();
-        if (currentQos0MessagesMemory >= qos0MemoryLimit) {
+        if (currentQos0MessagesMemory - freedByTrim >= qos0MemoryLimit) {
+            // Reported against the memory the node actually holds, not the hypothetical post-trim
+            // figure: nothing was evicted, and the counter the operator can observe is this one.
             if (shared) {
                 messageDroppedService.qos0MemoryExceededShared(
                         queueId, publishWithRetained.getTopic(), 0, currentQos0MessagesMemory, qos0MemoryLimit);
@@ -239,10 +306,32 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
 
         if (!shared) {
-            if (messages.qos0Memory >= qos0ClientMemoryLimit) {
+            if (messages.qos0Memory - freedByTrim >= qos0ClientMemoryLimit) {
                 messageDroppedService.qos0MemoryExceeded(
                         queueId, publishWithRetained.getTopic(), 0, messages.qos0Memory, qos0ClientMemoryLimit);
                 return;
+            }
+        }
+
+        // Admitted. Now, and only now, the ring gives up what it has to.
+        for (int evicted = 0; evicted < victimCount; evicted++) {
+            final PublishWithRetained oldest = messages.qos0Messages.pollFirst();
+            if (oldest == null) {
+                break;
+            }
+            final int freed = -oldest.getEstimatedSize();
+            increaseQos0MessagesMemory(freed);
+            increaseClientQos0MessagesMemory(messages, freed);
+            increaseMessagesMemory(freed);
+            // Rotation, not a drop. Reporting it through the dropped-message service put every
+            // sample a UI topic preview replaces on the node-wide dropped-message counter and wrote
+            // an event.log line per publish -- so opening a topic in the UI made the node look like
+            // it was losing customer messages (EDG-882 QA round 1). Nothing to dereference either:
+            // QoS 0 payloads are never reference-counted.
+            if (log.isTraceEnabled()) {
+                log.trace(
+                        "Rotated the oldest QoS 0 message out of bounded queue '{}' to make room for a new one",
+                        queueId);
             }
         }
 

@@ -29,6 +29,27 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * <b>Binary compatibility with the file-native module is part of this interface's contract.</b>
+ * <p>
+ * The file-native implementation lives in {@code hivemq-edge-mqtt-persistence}, which is loaded from
+ * {@code HIVEMQ_HOME/modules} at run time. Core and module are compiled separately and meet only at
+ * start-up, so an operator can pair any module jar with any core jar — including by accident, by
+ * replacing the core zip and leaving {@code modules/} alone.
+ * <p>
+ * That makes the direction of every {@code default} here load-bearing. A default method protects
+ * <em>callers</em> of the signature it replaces, and core has no callers of the old signatures left.
+ * What needs protecting is <em>implementors</em>: an older module implements only the signature that
+ * existed when it was built, so the signature core calls must be the one with a default, and the
+ * default must delegate to the older one. Getting this backwards makes a mismatched module fail with
+ * {@code AbstractMethodError} on the first queued publish — on a file-native node, the entire message
+ * path, with a stack trace that names no version (EDG-882 review v02, R2-01).
+ * <p>
+ * So: <b>when a parameter is added here, the old signature stays abstract and the new one gets the
+ * default.</b> Implementations override the new signature and implement the old one as a delegation.
+ * The cost is that a module built before the addition degrades silently to the previous behaviour, so
+ * {@code ClientQueueLocalPersistenceProvider} probes the loaded implementation once at start-up and
+ * says plainly what a stale module gives up.
+ *
  * @author Lukas Brandl
  * @since 4.0.0
  */
@@ -43,9 +64,35 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
      * @param publish     to be queued
      * @param max         maximum amount of messages queued for the client
      * @param strategy    how to discard messages in case the queue is full
+     * @param applyMaxToQos0 whether {@code max} also bounds QoS 0 messages. Normally false: QoS 0 queues
+     *                       are held only by the node-wide QoS 0 memory budget, and imposing a count
+     *                       limit on them would change long-standing behaviour for bridges and client
+     *                       queues. Sampler queues pass true — they are ring buffers of the most recent
+     *                       {@code SamplingService.SAMPLE_SIZE} payloads, and without this one sampled
+     *                       QoS 0 topic can consume the whole shared budget and starve every other QoS 0
+     *                       consumer on the node (EDG-885).
      * @param retained    true if this message was sent in response to a subscribe. Retained messages are not dropped
      *                    when the queue reached the maximum queue size.
      * @param bucketIndex provided by the single writer
+     */
+    default void add(
+            final @NotNull String queueId,
+            final boolean shared,
+            final @NotNull PUBLISH publish,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final boolean applyMaxToQos0,
+            final int bucketIndex) {
+        // Default, not abstract, so a module built before applyMaxToQos0 existed keeps working; see the
+        // contract note on this interface. It loses the QoS 0 bound, which is the previous behaviour.
+        add(queueId, shared, publish, max, strategy, retained, bucketIndex);
+    }
+
+    /**
+     * Equivalent to the overload above with {@code applyMaxToQos0 = false}, which is the historical
+     * behaviour. Abstract, and staying abstract, because it is the signature every module ever built
+     * implements.
      */
     void add(
             @NotNull String queueId,
@@ -66,10 +113,36 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
      * @param publishes   to be queued
      * @param max         maximum amount of messages queued for the client
      * @param strategy    how to discard messages in case the queue is full
+     * @param applyMaxToQos0 whether {@code max} also bounds QoS 0 messages. Normally false: QoS 0 queues
+     *                       are held only by the node-wide QoS 0 memory budget, and imposing a count
+     *                       limit on them would change long-standing behaviour for bridges and client
+     *                       queues. Sampler queues pass true — they are ring buffers of the most recent
+     *                       {@code SamplingService.SAMPLE_SIZE} payloads, and without this one sampled
+     *                       QoS 0 topic can consume the whole shared budget and starve every other QoS 0
+     *                       consumer on the node (EDG-885).
      * @param retained    true if this messages are sent in response to a subscribe. Retained messages are not dropped
      *                    when the queue reached the maximum queue size. It is not necessarily the same as the retain
      *                    flag of the publish.
      * @param bucketIndex provided by the single writer
+     */
+    default void add(
+            final @NotNull String queueId,
+            final boolean shared,
+            final @NotNull List<PUBLISH> publishes,
+            final long max,
+            final @NotNull QueuedMessagesStrategy strategy,
+            final boolean retained,
+            final boolean applyMaxToQos0,
+            final int bucketIndex) {
+        // Default, not abstract, so a module built before applyMaxToQos0 existed keeps working; see the
+        // contract note on this interface. It loses the QoS 0 bound, which is the previous behaviour.
+        add(queueId, shared, publishes, max, strategy, retained, bucketIndex);
+    }
+
+    /**
+     * Equivalent to the overload above with {@code applyMaxToQos0 = false}, which is the historical
+     * behaviour. Abstract, and staying abstract, because it is the signature every module ever built
+     * implements.
      */
     void add(
             @NotNull String queueId,

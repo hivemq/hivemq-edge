@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <hivemq xsi:schemaLocation="config.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <internal/>
     <config-version>1</config-version>
     <mqtt-listeners>
         <tcp-listener>
@@ -150,7 +151,8 @@
             <forwarded-topics>
                 <forwarded-topic>
                     <filters>
-                        <mqtt-topic-filter>#</mqtt-topic-filter>
+                        <mqtt-topic-filter>zone-b/#</mqtt-topic-filter>
+                        <mqtt-topic-filter>alarms/#</mqtt-topic-filter>
                     </filters>
                     <max-qos>0</max-qos>
                     <preserve-retain>true</preserve-retain>
@@ -162,6 +164,7 @@
                         </user-property>
                     </custom-user-properties>
                     <excludes/>
+                    <queue-limit>500</queue-limit>
                 </forwarded-topic>
             </forwarded-topics>
             <loop-prevention>
@@ -360,5 +363,4 @@
         <managed-assets/>
     </pulse>
     <modules/>
-    <internal/>
 </hivemq>
