@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
@@ -134,10 +135,17 @@ public class SamplingService {
             return;
         }
         final int interval = InternalConfigurations.SAMPLING_LEASE_SWEEP_INTERVAL_SEC.get();
-        // The future is not kept: the sweep runs until the executor is shut down, and there is no
-        // earlier point at which anything would cancel it.
-        final var unused = scheduledExecutorService.scheduleWithFixedDelay(
-                this::expireLeases, interval, interval, TimeUnit.SECONDS);
+        try {
+            // The future is not kept: the sweep runs until the executor is shut down, and there is no
+            // earlier point at which anything would cancel it.
+            final var unused = scheduledExecutorService.scheduleWithFixedDelay(
+                    this::expireLeases, interval, interval, TimeUnit.SECONDS);
+        } catch (final RejectedExecutionException shuttingDown) {
+            // The check above and the schedule are not one step: a first sampler-eligible publish during
+            // shutdown constructs this singleton on an event loop, and the executor can close in between.
+            // Nothing to sweep on a node that is going away.
+            log.debug("The sampling lease sweep was not scheduled: the persistence executor is shutting down");
+        }
     }
 
     /**
@@ -315,16 +323,14 @@ public class SamplingService {
     /**
      * The samples collected for a topic, most recent last.
      * <p>
-     * Reading renews the lease, and a read of a topic that is no longer sampled starts it again. That
-     * is what a panel left open past the lease sees: its next refresh comes back empty — the released
-     * queue was reclaimed — and sampling is running again by the time it returns, so the refresh after
-     * that has samples. The same thing the panel saw when it first opened, and the same thing it
-     * would see after a node restart; nothing to handle that the UI does not handle already. Making
-     * the read revive rather than only renew is what keeps a GET from ever answering "no samples"
-     * for a topic that was sampled a moment ago and stays that way.
+     * Reading renews the lease of a topic that is sampled, and starts nothing. Starting is what the
+     * POST is for, and the POST is admin-only while the two GETs are open to every role; a read that
+     * subscribed would hand that admin capability -- a subscription and a queue for any topic string --
+     * to any caller (EDG-949 review). So a panel left open past the lease sees an empty list on its next
+     * refresh, and samples again once it is remounted, which is when the UI starts sampling anyway.
      */
     public @NotNull List<byte[]> getSamples(final @NotNull String topic) {
-        startSampling(topic);
+        sampledTopics.computeIfPresent(topic, (sampledTopic, lease) -> nanoClock.getAsLong());
         final String queueId = createQueueId(topic);
         final ListenableFuture<ImmutableList<PUBLISH>> publishes =
                 clientQueuePersistence.peek(queueId, true, BYTE_LIMIT_SAMPLES, SAMPLE_SIZE);

@@ -169,8 +169,13 @@ public class SamplingServiceLeaseTest {
         verify(topicTree, never()).removeSubscriber(any(), any(), any());
     }
 
+    /**
+     * A read must not start sampling: the start is admin-only, the reads are open to every role, and a
+     * read that subscribed would hand the one to the other. A released topic stays released until it is
+     * started again.
+     */
     @Test
-    public void test_readingAReleasedTopicStartsSamplingItAgain() {
+    public void test_readingAReleasedTopicDoesNotStartItAgain() {
         samplingService.startSampling(TOPIC);
         advance(TTL_NANOS);
         samplingService.expireLeases();
@@ -178,17 +183,17 @@ public class SamplingServiceLeaseTest {
 
         samplingService.getSamples(TOPIC);
 
-        assertTrue(samplingService.isSampling(TOPIC), "a read revives a released topic");
-        verify(topicTree, times(2)).addTopic(eq(CLIENT_ID), any(), anyByte(), eq(CLIENT_ID));
+        assertFalse(samplingService.isSampling(TOPIC), "a read must not revive a released topic");
+        verify(topicTree, times(1)).addTopic(eq(CLIENT_ID), any(), anyByte(), eq(CLIENT_ID));
         verify(topicTree, times(1)).removeSubscriber(eq(CLIENT_ID), eq(TOPIC), eq(CLIENT_ID));
     }
 
     @Test
-    public void test_readingATopicThatWasNeverStartedStartsIt() {
+    public void test_readingATopicThatWasNeverStartedDoesNotStartIt() {
         samplingService.getSamples(TOPIC);
 
-        assertTrue(samplingService.isSampling(TOPIC));
-        verify(topicTree, times(1)).addTopic(eq(CLIENT_ID), any(), anyByte(), eq(CLIENT_ID));
+        assertFalse(samplingService.isSampling(TOPIC));
+        verify(topicTree, never()).addTopic(any(), any(), anyByte(), any());
     }
 
     @Test
@@ -332,10 +337,11 @@ public class SamplingServiceLeaseTest {
 
         final int readers = 4;
         final int iterations = 20_000;
-        final ExecutorService executor = Executors.newFixedThreadPool(readers + 1);
+        // readers renew, one starter keeps re-starting what the sweep releases, one sweeper releases
+        final ExecutorService executor = Executors.newFixedThreadPool(readers + 2);
         final AtomicReference<Throwable> failure = new AtomicReference<>();
         final CountDownLatch start = new CountDownLatch(1);
-        final CountDownLatch done = new CountDownLatch(readers + 1);
+        final CountDownLatch done = new CountDownLatch(readers + 2);
         try {
             for (int t = 0; t < readers; t++) {
                 executor.submit(() -> {
@@ -351,6 +357,18 @@ public class SamplingServiceLeaseTest {
                     }
                 });
             }
+            executor.submit(() -> {
+                try {
+                    start.await();
+                    for (int i = 0; i < iterations; i++) {
+                        service.startSampling(TOPIC);
+                    }
+                } catch (final Throwable e) {
+                    failure.compareAndSet(null, e);
+                } finally {
+                    done.countDown();
+                }
+            });
             executor.submit(() -> {
                 try {
                     start.await();

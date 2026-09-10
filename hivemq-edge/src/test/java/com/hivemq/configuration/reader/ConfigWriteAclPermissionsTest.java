@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import com.hivemq.configuration.reader.ConfigFileReaderWriter.PreservedAttributes;
+import com.hivemq.configuration.reader.ProtectedFileReplacer.PreservedAttributes;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -106,9 +106,9 @@ public class ConfigWriteAclPermissionsTest {
      */
     @Test
     public void createPartialFile_restrictsTheReplacementToItsOwnerBeforeItIsWritten() throws IOException {
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(targetReadableBy(bob));
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(targetReadableBy(bob));
 
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
 
         final List<AclEntry> actual = aclOf(partial);
         assertEquals(1, actual.size(), "the replacement is open to someone other than its owner");
@@ -128,9 +128,9 @@ public class ConfigWriteAclPermissionsTest {
     @Test
     public void createPartialFile_doesNotGiveTheReplacementTheTargetsOwnAcl() throws IOException {
         final Path target = targetReadableBy(bob);
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
 
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
 
         assertNotEquals(aclOf(target), aclOf(partial), "the replacement was created as open as its target");
         assertFalse(
@@ -148,8 +148,8 @@ public class ConfigWriteAclPermissionsTest {
         aclViewOf(partial).setAcl(readWriteFor(bob));
         Files.writeString(partial, "left behind by a killed write");
 
-        ConfigFileReaderWriter.createPartialFile(
-                partial, ConfigFileReaderWriter.preservedAttributesOf(targetReadableBy(bob)));
+        ProtectedFileReplacer.createPartialFile(
+                partial, ProtectedFileReplacer.preservedAttributesOf(targetReadableBy(bob)));
 
         assertFalse(namesPrincipal(aclOf(partial), bob), "a stale partial was reopened and kept its access control");
         assertEquals("", Files.readString(partial), "the stale content survived into the new write");
@@ -163,7 +163,7 @@ public class ConfigWriteAclPermissionsTest {
      */
     @Test
     public void createPartialFile_withNothingToReproduce_createsTheFileNormally() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, PreservedAttributes.NONE);
+        ProtectedFileReplacer.createPartialFile(partial, PreservedAttributes.NONE);
 
         assertTrue(Files.exists(partial), "the replacement must still be created");
     }
@@ -179,7 +179,7 @@ public class ConfigWriteAclPermissionsTest {
         final Path target = targetReadableBy(bob);
         Files.getFileAttributeView(target, AclFileAttributeView.class).setOwner(alice);
 
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
 
         assertEquals(alice, preserved.owner(), "the owner of an ACL-only file was not carried");
         assertEquals(aclOf(target), preserved.acl(), "the access-control list was not carried");
@@ -198,7 +198,7 @@ public class ConfigWriteAclPermissionsTest {
         Files.createFile(target);
         aclViewOf(target).setAcl(List.of());
 
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
 
         assertEquals(List.of(), preserved.acl(), "an empty access-control list was read as 'there is none'");
         assertFalse(
@@ -212,10 +212,10 @@ public class ConfigWriteAclPermissionsTest {
         final Path target = directory.resolve("config.xml");
         Files.createFile(target);
         aclViewOf(target).setAcl(List.of());
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, preserved);
 
         assertEquals(List.of(), aclOf(partial), "the replacement is readable by someone the target was not");
     }
@@ -225,11 +225,11 @@ public class ConfigWriteAclPermissionsTest {
     public void applyPreservedAttributes_reproducesTheTargetsAclAndOwner() throws IOException {
         final Path target = targetReadableBy(bob);
         aclViewOf(target).setOwner(alice);
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
         Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, preserved);
 
         assertEquals(aclOf(target), aclOf(partial), "the target's access-control list was not reproduced");
         assertEquals(alice, Files.getOwner(partial), "the target's owner was not reproduced");
@@ -243,14 +243,14 @@ public class ConfigWriteAclPermissionsTest {
     @Test
     public void theReplacementIsNeverWiderThanItsTargetWhileItHoldsTheConfiguration() throws IOException {
         final Path target = targetReadableBy(bob);
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
 
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
         assertFalse(namesPrincipal(aclOf(partial), bob), "the secrets are written into a file bob can read");
         Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
         assertFalse(namesPrincipal(aclOf(partial), bob), "the file was widened while it still held the secrets");
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, preserved);
 
         assertEquals(aclOf(target), aclOf(partial), "the target's access-control list was not reproduced");
     }
@@ -272,7 +272,7 @@ public class ConfigWriteAclPermissionsTest {
 
         final IOException refused = assertThrows(
                 IOException.class,
-                () -> ConfigFileReaderWriter.verifyPreservedAttributes(
+                () -> ProtectedFileReplacer.verifyPreservedAttributes(
                         partial, new PreservedAttributes(null, null, null, readWriteFor(bob))),
                 "an access-control list that did not take must abort the replacement, not be assumed");
         assertTrue(refused.getMessage().contains("access-control list"), refused.getMessage());
@@ -289,7 +289,7 @@ public class ConfigWriteAclPermissionsTest {
         Files.createFile(partial);
         aclViewOf(partial).setAcl(List.of());
 
-        ConfigFileReaderWriter.verifyPreservedAttributes(
+        ProtectedFileReplacer.verifyPreservedAttributes(
                 partial, new PreservedAttributes(null, null, null, readWriteFor(bob)));
     }
 
@@ -310,7 +310,7 @@ public class ConfigWriteAclPermissionsTest {
                                 .setPermissions(EnumSet.of(AclEntryPermission.WRITE_DATA))
                                 .build()));
 
-        ConfigFileReaderWriter.verifyPreservedAttributes(
+        ProtectedFileReplacer.verifyPreservedAttributes(
                 partial, new PreservedAttributes(null, null, null, readWriteFor(bob)));
     }
 
@@ -321,7 +321,7 @@ public class ConfigWriteAclPermissionsTest {
         Files.createFile(partial);
         aclViewOf(partial).setAcl(readWriteFor(bob));
 
-        ConfigFileReaderWriter.verifyPreservedAttributes(
+        ProtectedFileReplacer.verifyPreservedAttributes(
                 partial, new PreservedAttributes(null, null, null, readWriteFor(bob)));
     }
 
@@ -329,11 +329,11 @@ public class ConfigWriteAclPermissionsTest {
     @Test
     public void applyPreservedAttributes_whenTheOwnerDoesNotTake_thenTheWriteIsAborted() throws IOException {
         final PreservedAttributes preserved = new PreservedAttributes(null, new NeverTheSame("alice"), null, null);
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
 
         final IOException refused = assertThrows(
                 IOException.class,
-                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved),
+                () -> ProtectedFileReplacer.applyPreservedAttributes(partial, preserved),
                 "an owner that did not take must abort the replacement, not be assumed");
         assertTrue(refused.getMessage().contains("owned by"), refused.getMessage());
     }
@@ -344,13 +344,13 @@ public class ConfigWriteAclPermissionsTest {
      */
     @Test
     public void applyPreservedAttributes_whenTheAclCannotBeApplied_thenTheWriteIsAborted() throws IOException {
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(targetReadableBy(bob));
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(targetReadableBy(bob));
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
         Files.delete(partial); // the replacement is gone, so its protections cannot be set
 
         assertThrows(
                 IOException.class,
-                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved),
+                () -> ProtectedFileReplacer.applyPreservedAttributes(partial, preserved),
                 "protections that cannot be reproduced must abort the replacement, not be logged and ignored");
     }
 
@@ -362,9 +362,9 @@ public class ConfigWriteAclPermissionsTest {
     @Test
     public void replaceCarryingProtections_writesUnderTheTargetsProtectionsAndLeavesNothingBehind() throws IOException {
         final Path target = targetReadableBy(bob);
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
 
-        ConfigFileReaderWriter.replaceCarryingProtections(target, preserved, written -> {
+        ProtectedFileReplacer.replaceCarryingProtections(target, preserved, written -> {
             assertFalse(namesPrincipal(aclOf(written), bob), "the configuration is written into a file bob can read");
             Files.writeString(written, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
         });
@@ -383,7 +383,7 @@ public class ConfigWriteAclPermissionsTest {
     @Test
     public void preservedAttributesOf_aMissingFile_hasNothingToReproduce() throws IOException {
         final PreservedAttributes preserved =
-                ConfigFileReaderWriter.preservedAttributesOf(directory.resolve("not-written-yet.xml"));
+                ProtectedFileReplacer.preservedAttributesOf(directory.resolve("not-written-yet.xml"));
 
         assertTrue(preserved.nothingToReproduce(), "a first-time configuration file has nothing to preserve");
     }

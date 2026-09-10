@@ -65,7 +65,9 @@ public class ConfigWritePathHardeningTest extends AbstractConfigurationTest {
 
     @BeforeEach
     public void captureTheLogAndObserveRestarts() {
-        logCapture = LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(ConfigFileReaderWriter.class));
+        // The package logger: the lines asserted below come from the reader-writer and from the watcher.
+        logCapture = LogbackCapturingAppender.Factory.weaveInto(
+                LoggerFactory.getLogger(ConfigFileReaderWriter.class.getPackageName()));
         config = xmlFile.toPath();
         reader.setRestartHook(restarts::incrementAndGet);
         // The fragment and keystore watch only runs outside development mode, and so does the restart
@@ -102,8 +104,9 @@ public class ConfigWritePathHardeningTest extends AbstractConfigurationTest {
     }
 
     /**
-     * The watcher compares modification times with millisecond resolution and only reacts to a strictly
-     * later one, so every rewrite in these tests pushes the time forward by a full second.
+     * The watcher compares modification times with millisecond resolution and reacts to any change, so
+     * every rewrite in these tests moves the time by whole seconds to stay clear of the granularity of
+     * any file system.
      */
     private void rewrite(final @NotNull Path file, final @NotNull String content, final int secondsLater)
             throws IOException {
@@ -278,14 +281,101 @@ public class ConfigWritePathHardeningTest extends AbstractConfigurationTest {
         assertThat(restarts).hasValue(0);
     }
 
+    /**
+     * The node's own REST write bumps the file's time. The watcher must not read, parse and re-apply a
+     * file it has just written itself: pointless work after every REST change, and every such reload
+     * takes the configuration lock first and the extractors' monitors second, the inverse of the REST
+     * path (EDG-937 R3-02) -- a window that should not open on its own.
+     */
+    @Test
+    @Timeout(60)
+    public void whenTheNodeWritesTheConfigurationItself_thenTheWatcherDoesNotReloadIt() throws Exception {
+        rewrite(config, configWithBridge("edg-949-own-write"), 0);
+        reader.applyConfig();
+        reader.applyConfigAndWatch(WATCH_INTERVAL_MS);
+        Thread.sleep(WATCH_INTERVAL_MS * 4);
+        final long readsBefore = logged(Level.INFO).stream()
+                .filter(m -> m.contains("Reading configuration file"))
+                .count();
+
+        final FileTime beforeWrite = Files.getLastModifiedTime(config);
+        Thread.sleep(1100); // a second, so the write moves the time on any file system
+        reader.writeConfigWithSync();
+        assertThat(Files.getLastModifiedTime(config))
+                .as("the write must have replaced the file")
+                .isNotEqualTo(beforeWrite);
+        Thread.sleep(WATCH_INTERVAL_MS * 6);
+
+        final long readsAfter = logged(Level.INFO).stream()
+                .filter(m -> m.contains("Reading configuration file"))
+                .count();
+        assertThat(readsAfter).as("the watcher re-read the node's own write").isEqualTo(readsBefore);
+        assertThat(restarts).hasValue(0);
+
+        // and an operator's edit after that is still seen
+        rewrite(config, configWithBridge("edg-949-operator-edit"), 4);
+        await("the operator's edit to be applied", () -> "edg-949-operator-edit".equals(runningBridgeId()));
+    }
+
+    /**
+     * A restore from a backup -- cp -p, rsync -a, a volume remount -- carries an older time than the
+     * broken file it replaces. A high-water mark on the time would ignore the correction for good.
+     */
+    @Test
+    @Timeout(60)
+    public void whenAnOlderFileIsRestoredOverABrokenOne_thenItIsApplied() throws Exception {
+        rewrite(config, configWithBridge("edg-949-before"), 0);
+        reader.applyConfig();
+        reader.applyConfigAndWatch(WATCH_INTERVAL_MS);
+
+        rewrite(config, "<hivemq><mqtt-bridges><mqtt-bridge><id>edg-949-broken", 6);
+        await("the rejected reload to be reported", () -> logged(Level.ERROR).stream()
+                .anyMatch(message -> message.contains("reload rejected")));
+        final FileTime broken = Files.getLastModifiedTime(config);
+
+        rewrite(config, configWithBridge("edg-949-restored"), 0);
+        Files.setLastModifiedTime(config, FileTime.fromMillis(broken.toMillis() - 60_000)); // a minute older
+
+        await("the older, restored file to be applied", () -> "edg-949-restored".equals(runningBridgeId()));
+        assertThat(restarts).hasValue(0);
+    }
+
+    /**
+     * An unset variable is the most ordinary reload mistake. It used to fall through to the generic
+     * handler, which logged "Exiting HiveMQ Edge" on a node that was not exiting -- and an operator who
+     * believed it and restarted would not get the node back.
+     */
+    @Test
+    @Timeout(60)
+    public void whenAPlaceholderCannotBeRendered_thenTheReloadIsRejectedAndNothingSaysExiting() throws Exception {
+        rewrite(config, configWithBridge("edg-949-before"), 0);
+        reader.applyConfig();
+        reader.applyConfigAndWatch(WATCH_INTERVAL_MS);
+
+        rewrite(config, configWithBridge("${ENV:EDG949_VARIABLE_THAT_IS_NOT_SET}"), 2);
+
+        await("the rejected reload to be reported", () -> logged(Level.ERROR).stream()
+                .anyMatch(message -> message.contains("reload rejected")));
+        assertThat(logged(Level.ERROR)).anyMatch(message -> message.contains("could not be rendered"));
+        assertThat(logged(Level.ERROR)).noneMatch(message -> message.contains("Exiting"));
+        assertThat(runningBridgeId()).isEqualTo("edg-949-before");
+        assertThat(restarts).hasValue(0);
+
+        rewrite(config, configWithBridge("edg-949-fixed"), 4);
+        await("the correction to be applied", () -> "edg-949-fixed".equals(runningBridgeId()));
+    }
+
     // ---- findings 2 and 5: the rotation ----
 
     @Test
     public void whenTheBackupsRotate_thenOnlyTheBackupsEdgeWroteAreCandidates() throws Exception {
         final Path archive = config.resolveSibling("config-archive-2024.xml");
+        final Path yearArchive = config.resolveSibling("config_2024.xml"); // digits only: still not a slot
         final String archived = "<hivemq><!-- the operator's own copy, older than everything --></hivemq>";
         Files.writeString(archive, archived);
+        Files.writeString(yearArchive, archived);
         Files.setLastModifiedTime(archive, FileTime.fromMillis(1_700_000_000_000L)); // 2023
+        Files.setLastModifiedTime(yearArchive, FileTime.fromMillis(1_700_000_000_000L));
 
         for (int write = 1; write <= 8; write++) {
             rewrite(config, configWithBridge("edg-949-write-" + write), write);
@@ -297,6 +387,9 @@ public class ConfigWritePathHardeningTest extends AbstractConfigurationTest {
                 .as("a file Edge did not create was overwritten by the rolling backup")
                 .isEqualTo(archived);
         assertThat(Files.getLastModifiedTime(archive).toMillis()).isEqualTo(1_700_000_000_000L);
+        assertThat(Files.readString(yearArchive))
+                .as("a file named like a slot but outside the slot range was overwritten")
+                .isEqualTo(archived);
         for (int slot = 1; slot <= 5; slot++) {
             assertThat(config.resolveSibling("config_" + slot + ".xml"))
                     .as("all five configured slots are used, not four")
