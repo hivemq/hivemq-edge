@@ -105,6 +105,9 @@ public interface ConfigurationService {
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 
+    /** Stops watching the configuration file for changes; a no-op when no reader is set or no watch runs. */
+    void stopWatchingConfigFile();
+
     void writeConfiguration(final @NotNull Writer writer);
 
     @NotNull

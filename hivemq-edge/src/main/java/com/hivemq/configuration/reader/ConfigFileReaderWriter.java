@@ -295,8 +295,12 @@ public class ConfigFileReaderWriter {
         watcher.setRestartHook(restartHook);
     }
 
-    @VisibleForTesting
-    void stopWatching() {
+    /**
+     * Ends the watch started by {@link #applyConfigAndWatch(long)}. Called when the node shuts down: the
+     * watcher's own JVM shutdown hook does not run for an embedded node, whose JVM outlives it, and a watch
+     * left ticking on a stopped node reloads into a broker that no longer exists (EDG-949 CI follow-up).
+     */
+    public void stopWatching() {
         watcher.stop();
     }
 

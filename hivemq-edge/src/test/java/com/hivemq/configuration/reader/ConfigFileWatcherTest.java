@@ -368,13 +368,31 @@ public class ConfigFileWatcherTest {
 
     @Test
     @Timeout(30)
-    public void aMissingConfigurationFileDoesNotEndTheWatch() throws Exception {
+    public void aMissingConfigurationFileIsAWarningAndTheWatchGoesOn() throws Exception {
         start();
         Files.delete(config);
-        await("the failed check to be reported", () -> logged(Level.ERROR, "watcher failed to check") >= 1);
+        await("the missing file to be reported", () -> logged(Level.WARN, "does not exist") >= 1);
+        // Not an error: the file is missing, the watcher is fine (CI on EDG-949: an embedded node's
+        // teardown deletes the folder, and the integration suite fails on any ERROR line).
+        assertThat(logged(Level.ERROR, "watcher failed to check")).isZero();
 
         rewrite(config, "recreated", 4);
         await("the recreated file to be reloaded", () -> reloads.get() == 1);
+        assertThat(logged(Level.ERROR, "watcher failed to check")).isZero();
+    }
+
+    @Test
+    @Timeout(30)
+    public void aStoppedWatchDoesNotNoticeTheFolderGoingAway() throws Exception {
+        start();
+        ticks(2);
+        watcher.stop();
+        final long warningsAtStop = logged(Level.WARN, "does not exist");
+        Files.delete(config);
+        ticks(6);
+        assertThat(logged(Level.WARN, "does not exist")).isEqualTo(warningsAtStop);
+        assertThat(logged(Level.ERROR, "watcher failed to check")).isZero();
+        assertThat(reloads.get()).isZero();
     }
 
     // ---- the lock and the lifecycle

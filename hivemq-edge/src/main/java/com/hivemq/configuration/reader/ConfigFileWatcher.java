@@ -61,6 +61,7 @@ import org.slf4j.LoggerFactory;
 final class ConfigFileWatcher {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ConfigFileWatcher.class);
+    private static final long STOP_TIMEOUT_SECONDS = 5;
 
     static final @NotNull String CONFIG_FRAGMENT_PATH = "/fragment/config";
 
@@ -73,7 +74,11 @@ final class ConfigFileWatcher {
      * What the configuration watcher does when the node has to restart to apply a change. The process
      * exit in production; replaced in tests so the decision can be observed instead of ending the JVM.
      */
-    private volatile @NotNull Runnable restartHook = () -> System.exit(0);
+    // On its own thread: exiting from the tick would leave the tick blocked in Runtime.exit while the JVM
+    // runs the shutdown hooks -- one of which is stop(), waiting for the tick to finish -- and with the
+    // configuration lock held for the whole shutdown.
+    private volatile @NotNull Runnable restartHook =
+            () -> new Thread(() -> System.exit(0), "hivemq-edge-config-restart").start();
     /**
      * The modification time of the configuration file as the watcher last knew it. Set by the watcher
      * when it starts and on every reload, and by {@link #writtenByThisNode(Path, long)} after
@@ -231,11 +236,23 @@ final class ConfigFileWatcher {
         }
     }
 
-    @VisibleForTesting
+    /**
+     * Ends the watch and waits, bounded, for a tick in flight: a caller that removes the configuration
+     * folder right after stopping -- an embedded node's teardown -- must not race the last check.
+     */
     void stop() {
         final ScheduledExecutorService es = executorService.getAndSet(null);
         if (es != null) {
             es.shutdownNow();
+            try {
+                if (!es.awaitTermination(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    log.debug(
+                            "The configuration watcher did not finish its last check within {} s",
+                            STOP_TIMEOUT_SECONDS);
+                }
+            } catch (final InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -287,7 +304,19 @@ final class ConfigFileWatcher {
         lock.lock();
         try {
             final long known = fileModified.get();
-            final long modified = watchedTimestamp(configFile);
+            final long modified;
+            try {
+                modified = watchedTimestamp(configFile);
+            } catch (final NoSuchFileException gone) {
+                // The configuration file itself is missing: an operator replacing it by remove-and-copy, or
+                // a test deleting the folder of a node it stopped. Nothing to compare against, so the applied
+                // configuration stays and the file is checked again next tick; it reappears with a time of
+                // its own, which the comparison below picks up.
+                log.warn(
+                        "The configuration file {} does not exist; keeping the applied configuration until it reappears",
+                        configFile);
+                return;
+            }
             // Any change, not only a later time: a configuration restored from a backup -- cp -p,
             // rsync -a, a volume remount -- carries an older time than the broken file it replaces, and a
             // high-water mark would ignore the correction for good (EDG-949 review).

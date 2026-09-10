@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import ch.qos.logback.classic.Level;
+import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.LoggerFactory;
 import util.LogbackCapturingAppender;
+import util.TestConfigurationBootstrap;
 
 /**
  * EDG-949: the configuration write path, audited beside EDG-882. Four findings, each pinned by a test
@@ -128,6 +130,35 @@ public class ConfigWritePathHardeningTest extends AbstractConfigurationTest {
             Files.setPosixFilePermissions(staged, PosixFilePermissions.fromString(mode));
         }
         Files.move(staged, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+    }
+
+    // ---- the watch ends with the node
+
+    @Test
+    @Timeout(30)
+    public void theConfigurationServiceStopsTheWatchWhenTheNodeStops() throws Exception {
+        rewrite(config, configWithBridge("edg-949-before-stop"), 0);
+        final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
+        service.setConfigFileReaderWriter(reader);
+        reader.applyConfigAndWatch(WATCH_INTERVAL_MS);
+        TimeUnit.MILLISECONDS.sleep(WATCH_INTERVAL_MS * 2);
+
+        service.stopWatchingConfigFile();
+
+        // What the integration suite does after stopping an embedded node: the folder goes away. A watch
+        // still ticking would report the missing file every interval, and the suite fails on ERROR lines.
+        Files.delete(config);
+        TimeUnit.MILLISECONDS.sleep(WATCH_INTERVAL_MS * 6);
+        assertThat(logged(Level.WARN)).noneMatch(line -> line.contains("does not exist"));
+        assertThat(logged(Level.ERROR)).noneMatch(line -> line.contains("watcher failed to check"));
+        // and "stopped" means it can be started again
+        rewrite(config, configWithBridge("edg-949-after-stop"), 2);
+        reader.applyConfigAndWatch(WATCH_INTERVAL_MS);
+    }
+
+    @Test
+    public void stoppingTheWatchWithoutAReaderIsANoOp() {
+        new TestConfigurationBootstrap().getConfigurationService().stopWatchingConfigFile();
     }
 
     private @NotNull String runningBridgeId() {
@@ -272,8 +303,11 @@ public class ConfigWritePathHardeningTest extends AbstractConfigurationTest {
 
         Files.delete(config);
 
-        await("the failed check to be reported", () -> logged(Level.ERROR).stream()
-                .anyMatch(message -> message.contains("watcher failed to check")));
+        await("the missing file to be reported", () -> logged(Level.WARN).stream()
+                .anyMatch(message -> message.contains("does not exist")));
+        // A warning, not an error: the integration suite fails a test on any ERROR line, and an operator
+        // replacing the file by remove-and-copy has done nothing wrong.
+        assertThat(logged(Level.ERROR)).noneMatch(message -> message.contains("watcher failed to check"));
         assertThat(runningBridgeId()).isEqualTo("edg-949-before");
 
         rewrite(config, configWithBridge("edg-949-recreated"), 4);
