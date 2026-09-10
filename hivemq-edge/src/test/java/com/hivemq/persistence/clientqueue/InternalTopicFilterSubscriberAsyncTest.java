@@ -18,9 +18,11 @@ package com.hivemq.persistence.clientqueue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -94,6 +96,9 @@ class InternalTopicFilterSubscriberAsyncTest {
                     }
                     return Futures.immediateFuture(ImmutableList.of(queued.remove(0)));
                 });
+        when(clientQueuePersistence.remove(anyString(), anyInt())).thenReturn(Futures.immediateFuture(null));
+        // Stubbed as well, so a test that pins WHICH removal is used fails on the assertion rather than on a
+        // null future from an unstubbed mock.
         when(clientQueuePersistence.removeShared(anyString(), anyString())).thenReturn(Futures.immediateFuture(null));
 
         factory = new InternalTopicFilterSubscriberFactory(topicTree, clientQueuePersistence, singleWriterService);
@@ -263,6 +268,51 @@ class InternalTopicFilterSubscriberAsyncTest {
         assertThat(reads.get())
                 .as("and does not read the queue at all, which a replacement may now own")
                 .isEqualTo(readsBeforeCompletion);
+    }
+
+    @Test
+    void aProcessedQoS1MessageIsRemovedFromTheNonSharedQueue() {
+        // Nothing acknowledges on an internal subscriber's behalf, so this one call is all that ever removes a
+        // message -- and reading does not, above QoS 0: the store leaves the message stamped in flight.
+        //
+        // From EDG-504 until now it called removeShared, which searches the SHARED-subscription map. This
+        // subscriber's queue is in the client map, so that found nothing and returned silently: every QoS 1 and
+        // 2 message stayed stamped for ever, skipped by later reads, until the queue filled. Reported by Sam
+        // on #1752 as pre-existing, and confirmed on the first commit of the class.
+        queued.add(message("a"));
+
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "qos1-removal")
+                .withProcessor(m -> {})
+                .withTopicFilter("commands/#")
+                .build();
+        subscriber.consume();
+
+        verify(clientQueuePersistence)
+                .remove(subscriber.clientId(), ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER);
+        verify(clientQueuePersistence, never()).removeShared(anyString(), anyString());
+    }
+
+    @Test
+    void aProcessedQoS0MessageIsNotRemovedTwice() {
+        // Reading a QoS 0 message takes it out of the store, so there is nothing left to delete. Asking anyway
+        // would be harmless but would say something false about where the message lives.
+        queued.add(new PUBLISHFactory.Mqtt5Builder()
+                .withHivemqId("edge1")
+                .withTopic("commands/setpoint")
+                .withQoS(QoS.AT_MOST_ONCE)
+                .withOnwardQos(QoS.AT_MOST_ONCE)
+                .withPayload("a".getBytes(StandardCharsets.UTF_8))
+                .build());
+
+        final List<String> seen = new ArrayList<>();
+        factory.builder("test", "qos0-removal")
+                .withProcessor(m -> seen.add(new String(m.getPayload(), StandardCharsets.UTF_8)))
+                .withTopicFilter("commands/#")
+                .build()
+                .consume();
+
+        assertThat(seen).as("the message was delivered").containsExactly("a");
+        verify(clientQueuePersistence, never()).remove(anyString(), anyInt());
     }
 
     @Test

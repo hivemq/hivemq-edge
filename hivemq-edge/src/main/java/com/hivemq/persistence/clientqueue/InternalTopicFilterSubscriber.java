@@ -102,9 +102,14 @@ public final class InternalTopicFilterSubscriber {
 
     public static final @NotNull String INTERNAL_SUBSCRIBER_PREFIX = "$INTERNAL::";
 
-    // SHARED_IN_FLIGHT_MARKER acts as a boolean inflight flag -- not a real wire packet ID, since
-    // messages never go to an MQTT client. removeShared() uses uniqueId, not the packet ID, so
-    // the value here does not matter.
+    // SHARED_IN_FLIGHT_MARKER acts as a boolean inflight flag -- not a real wire packet ID, since messages
+    // never go to an MQTT client. Reading a message above QoS 0 stamps it with the id supplied here and leaves
+    // it in the queue; a later read skips anything stamped. So all this value has to be is non-zero.
+    //
+    // IT IS ALSO WHAT removeMessage() DELETES BY, so the same value identifies "the stamped message" rather
+    // than a particular one. That is unambiguous only because a subscriber holds exactly one message at a
+    // time -- see inFlight. Two in flight at once would both be stamped with this, and the removal would
+    // delete whichever the queue happened to hold first.
     private static final @NotNull ImmutableIntArray POLL_PACKET_IDS =
             ImmutableIntArray.of(ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER);
 
@@ -1221,8 +1226,8 @@ public final class InternalTopicFilterSubscriber {
     //                     claim, since nothing will arrive to release it later.
     // processMessage() -- hands the message to the processor and chains the release off its completion.
     // release() -- acknowledges the message and triggers the next poll.
-    // removeMessage() -- acknowledges the message to the queue persistence. QoS 0 messages are
-    //                     not persisted and need no acknowledgement.
+    // removeMessage() -- deletes the message from the queue, which is what stands in for an MQTT client's
+    //                     acknowledgement. A QoS 0 message needs no call: reading it removed it already.
     //
     // TWO CONDITIONS, ONE PLACE, AND GIVING UP IS NEVER LOSING A TRIGGER. A trigger only says "a message may
     // be available"; whether to act is pollUnlessBusy()'s alone. It declines while a message is in flight,
@@ -1543,9 +1548,30 @@ public final class InternalTopicFilterSubscriber {
         }
     }
 
+    /**
+     * Deletes a processed message from the queue.
+     * <p>
+     * <b>This stands in for the acknowledgement an ordinary MQTT client would send.</b> Nothing ever comes back
+     * from an internal subscriber, so this call is the only thing that removes a message: reading one does not,
+     * for anything above QoS 0. The store leaves it in place stamped in flight, precisely so it survives until
+     * something confirms it was handled. QoS 0 needs no call at all, because reading such a message removes it.
+     * <p>
+     * <b>The NON-shared removal, and this was wrong from EDG-504 until now.</b> Storage keeps two separate maps
+     * -- one for client queues, one for shared subscriptions -- and this subscriber is non-shared on every
+     * other side: no share name in the topic tree, {@code shared = false} when reading, {@code shared = false}
+     * when queued to. The removal alone said {@code removeShared}, which searched the other map, found no queue
+     * under this id, and returned in silence. So no QoS 1 or 2 message was ever removed: each stayed stamped in
+     * flight, skipped by later reads and holding its slot, until the queue filled and rejected everything
+     * after. Nothing logged, at any point.
+     * <p>
+     * <b>Keyed by packet identifier</b>, which is what the non-shared removal takes -- and every message
+     * carries the same marker rather than a real wire id, so this deletes "the stamped message". Sound only
+     * because a subscriber holds exactly one at a time; see {@link #inFlight}.
+     */
     private void removeMessage(final @NotNull PUBLISH message) {
         if (message.getQoS() != QoS.AT_MOST_ONCE) {
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(clientId, message.getUniqueId()));
+            FutureUtils.addExceptionLogger(
+                    clientQueuePersistence.remove(clientId, ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER));
         }
     }
 
