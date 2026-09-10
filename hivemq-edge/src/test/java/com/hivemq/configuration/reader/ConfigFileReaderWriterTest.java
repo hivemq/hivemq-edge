@@ -37,7 +37,7 @@ class ConfigFileReaderWriterTest {
                 .getResource("configs/testing/alltags.xml")
                 .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
-        assertThat(configEntity).isTrue();
+        assertThat(configEntity).isEqualTo(ConfigFileReaderWriter.ReloadOutcome.APPLIED);
     }
 
     @Test
@@ -50,7 +50,7 @@ class ConfigFileReaderWriterTest {
                 .getResource("configs/testing/empty.xml")
                 .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
-        assertThat(configEntity).isTrue();
+        assertThat(configEntity).isEqualTo(ConfigFileReaderWriter.ReloadOutcome.APPLIED);
     }
 
     @Test
@@ -64,7 +64,7 @@ class ConfigFileReaderWriterTest {
                 .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
         // This will break as soon as the xsd is fixed
-        assertThat(configEntity).isFalse();
+        assertThat(configEntity).isEqualTo(ConfigFileReaderWriter.ReloadOutcome.NEEDS_RESTART);
     }
 
     private void assertRoundTrips(final @NotNull String resource, final @NotNull String... mustContain)
@@ -78,7 +78,9 @@ class ConfigFileReaderWriterTest {
                 .toURI());
 
         // Read through Edge's real reader (validates against config.xsd)...
-        assertThat(reader.loadConfigFromXML(configFile)).as("read %s", resource).isTrue();
+        assertThat(reader.loadConfigFromXML(configFile))
+                .as("read %s", resource)
+                .isEqualTo(ConfigFileReaderWriter.ReloadOutcome.APPLIED);
         // ...then marshal back through the real writer (the marshaller validates against config.xsd too).
         final var writer = new java.io.StringWriter();
         reader.writeConfigToXML(writer);
@@ -112,7 +114,7 @@ class ConfigFileReaderWriterTest {
                 .getResource("configs/testing/oidc_disabled_no_role_mappings.xml")
                 .toURI());
 
-        assertThat(reader.loadConfigFromXML(configFile)).isTrue();
+        assertThat(reader.loadConfigFromXML(configFile)).isEqualTo(ConfigFileReaderWriter.ReloadOutcome.APPLIED);
 
         // Re-marshal (this is what config sync does). The marshaller validates against the schema, so an empty
         // <role-mappings/> would throw here. It must succeed and omit the element.

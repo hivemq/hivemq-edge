@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.hivemq.configuration.reader.ConfigFileReaderWriter.PreservedAttributes;
+import com.hivemq.configuration.reader.ProtectedFileReplacer.PreservedAttributes;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -113,8 +113,8 @@ public class ConfigWritePermissionsTest {
      */
     @Test
     public void createPartialFile_createsTheReplacementOwnerOnly() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(
-                partial, ConfigFileReaderWriter.preservedAttributesOf(targetWith(OWNER_ONLY)));
+        ProtectedFileReplacer.createPartialFile(
+                partial, ProtectedFileReplacer.preservedAttributesOf(targetWith(OWNER_ONLY)));
 
         assertEquals(
                 OWNER_ONLY,
@@ -129,8 +129,8 @@ public class ConfigWritePermissionsTest {
      */
     @Test
     public void createPartialFile_isOwnerOnlyEvenWhenTheTargetIsWorldReadable() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(
-                partial, ConfigFileReaderWriter.preservedAttributesOf(targetWith(WORLD_READABLE)));
+        ProtectedFileReplacer.createPartialFile(
+                partial, ProtectedFileReplacer.preservedAttributesOf(targetWith(WORLD_READABLE)));
 
         assertEquals(
                 OWNER_ONLY,
@@ -148,8 +148,8 @@ public class ConfigWritePermissionsTest {
         Files.createFile(partial, PosixFilePermissions.asFileAttribute(WORLD_WRITABLE));
         Files.writeString(partial, "left behind by a killed write");
 
-        ConfigFileReaderWriter.createPartialFile(
-                partial, ConfigFileReaderWriter.preservedAttributesOf(targetWith(OWNER_ONLY)));
+        ProtectedFileReplacer.createPartialFile(
+                partial, ProtectedFileReplacer.preservedAttributesOf(targetWith(OWNER_ONLY)));
 
         assertEquals(
                 OWNER_ONLY,
@@ -165,7 +165,7 @@ public class ConfigWritePermissionsTest {
      */
     @Test
     public void createPartialFile_withNothingToReproduce_createsTheFileNormally() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, PreservedAttributes.NONE);
+        ProtectedFileReplacer.createPartialFile(partial, PreservedAttributes.NONE);
 
         assertTrue(Files.exists(partial), "the replacement must still be created");
     }
@@ -173,10 +173,10 @@ public class ConfigWritePermissionsTest {
     /** The widening step: the written replacement ends up with exactly the target's mode. */
     @Test
     public void applyPreservedAttributes_givesTheReplacementTheTargetsExactMode() throws IOException {
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(targetWith(WORLD_READABLE));
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(targetWith(WORLD_READABLE));
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, preserved);
 
         assertEquals(WORLD_READABLE, Files.getPosixFilePermissions(partial), "the target's mode was not reproduced");
     }
@@ -189,22 +189,22 @@ public class ConfigWritePermissionsTest {
      */
     @Test
     public void applyPreservedAttributes_whenTheModeCannotBeReproduced_thenTheWriteIsAborted() throws IOException {
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(targetWith(OWNER_ONLY));
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(targetWith(OWNER_ONLY));
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
         Files.delete(partial); // the replacement is gone, so its protections cannot be set
 
         assertThrows(
                 IOException.class,
-                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved),
+                () -> ProtectedFileReplacer.applyPreservedAttributes(partial, preserved),
                 "protections that cannot be reproduced must abort the replacement, not be logged and ignored");
     }
 
     /** Nothing to reproduce is not a failure — it is the answer for a first-time configuration file. */
     @Test
     public void applyPreservedAttributes_withNothingToReproduce_isANoOp() throws IOException {
-        ConfigFileReaderWriter.createPartialFile(partial, PreservedAttributes.NONE);
+        ProtectedFileReplacer.createPartialFile(partial, PreservedAttributes.NONE);
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, PreservedAttributes.NONE);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, PreservedAttributes.NONE);
 
         assertTrue(Files.exists(partial));
     }
@@ -221,7 +221,7 @@ public class ConfigWritePermissionsTest {
         final Path target = targetWith(GROUP_READABLE);
         final PosixFileAttributes expected = Files.readAttributes(target, PosixFileAttributes.class);
 
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
 
         assertEquals(GROUP_READABLE, preserved.permissions(), "the mode must still be carried");
         assertNotNull(preserved.owner(), "the owner must be carried, or 0640 names a group it cannot name");
@@ -247,11 +247,11 @@ public class ConfigWritePermissionsTest {
         assumeTrue(other != null, "this account has no second group, so there is nothing to tell apart");
 
         Files.getFileAttributeView(target, PosixFileAttributeView.class).setGroup(other);
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
         Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, preserved);
 
         final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
         assertEquals(
@@ -279,7 +279,7 @@ public class ConfigWritePermissionsTest {
         try {
             assertThrows(
                     IOException.class,
-                    () -> ConfigFileReaderWriter.preservedAttributesOf(target),
+                    () -> ProtectedFileReplacer.preservedAttributesOf(target),
                     "a failure to read the target's protections must abort the write, not fall back to the umask");
         } finally {
             Files.setPosixFilePermissions(enclosing, PosixFilePermissions.fromString("rwx------"));
@@ -290,7 +290,7 @@ public class ConfigWritePermissionsTest {
     @Test
     public void preservedAttributesOf_aMissingFile_hasNothingToReproduce() throws IOException {
         final PreservedAttributes preserved =
-                ConfigFileReaderWriter.preservedAttributesOf(directory.resolve("not-written-yet.xml"));
+                ProtectedFileReplacer.preservedAttributesOf(directory.resolve("not-written-yet.xml"));
 
         assertTrue(preserved.nothingToReproduce(), "a first-time configuration file has nothing to preserve");
     }
@@ -303,9 +303,9 @@ public class ConfigWritePermissionsTest {
     @Test
     public void theReplacementIsNeverWiderThanItsTargetWhileItHoldsTheConfiguration() throws IOException {
         final Path target = targetWith(WORLD_READABLE);
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
 
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
         assertEquals(
                 OWNER_ONLY,
                 Files.getPosixFilePermissions(partial),
@@ -316,7 +316,7 @@ public class ConfigWritePermissionsTest {
                 Files.getPosixFilePermissions(partial),
                 "the file was widened while it still held the configuration");
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, preserved);
 
         final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
         assertEquals(WORLD_READABLE, actual.permissions(), "the target's mode must be reproduced");
@@ -346,10 +346,10 @@ public class ConfigWritePermissionsTest {
                 directory.getFileSystem().getUserPrincipalLookupService().lookupPrincipalByName("root");
         final PreservedAttributes rootOwned =
                 new PreservedAttributes(attributes.permissions(), root, attributes.group(), null);
-        ConfigFileReaderWriter.createPartialFile(partial, rootOwned);
+        ProtectedFileReplacer.createPartialFile(partial, rootOwned);
         Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, rootOwned);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, rootOwned);
 
         final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
         assertEquals(attributes.owner(), actual.owner(), "the replacement is owned by the account that wrote it");
@@ -384,10 +384,10 @@ public class ConfigWritePermissionsTest {
         assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
         final PreservedAttributes elsewhere =
                 new PreservedAttributes(attributes.permissions(), attributes.owner(), foreign, null);
-        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+        ProtectedFileReplacer.createPartialFile(partial, elsewhere);
         Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, elsewhere);
 
         final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
         assertEquals(
@@ -413,9 +413,9 @@ public class ConfigWritePermissionsTest {
         assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
         final PreservedAttributes elsewhere =
                 new PreservedAttributes(attributes.permissions(), attributes.owner(), foreign, null);
-        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+        ProtectedFileReplacer.createPartialFile(partial, elsewhere);
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, elsewhere);
 
         assertEquals(
                 PosixFilePermissions.fromString("rw----r--"),
@@ -438,9 +438,9 @@ public class ConfigWritePermissionsTest {
         assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
         final PreservedAttributes elsewhere =
                 new PreservedAttributes(attributes.permissions(), attributes.owner(), foreign, null);
-        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+        ProtectedFileReplacer.createPartialFile(partial, elsewhere);
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, elsewhere);
 
         assertEquals(
                 OWNER_ONLY,
@@ -462,9 +462,9 @@ public class ConfigWritePermissionsTest {
         final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
         assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
         final PreservedAttributes unreadable = new PreservedAttributes(Set.of(), Files.getOwner(target), foreign, null);
-        ConfigFileReaderWriter.createPartialFile(partial, unreadable);
+        ProtectedFileReplacer.createPartialFile(partial, unreadable);
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, unreadable);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, unreadable);
 
         assertEquals(
                 Set.<PosixFilePermission>of(),
@@ -488,10 +488,10 @@ public class ConfigWritePermissionsTest {
         final GroupPrincipal foreign = aGroupThisUserIsNotIn(target);
         assumeTrue(foreign != null, "this account can assign every group it can name, so there is nothing to refuse");
         final PreservedAttributes elsewhere = new PreservedAttributes(GROUP_READABLE, root, foreign, null);
-        ConfigFileReaderWriter.createPartialFile(partial, elsewhere);
+        ProtectedFileReplacer.createPartialFile(partial, elsewhere);
         Files.writeString(partial, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>");
 
-        ConfigFileReaderWriter.applyPreservedAttributes(partial, elsewhere);
+        ProtectedFileReplacer.applyPreservedAttributes(partial, elsewhere);
 
         final PosixFileAttributes actual = Files.readAttributes(partial, PosixFileAttributes.class);
         assertEquals(Files.getOwner(target), actual.owner(), "the replacement is owned by the account that wrote it");
@@ -512,7 +512,7 @@ public class ConfigWritePermissionsTest {
         final PreservedAttributes elsewhere =
                 new PreservedAttributes(GROUP_READABLE, Files.getOwner(target), foreign, null);
 
-        ConfigFileReaderWriter.replaceCarryingProtections(
+        ProtectedFileReplacer.replaceCarryingProtections(
                 target,
                 elsewhere,
                 written -> Files.writeString(written, "<hivemq><bridge><password>s3cr3t</password></bridge></hivemq>"));
@@ -538,13 +538,13 @@ public class ConfigWritePermissionsTest {
     @Test
     public void applyPreservedAttributes_whenTheReplacementIsGone_thenTheWriteIsStillAborted() throws IOException {
         final Path target = targetWith(GROUP_READABLE);
-        final PreservedAttributes preserved = ConfigFileReaderWriter.preservedAttributesOf(target);
-        ConfigFileReaderWriter.createPartialFile(partial, preserved);
+        final PreservedAttributes preserved = ProtectedFileReplacer.preservedAttributesOf(target);
+        ProtectedFileReplacer.createPartialFile(partial, preserved);
         Files.delete(partial);
 
         assertThrows(
                 IOException.class,
-                () -> ConfigFileReaderWriter.applyPreservedAttributes(partial, preserved),
+                () -> ProtectedFileReplacer.applyPreservedAttributes(partial, preserved),
                 "a store failure is not a privilege this node lacks, and must not be narrowed past");
     }
 

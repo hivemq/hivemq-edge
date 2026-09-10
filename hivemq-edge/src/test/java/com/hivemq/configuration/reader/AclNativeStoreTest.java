@@ -117,7 +117,7 @@ public class AclNativeStoreTest {
         final List<AclEntry> targetAcl = aclOf(target);
 
         try {
-            ConfigFileReaderWriter.createPartialFile(partial, ConfigFileReaderWriter.preservedAttributesOf(target));
+            ProtectedFileReplacer.createPartialFile(partial, ProtectedFileReplacer.preservedAttributesOf(target));
         } catch (final IOException refused) {
             assertTrue(
                     Files.notExists(partial) || aclOf(partial).isEmpty(),
@@ -140,9 +140,9 @@ public class AclNativeStoreTest {
     public void aReplacedFileGrantsWhatTheFileItReplacedGranted() throws IOException {
         final List<AclEntry> before = aclOf(target);
 
-        ConfigFileReaderWriter.replaceCarryingProtections(
+        ProtectedFileReplacer.replaceCarryingProtections(
                 target,
-                ConfigFileReaderWriter.preservedAttributesOf(target),
+                ProtectedFileReplacer.preservedAttributesOf(target),
                 partial -> Files.writeString(partial, "<hivemq><replaced/></hivemq>", StandardCharsets.UTF_8));
 
         final List<AclEntry> after = aclOf(target);

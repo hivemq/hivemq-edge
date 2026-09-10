@@ -23,6 +23,7 @@ import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapServiceImpl;
+import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
@@ -87,6 +88,28 @@ public class HiveMQEdgeMain {
         if (shutdownHooks.isShuttingDown()) {
             throw new HiveMQEdgeStartupException("User aborted.");
         }
+
+        // The configuration watcher is started before the injector exists, so it registers its stop here.
+        // It must stop before anything else is dismantled: a tick during shutdown would reload into a
+        // broker that is going away, and an embedded node's JVM outlives the node, so the watcher's own
+        // JVM shutdown hook never runs for it.
+        final ConfigurationService watchedConfig = Objects.requireNonNull(configService);
+        shutdownHooks.add(new HiveMQShutdownHook() {
+            @Override
+            public @NotNull String name() {
+                return "Configuration file watcher shutdown";
+            }
+
+            @Override
+            public @NotNull Priority priority() {
+                return Priority.FIRST;
+            }
+
+            @Override
+            public void run() {
+                watchedConfig.stopWatchingConfigFile();
+            }
+        });
 
         final HiveMQEdgeGateway instance = injector.edgeGateway();
         instance.start(embeddedExtension);
