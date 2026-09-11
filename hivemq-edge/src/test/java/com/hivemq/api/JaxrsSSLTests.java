@@ -46,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 import util.TestKeyStoreGenerator;
 
 /**
@@ -55,7 +56,9 @@ public class JaxrsSSLTests {
 
     protected final Logger logger = LoggerFactory.getLogger(JaxrsSSLTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
+    private int testHttpPort;
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTPS = "https";
@@ -68,7 +71,6 @@ public class JaxrsSSLTests {
     public void setUp() throws Exception {
         testKeyStoreGenerator = new TestKeyStoreGenerator();
         JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
         config.setProtocol(HTTPS);
         context = getSslContext("testpassword");
         config.setSslContext(context);
@@ -84,6 +86,10 @@ public class JaxrsSSLTests {
         // -- ensure we supplied our own test mapper as this can effect output
         ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
+        // Taken last, so that the key generation above happens before the port is claimed rather
+        // than between claiming it and binding it.
+        testHttpPort = RandomPortGenerator.get();
+        config.setPort(testHttpPort);
         server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
     }
@@ -142,7 +148,7 @@ public class JaxrsSSLTests {
         HttpsURLConnection.setDefaultHostnameVerifier((string, ssls) -> true);
 
         HttpResponse response = HttpUrlConnectionClient.get(
-                null, getTestServerAddress(HTTPS, TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
+                null, getTestServerAddress(HTTPS, testHttpPort, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
         assertEquals(200, response.getStatusCode(), "Resource should exist");
     }
 
@@ -150,7 +156,7 @@ public class JaxrsSSLTests {
     public void testGetResourceOnWrongProtocol() {
         assertThrows(SocketException.class, () -> {
             HttpUrlConnectionClient.get(
-                    null, getTestServerAddress("http", TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
+                    null, getTestServerAddress("http", testHttpPort, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
         });
     }
 }

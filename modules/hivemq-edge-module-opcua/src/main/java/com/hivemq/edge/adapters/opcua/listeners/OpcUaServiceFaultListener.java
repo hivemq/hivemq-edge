@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.adapters.opcua.Constants;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -30,6 +31,21 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Reports service faults raised by an OPC UA server, and recovers from the ones worth recovering from.
+ * <p>
+ * A service fault is how an OPC UA server rejects a request: the response carries a status code instead of a
+ * result. Milo hands every one of them to the listeners registered on the client that made the request. This
+ * listener counts them all, and then splits them. A handful of status codes mean the session or subscription
+ * no longer exists, so nothing will work again until the client reconnects — those are logged at ERROR, raise
+ * an adapter event, and trigger a reconnect. Everything else is logged at WARN with an event and no action.
+ * <p>
+ * <b>One instance is built per connection, not per adapter.</b> The adapter builds a template carrying its
+ * settings; each connection takes its own copy with {@link #forConnection} and registers that on its own
+ * client. The copy serves that connection alone, so when the connection begins closing it can call
+ * {@link #markClosed()} and this listener knows the faults that follow are the ordinary noise of a close
+ * rather than something to report or recover from.
+ */
 public class OpcUaServiceFaultListener implements ServiceFaultListener {
 
     private static final Logger log = LoggerFactory.getLogger(OpcUaServiceFaultListener.class);
@@ -38,6 +54,23 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
     private final @NotNull String adapterId;
     private final @Nullable Runnable reconnectionCallback;
     private final boolean reconnectOnServiceFault;
+
+    /**
+     * Whether the connection this listener serves is closing — set by {@link #markClosed()} when that
+     * connection begins closing, either because the adapter is stopping or because a reconnect is replacing
+     * it. The connection's own flag of the same name is what gets forwarded here.
+     * <p>
+     * Faults raised by a connection on its way out are expected rather than actionable. Closing a connection
+     * deletes its subscription while its client is still live, so a publish already in flight comes back
+     * {@code Bad_NoSubscription}: the ordinary end of a subscription that was deliberately removed. Before
+     * this existed, every shutdown produced errors that looked like failures to operators and failed
+     * whichever integration test happened to be finishing (EDG-942).
+     * <p>
+     * One-way, because a connection is never reopened — a reconnect builds a new one, with a new listener.
+     * False until told otherwise, so a listener nobody claimed reports everything: with no connection to
+     * vouch for a fault being expected, the louder report is the safe answer.
+     */
+    private final @NotNull AtomicBoolean closed = new AtomicBoolean();
 
     public OpcUaServiceFaultListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
@@ -52,10 +85,64 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
         this.reconnectOnServiceFault = reconnectOnServiceFault;
     }
 
+    /**
+     * Returns a listener with the same settings for one connection to register on its own client, leaving
+     * this one untouched. Callers are connections; the adapter builds one listener as a template and
+     * registers it nowhere.
+     * <p>
+     * <b>Why every connection needs its own rather than sharing the adapter's:</b> a fault says nothing about
+     * where it came from. Milo's callback takes only the fault, and the fault names neither the client nor
+     * the session, so a listener cannot look up the connection that raised it. What identifies the connection
+     * is which listener Milo called — it calls the one registered on the client that faulted — and that only
+     * identifies anything if each listener serves a single connection.
+     * <p>
+     * It matters because an adapter can have two connections alive at once: a reconnect starts a replacement
+     * while the connection it replaces is still finishing or closing. One shared listener would have a single
+     * closed flag for both, so the closing connection would silence the live one's faults.
+     */
+    public @NotNull OpcUaServiceFaultListener forConnection() {
+        return new OpcUaServiceFaultListener(
+                protocolAdapterMetricsService, eventService, adapterId, reconnectionCallback, reconnectOnServiceFault);
+    }
+
+    /**
+     * Records that the connection this listener serves is closing, so that faults from here on are the
+     * expected noise of a close rather than something to report or recover from.
+     * <p>
+     * Called from the connection's own {@code markClosed()}, which is why it shares the name: it is the same
+     * fact reaching a second object. That happens before anything is disconnected, so this covers the whole
+     * close rather than only its end. One-way and idempotent — a closed connection is never reopened, and a
+     * stop followed by a destroy reaches the same connection twice.
+     */
+    public void markClosed() {
+        closed.set(true);
+    }
+
     @Override
     public void onServiceFault(final ServiceFault serviceFault) {
         final StatusCode statusCode = serviceFault.getResponseHeader().getServiceResult();
         protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_SERVICE_FAULT_COUNT);
+
+        // Faults from a connection that is closing are expected, so they are recorded quietly and nothing is
+        // recovered. Closing deletes the subscription while the client is still live, so a publish already in
+        // flight comes back Bad_NoSubscription -- the ordinary end of a subscription that was deliberately
+        // removed, and not something an operator can act on.
+        //
+        // Placed above the critical/non-critical split below, not inside it. Which branch a fault takes
+        // depends on `reconnectOnServiceFault`, which comes from the operator's autoReconnect setting; a
+        // check inside one branch would leave the identical shutdown fault noisy for anyone who turned
+        // auto-reconnect off. Whether a connection is closing has nothing to do with that setting.
+        //
+        // Returning here also skips the reconnect the critical branch would trigger, which is what should
+        // happen: a connection that is already closing is not one to recover.
+        if (closed.get()) {
+            log.info(
+                    "OPC UA service fault for adapter '{}' on a connection that is closing: {}. Expected"
+                            + " while the connection is closed.",
+                    adapterId,
+                    statusCode);
+            return;
+        }
 
         // Check if this is a critical fault requiring immediate reconnection
         if (reconnectOnServiceFault && isCriticalFault(statusCode)) {

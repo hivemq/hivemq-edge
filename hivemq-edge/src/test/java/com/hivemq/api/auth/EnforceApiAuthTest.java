@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 
 /**
  * @author martin Schoenert
@@ -55,17 +56,21 @@ public class EnforceApiAuthTest {
 
     protected final Logger logger = LoggerFactory.getLogger(BasicAuthenticationTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
     static final int CONNECT_TIMEOUT = 1000;
     static final int READ_TIMEOUT = 1000;
     static final String HTTP = "http";
+
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
+    private static int testHttpPort;
 
     protected static JaxrsHttpServer server;
 
     @BeforeAll
     public static void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
         final var config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
         // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
 
@@ -102,7 +107,7 @@ public class EnforceApiAuthTest {
         } else {
             headers = null;
         }
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.get(headers, serverAddress, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 

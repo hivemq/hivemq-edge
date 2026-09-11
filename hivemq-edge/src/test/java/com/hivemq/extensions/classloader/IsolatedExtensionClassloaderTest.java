@@ -29,7 +29,11 @@ import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -271,33 +275,49 @@ public class IsolatedExtensionClassloaderTest {
         FileUtils.writeStringToFile(file, content, UTF_8);
     }
 
+    /**
+     * The {@code .java} source of {@code clazz}, so the test can copy, modify and recompile it.
+     * <p>
+     * The module root is derived by removing the build system's fixed output suffix from the class location --
+     * {@code build/classes/java/test} for Gradle, {@code out/test/classes} for IntelliJ. Both are constants of
+     * the build system, so nothing here depends on what any directory in the path happens to be called.
+     * <p>
+     * The previous version searched instead: it walked up until a path {@code endsWith("out")}, meaning
+     * IntelliJ's output folder. Under Gradle no such segment exists, so the walk was designed to run all the
+     * way to {@code /}, whose parent is {@code null}, which makes {@code new File((File) null, "src")} a
+     * RELATIVE path that Gradle then resolves against the module working directory. It worked, but only by
+     * that accident, and {@code endsWith} matches a string rather than a directory name -- so a Jenkins
+     * workspace derived from a branch called {@code .../something-timeout} ends with "out", the walk stopped
+     * on the workspace itself, and every derived path was wrong. Three tests failed on every build of that
+     * branch and passed after nothing but a rename (EDG-959).
+     */
     private File getJavaSrcFileForClassFile(final Class<?> clazz) {
-        final File f = new File(
+        final File classesRoot = new File(
                 clazz.getProtectionDomain().getCodeSource().getLocation().getPath());
-        File gradleHivemqParentFolder = f.getParentFile();
-        while (!gradleHivemqParentFolder.getAbsolutePath().equals("/")
-                && !gradleHivemqParentFolder.getAbsolutePath().endsWith("out")) {
-            gradleHivemqParentFolder = gradleHivemqParentFolder.getParentFile();
-        }
-        gradleHivemqParentFolder = gradleHivemqParentFolder.getParentFile();
-        final File gradleSrcFolder = new File(gradleHivemqParentFolder, "src");
-        File gradleTestFolder = new File(gradleSrcFolder, "test");
-        if (!gradleTestFolder.exists()) {
-            gradleTestFolder = new File(gradleSrcFolder, "core/test");
-        }
-        final File gradleJavaFolder = new File(gradleTestFolder, "java");
+        final Path classes = classesRoot.toPath().toAbsolutePath().normalize();
 
-        final File gradleFile =
-                new File(gradleJavaFolder, clazz.getCanonicalName().replace(".", File.separator) + ".java");
-        if (gradleFile.exists()) {
-            return gradleFile;
+        Path moduleRoot = null;
+        for (final String suffix : List.of("build/classes/java/test", "out/test/classes")) {
+            final Path relative = Paths.get(suffix);
+            if (classes.endsWith(relative)) {
+                moduleRoot =
+                        classes.getRoot().resolve(classes.subpath(0, classes.getNameCount() - relative.getNameCount()));
+                break;
+            }
         }
+        // Fail with the path we looked at. Deriving a wrong path silently is what made the branch-name bug
+        // cost an evening: the failure named a file that never existed and gave no hint why.
+        assertNotNull(
+                moduleRoot,
+                "Cannot derive the module root from the class location '" + classes
+                        + "'. Expected it to end with 'build/classes/java/test' (Gradle) or 'out/test/classes'"
+                        + " (IntelliJ). Add the new layout's suffix here.");
 
-        final File hivemqParentFolder = f.getParentFile().getParentFile().getParentFile();
-        final File srcFolder = new File(hivemqParentFolder, "src");
-        final File testFolder = new File(srcFolder, "test");
-        final File javaFolder = new File(testFolder, "java");
-
-        return new File(javaFolder, clazz.getCanonicalName().replace(".", File.separator) + ".java");
+        Path testJava = moduleRoot.resolve("src/test/java");
+        if (!Files.isDirectory(testJava)) {
+            testJava = moduleRoot.resolve("src/core/test/java");
+        }
+        return testJava.resolve(clazz.getCanonicalName().replace(".", File.separator) + ".java")
+                .toFile();
     }
 }

@@ -34,7 +34,9 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -147,13 +149,32 @@ public class HiveMQEdgeNettyBootstrapTest {
         assertTrue(listenableFuture.get().get(0).isSuccessful());
     }
 
+    /**
+     * Four ports, each checked free on its own.
+     * <p>
+     * The test below used to take one checked port and assume the three above it were free as well. Those
+     * three were never checked, and on a build agent running several test JVMs at once one of them
+     * regularly is not free: netty's bind fails, the listener comes back through
+     * {@code failedListenerStartup}, and the assertion reports {@code expected: <true> but was: <false>}
+     * against a listener whose port the test never chose. Nothing about the failure says "port", which is
+     * why it reads as an unrelated flake.
+     */
+    private static int[] fourFreePorts() {
+        final Set<Integer> ports = new LinkedHashSet<>();
+        while (ports.size() < 4) {
+            ports.add(RandomPortGenerator.get());
+        }
+        return ports.stream().mapToInt(Integer::intValue).toArray();
+    }
+
     @Test
     public void bootstrapServer_whenDifferentListenersProvided_thenSuccessfulBootstrap() throws Exception {
 
-        setupTcpListener(randomPort);
-        setupTlsTcpListener(randomPort + 1);
-        setupWebsocketListener(randomPort + 2);
-        setupTlsWebsocketListener(randomPort + 3);
+        final int[] ports = fourFreePorts();
+        setupTcpListener(ports[0]);
+        setupTlsTcpListener(ports[1]);
+        setupWebsocketListener(ports[2]);
+        setupTlsWebsocketListener(ports[3]);
 
         final ListenableFuture<List<ListenerStartupInformation>> listenableFuture =
                 hiveMQNettyBootstrap.bootstrapServer();

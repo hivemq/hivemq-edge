@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.vanilla.VanillaDataCombiningTransformationService;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -31,15 +32,18 @@ public class DataCombiningTransformationServiceProvider {
     private final @NotNull EdgeCoreFactoryService edgeCoreFactoryService;
     private final @NotNull PrePublishProcessorService prePublishProcessorService;
     private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull ShutdownHooks shutdownHooks;
 
     @Inject
     public DataCombiningTransformationServiceProvider(
             final @NotNull EdgeCoreFactoryService edgeCoreFactoryService,
             final @NotNull PrePublishProcessorService prePublishProcessorService,
-            final @NotNull MetricRegistry metricRegistry) {
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull ShutdownHooks shutdownHooks) {
         this.edgeCoreFactoryService = edgeCoreFactoryService;
         this.prePublishProcessorService = prePublishProcessorService;
         this.metricRegistry = metricRegistry;
+        this.shutdownHooks = shutdownHooks;
     }
 
     public @NotNull DataCombiningTransformationService get() {
@@ -48,6 +52,9 @@ public class DataCombiningTransformationServiceProvider {
         if (serviceFactory == null) {
             return new VanillaDataCombiningTransformationService(prePublishProcessorService);
         }
-        return serviceFactory.build(prePublishProcessorService, metricRegistry);
+        // The three-argument overload lets the module register its own shutdown cleanup. A module compiled
+        // against the older interface implements only the two-argument form and inherits the default, which
+        // delegates to it and registers nothing.
+        return serviceFactory.build(prePublishProcessorService, metricRegistry, shutdownHooks);
     }
 }

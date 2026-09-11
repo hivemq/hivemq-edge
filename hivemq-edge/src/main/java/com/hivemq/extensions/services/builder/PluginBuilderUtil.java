@@ -17,9 +17,12 @@ package com.hivemq.extensions.services.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;
 
 import com.google.common.base.Preconditions;
+import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Topics;
 import com.hivemq.util.Utf8Utils;
 import org.jetbrains.annotations.NotNull;
@@ -42,17 +45,65 @@ public class PluginBuilderUtil {
         return !validateUTF8 || !Utf8Utils.hasControlOrNonCharacter(stringToValidate);
     }
 
+    /**
+     * Validates a message expiry interval offered through a public extension SDK setter.
+     * <p>
+     * This is a bounded contract and stays one: the accepted range is {@code 0 ..
+     * min(maxMessageExpiryInterval, MAX_EXPIRY_INTERVAL_DEFAULT)}. {@code <message-expiry>} exists to
+     * guarantee that no message outlives it, so no input — however it is spelled — may pass this check
+     * unbounded. Zero is legal and means "expires immediately": MQTT 5 allows it, the decoders accept it, and
+     * the extension SDK documents only a negative interval as throwing (EDG-811 CR-5).
+     * <p>
+     * The four-byte cap is not redundant with the configured maximum. {@code MqttConfigurator} bounds the
+     * maximum at {@code MAX_EXPIRY_INTERVAL_DEFAULT}, but only when parsing {@code config.xml};
+     * {@code MqttConfigurationServiceImpl.setMaxMessageExpiryInterval} is unchecked, so without the cap a
+     * programmatically raised maximum would let a value with no MQTT representation into the domain model.
+     * The cap is {@code MAX_EXPIRY_INTERVAL_DEFAULT} (2^32) rather than {@link PUBLISH#MESSAGE_EXPIRY_INTERVAL_MAX}
+     * (2^32-1) because 2^32 is the default configured maximum itself — the value the decoders clamp an absent
+     * property to, and the value the encoder omits — so it must remain settable while it is the operator's bound.
+     * <p>
+     * <b>Internal "no expiry" markers do not belong here (EDG-811 CR2-1).</b>
+     * {@link PUBLISH#MESSAGE_EXPIRY_INTERVAL_NOT_SET} is {@code Long.MAX_VALUE} and therefore sits above every
+     * finite maximum; exempting it — or 2^32 — from the bound would let an extension mint a message that
+     * {@code MessageExpiryHandler} never counts down and the MQTT 5 encoder never emits, i.e. a genuine
+     * no-expiry publish under a ten-second maximum. A caller copying an existing publish must instead route
+     * the value through {@link #isCopyableMessageExpiryDuration} and assign the canonical marker directly,
+     * where {@code build()} resolves it to the configured maximum.
+     */
     public static void checkMessageExpiryInterval(
             final long messageExpiryInterval, final long maxMessageExpiryInterval) {
+        final long effectiveMaximum = Math.min(maxMessageExpiryInterval, MAX_EXPIRY_INTERVAL_DEFAULT);
         checkArgument(
-                messageExpiryInterval <= maxMessageExpiryInterval,
+                messageExpiryInterval <= effectiveMaximum,
                 "Message expiry interval %s not allowed. Maximum = %s",
                 messageExpiryInterval,
-                maxMessageExpiryInterval);
+                effectiveMaximum);
         checkArgument(
-                messageExpiryInterval > 0,
-                "Message expiry interval must be bigger than 0 was %s.",
+                messageExpiryInterval >= 0,
+                "Message expiry interval must not be negative was %s.",
                 messageExpiryInterval);
+    }
+
+    /**
+     * EDG-811: tells a copy boundary whether the interval it was handed is a real duration that must stay
+     * subject to the operator's configured maximum, or one of the internal "no expiry" markers that has to
+     * bypass the public setter entirely.
+     * <p>
+     * Internally "not a real duration" has been spelled at least four ways —
+     * {@link PUBLISH#MESSAGE_EXPIRY_INTERVAL_NOT_SET}, {@code MAX_EXPIRY_INTERVAL_DEFAULT} (what the decoders
+     * clamp an absent property to), {@code TTL_DISABLED}, and {@code JS_MAX_SAFE_INTEGER} from the northbound
+     * mapping defaults. A copy boundary cannot know which one it is being handed, and once the configured
+     * maximum is finite every one of them fails {@link #checkMessageExpiryInterval} — which is exactly the
+     * exception the bidirectional adapter's dead-letter repost hit. So the test is "is this an MQTT four-byte
+     * duration?" rather than an enumeration of markers, and anything that is not one collapses to the
+     * canonical marker at the caller. This mirrors the guard {@code RemoteMqttForwarder} already applies when
+     * converting a PUBLISH for a bridge client.
+     * <p>
+     * Real durations deliberately keep going through the bounded setter: copying a publish must not become a
+     * way around {@code <message-expiry>}.
+     */
+    public static boolean isCopyableMessageExpiryDuration(final long messageExpiryInterval) {
+        return UnsignedDataTypes.isUnsignedInt(messageExpiryInterval);
     }
 
     public static void checkResponseTopic(final @Nullable String responseTopic, final boolean validateUTF8) {

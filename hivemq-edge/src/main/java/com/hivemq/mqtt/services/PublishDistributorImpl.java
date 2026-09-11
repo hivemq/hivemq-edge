@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.reader.BridgeExtractor;
@@ -42,9 +43,11 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientqueue.QueuePolicy;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.util.FutureUtils;
+import com.hivemq.sampling.SamplingService;
 import dagger.Lazy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -84,15 +87,33 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     private final BridgeExtractor bridgeConfiguration;
 
+    /**
+     * Lazy because sampling is built on top of the queue persistence this class also uses: asking for
+     * it eagerly closes a dependency cycle at construction time.
+     */
+    @NotNull
+    private final Lazy<SamplingService> samplingService;
+
+    /**
+     * Lazy for the same reason as {@link #samplingService}: the message forwarder is built on the queue
+     * persistence this class also uses.
+     */
+    @NotNull
+    private final Lazy<MessageForwarder> messageForwarder;
+
     @Inject
     public PublishDistributorImpl(
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull ConfigurationService configurationService,
+            final @NotNull Lazy<SamplingService> samplingService,
+            final @NotNull Lazy<MessageForwarder> messageForwarder) {
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionPersistence = clientSessionPersistence;
         this.mqttConfigurationService = configurationService.mqttConfiguration();
         this.bridgeConfiguration = configurationService.bridgeExtractor();
+        this.samplingService = samplingService;
+        this.messageForwarder = messageForwarder;
     }
 
     @NotNull
@@ -172,8 +193,13 @@ public class PublishDistributorImpl implements PublishDistributor {
             final @Nullable ImmutableIntArray subscriptionIdentifier) {
 
         if (sharedSubscription) {
-            // only do the bridge iterations for client ids that can even be bridge clients
-            if (client.startsWith(FORWARDER_PREFIX)) {
+            // Asked of the registry that owns forwarder queues, not read off the queue ID -- the same
+            // rule the sampler branch below states, applied to the branch above it. A queue ID is built
+            // from a share name, and a share name is the client's to choose: a subscription to
+            // $share/$FORWARDER::<a live forwarder id>/t took this branch, so an ordinary client had a
+            // bridge's queue limit applied to its own queue and, against a persist=false bridge, its
+            // QoS silently rewritten to 0 (EDG-882 QA round 2).
+            if (messageForwarder.get().isForwarderQueue(client)) {
                 return handlePublishForBridgeForwarder(
                         publish,
                         client,
@@ -181,7 +207,12 @@ public class PublishDistributorImpl implements PublishDistributor {
                         subscriptionIdentifier,
                         mqttConfigurationService.maxQueuedMessages(),
                         subscriptionQos);
-            } else if (client.startsWith(SAMPLER_PREFIX)) {
+            } else if (samplingService.get().isSamplerQueue(client)) {
+                // Asked of the service that creates samplers rather than read off the queue ID: the ID
+                // is built from a share name, and a share name is the client's to choose. A
+                // subscription to $share/$SAMPLER::customer/alerts is legal and belongs to that client,
+                // so it must keep the configured queue limit and the configured overflow strategy
+                // instead of being turned into a ten-message ring (EDG-882 F-05).
                 return queuePublish(
                         client,
                         publish,
@@ -189,7 +220,8 @@ public class PublishDistributorImpl implements PublishDistributor {
                         true,
                         retainAsPublished,
                         subscriptionIdentifier,
-                        SAMPLER_QUEUE_LIMIT);
+                        SAMPLER_QUEUE_LIMIT,
+                        QueuePolicy.SAMPLE_RING);
             } else {
                 return queuePublish(
                         client,
@@ -261,6 +293,27 @@ public class PublishDistributorImpl implements PublishDistributor {
             final boolean retainAsPublished,
             final @Nullable ImmutableIntArray subscriptionIdentifier,
             final @Nullable Long queueLimit) {
+        return queuePublish(
+                client,
+                publish,
+                subscriptionQos,
+                shared,
+                retainAsPublished,
+                subscriptionIdentifier,
+                queueLimit,
+                QueuePolicy.DEFAULT);
+    }
+
+    @NotNull
+    private SettableFuture<PublishStatus> queuePublish(
+            final @NotNull String client,
+            final @NotNull PUBLISH publish,
+            final int subscriptionQos,
+            final boolean shared,
+            final boolean retainAsPublished,
+            final @Nullable ImmutableIntArray subscriptionIdentifier,
+            final @Nullable Long queueLimit,
+            final @NotNull QueuePolicy policy) {
 
         final Long appliedQueueLimit =
                 Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages);
@@ -269,7 +322,8 @@ public class PublishDistributorImpl implements PublishDistributor {
                 shared,
                 createPublish(publish, subscriptionQos, retainAsPublished, subscriptionIdentifier),
                 false,
-                appliedQueueLimit);
+                appliedQueueLimit,
+                policy);
 
         final SettableFuture<PublishStatus> statusFuture = SettableFuture.create();
 
@@ -290,17 +344,25 @@ public class PublishDistributorImpl implements PublishDistributor {
         return statusFuture;
     }
 
-    private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
+    /**
+     * The limits configured for the bridge subscription that owns this queue, or {@code null}.
+     * <p>
+     * Anchored rather than by substring: a forwarder queue ID is exactly
+     * {@code $FORWARDER::<bridgeId>-<digest>/<topic filter>}, so the prefix up to and including the '/'
+     * identifies the subscription and the rest is the topic. Matching with {@code contains} let one
+     * bridge whose id merely appears inside another's queue ID answer for it, and made the resolution
+     * depend on a string a client can influence (EDG-882 QA round 2).
+     */
+    private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String queueId) {
         for (final MqttBridge bridge : bridgeConfiguration.getBridges()) {
-            final String bridgeClientId = FORWARDER_PREFIX + bridge.getId();
-            if (clientId.contains(bridgeClientId)) {
-                for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
-                    final String detailedBridgeClientId =
-                            FORWARDER_PREFIX + bridge.getId() + "-" + localSubscription.calculateUniqueId();
-                    // contains as it ends with the topic filter, which we dont know
-                    if (clientId.contains(detailedBridgeClientId)) {
-                        return new CustomBridgeLimitations(bridge.isPersist(), localSubscription.getQueueLimit());
-                    }
+            if (!queueId.startsWith(FORWARDER_PREFIX + bridge.getId() + "-")) {
+                continue;
+            }
+            for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
+                final String queueIdPrefix =
+                        FORWARDER_PREFIX + bridge.getId() + "-" + localSubscription.calculateUniqueId() + "/";
+                if (queueId.startsWith(queueIdPrefix)) {
+                    return new CustomBridgeLimitations(bridge.isPersist(), localSubscription.getQueueLimit());
                 }
             }
         }

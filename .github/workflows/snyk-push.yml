@@ -52,10 +52,20 @@ jobs:
         with:
           node-version: '24.16.0'
 
+      # Snyk only needs pnpm-lock.yaml (overrides are already resolved into it). When a
+      # pnpm-workspace.yaml sits next to the lockfile, the Snyk pnpm plugin treats the dir
+      # as a workspace and refuses to scan unless --all-projects is passed, but that flag
+      # cannot be combined with --project-name (SNYK-CLI-0004), and --project-name is what
+      # names this project in the Snyk dashboard. Removing the (settings-only) workspace
+      # file from this throwaway CI checkout lets Snyk auto-detect the single pnpm project
+      # again. Same treatment as snyk-pr.yml.
+      - name: Hide pnpm-workspace.yaml from the Snyk pnpm scan
+        run: rm -f hivemq-edge/hivemq-edge-frontend/pnpm-workspace.yaml
+
       - name: Run Snyk Frontend monitor
         shell: bash
         run: >
-          snyk monitor --all-projects --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
+          snyk monitor --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
           --project-name=hivemq-edge-frontend --remote-repo-url=hivemq-edge-frontend --project-lifecycle=development -d
           hivemq-edge/hivemq-edge-frontend
         env:

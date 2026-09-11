@@ -44,6 +44,7 @@ plugins {
     id("com.hivemq.spotless-convention")
     id("com.hivemq.errorprone-convention")
     id("com.hivemq.nullaway-convention")
+    id("com.hivemq.test-ordering-convention")
 }
 
 group = "com.hivemq"
@@ -282,7 +283,9 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit)
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Compile-time, not runtime-only: util.ForkAttributionListener implements TestExecutionListener
+    // from this artifact (EDG-930).
+    testImplementation("org.junit.platform:junit-platform-launcher")
 
     testImplementation(libs.mockito.junit.jupiter)
 
@@ -296,12 +299,27 @@ dependencies {
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
     testImplementation(libs.systemstubs)
-    testImplementation(libs.testcontainers)
-    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.jimfs)
 }
 
 tasks.test {
     useJUnitPlatform()
+    // Run the unit tests in parallel JVMs, one per 2 cores, overridable with -PunitTestForks=N.
+    // Same formula as the integration suite, so there is one rule rather than two to keep straight.
+    maxParallelForks = (project.findProperty("unitTestForks") as String?)?.toIntOrNull()
+        ?: (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+
+    // The records that say which JVM ran which class go to the CONSOLE and nowhere else (EDG-930,
+    // EDG-990). Gradle merges the parallel forks' output into one stream and the JUnit XML carries a
+    // hostname rather than a process, so without them nothing says how the classes were distributed --
+    // but each record names its own process and its own time, so one build log is the whole account:
+    //
+    //   ./gradlew test | tee /tmp/run.log
+    //   ../jenkins-report/bin/edge_report.py /tmp/run.log --timings gradle/test-class-timings.csv
+    //
+    // The convention plugin turns the fork's own stdout off and re-prints only these lines, so the log
+    // carries roughly 1500 of them rather than the half million it used to.
+
     minHeapSize = "128m"
     maxHeapSize = "2048m"
     jvmArgs(
@@ -415,6 +433,12 @@ tasks.named("sourcesJar") {
 }
 
 tasks.shadowJar {
+    // ShadowJar defaults its duplicatesStrategy to EXCLUDE, and that filtering runs before
+    // mergeServiceFiles() below, so without this override the merge never sees a second copy: only
+    // the first META-INF/services file of a given name reaches the jar and every other provider is
+    // dropped silently. The override is scoped to service files, so every other duplicated resource
+    // still lands in the jar exactly once.
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     mergeServiceFiles()
     from(frontendBinary) {
         into("httpd")

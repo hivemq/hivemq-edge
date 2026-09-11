@@ -18,13 +18,13 @@ errorprone = "2.50.0"
 
 freemarker = "2.3.34"
 future-converter = "1.2.0"
-guava = "33.6.0-jre"
+guava = "33.7.1-jre"
 hikari = "6.3.3"
 hivemq-edge-adaptersdk = "2026.4"
 hivemq-edge-extensionsdk = "2025.15"
 hivemq-extensionsdk = "4.48.1"
 hivemq-mqtt-client = "1.3.17"
-jackson = "2.22.1"
+jackson = "2.22.2"
 jackson-nullable = "0.2.10"
 jackson3 = "3.2.1"
 jacoco = "0.8.15"
@@ -34,6 +34,7 @@ jaxb4-bind = "4.0.5"
 jaxb4-impl = "4.0.9"
 jctools = "4.0.6"
 jersey = "4.0.2"
+jimfs = "1.3.1"
 jose4j = "0.9.6"
 json = "20250517"
 json-path = "2.10.0"
@@ -49,7 +50,7 @@ milo = "1.1.6"
 mockito = "5.23.0"
 mssql = "13.4.0.jre11"
 mtconnect-protocol = "1.0.0"
-netty = "4.2.16.Final"
+netty = "4.2.17.Final"
 nimbus-oauth2-oidc-sdk = "11.38.2"
 nullaway = "0.13.8"
 pmd = "6.55.0"
@@ -131,6 +132,7 @@ jersey-container-jdk-http = { module = "org.glassfish.jersey.containers:jersey-c
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
 jersey-media-json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref = "jersey" }
 jersey-media-multipart = { module = "org.glassfish.jersey.media:jersey-media-multipart", version.ref = "jersey" }
+jimfs = { module = "com.google.jimfs:jimfs", version.ref = "jimfs" }
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
 json-path = { module = "com.jayway.jsonpath:json-path", version.ref = "json-path" }
 json-schema-inferrer = { module = "com.github.saasquatch:json-schema-inferrer", version.ref = "json-schema-inferrer" }

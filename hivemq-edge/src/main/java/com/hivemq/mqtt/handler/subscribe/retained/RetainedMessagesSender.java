@@ -31,6 +31,7 @@ import com.hivemq.mqtt.message.publish.PublishWithFuture;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientqueue.QueuePolicy;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.util.FutureUtils;
@@ -242,7 +243,10 @@ public class RetainedMessagesSender {
                     false,
                     qos1and2Messages,
                     true,
-                    Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages)));
+                    Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages),
+                    // retained messages go to an ordinary client queue: the session's configured limit
+                    // and overflow strategy, nothing sampler-shaped
+                    QueuePolicy.DEFAULT));
             resultFuture.setFuture(FutureUtils.voidFutureFromList(futures.build()));
         }
 

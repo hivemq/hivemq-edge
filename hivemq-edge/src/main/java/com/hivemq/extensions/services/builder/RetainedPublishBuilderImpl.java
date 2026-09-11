@@ -151,7 +151,7 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
         this.qos(qos);
         this.topic(topic);
         this.payloadFormatIndicator(payloadFormatIndicator.orElse(null));
-        this.messageExpiryInterval(messageExpiryInterval.orElse(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET));
+        this.copyMessageExpiryInterval(messageExpiryInterval.orElse(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET));
         this.responseTopic(responseTopic.orElse(null));
         this.correlationData(correlationData.orElse(null));
         this.contentType(contentType.orElse(null));
@@ -160,6 +160,20 @@ public class RetainedPublishBuilderImpl implements RetainedPublishBuilder {
             this.userProperty(userProperty.getName(), userProperty.getValue());
         }
         return this;
+    }
+
+    /**
+     * EDG-811: the latent twin of {@code PublishBuilderImpl}'s copy boundary — a retained message stored
+     * while the maximum was the 2^32 default still carries that marker after the operator lowers it. Real
+     * durations stay bounded by the configured maximum; the internal markers are assigned directly rather
+     * than routed through the bounded public setter, and {@link #build()} resolves them.
+     */
+    private void copyMessageExpiryInterval(final long sourceInterval) {
+        if (PluginBuilderUtil.isCopyableMessageExpiryDuration(sourceInterval)) {
+            this.messageExpiryInterval(sourceInterval);
+        } else {
+            this.messageExpiryInterval = MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+        }
     }
 
     @NotNull
