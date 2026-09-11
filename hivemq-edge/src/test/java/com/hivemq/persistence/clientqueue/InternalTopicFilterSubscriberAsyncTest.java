@@ -35,7 +35,6 @@ import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
-import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.ProducerQueues;
 import com.hivemq.persistence.SingleWriterService;
@@ -48,6 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 
 /// The one-message-in-flight bound, and what it rests on.
@@ -64,7 +65,7 @@ class InternalTopicFilterSubscriberAsyncTest {
 
     private @NotNull ClientQueuePersistence clientQueuePersistence;
     private @NotNull InternalTopicFilterSubscriberFactory factory;
-    private @NotNull LocalTopicTree topicTree; // REAL -- the identifier test asserts what the tree was told
+    private @NotNull LocalTopicTree topicTree; // REAL -- several tests assert what the tree was actually told
 
     /// Every message the stubbed queue has been asked for, so a test can count reads.
     private final @NotNull AtomicInteger reads = new AtomicInteger();
@@ -391,15 +392,20 @@ class InternalTopicFilterSubscriberAsyncTest {
         return new Destination(topicFilter, name);
     }
 
-    /// As the topic tree would: the identifiers of every filter that matched.
-    private @NotNull PUBLISH messageMatching(final @NotNull String payload, final int... identifiers) {
+    /// A message on the default topic. Which filters it matched is NOT stated here: the subscriber works that
+    /// out when it polls, by matching this topic against its own filters, so a message carries only its topic.
+    private @NotNull PUBLISH messageMatching(final @NotNull String payload) {
+        return messageOn("commands/setpoint", payload);
+    }
+
+    /// A message on a given topic, for pinning which of several filters it does and does not match.
+    private @NotNull PUBLISH messageOn(final @NotNull String topic, final @NotNull String payload) {
         return new PUBLISHFactory.Mqtt5Builder()
                 .withHivemqId("edge1")
-                .withTopic("commands/setpoint")
+                .withTopic(topic)
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withPayload(payload.getBytes(StandardCharsets.UTF_8))
-                .withSubscriptionIdentifiers(ImmutableIntArray.copyOf(identifiers))
                 .build();
     }
 
@@ -415,7 +421,7 @@ class InternalTopicFilterSubscriberAsyncTest {
         // the WHOLE context, so a consumer that needs two of them kept apart can say so by putting something
         // distinguishing in it.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1));
+        queued.add(messageMatching("a"));
 
         factory.builder("test", "shared-filter")
                 .addTopicFilterContext(to("commands/#", "mapping-A"))
@@ -440,7 +446,7 @@ class InternalTopicFilterSubscriberAsyncTest {
         // ONE identifier here, not two: both registrations name the same filter, so both sit behind the one
         // identifier that filter was assigned. The deduplication is within that list.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1));
+        queued.add(messageMatching("a"));
 
         factory.builder("test", "two-filters")
                 .addTopicFilterContext(to("commands/#", "the-same-mapping"))
@@ -457,8 +463,10 @@ class InternalTopicFilterSubscriberAsyncTest {
 
     @Test
     void severalMatchingFiltersYieldTheirSeveralDestinations() {
+        // "other/#" is excluded because it does not MATCH the message's topic -- the subscriber works that out
+        // from the topic itself, rather than being told which filters matched.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1, 3));
+        queued.add(messageMatching("a"));
 
         factory.builder("test", "several")
                 .addTopicFilterContext(to("commands/#", "first"))
@@ -480,7 +488,7 @@ class InternalTopicFilterSubscriberAsyncTest {
         // under its own name because withTopicFilter(List<String>) and a List of contexts have the same
         // erasure -- they could not be two overloads of one name.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1, 2));
+        queued.add(messageMatching("a"));
 
         factory.builder("test", "list-form")
                 .withTopicFilterContext(List.of(to("commands/#", "first"), to("commands/setpoint", "second")))
@@ -500,7 +508,7 @@ class InternalTopicFilterSubscriberAsyncTest {
         // destination on that filter must go on receiving. removeTopicFilter, by contrast, drops the filter
         // and everything behind it.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1));
+        queued.add(messageMatching("a"));
 
         factory.builder("test", "remove-one")
                 .addTopicFilterContext(to("commands/#", "keep"))
@@ -551,53 +559,49 @@ class InternalTopicFilterSubscriberAsyncTest {
     }
 
     @Test
-    void aFilterIsRegisteredWithTheSameIdentifierAcrossDetachAndAttach() {
-        // Re-allocating on re-attach stays internally consistent and fails only on one path: a message
-        // queued BEFORE the detach carries the old identifier and is read after it. Since the identifier
-        // travels with the queued message, that window is real.
-        //
-        // Asserted against the REAL topic tree rather than against the subscriber's own map: the map is
-        // written once at construction, so reading it back would pass however addToTree behaved. What has to
-        // be pinned is the identifier the tree was told, on the second attach.
+    void aFilterStillDeliversItsContextsAcrossDetachAndAttach() {
+        // A message queued BEFORE a detach and read after it must still reach its destination. Under the old
+        // scheme this was the one path that broke: the message carried a subscription identifier stamped on it
+        // at enqueue time, and a filter re-registered with a different number stranded it. Matching at POLL
+        // time removes the failure mode rather than working around it -- there is no number to go stale.
+        final List<Destination> matched = new ArrayList<>();
         final InternalTopicFilterSubscriber subscriber = factory.builder("test", "detach-reattach")
                 .addTopicFilterContext(to("commands/#", "mapping-A"))
-                .withAsyncContextProcessor((m, destinations) -> CompletableFuture.completedFuture(null))
+                .<Destination>withAsyncContextProcessor((m, destinations) -> {
+                    matched.addAll(destinations);
+                    return CompletableFuture.completedFuture(null);
+                })
                 .build();
 
         subscriber.attach();
-        final ImmutableIntArray firstAttach = registeredIdentifiers();
+        // Queued while attached the FIRST time, and not read until after the re-attach.
+        queued.add(messageMatching("a"));
 
         subscriber.detach();
         subscriber.attach();
-        final ImmutableIntArray secondAttach = registeredIdentifiers();
+        subscriber.consume();
 
-        assertThat(firstAttach.asList())
-                .as("a routed filter is registered with an identifier")
-                .isNotEmpty();
-        assertThat(secondAttach.asList())
-                .as("and re-attaching registers the same one, so a message queued before the detach still resolves")
-                .isEqualTo(firstAttach.asList());
+        assertThat(matched)
+                .as("a message queued before the detach still reaches its destination after the re-attach")
+                .containsExactly(to("commands/#", "mapping-A"));
     }
 
-    /// What the real topic tree reports for a matching topic -- the identifiers it was actually told.
-    private @NotNull ImmutableIntArray registeredIdentifiers() {
-        return topicTree.findTopicSubscribers("commands/setpoint").getSubscribers().stream()
-                .findFirst()
-                .map(SubscriberWithIdentifiers::getSubscriptionIdentifier)
-                .orElse(ImmutableIntArray.of());
+    /// Whether the real topic tree has this subscriber registered for a topic matching the default filter.
+    private boolean isRegisteredInTree() {
+        return !topicTree
+                .findTopicSubscribers("commands/setpoint")
+                .getSubscribers()
+                .isEmpty();
     }
 
     // -- the context filter verbs at RUNTIME ------------------------------------------------------------
     //
-    // These were build-time only, which made addTopicFilter on a context subscriber a silent trap: the filter
-    // was registered with no identifier, so its messages arrived with an empty matched set and were dropped.
-    // The verbs below close that, and each test here pins one half of why.
+    // These were build-time only, so a live subscriber could not take on a new destination at all. Each test
+    // here pins one half of why the runtime family exists.
 
     @Test
     void aContextAddedAtRuntimeReceivesItsMessages() {
-        // The whole point of the runtime family: a destination added to a LIVE subscriber is reachable, which
-        // means its filter went into the tree WITH an identifier. Registering it without one is the silent
-        // failure this replaces -- the message arrives and resolves to nothing.
+        // The whole point of the runtime family: a destination added to a LIVE subscriber is reachable.
         final List<Destination> matched = new ArrayList<>();
 
         final InternalTopicFilterSubscriber subscriber = factory.builder("test", "runtime-add")
@@ -609,13 +613,11 @@ class InternalTopicFilterSubscriberAsyncTest {
                 .attach();
 
         subscriber.addTopicFilterContext(to("commands/#", "added-later"));
+        assertThat(isRegisteredInTree())
+                .as("a context added at runtime subscribes its filter")
+                .isTrue();
 
-        final ImmutableIntArray registered = registeredIdentifiers();
-        assertThat(registered.asList())
-                .as("a context added at runtime is registered WITH an identifier")
-                .isNotEmpty();
-
-        queued.add(messageMatching("a", registered.get(0)));
+        queued.add(messageMatching("a"));
         subscriber.consume();
 
         assertThat(matched).containsExactly(to("commands/#", "added-later"));
@@ -633,57 +635,65 @@ class InternalTopicFilterSubscriberAsyncTest {
                 .attach();
 
         subscriber.removeTopicFilterContext(to("commands/#", "first"));
-        assertThat(registeredIdentifiers().asList())
+        assertThat(isRegisteredInTree())
                 .as("the filter stays while another context still wants it")
-                .isNotEmpty();
+                .isTrue();
 
         subscriber.removeTopicFilterContext(to("commands/#", "second"));
-        assertThat(registeredIdentifiers().asList())
+        assertThat(isRegisteredInTree())
                 .as("and goes when the last one is removed")
-                .isEmpty();
+                .isFalse();
     }
 
     @Test
-    void aRuntimeAddedFilterKeepsItsIdentifierAcrossDetachAndAttach() {
-        // Same guarantee as for a build-time filter, and it has to hold for these too: the identifier travels
-        // with a queued message, so a filter that came back with a different one would strand it.
+    void aRuntimeAddedFilterStillDeliversAcrossDetachAndAttach() {
+        // Same guarantee as for a build-time filter, and it has to hold for these too.
+        final List<Destination> matched = new ArrayList<>();
         final InternalTopicFilterSubscriber subscriber = factory.builder("test", "runtime-stability")
-                .withAsyncContextProcessor((m, destinations) -> CompletableFuture.completedFuture(null))
+                .<Destination>withAsyncContextProcessor((m, destinations) -> {
+                    matched.addAll(destinations);
+                    return CompletableFuture.completedFuture(null);
+                })
                 .build()
                 .attach();
 
         subscriber.addTopicFilterContext(to("commands/#", "added-later"));
-        final ImmutableIntArray firstAttach = registeredIdentifiers();
+        queued.add(messageMatching("a"));
 
         subscriber.detach();
         subscriber.attach();
+        subscriber.consume();
 
-        assertThat(firstAttach.asList()).isNotEmpty();
-        assertThat(registeredIdentifiers().asList())
-                .as("a runtime-added filter keeps the identifier it was given")
-                .isEqualTo(firstAttach.asList());
+        assertThat(matched)
+                .as("a runtime-added filter goes on delivering after a detach/attach")
+                .containsExactly(to("commands/#", "added-later"));
     }
 
     @Test
-    void anIdentifierIsNotReusedByTheNextFilter() {
-        // Freed identifiers are not handed straight back: allocation walks forward and wraps, so a message
-        // queued under a removed filter's identifier resolves to nothing rather than to whatever took the
-        // number next. Reuse would deliver it to the wrong destination, which is worse than dropping it.
-        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "no-reuse")
-                .withAsyncContextProcessor((m, destinations) -> CompletableFuture.completedFuture(null))
+    void aMessageQueuedUnderARemovedFilterResolvesToNothing() {
+        // A message may sit in the queue while the filter that admitted it is removed and a DIFFERENT filter
+        // is added. It must not be delivered to the new filter's destination -- that would be a write to the
+        // wrong device. Because matching happens at poll time against the filters that exist THEN, the
+        // message simply matches nothing that wants it.
+        final List<Destination> matched = new ArrayList<>();
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "no-misdelivery")
+                .<Destination>withAsyncContextProcessor((m, destinations) -> {
+                    matched.addAll(destinations);
+                    return CompletableFuture.completedFuture(null);
+                })
                 .build()
                 .attach();
 
         subscriber.addTopicFilterContext(to("commands/#", "first"));
-        final ImmutableIntArray firstIdentifier = registeredIdentifiers();
+        queued.add(messageMatching("a"));
 
         subscriber.removeTopicFilterContext(to("commands/#", "first"));
-        subscriber.addTopicFilterContext(to("commands/#", "second"));
+        subscriber.addTopicFilterContext(to("telemetry/#", "second"));
+        subscriber.consume();
 
-        assertThat(firstIdentifier.asList()).isNotEmpty();
-        assertThat(registeredIdentifiers().asList())
-                .as("the next filter gets a fresh identifier, not the one just freed")
-                .isNotEqualTo(firstIdentifier.asList());
+        assertThat(matched)
+                .as("the queued message does not reach the destination that replaced the one it matched")
+                .isEmpty();
     }
 
     @Test
@@ -691,8 +701,8 @@ class InternalTopicFilterSubscriberAsyncTest {
         // The fourth cell of the grid: being told what a message matched and needing a future are independent
         // choices, so a consumer whose per-destination work is small says so by returning nothing at all.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1));
-        queued.add(messageMatching("b", 1));
+        queued.add(messageMatching("a"));
+        queued.add(messageMatching("b"));
 
         factory.builder("test", "sync-context")
                 .addTopicFilterContext(to("commands/#", "mapping-A"))
@@ -714,8 +724,8 @@ class InternalTopicFilterSubscriberAsyncTest {
         // Removing the wrapper's catch alone leaves this test green -- verified -- because the outer catch
         // still releases. What differs is the log line, which this does not assert on.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1));
-        queued.add(messageMatching("b", 1));
+        queued.add(messageMatching("a"));
+        queued.add(messageMatching("b"));
 
         factory.builder("test", "sync-context-throwing")
                 .addTopicFilterContext(to("commands/#", "mapping-A"))
@@ -858,7 +868,7 @@ class InternalTopicFilterSubscriberAsyncTest {
         // The counterpart: `add` is what a caller declaring filters one at a time actually wants, and it
         // stays legal however many times it is called. Pins that the guard above did not over-reach.
         final List<Destination> matched = new ArrayList<>();
-        queued.add(messageMatching("a", 1));
+        queued.add(messageMatching("a"));
 
         factory.builder("test", "repeated-add")
                 .addTopicFilterContext(to("commands/#", "first"))
@@ -892,13 +902,13 @@ class InternalTopicFilterSubscriberAsyncTest {
                 .build()
                 .attach();
 
-        assertThat(registeredIdentifiers().asList()).isNotEmpty();
+        assertThat(isRegisteredInTree()).isTrue();
 
         subscriber.withTopicFilterContext(to("other/#", "new"));
 
-        assertThat(registeredIdentifiers().asList())
+        assertThat(isRegisteredInTree())
                 .as("the replaced filter is gone from the tree")
-                .isEmpty();
+                .isFalse();
         assertThat(topicTree.findTopicSubscribers("other/thing").getSubscribers())
                 .as("and the new one is in it")
                 .isNotEmpty();
@@ -906,14 +916,12 @@ class InternalTopicFilterSubscriberAsyncTest {
 
     @Test
     void withTopicFilterContextWhileDetachedTakesEffectOnTheNextAttach() {
-        // The detached counterpart of the test above, and the reason it is worth its own case: the two states
-        // take different routes. When ATTACHED, reconciliation registers each new filter and allocates its
-        // identifier on the way. When DETACHED there is nothing in the tree to reconcile, so the allocation
-        // happens in the calling method instead -- the one place it lives outside the shared helper.
+        // The detached counterpart of the test above, and worth its own case because the two states take
+        // different routes: when ATTACHED the tree is reconciled filter by filter, when DETACHED there is
+        // nothing registered to reconcile and the whole set is replayed by attach() instead.
         //
-        // What must hold either way: the new filter reaches the tree WITH an identifier when attach() finally
-        // runs. Without one it would register anyway (the topic tree accepts a null identifier), messages would
-        // match it, and they would arrive resolving to no destination at all -- silently.
+        // What must hold either way: after attach() the subscriber delivers to the destination declared while
+        // detached, and not to the one it replaced.
         final List<Destination> matched = new ArrayList<>();
         final InternalTopicFilterSubscriber subscriber = factory.builder("test", "detached-with")
                 .addTopicFilterContext(to("commands/#", "old"))
@@ -925,23 +933,100 @@ class InternalTopicFilterSubscriberAsyncTest {
 
         // Never attached, so the tree has nothing and reconciliation has nothing to do.
         subscriber.withTopicFilterContext(to("commands/setpoint", "new"));
-        assertThat(registeredIdentifiers().asList())
+        assertThat(isRegisteredInTree())
                 .as("nothing is registered while detached")
-                .isEmpty();
+                .isFalse();
 
         subscriber.attach();
+        assertThat(isRegisteredInTree())
+                .as("the replacement filter reaches the tree on attach")
+                .isTrue();
 
-        final ImmutableIntArray registered = registeredIdentifiers();
-        assertThat(registered.asList())
-                .as("the replacement filter reaches the tree with an identifier")
-                .isNotEmpty();
-
-        queued.add(messageMatching("a", registered.get(0)));
+        queued.add(messageMatching("a"));
         subscriber.consume();
 
         assertThat(matched)
                 .as("and resolves to the destination declared while detached, not the one it replaced")
                 .containsExactly(to("commands/setpoint", "new"));
+    }
+
+    // -- topic filter matching -------------------------------------------------------------------------
+    //
+    // Which filters a message matched is worked out from the message's TOPIC when it is polled, so the matching
+    // rules are now part of delivery and are pinned here. Driven through the public path rather than against the
+    // private matcher, so these test the code that actually runs.
+    //
+    // The cases are chosen for the places hand-written MQTT matchers go wrong, not for coverage of the happy
+    // path: a multi-level wildcard matching its own PARENT, either wildcard matching an EMPTY level, a
+    // single-level wildcard refusing to cross a separator, and a filter that is a strict prefix of the topic.
+
+    @ParameterizedTest(name = "{0} matches {1}")
+    @CsvSource({
+        // exact
+        "commands/setpoint, commands/setpoint",
+        // single-level wildcard
+        "commands/+, commands/setpoint",
+        "+/setpoint, commands/setpoint",
+        "+/+, commands/setpoint",
+        // a single-level wildcard matches an EMPTY level
+        "commands/+, commands/",
+        // multi-level wildcard, including its own parent
+        "commands/#, commands/setpoint",
+        "commands/#, commands/setpoint/deep",
+        "commands/#, commands",
+        "#, commands/setpoint",
+        "#, ''",
+        "+/#, commands",
+        // wildcards combined
+        "commands/+/deep, commands/x/deep",
+        "+/setpoint/#, commands/setpoint/deep",
+    })
+    void theseFiltersMatch(final @NotNull String filter, final @NotNull String topic) {
+        assertThat(destinationsFor(filter, topic))
+                .as("%s should match %s", filter, topic)
+                .containsExactly(to(filter, "d"));
+    }
+
+    @ParameterizedTest(name = "{0} does not match {1}")
+    @CsvSource({
+        // different literal
+        "commands/setpoint, commands/other",
+        "commands/setpoint, other/setpoint",
+        // a single-level wildcard covers exactly ONE level, never more
+        "commands/+, commands/setpoint/deep",
+        "+, commands/setpoint",
+        // a filter that is a strict PREFIX of the topic does not match
+        "commands, commands/setpoint",
+        "commands/set, commands/setpoint",
+        // nor the other way round
+        "commands/setpoint/deep, commands/setpoint",
+        // a multi-level wildcard matches its parent, but not a SHORTER topic than that
+        "commands/deep/#, commands",
+        // partial-segment comparisons must not match
+        "commands/+/deep, commands/x/deeper",
+    })
+    void theseFiltersDoNotMatch(final @NotNull String filter, final @NotNull String topic) {
+        assertThat(destinationsFor(filter, topic))
+                .as("%s should NOT match %s", filter, topic)
+                .isEmpty();
+    }
+
+    /// Puts one message on `topic` through a subscriber holding exactly one context on `filter`, and answers
+    /// what the processor was told it matched. Empty means the filter did not match.
+    private @NotNull List<Destination> destinationsFor(final @NotNull String filter, final @NotNull String topic) {
+        final List<Destination> matched = new ArrayList<>();
+        queued.add(messageOn(topic, "a"));
+
+        factory.builder("test", "match-" + filter + "-" + topic)
+                .addTopicFilterContext(to(filter, "d"))
+                .<Destination>withAsyncContextProcessor((m, destinations) -> {
+                    matched.addAll(destinations);
+                    return CompletableFuture.completedFuture(null);
+                })
+                .build()
+                .consume();
+
+        return matched;
     }
 
     // -- queue limit and overflow ----------------------------------------------------------------------

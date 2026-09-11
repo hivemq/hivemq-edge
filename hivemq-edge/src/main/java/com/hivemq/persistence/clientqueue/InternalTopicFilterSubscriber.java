@@ -30,7 +30,6 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.util.FutureUtils;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -112,16 +111,6 @@ public final class InternalTopicFilterSubscriber {
     // delete whichever the queue happened to hold first.
     private static final @NotNull ImmutableIntArray POLL_PACKET_IDS =
             ImmutableIntArray.of(ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER);
-
-    // The largest MQTT subscription identifier: a variable byte integer, so 2^28 - 1. Topic's constructor
-    // asserts the range, and 0 is reserved -- so the usable space is [1, MAX_SUBSCRIPTION_ID].
-    private static final int MAX_SUBSCRIPTION_ID = 268_435_455;
-
-    // At most half the space may be subscribed at once, and that bound is what makes allocation terminate
-    // rather than merely usually terminate: with under half the identifiers taken, no run of consecutive taken
-    // values can span the whole space, so the search below always finds a free one. Raising this towards the
-    // full space would take that guarantee away, which is why it is stated here rather than tuned.
-    private static final int MAX_TOPIC_FILTERS = MAX_SUBSCRIPTION_ID / 2;
 
     // clientId -- built once as the reserved-prefix triple "$INTERNAL::<componentPrefix>::<instanceId>"
     //            (see the constructor for what each segment means). PublishDistributorImpl
@@ -208,24 +197,11 @@ public final class InternalTopicFilterSubscriber {
     //                to replace its predecessor. The fan-out cannot live in the tree, so it lives here.
     private final @NotNull Map<String, Set<TopicFilterContext>> topicFilterContexts = new LinkedHashMap<>();
 
-    // The two directions between a filter and its MQTT subscription identifier. Inverses of each other, and
-    // maintained only by allocate/free below, which is what keeps them so.
-    //
-    //   subscriptionIdByTopicFilter -- used when registering a filter in the tree, and when removing one.
-    //   topicFilterBySubscriptionId -- used on the DELIVERY path: a message carries the identifiers it matched,
-    //                                  and this is what turns them back into filters and so into contexts.
-    //
-    // An identifier is assigned once per filter and kept for as long as that filter is subscribed, so it
-    // survives every detach()/attach(). Re-allocating on re-attach would stay internally consistent and break
-    // only when a message queued BEFORE the detach is read after it, carrying an identifier this subscriber no
-    // longer knows -- and the identifier travels with the queued message, so that window is real.
-    private final @NotNull Map<String, Integer> subscriptionIdByTopicFilter = new HashMap<>();
-
-    private final @NotNull Map<Integer, String> topicFilterBySubscriptionId = new HashMap<>();
-
-    // Where the next allocation starts looking. Identifiers are per subscriber, not global: two subscribers may
-    // both use 1 without interfering.
-    private int nextSubscriptionId = 0;
+    // NO per-filter subscription identifiers, deliberately. Which filters a message matched is worked out when
+    // the message is POLLED, by matching its topic against this subscriber's own filters -- see asAsync() and
+    // topicMatchesFilter(). An identifier recorded on the message when it was ENQUEUED would be a cached answer
+    // that outlives the table giving it meaning: it would have to survive detach/attach and a restart, and when
+    // it did not the message arrived with no contexts and was silently dropped.
 
     // attached -- true iff the current topicFilters are registered in the topic tree (messages are
     //            being collected into the client queue).
@@ -297,13 +273,10 @@ public final class InternalTopicFilterSubscriber {
             throw new IllegalArgumentException(
                     "InternalTopicFilterSubscriber needs a processor or a context processor, not neither");
         }
-        // The filters, in whichever form this subscriber's kind uses. Each context filter is assigned its
-        // identifier here, so it survives every later detach()/attach().
+        // The filters, in whichever form this subscriber's kind uses.
         if (contextual) {
-            initialContexts.forEach((filter, contexts) -> {
-                topicFilterContexts.put(filter, new LinkedHashSet<>(contexts));
-                subscriptionIdFor(filter);
-            });
+            initialContexts.forEach(
+                    (filter, contexts) -> topicFilterContexts.put(filter, new LinkedHashSet<>(contexts)));
         } else {
             this.topicFilters.addAll(initialFilters);
         }
@@ -883,12 +856,9 @@ public final class InternalTopicFilterSubscriber {
         }
         // The tree is reconciled against the FILTERS; the contexts behind them are this object's own business,
         // so a filter kept by both sets is left alone in the tree even if its contexts changed entirely.
-        final Set<String> goneFilters = reconcileTo(target.keySet());
-        goneFilters.forEach(this::freeSubscriptionId);
+        reconcileTo(target.keySet());
         topicFilterContexts.clear();
         topicFilterContexts.putAll(target);
-        // After the tree work, so a filter that survives keeps the identifier it was registered under.
-        target.keySet().forEach(this::subscriptionIdFor);
         return this;
     }
 
@@ -907,13 +877,8 @@ public final class InternalTopicFilterSubscriber {
             topicFilterContexts
                     .computeIfAbsent(topicFilter, ignored -> new LinkedHashSet<>())
                     .add(context);
-            if (isNewFilter) {
-                // The identifier first: addToTree reads it, and a filter registered without one would deliver
-                // messages that resolve to no context at all.
-                subscriptionIdFor(topicFilter);
-                if (attached) {
-                    addToTree(topicFilter);
-                }
+            if (isNewFilter && attached) {
+                addToTree(topicFilter);
             }
         }
         return this;
@@ -942,22 +907,21 @@ public final class InternalTopicFilterSubscriber {
                 if (attached) {
                     removeFromTree(topicFilter);
                 }
-                freeSubscriptionId(topicFilter);
             }
         }
         return this;
     }
 
     /**
-     * Reconciles the topic tree from the currently subscribed filters to the given target, and answers which
-     * filters are no longer wanted.
+     * Reconciles the topic tree from the currently subscribed filters to the given target.
      * <p>
-     * Does nothing to the tree while detached -- there is nothing registered to reconcile -- but still answers
-     * the difference, since the caller frees identifiers either way.
-     *
-     * @return the filters that were subscribed and are not in the target
+     * Does nothing while detached -- there is nothing registered to reconcile, and the caller's new filter set
+     * is replayed in full by the next {@code attach()}.
      */
-    private @NotNull Set<String> reconcileTo(final @NotNull Set<String> target) {
+    private void reconcileTo(final @NotNull Set<String> target) {
+        if (!attached) {
+            return;
+        }
         final Set<String> current = contextual ? topicFilterContexts.keySet() : topicFilters;
         final Set<String> gone = new LinkedHashSet<>();
         for (final String existing : current) {
@@ -965,20 +929,12 @@ public final class InternalTopicFilterSubscriber {
                 gone.add(existing);
             }
         }
-        if (attached) {
-            gone.forEach(this::removeFromTree);
-            for (final String wanted : target) {
-                if (!current.contains(wanted)) {
-                    // For a context subscriber the identifier must exist before the filter is registered, and
-                    // the caller has not written the new set yet -- so allocate here rather than after.
-                    if (contextual) {
-                        subscriptionIdFor(wanted);
-                    }
-                    addToTree(wanted);
-                }
+        gone.forEach(this::removeFromTree);
+        for (final String wanted : target) {
+            if (!current.contains(wanted)) {
+                addToTree(wanted);
             }
         }
-        return gone;
     }
 
     /** The filters this subscriber is subscribed to, whichever kind it is. */
@@ -1263,137 +1219,104 @@ public final class InternalTopicFilterSubscriber {
     // stays null, and our `clientId` is the sole identity (no separate shared-group name).
     /// Registers one topic filter in the topic tree under this subscriber's client id.
     ///
-    /// **On a CONTEXT subscriber the filter must already have a subscription identifier when this is called.**
-    /// This method only reads one; it does not allocate. Every current caller satisfies that -- the
-    /// constructor, `addTopicFilterContext` and the reconciliation in `withTopicFilterContext` each allocate
-    /// before registering, and `attach()` only ever replays filters one of those three put there -- so there is
-    /// no defect today. It is written down because nothing enforces it.
-    ///
-    /// **What goes wrong if a future caller forgets is silent.** A missing identifier reads as `null` from the
-    /// map, and [Topic] accepts `null` as "no subscription identifier" rather than rejecting it. So the filter
-    /// registers, messages match it, and they reach the consumer with an EMPTY set of matched contexts: a
-    /// component that finds nothing to do with them drops them, and nothing anywhere logs or throws. That is
-    /// precisely the failure the identifier mechanism exists to prevent, arriving through the one method that
-    /// is supposed to deliver it.
-    ///
-    /// If a fifth registration path is ever added, either allocate first as the others do, or move the
-    /// allocation in here -- [#subscriptionIdFor] is idempotent, so doing so would change no existing path.
+    /// **No subscription identifier is recorded**, for either kind of subscriber. A context subscriber works out
+    /// which filters a message matched when it POLLS the message, from the message's own topic -- see
+    /// [#asAsync] -- so it needs nothing stamped onto the message at enqueue time. That also means this method
+    /// has no precondition a caller can forget: every registration path is interchangeable, and a new one needs
+    /// only to call this.
     private void addToTree(final @NotNull String topicFilter) {
         topicTree.addTopic(
                 clientId,
-                // The subscription identifier is what makes a matched message say WHICH filter matched: the
-                // broker echoes it back on every message that subscription matched, and several come back when
-                // several filters match.
-                //
-                // NULL IS LEGITIMATE ONLY FOR A PLAIN SUBSCRIBER, which has no contexts to resolve and
-                // delivers exactly as it did before identifiers existed. On a context subscriber a null here
-                // is the silent failure described above -- see this method's documentation.
-                new Topic(
-                        topicFilter,
-                        qos,
-                        false,
-                        true,
-                        Topic.DEFAULT_RETAIN_HANDLING,
-                        subscriptionIdByTopicFilter.get(topicFilter)),
+                new Topic(topicFilter, qos, false, true, Topic.DEFAULT_RETAIN_HANDLING, null),
                 SubscriptionFlag.getDefaultFlags(false, true, false),
                 null); // sharedName -- null: non-shared (see note above)
     }
 
     /**
-     * Turns a routing processor into the async one the pipeline uses, by resolving each message's subscription
-     * identifiers back to what the consumer asked to be told.
+     * Turns a routing processor into the async one the pipeline uses, by working out which of this subscriber's
+     * filters the message's topic matches and handing over the contexts behind them.
      * <p>
-     * <b>A union, and over the CONTEXTS rather than the identifiers.</b> One context may sit behind two
-     * filters -- one destination reachable by two patterns -- and both identifiers come back when both match.
-     * Deduplicating at the end rather than the start is what stops the consumer doing the work twice for one
-     * message, which for a device write means sending the same command twice.
+     * <b>Matched at poll time, not at enqueue time.</b> The message carries its concrete topic and this
+     * subscriber holds its own filters, so the match is computed from what is true NOW. Nothing is stamped onto
+     * a stored message, and so nothing stored can go stale: a filter removed while the message sat in the queue
+     * simply does not match, and one added while it sat there does. The alternative -- having the topic tree
+     * record a per-filter subscription identifier on each queued message and resolving that identifier back to
+     * a filter here -- cached the answer at the wrong moment. It needed identifiers to stay stable across
+     * detach/attach and across a restart, neither of which a per-subscriber counter can promise, and it failed
+     * silently when they did not: the message arrived with an empty context set and was quietly dropped.
      * <p>
-     * The identifiers are in practice distinct, since a filter holds exactly one and the tree merges rather
-     * than repeats. But that is a consequence of two other invariants rather than anything declared, and a set
-     * costs nothing.
+     * <b>A union, and over the CONTEXTS rather than the filters.</b> One context may sit behind two filters --
+     * one destination reachable by two patterns -- and both may match one topic. Deduplicating means the
+     * consumer does the work once, which for a device write is the difference between sending a command once
+     * and sending it twice.
+     * <p>
+     * Cost is one pass over this subscriber's own filters, each a single walk over the topic with no allocation
+     * (see {@link #topicMatchesFilter}). Subscriber filter counts are small, and nothing shared is consulted:
+     * no topic tree, no lock beyond this object's own.
      */
     @SuppressWarnings("unchecked")
     private @NotNull AsyncProcessor asAsync(final @NotNull AsyncContextProcessor<?> contextProcessor) {
         final AsyncContextProcessor<TopicFilterContext> routing =
                 (AsyncContextProcessor<TopicFilterContext>) contextProcessor;
         return message -> {
-            final ImmutableIntArray matchedIdentifiers = message.getSubscriptionIdentifiers();
             final Set<TopicFilterContext> matched = new LinkedHashSet<>();
-            if (matchedIdentifiers != null) {
-                synchronized (this) {
-                    for (int i = 0; i < matchedIdentifiers.length(); i++) {
-                        // identifier -> filter -> contexts. A filter removed since this message was queued
-                        // resolves to nothing, and contributes nothing to the set.
-                        final String topicFilter = topicFilterBySubscriptionId.get(matchedIdentifiers.get(i));
-                        if (topicFilter != null) {
-                            matched.addAll(topicFilterContexts.getOrDefault(topicFilter, Set.of()));
-                        }
+            synchronized (this) {
+                topicFilterContexts.forEach((topicFilter, contexts) -> {
+                    if (topicMatchesFilter(topicFilter, message.getTopic())) {
+                        matched.addAll(contexts);
                     }
-                }
+                });
             }
             return routing.process(message, matched);
         };
     }
 
     /**
-     * The identifier this subscriber uses for a filter, assigned on first subscription and stable thereafter.
+     * Whether an MQTT topic filter matches a concrete topic.
      * <p>
-     * <b>Stable is the whole point.</b> A filter re-registered after a {@code detach()}/{@code attach()} keeps
-     * the identifier it had, because a message queued before the detach carries that identifier and is read
-     * after it. Re-allocating would look correct -- the identifiers would stay internally consistent -- and
-     * would fail only on that one path.
+     * Standard MQTT matching: {@code +} matches exactly one level, {@code #} matches the remaining levels and
+     * also the parent itself (so {@code a/b/#} matches {@code a/b}), and both wildcards match an EMPTY level
+     * (so {@code a/+} matches {@code a/}).
+     * <p>
+     * <b>Assumes both arguments are well formed</b> -- in the filter {@code +} and {@code #} each occupy a whole
+     * level and {@code #} is last; in the topic neither character appears. Both hold here: filters come from
+     * configuration that Edge validates, and topics come from messages the broker accepted.
+     * <p>
+     * A single left-to-right walk over the two strings with no allocation and no splitting into levels. Two
+     * details carry the wildcards. The trailing {@code /#} is stripped up front and remembered, so the loop
+     * never sees it and a filter that ran out while the topic sits on a {@code /} still matches. And the
+     * {@code +} test comes BEFORE the character comparison, with the loop advancing on the FILTER alone -- that
+     * is what lets {@code +} match an empty level, where there is no character in the topic to compare against.
+     * <p>
+     * The final read needs no bounds check: {@code ||} evaluates its right side only when the topic cursor is
+     * not at the end, and the cursor never passes the end, so it is always in range.
      */
-    private int subscriptionIdFor(final @NotNull String topicFilter) {
-        final Integer existing = subscriptionIdByTopicFilter.get(topicFilter);
-        if (existing != null) {
-            return existing;
+    private static boolean topicMatchesFilter(final @NotNull String filter, final @NotNull String topic) {
+        boolean hasHashWildcard = false;
+        int lenF = filter.length();
+        if (1 == lenF && filter.charAt(0) == '#') {
+            return true;
         }
-        final int allocated = allocateSubscriptionId();
-        subscriptionIdByTopicFilter.put(topicFilter, allocated);
-        topicFilterBySubscriptionId.put(allocated, topicFilter);
-        return allocated;
-    }
+        if (2 <= lenF && filter.charAt(lenF - 2) == '/' && filter.charAt(lenF - 1) == '#') {
+            lenF = lenF - 2;
+            hasHashWildcard = true;
+        }
 
-    /**
-     * Frees the identifier a filter held, so the space does not grow with churn.
-     * <p>
-     * Called only when a filter is genuinely unsubscribed -- not on {@code detach()}, which keeps the filters
-     * in order to replay them.
-     */
-    private void freeSubscriptionId(final @NotNull String topicFilter) {
-        final Integer released = subscriptionIdByTopicFilter.remove(topicFilter);
-        if (released != null) {
-            topicFilterBySubscriptionId.remove(released);
-        }
-    }
+        final int lenT = topic.length();
+        int iT = 0;
 
-    /**
-     * An identifier no filter currently holds, walking forward from the last one handed out and wrapping.
-     * <p>
-     * <b>Identifiers are not reused while held, and are reused only after wrapping.</b> Walking forward means a
-     * freed identifier is handed out again only once the counter has been all the way round -- after
-     * {@link #MAX_SUBSCRIPTION_ID} allocations, each one a filter subscribed for the first time -- rather than
-     * immediately. That matters because a message queued under a filter's identifier may be read after that
-     * filter is gone: until the wrap it resolves to nothing and the message is dropped, which is right; after a
-     * wrap it could resolve to whichever filter has since taken the number, which is not. No real deployment
-     * subscribes that many filters on one subscriber while a single message sits unread, and the trade buys a
-     * bounded space and a plain int counter.
-     *
-     * @throws IllegalStateException if this subscriber already holds {@link #MAX_TOPIC_FILTERS} filters
-     */
-    private int allocateSubscriptionId() {
-        if (topicFilterBySubscriptionId.size() >= MAX_TOPIC_FILTERS) {
-            throw new IllegalStateException("InternalTopicFilterSubscriber '" + clientId
-                    + "' has too many topic filters: at most "
-                    + MAX_TOPIC_FILTERS
-                    + " may be subscribed at once");
+        for (int iF = 0; iF < lenF; iF++) {
+            if (filter.charAt(iF) == '+') {
+                while (iT < lenT && topic.charAt(iT) != '/') {
+                    iT++;
+                }
+            } else if (iT < lenT && filter.charAt(iF) == topic.charAt(iT)) {
+                iT++;
+            } else {
+                return false;
+            }
         }
-        do {
-            // Wraps within [1, MAX_SUBSCRIPTION_ID]; never yields 0, which MQTT reserves. Terminates because
-            // fewer than half the identifiers are taken -- see MAX_TOPIC_FILTERS.
-            nextSubscriptionId = (nextSubscriptionId % MAX_SUBSCRIPTION_ID) + 1;
-        } while (topicFilterBySubscriptionId.containsKey(nextSubscriptionId));
-        return nextSubscriptionId;
+        return iT == lenT || (topic.charAt(iT) == '/' && hasHashWildcard);
     }
 
     private void removeFromTree(final @NotNull String topicFilter) {
