@@ -17,7 +17,7 @@
                 <keystore>
                     <path>${ENV:HIVEMQ_MQTTS_KEYSTORE_PATH}</path>
                     <password>${ENV:HIVEMQ_MQTTS_SECRET_KEYSTORE_PASSWORD}</password>
-                    <private-key-password>${ENV:HIVEMQ_MQTTS_SECRET_KEYSTORE_PASSWORD}</private-key-password>
+                    <private-key-password>${ENV:HIVEMQ_MQTTS_SECRET_PRIVATE_KEY_PASSWORD}</private-key-password>
                 </keystore>
             </tls>
         </tls-tcp-listener>
@@ -180,6 +180,14 @@
         <option>
             <key>data-hub.preset.root-folder</key>
             <value>/datahubinit</value>
+        </option>
+        <option>
+            <key>data-hub.preset.watcher-interval-millis</key>
+            <value>${ENV:HIVEMQ_DATAHUB_WATCHER_INTERVAL}</value>
+        </option>
+        <option>
+            <key>data-hub.preset.watcher-initial-delay-millis</key>
+            <value>${ENV:HIVEMQ_DATAHUB_WATCHER_INITIAL_DELAY}</value>
         </option>
     </internal>
     ${IF:HIVEMQ_DATAHUB_ENABLED}

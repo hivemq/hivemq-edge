@@ -16,8 +16,10 @@
 package com.hivemq.configuration.reader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.OptionEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapServerEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
@@ -107,6 +109,32 @@ public class ConfigK8sTemplateTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void mqttsWithoutClientAuth_readsThePrivateKeyPasswordFromItsOwnVariable(
+            final @NotNull EnvironmentVariables environmentVariables) throws Exception {
+        // The chart has always exported both passwords, but the NONE-mode listener read the keystore
+        // password for the private key too, so a keystore whose key password differs could not be opened.
+        final Map<String, String> env = withLocalAdmin(baseEnvironment());
+        env.put("HIVEMQ_MQTTS_ENABLED", "true");
+        env.put("HIVEMQ_MQTTS_CLIENT_AUTH_MODE", "NONE");
+        env.put("HIVEMQ_MQTTS_PREFER_SERVER_CIPHER_SUITE", "false");
+        env.put("HIVEMQ_MQTTS_KEYSTORE_PATH", "/mqtts/keystore.jks");
+        env.put("HIVEMQ_MQTTS_SECRET_KEYSTORE_PASSWORD", "store-pw");
+        env.put("HIVEMQ_MQTTS_SECRET_PRIVATE_KEY_PASSWORD", "key-pw");
+
+        final var entity = render(environmentVariables, env);
+
+        assertThat(entity.getMqttListenerConfig())
+                .filteredOn(TlsTCPListenerEntity.class::isInstance)
+                .singleElement()
+                .isInstanceOfSatisfying(TlsTCPListenerEntity.class, listener -> {
+                    assertThat(listener.getTls().getKeystoreEntity().getPassword())
+                            .isEqualTo("store-pw");
+                    assertThat(listener.getTls().getKeystoreEntity().getPrivateKeyPassword())
+                            .isEqualTo("key-pw");
+                });
+    }
+
+    @Test
     public void mqttsWithClientAuth_yieldsExactlyOneTlsListenerCarryingTheTruststore(
             final @NotNull EnvironmentVariables environmentVariables) throws Exception {
         // HIVEMQ_MQTTS_ENABLED must stay unset here: it selects a second listener on the same port 8883,
@@ -160,6 +188,28 @@ public class ConfigK8sTemplateTest extends AbstractConfigurationTest {
 
         assertThat(entity.getApiConfig().getLdap()).isNotNull();
         assertThat(entity.getApiConfig().getLdap().getBaseDn()).isNull();
+    }
+
+    @Test
+    public void dataHubEnabled_carriesThePresetWatcherTimingsTheChartSets(
+            final @NotNull EnvironmentVariables environmentVariables) throws Exception {
+        // The chart has exported HIVEMQ_DATAHUB_WATCHER_INTERVAL and _INITIAL_DELAY since 2025.5 and nothing
+        // read them (EDG-1007). They now feed the two internal options the preset watcher is timed by, so a
+        // Data Hub deployment without them must fail loudly here rather than start with the defaults.
+        final Map<String, String> env = withLocalAdmin(baseEnvironment());
+        env.put("HIVEMQ_DATAHUB_ENABLED", "true");
+        env.put("HIVEMQ_DATAHUB_SCRIPTSTATE_PATH", "/persistence/scriptstate.db");
+        env.put("HIVEMQ_DATAHUB_WATCHER_INTERVAL", "7000");
+        env.put("HIVEMQ_DATAHUB_WATCHER_INITIAL_DELAY", "45000");
+
+        final var entity = render(environmentVariables, env);
+
+        assertThat(entity.getInternal().getOptions())
+                .extracting(OptionEntity::getKey, OptionEntity::getValue)
+                .containsExactly(
+                        tuple("data-hub.preset.root-folder", "/datahubinit"),
+                        tuple("data-hub.preset.watcher-interval-millis", "7000"),
+                        tuple("data-hub.preset.watcher-initial-delay-millis", "45000"));
     }
 
     private static @NotNull Map<String, String> ldapEnvironment(final boolean withBaseDn) {
