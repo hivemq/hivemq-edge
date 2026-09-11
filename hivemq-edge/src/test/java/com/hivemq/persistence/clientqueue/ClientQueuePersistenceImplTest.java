@@ -273,6 +273,56 @@ public class ClientQueuePersistenceImplTest {
 
     @Test
     @Timeout(5)
+    public void aSharedQueueDoesNotInheritAnInternalSubscribersOverflowStrategy() throws Exception {
+        // A shared queue's id is built from a SHARE NAME, and a share name is the client's to choose. Strip the
+        // "$share/" prefix and a subscription to $share/$INTERNAL::test::victim/ leaves a queue id identical to
+        // that subscriber's own -- so without the shared flag this queue took the subscriber's DISCARD_OLDEST
+        // instead of the configured DISCARD, and a client's own messages were dropped under a policy meant for
+        // an internal consumer.
+        //
+        // Asking the factory cannot resolve it: an internal subscriber's id carries no topic suffix, so nothing
+        // in the string separates "the subscriber called X" from "a share group called X". The flag is the only
+        // thing that can, which is why it is threaded through rather than the branch made name-independent.
+        //
+        // Third occurrence of this shape -- see EDG-882 F-05 (sampler) and QA round 2 (bridge forwarder).
+        final InternalTopicFilterSubscriber subscriber = mock(InternalTopicFilterSubscriber.class);
+        when(subscriber.queueOverflow()).thenReturn(QueuedMessagesStrategy.DISCARD_OLDEST);
+        final InternalTopicFilterSubscriberFactory subscriberFactory = mock(InternalTopicFilterSubscriberFactory.class);
+        final String queueId = InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX + "test::victim";
+        when(subscriberFactory.getSubscriber(queueId)).thenReturn(subscriber);
+
+        final ClientQueuePersistenceImpl persistence = new ClientQueuePersistenceImpl(
+                localPersistence,
+                singleWriterService,
+                mqttConfigurationService,
+                clientSessionLocalPersistence,
+                messageDroppedService,
+                topicTree,
+                connectionPersistence,
+                () -> publishPollService,
+                () -> subscriberFactory,
+                messageForwarder,
+                shutdownHooks);
+
+        // shared = true: the same string, but a different queue in a different store.
+        persistence
+                .add(queueId, true, createPublish(1, QoS.AT_LEAST_ONCE, "topic"), false, 1000L, QueuePolicy.DEFAULT)
+                .get();
+
+        verify(localPersistence)
+                .add(
+                        eq(queueId),
+                        eq(true),
+                        any(PUBLISH.class),
+                        eq(1000L),
+                        eq(QueuedMessagesStrategy.DISCARD), // the broker's, NOT the subscriber's DISCARD_OLDEST
+                        anyBoolean(),
+                        eq(false),
+                        anyInt());
+    }
+
+    @Test
+    @Timeout(5)
     public void anInternalSubscribersDeclaredOverflowStrategyIsUsed() throws Exception {
         // The consumption end of withQueueOverflow. Without this the subscriber would carry a value nothing
         // reads, and the queue would silently keep the broker default -- DISCARD, which for a command queue

@@ -118,22 +118,31 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
      * where a consumer says everything else about itself. Declaring none leaves the broker-wide setting, which
      * is what every queue got before this existed.
      * <p>
-     * <b>The queue id is deliberately not consulted for the policy.</b> Reading it off the id was the EDG-882
-     * F-05 defect: a share name is chosen by a client, so an ordinary subscription to
-     * {@code $share/$SAMPLER::customer/alerts} had its messages discarded under a policy meant for
-     * diagnostics. The id is used here only to look a subscriber up, which is an identity question rather than
-     * a policy one.
+     * <b>ONLY FOR A NON-SHARED QUEUE, and {@code shared} is the only thing that can tell.</b> A shared queue's
+     * id is built from a share name, and a share name is the client's to choose -- so a subscription to
+     * {@code $share/$INTERNAL::<a live subscriber's name>/} yields a queue id that, once the {@code $share/}
+     * prefix is stripped, is indistinguishable from that subscriber's own. Asking the factory does not help:
+     * an internal subscriber's id carries no topic suffix, so nothing recoverable from the string separates
+     * "the subscriber called X" from "a client's share group called X". The flag the caller already holds is
+     * the answer, and without it a client could take an internal subscriber's overflow strategy for its own
+     * queue.
+     * <p>
+     * This is the third time the same shape has bitten: reading a queue's policy off its id gave a legitimate
+     * client a sampler's ten-message ring (EDG-882 F-05) and, a round later, a bridge's queue limit and a
+     * rewritten QoS (EDG-882 QA round 2). Both were fixed by asking the owning service instead. That remedy
+     * does not transfer here -- see above -- so this branch is gated on {@code shared} rather than made
+     * name-independent.
      * <p>
      * The factory is resolved lazily, and only for a queue whose id says it could be an internal subscriber:
      * the factory depends on this persistence, so holding it eagerly would be a construction cycle.
      */
     private @NotNull MqttConfigurationService.QueuedMessagesStrategy overflowStrategyFor(
-            final @NotNull String queueId, final @NotNull QueuePolicy policy) {
+            final @NotNull String queueId, final boolean shared, final @NotNull QueuePolicy policy) {
 
         if (policy == QueuePolicy.SAMPLE_RING) {
             return MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
         }
-        if (queueId.startsWith(InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX)) {
+        if (!shared && queueId.startsWith(InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX)) {
             final InternalTopicFilterSubscriber subscriber =
                     subscriberFactory.get().getSubscriber(queueId);
             if (subscriber != null && subscriber.queueOverflow() != null) {
@@ -171,7 +180,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                     shared,
                     publish,
                     queueLimit,
-                    overflowStrategyFor(queueId, policy),
+                    overflowStrategyFor(queueId, shared, policy),
                     retained,
                     applyMaxToQos0,
                     bucketIndex);
@@ -214,7 +223,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                     shared,
                     publishes,
                     queueLimit,
-                    overflowStrategyFor(queueId, policy),
+                    overflowStrategyFor(queueId, shared, policy),
                     retained,
                     applyMaxToQos0,
                     bucketIndex);
