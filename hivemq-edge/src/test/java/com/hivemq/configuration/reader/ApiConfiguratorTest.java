@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
 import com.hivemq.api.config.AuthMode;
+import com.hivemq.configuration.entity.api.ldap.LdapServerEntity;
 import com.hivemq.exceptions.UnrecoverableException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,19 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
 
     private static @NotNull String oidc(final boolean enabled) {
         return "<oidc-authentication><enabled>" + enabled + "</enabled>" + OIDC_FIELDS + "</oidc-authentication>";
+    }
+
+    private static @NotNull String ldap(final @NotNull String @NotNull ... hosts) {
+        final StringBuilder sb = new StringBuilder("<ldap><servers>");
+        for (final String host : hosts) {
+            sb.append("<ldap-server><host>").append(host).append("</host><port>389</port></ldap-server>");
+        }
+        return sb.append("</servers>")
+                .append(
+                        "<simple-bind><rdns>cn=admin,dc=example,dc=com</rdns><userPassword>pw</userPassword></simple-bind>")
+                .append("<rdns>ou=people,dc=example,dc=com</rdns>")
+                .append("</ldap>")
+                .toString();
     }
 
     // -- Local username/password.
@@ -260,6 +274,38 @@ public class ApiConfiguratorTest extends AbstractConfigurationTest {
     public void oidcWithoutEnabled_isRejectedByTheSchema() throws Exception {
         writeConfig(
                 usernameAuth(true) + users("alice") + "<oidc-authentication>" + OIDC_FIELDS + "</oidc-authentication>");
+
+        assertThrows(Exception.class, () -> reader.applyConfig());
+    }
+
+    // -- LDAP servers. Connections are spread over them round-robin, so more than one is valid.
+
+    @Test
+    public void ldapWithASingleServer_isAccepted() throws Exception {
+        writeConfig(ldap("ldap1.example.com"));
+
+        final var entity = reader.applyConfig();
+
+        assertThat(entity.getApiConfig().getLdap()).isNotNull();
+        assertThat(entity.getApiConfig().getLdap().getServers())
+                .extracting(LdapServerEntity::getHost)
+                .containsExactly("ldap1.example.com");
+    }
+
+    @Test
+    public void ldapWithSeveralServers_isAccepted() throws Exception {
+        writeConfig(ldap("ldap1.example.com", "ldap2.example.com", "ldap3.example.com"));
+
+        final var entity = reader.applyConfig();
+
+        assertThat(entity.getApiConfig().getLdap().getServers())
+                .extracting(LdapServerEntity::getHost)
+                .containsExactly("ldap1.example.com", "ldap2.example.com", "ldap3.example.com");
+    }
+
+    @Test
+    public void ldapWithoutAnyServer_isRejectedByTheSchema() throws Exception {
+        writeConfig(ldap());
 
         assertThrows(Exception.class, () -> reader.applyConfig());
     }

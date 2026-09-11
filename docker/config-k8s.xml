@@ -110,7 +110,9 @@
 
             <uid-attribute>${ENV:HIVEMQ_LDAP_UID}</uid-attribute>
             <rdns>${ENV:HIVEMQ_LDAP_RDNS}</rdns>
+            ${IF:HIVEMQ_LDAP_BASE_DN_ENABLED}
             <base-dn>${ENV:HIVEMQ_LDAP_BASE_DN}</base-dn>
+            ${IF:HIVEMQ_LDAP_BASE_DN_ENABLED}
             <directory-descent>${ENV:HIVEMQ_LDAP_DIRECTORY_DESCENT}</directory-descent>
             ${IF:HIVEMQ_LDAP_OBJECT_CLASS_ENABLED}
             <required-object-class>${ENV:HIVEMQ_LDAP_OBJECT_CLASS}</required-object-class>

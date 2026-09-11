@@ -132,6 +132,64 @@ public class SystemInformationImplTest {
     }
 
     @Test
+    public void test_getSecondaryConfigFolder_defaultsToConfigFolder(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+        systemProperties.set(SystemProperties.HIVEMQ_HOME, tempFolder.getAbsolutePath());
+
+        systemInformation = new SystemInformationImpl();
+        systemInformation.init();
+
+        assertThat(systemInformation.getConfigFolder().getAbsolutePath())
+                .isEqualTo(systemInformation.getSecondaryHiveMQHomeFolder().getAbsolutePath());
+    }
+
+    @Test
+    public void test_getSecondaryConfigFolder_property(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+        final var testfolder = new File(tempFolder, "testconfig-secondary");
+
+        systemProperties.set(SystemProperties.CONFIG_FOLDER_SECONDARY, testfolder.getAbsolutePath());
+
+        systemInformation = new SystemInformationImpl();
+        systemInformation.init();
+
+        assertThat(testfolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getSecondaryHiveMQHomeFolder().getAbsolutePath());
+    }
+
+    @Test
+    public void test_getSecondaryConfigFolder_environmentVariable(
+            final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
+        final var testfolder = new File(tempFolder, "testconfig-secondary");
+
+        environmentVariables.set(EnvironmentVariables.CONFIG_FOLDER_SECONDARY, testfolder.getAbsolutePath());
+
+        systemInformation = new SystemInformationImpl();
+        systemInformation.init();
+
+        assertThat(testfolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getSecondaryHiveMQHomeFolder().getAbsolutePath());
+    }
+
+    @Test
+    public void test_getSecondaryConfigFolder_isIndependentOfConfigFolder(
+            final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
+        final var configFolder = new File(tempFolder, "testconfig");
+        final var secondaryFolder = new File(tempFolder, "testconfig-secondary");
+
+        environmentVariables.set(EnvironmentVariables.CONFIG_FOLDER, configFolder.getAbsolutePath());
+        environmentVariables.set(EnvironmentVariables.CONFIG_FOLDER_SECONDARY, secondaryFolder.getAbsolutePath());
+
+        systemInformation = new SystemInformationImpl();
+        systemInformation.init();
+
+        assertThat(configFolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getConfigFolder().getAbsolutePath());
+        assertThat(secondaryFolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getSecondaryHiveMQHomeFolder().getAbsolutePath());
+    }
+
+    @Test
     public void test_getLogFolder_default(
             final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         systemProperties.remove(SystemProperties.LOG_FOLDER);
