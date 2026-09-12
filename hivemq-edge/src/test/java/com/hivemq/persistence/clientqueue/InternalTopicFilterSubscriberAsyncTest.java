@@ -18,6 +18,7 @@ package com.hivemq.persistence.clientqueue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -42,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
@@ -234,6 +236,50 @@ class InternalTopicFilterSubscriberAsyncTest {
     }
 
     @Test
+    void aFailedReadEndsTheLoopSoTheSubscriberRecovers() {
+        // A read that FAILS must end the running loop exactly as an empty or successful one does. It used to be
+        // attached with a success-only transform, so an exceptionally completed read ran nothing at all: the
+        // loop stayed marked as running for ever and every later trigger found one in progress and did nothing,
+        // silently, including after a pause and resume. The enclosing try/catch did not help -- a future
+        // completing exceptionally is not a throw from the try block. Reported by Sam on #1752.
+        final List<String> seen = new ArrayList<>();
+        final AtomicBoolean failNextRead = new AtomicBoolean(true);
+
+        when(clientQueuePersistence.readNew(anyString(), any(Boolean.class), any(ImmutableIntArray.class), anyLong()))
+                .thenAnswer(invocation -> {
+                    reads.incrementAndGet();
+                    if (failNextRead.getAndSet(false)) {
+                        return Futures.immediateFailedFuture(new IllegalStateException("persistence is down"));
+                    }
+                    if (queued.isEmpty()) {
+                        return Futures.immediateFuture(ImmutableList.of());
+                    }
+                    return Futures.immediateFuture(ImmutableList.of(queued.remove(0)));
+                });
+
+        final ArgumentCaptor<ClientQueuePersistence.PublishAvailableCallback> callback =
+                ArgumentCaptor.forClass(ClientQueuePersistence.PublishAvailableCallback.class);
+
+        // The drain consume() starts hits the injected failure.
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "failed-read")
+                .withProcessor(m -> seen.add(new String(m.getPayload(), StandardCharsets.UTF_8)))
+                .withTopicFilter("commands/#")
+                .build();
+        subscriber.consume();
+
+        assertThat(seen).as("the read failed, so nothing was processed").isEmpty();
+
+        // Recovery: a later wake-up must be acted on rather than declined by a claim nobody released.
+        verify(clientQueuePersistence).addPublishAvailableCallback(callback.capture(), anyString());
+        queued.add(message("a"));
+        callback.getValue().onPublishAvailable(subscriber.clientId());
+
+        assertThat(seen)
+                .as("the failed read ended its loop, so the subscriber is not stalled")
+                .containsExactly("a");
+    }
+
+    @Test
     void aCompletionArrivingAfterStopDoesNotReadFromTheQueue() {
         // stop() FREES THE CLIENT ID, so a replacement subscriber may already own the queue under that name.
         // An outstanding future completing afterwards used to acknowledge and poll regardless -- the discarded
@@ -269,6 +315,43 @@ class InternalTopicFilterSubscriberAsyncTest {
         assertThat(reads.get())
                 .as("and does not read the queue at all, which a replacement may now own")
                 .isEqualTo(readsBeforeCompletion);
+    }
+
+    @Test
+    void aTeardownAskedForMidIterationWaitsForThatIterationToFinish() {
+        // THE CASE THE TEARDOWN EVENT EXISTS FOR. deallocate() destroys the queue and hands the client id back
+        // for reuse. Doing that while an iteration is in flight -- a message with the consumer's processor,
+        // messages already read sitting in the subscriber -- races the very queue it destroys, and frees an
+        // identity a replacement may take while the old loop is still reading under it.
+        //
+        // So the request is REGISTERED and acted on only when the loop next reaches its controller, which is a
+        // point between iterations. Here: nothing is destroyed while the processor holds the message, and the
+        // teardown happens the moment it completes.
+        final List<CompletableFuture<Void>> outstanding = new ArrayList<>();
+        queued.add(message("a"));
+
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "teardown-mid-iteration")
+                .withAsyncProcessor(m -> {
+                    final CompletableFuture<Void> completion = new CompletableFuture<>();
+                    outstanding.add(completion);
+                    return completion;
+                })
+                .withTopicFilter("commands/#")
+                .build();
+        subscriber.consume();
+
+        assertThat(outstanding).as("an iteration is in flight").hasSize(1);
+
+        subscriber.deallocate();
+        verify(clientQueuePersistence, never())
+                .clear(anyString(), anyBoolean()); // NOT while the processor still holds the message
+
+        outstanding.get(0).complete(null);
+
+        verify(clientQueuePersistence).clear(subscriber.clientId(), false);
+        assertThatThrownBy(subscriber::attach)
+                .as("and the subscriber is dead once the loop has done it")
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -314,6 +397,48 @@ class InternalTopicFilterSubscriberAsyncTest {
 
         assertThat(seen).as("the message was delivered").containsExactly("a");
         verify(clientQueuePersistence, never()).remove(anyString(), anyInt());
+    }
+
+    @Test
+    void everyMessageAReadReturnsIsProcessed_notJustTheFirst() {
+        // A READ CAN RETURN MORE THAN ONE MESSAGE EVEN THOUGH WE ASK FOR ONE. The argument that looks like a
+        // count is a supply of packet ids to STAMP messages with, and a QoS 0 message needs no stamp -- so on a
+        // queue holding both kinds the store hands back one stamped message AND one QoS 0 message, the latter
+        // added before the count limit is re-tested.
+        //
+        // Taking only the first and dropping the rest LOSES messages outright: reading a QoS 0 message removes
+        // it from the store, so a dropped one is not delayed or redelivered, it is gone, with nothing logged.
+        // This stubs a read that returns two, as the real store does, and pins that both arrive.
+        final List<String> seen = new ArrayList<>();
+
+        final PUBLISH stamped = message("qos1");
+        final PUBLISH alongside = new PUBLISHFactory.Mqtt5Builder()
+                .withHivemqId("edge1")
+                .withTopic("commands/setpoint")
+                .withQoS(QoS.AT_MOST_ONCE)
+                .withOnwardQos(QoS.AT_MOST_ONCE)
+                .withPayload("qos0".getBytes(StandardCharsets.UTF_8))
+                .build();
+
+        final AtomicBoolean firstRead = new AtomicBoolean(true);
+        when(clientQueuePersistence.readNew(anyString(), any(Boolean.class), any(ImmutableIntArray.class), anyLong()))
+                .thenAnswer(invocation -> {
+                    reads.incrementAndGet();
+                    if (firstRead.getAndSet(false)) {
+                        return Futures.immediateFuture(ImmutableList.of(stamped, alongside));
+                    }
+                    return Futures.immediateFuture(ImmutableList.of());
+                });
+
+        factory.builder("test", "two-from-one-read")
+                .withProcessor(m -> seen.add(new String(m.getPayload(), StandardCharsets.UTF_8)))
+                .withTopicFilter("commands/#")
+                .build()
+                .consume();
+
+        assertThat(seen)
+                .as("both messages the single read returned are processed, in order")
+                .containsExactly("qos1", "qos0");
     }
 
     @Test
@@ -780,6 +905,34 @@ class InternalTopicFilterSubscriberAsyncTest {
                 .containsExactly("a");
         // And the pause took effect on the callback too, which is what it always did.
         verify(clientQueuePersistence).removePublishAvailableCallback(subscriber.clientId());
+    }
+
+    @Test
+    void aTriggerArrivingWhilePausedDoesNotDrain() {
+        // WHY THE LOOP STILL READS `consuming` AND NOT ONLY THE COMMANDS IT IS SENT. pause() sends a STOP so
+        // that a pause takes effect promptly, but that is an EVENT -- it says "stop now", not "stay stopped".
+        // The message-available callback is deregistered on the caller's thread, so a message may already be
+        // in flight towards it, and a START arriving after the pause would otherwise drain a paused
+        // subscriber. The standing fact is what refuses it.
+        final List<String> seen = new ArrayList<>();
+
+        final ArgumentCaptor<ClientQueuePersistence.PublishAvailableCallback> callback =
+                ArgumentCaptor.forClass(ClientQueuePersistence.PublishAvailableCallback.class);
+
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "trigger-while-paused")
+                .withProcessor(m -> seen.add(new String(m.getPayload(), StandardCharsets.UTF_8)))
+                .withTopicFilter("commands/#")
+                .build();
+        subscriber.consume();
+        verify(clientQueuePersistence).addPublishAvailableCallback(callback.capture(), anyString());
+
+        subscriber.pause();
+
+        // A message arrives, and the callback fires -- as one already in flight would.
+        queued.add(message("a"));
+        callback.getValue().onPublishAvailable(subscriber.clientId());
+
+        assertThat(seen).as("a paused subscriber processes nothing").isEmpty();
     }
 
     @Test
