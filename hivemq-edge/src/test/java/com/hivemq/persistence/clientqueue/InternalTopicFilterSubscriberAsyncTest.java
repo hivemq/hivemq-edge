@@ -37,18 +37,21 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.InMemoryProducerQueues;
 import com.hivemq.persistence.ProducerQueues;
 import com.hivemq.persistence.SingleWriterService;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -871,6 +874,57 @@ class InternalTopicFilterSubscriberAsyncTest {
     // Submitting a poll can run the whole cycle INLINE on the calling thread, so a submit made inside a
     // synchronized verb would call the component's processor inside the monitor. These two pin the split
     // that prevents it, each from the side that would have failed.
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void noLifecycleVerbBlocksOnTheRealSingleWriter() {
+        // THE REGRESSION TEST FOR "NO LIFECYCLE VERB BLOCKS" -- see the rule and the worked deadlock at the
+        // head of the lifecycle region.
+        //
+        // This is the one test that uses the REAL in-memory SingleWriter rather than the stub above, because
+        // the stub cannot reproduce the hazard: it runs every submitted task immediately, whereas the real one
+        // has a work-in-progress counter, and a submit made from INSIDE the drain loop enqueues without
+        // draining. That counter is exactly what would strand a verb that waited.
+        //
+        // The shape is the deadlock from the region comment, and the class supports it: a processor pauses its
+        // own subscriber, so the pause happens on the writer's thread, inside the drain loop, with the counter
+        // held. Running on that thread is fine; WAITING while on it is not. Today nothing waits, so this
+        // completes. The day a verb waits, it hangs -- and the timeout turns the hang into a named failure
+        // rather than a wedged suite.
+        //
+        // SEPARATE_THREAD on the timeout, and not by taste. The default runs the test on the calling thread
+        // and can only report a timeout once that thread comes back -- which, for a thread deadlocked on its
+        // own work, is never. Verified: with a wait added to the verb, the default mode wedged the whole JVM
+        // and this test never reported at all. The separate thread is what makes the failure arrive.
+        final InMemoryProducerQueues realQueues = new InMemoryProducerQueues(4, 1);
+        final SingleWriterService realWriter = mock(SingleWriterService.class);
+        when(realWriter.getQueuedMessagesQueue()).thenReturn(realQueues);
+
+        final InternalTopicFilterSubscriberFactory realFactory =
+                new InternalTopicFilterSubscriberFactory(topicTree, clientQueuePersistence, realWriter);
+
+        queued.add(message("a"));
+        queued.add(message("b"));
+
+        final List<String> seen = new ArrayList<>();
+        final AtomicReference<InternalTopicFilterSubscriber> self = new AtomicReference<>();
+        final InternalTopicFilterSubscriber subscriber = realFactory
+                .builder("test", "no-verb-blocks")
+                .withProcessor(m -> {
+                    seen.add(new String(m.getPayload(), StandardCharsets.UTF_8));
+                    self.get().pause(); // on the writer's thread, inside its drain loop
+                })
+                .withTopicFilter("commands/#")
+                .build();
+        self.set(subscriber);
+
+        subscriber.consume(); // would never return if pause() waited for the loop
+        subscriber.stop(); // nor would this, for the same reason
+
+        assertThat(seen)
+                .as("the first message was processed, and the verbs returned")
+                .containsExactly("a");
+    }
 
     @Test
     void aProcessorThatPausesDuringTheFirstDrainActuallyPauses() {
