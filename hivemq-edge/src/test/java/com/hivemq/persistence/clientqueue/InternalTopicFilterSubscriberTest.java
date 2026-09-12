@@ -18,11 +18,16 @@ package com.hivemq.persistence.clientqueue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableList;
+import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
@@ -54,16 +59,21 @@ class InternalTopicFilterSubscriberTest {
         clientQueuePersistence = mock(ClientQueuePersistence.class);
         singleWriterService = mock(SingleWriterService.class);
 
-        // consume() calls submitPoll(), which submits a task onto the SingleWriter queue. We do NOT run
-        // the task here: in production each submit() is asynchronous, and the poll pipeline reschedules
-        // itself via submitPoll() — running it synchronously in the test thread would recurse without
-        // bound. These tests exercise the wiring and state machine, not the poll loop, so submit() just
-        // returns an immediate future. (Mockito still records the queueId argument, which is what the
-        // id-coupling test captures.)
+        // Submitted tasks RUN, on the calling thread, as the in-memory single writer does in production.
+        // They must: deallocate() no longer tears down inline, it submits a TEARDOWN event for the ppf-loop
+        // to act on, so a stub that swallowed tasks would leave every subscriber alive.
+        // (Mockito still records the queueId argument, which is what the id-coupling test captures.)
         final ProducerQueues producerQueues = mock(ProducerQueues.class);
         when(singleWriterService.getQueuedMessagesQueue()).thenReturn(producerQueues);
-        when(producerQueues.submit(any(), any(SingleWriterService.Task.class)))
-                .thenReturn(Futures.immediateFuture(null));
+        when(producerQueues.submit(any(), any(SingleWriterService.Task.class))).thenAnswer(invocation -> {
+            final SingleWriterService.Task<?> task = invocation.getArgument(1);
+            return Futures.immediateFuture(task.doTask(0));
+        });
+
+        // An empty queue, so a ppf-loop that starts ends immediately. Without this the read hands back null,
+        // which the loop treats as a failure and retries -- for ever, on this inline-running stub.
+        when(clientQueuePersistence.readNew(anyString(), anyBoolean(), any(ImmutableIntArray.class), anyLong()))
+                .thenReturn(Futures.immediateFuture(ImmutableList.of()));
 
         factory = new InternalTopicFilterSubscriberFactory(topicTree, clientQueuePersistence, singleWriterService);
     }
@@ -125,12 +135,20 @@ class InternalTopicFilterSubscriberTest {
     }
 
     @Test
-    void deallocate_throws_whenNotDetachedAndPaused() {
+    void deallocate_onALiveSubscriber_detachesAndPausesItself() {
+        // It used to demand being detached and paused first, because it tore down inline and could not do
+        // that safely under a running ppf-loop. It now submits the teardown to the loop, so it can do the
+        // detaching and pausing on the caller's behalf.
         final InternalTopicFilterSubscriber s = build("sensors/#").start(); // attached + consuming
 
-        assertThatThrownBy(s::deallocate)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("must be detached and paused");
+        s.deallocate();
+
+        assertThat(topicTree.findTopicSubscribers("sensors/temp").getSubscribers())
+                .as("detached: out of the topic tree")
+                .isEmpty();
+        assertThatThrownBy(s::attach)
+                .as("and dead: every verb but deallocate/stop throws")
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
