@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  minimatch@3: 3.1.5
+  minimatch@3: 10.2.6
   minimatch@8: 8.0.7
   minimatch@9: 9.0.9
   minimatch@10: 10.2.6
@@ -4149,9 +4149,6 @@ packages:
     resolution: {integrity: sha512-2hCgjEmP8YLWQ130n2FerGv7rYpfBmnmp9Uy2Le1vge6X3gZIfSmEzP5QTDElFxcvVcXlEn8Aq6MU/PZygIOog==}
     engines: {node: '>=14.16'}
 
-  brace-expansion@1.1.18:
-    resolution: {integrity: sha512-Edep/X9fGqVNmzKBVsDYIOtD+z1tuezV70LBjdCst9Tqu76lsnvRiZ6oTic1n+/BIwX6QDGAO94PN4N2SADvtw==}
-
   brace-expansion@2.1.4:
     resolution: {integrity: sha512-hGfVzPxthbf3+2yjg/RBs60cB0FhqBS/zvdV/4wn4/BmN0bNMMHPc4V/BbFieqf1TKAGGAHnY4eSjajCl0f2Xg==}
 
@@ -4488,9 +4485,6 @@ packages:
 
   compute-lcm@1.1.2:
     resolution: {integrity: sha512-OFNPdQAXnQhDSKioX8/XYT6sdUlXwpeMjfd6ApxMJfyZ4GxmLR1xvMERctlYhlHwIiz6CSpBc2+qYKjHGZw4TQ==}
-
-  concat-map@0.0.1:
-    resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
   concat-stream@2.0.0:
     resolution: {integrity: sha512-MWufYdFw53ccGjCA+Ol7XJYpAlW6/prSMzuPOTRnJGcGzuhLn4Scrz7qf6o8bROZ514ltazcIFJZevcfbo0x7A==}
@@ -6730,9 +6724,6 @@ packages:
   minimatch@10.2.6:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
     engines: {node: 18 || 20 || >=22}
-
-  minimatch@3.1.5:
-    resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
 
   minimatch@9.0.9:
     resolution: {integrity: sha512-OBwBN9AL4dqmETlpS2zasx+vTeWclWzkblfZk7KTA5j3jeOONz/tRCnZomUyvNg83wL5Zv9Ss6HMJXAgL8R2Yg==}
@@ -13383,11 +13374,6 @@ snapshots:
       widest-line: 4.0.1
       wrap-ansi: 8.1.0
 
-  brace-expansion@1.1.18:
-    dependencies:
-      balanced-match: 1.0.2
-      concat-map: 0.0.1
-
   brace-expansion@2.1.4:
     dependencies:
       balanced-match: 1.0.2
@@ -13881,8 +13867,6 @@ snapshots:
       validate.io-function: 1.0.2
       validate.io-integer-array: 1.0.0
 
-  concat-map@0.0.1: {}
-
   concat-stream@2.0.0:
     dependencies:
       buffer-from: 1.1.2
@@ -13926,7 +13910,7 @@ snapshots:
   copyfiles@2.4.1:
     dependencies:
       glob: 7.2.3
-      minimatch: 3.1.5
+      minimatch: 10.2.6
       mkdirp: 1.0.4
       noms: 0.0.0
       through2: 2.0.5
@@ -14728,7 +14712,7 @@ snapshots:
       estraverse: 5.3.0
       hasown: 2.0.2
       jsx-ast-utils: 3.3.5
-      minimatch: 3.1.5
+      minimatch: 10.2.6
       object.entries: 1.1.9
       object.fromentries: 2.0.8
       object.values: 1.2.1
@@ -15230,7 +15214,7 @@ snapshots:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.1.5
+      minimatch: 10.2.6
       once: 1.4.0
       path-is-absolute: 1.0.1
 
@@ -16240,10 +16224,6 @@ snapshots:
   minimatch@10.2.6:
     dependencies:
       brace-expansion: 5.0.9
-
-  minimatch@3.1.5:
-    dependencies:
-      brace-expansion: 1.1.18
 
   minimatch@9.0.9:
     dependencies:
