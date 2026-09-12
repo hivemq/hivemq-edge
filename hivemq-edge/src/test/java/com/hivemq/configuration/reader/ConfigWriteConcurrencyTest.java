@@ -143,9 +143,9 @@ public class ConfigWriteConcurrencyTest {
                     if (!go.await(30, TimeUnit.SECONDS)) {
                         throw new IllegalStateException("the start gate never opened");
                     }
-                    ConfigFileReaderWriter.replaceCarryingProtections(
+                    ProtectedFileReplacer.replaceCarryingProtections(
                             target,
-                            ConfigFileReaderWriter.preservedAttributesOf(target),
+                            ProtectedFileReplacer.preservedAttributesOf(target),
                             partial -> Files.writeString(partial, content, StandardCharsets.UTF_8));
                     return null;
                 }));
@@ -192,9 +192,9 @@ public class ConfigWriteConcurrencyTest {
             }
             work.add(threads.submit(() -> {
                 for (int repeat = 0; repeat < 20; repeat++) {
-                    ConfigFileReaderWriter.replaceCarryingProtections(
+                    ProtectedFileReplacer.replaceCarryingProtections(
                             target,
-                            ConfigFileReaderWriter.preservedAttributesOf(target),
+                            ProtectedFileReplacer.preservedAttributesOf(target),
                             partial -> Files.writeString(partial, content, StandardCharsets.UTF_8));
                 }
                 return null;

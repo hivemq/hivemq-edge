@@ -152,6 +152,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
+    public void stopWatchingConfigFile() {
+        final ConfigFileReaderWriter reader = configFileReaderWriter;
+        if (reader != null) {
+            reader.stopWatching();
+        }
+    }
+
+    @Override
     public @NotNull ProtocolAdapterExtractor protocolAdapterExtractor() {
         Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getProtocolAdapterExtractor();

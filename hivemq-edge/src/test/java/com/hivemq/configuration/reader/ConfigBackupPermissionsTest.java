@@ -149,8 +149,7 @@ public class ConfigBackupPermissionsTest extends AbstractConfigurationTest {
      * slots exist the rotation recycles the oldest, and a slot left wide by an earlier release — or by an
      * operator — must not decide how the next backup of a restricted configuration is protected.
      * <p>
-     * The modification times are set rather than assumed, because "oldest" is what selects the slot and
-     * the configuration file itself is in the set the rotation looks at.
+     * The modification times are set rather than assumed, because "oldest" is what selects the slot.
      */
     @Test
     public void theRecycledBackupSlotIsNotWidenedByWhatItHeld() throws IOException {
@@ -158,11 +157,12 @@ public class ConfigBackupPermissionsTest extends AbstractConfigurationTest {
         Files.writeString(config, config("s3cr3t-do-not-write-me"));
         Files.setPosixFilePermissions(config, OWNER_ONLY);
         Files.setLastModifiedTime(config, FileTime.fromMillis(now));
-        for (int slot = 1; slot <= 4; slot++) {
+        // all five slots taken (EDG-949 made the fifth one usable), config_1 the oldest
+        for (int slot = 1; slot <= 5; slot++) {
             final Path used = config.resolveSibling("config_" + slot + ".xml");
             Files.writeString(used, "an earlier backup left readable by everyone");
             Files.setPosixFilePermissions(used, WORLD_WRITABLE);
-            Files.setLastModifiedTime(used, FileTime.fromMillis(now - (5L - slot) * 60_000L));
+            Files.setLastModifiedTime(used, FileTime.fromMillis(now - (6L - slot) * 60_000L));
         }
 
         reader.applyConfig();
