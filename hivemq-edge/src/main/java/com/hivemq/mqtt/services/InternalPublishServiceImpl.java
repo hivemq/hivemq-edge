@@ -31,6 +31,7 @@ import com.hivemq.mqtt.topic.tree.TopicSubscribers;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber;
 import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberFactory;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberWithoutQueue;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.util.Exceptions;
 import jakarta.inject.Inject;
@@ -201,6 +202,14 @@ public class InternalPublishServiceImpl implements InternalPublishService {
                     final InternalTopicFilterSubscriber internalSubscriber =
                             internalTopicFilterSubscriberFactory.getSubscriber(subscriber.getSubscriber());
                     if (internalSubscriber != null && internalSubscriber.isExcludedIngressClientId(sender)) {
+                        continue;
+                    }
+                    // The same exclusion for a queueless internal subscriber -- a separate lookup because the
+                    // two are separate classes; at most one of them answers for a given client id.
+                    final InternalTopicFilterSubscriberWithoutQueue internalSubscriberWithoutQueue =
+                            internalTopicFilterSubscriberFactory.getSubscriberWithoutQueue(subscriber.getSubscriber());
+                    if (internalSubscriberWithoutQueue != null
+                            && internalSubscriberWithoutQueue.isExcludedIngressClientId(sender)) {
                         continue;
                     }
                 }
