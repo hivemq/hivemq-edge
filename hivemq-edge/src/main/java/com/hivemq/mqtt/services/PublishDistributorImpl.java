@@ -45,6 +45,7 @@ import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber;
 import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberFactory;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberWithoutQueue;
 import com.hivemq.persistence.clientqueue.QueuePolicy;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
@@ -247,6 +248,18 @@ public class PublishDistributorImpl implements PublishDistributor {
         Long queueLimit = null;
 
         if (client.startsWith(INTERNAL_SUBSCRIBER_PREFIX)) {
+            // The transport fork: an internal subscriber is queued or queueless, and which it is decides
+            // whether this message is queued at all. Asked of the registry rather than read off the client id,
+            // so the two kinds need no separate prefix.
+            final InternalTopicFilterSubscriberWithoutQueue subscriberWithoutQueue =
+                    subscriberFactory.get().getSubscriberWithoutQueue(client);
+            if (subscriberWithoutQueue != null) {
+                // Delivered here, on this thread. createPublish applies the same transformation a queued
+                // message gets, so both kinds of subscriber see the same message.
+                final boolean delivered = subscriberWithoutQueue.deliver(
+                        createPublish(publish, subscriptionQos, retainAsPublished, subscriptionIdentifier));
+                return Futures.immediateFuture(delivered ? DELIVERED : FAILED);
+            }
             // An internal subscriber has no client session, so there is no session-scoped limit to read; it
             // declares its own instead, at the builder. Null here means it declared none, and queuePublish
             // then falls back to the broker-wide maxQueuedMessages -- the same value it got before this.
