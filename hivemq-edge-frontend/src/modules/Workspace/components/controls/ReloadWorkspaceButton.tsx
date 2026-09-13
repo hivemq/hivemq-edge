@@ -1,11 +1,10 @@
 import type { FC } from 'react'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useDisclosure, useToast } from '@chakra-ui/react'
+import { Button, useDisclosure, useToast } from '@chakra-ui/react'
 import { LuRefreshCw } from 'react-icons/lu'
 import type { Edge, Node } from '@xyflow/react'
 
-import IconButton from '@/components/Chakra/IconButton.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 import { useIsPanelOpen, useReloadWorkspace } from '@/modules/Workspace/hooks/useReloadWorkspace.ts'
@@ -64,12 +63,21 @@ const ReloadWorkspaceButton: FC<ReloadWorkspaceButtonProps> = ({ builtNodes, bui
 
   return (
     <>
-      <IconButton
-        icon={<LuRefreshCw />}
+      {/*
+        A labelled button, not an icon in the control group: the point of this control is that a
+        confused user finds it, and the five icon-only controls beside it are exactly the pattern
+        that made the old reset undiscoverable.
+      */}
+      <Button
+        leftIcon={<LuRefreshCw />}
         onClick={onOpen}
-        aria-label={t('workspace.reload.trigger')}
+        size="sm"
+        variant="outline"
+        backgroundColor="white"
         data-testid="reload-workspace-trigger"
-      />
+      >
+        {t('workspace.reload.trigger')}
+      </Button>
       <ReloadWorkspaceDialog
         isOpen={isOpen}
         onClose={onClose}

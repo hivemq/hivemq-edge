@@ -22,14 +22,15 @@ describe('CanvasControls', () => {
     cy.intercept('/api/v1/management/pulse/asset-mappers', { statusCode: 200, body: { items: [] }, log: false })
   })
 
-  it('should carry the reload control alongside the other canvas controls', () => {
+  it('should carry the reload control beside, not inside, the attached group', () => {
     cy.mountWithProviders(<CanvasControls />, { wrapper })
 
-    // The six controls, in order: zoom in, zoom out, fit, lock, options, reload.
-    cy.get('[role="group"]').last().find('button').should('have.length', 6)
-    cy.get('[role="group"]').last().find('button').eq(5).should('have.attr', 'aria-label', 'Reload workspace')
+    // The attached group keeps its five icon controls: zoom in, zoom out, fit, lock, options.
+    cy.get('[role="group"]').last().find('button').should('have.length', 5)
 
-    cy.getByTestId('reload-workspace-trigger').should('be.visible')
+    // The reload control sits outside that group and carries a visible label, so it can be found.
+    cy.getByTestId('reload-workspace-trigger').should('be.visible').should('contain.text', 'Reload workspace')
+    cy.get('[role="group"]').last().find('[data-testid="reload-workspace-trigger"]').should('not.exist')
   })
 
   it('should open the reload dialog from the canvas controls', () => {
