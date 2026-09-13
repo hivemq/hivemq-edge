@@ -11,7 +11,9 @@ import '@xyflow/react/dist/style.css'
 import './reactflow-chakra.fix.css'
 
 import MiniMap from '@/components/react-flow/MiniMap.tsx'
+import Panel from '@/components/react-flow/Panel.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
+import ReloadWorkspaceButton from '@/modules/Workspace/components/controls/ReloadWorkspaceButton.tsx'
 import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
 import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
@@ -274,6 +276,9 @@ const ReactFlowWrapper = () => {
     >
       <Box role="group" aria-label={t('workspace.canvas.toolbar.container')} aria-controls="edge-workspace-canvas">
         <CanvasToolbar />
+        <Panel position="top-right">
+          <ReloadWorkspaceButton builtNodes={newNodes} builtEdges={newEdges} />
+        </Panel>
         <SelectionListener />
         <StatusListener />
         <CanvasControls />

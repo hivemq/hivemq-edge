@@ -870,6 +870,27 @@
         "minimap": "Mini Map toolbar"
       }
     },
+    "reload": {
+      "trigger": "Reload workspace",
+      "header": "Reload the workspace",
+      "progress": "Fetching everything from HiveMQ Edge and rebuilding the workspace...",
+      "panelOpen": "Close the open panel before reloading. Reloading now could discard changes you have not saved yet.",
+      "safe": {
+        "title": "Reload",
+        "description": "Fetches everything from HiveMQ Edge again and corrects what the workspace shows. Your groups, layout and panel preferences are kept."
+      },
+      "destructive": {
+        "title": "Reset everything",
+        "description": "Clears all locally stored data and starts over. Your groups, layout and preferences are deleted, and you are signed out. Use this only when reloading does not fix the workspace."
+      },
+      "action": {
+        "cancel": "Cancel",
+        "reload": "Reload",
+        "reset": "Reset everything"
+      },
+      "success": "Workspace reloaded: {{updated}} updated, {{added}} added, {{removed}} removed.",
+      "error": "Could not reload the workspace. Nothing was changed."
+    },
     "controls": {
       "aria-label": "Workspace toolbars",
       "zoomIn": "Zoom in",
