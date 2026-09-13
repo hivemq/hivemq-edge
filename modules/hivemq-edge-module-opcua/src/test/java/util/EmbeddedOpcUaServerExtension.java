@@ -65,8 +65,10 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
+import org.eclipse.milo.opcua.stack.core.types.structured.SetPublishingModeRequest;
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
@@ -230,6 +232,27 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public @Nullable OpcUaServer getOpcUaServer() {
         return opcUaServer;
+    }
+
+    /**
+     * Turns publishing on or off for every subscription on this server, as a client's SetPublishingMode would.
+     * <p>
+     * While publishing is off the server still sends keep-alives and its monitored items keep queueing; only the
+     * notifications are held back. Whatever is fired meanwhile goes out in the first publication after publishing
+     * is turned back on, so a test can put several notifications into one publishing cycle without racing it.
+     */
+    public void setPublishingEnabled(final boolean enabled) {
+        if (opcUaServer == null) {
+            throw new IllegalStateException("Server has not been started; there is no subscription to hold");
+        }
+        final var subscriptions = opcUaServer.getSubscriptions().values();
+        // Holding nothing would put the caller straight back into the race it meant to avoid.
+        if (subscriptions.isEmpty()) {
+            throw new IllegalStateException("The server holds no subscription whose publishing could be changed");
+        }
+        // Milo's Subscription reads only the flag; the header and subscription ids belong to the service call.
+        final SetPublishingModeRequest request = new SetPublishingModeRequest(null, enabled, new UInteger[0]);
+        subscriptions.forEach(subscription -> subscription.setPublishingMode(request));
     }
 
     /**
