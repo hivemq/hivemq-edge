@@ -1,21 +1,26 @@
 import type { FC } from 'react'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, useDisclosure, useToast } from '@chakra-ui/react'
+import { useDisclosure, useToast } from '@chakra-ui/react'
 import { LuRefreshCw } from 'react-icons/lu'
 import type { Edge, Node } from '@xyflow/react'
 
+import IconButton from '@/components/Chakra/IconButton.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 import { useIsPanelOpen, useReloadWorkspace } from '@/modules/Workspace/hooks/useReloadWorkspace.ts'
 import ReloadWorkspaceDialog from './ReloadWorkspaceDialog.tsx'
 
 interface ReloadWorkspaceButtonProps {
   /**
-   * The graph as the builder currently derives it from the query cache. After a refetch this is the
-   * server's picture of the world, and what the canvas is reconciled against.
+   * The graph as the builder currently derives it from the query cache — the server's picture of the
+   * world once a refetch has landed, and what the canvas is reconciled against.
+   *
+   * Optional: with no props the button derives it itself, which is how it is used in the canvas
+   * toolbar. Passing it in keeps the component testable without the whole query stack behind it.
    */
-  builtNodes: Node[]
-  builtEdges: Edge[]
+  builtNodes?: Node[]
+  builtEdges?: Edge[]
 }
 
 /**
@@ -33,11 +38,16 @@ const ReloadWorkspaceButton: FC<ReloadWorkspaceButtonProps> = ({ builtNodes, bui
   const { isReloading, reload, resetEverything } = useReloadWorkspace()
   const onReconcileWithServer = useWorkspaceStore((state) => state.onReconcileWithServer)
 
+  // The builder recomputes whenever the queries it reads change, so after a refetch these describe
+  // the server. Props win when given, so a test can drive the reconcile with a known graph.
+  const derived = useGetFlowElements()
+  const nodes = builtNodes ?? derived.nodes
+  const edges = builtEdges ?? derived.edges
+
   const handleReload = useCallback(() => {
     reload(() => {
-      // The builder recomputes from the refreshed query cache, so by the time this runs the arrays
-      // it produced describe the server. Reconciling merges that into the canvas in place.
-      const summary = onReconcileWithServer(builtNodes, builtEdges)
+      // Reconciling merges the server's picture into the canvas in place, keeping the user's layout.
+      const summary = onReconcileWithServer(nodes, edges)
 
       toast({
         status: 'success',
@@ -50,19 +60,16 @@ const ReloadWorkspaceButton: FC<ReloadWorkspaceButtonProps> = ({ builtNodes, bui
         toast({ status: 'error', title: t('workspace.reload.error'), isClosable: true })
       })
       .finally(onClose)
-  }, [reload, onReconcileWithServer, builtNodes, builtEdges, toast, t, onClose])
+  }, [reload, onReconcileWithServer, nodes, edges, toast, t, onClose])
 
   return (
     <>
-      <Button
-        leftIcon={<LuRefreshCw />}
+      <IconButton
+        icon={<LuRefreshCw />}
         onClick={onOpen}
-        size="sm"
-        variant="outline"
+        aria-label={t('workspace.reload.trigger')}
         data-testid="reload-workspace-trigger"
-      >
-        {t('workspace.reload.trigger')}
-      </Button>
+      />
       <ReloadWorkspaceDialog
         isOpen={isOpen}
         onClose={onClose}

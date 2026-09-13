@@ -11,6 +11,7 @@ import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import Panel from '@/components/react-flow/Panel.tsx'
+import ReloadWorkspaceButton from '@/modules/Workspace/components/controls/ReloadWorkspaceButton.tsx'
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
 import {
   CONFIG_ZOOM_MAX,
@@ -59,6 +60,7 @@ const CanvasControls: FC<ControlProps> = ({ onInteractiveChange }) => {
           onClick={() => optionDrawer.onOpen()}
           aria-label={t('workspace.configuration.header')}
         />
+        <ReloadWorkspaceButton />
       </ButtonGroup>
     </Panel>
   )

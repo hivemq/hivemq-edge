@@ -41,7 +41,10 @@ describe('ReloadWorkspaceButton', () => {
   it('should render the trigger', () => {
     cy.mountWithProviders(<ReloadWorkspaceButton builtNodes={[]} builtEdges={[]} />, { wrapper })
 
-    cy.getByTestId('reload-workspace-trigger').should('be.visible').should('contain.text', 'Reload workspace')
+    // An icon button in the canvas control cluster, so the label is the accessible name.
+    cy.getByTestId('reload-workspace-trigger')
+      .should('be.visible')
+      .should('have.attr', 'aria-label', 'Reload workspace')
   })
 
   it('should offer both choices, with the destructive one naming its cost', () => {
