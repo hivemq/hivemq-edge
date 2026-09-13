@@ -2,26 +2,44 @@ import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router'
 
+import type { HiveMqClient } from '@/api/__generated__'
+import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
 import { STORE_WORKSPACE_KEY } from '@/modules/Workspace/types.ts'
 
 /**
- * The six queries the workspace graph is built from. They are refetched together and all-or-nothing:
- * if one fails, nothing is reconciled.
+ * The six lists the workspace graph is built from, fetched together and all-or-nothing: if one
+ * fails, nothing is reconciled.
  *
- * That is the decisive safety property. Each query succeeds or fails independently, and the graph
+ * That is the decisive safety property. Each list succeeds or fails independently, and the graph
  * builder only tracks a combined "is loading" — it has no combined error state. So a reconcile that
  * ran on a partial result could not tell "the server has no combiners" from "the combiner call
  * failed", and would delete every combiner from the user's workspace during a momentary blip.
+ *
+ * Each carries its own fetcher rather than relying on `refetchQueries`, which only refreshes queries
+ * the cache already holds — a list nothing has mounted yet would be silently skipped, and the reload
+ * would report success having asked the server nothing.
  */
-const WORKSPACE_QUERY_KEYS = [
-  [QUERY_KEYS.ADAPTERS],
-  [QUERY_KEYS.PROTOCOLS],
-  [QUERY_KEYS.BRIDGES],
-  [QUERY_KEYS.LISTENERS],
-  [QUERY_KEYS.COMBINER],
-  [QUERY_KEYS.ASSET_MAPPER],
-] as const
+interface WorkspaceQuery {
+  queryKey: string[]
+  /** The reload only passes the payload through to the cache, so its shape is the caller's concern. */
+  queryFn: () => Promise<unknown>
+}
+
+const workspaceQueries = (appClient: HiveMqClient): WorkspaceQuery[] =>
+  [
+    // The shapes must match what each list hook stores, or the reload would corrupt the cache it is
+    // meant to refresh: adapters and bridges unwrap to their `items`, the others keep the envelope.
+    {
+      queryKey: [QUERY_KEYS.ADAPTERS],
+      queryFn: async () => (await appClient.protocolAdapters.getAdapters()).items,
+    },
+    { queryKey: [QUERY_KEYS.PROTOCOLS], queryFn: () => appClient.protocolAdapters.getAdapterTypes() },
+    { queryKey: [QUERY_KEYS.BRIDGES], queryFn: async () => (await appClient.bridges.getBridges()).items },
+    { queryKey: [QUERY_KEYS.LISTENERS], queryFn: () => appClient.gatewayEndpoint.getListeners() },
+    { queryKey: [QUERY_KEYS.COMBINER], queryFn: () => appClient.combiners.getCombiners() },
+    { queryKey: [QUERY_KEYS.ASSET_MAPPER], queryFn: () => appClient.pulse.getAssetMappers() },
+  ] as const
 
 /**
  * The status queries that poll on a timer and write into node `data`.
@@ -64,6 +82,7 @@ export const useIsPanelOpen = () => {
 
 export const useReloadWorkspace = () => {
   const queryClient = useQueryClient()
+  const appClient = useHttpClient()
   const [phase, setPhase] = useState<ReloadPhase>(ReloadPhase.IDLE)
 
   /**
@@ -77,19 +96,18 @@ export const useReloadWorkspace = () => {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        await Promise.all(
-          WORKSPACE_QUERY_KEYS.map((queryKey) => queryClient.refetchQueries({ queryKey: [...queryKey], exact: true }))
+        // fetchQuery runs the fetcher and rejects when it fails, so Promise.all gives the
+        // all-or-nothing outcome directly. Written into the cache only once every one resolved.
+        const results = await Promise.all(
+          workspaceQueries(appClient).map(({ queryKey, queryFn }) =>
+            queryClient
+              .fetchQuery({ queryKey: [...queryKey], queryFn, staleTime: 0, retry: false })
+              .then((data) => ({ queryKey, data }))
+          )
         )
 
-        // refetchQueries resolves even when a query settled in error, so the outcome has to be read
-        // back off the cache rather than inferred from the promise.
-        const failed = WORKSPACE_QUERY_KEYS.filter((queryKey) => {
-          const state = queryClient.getQueryState([...queryKey])
-          return state?.status === 'error'
-        })
-
-        if (!failed.length) return
-        lastError = new Error(`${failed.length} of ${WORKSPACE_QUERY_KEYS.length} workspace queries failed`)
+        results.forEach(({ queryKey, data }) => queryClient.setQueryData([...queryKey], data))
+        return
       } catch (error) {
         lastError = error
       }
@@ -98,7 +116,7 @@ export const useReloadWorkspace = () => {
     }
 
     throw lastError ?? new Error('Could not reload the workspace')
-  }, [queryClient])
+  }, [appClient, queryClient])
 
   /**
    * The safe reload: refresh from the server and repair the graph, keeping the user's arrangement.
