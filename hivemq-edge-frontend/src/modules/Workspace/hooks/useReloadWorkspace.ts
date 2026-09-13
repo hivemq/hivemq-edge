@@ -74,10 +74,18 @@ export enum ReloadPhase {
  * Any open panel counts as potentially unsaved: dirty-form tracking barely exists in this module, so
  * the reload cannot ask a panel whether it holds unsaved edits and gets to assume the worst.
  */
+const WORKSPACE_PATH = '/workspace'
+
 export const useIsPanelOpen = () => {
   const { pathname } = useLocation()
-  const normalised = pathname.replace(/\/+$/, '')
-  return normalised.startsWith('/workspace/') && normalised !== '/workspace'
+
+  // Trailing slashes are trimmed by hand rather than with a pattern: `/\/+$/` backtracks, and the
+  // whole job is "drop the slashes at the end".
+  let end = pathname.length
+  while (end > 0 && pathname[end - 1] === '/') end -= 1
+  const normalised = pathname.slice(0, end)
+
+  return normalised.startsWith(`${WORKSPACE_PATH}/`) && normalised !== WORKSPACE_PATH
 }
 
 export const useReloadWorkspace = () => {

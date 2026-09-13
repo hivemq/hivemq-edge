@@ -30,6 +30,49 @@ interface ReloadWorkspaceDialogProps {
 }
 
 /**
+ * What the dialog says, which is one of three things: it is working, it cannot work yet because a
+ * panel is open, or it is offering the two choices. Kept apart from the dialog frame so the three
+ * states read as three states rather than as a chain of conditions.
+ */
+const ReloadDialogBody: FC<Pick<ReloadWorkspaceDialogProps, 'isReloading' | 'isPanelOpen'>> = ({
+  isReloading,
+  isPanelOpen,
+}) => {
+  const { t } = useTranslation()
+
+  if (isReloading) {
+    return (
+      <Center flexDirection="column" gap={4} py={8} data-testid="reload-workspace-progress">
+        <Spinner size="lg" thickness="3px" speed="0.8s" />
+        <Text aria-live="polite">{t('workspace.reload.progress')}</Text>
+      </Center>
+    )
+  }
+
+  if (isPanelOpen) {
+    return (
+      <Alert status="warning" data-testid="reload-workspace-panel-warning">
+        <AlertIcon />
+        <Text>{t('workspace.reload.panelOpen')}</Text>
+      </Alert>
+    )
+  }
+
+  return (
+    <VStack align="stretch" spacing={5}>
+      <Box>
+        <Text fontWeight="semibold">{t('workspace.reload.safe.title')}</Text>
+        <Text fontSize="sm">{t('workspace.reload.safe.description')}</Text>
+      </Box>
+      <Box>
+        <Text fontWeight="semibold">{t('workspace.reload.destructive.title')}</Text>
+        <Text fontSize="sm">{t('workspace.reload.destructive.description')}</Text>
+      </Box>
+    </VStack>
+  )
+}
+
+/**
  * The two choices behind the Reload button.
  *
  * One entry point rather than two buttons: a user who suspects the workspace is wrong should not have
@@ -67,28 +110,7 @@ const ReloadWorkspaceDialog: FC<ReloadWorkspaceDialogProps> = ({
           </AlertDialogHeader>
 
           <AlertDialogBody>
-            {isReloading ? (
-              <Center flexDirection="column" gap={4} py={8} data-testid="reload-workspace-progress">
-                <Spinner size="lg" thickness="3px" speed="0.8s" />
-                <Text aria-live="polite">{t('workspace.reload.progress')}</Text>
-              </Center>
-            ) : isPanelOpen ? (
-              <Alert status="warning" data-testid="reload-workspace-panel-warning">
-                <AlertIcon />
-                <Text>{t('workspace.reload.panelOpen')}</Text>
-              </Alert>
-            ) : (
-              <VStack align="stretch" spacing={5}>
-                <Box>
-                  <Text fontWeight="semibold">{t('workspace.reload.safe.title')}</Text>
-                  <Text fontSize="sm">{t('workspace.reload.safe.description')}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="semibold">{t('workspace.reload.destructive.title')}</Text>
-                  <Text fontSize="sm">{t('workspace.reload.destructive.description')}</Text>
-                </Box>
-              </VStack>
-            )}
+            <ReloadDialogBody isReloading={isReloading} isPanelOpen={isPanelOpen} />
           </AlertDialogBody>
 
           <AlertDialogFooter gap={3}>
