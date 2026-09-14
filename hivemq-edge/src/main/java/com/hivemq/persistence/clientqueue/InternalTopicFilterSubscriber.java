@@ -1159,8 +1159,18 @@ public final class InternalTopicFilterSubscriber {
         /// That iteration failed; run another. Until there is anything cleverer -- a backoff, an attempt
         /// limit -- a failure is simply retried, so this asks for the same thing CONTINUE does.
         RESTART,
-        /// Be draining. Sent by [#consume].
+        /// Be draining, and start an iteration now. Sent by [#consume], after it has released the monitor.
+        ///
+        /// **Acts only if the goal is still what [#CONSUME_DONT_START] left it.** Between the two commands
+        /// the monitor is free, so a whole `pause()` can run: it takes the monitor, submits its PAUSE -- which
+        /// is therefore ordered BEFORE this command -- and returns. This command then finds the goal is no
+        /// longer ACTIVE and does not start. Without that check it would assert ACTIVE over a pause that had
+        /// already been recorded, leaving the loop draining while the subscriber says it is paused.
         CONSUME,
+        /// Be draining, but do not start an iteration. Sent by [#consume] from INSIDE the monitor, which is
+        /// safe because recording a goal cannot run consumer code -- and which is what puts this command
+        /// ahead of anything a competing verb submits while waiting for that monitor.
+        CONSUME_DONT_START,
         /// That iteration found nothing to read; settle. Sent by [#poll].
         IDLE,
         /// Stop draining. Sent by [#pause].
@@ -1200,7 +1210,9 @@ public final class InternalTopicFilterSubscriber {
         return switch (command) {
             case TEARDOWN -> PpfLoopState.TERMINATED;
             case PAUSE -> PpfLoopState.PAUSED;
-            case CONSUME -> PpfLoopState.ACTIVE;
+            // The two halves of one ask, so they ask for the same thing. They differ only in whether the
+            // acting switch runs afterwards -- see the acting switch and the two enum constants.
+            case CONSUME, CONSUME_DONT_START -> PpfLoopState.ACTIVE;
             // The loop's own reports. They say what just happened, so they may move a goal that is already
             // about draining -- but they must not resurrect a paused subscriber.
             case WAKE, CONTINUE, RESTART -> goal == PpfLoopState.PAUSED ? PpfLoopState.PAUSED : PpfLoopState.ACTIVE;
@@ -1219,6 +1231,13 @@ public final class InternalTopicFilterSubscriber {
 
         // 1. RECORD -- the whole of the first matrix, in one line.
         goalState = goalStateFor(goalState, command);
+
+        // 1a. RECORD ONLY. CONSUME_DONT_START is the half of consume() that runs under the monitor: it says
+        // what is wanted and stops there, because acting could run the consumer's processor and no processor
+        // is ever called with the monitor held. The CONSUME that follows does the acting.
+        if (command == PpfLoopCommand.CONSUME_DONT_START) {
+            return;
+        }
 
         // 2. GUARD -- there is only ever one iteration in flight. Pass only if none is, or if this IS that
         // iteration reporting back. Anything turned away is already recorded in the goal above, and the
@@ -1645,9 +1664,18 @@ public final class InternalTopicFilterSubscriber {
     /// deadlocks, and a processor calling back into a verb observes half-finished state. **No processor is
     /// ever called with this monitor held**, and this split is where that is earned.
     ///
-    /// Splitting also fixes the order. `consuming` is already true by the time the loop starts, so a processor
-    /// that calls `pause()` during that first inline loop is honoured rather than silently discarded -- with
-    /// the flag still false it would hit the "not consuming" guard in [#pause] and do nothing.
+    /// Splitting also fixes the order for a processor that pauses. The state says consuming by the time the
+    /// loop starts, so a `pause()` from inside that first inline iteration is honoured rather than silently
+    /// discarded -- recorded later, it would hit the "not consuming" guard in [#pause] and do nothing.
+    ///
+    /// **And splitting is what orders a COMPETING pause correctly**, which is why the ask is sent as two
+    /// commands rather than one. The monitor is free between them, so a `pause()` on another thread can run
+    /// whole: it takes the monitor, submits its PAUSE, and returns. The ask was already recorded by
+    /// [PpfLoopCommand#CONSUME_DONT_START] from INSIDE the monitor, so that pause is strictly later in the
+    /// queue and lowers the goal -- and the [PpfLoopCommand#CONSUME] that follows finds the goal no longer
+    /// ACTIVE and does not start. Sent as one command, it would instead assert ACTIVE over a pause already
+    /// recorded, leaving the loop draining while the subscriber says it is paused, and every later `pause()`
+    /// returning at its guard. Raised in review, 2026-09-14.
     public @NotNull InternalTopicFilterSubscriber consume() {
         if (consumeDontStartPpfLoop()) {
             sendPpfLoopCommand(PpfLoopCommand.CONSUME, false);
@@ -1662,6 +1690,11 @@ public final class InternalTopicFilterSubscriber {
         }
         callMeWhenAMessageArrives();
         state = ifStateAttached() ? SubscriberState.RUNNING : SubscriberState.ARMED;
+        // The ask is RECORDED here, with the monitor still held, and only acted on by the CONSUME that
+        // consume() sends once the monitor is free. That ordering is the whole point: a pause() racing this
+        // one cannot take the monitor until it is released, so its PAUSE is submitted strictly after this
+        // command -- and the CONSUME that follows finds the goal already lowered and does not start.
+        sendPpfLoopCommand(PpfLoopCommand.CONSUME_DONT_START, false);
         return true;
     }
 
