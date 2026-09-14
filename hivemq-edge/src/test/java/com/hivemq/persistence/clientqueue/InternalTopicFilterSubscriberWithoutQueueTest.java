@@ -30,6 +30,7 @@ import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -371,6 +372,52 @@ class InternalTopicFilterSubscriberWithoutQueueTest {
         assertThat(subscriber.deliver(message("a")))
                 .as("and a dead subscriber delivers nothing")
                 .isFalse();
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void twoConcurrentStopsBothReturnQuietly() throws Exception {
+        // Raised in review, 2026-09-14 (2). stop() is a composition of two verbs, and it used to hold no
+        // monitor across them -- so two threads could both pass its deallocated check, one complete the whole
+        // shutdown, and the other then enter pauseDetach(), which refuses a dead subscriber and THROWS.
+        //
+        // That broke the promise written above stop() -- that it is safe on a dead subscriber -- and it threw
+        // during shutdown cleanup, where an unexpected exception is most likely to abandon the rest of it.
+        //
+        // Both threads are released together and hammer stop() repeatedly, so the interleaving is reached by
+        // weight of attempts rather than by a hook: the window is a handful of instructions wide, and with
+        // stop() unsynchronized this fails almost immediately.
+        final InternalTopicFilterSubscriberWithoutQueue subscriber = factory.builderWithoutQueue("test", "twostops")
+                .withProcessor(m -> {})
+                .withTopicFilter("commands/#")
+                .build()
+                .start();
+
+        final CountDownLatch go = new CountDownLatch(1);
+        final List<Throwable> thrown = Collections.synchronizedList(new ArrayList<>());
+        final List<Thread> stoppers = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            final Thread stopper = new Thread(() -> {
+                try {
+                    assertThat(go.await(5, TimeUnit.SECONDS)).isTrue();
+                    for (int attempt = 0; attempt < 200; attempt++) {
+                        subscriber.stop();
+                    }
+                } catch (final Throwable t) {
+                    thrown.add(t);
+                }
+            });
+            stoppers.add(stopper);
+            stopper.start();
+        }
+        go.countDown();
+        for (final Thread stopper : stoppers) {
+            stopper.join();
+        }
+
+        assertThat(thrown)
+                .as("stop() is documented as safe on a dead subscriber, however many threads call it")
+                .isEmpty();
     }
 
     @Test

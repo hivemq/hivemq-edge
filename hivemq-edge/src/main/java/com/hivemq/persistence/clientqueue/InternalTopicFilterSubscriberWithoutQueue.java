@@ -561,12 +561,23 @@ public final class InternalTopicFilterSubscriberWithoutQueue {
         deallocated = true;
     }
 
-    public @NotNull InternalTopicFilterSubscriberWithoutQueue start() {
+    /// **Synchronized like the verbs it composes**, so that two threads calling it cannot interleave. The
+    /// queued sibling needs no such thing: its compositions delegate to ONE verb, so there is no gap between
+    /// two calls to slip into. Here there are two, and holding the monitor across them is safe because
+    /// nothing in these verbs runs consumer code -- they touch only the topic tree and the factory.
+    /// [#deliver] deliberately takes no monitor, so a processor calling a verb waits rather than deadlocks.
+    public synchronized @NotNull InternalTopicFilterSubscriberWithoutQueue start() {
         return attachConsume();
     }
 
     /// The one composition that is safe on a dead subscriber; it returns quietly.
-    public void stop() {
+    ///
+    /// **Synchronized, and that is what makes the promise above true.** Unsynchronized, two threads could both
+    /// pass the deallocated check, one complete the whole shutdown, and the other then enter [#pauseDetach] --
+    /// which refuses a dead subscriber and throws. That broke the documented idempotence, and it threw during
+    /// shutdown cleanup, where an unexpected exception is most likely to abandon the rest of it half-done.
+    /// Raised in review, 2026-09-14.
+    public synchronized void stop() {
         if (deallocated) {
             return;
         }
