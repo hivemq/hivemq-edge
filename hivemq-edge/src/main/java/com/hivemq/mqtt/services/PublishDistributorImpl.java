@@ -265,9 +265,19 @@ public class PublishDistributorImpl implements PublishDistributor {
             // then falls back to the broker-wide maxQueuedMessages -- the same value it got before this.
             final InternalTopicFilterSubscriber subscriber =
                     subscriberFactory.get().getSubscriber(client);
-            if (subscriber != null) {
-                queueLimit = subscriber.queueLimit();
+            if (subscriber == null) {
+                // NEITHER KIND OWNS THIS ID, so there is nobody to deliver to and nobody who would ever drain
+                // a queue made for it. Queueing anyway creates an orphan: the subscriber that put this filter
+                // in the topic tree has since been deallocated, and its teardown -- which is what clears the
+                // queue -- has already run. Nothing would clear this one.
+                //
+                // The window is real rather than theoretical: the topic tree is consulted first and yields
+                // client-id STRINGS, and delivery happens afterwards, so a subscriber can be stopped in
+                // between. NOT_CONNECTED is what the ordinary-client branch below returns for a session that
+                // has gone, which is the same situation.
+                return Futures.immediateFuture(NOT_CONNECTED);
             }
+            queueLimit = subscriber.queueLimit();
         } else {
             final ClientSession clientSession = clientSessionPersistence.get().getSession(client, false);
             final boolean clientConnected = clientSession != null && clientSession.isConnected();
