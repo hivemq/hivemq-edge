@@ -1299,4 +1299,42 @@ class InternalTopicFilterSubscriberAsyncTest {
                 .as("one read, and no further read while the first is unanswered")
                 .isEqualTo(1);
     }
+
+    @Test
+    void aSubscriberCannotBeRestartedWhileItsTeardownIsStillPending() {
+        // Sam's review, 2026-09-14 (4). deallocate() ASKS -- it submits TEARDOWN and returns, and the loop acts
+        // on it later, which is what stops a teardown racing an iteration still holding a message. But the
+        // `deallocated` flag is only raised by that later work, so in the window between the two every verb
+        // still passes its guard. A start() in that window re-attaches the filters; the teardown then arrives,
+        // deregisters the subscriber and destroys the queue -- and leaves those filters in the topic tree,
+        // pointing at an identity that no longer exists. Messages are collected for a consumer that is gone.
+        final List<CompletableFuture<Void>> outstanding = new ArrayList<>();
+        queued.add(message("a"));
+
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "resurrect")
+                .withAsyncProcessor(m -> {
+                    final CompletableFuture<Void> completion = new CompletableFuture<>();
+                    outstanding.add(completion);
+                    return completion;
+                })
+                .withTopicFilter("commands/setpoint")
+                .build();
+        subscriber.start();
+
+        assertThat(outstanding)
+                .as("an iteration is in flight, so the teardown will be deferred")
+                .hasSize(1);
+
+        subscriber.stop();
+
+        assertThatThrownBy(subscriber::start)
+                .as("the subscriber is asked to be dead; it must refuse to come back")
+                .isInstanceOf(IllegalStateException.class);
+
+        outstanding.get(0).complete(null);
+
+        assertThat(topicTree.findTopicSubscribers("commands/setpoint").getSubscribers())
+                .as("and nothing of it is left in the topic tree once the teardown has run")
+                .isEmpty();
+    }
 }

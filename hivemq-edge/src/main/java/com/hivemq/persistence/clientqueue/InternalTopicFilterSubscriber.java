@@ -72,6 +72,9 @@ import org.slf4j.LoggerFactory;
 // (callback armed, ready for when topics are attached later). start() and stop() are just convenience
 // compositions of the verbs.
 //
+// Those four combinations, plus the two a dying subscriber passes through, are named in SubscriberState --
+// six values rather than four booleans, which would suggest sixteen combinations of which ten cannot occur.
+//
 // Threading, and why a processor may not block. Three steps, in order -- the constraint on a processor is
 // a consequence rather than a rule of its own:
 //
@@ -246,20 +249,8 @@ public final class InternalTopicFilterSubscriber {
     private @NotNull PpfLoopState goalState = PpfLoopState.PAUSED;
 
     // Lifecycle - start, stop
-    // attached -- true iff the current topicFilters are registered in the topic tree (messages are
-    //            being collected into the client queue).
-    private boolean attached = false;
-
-    // consuming -- true iff this subscriber is draining its queue: the publish-available callback is
-    //             registered AND the poll pipeline will act on a trigger. Read by pollIfIdle(), which
-    //             is what makes pause() stop work already under way rather than only future wake-ups.
-    private boolean consuming = false;
-
-    // deallocated -- true once deallocate() has cleared the queue. TERMINAL: once deallocated the
-    //               subscriber is dead and cannot be resurrected; every verb is a no-op (or, for
-    //               attach/consume, rejected) from then on. This flag makes deallocate()/stop() safely
-    //               idempotent and guards the other verbs against use-after-deallocate.
-    private boolean deallocated = false;
+    // Not here: the lifecycle state is ONE value, SubscriberState, declared beside the lifecycle verbs --
+    // the only place that writes it, apart from build() and tearDown().
 
     // Misc
     // SHARED_IN_FLIGHT_MARKER acts as a boolean inflight flag -- not a real wire packet ID, since messages
@@ -672,6 +663,7 @@ public final class InternalTopicFilterSubscriber {
                     qos,
                     queueLimit,
                     queueOverflow);
+            subscriber.setStateIdle(); // detached and paused: nothing flows until start()
             factory.register(subscriber); // throws if clientId already in use -- deregistered by deallocate()
             return subscriber;
         }
@@ -821,7 +813,7 @@ public final class InternalTopicFilterSubscriber {
     }
 
     public synchronized @NotNull InternalTopicFilterSubscriber withTopicFilter(final @NotNull List<String> newFilters) {
-        throwIfDeallocated();
+        throwIfStateIsDeallocated();
         throwIfContextual("withTopicFilter");
         reconcileTo(new LinkedHashSet<>(newFilters));
         topicFilters.clear();
@@ -835,10 +827,10 @@ public final class InternalTopicFilterSubscriber {
 
     public synchronized @NotNull InternalTopicFilterSubscriber addTopicFilter(
             final @NotNull List<String> topicFiltersToAdd) {
-        throwIfDeallocated();
+        throwIfStateIsDeallocated();
         throwIfContextual("addTopicFilter");
         for (final String topicFilter : topicFiltersToAdd) {
-            if (topicFilters.add(topicFilter) && attached) {
+            if (topicFilters.add(topicFilter) && ifStateAttached()) {
                 subscribeFilterInTopicTree(topicFilter);
             }
         }
@@ -851,10 +843,10 @@ public final class InternalTopicFilterSubscriber {
 
     public synchronized @NotNull InternalTopicFilterSubscriber removeTopicFilter(
             final @NotNull List<String> topicFiltersToRemove) {
-        throwIfDeallocated();
+        throwIfStateIsDeallocated();
         throwIfContextual("removeTopicFilter");
         for (final String topicFilter : topicFiltersToRemove) {
-            if (topicFilters.remove(topicFilter) && attached) {
+            if (topicFilters.remove(topicFilter) && ifStateAttached()) {
                 unsubscribeFilterFromTopicTree(topicFilter);
             }
         }
@@ -874,7 +866,7 @@ public final class InternalTopicFilterSubscriber {
 
     public synchronized @NotNull InternalTopicFilterSubscriber withTopicFilterContext(
             final @NotNull List<? extends TopicFilterContext> contexts) {
-        throwIfDeallocated();
+        throwIfStateIsDeallocated();
         throwIfNotContextual("withTopicFilterContext");
         final Map<String, Set<TopicFilterContext>> target = new LinkedHashMap<>();
         for (final TopicFilterContext context : contexts) {
@@ -896,7 +888,7 @@ public final class InternalTopicFilterSubscriber {
 
     public synchronized @NotNull InternalTopicFilterSubscriber addTopicFilterContext(
             final @NotNull List<? extends TopicFilterContext> contexts) {
-        throwIfDeallocated();
+        throwIfStateIsDeallocated();
         throwIfNotContextual("addTopicFilterContext");
         for (final TopicFilterContext context : contexts) {
             final String topicFilter = context.topicFilter();
@@ -904,7 +896,7 @@ public final class InternalTopicFilterSubscriber {
             topicFilterContexts
                     .computeIfAbsent(topicFilter, ignored -> new LinkedHashSet<>())
                     .add(context);
-            if (isNewFilter && attached) {
+            if (isNewFilter && ifStateAttached()) {
                 subscribeFilterInTopicTree(topicFilter);
             }
         }
@@ -918,7 +910,7 @@ public final class InternalTopicFilterSubscriber {
 
     public synchronized @NotNull InternalTopicFilterSubscriber removeTopicFilterContext(
             final @NotNull List<? extends TopicFilterContext> contexts) {
-        throwIfDeallocated();
+        throwIfStateIsDeallocated();
         throwIfNotContextual("removeTopicFilterContext");
         for (final TopicFilterContext context : contexts) {
             final String topicFilter = context.topicFilter();
@@ -931,7 +923,7 @@ public final class InternalTopicFilterSubscriber {
                 // Nothing wants this filter any more, so the filter goes too. Keeping it would leave a
                 // subscription whose messages resolve to no destination -- accepted into the queue, then dropped.
                 topicFilterContexts.remove(topicFilter);
-                if (attached) {
+                if (ifStateAttached()) {
                     unsubscribeFilterFromTopicTree(topicFilter);
                 }
             }
@@ -944,7 +936,7 @@ public final class InternalTopicFilterSubscriber {
     /// Does nothing while detached -- there is nothing registered to reconcile, and the caller's new filter set
     /// is replayed in full by the next `attach()`.
     private void reconcileTo(final @NotNull Set<String> target) {
-        if (!attached) {
+        if (!ifStateAttached()) {
             return;
         }
         final Set<String> current = hasTopicFilterContext() ? topicFilterContexts.keySet() : topicFilters;
@@ -1132,11 +1124,9 @@ public final class InternalTopicFilterSubscriber {
     // that stretch is precisely when a second read must not start. A loop is either running or it is not,
     // with no such gap, so the loop is what the flag is about.
     //
-    // WHY consuming IS READ HERE. It was set and cleared by consume()/pause() and read by nothing on this
-    // path, so pausing removed the message-available callback but did not stop a loop already running.
-    // Deallocation is covered by the same clause rather than needing its own: deallocate() requires being
-    // paused, so a dead subscriber is one whose consuming flag is already false -- which matters because
-    // deallocation FREES THE CLIENT ID, and a replacement may already own the queue this loop would read.
+    // THE LOOP DOES NOT READ THE LIFECYCLE STATE. A pause reaches it as a PAUSE command, in order with the
+    // loop's own work, rather than as a flag the loop consults -- which is what lets the state be written
+    // only by the lifecycle verbs. An earlier version did read a `consuming` flag here.
     //
     // A PLAIN FIELD, NOT AN ATOMIC. ppfLoopCtrl() is reached either from sendPpfLoopCommand(PpfLoopCommand.START),
     // which puts it in the
@@ -1270,7 +1260,7 @@ public final class InternalTopicFilterSubscriber {
     ///
     /// Idempotent: a second teardown finds this subscriber already dead and does nothing.
     private void tearDown() {
-        if (deallocated) {
+        if (state == SubscriberState.DEREGISTERED) {
             return;
         }
         destroyQueue();
@@ -1280,7 +1270,7 @@ public final class InternalTopicFilterSubscriber {
         // Symmetric with build(): the queue is destroyed, so the identity becomes available for reuse. LAST,
         // so nothing of this lifetime can still touch a queue the next owner of the id is using.
         factory.deregister(this);
-        deallocated = true;
+        setStateDeregistered();
     }
 
     /// Produces the next message and hands it to [#process], the first P of the ppf-loop.
@@ -1552,15 +1542,87 @@ public final class InternalTopicFilterSubscriber {
     // so the cycle cannot form. A future change that adds a wait breaks rule 1, and nothing will complain --
     // which is why the rules are written here rather than left to be re-derived.
     //
+    /// What this subscriber IS, as one value rather than a handful of flags.
+    ///
+    /// **Six states, not sixteen.** The two independent questions of a living subscriber -- are its filters in
+    /// the topic tree, and is it draining its queue -- give four combinations, and dying gives two more. Four
+    /// booleans would suggest sixteen, of which ten are unreachable nonsense; naming the six that exist is
+    /// what stops a verb being written for a combination that cannot occur.
+    ///
+    /// **The dying states are a chain, not a further axis.** Once deallocation is asked for, neither attaching
+    /// nor consuming can be turned back on, so they are not two more dimensions -- they are the end.
+    private enum SubscriberState {
+        /// Detached and paused. The state a subscriber is born in.
+        IDLE,
+        /// Detached, but the callback is armed: ready for filters to be attached later.
+        ARMED,
+        /// Attached and paused -- filling the queue with nothing draining it.
+        COLLECTING,
+        /// Attached and consuming. The normal working state.
+        RUNNING,
+        /// [#deallocate] has been ASKED for: filters removed, drain stopped, teardown submitted. The teardown
+        /// itself runs later, on the loop's thread, so it does not race an iteration still holding a message.
+        /// Every verb refuses from here on -- which is what stops a subscriber being restarted into a
+        /// teardown that is already on its way, re-registering filters the teardown will not remove.
+        DEALLOCATED,
+        /// The teardown has run: queue destroyed, identity handed back to the factory.
+        DEREGISTERED
+    }
+
+    /// **Written ONLY by the verbs of this region**, plus [Builder#build] (which sets [SubscriberState#IDLE])
+    /// and [#tearDown] (which sets [SubscriberState#DEREGISTERED]). Everything else asks one of the two
+    /// questions below and never sees the value.
+    ///
+    /// Volatile because [#deallocate] may be called from any thread while the loop's teardown reads it.
+    private volatile @NotNull SubscriberState state = SubscriberState.IDLE;
+
+    /// Sets the state a subscriber is born in. For [Builder#build] only.
+    void setStateIdle() {
+        state = SubscriberState.IDLE;
+    }
+
+    /// Records that the teardown has run. For [#tearDown] only.
+    private void setStateDeregistered() {
+        state = SubscriberState.DEREGISTERED;
+    }
+
+    /// Refuses a subscriber that has been deallocated. **The first line of every public verb.**
+    ///
+    /// Deliberately does not distinguish [SubscriberState#DEALLOCATED] from [SubscriberState#DEREGISTERED]:
+    /// to a consumer both mean the same thing, that this subscriber is finished and will not come back. The
+    /// difference is internal -- whether the loop has yet done the work -- and naming it here would expose a
+    /// distinction no caller can act on.
+    private void throwIfStateIsDeallocated() {
+        if (state == SubscriberState.DEALLOCATED || state == SubscriberState.DEREGISTERED) {
+            throw new IllegalStateException(
+                    "InternalTopicFilterSubscriber '" + clientId + "' has been deallocated and cannot be used");
+        }
+    }
+
+    /// Whether this subscriber's filters are registered in the topic tree right now.
+    ///
+    /// **The one question asked outside this region.** The topic-filter verbs need it because a filter added
+    /// at runtime must be pushed to the tree when the filters are live there, and only remembered when they
+    /// are not. Phrased as a question rather than handing out the state, so that adding a state later cannot
+    /// silently give those verbs a wrong answer.
+    private boolean ifStateAttached() {
+        return state == SubscriberState.COLLECTING || state == SubscriberState.RUNNING;
+    }
+
+    /// Whether this subscriber is draining its queue right now.
+    private boolean ifStateConsuming() {
+        return state == SubscriberState.ARMED || state == SubscriberState.RUNNING;
+    }
+
     public synchronized @NotNull InternalTopicFilterSubscriber attach() {
-        throwIfDeallocated();
-        if (attached) {
+        throwIfStateIsDeallocated();
+        if (ifStateAttached()) {
             return this;
         }
         for (final String topicFilter : currentFilters()) {
             subscribeFilterInTopicTree(topicFilter);
         }
-        attached = true;
+        state = ifStateConsuming() ? SubscriberState.RUNNING : SubscriberState.COLLECTING;
         return this;
     }
 
@@ -1594,12 +1656,12 @@ public final class InternalTopicFilterSubscriber {
     }
 
     private synchronized boolean consumeDontStartPpfLoop() {
-        throwIfDeallocated();
-        if (consuming) {
+        throwIfStateIsDeallocated();
+        if (ifStateConsuming()) {
             return false;
         }
         callMeWhenAMessageArrives();
-        consuming = true;
+        state = ifStateAttached() ? SubscriberState.RUNNING : SubscriberState.ARMED;
         return true;
     }
 
@@ -1624,12 +1686,12 @@ public final class InternalTopicFilterSubscriber {
     /// command sent below, which travels through the SingleWriter's queue for this subscriber: the loop sees
     /// it in order with its own work.
     public synchronized @NotNull InternalTopicFilterSubscriber pause() {
-        throwIfDeallocated();
-        if (!consuming) {
+        throwIfStateIsDeallocated();
+        if (!ifStateConsuming()) {
             return this;
         }
         stopCallingMeWhenAMessageArrives();
-        consuming = false;
+        state = ifStateAttached() ? SubscriberState.COLLECTING : SubscriberState.IDLE;
         // So a pause takes effect on an iteration already under way, rather than only on the next one. The
         // flag above is the standing answer to "may I poll at all"; this is the prompt to stop now.
         sendPpfLoopCommand(PpfLoopCommand.PAUSE, false);
@@ -1637,14 +1699,14 @@ public final class InternalTopicFilterSubscriber {
     }
 
     public synchronized @NotNull InternalTopicFilterSubscriber detach() {
-        throwIfDeallocated();
-        if (!attached) {
+        throwIfStateIsDeallocated();
+        if (!ifStateAttached()) {
             return this;
         }
         for (final String topicFilter : currentFilters()) {
             unsubscribeFilterFromTopicTree(topicFilter);
         }
-        attached = false;
+        state = ifStateConsuming() ? SubscriberState.ARMED : SubscriberState.IDLE;
         return this;
     }
 
@@ -1664,19 +1726,16 @@ public final class InternalTopicFilterSubscriber {
     /// **No precondition.** It used to demand being detached and paused, because it could not safely tear
     /// down a live subscriber. Now it detaches and pauses on the caller's behalf and lets the loop finish.
     public void deallocate() {
-        if (deallocated) {
+        if (state == SubscriberState.DEALLOCATED || state == SubscriberState.DEREGISTERED) {
             return;
         }
         detach();
         pause();
+        // DEALLOCATED here, before the command and after the two verbs that still had work to do. The teardown
+        // runs later, on the loop's thread; without this the subscriber would stay alive to its caller in the
+        // meantime, and a start() in that window would re-attach filters the teardown does not remove.
+        state = SubscriberState.DEALLOCATED;
         sendPpfLoopCommand(PpfLoopCommand.TEARDOWN, false);
-    }
-
-    private void throwIfDeallocated() {
-        if (deallocated) {
-            throw new IllegalStateException(
-                    "InternalTopicFilterSubscriber '" + clientId + "' has been deallocated and cannot be used");
-        }
     }
 
     public @NotNull InternalTopicFilterSubscriber start() {
