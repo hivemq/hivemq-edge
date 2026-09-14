@@ -560,11 +560,21 @@ public class OpcUaConditionSubscriptionIT {
             assertThat(tagStreamingService.published()).isNotEmpty();
         });
 
-        // Fired back to back, so they land in one publishing cycle and must all fit in the queue. Counted by
-        // their distinct messages rather than by clearing what came before, which the capture does not allow.
+        // One publishing cycle, made rather than hoped for. Each fireAlarm builds a whole AlarmConditionType
+        // instance, which takes up to ~200 ms on a loaded CI runner, so ten fired back to back could outlast the
+        // publishing interval and be split across two publications: every transition delivered, and the batch
+        // assertion below failing anyway (EDG-1010). With publishing held, the burst waits in the item's queue
+        // however long it takes to fire, and the first publication after publishing resumes carries all of it --
+        // exactly the case a depth-1 queue would lose nine of. Counted by their distinct messages rather than by
+        // clearing what came before, which the capture does not allow.
         final int burst = 10;
-        for (int i = 0; i < burst; i++) {
-            opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "burst-" + i, 600 + i, true);
+        opcUaServerExtension.setPublishingEnabled(false);
+        try {
+            for (int i = 0; i < burst; i++) {
+                opcUaServerExtension.getTestNamespace().fireAlarm(NodeId.parse(alarm), "burst-" + i, 600 + i, true);
+            }
+        } finally {
+            opcUaServerExtension.setPublishingEnabled(true);
         }
 
         await().untilAsserted(() -> {
