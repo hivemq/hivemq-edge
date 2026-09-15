@@ -1068,7 +1068,7 @@ public final class InternalTopicFilterSubscriber {
 
     /// Destroys the queue and everything still in it. Terminal -- see [#deallocate].
     private void destroyQueue() {
-        clientQueuePersistence.clear(clientId, false); // false == no tombstone
+        clientQueuePersistence.clear(clientId, false); // false == not a shared queue
     }
 
     // endregion
