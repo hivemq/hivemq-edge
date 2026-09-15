@@ -62,6 +62,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -78,6 +80,11 @@ public class DeviceTagImporter {
 
     private final @NotNull ProtocolAdapterExtractor adapterExtractor;
     private final @NotNull DataCombiningExtractor combiningExtractor;
+
+    // Per-adapter locks so concurrent imports on different adapters can proceed in parallel.
+    // Previously the entire import serialized on the shared adapterExtractor monitor, which
+    // was stricter than needed — TOCTOU protection is per-adapter, not global.
+    private final @NotNull ConcurrentMap<String, Object> perAdapterLocks = new ConcurrentHashMap<>();
 
     @Inject
     public DeviceTagImporter(
@@ -116,10 +123,12 @@ public class DeviceTagImporter {
             final @NotNull String adapterId,
             final @Nullable BulkTagBrowser browser)
             throws DeviceTagImporterException {
-        // Synchronize the entire read-compute-write cycle on the same intrinsic lock used by
-        // ProtocolAdapterExtractor's synchronized methods to prevent TOCTOU races between
-        // concurrent imports (e.g., two OVERWRITE operations reading the same stale state).
-        synchronized (adapterExtractor) {
+        // Per-adapter lock: two imports on the same adapter still serialize (preventing TOCTOU
+        // between concurrent OVERWRITE operations on the same adapter), but imports on
+        // different adapters can proceed in parallel. This matters for multi-adapter
+        // scripted-provisioning workflows where a global lock was a needless bottleneck.
+        final Object lock = perAdapterLocks.computeIfAbsent(adapterId, id -> new Object());
+        synchronized (lock) {
             return doImportLocked(rows, mode, adapterId, browser);
         }
     }
