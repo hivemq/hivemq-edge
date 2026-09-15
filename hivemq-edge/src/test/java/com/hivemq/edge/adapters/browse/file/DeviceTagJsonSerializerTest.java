@@ -245,6 +245,44 @@ class DeviceTagJsonSerializerTest {
     }
 
     @Test
+    void streamingSerialize_sourceFailsMidStream_outputIsNotAWellFormedDocument() {
+        // The browse endpoint streams rows straight from the device after the 200 has gone out. When a read
+        // fails mid-stream the client must not receive a document that parses cleanly with fewer rows than
+        // the device has: the partial output has to be recognisably broken.
+        final DeviceTagRow row = DeviceTagRow.builder()
+                .nodeId("ns=2;i=100")
+                .tagName("t1")
+                .nodePath("/A")
+                .build();
+        final Iterable<DeviceTagRow> failingAfterTwo = () -> new java.util.Iterator<>() {
+            private int served;
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public DeviceTagRow next() {
+                if (served++ == 2) {
+                    throw new IllegalStateException("attribute read failed");
+                }
+                return row;
+            }
+        };
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        assertThatThrownBy(() -> serializer.serialize(failingAfterTwo, baos))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("attribute read failed");
+        final byte[] partial = baos.toByteArray();
+        assertThat(new String(partial, StandardCharsets.UTF_8))
+                .contains("ns=2;i=100")
+                .doesNotEndWith("]}");
+        assertThatThrownBy(() -> serializer.deserialize(partial)).isInstanceOf(IOException.class);
+    }
+
+    @Test
     void streamingSerialize_emptyList() throws IOException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         serializer.serialize(List.of(), baos);
