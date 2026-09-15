@@ -111,6 +111,11 @@ export interface WorkspaceAction {
   onAddEdges: (changes: EdgeAddChange[]) => void
   onInsertGroupNode: (node: Node<Group, NodeTypes.CLUSTER_NODE>, edge: Edge, rect: Rect) => void
   onDeleteNode: (type: NodeTypes, adapterId: string) => void
+  /**
+   * Merge a freshly built graph into the canvas: refresh server data, drop entities the server no
+   * longer has, add new ones, and keep the user's positions and grouping. Returns what changed.
+   */
+  onReconcileWithServer: (nodes: Node[], edges: Edge[]) => { updated: number; added: number; removed: number }
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
   onGroupSetData: (id: string, node: Pick<Group, 'title' | 'colorScheme'>) => void
   onUpdateNode: <T extends Record<string, unknown>>(id: string, data: T) => void

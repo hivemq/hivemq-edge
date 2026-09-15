@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { EdgeChange, NodeChange, NodeAddChange, EdgeAddChange, Node } from '@xyflow/react'
+import type { Edge, EdgeChange, NodeChange, NodeAddChange, EdgeAddChange, Node } from '@xyflow/react'
 import { addEdge, applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
+
+import { pruneDanglingEdges, reconcileWorkspace } from '@/modules/Workspace/utils/reconcile-utils.ts'
 
 import type { Adapter } from '@/api/__generated__'
 import type { Group, WorkspaceState, WorkspaceAction, DeviceMetadata } from '@/modules/Workspace/types.ts'
@@ -94,15 +96,23 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
           })
       },
       onDeleteNode: (type: NodeTypes, adapterId: string) => {
-        set({
-          nodes: get().nodes.filter((node) => {
-            const isThisTheAdapter = node.type === type && (node.data as Adapter).id === adapterId
-            const isThisTheDevice =
-              node.type === NodeTypes.DEVICE_NODE && (node.data as DeviceMetadata).sourceAdapterId == adapterId
+        const nodes = get().nodes.filter((node) => {
+          const isThisTheAdapter = node.type === type && (node.data as Adapter).id === adapterId
+          const isThisTheDevice =
+            node.type === NodeTypes.DEVICE_NODE && (node.data as DeviceMetadata).sourceAdapterId == adapterId
 
-            return !isThisTheAdapter && !isThisTheDevice
-          }),
+          return !isThisTheAdapter && !isThisTheDevice
         })
+
+        // Removing a node used to leave its connectors behind, pointing at an id that no longer
+        // exists. An entity is several things on the canvas — an adapter is the adapter node, its
+        // device node and a connector — so the edges have to go with it.
+        set({ nodes, edges: pruneDanglingEdges(get().edges, nodes) })
+      },
+      onReconcileWithServer: (incomingNodes: Node[], incomingEdges: Edge[]) => {
+        const { nodes, edges, summary } = reconcileWorkspace(get().nodes, get().edges, incomingNodes, incomingEdges)
+        set({ nodes, edges })
+        return summary
       },
       onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, showGroup: boolean) => {
         set({
