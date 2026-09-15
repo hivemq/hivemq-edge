@@ -1194,32 +1194,6 @@ public final class InternalTopicFilterSubscriber {
         });
     }
 
-    /// The goal a command asks for, given the goal already standing. **The first of the loop's two matrices.**
-    ///
-    /// Each command names a state it wants; this decides whether the ask takes. Two rules, and only two:
-    ///
-    ///   - **TERMINATED absorbs.** Once destruction is the goal, nothing lowers it.
-    ///   - **PAUSED is not overridden by the loop's own progress.** A pause asked for mid-iteration must
-    ///     survive the CONTINUE that ends that iteration, or it is lost. So CONTINUE, RESTART, WAKE and IDLE
-    ///     leave a PAUSED goal alone; only CONSUME lifts it.
-    private static @NotNull PpfLoopState goalStateFor(
-            final @NotNull PpfLoopState goal, final @NotNull PpfLoopCommand command) {
-        if (goal == PpfLoopState.TERMINATED) {
-            return PpfLoopState.TERMINATED;
-        }
-        return switch (command) {
-            case TEARDOWN -> PpfLoopState.TERMINATED;
-            case PAUSE -> PpfLoopState.PAUSED;
-            // The two halves of one ask, so they ask for the same thing. They differ only in whether the
-            // acting switch runs afterwards -- see the acting switch and the two enum constants.
-            case CONSUME, CONSUME_DONT_START -> PpfLoopState.ACTIVE;
-            // The loop's own reports. They say what just happened, so they may move a goal that is already
-            // about draining -- but they must not resurrect a paused subscriber.
-            case WAKE, CONTINUE, RESTART -> goal == PpfLoopState.PAUSED ? PpfLoopState.PAUSED : PpfLoopState.ACTIVE;
-            case IDLE -> goal == PpfLoopState.PAUSED ? PpfLoopState.PAUSED : PpfLoopState.WAITING;
-        };
-    }
-
     /// Drives the ppf-loop: records what was asked, refuses to act while an iteration is in flight, then moves
     /// [#loopState] towards [#goalState]. **The only place either is written.**
     ///
@@ -1229,14 +1203,30 @@ public final class InternalTopicFilterSubscriber {
     /// an earlier version did for TEARDOWN -- destroys the queue out from under an iteration still reading it.
     private void ppfLoopCtrl(final @NotNull PpfLoopCommand command, final boolean fromActiveLoop) {
 
-        // 1. RECORD -- the whole of the first matrix, in one line.
-        goalState = goalStateFor(goalState, command);
-
-        // 1a. RECORD ONLY. CONSUME_DONT_START is the half of consume() that runs under the monitor: it says
-        // what is wanted and stops there, because acting could run the consumer's processor and no processor
-        // is ever called with the monitor held. The CONSUME that follows does the acting.
-        if (command == PpfLoopCommand.CONSUME_DONT_START) {
+        // 1. RECORD -- what this command asks of the goal. Two of the branches are exceptions to the shape:
+        // CONSUME_DONT_START records and RETURNS, and CONSUME records NOTHING.
+        if (goalState == PpfLoopState.TERMINATED) {
+            // Once destruction is the goal, nothing lowers it -- but the teardown itself still has to be
+            // acted on, so this records nothing rather than returning.
+        } else if (command == PpfLoopCommand.TEARDOWN) {
+            goalState = PpfLoopState.TERMINATED;
+        } else if (command == PpfLoopCommand.PAUSE) {
+            goalState = PpfLoopState.PAUSED;
+        } else if (command == PpfLoopCommand.CONSUME_DONT_START) {
+            // The half of consume() sent from inside the monitor. It records the ask and stops there, because
+            // acting could run the consumer's processor and no processor is called with the monitor held.
+            goalState = PpfLoopState.ACTIVE;
             return;
+        } else if (command == PpfLoopCommand.CONSUME) {
+            // The acting half, sent once the monitor is free. IT RECORDS NOTHING: a pause() can run whole in
+            // the gap between the two halves, and asserting ACTIVE here would override it.
+        } else if (goalState == PpfLoopState.PAUSED) {
+            // The loop's own reports -- WAKE, CONTINUE, RESTART, IDLE -- must not resurrect a paused loop.
+            return;
+        } else if (command == PpfLoopCommand.IDLE) {
+            goalState = PpfLoopState.WAITING;
+        } else {
+            goalState = PpfLoopState.ACTIVE;
         }
 
         // 2. GUARD -- there is only ever one iteration in flight. Pass only if none is, or if this IS that
