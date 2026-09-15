@@ -1748,7 +1748,15 @@ public final class InternalTopicFilterSubscriber {
     ///
     /// **No precondition.** It used to demand being detached and paused, because it could not safely tear
     /// down a live subscriber. Now it detaches and pauses on the caller's behalf and lets the loop finish.
-    public void deallocate() {
+    ///
+    /// **Synchronized, so that the check and the two verbs it calls cannot interleave.** Unsynchronized, two
+    /// threads could both pass the check below; one would complete the release, and the other would then enter
+    /// [#detach], which refuses a dead subscriber and throws -- during shutdown, where an unexpected exception
+    /// is most likely to abandon the rest of the cleanup. Raised in review, 2026-09-15.
+    ///
+    /// Holding the monitor across the TEARDOWN submit is safe for the same reason [#pause] already does it:
+    /// acting on that command never runs consumer code.
+    public synchronized void deallocate() {
         if (state == SubscriberState.DEALLOCATED || state == SubscriberState.DEREGISTERED) {
             return;
         }
@@ -1761,12 +1769,21 @@ public final class InternalTopicFilterSubscriber {
         sendPpfLoopCommand(PpfLoopCommand.TEARDOWN, false);
     }
 
+    /// **NOT synchronized, deliberately** -- unlike [#deallocate]. It calls [#consume], which must submit its
+    /// acting command with the monitor FREE, because that submit can run the consumer's processor inline. A
+    /// monitor held here would be held across consumer code, which this class promises never to do.
+    ///
+    /// Two concurrent starts are harmless without it: both verbs are idempotent, and neither throws on a live
+    /// subscriber, so the loser finds the work done rather than an exception. That is what makes this
+    /// different from [#deallocate], where the loser met a verb that refuses a dead subscriber.
     public @NotNull InternalTopicFilterSubscriber start() {
         attach();
         consume();
         return this;
     }
 
+    /// Safe on a dead subscriber, and safe against itself: it is one call to [#deallocate], which is
+    /// synchronized and idempotent, so there is no gap here of its own.
     public void stop() {
         deallocate(); // which detaches and pauses first, then asks the ppf-loop to tear down
     }

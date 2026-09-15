@@ -44,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1335,6 +1336,50 @@ class InternalTopicFilterSubscriberAsyncTest {
 
         assertThat(topicTree.findTopicSubscribers("commands/setpoint").getSubscribers())
                 .as("and nothing of it is left in the topic tree once the teardown has run")
+                .isEmpty();
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void twoConcurrentDeallocationsBothReturnQuietly() throws Exception {
+        // Raised in review, 2026-09-15 (2). deallocate() is a composition -- check the state, detach, pause,
+        // record, send -- and it held no monitor across those. Two threads could both pass the check; one
+        // completed the release, and the other then entered detach(), which refuses a dead subscriber and
+        // THREW, during shutdown cleanup. The same defect had already been fixed in the queueless sibling and
+        // not looked for here, which is why the sweep matters more than the individual fix.
+        //
+        // Both threads are released together and hammer the verb, so the interleaving is reached by weight of
+        // attempts: the window is a handful of instructions, and unsynchronized this fails almost at once.
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "twodeallocations")
+                .withProcessor(m -> {})
+                .withTopicFilter("commands/#")
+                .build()
+                .start();
+
+        final CountDownLatch go = new CountDownLatch(1);
+        final List<Throwable> thrown = java.util.Collections.synchronizedList(new ArrayList<>());
+        final List<Thread> releasers = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            final Thread releaser = new Thread(() -> {
+                try {
+                    assertThat(go.await(5, TimeUnit.SECONDS)).isTrue();
+                    for (int attempt = 0; attempt < 200; attempt++) {
+                        subscriber.stop();
+                    }
+                } catch (final Throwable t) {
+                    thrown.add(t);
+                }
+            });
+            releasers.add(releaser);
+            releaser.start();
+        }
+        go.countDown();
+        for (final Thread releaser : releasers) {
+            releaser.join();
+        }
+
+        assertThat(thrown)
+                .as("stop() is documented as safe on a dead subscriber, however many threads call it")
                 .isEmpty();
     }
 }
