@@ -1382,4 +1382,70 @@ class InternalTopicFilterSubscriberAsyncTest {
                 .as("stop() is documented as safe on a dead subscriber, however many threads call it")
                 .isEmpty();
     }
+
+    @Test
+    void anIterationCompletingWhilePausedStillLetsTheSubscriberResume() {
+        // Raised in review, 2026-09-15 (3), against a regression introduced the same day. The RECORD chain in
+        // ppfLoopCtrl turned "the loop's own reports must not lift a PAUSED goal" into an early RETURN. That
+        // skips the GUARD and the ACT as well as the record -- so the CONTINUE ending the paused iteration
+        // never moved loopState off ACTIVE, and every later command was turned away by the one-iteration
+        // guard. The subscriber was wedged: not consuming, and unable to be told anything.
+        //
+        // Keeping the goal and RETURNING are different things, which is exactly what the TERMINATED branch
+        // above it already says in its own comment.
+        final List<CompletableFuture<Void>> outstanding = new ArrayList<>();
+        queued.add(message("a"));
+
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "pause-completion-resume")
+                .withAsyncProcessor(m -> {
+                    final CompletableFuture<Void> completion = new CompletableFuture<>();
+                    outstanding.add(completion);
+                    return completion;
+                })
+                .withTopicFilter("commands/#")
+                .build();
+        subscriber.consume();
+
+        assertThat(outstanding).as("an iteration is in flight").hasSize(1);
+
+        subscriber.pause();
+        outstanding.get(0).complete(null); // the paused iteration reports back -- CONTINUE, while PAUSED
+
+        queued.add(message("b"));
+        subscriber.consume();
+
+        assertThat(outstanding)
+                .as("consume() after a completion that arrived while paused must start an iteration again")
+                .hasSize(2);
+    }
+
+    @Test
+    void anIterationCompletingWhilePausedStillLetsTheSubscriberBeTornDown() {
+        // The second half of the same regression: a wedged loopState turns stop() away at the guard too, so
+        // the subscriber stays registered for ever and its client id is never released. Same cause as
+        // anIterationCompletingWhilePausedStillLetsTheSubscriberResume; pinned separately because a fix that
+        // restored only the resume path would leave this one broken and silent.
+        final List<CompletableFuture<Void>> outstanding = new ArrayList<>();
+        queued.add(message("a"));
+
+        final InternalTopicFilterSubscriber subscriber = factory.builder("test", "pause-completion-teardown")
+                .withAsyncProcessor(m -> {
+                    final CompletableFuture<Void> completion = new CompletableFuture<>();
+                    outstanding.add(completion);
+                    return completion;
+                })
+                .withTopicFilter("commands/#")
+                .build();
+        subscriber.consume();
+
+        subscriber.pause();
+        outstanding.get(0).complete(null);
+
+        subscriber.stop();
+
+        verify(clientQueuePersistence).clear(subscriber.clientId(), false);
+        assertThatThrownBy(subscriber::attach)
+                .as("the teardown must actually run, not be turned away by a stale in-flight guard")
+                .isInstanceOf(IllegalStateException.class);
+    }
 }

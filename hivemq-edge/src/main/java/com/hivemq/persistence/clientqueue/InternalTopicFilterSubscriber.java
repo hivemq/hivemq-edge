@@ -1045,7 +1045,7 @@ public final class InternalTopicFilterSubscriber {
     /// Asks to be told when a message arrives, and starts a ppf-loop each time one does.
     private void callMeWhenAMessageArrives() {
         clientQueuePersistence.addPublishAvailableCallback(
-                id -> sendPpfLoopCommand(PpfLoopCommand.WAKE, false), clientId);
+                id -> sendPpfLoopCommand(PpfLoopCommand.LOOP_AROUND_WAKE, false), clientId);
     }
 
     /// Stops those notifications. Messages keep arriving in the queue; nothing wakes up to drain them.
@@ -1091,9 +1091,8 @@ public final class InternalTopicFilterSubscriber {
     //
     // The five methods:
     //
-    // sendPpfLoopCommand(PpfLoopCommand.START) -- the ONE entry point for every trigger that says "a message may be
-    // available now": the
-    //                     message-available callback and consume(). Submits ppfLoopCtrl(START).
+    // sendPpfLoopCommand(command) -- the ONE entry point for every ask made of the loop, from a lifecycle
+    //                     verb or from the loop reporting on itself. Submits ppfLoopCtrl(command).
     // ppfLoopCtrl(case) -- owns loopActive and is the only caller of poll(). Every transition of the loop
     //                     goes through it; see the four cases on the method itself.
     // poll() -- produces the next message and hands it to process(). Serves anything left over from the
@@ -1101,7 +1100,7 @@ public final class InternalTopicFilterSubscriber {
     //                     can return more than one message even when asked for one; see the fetched field.
     //                     An empty read or a failure ends the loop by calling back into ppfLoopCtrl.
     // process() -- hands the message to the processor and chains finish() off its completion.
-    // finish() -- deletes the message from the queue, then goes round again via ppfLoopCtrl(CONTINUE).
+    // finish() -- deletes the message from the queue, then goes round again with LOOP_AROUND_CONTINUE.
     //
     // And two helpers of process(), for the context forms, which are told which destinations a message is for:
     //
@@ -1124,13 +1123,12 @@ public final class InternalTopicFilterSubscriber {
     // that stretch is precisely when a second read must not start. A loop is either running or it is not,
     // with no such gap, so the loop is what the flag is about.
     //
-    // THE LOOP DOES NOT READ THE LIFECYCLE STATE. A pause reaches it as a PAUSE command, in order with the
-    // loop's own work, rather than as a flag the loop consults -- which is what lets the state be written
-    // only by the lifecycle verbs. An earlier version did read a `consuming` flag here.
+    // THE LOOP DOES NOT READ THE LIFECYCLE STATE. A pause reaches it as a RECORD_PAUSE_AND_DOIT command, in
+    // order with the loop's own work, rather than as a flag the loop consults -- which is what lets the state
+    // be written only by the lifecycle verbs. An earlier version did read a `consuming` flag here.
     //
-    // A PLAIN FIELD, NOT AN ATOMIC. ppfLoopCtrl() is reached either from sendPpfLoopCommand(PpfLoopCommand.START),
-    // which puts it in the
-    // SingleWriter's serialisation for this queue, or from a step of a loop that is already inside it -- so
+    // A PLAIN FIELD, NOT AN ATOMIC. ppfLoopCtrl() is reached either from sendPpfLoopCommand, which puts it in
+    // the SingleWriter's serialisation for this queue, or from a step of a loop that is already inside it -- so
     // no two invocations ever overlap, whichever thread submitted them, and the field needs no atomicity.
 
     /// What the ppf-loop IS, and -- as [#goalState] -- what it is being asked to be.
@@ -1149,34 +1147,58 @@ public final class InternalTopicFilterSubscriber {
         TERMINATED
     }
 
-    /// What one call asks of the ppf-loop. Each command names the state it asks for, and [#goalStateFor]
-    /// decides whether that ask takes. Named as verbs, against the adjectives of [PpfLoopState].
+    /// What one call asks of the ppf-loop.
+    ///
+    /// **The names carry the one distinction that cannot be inferred from anything else: whether the command
+    /// is to be acted on NOW.** Almost every command means "record this goal and move towards it"; exactly one
+    /// means "record this goal and deliberately do NOT move towards it, a separate command is coming to do
+    /// that". No return type, no restructuring of [#ppfLoopCtrl] can absorb that difference -- it is a
+    /// property of the command, not of the state it records -- so it is spelled out in every name instead.
+    /// Four shapes, and a call site is readable without opening this enum:
+    ///
+    ///   - `RECORD_..._AND_DOIT` -- sent by a lifecycle verb; record the goal and act on it.
+    ///   - `RECORD_..._AND_DONT_DOIT` -- record the goal only. The one exception, and it is named for it.
+    ///   - `DOIT_NOW` -- names no goal; acts on whatever is standing. The other half of the exception.
+    ///   - `LOOP_AROUND_...` -- the loop reporting on ITSELF. **Not an instruction from outside**; these say
+    ///     what the iteration just did, which is why they must never raise a goal a verb has lowered, and
+    ///     equally why they must always be ACTED on: such a report is the only thing that moves [#loopState]
+    ///     off ACTIVE when an iteration ends. A regression on 2026-09-15 returned early on one of these and
+    ///     wedged the loop into claiming an iteration that had finished.
+    /// **Declared in the order [#ppfLoopCtrl] tests them**, so this enum reads as a table of contents for that
+    /// method's RECORD chain.
     private enum PpfLoopCommand {
-        /// A message is available; run an iteration. Sent by the message-available callback.
-        WAKE,
-        /// That iteration finished a message; run another. Sent by [#finish].
-        CONTINUE,
-        /// That iteration failed; run another. Until there is anything cleverer -- a backoff, an attempt
-        /// limit -- a failure is simply retried, so this asks for the same thing CONTINUE does.
-        RESTART,
-        /// Be draining, and start an iteration now. Sent by [#consume], after it has released the monitor.
-        ///
-        /// **Acts only if the goal is still what [#CONSUME_DONT_START] left it.** Between the two commands
-        /// the monitor is free, so a whole `pause()` can run: it takes the monitor, submits its PAUSE -- which
-        /// is therefore ordered BEFORE this command -- and returns. This command then finds the goal is no
-        /// longer ACTIVE and does not start. Without that check it would assert ACTIVE over a pause that had
-        /// already been recorded, leaving the loop draining while the subscriber says it is paused.
-        CONSUME,
-        /// Be draining, but do not start an iteration. Sent by [#consume] from INSIDE the monitor, which is
+        /// Be destroyed. Sent by [#deallocate].
+        RECORD_TEARDOWN_AND_DOIT,
+        /// Stop draining. Sent by [#pause].
+        RECORD_PAUSE_AND_DOIT,
+        /// Be draining, but do NOT start an iteration. Sent by [#consume] from INSIDE the monitor, which is
         /// safe because recording a goal cannot run consumer code -- and which is what puts this command
         /// ahead of anything a competing verb submits while waiting for that monitor.
-        CONSUME_DONT_START,
+        ///
+        /// **The only command that records without acting, and the only one that returns early**, because
+        /// acting here could run the consumer's processor with the monitor held. [#DOIT_NOW] is the other
+        /// half and follows once the monitor is free.
+        RECORD_CONSUME_AND_DONT_DOIT,
+        /// Act on whatever goal is standing. Sent by [#consume] once it has released the monitor.
+        ///
+        /// **The only command that names no goal.** All the others say what they want and are recorded; this
+        /// one only says "now", and acts on whatever the standing goal turns out to be.
+        ///
+        /// **It therefore records nothing.** Between the two halves the monitor is free, so a whole `pause()`
+        /// can run: it takes the monitor, submits its own command -- ordered BEFORE this one -- and returns.
+        /// This one then acts on a goal that is no longer ACTIVE and does not start. Asserting ACTIVE here
+        /// would override that pause, leaving the loop draining while the subscriber says it is paused.
+        /// Raised in review 2026-09-14, and fixed for real on 2026-09-15.
+        DOIT_NOW,
+        /// A message is available; run an iteration. Sent by the message-available callback.
+        LOOP_AROUND_WAKE,
+        /// That iteration finished a message; run another. Sent by [#finish].
+        LOOP_AROUND_CONTINUE,
+        /// That iteration failed; run another. Until there is anything cleverer -- a backoff, an attempt
+        /// limit -- a failure is simply retried, so this asks for the same thing a CONTINUE does.
+        LOOP_AROUND_RESTART,
         /// That iteration found nothing to read; settle. Sent by [#poll].
-        IDLE,
-        /// Stop draining. Sent by [#pause].
-        PAUSE,
-        /// Be destroyed. Sent by [#deallocate].
-        TEARDOWN
+        LOOP_AROUND_IDLE
     }
 
     /// Sends one command to the ppf-loop, from any thread.
@@ -1203,27 +1225,30 @@ public final class InternalTopicFilterSubscriber {
     /// an earlier version did for TEARDOWN -- destroys the queue out from under an iteration still reading it.
     private void ppfLoopCtrl(final @NotNull PpfLoopCommand command, final boolean fromActiveLoop) {
 
-        // 1. RECORD -- what this command asks of the goal. Two of the branches are exceptions to the shape:
-        // CONSUME_DONT_START records and RETURNS, and CONSUME records NOTHING.
+        // 1. RECORD -- what this command asks of the goal. **RECORD_CONSUME_AND_DONT_DOIT is the only branch
+        // that returns**, and its name says so; every other branch falls through to the guard and the act,
+        // including the three that record NOTHING.
         if (goalState == PpfLoopState.TERMINATED) {
             // Once destruction is the goal, nothing lowers it -- but the teardown itself still has to be
             // acted on, so this records nothing rather than returning.
-        } else if (command == PpfLoopCommand.TEARDOWN) {
+        } else if (command == PpfLoopCommand.RECORD_TEARDOWN_AND_DOIT) {
             goalState = PpfLoopState.TERMINATED;
-        } else if (command == PpfLoopCommand.PAUSE) {
+        } else if (command == PpfLoopCommand.RECORD_PAUSE_AND_DOIT) {
             goalState = PpfLoopState.PAUSED;
-        } else if (command == PpfLoopCommand.CONSUME_DONT_START) {
-            // The half of consume() sent from inside the monitor. It records the ask and stops there, because
-            // acting could run the consumer's processor and no processor is called with the monitor held.
+        } else if (command == PpfLoopCommand.RECORD_CONSUME_AND_DONT_DOIT) {
             goalState = PpfLoopState.ACTIVE;
-            return;
-        } else if (command == PpfLoopCommand.CONSUME) {
-            // The acting half, sent once the monitor is free. IT RECORDS NOTHING: a pause() can run whole in
-            // the gap between the two halves, and asserting ACTIVE here would override it.
+            return; // DOIT deferred for later
+        } else if (command == PpfLoopCommand.DOIT_NOW) {
+            // Records NOTHING: a pause() can run whole in the gap between the two halves of consume(), and
+            // asserting ACTIVE here would override it.
         } else if (goalState == PpfLoopState.PAUSED) {
-            // The loop's own reports -- WAKE, CONTINUE, RESTART, IDLE -- must not resurrect a paused loop.
-            return;
-        } else if (command == PpfLoopCommand.IDLE) {
+            // A LOOP_AROUND_* report meeting a paused goal. It records NOTHING, leaving the goal PAUSED --
+            // and it MUST NOT RETURN: a report is the loop speaking about itself, and the one ending an
+            // iteration is the only thing that can move loopState off ACTIVE. Returning here leaves the loop
+            // for ever claiming an iteration that has finished, after which the guard below turns away every
+            // consume() and stop(). Keeping a goal and declining to act are different things; the TERMINATED
+            // branch above says the same of itself. Raised in review, 2026-09-15.
+        } else if (command == PpfLoopCommand.LOOP_AROUND_IDLE) {
             goalState = PpfLoopState.WAITING;
         } else {
             goalState = PpfLoopState.ACTIVE;
@@ -1236,28 +1261,32 @@ public final class InternalTopicFilterSubscriber {
         // fromActiveLoop is the CALLER's word, not something derived from the command, because only the sender
         // knows whether it is the running iteration speaking.
         if (loopState == PpfLoopState.ACTIVE && !fromActiveLoop) {
-            return;
+            return; // another loop already actively running
         }
 
-        // 3. ACT -- the second matrix: move loopState towards goalState.
-        switch (goalState) {
+        // 3. ACT -- the second matrix: move loopState towards goalState. Tested in the same shape as the
+        // RECORD chain above, so both steps read alike. The final branch is ACTIVE by elimination rather than
+        // by test, so a state added to PpfLoopState lands there and runs an iteration -- name it here.
+        if (goalState == PpfLoopState.TERMINATED) {
             // Destroy. Deregistering the clientId from the factory is tearDown()'s last step, so there can
             // never be two subscribers for one clientId.
-            case TERMINATED -> {
-                tearDown();
-                loopState = PpfLoopState.TERMINATED;
-            }
-            // Stop draining. A message arriving later sends WAKE, which will not lift a PAUSED goal.
-            case PAUSED -> loopState = PpfLoopState.PAUSED;
+            tearDown();
+            loopState = PpfLoopState.TERMINATED;
+        } else if (goalState == PpfLoopState.PAUSED) {
+            // Stop draining. A message arriving later sends LOOP_AROUND_WAKE, which will not lift a PAUSED goal.
+            loopState = PpfLoopState.PAUSED;
+        } else if (goalState == PpfLoopState.WAITING) {
             // Settle: no iteration runs, but a message arriving will start one.
-            case WAITING -> loopState = PpfLoopState.WAITING;
-            // Run an iteration. poll() reports back with CONTINUE, RESTART or IDLE, and that report is what
-            // decides the next goal.
-            case ACTIVE -> {
-                loopState = PpfLoopState.ACTIVE;
-                poll();
-            }
+            loopState = PpfLoopState.WAITING;
+        } else {
+            // ACTIVE -- run an iteration. poll() reports back with one of the LOOP_AROUND_* commands, and that
+            // report is what decides the next goal.
+            loopState = PpfLoopState.ACTIVE;
+            poll();
+            return; // loop async continuing with message delivery (goalState unchanged)
         }
+
+        // goalState achieved
     }
 
     /// Tears this subscriber down, on the SingleWriter thread and between iterations of the ppf-loop.
@@ -1311,7 +1340,7 @@ public final class InternalTopicFilterSubscriber {
                         @Override
                         public void onSuccess(final @Nullable ImmutableList<PUBLISH> messages) {
                             if (messages == null || messages.isEmpty()) {
-                                sendPpfLoopCommand(PpfLoopCommand.IDLE, true);
+                                sendPpfLoopCommand(PpfLoopCommand.LOOP_AROUND_IDLE, true);
                                 return;
                             }
                             // EVERYTHING the read returned, not just the first: see [#fetched].
@@ -1325,13 +1354,13 @@ public final class InternalTopicFilterSubscriber {
                                     "Failed to read a message for internal subscriber '{}': {}",
                                     clientId,
                                     t.getMessage());
-                            sendPpfLoopCommand(PpfLoopCommand.RESTART, true);
+                            sendPpfLoopCommand(PpfLoopCommand.LOOP_AROUND_RESTART, true);
                         }
                     },
                     MoreExecutors.directExecutor());
         } catch (final Throwable t) {
             log.error("Failed to poll internal subscriber '{}': {}", clientId, t.getMessage());
-            sendPpfLoopCommand(PpfLoopCommand.RESTART, true);
+            sendPpfLoopCommand(PpfLoopCommand.LOOP_AROUND_RESTART, true);
         }
     }
 
@@ -1410,7 +1439,7 @@ public final class InternalTopicFilterSubscriber {
         } catch (final Exception e) {
             log.error("Failed to acknowledge message for internal subscriber '{}': {}", clientId, e.getMessage());
         } finally {
-            sendPpfLoopCommand(PpfLoopCommand.CONTINUE, true);
+            sendPpfLoopCommand(PpfLoopCommand.LOOP_AROUND_CONTINUE, true);
         }
     }
 
@@ -1660,15 +1689,15 @@ public final class InternalTopicFilterSubscriber {
     ///
     /// **And splitting is what orders a COMPETING pause correctly**, which is why the ask is sent as two
     /// commands rather than one. The monitor is free between them, so a `pause()` on another thread can run
-    /// whole: it takes the monitor, submits its PAUSE, and returns. The ask was already recorded by
-    /// [PpfLoopCommand#CONSUME_DONT_START] from INSIDE the monitor, so that pause is strictly later in the
-    /// queue and lowers the goal -- and the [PpfLoopCommand#CONSUME] that follows finds the goal no longer
-    /// ACTIVE and does not start. Sent as one command, it would instead assert ACTIVE over a pause already
+    /// whole: it takes the monitor, submits its own command, and returns. The ask was already recorded by
+    /// [PpfLoopCommand#RECORD_CONSUME_AND_DONT_DOIT] from INSIDE the monitor, so that pause is strictly later
+    /// in the queue and lowers the goal -- and the [PpfLoopCommand#DOIT_NOW] that follows finds the goal no
+    /// longer ACTIVE and does not start. Sent as one command, it would instead assert ACTIVE over a pause already
     /// recorded, leaving the loop draining while the subscriber says it is paused, and every later `pause()`
     /// returning at its guard. Raised in review, 2026-09-14.
     public @NotNull InternalTopicFilterSubscriber consume() {
         if (consumeDontStartPpfLoop()) {
-            sendPpfLoopCommand(PpfLoopCommand.CONSUME, false);
+            sendPpfLoopCommand(PpfLoopCommand.DOIT_NOW, false);
         }
         return this;
     }
@@ -1680,18 +1709,19 @@ public final class InternalTopicFilterSubscriber {
         }
         callMeWhenAMessageArrives();
         state = ifStateAttached() ? SubscriberState.RUNNING : SubscriberState.ARMED;
-        // The ask is RECORDED here, with the monitor still held, and only acted on by the CONSUME that
+        // The ask is RECORDED here, with the monitor still held, and only acted on by the DOIT_NOW that
         // consume() sends once the monitor is free. That ordering is the whole point: a pause() racing this
-        // one cannot take the monitor until it is released, so its PAUSE is submitted strictly after this
-        // command -- and the CONSUME that follows finds the goal already lowered and does not start.
-        sendPpfLoopCommand(PpfLoopCommand.CONSUME_DONT_START, false);
+        // one cannot take the monitor until it is released, so its command is submitted strictly after this
+        // one -- and the DOIT_NOW that follows finds the goal already lowered and does not start.
+        sendPpfLoopCommand(PpfLoopCommand.RECORD_CONSUME_AND_DONT_DOIT, false);
         return true;
     }
 
     /// Stops draining the queue. Messages keep being collected if attached; nothing processes them.
     ///
     /// **WHAT THIS PROMISES.** The message-available callback is deregistered before this returns, so nothing
-    /// further will wake the subscriber. And a PAUSE command is sent, which the ppf-loop acts on at its next
+    /// further will wake the subscriber. And a RECORD_PAUSE_AND_DOIT is sent, which the ppf-loop acts on at its
+    // next
     /// decision point: from then on it hands no message to the processor.
     ///
     /// **WHAT IT DOES NOT PROMISE.** That the loop has seen it yet. The command is submitted, not executed,
@@ -1705,8 +1735,8 @@ public final class InternalTopicFilterSubscriber {
     /// **Why a promise about ordering is statable at all.** This call and the processor run on different
     /// threads, and two events on different threads have NO intrinsic order -- wall-clock "before" means
     /// nothing between them. An order exists only where Java's happens-before relation puts one, so a claim
-    /// about what has stopped is only as good as the edge that establishes it. Here that edge is the PAUSE
-    /// command sent below, which travels through the SingleWriter's queue for this subscriber: the loop sees
+    /// about what has stopped is only as good as the edge that establishes it. Here that edge is the command
+    /// sent below, which travels through the SingleWriter's queue for this subscriber: the loop sees
     /// it in order with its own work.
     public synchronized @NotNull InternalTopicFilterSubscriber pause() {
         throwIfStateIsDeallocated();
@@ -1717,7 +1747,7 @@ public final class InternalTopicFilterSubscriber {
         state = ifStateAttached() ? SubscriberState.COLLECTING : SubscriberState.IDLE;
         // So a pause takes effect on an iteration already under way, rather than only on the next one. The
         // flag above is the standing answer to "may I poll at all"; this is the prompt to stop now.
-        sendPpfLoopCommand(PpfLoopCommand.PAUSE, false);
+        sendPpfLoopCommand(PpfLoopCommand.RECORD_PAUSE_AND_DOIT, false);
         return this;
     }
 
@@ -1754,7 +1784,7 @@ public final class InternalTopicFilterSubscriber {
     /// [#detach], which refuses a dead subscriber and throws -- during shutdown, where an unexpected exception
     /// is most likely to abandon the rest of the cleanup. Raised in review, 2026-09-15.
     ///
-    /// Holding the monitor across the TEARDOWN submit is safe for the same reason [#pause] already does it:
+    /// Holding the monitor across the teardown submit is safe for the same reason [#pause] already does it:
     /// acting on that command never runs consumer code.
     public synchronized void deallocate() {
         if (state == SubscriberState.DEALLOCATED || state == SubscriberState.DEREGISTERED) {
@@ -1766,7 +1796,7 @@ public final class InternalTopicFilterSubscriber {
         // runs later, on the loop's thread; without this the subscriber would stay alive to its caller in the
         // meantime, and a start() in that window would re-attach filters the teardown does not remove.
         state = SubscriberState.DEALLOCATED;
-        sendPpfLoopCommand(PpfLoopCommand.TEARDOWN, false);
+        sendPpfLoopCommand(PpfLoopCommand.RECORD_TEARDOWN_AND_DOIT, false);
     }
 
     /// **NOT synchronized, deliberately** -- unlike [#deallocate]. It calls [#consume], which must submit its
