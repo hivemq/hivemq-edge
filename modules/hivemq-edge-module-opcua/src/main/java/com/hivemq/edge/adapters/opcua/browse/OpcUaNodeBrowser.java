@@ -165,8 +165,12 @@ public class OpcUaNodeBrowser {
             }
 
             // Sort by path early (DiscoveredVariable is small) so the output stream is ordered
-            // without needing to materialize the full List<BrowsedNode>.
-            variables.sort(Comparator.comparing(DiscoveredVariable::path));
+            // without needing to materialize the full List<BrowsedNode>. Nodes sharing a path
+            // (e.g. Prosys simulation instances) are tie-broken on the NodeId: the async browse
+            // callbacks add them in arrival order, which varies between browses, and without the
+            // tie-break the collision suffixes in tagNameDefaults would shuffle between runs.
+            variables.sort(
+                    Comparator.comparing(DiscoveredVariable::path).thenComparing(v -> v.nodeId.toParseableString()));
 
             // Pre-compute unique tag name defaults. Multiple nodes can share the same browse
             // path (e.g. Prosys simulation instances), so we append a numeric suffix on collision.

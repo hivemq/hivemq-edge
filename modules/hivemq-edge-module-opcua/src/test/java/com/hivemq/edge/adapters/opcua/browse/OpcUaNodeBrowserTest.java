@@ -18,24 +18,41 @@ package com.hivemq.edge.adapters.opcua.browse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.edge.adapters.browse.BrowseException;
+import com.hivemq.edge.adapters.browse.BrowsedNode;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadResponse;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -73,6 +90,66 @@ class OpcUaNodeBrowserTest {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(client, "test-adapter");
 
         assertThat(browser.browse(null, 0).count()).isEqualTo(0);
+    }
+
+    // --- deterministic collision suffixes ---
+
+    @Test
+    void browse_samePathNodes_tagNameDefaultSuffixIndependentOfArrivalOrder() throws BrowseException {
+        // Two variables under the same browse path collide on tagNameDefault and get "-2" appended to one of
+        // them. The order the async browse callbacks deliver them in varies between browses, so the suffix
+        // must be decided by a stable key (the NodeId), not by arrival order — otherwise a CSV exported from
+        // one browse names a different node than the next browse would.
+        final ReferenceDescription first = variable("ns=2;s=Sim1/Max", "Max Value");
+        final ReferenceDescription second = variable("ns=2;s=Sim2/Max", "Max Value");
+
+        final Map<String, String> forward = tagNameDefaultsByNodeId(browse(first, second));
+        final Map<String, String> reversed = tagNameDefaultsByNodeId(browse(second, first));
+
+        assertThat(forward)
+                .containsEntry("ns=2;s=Sim1/Max", "max-value")
+                .containsEntry("ns=2;s=Sim2/Max", "max-value-2");
+        assertThat(reversed)
+                .as("the same node keeps the same default whichever order the server delivered the references")
+                .isEqualTo(forward);
+    }
+
+    private static @NotNull ReferenceDescription variable(final @NotNull String nodeId, final @NotNull String name) {
+        return new ReferenceDescription(
+                NodeIds.HasComponent,
+                true,
+                ExpandedNodeId.parse(nodeId),
+                new QualifiedName(2, name),
+                LocalizedText.english(name),
+                NodeClass.Variable,
+                ExpandedNodeId.NULL_VALUE);
+    }
+
+    /** Browse a root whose only children are {@code refs}; every other node is a leaf and reads answer null. */
+    private static @NotNull List<BrowsedNode> browse(final @NotNull ReferenceDescription... refs)
+            throws BrowseException {
+        final OpcUaClient client = mock(OpcUaClient.class);
+        final NamespaceTable nsTable = new NamespaceTable();
+        nsTable.add("urn:test");
+        nsTable.add("urn:test:sim");
+        when(client.getNamespaceTable()).thenReturn(nsTable);
+        final BrowseResult root = new BrowseResult(StatusCode.GOOD, ByteString.NULL_VALUE, refs);
+        final BrowseResult leaf = new BrowseResult(StatusCode.GOOD, ByteString.NULL_VALUE, new ReferenceDescription[0]);
+        when(client.browseAsync(any(BrowseDescription.class))).thenAnswer(invocation -> {
+            final BrowseDescription bd = invocation.getArgument(0);
+            return CompletableFuture.completedFuture(NodeIds.ObjectsFolder.equals(bd.getNodeId()) ? root : leaf);
+        });
+        when(client.readAsync(anyDouble(), any(), anyList())).thenAnswer(invocation -> {
+            final List<ReadValueId> ids = invocation.getArgument(2);
+            final DataValue[] values = new DataValue[ids.size()];
+            Arrays.fill(values, new DataValue(Variant.NULL_VALUE));
+            return CompletableFuture.completedFuture(new ReadResponse(null, values, null));
+        });
+        return new OpcUaNodeBrowser(client, "adapter").browse(null, 0).collect(Collectors.toList());
+    }
+
+    private static @NotNull Map<String, String> tagNameDefaultsByNodeId(final @NotNull List<BrowsedNode> nodes) {
+        return nodes.stream().collect(Collectors.toMap(BrowsedNode::nodeId, BrowsedNode::tagNameDefault));
     }
 
     // --- adapter-scoped browse serialisation (EDG-576) ---
