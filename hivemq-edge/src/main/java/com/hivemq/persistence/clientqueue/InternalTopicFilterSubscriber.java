@@ -210,59 +210,14 @@ public final class InternalTopicFilterSubscriber {
 
     private final @Nullable QueuedMessagesStrategy queueOverflow;
 
-    // PPF-Loop - implementation
-    // loopState -- what the loop IS: ACTIVE (an iteration in flight), WAITING (none, but a message will start
-    //            one), PAUSED (none, and a message will not), TERMINATED (dead). A subscriber is born PAUSED.
-    //            ACTIVE IS THE ONE-MESSAGE-AT-A-TIME BOUND, and the only thing that states it. Deliberately
-    //            about the LOOP rather than about a message: it holds across the gap between finishing one
-    //            message and the next read returning, which is exactly when a second read must not start.
-    //            Written by ppfLoopCtrl() and by nothing else; see there for why it can be a plain field.
-    private @NotNull PpfLoopState loopState = PpfLoopState.PAUSED;
-
-    // fetched -- messages a read handed us that we have not processed yet.
+    // WHAT IS NOT HERE, and why. What a CONSUMER declares lives above: the collaborators, the identity, the
+    // processors, the filters, and the four declarations made through the builder's with... verbs. What the
+    // subscriber keeps for ITSELF is declared beside the code that owns it, so that a region can be read
+    // without holding the whole class in mind:
     //
-    //            A READ CAN RETURN MORE THAN ONE MESSAGE, EVEN WHEN ASKED FOR ONE. We pass a single packet id,
-    //            which reads as "give me one message" and is not: that argument is a supply of packet ids to
-    //            STAMP messages with, and a QoS 0 message needs no stamp. So the storage layer hands back one
-    //            stamped message AND, on a queue that also holds QoS 0 messages, one of those as well -- added
-    //            before the count limit is re-tested. Two messages from a read that asked for one.
-    //
-    //            THIS IS WHY THE EXTRAS MUST BE KEPT. Reading a QoS 0 message REMOVES it from the queue, so a
-    //            returned message we drop is gone: not delayed, not redelivered, just lost, with nothing
-    //            logged. An earlier version took messages.get(0) and discarded the rest, which silently lost
-    //            every QoS 0 message that arrived alongside a QoS 1 or 2 one. Whatever a read returns is now
-    //            drained in here and handed to the processor one at a time, in order.
-    //
-    //            An ArrayDeque because poll() is exactly the operation wanted -- take the head, leave the
-    //            rest, answer null when empty -- in one call, with no index to keep and no node per message.
-    private final @NotNull Deque<PUBLISH> fetched = new ArrayDeque<>();
-
-    // goalState -- what the loop is being ASKED to be, as against loopState which is what it IS.
-    //
-    //            THE PRIORITISED QUEUE OF PENDING COMMANDS, expressed as the state they are asking for. A verb
-    //            arriving while an iteration is in flight cannot be acted on then -- the iteration owns the
-    //            thread, and a message may be with the consumer's processor -- so it is recorded here and
-    //            acted on when that iteration reports back. goalStateFor() is the rule for what an ask does to
-    //            a goal already standing, and is where the priority between them lives.
-    //
-    //            Written and read only by ppfLoopCtrl(), like loopState, and so needs no atomicity.
-    private @NotNull PpfLoopState goalState = PpfLoopState.PAUSED;
-
-    // Lifecycle - start, stop
-    // Not here: the lifecycle state is ONE value, SubscriberState, declared beside the lifecycle verbs --
-    // the only place that writes it, apart from build() and tearDown().
-
-    // Misc
-    // SHARED_IN_FLIGHT_MARKER acts as a boolean inflight flag -- not a real wire packet ID, since messages
-    // never go to an MQTT client. Reading a message above QoS 0 stamps it with the id supplied here and leaves
-    // it in the queue; a later read skips anything stamped. So all this value has to be is non-zero.
-    //
-    // IT IS ALSO WHAT finish() DELETES BY, so the same value identifies "the stamped message" rather
-    // than a particular one. That is unambiguous only because a subscriber holds exactly one message at a
-    // time -- see loopActive. Two at once would both be stamped with this, and the removal would
-    // delete whichever the queue happened to hold first.
-    private static final @NotNull ImmutableIntArray POLL_PACKET_IDS =
-            ImmutableIntArray.of(ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER);
+    //   loopState, goalState, fetched -- the ppf-loop's own state, in the PPF-Loop region
+    //   POLL_PACKET_IDS -- an argument of one queue call, in the Queue Wiring region
+    //   state (SubscriberState) -- the lifecycle, in the Lifecycle Verbs region
 
     // endregion
 
@@ -1053,6 +1008,21 @@ public final class InternalTopicFilterSubscriber {
         clientQueuePersistence.removePublishAvailableCallback(clientId);
     }
 
+    /// The packet ids a read is allowed to STAMP messages with -- an argument of the one call below, which is
+    /// why it is declared here rather than among the subscriber's own state.
+    ///
+    /// [ClientQueuePersistenceImpl#SHARED_IN_FLIGHT_MARKER] acts as a boolean in-flight flag: not a real wire
+    /// packet id, since these messages never go to an MQTT client. Reading a message above QoS 0 stamps it
+    /// with the id supplied here and leaves it in the queue; a later read skips anything stamped. So all this
+    /// value has to be is non-zero.
+    ///
+    /// **It is also what [#finish] deletes by**, so the same value identifies "the stamped message" rather
+    /// than a particular one. That is unambiguous only because a subscriber holds exactly one message at a
+    /// time -- see [#loopState]. Two at once would both be stamped with this, and the removal would delete
+    /// whichever the queue happened to hold first.
+    private static final @NotNull ImmutableIntArray POLL_PACKET_IDS =
+            ImmutableIntArray.of(ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER);
+
     /// Reads the next message(s), answering a future. See [#fetched] for why this may return more than one
     /// even though a single packet id is passed.
     private @NotNull ListenableFuture<ImmutableList<PUBLISH>> readNextMessagesFromQueue() {
@@ -1200,6 +1170,44 @@ public final class InternalTopicFilterSubscriber {
         /// That iteration found nothing to read; settle. Sent by [#poll].
         LOOP_AROUND_IDLE
     }
+
+    /// What the loop IS. A subscriber is born PAUSED.
+    ///
+    /// **ACTIVE is the one-message-at-a-time bound**, and the only thing that states it. Deliberately about the
+    /// LOOP rather than about a message: it holds across the gap between finishing one message and the next
+    /// read returning, which is exactly when a second read must not start.
+    ///
+    /// Written by [#ppfLoopCtrl] and by nothing else; see there for why it can be a plain field.
+    private @NotNull PpfLoopState loopState = PpfLoopState.PAUSED;
+
+    /// What the loop is being ASKED to be, as against [#loopState] which is what it IS.
+    ///
+    /// **The prioritised queue of pending commands, expressed as the state they ask for.** A verb arriving
+    /// while an iteration is in flight cannot be acted on then -- the iteration owns the thread, and a message
+    /// may be with the consumer's processor -- so it is recorded here and acted on when that iteration reports
+    /// back. The RECORD chain in [#ppfLoopCtrl] is the rule for what an ask does to a goal already standing,
+    /// and is where the priority between them lives.
+    ///
+    /// Written and read only by [#ppfLoopCtrl], like [#loopState], and so needs no atomicity.
+    private @NotNull PpfLoopState goalState = PpfLoopState.PAUSED;
+
+    /// Messages a read handed us that we have not processed yet.
+    ///
+    /// **A read can return more than one message, even when asked for one.** We pass a single packet id, which
+    /// reads as "give me one message" and is not: that argument is a supply of packet ids to STAMP messages
+    /// with, and a QoS 0 message needs no stamp. So the storage layer hands back one stamped message AND, on a
+    /// queue that also holds QoS 0 messages, one of those as well -- added before the count limit is
+    /// re-tested. Two messages from a read that asked for one.
+    ///
+    /// **This is why the extras must be kept.** Reading a QoS 0 message REMOVES it from the queue, so a
+    /// returned message we drop is gone: not delayed, not redelivered, just lost, with nothing logged. An
+    /// earlier version took the first and discarded the rest, which silently lost every QoS 0 message that
+    /// arrived alongside a QoS 1 or 2 one. Whatever a read returns is now drained in here and handed to the
+    /// processor one at a time, in order.
+    ///
+    /// An ArrayDeque because poll() is exactly the operation wanted -- take the head, leave the rest, answer
+    /// null when empty -- in one call, with no index to keep and no node per message.
+    private final @NotNull Deque<PUBLISH> fetched = new ArrayDeque<>();
 
     /// Sends one command to the ppf-loop, from any thread.
     ///
