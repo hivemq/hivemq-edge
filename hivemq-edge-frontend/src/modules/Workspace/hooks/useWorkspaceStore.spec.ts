@@ -164,7 +164,9 @@ describe('useWorkspaceStore', () => {
     })
 
     expect(result.current.nodes).toHaveLength(0)
-    expect(result.current.edges).toHaveLength(1)
+    // The connector goes with the nodes it connected. This assertion used to expect the edge to
+    // survive, which left it dangling between two ids that no longer existed.
+    expect(result.current.edges).toHaveLength(0)
   })
 
   it('should toggle a group', async () => {
