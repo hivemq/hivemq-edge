@@ -1,4 +1,4 @@
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import type { ActionMeta, OnChangeValue } from 'chakra-react-select'
 import { CreatableSelect } from 'chakra-react-select'
 import type { WidgetProps } from '@rjsf/utils'
@@ -26,29 +26,34 @@ export const MessageTypeSelect: FC<WidgetProps> = (props) => {
   const { id, value, onChange, required, disabled, readonly, schema, rawErrors, formContext } = props
   const { t } = useTranslation('datahub')
   const [options, setOptions] = useState<MessageTypeOption[]>([])
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   // Access schemaSource from formContext (passed by SchemaEditor)
   const context = formContext as SchemaFormContext | undefined
   const currentSchemaSource = context?.currentSchemaSource
 
-  // Compute options fresh when user opens the dropdown menu
-  // formContext.currentSchemaSource is LIVE updated by SchemaEditor when Monaco editor changes!
-  const handleMenuOpen = useCallback(() => {
-    const schemaSource = currentSchemaSource || ''
-
-    if (!schemaSource) {
-      setOptions([])
+  // Options are derived only while the menu is open: protobufjs `parse()` is real work and
+  // `currentSchemaSource` is updated by SchemaEditor on every keystroke in the Monaco editor.
+  //
+  // Recomputing on every source change *while open*, rather than once in an onMenuOpen handler, is
+  // what makes this correct: the editor change reaches formContext a render after Monaco emits it,
+  // so a menu opened in that window used to capture an empty source and then stay stuck on "no
+  // messages" until it was closed and reopened, because nothing recomputed in between.
+  useEffect(() => {
+    if (!isMenuOpen) {
       return
     }
 
-    const messageTypes = extractProtobufMessageTypes(schemaSource)
-
-    const newOptions = messageTypes.map((messageType) => ({
-      label: messageType,
-      value: messageType,
-    }))
-    setOptions(newOptions)
-  }, [currentSchemaSource])
+    const schemaSource = currentSchemaSource || ''
+    setOptions(
+      schemaSource
+        ? extractProtobufMessageTypes(schemaSource).map((messageType) => ({
+            label: messageType,
+            value: messageType,
+          }))
+        : []
+    )
+  }, [isMenuOpen, currentSchemaSource])
 
   const selectedValue = useMemo<MessageTypeOption | null>(() => {
     if (!value) return null
@@ -97,7 +102,8 @@ export const MessageTypeSelect: FC<WidgetProps> = (props) => {
         options={options}
         value={selectedValue}
         onChange={onSelectChange}
-        onMenuOpen={handleMenuOpen}
+        onMenuOpen={() => setIsMenuOpen(true)}
+        onMenuClose={() => setIsMenuOpen(false)}
         isClearable={true}
         isDisabled={disabled || readonly}
         placeholder={

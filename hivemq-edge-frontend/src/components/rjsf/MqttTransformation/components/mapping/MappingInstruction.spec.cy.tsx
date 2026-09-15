@@ -30,15 +30,6 @@ const MOCK_PROPERTY_STRING_REQUIRED: FlatJSONSchema7 = {
   required: true,
 }
 
-const MOCK_PROPERTY_READONLY: FlatJSONSchema7 = {
-  description: undefined,
-  path: [],
-  key: 'system-id',
-  title: 'System ID',
-  type: 'string',
-  readOnly: true,
-}
-
 // ─── Mock instructions ────────────────────────────────────────────────────────
 
 const MOCK_INSTRUCTION_NO_REF: Instruction = {
@@ -173,25 +164,6 @@ describe('MappingInstruction', () => {
     cy.getByTestId('mapping-instruction-dropzone').should('not.exist')
     cy.getByAriaLabel('Clear mapping').should('not.exist')
     cy.get('[role="alert"]').should('contain.text', 'Not supported').should('have.attr', 'data-status', 'warning')
-  })
-
-  it('should render readonly property properly', () => {
-    cy.mountWithProviders(
-      <MappingInstruction
-        property={MOCK_PROPERTY_READONLY}
-        showTransformation={false}
-        onChange={cy.stub()}
-        instruction={undefined}
-      />
-    )
-
-    cy.getByTestId('mapping-instruction-readonly').should('exist')
-    cy.getByTestId('property-name').should('have.text', 'System ID')
-    cy.getByAriaLabel('Property').should('have.attr', 'data-type', 'string').should('not.have.attr', 'draggable')
-    cy.getByTestId('property-readonly').should('exist')
-    cy.getByTestId('mapping-instruction-dropzone').should('not.exist')
-    cy.getByAriaLabel('Clear mapping').should('not.exist')
-    cy.get('[role="alert"]').should('contain.text', 'Read-only').should('have.attr', 'data-status', 'info')
   })
 
   // ── Ownership row: TAG sources ───────────────────────────────────────────────
@@ -329,19 +301,6 @@ describe('MappingInstruction', () => {
   })
 
   // ── Accessibility ─────────────────────────────────────────────────────────────
-
-  it('should be accessible with readonly property', () => {
-    cy.injectAxe()
-    cy.mountWithProviders(
-      <MappingInstruction
-        property={MOCK_PROPERTY_READONLY}
-        showTransformation={false}
-        onChange={cy.stub()}
-        instruction={undefined}
-      />
-    )
-    cy.checkAccessibility()
-  })
 
   it('should be accessible without instruction', () => {
     cy.injectAxe()

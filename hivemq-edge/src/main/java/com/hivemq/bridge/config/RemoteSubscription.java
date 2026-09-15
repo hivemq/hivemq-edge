@@ -23,13 +23,15 @@ import org.jetbrains.annotations.Nullable;
 public class RemoteSubscription {
 
     private final @NotNull List<String> filters;
+    private final @NotNull List<String> configuredFilters;
     private final @Nullable String destination;
     private final @NotNull List<CustomUserProperty> customUserProperties;
     private final boolean preserveRetain;
     private final int maxQoS;
 
     public RemoteSubscription(final @NotNull List<String> filters, final @Nullable String destination) {
-        this.filters = filters;
+        this.filters = canonical(filters);
+        this.configuredFilters = List.copyOf(filters);
         this.destination = destination;
         this.customUserProperties = List.of();
         this.maxQoS = 2;
@@ -42,15 +44,59 @@ public class RemoteSubscription {
             @NotNull final List<CustomUserProperty> customUserProperties,
             final boolean preserveRetain,
             final int maxQoS) {
-        this.filters = filters;
+        this.filters = canonical(filters);
+        this.configuredFilters = List.copyOf(filters);
         this.destination = destination;
         this.customUserProperties = customUserProperties;
         this.preserveRetain = preserveRetain;
         this.maxQoS = maxQoS;
     }
 
+    /**
+     * Sorts the topic filters, so that two subscriptions differing only in the order they were written
+     * in are one subscription — the same rule {@code LocalSubscription} applies to the local half,
+     * applied here (EDG-882 QA, 2026-08-25).
+     * <p>
+     * Order carries no meaning: the filters become one SUBSCRIBE packet sent to the remote broker when
+     * the bridge connects, and nothing downstream reads them in order. But {@link #equals(Object)}
+     * compared them positionally, so reordering a {@code <mqtt-topic-filter>} inside a
+     * {@code <remote-subscription>} made the bridge compare as changed, and the reload path answers a
+     * change by restarting the bridge. F-07 canonicalised {@code LocalSubscription} and left this half
+     * as it was — EDG-884's own yardstick, that an unchanged configuration must compare equal, failing
+     * on the remote side.
+     * <p>
+     * <b>Cheaper here than it was for the local half, and for a reason worth knowing.</b>
+     * {@code LocalSubscription}'s canonical order feeds {@code calculateUniqueId()}, which names every
+     * persisted queue of the subscription, so changing what it sees is a decision about queue naming.
+     * A remote subscription has no derived identity and owns no queue, so this is purely a change to
+     * what counts as equal.
+     * <p>
+     * Sorted, not de-duplicated: two identical filters are a different configuration from one, and
+     * {@code customUserProperties} is left alone because MQTT user properties are ordered and
+     * duplicate keys are legal, so their order is part of the configuration.
+     */
+    private static @NotNull List<String> canonical(final @NotNull List<String> topicFilters) {
+        return topicFilters.stream().sorted().toList();
+    }
+
     public @NotNull List<String> getFilters() {
         return filters;
+    }
+
+    /**
+     * The filters in the order they were configured, for writing the configuration back out and for
+     * serving over the API.
+     * <p>
+     * Canonicalisation exists so that reordering a filter is not a configuration change; it was never
+     * meant to reorder the operator's file. Every write of {@code config.xml} rebuilds the bridge
+     * entities from these objects, and any REST write of any subsystem triggers one, so returning the
+     * sorted list to the write-back would rewrite elements the operator put in a deliberate order —
+     * exactly the damage {@link LocalSubscription#getConfiguredFilters()} exists to avoid.
+     * <p>
+     * Deliberately not part of {@link #equals(Object)} or {@link #hashCode()}.
+     */
+    public @NotNull List<String> getConfiguredFilters() {
+        return configuredFilters;
     }
 
     public @Nullable String getDestination() {
@@ -85,6 +131,10 @@ public class RemoteSubscription {
                 + '}';
     }
 
+    /**
+     * Compares the configured state; {@code configuredFilters} is excluded, because two subscriptions
+     * that differ only in the order they were written in are one subscription. See {@link #canonical}.
+     */
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;

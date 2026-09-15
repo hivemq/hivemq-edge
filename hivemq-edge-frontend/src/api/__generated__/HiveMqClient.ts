@@ -19,6 +19,7 @@ import { DataHubSchemasService } from './services/DataHubSchemasService';
 import { DataHubScriptsService } from './services/DataHubScriptsService';
 import { DataHubStateService } from './services/DataHubStateService';
 import { DefaultService } from './services/DefaultService';
+import { DeviceTagBrowsingService } from './services/DeviceTagBrowsingService';
 import { DomainService } from './services/DomainService';
 import { EventsService } from './services/EventsService';
 import { FrontendService } from './services/FrontendService';
@@ -49,6 +50,7 @@ export class HiveMqClient {
     public readonly dataHubScripts: DataHubScriptsService;
     public readonly dataHubState: DataHubStateService;
     public readonly default: DefaultService;
+    public readonly deviceTagBrowsing: DeviceTagBrowsingService;
     public readonly domain: DomainService;
     public readonly events: EventsService;
     public readonly frontend: FrontendService;
@@ -67,7 +69,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2026.1-SNAPSHOT',
+            VERSION: config?.VERSION ?? 'PLACEHOLDER_HIVEMQ_VERSION',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -90,6 +92,7 @@ export class HiveMqClient {
         this.dataHubScripts = new DataHubScriptsService(this.request);
         this.dataHubState = new DataHubStateService(this.request);
         this.default = new DefaultService(this.request);
+        this.deviceTagBrowsing = new DeviceTagBrowsingService(this.request);
         this.domain = new DomainService(this.request);
         this.events = new EventsService(this.request);
         this.frontend = new FrontendService(this.request);

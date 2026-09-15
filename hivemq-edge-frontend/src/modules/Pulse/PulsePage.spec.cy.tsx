@@ -17,13 +17,13 @@ describe('PulsePage', () => {
       cy.get('h1').should('have.text', 'Assets')
       cy.get('h1 + p').should(
         'have.text',
-        'Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.'
+        "Manage Assets and their data mappings to stream live data from Edge to HiveMQ's Data Intelligence Platform and other external infrastructure."
       )
     })
 
     cy.get('h2').should(
       'have.text',
-      'Pulse Assets are not yet available for HiveMQ Edge. Please contact us for more information.'
+      'Assets are not yet available for HiveMQ Edge. Please contact us for more information.'
     )
   })
 
@@ -37,7 +37,7 @@ describe('PulsePage', () => {
       cy.get('h1').should('have.text', 'Assets')
       cy.get('h1 + p').should(
         'have.text',
-        'Manage Assets and their data mappings to stream live data from Edge to Pulse and other external infrastructure.'
+        "Manage Assets and their data mappings to stream live data from Edge to HiveMQ's Data Intelligence Platform and other external infrastructure."
       )
     })
 

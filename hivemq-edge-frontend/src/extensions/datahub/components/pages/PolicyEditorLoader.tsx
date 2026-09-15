@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Spinner, useToast } from '@chakra-ui/react'
 import type { Connection, Node, NodeAddChange } from '@xyflow/react'

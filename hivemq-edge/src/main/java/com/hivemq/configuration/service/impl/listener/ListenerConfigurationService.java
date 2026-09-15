@@ -21,7 +21,6 @@ import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
-import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.exception.ConfigurationValidationException;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -73,13 +72,6 @@ public interface ListenerConfigurationService {
     @ReadOnly
     @NotNull
     List<MqttTlsWebsocketListener> getTlsWebsocketListeners();
-
-    /**
-     * @return a unmodifiable list of all active UDP listeners
-     */
-    @ReadOnly
-    @NotNull
-    List<MqttsnUdpListener> getUdpListeners();
 
     @ReadOnly
     void clear();

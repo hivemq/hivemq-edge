@@ -29,6 +29,18 @@ import org.jetbrains.annotations.NotNull;
 public interface ClientQueuePersistence {
 
     /**
+     * Checkpoint visited when the client-queue clean-up has finished a bucket.
+     * <p>
+     * Declared here rather than on the implementation because the integration tests that wait for it
+     * cannot reference the implementation class: reading its class file needs types that are not on
+     * their compile classpath. Tests wait for a number of these instead of sleeping — the sleeps they
+     * replace passed just as green on a node where the clean-up had stopped being scheduled at all
+     * (EDG-882 F-09).
+     */
+    @NotNull
+    String CLIENT_QUEUE_CLEAN_UP_FINISHED = "client-queue-clean-up-finished";
+
+    /**
      * Add a publish to the queue.
      * The publish will be queued without a packet ID
      *
@@ -38,10 +50,17 @@ public interface ClientQueuePersistence {
      * @param retained   true if this message was sent in response to a subscribe.
      *                   It is not necessarily the same as the retain flag of the publish.
      * @param queueLimit of the client session or the default configuration.
+     * @param policy     what to do when the queue is full, decided by the producer of the messages —
+     *                   see {@link QueuePolicy}, and EDG-882 F-05 for why it is not inferred here.
      */
     @NotNull
     ListenableFuture<Void> add(
-            @NotNull String queueId, boolean shared, @NotNull PUBLISH publish, boolean retained, long queueLimit);
+            @NotNull String queueId,
+            boolean shared,
+            @NotNull PUBLISH publish,
+            boolean retained,
+            long queueLimit,
+            @NotNull QueuePolicy policy);
 
     /**
      * Add a list of publishes to the queue.
@@ -53,6 +72,8 @@ public interface ClientQueuePersistence {
      * @param retained   true if this message was sent in response to a subscribe.
      *                   It is not necessarily the same as the retain flag of the publishes.
      * @param queueLimit of the client session or the default configuration.
+     * @param policy     what to do when the queue is full, decided by the producer of the messages —
+     *                   see {@link QueuePolicy}, and EDG-882 F-05 for why it is not inferred here.
      */
     @NotNull
     ListenableFuture<Void> add(
@@ -60,7 +81,8 @@ public interface ClientQueuePersistence {
             boolean shared,
             @NotNull List<PUBLISH> publishes,
             boolean retained,
-            final long queueLimit);
+            final long queueLimit,
+            @NotNull QueuePolicy policy);
 
     /**
      * Read publishes that are not yet in-flight.

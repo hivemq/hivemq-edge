@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router'
 import { AbsoluteCenter } from '@chakra-ui/react'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'

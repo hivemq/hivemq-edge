@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { FC, ReactElement } from 'react'
 import type { DrawerProps } from '@chakra-ui/react'
 import {
   Drawer,
@@ -14,7 +14,7 @@ import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 
 interface ExpandableDrawerProps extends DrawerProps {
   header: string
-  subHeader?: JSX.Element
+  subHeader?: ReactElement
   initiallyExpanded?: boolean
 }
 

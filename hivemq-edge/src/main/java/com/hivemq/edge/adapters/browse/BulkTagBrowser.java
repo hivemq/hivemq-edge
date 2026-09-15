@@ -39,6 +39,19 @@ public interface BulkTagBrowser {
     Stream<BrowsedNode> browse(@Nullable String rootId, int maxDepth) throws BrowseException;
 
     /**
+     * Whether the adapter has hydrated the metadata a deterministic browse needs. Adapters without a warm-up
+     * phase are always ready. OPC UA reports {@code false} after a (re)connect until its namespace table and
+     * data-type tree are loaded — the Milo session reports CONNECTED before that metadata is available — so the
+     * REST layer can answer {@code 503 Service Unavailable} with {@code Retry-After} instead of serving a
+     * degraded browse (EDG-577).
+     *
+     * @return {@code true} once the device address-space metadata is loaded and a browse will be deterministic
+     */
+    default boolean isBrowseReady() {
+        return true;
+    }
+
+    /**
      * Resolve a node ID against the device's current namespace table using the stable namespace URI.
      * If the device's namespace index for the given URI has changed since the file was exported,
      * the returned node ID will contain the updated index.

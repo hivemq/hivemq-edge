@@ -31,6 +31,10 @@ export const getThemeForStatus = (theme: Partial<WithCSSVar<Dict>>, status: Stat
   if (status?.connection === Status.connection.CONNECTED) return theme.colors.status.connected[500]
   if (status?.connection === Status.connection.DISCONNECTED) return theme.colors.status.disconnected[500]
   if (status?.connection === Status.connection.STATELESS) return theme.colors.status.stateless[500]
+  // Named rather than left to fall through, because the fall-through is red. An adapter that is connecting
+  // is doing what it is supposed to, and painting a normal connect window as an error is what made the
+  // backend publishing CONNECTING look like a regression.
+  if (status?.connection === Status.connection.CONNECTING) return theme.colors.status.disconnected[500]
 
   return theme.colors.status.error[500]
 }
@@ -288,6 +292,43 @@ export const getEdgeStatusFromModel = (
 }
 
 /**
+ * Apply a computed style to an edge, keeping the existing edge object when nothing changed.
+ *
+ * React Flow diffs edges by reference, so returning `{ ...edge, ...style }` unconditionally makes
+ * every status pass look like a change: the diff produces a `replace` for each edge, the workspace
+ * store swaps its edge array, and the nodes deriving their status from those connections recompute
+ * and write themselves back - which triggers the next status pass. Preserving the reference when
+ * the style is identical keeps that feedback loop from running away.
+ *
+ * @param edge - The edge being updated
+ * @param style - The style computed for the edge
+ * @returns The original edge if the style is already applied, a new edge otherwise
+ */
+const applyEdgeStyle = (edge: Edge, style: EdgeStyle<EdgeStatus>): Edge => {
+  const currentData = edge.data as EdgeStatus | undefined
+  const isSameMarker =
+    edge.markerEnd === style.markerEnd ||
+    (typeof edge.markerEnd === 'object' &&
+      typeof style.markerEnd === 'object' &&
+      edge.markerEnd.type === style.markerEnd.type &&
+      edge.markerEnd.width === style.markerEnd.width &&
+      edge.markerEnd.height === style.markerEnd.height &&
+      edge.markerEnd.color === style.markerEnd.color)
+
+  const isSameStyle =
+    edge.animated === style.animated &&
+    edge.style?.stroke === style.style?.stroke &&
+    edge.style?.strokeWidth === style.style?.strokeWidth &&
+    currentData?.isConnected === style.data?.isConnected &&
+    currentData?.hasTopics === style.data?.hasTopics &&
+    isSameMarker
+
+  if (isSameStyle) return edge
+
+  return { ...edge, ...style }
+}
+
+/**
  * Create a new edge status model and styling for connections to combiner nodes.
  * This function handles the logic for edges targeting combiner nodes, where:
  * - Runtime status comes from the source node (is the source active?)
@@ -318,10 +359,7 @@ export const createNewStatusEdgeForCombiner = (
       source: 'DERIVED' as const,
     }
 
-    return {
-      ...edge,
-      ...getEdgeStatusFromModel(edgeStatusModel, true, theme),
-    }
+    return applyEdgeStyle(edge, getEdgeStatusFromModel(edgeStatusModel, true, theme))
   }
 
   // Fallback: If combiner hasn't computed statusModel yet, check mappings directly
@@ -333,10 +371,7 @@ export const createNewStatusEdgeForCombiner = (
     source: 'DERIVED' as const,
   }
 
-  return {
-    ...edge,
-    ...getEdgeStatusFromModel(fallbackStatusModel, true, theme),
-  }
+  return applyEdgeStyle(edge, getEdgeStatusFromModel(fallbackStatusModel, true, theme))
 }
 
 /**
@@ -466,10 +501,7 @@ export const updateEdgesStatusWithModel = (
         source: 'DERIVED',
       }
 
-      newEdges.push({
-        ...edge,
-        ...getEdgeStatusFromModel(aggregatedStatusModel, true, theme),
-      })
+      newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(aggregatedStatusModel, true, theme)))
       return
     }
 
@@ -491,10 +523,7 @@ export const updateEdgesStatusWithModel = (
 
       if (target?.type === NodeTypes.DEVICE_NODE) {
         // Device connections may be bidirectional
-        newEdges.push({
-          ...edge,
-          ...getEdgeStatusFromModel(statusModel, isBidirectional(type), theme),
-        })
+        newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(statusModel, isBidirectional(type), theme)))
         return
       }
 
@@ -506,10 +535,7 @@ export const updateEdgesStatusWithModel = (
       }
 
       // Other connections (to Edge node, etc.)
-      newEdges.push({
-        ...edge,
-        ...getEdgeStatusFromModel(statusModel, true, theme),
-      })
+      newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(statusModel, true, theme)))
       return
     }
 
@@ -533,10 +559,7 @@ export const updateEdgesStatusWithModel = (
         return
       }
 
-      newEdges.push({
-        ...edge,
-        ...getEdgeStatusFromModel(bridgeStatusModel, true, theme),
-      })
+      newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(bridgeStatusModel, true, theme)))
       return
     }
 
@@ -563,19 +586,13 @@ export const updateEdgesStatusWithModel = (
             source: 'DERIVED' as const,
           }
 
-          newEdges.push({
-            ...edge,
-            ...getEdgeStatusFromModel(edgeStatusModel, true, theme),
-          })
+          newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(edgeStatusModel, true, theme)))
           return
         }
       }
 
       // For other Pulse edges (e.g., to Edge node), use Pulse node's overall status
-      newEdges.push({
-        ...edge,
-        ...getEdgeStatusFromModel(statusModel, true, theme),
-      })
+      newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(statusModel, true, theme)))
       return
     }
 
@@ -585,20 +602,14 @@ export const updateEdgesStatusWithModel = (
       // Use the combiner's own statusModel which includes:
       // - Runtime: derived from upstream sources
       // - Operational: ACTIVE if has mappings, INACTIVE otherwise
-      newEdges.push({
-        ...edge,
-        ...getEdgeStatusFromModel(statusModel, true, theme),
-      })
+      newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(statusModel, true, theme)))
       return
     }
 
     // Handle passive node edges (Device, Host, etc.)
     // These derive their status from upstream nodes
     if (statusModel) {
-      newEdges.push({
-        ...edge,
-        ...getEdgeStatusFromModel(statusModel, true, theme),
-      })
+      newEdges.push(applyEdgeStyle(edge, getEdgeStatusFromModel(statusModel, true, theme)))
       return
     }
 

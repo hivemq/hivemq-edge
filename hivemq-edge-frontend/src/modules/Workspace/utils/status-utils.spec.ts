@@ -141,6 +141,9 @@ describe('getThemeForStatus', () => {
     { status: { runtime: Status.runtime.STOPPED }, expected: '#E53E3E' },
     { status: { connection: Status.connection.CONNECTED }, expected: '#38A169' },
     { status: { connection: Status.connection.DISCONNECTED }, expected: '#718096' },
+    // Review-09 finding 3: not '#E53E3E'. Before CONNECTING was named here it fell through to the error
+    // colour, so a normal connect window was painted as a fault.
+    { status: { connection: Status.connection.CONNECTING }, expected: '#718096' },
     { status: { connection: Status.connection.ERROR }, expected: '#E53E3E' },
     { status: { connection: Status.connection.UNKNOWN }, expected: '#E53E3E' },
     { status: { connection: Status.connection.STATELESS }, expected: '#38A169' },

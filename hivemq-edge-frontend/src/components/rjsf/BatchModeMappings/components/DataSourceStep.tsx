@@ -22,20 +22,28 @@ const DataSourceStep: FC<StepRendererProps> = ({ onContinue, store }) => {
     noKeyboard: true,
     maxFiles: 1,
     accept: acceptMimeTypes,
-    onDropRejected: (fileRejections) => {
-      const status: AlertStatus = 'error'
-      setLoading(false)
-      fileRejections.forEach((fileRejection) => {
-        toast({
-          ...DEFAULT_TOAST_OPTION,
-          status,
-          title: t('rjsf.batchUpload.dropZone.status', { context: status, fileName: fileRejection.file.name }),
-          description: fileRejection.errors[0].message,
+    // react-dropzone 19 stopped rejecting an over-limit batch as a whole: it keeps the files that
+    // fit and rejects only the excess. Split across onDropAccepted/onDropRejected that would advance
+    // the wizard with the first file *and* raise an error for the rest, so both are handled in one
+    // callback and any rejection discards the whole batch.
+    onDrop: async (acceptedFiles, fileRejections) => {
+      if (fileRejections.length) {
+        const status: AlertStatus = 'error'
+        setLoading(false)
+        fileRejections.forEach((fileRejection) => {
+          toast({
+            ...DEFAULT_TOAST_OPTION,
+            status,
+            title: t('rjsf.batchUpload.dropZone.status', { context: status, fileName: fileRejection.file.name }),
+            description: fileRejection.errors[0].message,
+          })
         })
-      })
-    },
-    onDropAccepted: async (files) => {
-      const [file] = files
+        return
+      }
+
+      const [file] = acceptedFiles
+      if (!file) return
+
       setLoading(true)
       try {
         const workbook = XLSX.read(await readFileAsync(file), {

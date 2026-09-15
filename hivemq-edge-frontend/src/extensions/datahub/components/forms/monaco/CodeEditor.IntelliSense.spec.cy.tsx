@@ -177,7 +177,9 @@ describe('Monaco IntelliSense - Template Insertion (API Verification)', () => {
 
     cy.get('.monaco-editor', { timeout: 10000 }).should('be.visible')
 
-    cy.window().then((win) => {
+    // The editor DOM is in place before `onMount` runs, and that is where the actions are
+    // registered, so this has to retry rather than sample once.
+    cy.window().should((win) => {
       // @ts-ignore
       const monaco = win.monaco
       // @ts-ignore
@@ -186,7 +188,7 @@ describe('Monaco IntelliSense - Template Insertion (API Verification)', () => {
 
       // Check if action was registered by trying to get it
       // @ts-ignore
-      const action = editor.getAction('datahub.insertTransformTemplate')
+      const action = editor?.getAction('datahub.insertTransformTemplate')
 
       expect(action, 'Template insertion action should be registered').to.exist
       expect(action.id).to.include('datahub.insertTransformTemplate')

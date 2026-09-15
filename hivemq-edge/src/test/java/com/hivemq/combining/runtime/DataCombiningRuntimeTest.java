@@ -15,6 +15,7 @@
  */
 package com.hivemq.combining.runtime;
 
+import static com.hivemq.combining.runtime.DataCombiningRuntime.COMBINER_PREFIX;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
@@ -567,7 +568,7 @@ class DataCombiningRuntimeTest {
 
     /*
      * Verifies that when start() subscribes a TOPIC_FILTER primary, it registers the
-     * topic in LocalTopicTree via addTopic() with the correct subscriber (combiningId + "#")
+     * topic in LocalTopicTree via addTopic() with the correct subscriber ("$COMBINER::" + combiningId)
      * and sharedName (combiningId). These values are set internally by InternalTopicFilterConsumer
      * and used for shared subscription routing.
      */
@@ -585,7 +586,8 @@ class DataCombiningRuntimeTest {
         final DataCombiningRuntime runtime = createRuntime(combining);
         runtime.start();
 
-        verify(localTopicTree).addTopic(eq(combiningId + "#"), any(Topic.class), anyByte(), eq(combiningId.toString()));
+        verify(localTopicTree)
+                .addTopic(eq(COMBINER_PREFIX + combiningId), any(Topic.class), anyByte(), eq(combiningId.toString()));
     }
 
     /*

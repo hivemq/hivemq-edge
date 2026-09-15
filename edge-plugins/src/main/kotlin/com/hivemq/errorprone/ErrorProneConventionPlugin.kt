@@ -45,7 +45,17 @@ class ErrorProneConventionPlugin : Plugin<Project> {
             }
             logging.addStandardErrorListener { msg ->
                 val reportFile = reportFileProvider.get().asFile
-                reportFile.appendText(msg.toString())
+                // The listener can fire before doFirst runs (or when the task is
+                // UP-TO-DATE / FROM-CACHE and doFirst is skipped), so ensure the
+                // parent directory exists here rather than relying on doFirst. An
+                // I/O failure in a logging listener runs on a Gradle worker thread
+                // and would otherwise wedge the whole build, so it must never escape.
+                try {
+                    reportFile.parentFile.mkdirs()
+                    reportFile.appendText(msg.toString())
+                } catch (_: Exception) {
+                    // Best-effort logging; never fail the build from here.
+                }
             }
         }
     }

@@ -50,7 +50,7 @@ class HiveMQEdgeEnvironmentUtilsTest {
         final ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
         for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
+            var unused = executor.submit(() -> {
                 ready.countDown();
                 try {
                     go.await(5, TimeUnit.SECONDS);

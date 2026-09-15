@@ -1,7 +1,7 @@
 import ApiErrorToastDevMode from '@datahub/components/helpers/ApiErrorToastDevMode.tsx'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import type { Node } from '@xyflow/react'
 import type { UseMutateAsyncFunction } from '@tanstack/react-query'
 import type { UseToastOptions } from '@chakra-ui/react'

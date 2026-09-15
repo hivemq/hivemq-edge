@@ -1,5 +1,8 @@
 import type { FC } from 'react'
-import { RouterProvider } from 'react-router-dom'
+// The DOM build of the provider; it is the root one with `flushSync: ReactDOM.flushSync` supplied,
+// which is what makes `viewTransition`/`flushSync` navigations work. Everything else still comes
+// from the framework-agnostic 'react-router' entry point.
+import { RouterProvider } from 'react-router/dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ChakraProvider } from '@chakra-ui/react'

@@ -243,8 +243,8 @@ class HiveMQEdgeHttpServiceImplTest {
             final CountDownLatch configRequestReceived = new CountDownLatch(1);
             final CountDownLatch allowConfigResponse = new CountDownLatch(1);
 
-            final HttpServer localServer = HttpServer.create(new InetSocketAddress(0), 0);
-            final int localPort = localServer.getAddress().getPort();
+            final int localPort = RandomPortGenerator.get();
+            final HttpServer localServer = HttpServer.create(new InetSocketAddress(localPort), 0);
 
             final String servicesJson = String.format("""
                     {

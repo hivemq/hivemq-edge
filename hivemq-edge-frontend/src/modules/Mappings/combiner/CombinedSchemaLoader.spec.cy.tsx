@@ -5,8 +5,8 @@ import type { CombinerContext } from '@/modules/Mappings/types'
 
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 
-const writingSchemaUrl = (adapterId: string, tagName: string) =>
-  `/api/v1/management/protocol-adapters/writing-schema/${adapterId}/${encodeURIComponent(tagName)}`
+const schemaUrl = (adapterId: string, tagName: string) =>
+  `/api/v1/management/protocol-adapters/schema/${adapterId}/${encodeURIComponent(tagName)}`
 
 const mockFormData: DataCombining = {
   ...mockCombinerMapping,
@@ -46,7 +46,7 @@ describe('CombinedSchemaLoader', () => {
 
   describe('error fallback heading — ownership display', () => {
     it('should show ownership string in error heading when scope is set', () => {
-      cy.intercept('GET', writingSchemaUrl('opcua-adapter', 'temperature'), {
+      cy.intercept('GET', schemaUrl('opcua-adapter', 'temperature'), {
         statusCode: 404,
         body: { message: 'Adapter not found' },
       }).as('schemaFail')
@@ -65,7 +65,7 @@ describe('CombinedSchemaLoader', () => {
     })
 
     it('should show plain tag name in error heading when scope is null', () => {
-      cy.intercept('GET', writingSchemaUrl('', 'temperature'), { statusCode: 404 }).as('schemaFail')
+      cy.intercept('GET', schemaUrl('', 'temperature'), { statusCode: 404 }).as('schemaFail')
 
       const context: CombinerContext = {
         selectedSources: {

@@ -108,6 +108,12 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
             assertThat(mapping.publishingInterval()).isEqualTo(12);
             assertThat(mapping.serverQueueSize()).isEqualTo(13);
+            // Review-02 finding 6. This is the case every deployed configuration is in: an opcuaToMqtt
+            // element that exists and names the two fields that predate condition tags, but not the one
+            // added with them. The sibling test below covers an *absent* element, which takes a different
+            // path entirely -- the outer requireNonNullElse that substitutes a whole default object -- so it
+            // never exercised this and the defect sat behind a green suite.
+            assertThat(mapping.eventQueueSize()).isEqualTo(OpcUaToMqttConfig.DEFAULT_EVENT_QUEUE_SIZE);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings())
@@ -152,6 +158,10 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
             assertThat(mapping.publishingInterval()).isEqualTo(1000);
             assertThat(mapping.serverQueueSize()).isEqualTo(1);
+            // A config written before event subscriptions existed names no event queue size. It must read
+            // back as the default rather than as zero, which would ask the server for its own default and
+            // make the depth vendor-dependent.
+            assertThat(mapping.eventQueueSize()).isEqualTo(OpcUaToMqttConfig.DEFAULT_EVENT_QUEUE_SIZE);
         });
 
         assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
@@ -174,6 +184,51 @@ class OpcUaProtocolAdapterConfigTest {
     }
 
     @Test
+    public void configWriteBack_leavesTheValidationSettingsExactlyAsWritten() throws Exception {
+        // The production round trip: the file is read through ConfigFileReaderWriter and the adapter
+        // config is turned back into the map that gets written out again. Whatever Edge writes back
+        // must be what the operator wrote - no expanded preset, no axes filled in with defaults, no
+        // fields appearing that were never there. A configuration edit elsewhere in the file must not
+        // silently rewrite this adapter's security posture.
+        final URL resource = getClass().getResource("/opcua-adapter-tls-checks-full-config.xml");
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
+
+        final OpcUaProtocolAdapterFactory factory =
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+        final Map<String, Object> writtenBack =
+                factory.unconvertConfigObject(mapper, protocolAdapterConfig.getAdapterConfig());
+
+        final Map<String, Object> tls = (Map<String, Object>) writtenBack.get("tls");
+        assertThat(tls).doesNotContainKey("tlsChecks");
+
+        final Map<String, Object> axes = (Map<String, Object>) tls.get("tlsChecksFull");
+        assertThat(axes)
+                .as("only the three axes the file names may be present")
+                .containsOnlyKeys("trustMode", "hostname", "revocation")
+                .containsEntry("trustMode", "ALLOW_LIST")
+                .containsEntry("hostname", "NONE")
+                .containsEntry("revocation", "NONE");
+
+        assertThat((Map<String, Object>) tls.get("allowList"))
+                .containsEntry("path", "/opt/hivemq/conf/opcua-fingerprints.txt");
+    }
+
+    @Test
+    public void configWriteBack_ofAPresetDoesNotExpandItIntoAxes() throws Exception {
+        final URL resource = getClass().getResource("/opcua-adapter-full-config.xml");
+        final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
+
+        final OpcUaProtocolAdapterFactory factory =
+                new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
+        final Map<String, Object> tls =
+                (Map<String, Object>) factory.unconvertConfigObject(mapper, protocolAdapterConfig.getAdapterConfig())
+                        .get("tls");
+
+        // The fixture names neither knob; nothing about validation may appear on write-back either.
+        assertThat(tls).doesNotContainKey("tlsChecks").doesNotContainKey("tlsChecksFull");
+    }
+
+    @Test
     public void unconvertConfigObject_full_valid() {
 
         final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig(
@@ -184,8 +239,10 @@ class OpcUaProtocolAdapterConfigTest {
                 new Tls(
                         true,
                         TlsChecks.NONE,
+                        null,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
-                        new Truststore("my/truststore/path", "truststore-password")),
+                        new Truststore("my/truststore/path", "truststore-password"),
+                        null),
                 new OpcUaToMqttConfig(1, 1000),
                 new Security(BASIC128RSA15),
                 null);

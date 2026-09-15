@@ -35,12 +35,17 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
       reset: () => {
         set(initialState)
       },
+      // React Flow calls the change handlers with an empty list when a batched update turns out to
+      // be a no-op. applyNodeChanges/applyEdgeChanges always allocate a new array, so writing that
+      // back would give every subscriber a fresh identity and re-run effects that watch nodes/edges.
       onNodesChange: (changes: NodeChange[]) => {
+        if (!changes.length) return
         set({
           nodes: applyNodeChanges(changes, get().nodes),
         })
       },
       onEdgesChange: (changes: EdgeChange[]) => {
+        if (!changes.length) return
         set({
           edges: applyEdgeChanges(changes, get().edges),
         })

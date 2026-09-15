@@ -121,6 +121,15 @@ public class ShutdownHooks {
         }
         executorService.shutdown();
 
+        // Drop the hooks once they have run. Each hook holds the component that registered it, so the registry
+        // reaches most of the object graph of the Edge instance it belongs to. Keeping them after shutdown is
+        // pointless -- they have already run and `shuttingDown` prevents a second pass -- but in a JVM that
+        // starts and stops an embedded Edge repeatedly it retains every retired instance: a heap dump of one
+        // test JVM traced 14 live JaxrsHttpServer instances (and their whole JAX-RS graphs) along
+        // ShutdownHooks.synchronousHooks -> ... -> JaxrsHttpServer$Shutdown, with the registry itself kept
+        // reachable by still-running Netty threads holding bridge MQTT clients.
+        synchronousHooks.clear();
+
         log.info("Shutdown completed.");
     }
 }

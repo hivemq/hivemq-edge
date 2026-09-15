@@ -20,6 +20,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.errors.adapters.AdapterBrowseNotReadyError;
 import com.hivemq.edge.adapters.browse.BrowseException;
 import com.hivemq.edge.adapters.browse.BrowsedNode;
 import com.hivemq.edge.adapters.browse.BulkTagBrowser;
@@ -35,6 +36,7 @@ import com.hivemq.edge.adapters.browse.validate.ValidationError;
 import com.hivemq.edge.api.DeviceTagBrowsingApi;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
@@ -124,6 +126,15 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         if (!(adapter instanceof final BulkTagBrowser browser)) {
             return errorResponse(
                     Response.Status.CONFLICT, "Adapter '" + adapterId + "' does not support bulk tag browsing");
+        }
+
+        // EDG-577: the adapter may be CONNECTED but still loading its address-space metadata, during which a
+        // browse would be non-deterministic. Answer 503 (ProblemDetails) with Retry-After so the caller retries
+        // once it is ready.
+        if (!browser.isBrowseReady()) {
+            return Response.fromResponse(ErrorResponseUtil.errorResponse(new AdapterBrowseNotReadyError(adapterId)))
+                    .header("Retry-After", "2")
+                    .build();
         }
 
         // Browse

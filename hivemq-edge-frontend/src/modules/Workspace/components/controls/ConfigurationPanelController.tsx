@@ -16,7 +16,7 @@ import { useDisclosure } from '@chakra-ui/react'
 import { useEdges, useNodes } from '@xyflow/react'
 import type { FC } from 'react'
 import { lazy, Suspense, useEffect, useMemo } from 'react'
-import { useNavigate, useOutlet, useParams } from 'react-router-dom'
+import { useNavigate, useOutlet, useParams } from 'react-router'
 
 const DevicePropertyDrawer = lazy(() => import('../drawers/DevicePropertyDrawer.tsx'))
 const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))

@@ -9,6 +9,7 @@ export const StatusConnection: RJSFSchema = {
   enum: [
     Status.connection.CONNECTED,
     Status.connection.DISCONNECTED,
+    Status.connection.CONNECTING,
     Status.connection.STATELESS,
     Status.connection.UNKNOWN,
     Status.connection.ERROR,

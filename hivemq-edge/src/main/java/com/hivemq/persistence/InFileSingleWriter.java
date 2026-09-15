@@ -47,6 +47,7 @@ public class InFileSingleWriter implements SingleWriterService {
     private static final @NotNull Logger log = LoggerFactory.getLogger(InFileSingleWriter.class);
 
     private static final int AMOUNT_OF_PRODUCERS = 5;
+    private static final int SHUTDOWN_AWAIT_TERMINATION_SEC = 2;
     private static final int RETAINED_MESSAGE_QUEUE_INDEX = 0;
     private static final int CLIENT_SESSION_QUEUE_INDEX = 1;
     private static final int SUBSCRIPTION_QUEUE_INDEX = 2;
@@ -202,7 +203,23 @@ public class InFileSingleWriter implements SingleWriterService {
         singleWriterExecutor.shutdown();
 
         try {
-            singleWriterExecutor.awaitTermination(shutdownGracePeriod, TimeUnit.SECONDS);
+            // This used to pass shutdownGracePeriod (a MILLISECOND value, see
+            // PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC, default 500) to a method taking SECONDS, making this a
+            // 500-second wait. A writer that did not drain promptly then held the whole shutdown, and in an
+            // embedded Edge that is stopped and restarted (tests) the pools piled up: 20 threads per
+            // instance, 260 still parked after 31 instances.
+            //
+            // Note what that bug concealed: with a 500-second wait, in-flight work ALWAYS finished before we
+            // gave up, so the race between shutdown and still-running tasks never surfaced. Correcting the
+            // unit exposes it -- a task that outlives the wait has its completion callback rejected by the
+            // shutting-down executor, which Guava logs at error level. That is a pre-existing race being
+            // revealed, not a new one.
+            //
+            // Hence the explicit 2 seconds rather than the raw 500 ms: long enough that normal drainage wins
+            // comfortably, short enough that a genuinely stuck writer cannot hold shutdown open. The shared
+            // constant stays at 500 ms because InMemoryProducerQueues consumes it as milliseconds and should
+            // not inherit this value.
+            singleWriterExecutor.awaitTermination(SHUTDOWN_AWAIT_TERMINATION_SEC, TimeUnit.SECONDS);
             if (log.isTraceEnabled()) {
                 log.trace("Finished single writer shutdown in {} ms", (System.currentTimeMillis() - start));
             }

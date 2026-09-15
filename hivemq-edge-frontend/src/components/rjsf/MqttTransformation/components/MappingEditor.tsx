@@ -6,7 +6,7 @@ import { Button, Card, CardBody, CardHeader, Heading, HStack } from '@chakra-ui/
 import { LuWand } from 'react-icons/lu'
 
 import type { Instruction } from '@/api/__generated__'
-import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema.ts'
+import { useGetSchema } from '@/api/hooks/useProtocolAdapters/useGetSchema.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { filterSupportedProperties } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.ts'
@@ -35,7 +35,10 @@ const MappingEditor: FC<MappingEditorProps> = ({
   ...props
 }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading, isError, error, isSuccess } = useGetWritingSchema(adapterId, topic)
+  // The properties listed here are the destination of a southbound mapping, i.e. what the user may write to.
+  // The SOUTHBOUND schema drops the non-writable envelope; any remaining read-only fields inside the value
+  // are hidden by MappingInstructionList (EDG-59).
+  const { data, isLoading, isError, error, isSuccess } = useGetSchema(adapterId, topic, 'SOUTHBOUND')
 
   const properties = useMemo(() => {
     const allProperties = data ? getPropertyListFrom(data) : []

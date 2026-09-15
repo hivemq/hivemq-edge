@@ -1,7 +1,7 @@
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useStore, useReactFlow } from '@xyflow/react'
+import { Handle, Position, useStore } from '@xyflow/react'
 import { Box, HStack, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
@@ -21,6 +21,7 @@ import { OperationalStatus } from '@/modules/Workspace/types/status.types.ts'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import MappingBadge from '../parts/MappingBadge.tsx'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeBridge: FC<NodeProps<NodeBridgeType>> = ({ id, selected, data: bridge, dragging }) => {
   const { t } = useTranslation()
@@ -28,7 +29,6 @@ const NodeBridge: FC<NodeProps<NodeBridgeType>> = ({ id, selected, data: bridge,
   const { options } = useEdgeFlowContext()
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/bridge/${id}`)
   const showSkeleton = useStore(selectorIsSkeletonZoom)
-  const { updateNodeData } = useReactFlow()
 
   // Compute unified status model with operational status based on topic filters
   const statusModel = useMemo(() => {
@@ -40,10 +40,7 @@ const NodeBridge: FC<NodeProps<NodeBridgeType>> = ({ id, selected, data: bridge,
     return createBridgeStatusModel(bridge.status, operational)
   }, [bridge.status, topics.local.length, topics.remote.length])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, bridge.statusModel)
 
   return (
     <>

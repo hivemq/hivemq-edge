@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ArrayFieldTemplateItemType } from '@rjsf/utils'
+import type { ArrayFieldTemplateItemType, ErrorSchema, IdSchema } from '@rjsf/utils'
 import { getTemplate, getUiOptions } from '@rjsf/utils'
 import {
   Box,
@@ -28,6 +28,16 @@ interface ArrayFieldItemCollapsableUISchema {
   name: string
 }
 
+// React 19 types `ReactElement['props']` as `unknown` where React 18 used `any`. The element rjsf
+// renders for an array item is always a SchemaField, so describe the props we read off it once.
+interface ArrayFieldItemChildProps {
+  formData: Record<string, unknown>
+  index: number
+  name: string
+  idSchema: IdSchema
+  errorSchema?: ErrorSchema
+}
+
 // TODO[NVL] This is driven by subscription handling; use uiSchema to allow configuration for individual array property
 export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) => {
   const {
@@ -46,6 +56,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     uiSchema,
     registry,
   } = props
+  const childProps = children.props as ArrayFieldItemChildProps
   const { t } = useTranslation('components')
   const uiOptions = getUiOptions(uiSchema)
   const { expandItems } = useFormControlStore()
@@ -59,21 +70,20 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   const { isOpen, onToggle, getButtonProps, getDisclosureProps, onOpen } = useDisclosure({
     defaultIsOpen:
       !collapsableItems?.titleKey ||
-      (index === props.totalItems - 1 && children.props.formData[collapsableItems?.titleKey] === undefined),
+      (index === props.totalItems - 1 && childProps.formData[collapsableItems?.titleKey] === undefined),
   })
   const name = useMemo<string>(() => {
-    const childrenFormData = collapsableItems?.titleKey
-      ? children.props.formData[collapsableItems?.titleKey]
-      : undefined
+    const rawTitle = collapsableItems?.titleKey ? childProps.formData[collapsableItems?.titleKey] : undefined
+    const childrenFormData = rawTitle == null ? undefined : String(rawTitle)
 
-    return formatItemName(collapsableItems?.name, children.props.index, childrenFormData)
-  }, [children.props.formData, children.props.index, collapsableItems?.name, collapsableItems?.titleKey])
+    return formatItemName(collapsableItems?.name, childProps.index, childrenFormData)
+  }, [childProps.formData, childProps.index, collapsableItems?.name, collapsableItems?.titleKey])
 
   useEffect(() => {
-    if (props.children.props.idSchema.$id === expandItems.join('_')) onOpen()
-  }, [expandItems, onOpen, props.children.props.idSchema.$id])
+    if (childProps.idSchema.$id === expandItems.join('_')) onOpen()
+  }, [expandItems, onOpen, childProps.idSchema.$id])
 
-  const hasErrors = hasNestedError(props.children.props.errorSchema)
+  const hasErrors = hasNestedError(childProps.errorSchema)
   const errorStyle =
     hasErrors && collapsableItems && !isOpen
       ? { borderColor: color, boxShadow: `0 0 0 1px ${getColor(theme, color)}` }
@@ -90,7 +100,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
       <FormControl variant="hivemq" sx={errorStyle}>
         <TitleFieldTemplate
           title={name}
-          id={children.props.name}
+          id={childProps.name}
           registry={registry}
           uiSchema={uiSchema}
           schema={props.schema}
@@ -103,7 +113,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   // This is to override the hardcoded rendering of the item's indexed names
   const childrenWithCustomTitle = {
     ...children,
-    props: { ...children.props, title: formatItemName(collapsableItems?.name, children.props.index) },
+    props: { ...childProps, title: formatItemName(collapsableItems?.name, childProps.index) },
   }
 
   return (

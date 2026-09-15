@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { WidgetProps } from '@rjsf/utils'
 import { MessageTypeSelect } from '@datahub/components/forms/MessageTypeSelect.tsx'
 
@@ -203,6 +204,35 @@ describe('MessageTypeSelect', () => {
 
     // Verify the select is disabled
     cy.get('#messageType').should('be.disabled')
+  })
+
+  it('should pick up a schemaSource that arrives while the menu is open', () => {
+    // The Monaco editor change reaches formContext a render after it is emitted, so the dropdown can
+    // be opened while currentSchemaSource is still empty. It has to recover on its own: computing the
+    // options once on menu open left it stuck on "no messages" until it was closed and reopened.
+    // The source therefore has to land without any user interaction here -- clicking anything outside
+    // the select would blur it and close the menu, which is not the situation being tested.
+    const TestHarness = () => {
+      const [source, setSource] = useState('')
+      useEffect(() => {
+        const timer = setTimeout(
+          () => setSource('syntax = "proto3"; message SensorData { double temperature = 1; }'),
+          1000
+        )
+        return () => clearTimeout(timer)
+      }, [])
+      return <MessageTypeSelect {...getMockProps()} formContext={{ currentSchemaSource: source }} />
+    }
+
+    cy.mountWithProviders(<TestHarness />)
+
+    // Open the menu before any source exists
+    cy.get('#messageType').click()
+    cy.get('[role="option"]').should('not.exist')
+
+    // The source lands while the menu is still open; the options must appear without reopening it
+    cy.get('[role="option"]', { timeout: 6000 }).should('have.length', 1)
+    cy.get('[role="option"]').first().should('contain.text', 'SensorData')
   })
 
   it('should update options when schemaSource changes', () => {

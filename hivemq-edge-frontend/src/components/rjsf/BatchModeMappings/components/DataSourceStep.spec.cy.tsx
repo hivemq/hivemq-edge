@@ -52,4 +52,39 @@ describe('DataSourceStep', () => {
     //   worksheet: Cypress.sinon.match.array,
     // })
   })
+
+  // react-dropzone 19 accepts the files that fit under `maxFiles` and rejects only the excess,
+  // where 14 rejected the whole batch. Without the single-onDrop guard this drop would advance the
+  // wizard with the first file while also toasting an error for the second.
+  it('should reject the whole batch when more than one file is dropped', () => {
+    cy.mountWithProviders(<DataSourceStep onContinue={cy.stub().as('getWorksheet')} store={MOCK_STORE} />)
+
+    cy.get('#dropzone').selectFile(
+      ['cypress/fixtures/test-spreadsheet.xlsx', 'cypress/fixtures/test-spreadsheet.xlsx'],
+      { action: 'drag-drop' }
+    )
+
+    cy.get('[role="status"] > div').should('have.attr', 'data-status', 'error')
+    cy.get('@getWorksheet').should('not.have.been.called')
+  })
+
+  it('should reject a batch mixing a valid and an invalid file', () => {
+    cy.mountWithProviders(<DataSourceStep onContinue={cy.stub().as('getWorksheet')} store={MOCK_STORE} />)
+
+    cy.get('#dropzone').selectFile(['cypress/fixtures/test-spreadsheet.xlsx', 'cypress/fixtures/example.json'], {
+      action: 'drag-drop',
+    })
+
+    cy.get('[role="status"] > div').should('have.attr', 'data-status', 'error')
+    cy.get('@getWorksheet').should('not.have.been.called')
+  })
+
+  it('should still accept a single valid file', () => {
+    cy.mountWithProviders(<DataSourceStep onContinue={cy.stub().as('getWorksheet')} store={MOCK_STORE} />)
+
+    cy.get('#dropzone').selectFile('cypress/fixtures/test-spreadsheet.xlsx', { action: 'drag-drop' })
+
+    cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
+    cy.get('@getWorksheet').should('have.been.calledOnce')
+  })
 })

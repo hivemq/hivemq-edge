@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from 'react'
 import { useEffect, useState, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import type { IChangeEvent } from '@rjsf/core'
 import { useTranslation } from 'react-i18next'
 import {

@@ -1,7 +1,7 @@
 import { ShellPage } from 'cypress/pages/ShellPage.ts'
 import { EDGE_MENU_LINKS } from 'cypress/utils/constants.utils.ts'
 
-const TABLE_TITLE = 'List of Pulse assets'
+const TABLE_TITLE = 'List of Assets'
 const COLUMN_NAMES = ['name', 'description', 'topic', 'status', 'sources', 'actions'] as const
 type ColumnName = (typeof COLUMN_NAMES)[number]
 type FilterableColumn = Extract<ColumnName, 'topic' | 'status'>

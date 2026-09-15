@@ -1,5 +1,8 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+// zustand v5 compares selector results with Object.is only, so a selector that builds a fresh
+// object re-renders on every store change and loops. useShallow restores the v4 behaviour.
+import { useShallow } from 'zustand/react/shallow'
 
 import type { WizardStore, WizardState, WizardType, GhostNode, GhostEdge } from '../components/wizard/types'
 import { EntityType } from '../components/wizard/types'
@@ -325,15 +328,17 @@ export const useWizardStore = create<WizardStore>()(
  * Convenience hook to get wizard state
  */
 export const useWizardState = () =>
-  useWizardStore((state) => ({
-    isActive: state.isActive,
-    entityType: state.entityType,
-    currentStep: state.currentStep,
-    totalSteps: state.totalSteps,
-    selectedNodeIds: state.selectedNodeIds,
-    selectionConstraints: state.selectionConstraints,
-    errorMessage: state.errorMessage,
-  }))
+  useWizardStore(
+    useShallow((state) => ({
+      isActive: state.isActive,
+      entityType: state.entityType,
+      currentStep: state.currentStep,
+      totalSteps: state.totalSteps,
+      selectedNodeIds: state.selectedNodeIds,
+      selectionConstraints: state.selectionConstraints,
+      errorMessage: state.errorMessage,
+    }))
+  )
 
 /**
  * Convenience hook to get wizard actions
@@ -344,36 +349,42 @@ export const useWizardActions = () => useWizardStore((state) => state.actions)
  * Convenience hook to get selection state and actions
  */
 export const useWizardSelection = () =>
-  useWizardStore((state) => ({
-    selectedNodeIds: state.selectedNodeIds,
-    selectionConstraints: state.selectionConstraints,
-    selectNode: state.actions.selectNode,
-    deselectNode: state.actions.deselectNode,
-    clearSelection: state.actions.clearSelection,
-  }))
+  useWizardStore(
+    useShallow((state) => ({
+      selectedNodeIds: state.selectedNodeIds,
+      selectionConstraints: state.selectionConstraints,
+      selectNode: state.actions.selectNode,
+      deselectNode: state.actions.deselectNode,
+      clearSelection: state.actions.clearSelection,
+    }))
+  )
 
 /**
  * Convenience hook to get ghost node state
  */
 export const useWizardGhosts = () =>
-  useWizardStore((state) => ({
-    ghostNodes: state.ghostNodes,
-    ghostEdges: state.ghostEdges,
-    addGhostNodes: state.actions.addGhostNodes,
-    addGhostEdges: state.actions.addGhostEdges,
-    clearGhostNodes: state.actions.clearGhostNodes,
-  }))
+  useWizardStore(
+    useShallow((state) => ({
+      ghostNodes: state.ghostNodes,
+      ghostEdges: state.ghostEdges,
+      addGhostNodes: state.actions.addGhostNodes,
+      addGhostEdges: state.actions.addGhostEdges,
+      clearGhostNodes: state.actions.clearGhostNodes,
+    }))
+  )
 
 /**
  * Convenience hook to get configuration state and actions
  */
 export const useWizardConfiguration = () =>
-  useWizardStore((state) => ({
-    configurationData: state.configurationData,
-    isConfigurationValid: state.isConfigurationValid,
-    updateConfiguration: state.actions.updateConfiguration,
-    validateConfiguration: state.actions.validateConfiguration,
-  }))
+  useWizardStore(
+    useShallow((state) => ({
+      configurationData: state.configurationData,
+      isConfigurationValid: state.isConfigurationValid,
+      updateConfiguration: state.actions.updateConfiguration,
+      validateConfiguration: state.actions.validateConfiguration,
+    }))
+  )
 
 /**
  * Convenience hook to check if wizard can proceed to next step

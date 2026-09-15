@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.config;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,11 +26,39 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
+
+    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(OpcUaSpecificAdapterConfig.class);
+
+    /**
+     * The settings this configuration accepts, derived from the declared properties so the list can
+     * never drift from the class it describes. Quoted back when an unknown setting is refused.
+     */
+    private static final @NotNull String KNOWN_SETTINGS = Arrays.stream(
+                    OpcUaSpecificAdapterConfig.class.getDeclaredFields())
+            .map(field -> field.getAnnotation(JsonProperty.class))
+            .filter(Objects::nonNull)
+            .map(JsonProperty::value)
+            .collect(Collectors.joining(", "));
+
+    /**
+     * Settings that released versions accepted and later versions removed. Refusing them would break
+     * an upgrade, so they are reported and ignored instead: {@code includeMetadata} was a top-level
+     * setting until its removal, and {@code mqttToOpcua} carried the southbound mappings of the
+     * bidirectional era — it is still a declared setting of the commercial bidirectional subtype
+     * (where it binds normally and never reaches this trap), but a northbound-only deployment reading
+     * a config written back then must not refuse to start over it.
+     */
+    private static final @NotNull Set<String> RETIRED_SETTINGS = Set.of("includeMetadata", "mqttToOpcua");
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(
@@ -117,6 +146,36 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.opcuaToMqttConfig = requireNonNullElseGet(opcuaToMqttConfig, OpcUaToMqttConfig::defaultOpcUaToMqttConfig);
         this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
         this.connectionOptions = requireNonNullElseGet(connectionOptions, ConnectionOptions::defaultConnectionOptions);
+    }
+
+    /**
+     * Refuses a setting this configuration does not have, at conversion time. The application-wide
+     * handling for unknown adapter settings warns and drops, which is the wrong posture here: the
+     * enclosing settings carry the security-relevant elements, so a misspelled {@code <tlls>},
+     * {@code <securtiy>} or {@code <aut>} would drop the whole block and quietly run the adapter on
+     * the insecure default — TLS off, policy NONE, anonymous access — instead of what the operator
+     * wrote. An any-setter runs ahead of that handler, so the entry is refused with the mistake
+     * named. The rejection is contained: ProtocolAdapterManager converts each adapter's
+     * configuration in isolation, and a running instance stays unchanged.
+     *
+     * <p>Inherited by subtypes; a subtype's own declared settings are known to its deserializer and
+     * never arrive here.
+     *
+     * <p>The {@link #RETIRED_SETTINGS} are the exception: settings that released versions accepted,
+     * so refusing them would break an upgrade. They are reported and ignored.
+     */
+    @JsonAnySetter
+    void refuseUnknownSetting(final @NotNull String name, final @Nullable Object value) {
+        if (RETIRED_SETTINGS.contains(name)) {
+            LOGGER.warn(
+                    "Adapter configuration: '{}' is a retired setting and has been ignored. Remove the entry.", name);
+            return;
+        }
+        throw new IllegalArgumentException(("The adapter configuration contains '%s', which is not a setting it "
+                        + "has. It cannot be applied, and dropping it could mean running with weaker security than "
+                        + "was written, so the configuration is rejected instead. Correct or remove the entry. "
+                        + "Known settings: %s.")
+                .formatted(name, KNOWN_SETTINGS));
     }
 
     public @NotNull String getUri() {

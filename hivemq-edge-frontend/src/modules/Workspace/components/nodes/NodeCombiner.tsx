@@ -1,8 +1,8 @@
 import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData } from '@xyflow/react'
 import { Icon, Text, useColorModeValue, VStack } from '@chakra-ui/react'
 
 import { EntityType } from '@/api/__generated__'
@@ -16,15 +16,18 @@ import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils'
 import type { NodeCombinerType } from '@/modules/Workspace/types'
 import MappingBadge from '../parts/MappingBadge'
 import { OperationalStatus } from '@/modules/Workspace/types/status.types'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dragging }) => {
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/combiner/${id}`)
   const bgColour = useColorModeValue('gray.300', 'gray.900')
-  const { updateNodeData } = useReactFlow()
 
   // Use React Flow's efficient hooks to get connected nodes
   const connections = useNodeConnections({ id })
-  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
+  // useNodesData memoises its selector on the ids array, so a fresh array on every render makes
+  // the store recompute and return a new selection every time.
+  const connectedNodeIds = useMemo(() => connections.map((connection) => connection.source), [connections])
+  const connectedNodes = useNodesData(connectedNodeIds)
 
   const topics = useMemo(() => {
     return data.mappings.items.map((e) => e.destination.topic as string)
@@ -43,10 +46,7 @@ const NodeCombiner: FC<NodeProps<NodeCombinerType>> = ({ id, selected, data, dra
     return computeNodeRuntimeStatus(operational, connectedNodes)
   }, [connectedNodes, data.mappings.items.length])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, data.statusModel)
 
   return (
     <>

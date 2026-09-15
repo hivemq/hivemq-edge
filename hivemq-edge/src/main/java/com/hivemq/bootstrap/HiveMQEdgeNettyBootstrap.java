@@ -25,7 +25,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.netty.ChannelInitializerFactory;
 import com.hivemq.bootstrap.netty.NettyTcpConfiguration;
 import com.hivemq.bootstrap.netty.NettyUdpConfiguration;
-import com.hivemq.bootstrap.netty.udp.UdpServerChannel;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.entity.ClientWriteBufferProperties;
@@ -34,11 +33,9 @@ import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
-import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.persistence.connection.ConnectionPersistence;
-import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
@@ -105,7 +102,6 @@ public class HiveMQEdgeNettyBootstrap {
         futures.addAll(bindMqttTlsTcpListeners(listenerConfigurationService.getTlsTcpListeners()));
         futures.addAll(bindMqttWebsocketListeners(listenerConfigurationService.getWebsocketListeners()));
         futures.addAll(bindMqttTlsWebsocketListeners(listenerConfigurationService.getTlsWebsocketListeners()));
-        futures.addAll(bindMqttSnUdpListeners(listenerConfigurationService.getUdpListeners()));
 
         return aggregatedFuture(futures);
     }
@@ -203,26 +199,6 @@ public class HiveMQEdgeNettyBootstrap {
         return futures.build();
     }
 
-    private @NotNull List<BindInformation> bindMqttSnUdpListeners(
-            final @NotNull List<MqttsnUdpListener> mqttsnUdpListeners) {
-        log.trace("Checking UDP listeners");
-        final ImmutableList.Builder<BindInformation> futures = ImmutableList.builder();
-        for (final MqttsnUdpListener listener : mqttsnUdpListeners) {
-            final AbstractBootstrap b = createUdpBootstrap(
-                    nettyUdpConfiguration.getParentEventLoopGroup(),
-                    nettyUdpConfiguration.getChildEventLoopGroup(),
-                    listener);
-            log.debug(
-                    "Starting MQTT-SN UDP listener on address {} and port {}",
-                    listener.getBindAddress(),
-                    listener.getPort());
-            final ChannelFuture bind = b.bind(listener.getBindAddress(), listener.getPort());
-            connectionPersistence.addServerChannel(listener.getName(), bind.channel());
-            futures.add(new BindInformation(listener, bind));
-        }
-        return futures.build();
-    }
-
     /**
      * Creates an aggregated future which allows to wait for all futures at once
      *
@@ -260,25 +236,6 @@ public class HiveMQEdgeNettyBootstrap {
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
         setAdvancedOptions(tcpBootstrap);
         return tcpBootstrap;
-    }
-
-    private @NotNull AbstractBootstrap createUdpBootstrap(
-            final @NotNull EventLoopGroup bossGroup,
-            final @NotNull EventLoopGroup workerGroup,
-            final @NotNull Listener listener) {
-
-        return new ServerBootstrap()
-                .group(bossGroup)
-                .childHandler(channelInitializerFactory.getChannelInitializer(listener))
-                //                .channel(UdpServerChannel.class)
-                .channelFactory(() -> {
-                    UdpServerChannel serverChannel = new UdpServerChannel(workerGroup);
-                    return serverChannel;
-                })
-                .option(ChannelOption.AUTO_CLOSE, true)
-                .option(ChannelOption.SO_REUSEADDR, true)
-                .option(ChannelOption.SO_BROADCAST, true)
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     }
 
     /**

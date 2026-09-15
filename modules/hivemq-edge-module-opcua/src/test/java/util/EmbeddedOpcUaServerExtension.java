@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -64,8 +65,10 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
+import org.eclipse.milo.opcua.stack.core.types.structured.SetPublishingModeRequest;
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
@@ -79,11 +82,15 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public static final @NotNull String NS_URI = "urn:hivemq:edge:opcua:test";
 
-    private static final @NotNull GeneralNames SUBJECT_ALTERNATIVE_NAME = new GeneralNames(new GeneralName[] {
-        new GeneralName(GeneralName.uniformResourceIdentifier, EmbeddedOpcUaServerExtension.NS_URI)
-    });
     private static final @NotNull String SERVER_PATH = "/opcua/test";
     private static final @NotNull String BIND_ADDRESS = "127.0.0.1";
+
+    // The bind address is part of the SubjectAltName so that clients configured to verify the endpoint
+    // hostname can be exercised against this server, as a real deployment would be.
+    private static final @NotNull GeneralNames SUBJECT_ALTERNATIVE_NAME = new GeneralNames(new GeneralName[] {
+        new GeneralName(GeneralName.uniformResourceIdentifier, EmbeddedOpcUaServerExtension.NS_URI),
+        new GeneralName(GeneralName.iPAddress, BIND_ADDRESS)
+    });
     private static final @NotNull String USERNAME = "testuser";
     private static final @NotNull String PASSWORD = "testpass";
     private static final @NotNull IdentityValidator IDENTITY_VALIDATOR = new CompositeValidator(
@@ -102,14 +109,16 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
     private int bindPort;
     private @Nullable OpcUaServer opcUaServer;
     private @Nullable TestNamespace testNamespace;
+    private @Nullable MemoryTrustListManager trustManager;
+    private @Nullable X509Certificate serverCertificate;
 
     private static @NotNull X509Certificate generateServerCertificate(final KeyPair keyPair) throws Exception {
         final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
                 new X500Name(
                         "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
                 BigInteger.valueOf(123456789),
-                new Date(System.currentTimeMillis() - 10000),
-                new Date(System.currentTimeMillis() + 10000),
+                Date.from(Instant.now().minusSeconds(10)),
+                Date.from(Instant.now().plusSeconds(10)),
                 new X500Name(
                         "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
                 keyPair.getPublic());
@@ -147,8 +156,9 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         bindPort = RandomPortGenerator.get();
         final KeyPair keyPair = createServerKeyPair();
         final X509Certificate certificate = generateServerCertificate(keyPair);
+        this.serverCertificate = certificate;
 
-        final var trustManager = new MemoryTrustListManager();
+        trustManager = new MemoryTrustListManager();
         trustManager.addTrustedCertificate(certificate);
         final var quarantine = new MemoryCertificateQuarantine();
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
@@ -218,6 +228,53 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public @Nullable TestNamespace getTestNamespace() {
         return testNamespace;
+    }
+
+    public @Nullable OpcUaServer getOpcUaServer() {
+        return opcUaServer;
+    }
+
+    /**
+     * Turns publishing on or off for every subscription on this server, as a client's SetPublishingMode would.
+     * <p>
+     * While publishing is off the server still sends keep-alives and its monitored items keep queueing; only the
+     * notifications are held back. Whatever is fired meanwhile goes out in the first publication after publishing
+     * is turned back on, so a test can put several notifications into one publishing cycle without racing it.
+     */
+    public void setPublishingEnabled(final boolean enabled) {
+        if (opcUaServer == null) {
+            throw new IllegalStateException("Server has not been started; there is no subscription to hold");
+        }
+        final var subscriptions = opcUaServer.getSubscriptions().values();
+        // Holding nothing would put the caller straight back into the race it meant to avoid.
+        if (subscriptions.isEmpty()) {
+            throw new IllegalStateException("The server holds no subscription whose publishing could be changed");
+        }
+        // Milo's Subscription reads only the flag; the header and subscription ids belong to the service call.
+        final SetPublishingModeRequest request = new SetPublishingModeRequest(null, enabled, new UInteger[0]);
+        subscriptions.forEach(subscription -> subscription.setPublishingMode(request));
+    }
+
+    /**
+     * The self-signed certificate this server presents to clients. Needed by tests that trust the
+     * server by fingerprint.
+     */
+    public @NotNull X509Certificate getServerCertificate() {
+        if (serverCertificate == null) {
+            throw new IllegalStateException("Server has not been started; no certificate has been generated");
+        }
+        return serverCertificate;
+    }
+
+    /**
+     * Adds a certificate (typically a client root CA) to the server's trust list so the server
+     * will accept clients whose application instance certificate chains to this anchor.
+     */
+    public void addTrustedClientCertificate(final @NotNull X509Certificate clientTrustAnchor) {
+        if (trustManager == null) {
+            throw new IllegalStateException("Server has not been started; trustManager is not initialised");
+        }
+        trustManager.addTrustedCertificate(clientTrustAnchor);
     }
 
     private @NotNull Set<EndpointConfig> createEndpointConfigs(final @NotNull X509Certificate certificate) {

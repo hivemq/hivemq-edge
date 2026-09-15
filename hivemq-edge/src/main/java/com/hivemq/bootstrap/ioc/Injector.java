@@ -48,7 +48,6 @@ import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.metrics.ioc.MetricsModule;
 import com.hivemq.mqtt.ioc.MQTTHandlerModule;
 import com.hivemq.mqtt.ioc.MQTTServiceModule;
-import com.hivemq.mqttsn.ioc.MqttsnServiceModule;
 import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.ioc.PersistenceModule;
@@ -72,7 +71,6 @@ import java.util.Set;
             ThrottlingModule.class,
             MQTTServiceModule.class,
             SecurityModule.class,
-            MqttsnServiceModule.class,
             ExecutorsModule.class,
             ExtensionModule.class,
             BridgeModule.class,

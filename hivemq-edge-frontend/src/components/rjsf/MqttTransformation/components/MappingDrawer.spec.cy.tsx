@@ -27,18 +27,15 @@ describe('MappingDrawer', () => {
       items: MOCK_DEVICE_TAGS(mockAdapterId, MockAdapterType.OPC_UA),
     }).as('getTags')
 
-    cy.intercept(
-      `/api/v1/management/protocol-adapters/writing-schema/${mockAdapterId}/${encodeURIComponent('my/tag')}`,
-      {
-        configSchema: GENERATE_DATA_MODELS(true, 'mockTopic'),
-        protocolId: 'my-type',
-      }
-    )
+    cy.intercept(`/api/v1/management/protocol-adapters/schema/${mockAdapterId}/${encodeURIComponent('my/tag')}`, {
+      configSchema: GENERATE_DATA_MODELS(true, 'mockTopic'),
+      protocolId: 'my-type',
+    })
 
     cy.intercept('/api/v1/management/sampling/topic/**', { items: [] })
     cy.intercept('/api/v1/management/sampling/schema/*', GENERATE_DATA_MODELS(true, 'my-topic'))
 
-    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/*/*', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/schema/*/*', { statusCode: 203, log: false })
   })
 
   it('should render properly', () => {

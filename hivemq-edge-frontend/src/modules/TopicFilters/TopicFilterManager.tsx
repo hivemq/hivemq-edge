@@ -1,9 +1,9 @@
 import { type FC, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Button, ButtonGroup, Card, CardBody, Text, useDisclosure } from '@chakra-ui/react'
-import { LuClipboardEdit, LuPencil, LuTrash, LuView } from 'react-icons/lu'
+import { LuClipboardPen, LuPencil, LuTrash, LuView } from 'react-icons/lu'
 
 import type { TopicFilter, TopicFilterList } from '@/api/__generated__'
 import { useTopicFilterManager } from '@/modules/TopicFilters/hooks/useTopicFilterManager.ts'
@@ -102,7 +102,7 @@ const TopicFilterManager: FC = () => {
               }}
               trigger={({ onOpen: onOpenArrayDrawer }) => (
                 <ButtonGroup isAttached size="sm">
-                  <Button leftIcon={<LuClipboardEdit />} onClick={onOpenArrayDrawer}>
+                  <Button leftIcon={<LuClipboardPen />} onClick={onOpenArrayDrawer}>
                     {t('topicFilter.listing.action.add.aria-label')}
                   </Button>
                 </ButtonGroup>

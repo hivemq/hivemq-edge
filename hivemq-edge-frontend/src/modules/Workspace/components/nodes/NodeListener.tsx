@@ -1,7 +1,7 @@
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData } from '@xyflow/react'
 import { Image } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,14 +13,17 @@ import type { NodeListenerType } from '../../types'
 import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeListener: FC<NodeProps<NodeListenerType>> = ({ id, selected, data }) => {
   const { t } = useTranslation()
-  const { updateNodeData } = useReactFlow()
 
   // Use React Flow's efficient hooks to get connected nodes (edge node)
   const connections = useNodeConnections({ id })
-  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
+  // useNodesData memoises its selector on the ids array, so a fresh array on every render makes
+  // the store recompute and return a new selection every time.
+  const connectedNodeIds = useMemo(() => connections.map((connection) => connection.source), [connections])
+  const connectedNodes = useNodesData(connectedNodeIds)
 
   // Compute unified status model - derives from upstream edge node using React Flow's optimized hooks
   const statusModel = useMemo(() => {
@@ -56,10 +59,7 @@ const NodeListener: FC<NodeProps<NodeListenerType>> = ({ id, selected, data }) =
     }
   }, [connectedNodes])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, data.statusModel)
 
   const getLogo = () => {
     if (data.transport === Listener.transport.TCP) return logoTCP

@@ -16,7 +16,9 @@ export const ClientFilterNode: FC<NodeProps<Node<ClientFilterData>>> = (props) =
     <>
       <NodeWrapper route={`node/${type}/${id}`} {...props}>
         <VStack ml={6} data-testid="node-model" alignItems="flex-end">
-          {data.clients?.map((client) => <ClientTag tagTitle={client} key={client} data-testid="client-wrapper" />)}
+          {data.clients?.map((client) => (
+            <ClientTag tagTitle={client} key={client} data-testid="client-wrapper" />
+          ))}
         </VStack>
       </NodeWrapper>
       {data.clients?.map((client, index) => (

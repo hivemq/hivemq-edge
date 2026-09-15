@@ -110,6 +110,17 @@ public class ForwardedTopicEntity {
         return queueLimit;
     }
 
+    /**
+     * Without this the write-back path could not carry the element at all: {@code sync} rebuilds every
+     * bridge entity from the runtime configuration, so a field with no setter is silently dropped from
+     * {@code config.xml} on the next write — and any REST write of any subsystem triggers one. The
+     * operator's {@code <queue-limit>} vanished, the reload that followed saw a changed bridge, and the
+     * bridge was restarted for a change nobody made (EDG-882 QA round 2).
+     */
+    public void setQueueLimit(final @Nullable Long queueLimit) {
+        this.queueLimit = queueLimit;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;

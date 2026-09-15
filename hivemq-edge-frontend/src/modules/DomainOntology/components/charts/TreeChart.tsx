@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import { type LinkTooltipProps, type NodeTooltipProps, ResponsiveTree, type TreeDataProps } from '@nivo/tree'
-import { type PropertyAccessor, useTheme } from '@nivo/core'
+import { type PropertyAccessor } from '@nivo/core'
+import { useTheme } from '@nivo/theming'
 import { Box, chakra as Chakra } from '@chakra-ui/react'
 
 import logo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'

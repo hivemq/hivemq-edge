@@ -75,7 +75,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     private void stopPolling(final @NotNull ProtocolAdapterPollingSampler sampler) {
         final PollingTask taskToStop = samplerToTask.remove(sampler);
-        taskToStop.stopScheduling();
+        if (taskToStop != null) {
+            taskToStop.stopScheduling();
+        }
     }
 
     public void stopAllPolling() {

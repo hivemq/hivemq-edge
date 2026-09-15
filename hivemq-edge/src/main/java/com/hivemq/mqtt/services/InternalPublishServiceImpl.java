@@ -29,6 +29,8 @@ import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.mqtt.topic.tree.TopicSubscribers;
 import com.hivemq.persistence.RetainedMessage;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberFactory;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.util.Exceptions;
 import jakarta.inject.Inject;
@@ -51,6 +53,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence;
     private final @NotNull LocalTopicTree topicTree;
     private final @NotNull PublishDistributor publishDistributor;
+    private final @NotNull InternalTopicFilterSubscriberFactory internalTopicFilterSubscriberFactory;
 
     private final boolean acknowledgeAfterPersist;
 
@@ -58,10 +61,12 @@ public class InternalPublishServiceImpl implements InternalPublishService {
     public InternalPublishServiceImpl(
             final @NotNull RetainedMessagePersistence retainedMessagePersistence,
             final @NotNull LocalTopicTree topicTree,
-            final @NotNull PublishDistributor publishDistributor) {
+            final @NotNull PublishDistributor publishDistributor,
+            final @NotNull InternalTopicFilterSubscriberFactory internalTopicFilterSubscriberFactory) {
         this.retainedMessagePersistence = retainedMessagePersistence;
         this.topicTree = topicTree;
         this.publishDistributor = publishDistributor;
+        this.internalTopicFilterSubscriberFactory = internalTopicFilterSubscriberFactory;
         this.acknowledgeAfterPersist = ACKNOWLEDGE_INCOMING_PUBLISH_AFTER_PERSISTING_ENABLED.get();
     }
 
@@ -184,6 +189,20 @@ public class InternalPublishServiceImpl implements InternalPublishService {
                 if (subscriber.isNoLocal() && sender != null && sender.equals(subscriber.getSubscriber())) {
                     // do not send to this subscriber, because NoLocal Option is set and subscriber == sender
                     continue;
+                }
+
+                // Ingress-exclusion (generalized No Local) for internal topic-filter subscribers: if this
+                // subscriber is one of ours and was configured to exclude the ingress client, skip it —
+                // before queueing, so an excluded message never enters the subscriber's queue. The cheap
+                // prefix check gates the registry lookup so ordinary MQTT subscribers (the vast majority
+                // on this hot path) pay nothing. getSubscriber(...) is null for an internal subscriber
+                // that is not currently attached, in which case we do not skip.
+                if (subscriber.getSubscriber().startsWith(InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX)) {
+                    final InternalTopicFilterSubscriber internalSubscriber =
+                            internalTopicFilterSubscriberFactory.getSubscriber(subscriber.getSubscriber());
+                    if (internalSubscriber != null && internalSubscriber.isExcludedIngressClientId(sender)) {
+                        continue;
+                    }
                 }
 
                 notSharedSubscribers.put(subscriber.getSubscriber(), subscriber);

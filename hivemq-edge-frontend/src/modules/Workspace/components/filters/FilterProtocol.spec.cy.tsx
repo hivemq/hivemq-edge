@@ -23,7 +23,7 @@ describe('FilterProtocol', () => {
     cy.get('[role="group"] label#workspace-filter-protocol-label').should('have.text', 'Protocols')
     cy.get('[role="group"] #react-select-protocol-placeholder').should('have.text', 'Select Protocols to filter ...')
     cy.get('[role="group"] #workspace-filter-protocol-trigger').click()
-    cy.get('#react-select-protocol-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-protocol-listbox').within(() => {
       cy.get('[role="option"]').should('have.length', 2)
       cy.get('[role="option"]').eq(0).should('have.text', 'OPC UA')
       cy.get('[role="option"]').eq(1).should('have.text', 'Simulation')
@@ -76,7 +76,7 @@ describe('FilterProtocol', () => {
     cy.get('[role="group"] ').should('have.attr', 'data-disabled')
 
     cy.get('[role="group"] #workspace-filter-protocol-trigger').click({ force: true })
-    cy.get('#react-select-protocol-listbox [role="listbox"]').should('not.exist')
+    cy.get('#react-select-protocol-listbox').should('not.exist')
 
     cy.get('@onChange').should('not.have.been.called')
   })

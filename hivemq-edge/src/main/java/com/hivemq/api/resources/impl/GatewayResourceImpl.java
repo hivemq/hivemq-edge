@@ -103,7 +103,6 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
             case 8443, 443 -> "https";
             case 1883 -> "mqtt";
             case 8883 -> "mqtt (secure)";
-            case 2442 -> "mqtt-sn";
             default -> null;
         };
     }
@@ -113,7 +112,6 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
         // -- TODO Add element to config for protocol
         return switch (port) {
             case 8080, 80, 3000, 8443, 443, 1883, 8883 -> Listener.TRANSPORT.TCP;
-            case 2442 -> Listener.TRANSPORT.UDP;
             default -> null;
         };
     }

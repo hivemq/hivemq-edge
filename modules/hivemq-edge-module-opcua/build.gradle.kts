@@ -23,7 +23,7 @@ group = "com.hivemq"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
@@ -58,6 +58,16 @@ dependencies {
     testImplementation(libs.milo.server)
     testImplementation(libs.assertj)
     testImplementation(libs.awaitility)
+    // Test-only, and for one purpose: OpcUaSessionActivityListenerTest's race loop turns down the listener's
+    // own logger for the duration of the loop. See that test for why -- half a million INFO lines is a
+    // hundred-megabyte JUnit XML that GitHub's result parser refuses. Nothing in main uses Logback directly;
+    // the adapter logs through SLF4J and the binding is the runtime's business.
+    testImplementation(libs.logback.classic)
+    // Test-only: the same validator Edge puts in front of a southbound write, so a published schema can be
+    // checked by running a payload through the gate rather than by reading the rendered type. hivemq-edge has
+    // it as an `implementation` dependency, so it reaches this module's test runtime but not its compile
+    // classpath. See ConditionSchemaNullableFieldsTest for the finding that needed it.
+    testImplementation(libs.json.schema.validator)
 }
 
 configurations {
@@ -86,6 +96,15 @@ tasks.register<Copy>("copyAllDependencies") {
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }
+
+tasks.shadowJar {
+    // ShadowJar defaults its duplicatesStrategy to EXCLUDE, and that filtering runs before the
+    // service-file merge, so without this override only the first META-INF/services file of a given
+    // name reaches the jar and every other provider is dropped silently. The override is scoped to
+    // service files, so every other duplicated resource still lands in the jar exactly once.
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    mergeServiceFiles()
+}
 
 // ******************** artifacts ********************
 
@@ -117,5 +136,5 @@ artifacts {
 
 hivemqLicense {
     projectName.set(project.name)
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
 }

@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: PLACEHOLDER_HIVEMQ_VERSION
+  version: 2026.15-SNAPSHOT
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -158,7 +158,9 @@ paths:
       description: Authorize the presented user to obtain a secure token for use on the API.
       operationId: refresh-token
       x-roles-allowed:
-        - NO_AUTH_REQUIRED
+        - admin
+        - super
+        - user
       responses:
         '200':
           content:
@@ -203,6 +205,100 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
           description: The token was invalid
       summary: Authorize the presented user to obtain a secure token for use on the API.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/mode:
+    get:
+      description: Report which authentication mechanisms the gateway accepts, so the UI can present the matching login. Both local username/password and OIDC single sign-on may be returned when both are enabled.
+      operationId: auth-mode
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMode'
+          description: The enabled authentication mechanisms.
+      summary: Report the enabled authentication mechanisms.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/oidc/login:
+    post:
+      description: Begin the OIDC authorization-code flow. Mints a fresh state, nonce, and PKCE challenge and returns the Identity Provider authorization URL for the SPA to open. This is a POST because each call allocates one-time server-side login state; it is not a safe, repeatable retrieval. The SPA opens the returned URL in the login popup, rather than this endpoint redirecting, so that a start-time failure is a normal error response the SPA can present instead of a stranded popup.
+      operationId: oidc-login
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcLoginRedirect'
+          description: The Identity Provider authorization URL to open.
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: OIDC is not configured on this instance, or the Identity Provider could not be reached. The `detail` field distinguishes the two.
+      summary: Begin the OIDC login flow.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/oidc/callback:
+    get:
+      description: The OIDC redirect URI. Validates the returned state and ID token, exchanges the authorization code for tokens, maps the IdP roles to Edge roles, and issues a HiveMQ Edge JWT delivered to the SPA.
+      operationId: oidc-callback
+      x-roles-allowed:
+        - NO_AUTH_REQUIRED
+      parameters:
+        - description: The authorization code returned by the Identity Provider.
+          in: query
+          name: code
+          required: false
+          schema:
+            type: string
+        - description: The opaque state token echoed back by the Identity Provider.
+          in: query
+          name: state
+          required: false
+          schema:
+            type: string
+        - description: An OAuth2 error code, present instead of code/state when the login failed.
+          in: query
+          name: error
+          required: false
+          schema:
+            type: string
+        - description: A human-readable description of the error.
+          in: query
+          name: error_description
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            text/html:
+              schema:
+                type: string
+          description: |-
+            Login succeeded. This is a browser endpoint: the response is an HTML page that posts
+            `{ type: "oidc-result", token: "<the HiveMQ Edge JWT>" }` to the opener window and closes itself.
+        '401':
+          content:
+            text/html:
+              schema:
+                type: string
+          description: |-
+            The login could not be completed. The response is an HTML page that posts
+            `{ type: "oidc-result", errorCode: "<code>" }` to the opener window and closes itself, so the
+            SPA always settles the pending login. Codes: `idp-error`, `invalid-request`, `invalid-state`,
+            `exchange-failed`, `no-roles`. Identity Provider error descriptions are logged, not returned.
+      summary: Complete the OIDC login flow.
       tags:
         - Authentication
         - Authentication Endpoint
@@ -4108,6 +4204,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter does not support bulk tag browsing or browse failed
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Adapter is connected but its device address-space metadata is still loading; retry after the indicated delay.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying the browse.
+              schema:
+                type: integer
+              example: 2
         '504':
           content:
             application/json:
@@ -4483,7 +4591,8 @@ paths:
         - Protocol Adapters
   /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
     get:
-      description: Get a json schema that explains the json schema that is used to write to a PLC for the given tag name."
+      deprecated: true
+      description: '**Deprecated:** Use `GET /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND` instead. This endpoint now returns a 301 redirect to the replacement.'
       operationId: get-writing-schema
       x-roles-allowed:
         - admin
@@ -4504,6 +4613,49 @@ paths:
             type: string
             format: urlencoded
       responses:
+        '301':
+          description: Moved Permanently. The schema endpoint has moved to `/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND`.
+          headers:
+            Location:
+              description: The new URL for this resource.
+              schema:
+                type: string
+                format: uri
+      summary: Deprecated. Redirects to the replacement schema endpoint.
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}:
+    get:
+      description: Get a json schema that explains the json schema that represents the tag with the provided name."
+      operationId: get-schema
+      x-roles-allowed:
+        - admin
+        - super
+        - user
+      parameters:
+        - description: The id of the adapter for which the Json Schema should be retrieved.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+        - description: The tag name (urlencoded) for which the Json Schema should be retrieved.
+          in: path
+          name: tagName
+          required: true
+          schema:
+            type: string
+            format: urlencoded
+        - description: 'The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that a write targets. Fields inside the value that the device does not accept a write for are marked readOnly. That flag is descriptive metadata only - it is a JSON Schema annotation rather than an assertion, and it is not currently enforced when a write is validated; use it to decide what to offer as a write destination, not as a safety boundary. When omitted, the NORTHBOUND schema describing the full data shape published for the tag is returned. Any other value is rejected with a 400.'
+          in: query
+          name: direction
+          required: false
+          schema:
+            type: string
+            enum:
+              - NORTHBOUND
+              - SOUTHBOUND
+      responses:
         '200':
           content:
             application/json:
@@ -4522,6 +4674,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/JsonNode'
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unknown schema direction
         '404':
           content:
             application/json:
@@ -4534,7 +4692,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Internal Server Error
-      summary: Get a json schema that explains the json schema that is used to write to a PLC for the given tag name.
+      summary: Get a json schema that represents the tag with the provided name.
       tags:
         - Protocol Adapters
   /api/v1/management/sampling/schema/{topic}:
@@ -5612,6 +5770,28 @@ components:
           format: uri
       required:
         - title
+    AuthMode:
+      type: object
+      properties:
+        modes:
+          type: array
+          description: The authentication mechanisms the gateway accepts. Drives which login options the UI presents.
+          items:
+            type: string
+            enum:
+              - USERNAME_PASSWORD
+              - OPEN_ID
+      required:
+        - modes
+    OidcLoginRedirect:
+      type: object
+      description: The Identity Provider authorization URL the SPA should open to begin the OIDC login.
+      properties:
+        authorizeUrl:
+          type: string
+          description: The absolute Identity Provider authorization endpoint URL, with the freshly minted state, nonce, and PKCE challenge. The SPA opens this in the login popup.
+      required:
+        - authorizeUrl
     PaginationCursor:
       type: object
       description: Links for pagination
@@ -7825,6 +8005,7 @@ components:
             - STATELESS
             - UNKNOWN
             - ERROR
+            - CONNECTING
         id:
           type: string
           description: The identifier of the object

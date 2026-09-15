@@ -41,7 +41,9 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
     public static String getBasicAuthenticationHeaderValue(
             final @NotNull String username, final @NotNull String password) {
         final var usernamePasswordDecodedString = username + SEP + password;
-        return METHOD + " " + Base64.getEncoder().encodeToString(usernamePasswordDecodedString.getBytes());
+        return METHOD
+                + " "
+                + Base64.getEncoder().encodeToString(usernamePasswordDecodedString.getBytes(StandardCharsets.UTF_8));
     }
 
     public BasicAuthenticationHandler(final @NotNull IUsernameRolesProvider provider) {
@@ -74,12 +76,13 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
     protected static Optional<UsernamePasswordRoles> parseValue(final @NotNull String headerValue) {
         Preconditions.checkNotNull(headerValue);
 
-        final var usernamePasswordDecodedString = new String(Base64.getDecoder().decode(headerValue.trim()));
+        final var usernamePasswordDecodedString =
+                new String(Base64.getDecoder().decode(headerValue.trim()), StandardCharsets.UTF_8);
         if (!usernamePasswordDecodedString.contains(SEP)) {
             return Optional.empty();
         }
 
-        final var usernamePasswordStringList = usernamePasswordDecodedString.split(SEP);
+        final var usernamePasswordStringList = usernamePasswordDecodedString.split(SEP, -1);
         if (usernamePasswordStringList.length != 2) {
             return Optional.empty();
         }

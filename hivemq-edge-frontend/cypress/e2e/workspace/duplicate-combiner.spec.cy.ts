@@ -4,11 +4,9 @@ import { factory, primaryKey, drop } from '@mswjs/data'
 import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
-import { adapterPage, loginPage, rjsf, workspacePage } from 'cypress/pages'
+import { loginPage, workspacePage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import { workspaceCombinerPanel } from 'cypress/pages/Workspace/CombinerFormPage.ts'
-
-const COMBINER_ID = '9e975b62-6f8d-410f-9007-3f83719aec6f'
 
 describe('Duplicate Combiner Detection', () => {
   // Creating a mock storage for Combiner
@@ -50,8 +48,8 @@ describe('Duplicate Combiner Detection', () => {
     cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
       const combiner = req.body
       const newCombinerData = mswDB.combiner.create({
-        id: COMBINER_ID,
-        json: JSON.stringify({ ...combiner, id: COMBINER_ID }),
+        id: combiner.id,
+        json: JSON.stringify(combiner),
       })
       req.reply(200, JSON.parse(newCombinerData.json))
     }).as('postCombiner')
@@ -109,6 +107,7 @@ describe('Duplicate Combiner Detection', () => {
 
       cy.wait('@postCombiner').then((interception) => {
         expect(interception.response?.statusCode).to.equal(200)
+        cy.wrap(interception.response?.body.id).as('firstCombinerID')
       })
       cy.wait('@getCombiners')
 
@@ -118,7 +117,9 @@ describe('Duplicate Combiner Detection', () => {
       workspacePage.closeToast.click()
 
       // Verify first combiner exists
-      workspacePage.combinerNode(COMBINER_ID).should('be.visible')
+      cy.get('@firstCombinerID').then((id) => {
+        workspacePage.combinerNode(id as unknown as string).should('be.visible')
+      })
 
       // Step 2: Attempt to create duplicate combiner
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -198,7 +199,9 @@ describe('Duplicate Combiner Detection', () => {
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
-      cy.wait('@postCombiner')
+      cy.wait('@postCombiner').then((interception) => {
+        cy.wrap(interception.response?.body.id).as('combinerID')
+      })
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
@@ -215,19 +218,12 @@ describe('Duplicate Combiner Detection', () => {
       workspaceCombinerPanel.form.should('be.visible')
 
       // Verify we're editing the existing combiner
-      cy.url().should('include', COMBINER_ID)
+      cy.get('@combinerID').then((id) => {
+        cy.url().should('include', id as unknown as string)
+      })
     })
 
     it('should create new combiner when "Create New Anyway" is clicked', () => {
-      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
-        const combiner = req.body
-        const newCombinerData = mswDB.combiner.create({
-          id: combiner.id,
-          json: JSON.stringify({ ...combiner, id: combiner.id }),
-        })
-        req.reply(200, JSON.parse(newCombinerData.json))
-      }).as('postCombiner')
-
       // Create initial combiner
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -261,49 +257,40 @@ describe('Duplicate Combiner Detection', () => {
 
   describe('Modal with Mappings', () => {
     it('should display existing mappings in modal', () => {
-      // Create combiner with mappings
+      // Override POST to return a combiner that already has a mapping (LIFO — runs before @postCombiner)
+      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
+        const combiner: Combiner = {
+          ...req.body,
+          mappings: {
+            items: [
+              {
+                id: 'test-mapping-id',
+                sources: { primary: { id: 'my/tag/t1', type: 'TAG', scope: 'opcua-pump' } },
+                destination: { topic: 'my/destination' },
+                instructions: [],
+              },
+            ],
+          },
+        }
+        mswDB.combiner.create({ id: combiner.id, json: JSON.stringify(combiner) })
+        req.reply(200, combiner)
+      }).as('postCombinerMapped')
+
+      // Create the combiner (POST will include mappings in response)
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
-      cy.wait('@postCombiner')
+      cy.wait('@postCombinerMapped')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
-      // Open combiner and add mapping
-      workspacePage.combinerNode(COMBINER_ID).click()
-      workspacePage.combinerNode(COMBINER_ID).dblclick()
-      workspaceCombinerPanel.form.should('be.visible')
-
-      adapterPage.config.formTab(2).click()
-      cy.getByTestId('combiner-mapping-list-add').click()
-      rjsf.field('mappings').table.row(0).edit.click()
-
-      workspaceCombinerPanel.mappingEditor.sources.selector.click()
-      workspaceCombinerPanel.mappingEditor.sources.selector.type('a/topic/')
-      workspaceCombinerPanel.mappingEditor.sources.options.first().click()
-      workspaceCombinerPanel.mappingEditor.destination.selector.type('my/destination{enter}')
-      workspaceCombinerPanel.mappingEditor.primary.selector.type('a/topic/{enter}')
-
-      workspaceCombinerPanel.mappingEditor.destination.inferSchema.click()
-
-      workspaceCombinerPanel.inferSchema.modal.should('be.visible')
-      workspaceCombinerPanel.inferSchema.submit.click()
-
-      workspaceCombinerPanel.mappingEditor.submit.click()
-      workspaceCombinerPanel.submit.click()
-      cy.wait('@putCombiner')
-      cy.wait('@getCombiners')
-      workspacePage.closeToast.click()
-
-      // Attempt to create duplicate
+      // Attempt duplicate → modal should show the mappings
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
 
       // Verify mappings are shown in modal
       workspacePage.duplicateCombinerModal.modal.should('be.visible')
       workspacePage.duplicateCombinerModal.mappingsList.should('be.visible')
-
-      // Verify mapping details are visible
       cy.get('[data-testid^="mapping-item-"]').first().should('be.visible')
       cy.get('[data-testid^="mapping-destination-"]').first().should('contain.text', 'my/destination')
     })
@@ -409,41 +396,34 @@ describe('Duplicate Combiner Detection', () => {
     it('should be accessible with mappings', { tags: ['@percy'] }, () => {
       cy.injectAxe()
 
-      // Create combiner with mappings
+      // Override POST to return a combiner that already has a mapping (LIFO — runs before @postCombiner)
+      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
+        const combiner: Combiner = {
+          ...req.body,
+          mappings: {
+            items: [
+              {
+                id: 'test-mapping-id',
+                sources: { primary: { id: 'my/tag/t1', type: 'TAG', scope: 'opcua-pump' } },
+                destination: { topic: 'my/destination' },
+                instructions: [],
+              },
+            ],
+          },
+        }
+        mswDB.combiner.create({ id: combiner.id, json: JSON.stringify(combiner) })
+        req.reply(200, combiner)
+      }).as('postCombinerMapped')
+
+      // Create the combiner (POST will include mappings in response)
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
-      cy.wait('@postCombiner')
+      cy.wait('@postCombinerMapped')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
-      // Add mapping
-      workspacePage.combinerNode(COMBINER_ID).click()
-      workspacePage.combinerNode(COMBINER_ID).dblclick()
-      workspaceCombinerPanel.form.should('be.visible')
-
-      adapterPage.config.formTab(2).click()
-      cy.getByTestId('combiner-mapping-list-add').click()
-      rjsf.field('mappings').table.row(0).edit.click()
-
-      workspaceCombinerPanel.mappingEditor.sources.selector.click()
-      workspaceCombinerPanel.mappingEditor.sources.selector.type('a/topic/')
-      workspaceCombinerPanel.mappingEditor.sources.options.first().click()
-      workspaceCombinerPanel.mappingEditor.destination.selector.type('my/destination{enter}')
-      workspaceCombinerPanel.mappingEditor.primary.selector.type('a/topic/{enter}')
-
-      workspaceCombinerPanel.mappingEditor.destination.inferSchema.click()
-
-      workspaceCombinerPanel.inferSchema.modal.should('be.visible')
-      workspaceCombinerPanel.inferSchema.submit.click()
-
-      workspaceCombinerPanel.mappingEditor.submit.click()
-      workspaceCombinerPanel.submit.click()
-      cy.wait('@putCombiner')
-      cy.wait('@getCombiners')
-      workspacePage.closeToast.click()
-
-      // Show modal
+      // Attempt duplicate → modal should show the mappings
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
       workspacePage.duplicateCombinerModal.modal.should('be.visible')

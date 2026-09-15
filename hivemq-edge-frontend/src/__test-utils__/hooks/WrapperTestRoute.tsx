@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { Card, CardBody, CardHeader, Code } from '@chakra-ui/react'
 
 export const WrapperTestRoute: FC<PropsWithChildren> = ({ children }) => {

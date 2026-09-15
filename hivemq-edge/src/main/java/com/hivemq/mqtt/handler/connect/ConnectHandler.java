@@ -62,6 +62,7 @@ import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
+import com.hivemq.mqtt.services.PublishDistributorImpl;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
@@ -320,6 +321,16 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
         if (assigned != null && assigned) {
             return true;
+        }
+
+        if (PublishDistributorImpl.isReservedClientId(msg.getClientIdentifier())) {
+            mqttConnacker.connackError(
+                    ctx.channel(),
+                    "A client (IP: {}) connected with a reserved client identifier. This is not allowed.",
+                    "Sent CONNECT with reserved client identifier",
+                    Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                    ReasonStrings.CONNACK_CLIENT_IDENTIFIER_NOT_VALID);
+            return false;
         }
 
         if (msg.getClientIdentifier().length() > maxClientIdLength) {

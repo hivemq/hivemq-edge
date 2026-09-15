@@ -4,10 +4,6 @@ pluginManagement {
     }
 }
 
-plugins {
-    id("com.hivemq.tools.oci-version-catalog") version "0.2.0"
-}
-
 rootProject.name = "hivemq-edge-build"
 
 includeBuild("./hivemq-edge")
@@ -16,6 +12,7 @@ includeBuild("./hivemq-edge-frontend")
 // ** module-deps ** //
 
 includeBuild("./modules/hivemq-edge-module-etherip")
+includeBuild("./modules/hivemq-edge-module-etherip-cip-odva")
 includeBuild("./modules/hivemq-edge-module-plc4x")
 includeBuild("./modules/hivemq-edge-module-http")
 includeBuild("./modules/hivemq-edge-module-modbus")

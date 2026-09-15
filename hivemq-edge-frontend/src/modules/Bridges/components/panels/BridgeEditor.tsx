@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react'
 import { useEffect } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import type { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 

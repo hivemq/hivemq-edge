@@ -25,7 +25,7 @@ describe('Pulse to Asset Mapper edge status', () => {
       type: NodeTypes.PULSE_NODE,
       data: {
         id: 'pulse-1',
-        label: 'Pulse Agent',
+        label: 'HiveMQ Platform',
         status: {
           activation: PulseStatus.activation.ACTIVATED,
           runtime: PulseStatus.runtime.CONNECTED,
@@ -127,7 +127,7 @@ describe('Pulse to Asset Mapper edge status', () => {
       type: NodeTypes.PULSE_NODE,
       data: {
         id: 'pulse-1',
-        label: 'Pulse Agent',
+        label: 'HiveMQ Platform',
         statusModel: {
           runtime: RuntimeStatus.ACTIVE,
           operational: OperationalStatus.ACTIVE,

@@ -6,7 +6,7 @@ import { useReactFlow, useStore, useStoreApi } from '@xyflow/react'
 import { ButtonGroup } from '@chakra-ui/react'
 import { shallow } from 'zustand/shallow'
 import { IoMdOptions } from 'react-icons/io'
-import { LuBoxSelect } from 'react-icons/lu'
+import { LuSquareDashed } from 'react-icons/lu'
 import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -48,7 +48,7 @@ const CanvasControls: FC<ControlProps> = ({ onInteractiveChange }) => {
       <ButtonGroup variant="outline" isAttached size="sm">
         <IconButton icon={<FaPlus />} onClick={() => zoomIn()} aria-label={t('workspace.controls.zoomIn')} />
         <IconButton icon={<FaMinus />} onClick={() => zoomOut()} aria-label={t('workspace.controls.zoomIOut')} />
-        <IconButton icon={<LuBoxSelect />} onClick={() => fitView()} aria-label={t('workspace.controls.fitView')} />
+        <IconButton icon={<LuSquareDashed />} onClick={() => fitView()} aria-label={t('workspace.controls.fitView')} />
         <IconButton
           icon={isInteractive ? <FaLock /> : <FaLockOpen />}
           onClick={onToggleInteractivity}

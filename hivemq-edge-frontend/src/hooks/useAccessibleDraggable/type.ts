@@ -17,7 +17,7 @@ export interface AccessibleDraggableProps {
     property: FlatJSONSchema7
     dataReference?: DataReference | undefined
   }
-  ref?: RefObject<FocusableElement>
+  ref?: RefObject<FocusableElement | null>
 }
 
 export const EDGE_HOTKEY = {

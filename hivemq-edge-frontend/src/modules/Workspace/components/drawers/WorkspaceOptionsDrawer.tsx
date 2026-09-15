@@ -17,7 +17,7 @@ import {
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 const WorkspaceOptionsDrawer: FC = () => {
   const { t } = useTranslation()

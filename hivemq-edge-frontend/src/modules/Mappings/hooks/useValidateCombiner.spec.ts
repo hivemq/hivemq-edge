@@ -118,9 +118,6 @@ describe('useValidateCombiner', () => {
       })
       expect(errors).toStrictEqual([
         expect.objectContaining({
-          message: "The Edge broker must be connected to the combiner's sources",
-        }),
-        expect.objectContaining({
           message: 'This is not a valid reference to a Workspace entity',
         }),
       ])
@@ -144,9 +141,6 @@ describe('useValidateCombiner', () => {
         },
       })
       expect(errors).toStrictEqual([
-        expect.objectContaining({
-          message: "The Edge broker must be connected to the combiner's sources",
-        }),
         expect.objectContaining({
           message: 'The adapter does not support data combining and cannot be used as a source',
         }),
@@ -415,7 +409,7 @@ describe('useValidateCombiner', () => {
     it.skip('should not validate when a tag schema is invalid', async () => {
       const result = await loadingEntities(sources, undefined, [
         http.get<{ adapterId: string; tagName: string }>(
-          '*/management/protocol-adapters/writing-schema/:adapterId/:tagName',
+          '*/management/protocol-adapters/schema/:adapterId/:tagName',
           ({ params }) => {
             const { tagName } = params
 

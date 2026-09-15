@@ -1,0 +1,411 @@
+/*
+ * Copyright 2023-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.adapters.opcua.listeners;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.edge.adapters.opcua.FakeEventService;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.eclipse.milo.opcua.sdk.client.UaSession;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+
+/**
+ * The reconnect callback decides whether a condition refresh happens after a session comes back.
+ * <p>
+ * It exists for the case nothing else covers: a reconnect whose subscription transfers successfully recreates
+ * no monitored items, so the refresh that rides on re-establishing them never runs.
+ */
+class OpcUaSessionActivityListenerTest {
+
+    /** One shared session: the listener only logs it, and the race test creates half a million listeners. */
+    private static final @NotNull UaSession SESSION = mock(UaSession.class);
+
+    private @NotNull OpcUaSessionActivityListener listener;
+    private @NotNull AtomicInteger reconnects;
+
+    @BeforeEach
+    void setUp() {
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        listener =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
+        reconnects = new AtomicInteger();
+        listener.setOnReconnect(reconnects::incrementAndGet);
+    }
+
+    @Test
+    void theFirstActivationIsNotAReconnect() {
+        // The initial connect creates the subscription, which refreshes on its own. Reporting it here too
+        // would ask the server for the same burst twice.
+        listener.onSessionActive(mock(UaSession.class));
+
+        assertThat(reconnects).hasValue(0);
+    }
+
+    @Test
+    void theFirstActivationDoesNotPublishConnectedBeforeInitialSetupFinishes() {
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+        final OpcUaSessionActivityListener initial =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
+
+        initial.onSessionActive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("the connection publishes CONNECTED only after subscriptions and its context are usable")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+    }
+
+    @Test
+    void aReactivationBeforeInitialSetupFinishesDoesNotPublishConnectedEither() {
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+        final AtomicBoolean ready = new AtomicBoolean();
+        final OpcUaSessionActivityListener initial = new OpcUaSessionActivityListener(
+                mock(), new FakeEventService(), "test-adapter-id", state, () -> true, ready::get);
+
+        initial.onSessionActive(mock(UaSession.class));
+        initial.onSessionActive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("an early reconnect still has no usable connection context")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+
+        ready.set(true);
+        initial.onSessionActive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("a later activation of an established connection restores CONNECTED")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+    }
+
+    @Test
+    void everyLaterActivationIsAReconnect() {
+        listener.onSessionActive(mock(UaSession.class));
+        listener.onSessionActive(mock(UaSession.class));
+        listener.onSessionActive(mock(UaSession.class));
+
+        assertThat(reconnects)
+                .as("each reconnect needs its own refresh, not just the first")
+                .hasValue(2);
+    }
+
+    @Test
+    void aSessionGoingInactiveAndBackIsAReconnect() {
+        listener.onSessionActive(mock(UaSession.class));
+        listener.onSessionInactive(mock(UaSession.class));
+        listener.onSessionActive(mock(UaSession.class));
+
+        assertThat(reconnects).hasValue(1);
+    }
+
+    @Test
+    void withNoCallbackNothingHappens() {
+        // The callback is set after the listener is constructed, so an activation in between must not fail.
+        final OpcUaSessionActivityListener unwired = unwiredListener();
+
+        unwired.onSessionActive(mock(UaSession.class));
+        unwired.onSessionActive(mock(UaSession.class));
+    }
+
+    @Test
+    void aReconnectArrivingBeforeTheCallbackIsWiredIsNotLost() {
+        // EDG-835: the listener is registered as soon as the client exists, but the handler it delegates to
+        // is built only after the subscription is established -- and for condition tags that step makes
+        // blocking round trips per tag, so the window is real. A reconnect landing in it used to be dropped
+        // twice over: no callback to run, and the activation still consumed seenFirstActivation, so it was
+        // miscounted as the initial connect.
+        final OpcUaSessionActivityListener unwired = unwiredListener();
+        final AtomicInteger late = new AtomicInteger();
+
+        unwired.onSessionActive(mock(UaSession.class)); // the initial connect
+        unwired.onSessionActive(mock(UaSession.class)); // a reconnect, with nothing wired yet
+
+        unwired.setOnReconnect(late::incrementAndGet);
+
+        assertThat(late)
+                .as("the missed reconnect must be honoured once there is something to call")
+                .hasValue(1);
+    }
+
+    @Test
+    void aMissedReconnectIsReplayedOnlyOnce() {
+        final OpcUaSessionActivityListener unwired = unwiredListener();
+        final AtomicInteger late = new AtomicInteger();
+
+        unwired.onSessionActive(mock(UaSession.class));
+        unwired.onSessionActive(mock(UaSession.class));
+        unwired.onSessionActive(mock(UaSession.class)); // two reconnects missed, not one
+
+        unwired.setOnReconnect(late::incrementAndGet);
+
+        // One refresh answers any number of missed reconnects: it re-reports the whole current picture, so
+        // asking twice would only duplicate the burst.
+        assertThat(late).hasValue(1);
+    }
+
+    @Test
+    void nothingIsReplayedWhenNoReconnectWasMissed() {
+        final OpcUaSessionActivityListener unwired = unwiredListener();
+        final AtomicInteger late = new AtomicInteger();
+
+        unwired.onSessionActive(mock(UaSession.class)); // the initial connect alone
+
+        unwired.setOnReconnect(late::incrementAndGet);
+
+        assertThat(late)
+                .as("the initial connect refreshes on its own; replaying here would ask twice")
+                .hasValue(0);
+    }
+
+    @Test
+    void aReconnectRacingTheCallbackRegistrationIsNeverLost() throws Exception {
+        // Review-02 finding 3, and now supplemental rather than the oracle. The handoff used to be a
+        // volatile callback plus a separate AtomicBoolean, which makes each field's value visible but does
+        // not make check-then-act atomic. That admits an interleaving where nobody is left responsible:
+        //
+        //   1. the session thread reads onReconnect and finds it null
+        //   2. the connection thread stores the callback
+        //   3. the connection thread tests missedReconnect, still false, and returns
+        //   4. the session thread sets missedReconnect = true
+        //
+        // The flag now says a refresh is owed and the callback that would honour it is already installed.
+        // Nothing runs it, and nothing notices until a later reconnect happens to consume the stale flag --
+        // so the retained alarm picture stays as it was before the disconnect.
+        //
+        // This used to run 250,000 rounds because racing was the only way to reach that interleaving. On the
+        // measured hit rate of the old defect -- one per 70,000 rounds -- that still left a run about a 3%
+        // chance of seeing nothing and passing against the bug it was written for, and cost fifteen seconds
+        // of every CI run. Review-03 finding 10. The decision now lives in ReconnectHandoff, where
+        // ReconnectHandoffTest enumerates both orderings and pauses one half mid-transition to prove they
+        // cannot interleave at all -- deterministically, every run.
+        //
+        // What remains here is worth keeping and is not the same assertion: this drives the *listener*, so
+        // it covers the wiring the extracted class cannot see -- that the first activation is consumed as
+        // the initial connect, that a reconnect reaches the handoff, and that the callback runs outside the
+        // lock. A few thousand rounds is enough for that, and the round count is no longer load-bearing.
+        //
+        // No Mockito anywhere in this loop, and that is a correctness point rather than a style one. A mock
+        // records every invocation it receives so it can be verified later, so a shared mock taking tens of
+        // thousands of calls grows without bound -- and a per-round mock costs more to construct than
+        // everything under test. The listener does nothing with these collaborators that this test is about.
+        //
+        // The logger is still scoped down. onSessionActive logs the connection at INFO before it decides
+        // whether this is a reconnect, and Gradle captures test output into its JUnit XML -- at the old
+        // round count that produced a 119 MB report which GitHub's Test Results check refused to parse.
+        // Kept because the reasoning holds at any round count, and set to WARN rather than OFF so a warning
+        // raised by the code under test would still be seen.
+        final Logger listenerLog = (Logger) LoggerFactory.getLogger(OpcUaSessionActivityListener.class);
+        final Level previousLevel = listenerLog.getLevel();
+        listenerLog.setLevel(Level.WARN);
+
+        final ProtocolAdapterState sharedState = new NoOpAdapterState();
+        final ProtocolAdapterMetricsService sharedMetrics = new NoOpMetrics();
+        final FakeEventService sharedEvents = new FakeEventService();
+
+        final int rounds = 5_000;
+        final ExecutorService threads = Executors.newFixedThreadPool(2);
+        try {
+            for (int round = 0; round < rounds; round++) {
+                final OpcUaSessionActivityListener racing = new OpcUaSessionActivityListener(
+                        sharedMetrics, sharedEvents, "test-adapter-id", sharedState, () -> true);
+                final AtomicInteger refreshes = new AtomicInteger();
+                // Consume the initial connect, so the activation below counts as a reconnect.
+                racing.onSessionActive(SESSION);
+
+                final AtomicBoolean go = new AtomicBoolean();
+                final Future<?> reconnect = threads.submit(() -> {
+                    while (!go.get()) {
+                        Thread.onSpinWait();
+                    }
+                    racing.onSessionActive(SESSION);
+                });
+                final Future<?> register = threads.submit(() -> {
+                    while (!go.get()) {
+                        Thread.onSpinWait();
+                    }
+                    racing.setOnReconnect(refreshes::incrementAndGet);
+                });
+                go.set(true);
+                reconnect.get(10, TimeUnit.SECONDS);
+                register.get(10, TimeUnit.SECONDS);
+
+                // Exactly one, whichever thread won. If the callback was installed first the reconnect runs
+                // it directly; if the reconnect arrived first the registration owes it and runs it then.
+                assertThat(refreshes.get())
+                        .as("round %d: a reconnect must produce exactly one condition refresh", round)
+                        .isEqualTo(1);
+            }
+        } finally {
+            threads.shutdownNow();
+            // Null restores inheritance from the parent logger, which is what getLevel() returns when the
+            // level was never set explicitly -- so this puts the logger back however it was configured
+            // rather than pinning it to whatever this test found.
+            listenerLog.setLevel(previousLevel);
+        }
+    }
+
+    // ── review-06 finding 1: whose session is this reporting about ──────────────────────────────────
+
+    @Test
+    void aSupersededConnectionsSessionMustNotReportIntoTheAdaptersStatus() {
+        // The listener belongs to one client; the status belongs to the adapter. A superseded connection's
+        // session stays live until its close completes and Milo goes on reporting its activity throughout, so
+        // an ungated listener describes whichever connection is current -- by then, a different one. A stale
+        // DISCONNECTED makes a healthy replacement look failed to the health check; a stale CONNECTED hides a
+        // genuine failure of it.
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        final OpcUaSessionActivityListener superseded =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> false);
+        // The replacement, connected.
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+        superseded.onSessionInactive(mock(UaSession.class));
+
+        assertThat(state.getConnectionStatus())
+                .as("a replaced connection's session must not disconnect the connection that replaced it")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+    }
+
+    @Test
+    void butTheCurrentConnectionsSessionStillReportsBothWays() {
+        // The counterpart. This is the adapter's ordinary connect/disconnect reporting and it has to keep
+        // working -- a gate that never opens would pass every assertion above and cost the adapter its status.
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        final OpcUaSessionActivityListener current =
+                new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
+
+        current.onSessionActive(mock(UaSession.class));
+        assertThat(state.getConnectionStatus())
+                .as("the initial activation is not the readiness boundary")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+
+        // The connection publishes its own initial readiness after installing the context. From then on the
+        // session listener owns the inactive/reactivated transitions for that established connection.
+        state.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        current.onSessionInactive(mock(UaSession.class));
+        assertThat(state.getConnectionStatus())
+                .as("an inactive session on the current connection is the adapter being disconnected")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+
+        current.onSessionActive(mock(UaSession.class));
+        assertThat(state.getConnectionStatus())
+                .as("and a reactivated established session is connected again")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+    }
+
+    @Test
+    void theEventAndTheMetricAreStillReportedByASupersededSession() {
+        // Deliberately not gated, and the distinction is the reason the gate is around the status alone. An
+        // event records that something happened, and the session really did go inactive; the status is a
+        // single slot describing the adapter now. Suppressing the record as well would lose the only trace
+        // that a superseded connection was ever torn down.
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        final FakeEventService events = new FakeEventService();
+        final OpcUaSessionActivityListener superseded =
+                new OpcUaSessionActivityListener(mock(), events, "test-adapter-id", state, () -> false);
+
+        superseded.onSessionInactive(mock(UaSession.class));
+
+        assertThat(events.readEvents(null, null))
+                .as("the disconnection still happened and must still be recorded")
+                .anySatisfy(event -> assertThat(event.getMessage()).contains("session has been disconnected"));
+    }
+
+    /** A state that records nothing, for the half-million-round race loop. See that test for why. */
+    private static final class NoOpAdapterState implements ProtocolAdapterState {
+
+        private volatile @NotNull ConnectionStatus connectionStatus = ConnectionStatus.DISCONNECTED;
+        private volatile @NotNull RuntimeStatus runtimeStatus = RuntimeStatus.STARTED;
+
+        @Override
+        public boolean setConnectionStatus(final @NotNull ConnectionStatus connectionStatus) {
+            this.connectionStatus = connectionStatus;
+            return true;
+        }
+
+        @Override
+        public @NotNull ConnectionStatus getConnectionStatus() {
+            return connectionStatus;
+        }
+
+        @Override
+        public void setErrorConnectionStatus(final @Nullable Throwable throwable, final @Nullable String message) {}
+
+        @Override
+        public void reportErrorMessage(
+                final @Nullable Throwable throwable, final @Nullable String message, final boolean sendEvent) {}
+
+        @Override
+        public void setRuntimeStatus(final @NotNull RuntimeStatus runtimeStatus) {
+            this.runtimeStatus = runtimeStatus;
+        }
+
+        @Override
+        public @NotNull RuntimeStatus getRuntimeStatus() {
+            return runtimeStatus;
+        }
+
+        @Override
+        public @Nullable String getLastErrorMessage() {
+            return null;
+        }
+    }
+
+    /** Metrics that count nothing, for the same reason. */
+    private static final class NoOpMetrics implements ProtocolAdapterMetricsService {
+
+        @Override
+        public void incrementReadPublishSuccess() {}
+
+        @Override
+        public void incrementReadPublishFailure() {}
+
+        @Override
+        public void incrementWritePublishSuccess() {}
+
+        @Override
+        public void incrementWritePublishFailure() {}
+
+        @Override
+        public void incrementConnectionFailure() {}
+
+        @Override
+        public void incrementConnectionSuccess() {}
+
+        @Override
+        public void increment(final @NotNull String metricName) {}
+    }
+
+    private static @NotNull OpcUaSessionActivityListener unwiredListener() {
+        final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
+        return new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
+    }
+}

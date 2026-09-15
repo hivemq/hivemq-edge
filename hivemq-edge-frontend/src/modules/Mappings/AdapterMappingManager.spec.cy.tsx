@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router'
 import type { Node } from '@xyflow/react'
 
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'

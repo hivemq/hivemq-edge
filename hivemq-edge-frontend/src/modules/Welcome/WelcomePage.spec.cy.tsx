@@ -35,14 +35,14 @@ describe('WelcomePage', () => {
       cy.getByTestId('onboarding-container').within(() => {
         cy.get('h2').should('have.text', 'Get data flowing')
         cy.get('aside[aria-labelledby="heading-task-3"]').within(() => {
-          cy.get('h3').should('have.text', 'Connect to HiveMQ Pulse')
+          cy.get('h3').should('have.text', 'Connect to HiveMQ Platform')
 
           cy.get('section').within(() => {
             cy.get('p').should(
               'have.text',
-              'To access the features of HiveMQ Edge Pulse, you need to activate it first.'
+              'To access Data Intelligence features, you need to connect with HiveMQ Platform first.'
             )
-            cy.get('button').should('have.text', 'Activate Pulse')
+            cy.get('button').should('have.text', 'Connect with HiveMQ Platform')
           })
         })
       })
@@ -56,22 +56,22 @@ describe('WelcomePage', () => {
       cy.getByTestId('onboarding-container').within(() => {
         cy.get('h2').should('have.text', 'Get data flowing')
         cy.get('aside[aria-labelledby="heading-task-3"]').within(() => {
-          cy.get('h3').should('have.text', 'Connect to HiveMQ Pulse')
+          cy.get('h3').should('have.text', 'Connect to HiveMQ Platform')
           cy.get('section')
             .eq(0)
             .within(() => {
               cy.get('p').should(
                 'have.text',
-                'To access the features of HiveMQ Edge Pulse, you need to activate it first.'
+                'To access Data Intelligence features, you need to connect with HiveMQ Platform first.'
               )
-              cy.get('button').should('have.text', 'Manage Activation')
+              cy.get('button').should('have.text', 'Manage Connection')
             })
 
           cy.get('section')
             .eq(1)
             .within(() => {
-              cy.get('p').should('have.text', 'Use HiveMQ Edge Pulse to manage and publish assets to your HiveMQ Edge')
-              cy.get('a').should('have.text', 'Manage Pulse Assets')
+              cy.get('p').should('have.text', 'Use HiveMQ Platform to manage and publish assets to your HiveMQ Edge')
+              cy.get('a').should('have.text', 'Manage Assets')
             })
 
           cy.get('section')

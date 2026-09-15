@@ -3,7 +3,7 @@ import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge, Box, Skeleton, useDisclosure } from '@chakra-ui/react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 import type { ApiError, Bridge, BridgeSubscription, LocalBridgeSubscription } from '@/api/__generated__'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'

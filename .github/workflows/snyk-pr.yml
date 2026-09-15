@@ -18,11 +18,11 @@ jobs:
 
     steps:
       - name: Setup Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: 'temurin'
           java-version: |
-            21
+            25
 
       - uses: hivemq/hivemq-checkout-composite-action@26f72bf9994a1e9091f035e7b0bef787d82bad83 # v1
         with:
@@ -40,9 +40,18 @@ jobs:
           github-token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '20.13.1'
+          node-version: '24.16.0'
+
+      # Snyk only needs pnpm-lock.yaml (overrides are already resolved into it). When a
+      # pnpm-workspace.yaml sits next to the lockfile, the Snyk pnpm plugin treats the dir
+      # as a workspace and refuses to scan unless --all-projects is passed, but that flag
+      # makes Snyk emit a JSON array which the composite action's single-project parser
+      # (jq '.org') cannot read. Removing the (settings-only) workspace file from this
+      # throwaway CI checkout lets Snyk auto-detect the single pnpm project again.
+      - name: Hide pnpm-workspace.yaml from the Snyk pnpm scan
+        run: rm -f hivemq-edge/hivemq-edge-frontend/pnpm-workspace.yaml
 
       - name: Check for new issues (hivemq-edge-frontend)
         uses: hivemq/hivemq-snyk-composite-action@1c18f39e10e7b1d35fa121b91b99c0445b7a4a56 # v2.3.6

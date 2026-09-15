@@ -300,7 +300,7 @@ describe('createPulseNode', () => {
       expect.objectContaining({
         nodePulse: expect.objectContaining({
           data: {
-            label: 'Pulse Agent',
+            label: 'HiveMQ Platform',
             id: 'idPulse',
           },
           id: 'idPulse',

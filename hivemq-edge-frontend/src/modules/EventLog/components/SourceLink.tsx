@@ -1,5 +1,5 @@
-import type { FC } from 'react'
-import { Link as ReactRouterLink } from 'react-router-dom'
+import type { FC, ReactElement } from 'react'
+import { Link as ReactRouterLink } from 'react-router'
 import { Box, Icon, Link as ChakraLink } from '@chakra-ui/react'
 import { PiBridgeThin, PiPlugsConnectedFill, PiUserFill } from 'react-icons/pi'
 import { MdOutlineEventNote } from 'react-icons/md'
@@ -15,7 +15,7 @@ interface SourceLinkProps {
 }
 
 const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
-  let icon: JSX.Element | undefined
+  let icon: ReactElement | undefined
   let to: string | undefined
   let state: AdapterNavigateState | undefined
 

@@ -150,8 +150,10 @@ function FieldTemplate<
   )
 }
 
-interface ReactFlowSchemaFormProps
-  extends Omit<FormProps, 'validator' | 'templates' | 'liveValidate' | 'omitExtraData'> {
+interface ReactFlowSchemaFormProps extends Omit<
+  FormProps,
+  'validator' | 'templates' | 'liveValidate' | 'omitExtraData'
+> {
   isNodeEditable?: boolean
 }
 

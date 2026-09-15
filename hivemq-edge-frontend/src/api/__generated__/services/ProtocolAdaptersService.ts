@@ -54,6 +54,7 @@ export class ProtocolAdaptersService {
             errors: {
                 400: `Adapter failed validation`,
                 404: `Adapter type not found`,
+                409: `Tag already exists`,
                 500: `Internal Server Error`,
             },
         });
@@ -398,6 +399,7 @@ export class ProtocolAdaptersService {
             mediaType: 'application/json',
             errors: {
                 404: `Adapter not found`,
+                409: `Tag already exists`,
                 500: `Internal Server Error`,
             },
         });
@@ -455,6 +457,7 @@ export class ProtocolAdaptersService {
             errors: {
                 403: `Adapter not found`,
                 404: `Tag not found`,
+                409: `Tag already exists`,
                 500: `Internal Server Error`,
             },
         });
@@ -625,17 +628,18 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Get a json schema that explains the json schema that is used to write to a PLC for the given tag name.
-     * Get a json schema that explains the json schema that is used to write to a PLC for the given tag name."
+     * @deprecated
+     * Deprecated. Redirects to the replacement schema endpoint.
+     * **Deprecated:** Use `GET /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND` instead. This endpoint now returns a 301 redirect to the replacement.
      * @param adapterId The id of the adapter for which the Json Schema for writing to a PLC gets created.
      * @param tagName The tag name (urlencoded) for which the Json Schema for writing to a PLC gets created.
-     * @returns JsonNode Success
+     * @returns void
      * @throws ApiError
      */
     public getWritingSchema(
         adapterId: string,
         tagName: string,
-    ): CancelablePromise<JsonNode> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}',
@@ -644,6 +648,37 @@ export class ProtocolAdaptersService {
                 'tagName': tagName,
             },
             errors: {
+                301: `Moved Permanently. The schema endpoint has moved to \`/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}?direction=SOUTHBOUND\`.`,
+            },
+        });
+    }
+
+    /**
+     * Get a json schema that represents the tag with the provided name.
+     * Get a json schema that explains the json schema that represents the tag with the provided name."
+     * @param adapterId The id of the adapter for which the Json Schema should be retrieved.
+     * @param tagName The tag name (urlencoded) for which the Json Schema should be retrieved.
+     * @param direction The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that a write targets. Fields inside the value that the device does not accept a write for are marked readOnly. That flag is descriptive metadata only - it is a JSON Schema annotation rather than an assertion, and it is not currently enforced when a write is validated; use it to decide what to offer as a write destination, not as a safety boundary. When omitted, the NORTHBOUND schema describing the full data shape published for the tag is returned. Any other value is rejected with a 400.
+     * @returns JsonNode Success
+     * @throws ApiError
+     */
+    public getSchema(
+        adapterId: string,
+        tagName: string,
+        direction?: 'NORTHBOUND' | 'SOUTHBOUND',
+    ): CancelablePromise<JsonNode> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}',
+            path: {
+                'adapterId': adapterId,
+                'tagName': tagName,
+            },
+            query: {
+                'direction': direction,
+            },
+            errors: {
+                400: `Unknown schema direction`,
                 404: `Adapter not found`,
                 500: `Internal Server Error`,
             },

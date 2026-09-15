@@ -28,7 +28,7 @@ describe('Pulse Assets', () => {
 
   describe('Assets Management', () => {
     it('should render assets', () => {
-      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Pulse is currently active.')
+      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Connected with HiveMQ Platform.')
 
       homePage.pulseOnboarding.title.should('contain.text', 'Stay up-to-date with your asset mappings')
 
@@ -57,7 +57,7 @@ describe('Pulse Assets', () => {
 
     it('should be accessible', { tags: ['@percy'] }, () => {
       cy.injectAxe()
-      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Pulse is currently active.')
+      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Connected with HiveMQ Platform.')
       homePage.pulseOnboarding.todos.eq(0).find('a').click()
 
       assetsPage.location.should('equal', '/app/pulse-assets')
@@ -80,7 +80,7 @@ describe('Pulse Assets', () => {
     })
 
     it('should create a new asset mapper', () => {
-      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Pulse is currently active.')
+      homePage.taskSectionTitle(ONBOARDING.TASK_PULSE, 0).should('contain.text', 'Connected with HiveMQ Platform.')
       homePage.pulseOnboarding.todos.eq(0).find('a').click()
       assetsPage.location.should('equal', '/app/pulse-assets')
       assetsPage.table.action(0, 'map').click()

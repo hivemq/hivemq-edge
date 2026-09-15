@@ -15,6 +15,8 @@
  */
 package com.hivemq.bridge.mqtt;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.BRIDGE_MARKER_PROPERTY;
+import static com.hivemq.edge.HiveMQEdgeConstants.BRIDGE_MARKER_PROPERTY_VALUE;
 import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY;
 import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -58,14 +60,16 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.security.ssl.SslUtil;
+import com.hivemq.util.Checkpoints;
 import com.hivemq.util.StoreTypeUtil;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -79,12 +83,10 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BridgeMqttClient {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeMqttClient.class);
+    /** Checkpoint visited when the bridge has connected to its remote broker, before it forwards. */
+    public static final @NotNull String REMOTE_CONNECTED = "mqtt-bridge-remote-connected";
 
-    private static final long RECONNECT_MIN_DELAY_MS = 1_000; // 1 second
-    private static final long RECONNECT_MAX_DELAY_MS = 120_000; // 2 minutes
-    private static final double RECONNECT_JITTER_FACTOR = 0.25; // 25% max jitter
-    private static final int RECONNECT_MAX_BACKOFF_EXPONENT = 10; // 2^10 = 1024 seconds max
+    private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeMqttClient.class);
 
     private final @NotNull MqttBridge bridge;
     private final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler;
@@ -133,6 +135,48 @@ public class BridgeMqttClient {
         return bridgeId + '-' + sub.calculateUniqueId();
     }
 
+    /**
+     * Refuses a bridge whose local subscriptions do not resolve to distinct forwarder ids (EDG-882).
+     * <p>
+     * {@link LocalSubscription#calculateUniqueId()} joins the filters with an empty separator, so
+     * {@code ["ab", "c"]} and {@code ["a", "bc"]} — with the same destination — produce the same id.
+     * Both subscriptions are live at once: {@link #createForwarders()} builds one forwarder per local
+     * subscription and every one of them is registered. Under a shared id the second registration
+     * takes the first's queues out of the ownership index, the periodic clean-up then finds those live
+     * queues unowned, and it deletes the messages waiting in them. The digest itself commonly contains
+     * a '/', so the generic queue-name parser cannot recover the owner either.
+     * <p>
+     * Rejecting the configuration is the fix, rather than disambiguating the id: the id names every
+     * persisted queue of the bridge, so re-encoding it renames those queues on upgrade and strands the
+     * messages already in them. Failing at startup, loudly and naming both subscriptions, is the only
+     * outcome here that loses nothing. A collision needs two subscriptions whose sorted filters
+     * concatenate to the same string, so a configuration that has never collided cannot start
+     * colliding on upgrade.
+     *
+     * @throws IllegalStateException if two local subscriptions share a forwarder id
+     */
+    static void verifyForwarderIdsAreUnique(final @NotNull MqttBridge bridge) {
+        final Map<String, LocalSubscription> subscriptionByForwarderId = new HashMap<>();
+        for (final LocalSubscription sub : bridge.getLocalSubscriptions()) {
+            final String forwarderId = createForwarderId(bridge.getId(), sub);
+            final LocalSubscription previous = subscriptionByForwarderId.putIfAbsent(forwarderId, sub);
+            if (previous != null) {
+                throw new IllegalStateException(String.format(
+                        "Bridge '%s' cannot start: the local subscriptions with filters %s (destination '%s') and %s "
+                                + "(destination '%s') both resolve to the internal forwarder id '%s'. That id names "
+                                + "the internal queues of the subscription, so the two would share one set of queues "
+                                + "and the messages of one of them would be discarded. Change or remove one of the "
+                                + "two subscriptions; altering any topic filter or the destination is enough.",
+                        bridge.getId(),
+                        previous.getFilters(),
+                        previous.getDestination(),
+                        sub.getFilters(),
+                        sub.getDestination(),
+                        forwarderId));
+            }
+        }
+    }
+
     public synchronized @NotNull ListenableFuture<Void> start() {
         if (operationState.compareAndSet(OperationState.IDLE, OperationState.STARTING)) {
             log.info("Starting bridge '{}' connecting to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
@@ -148,6 +192,7 @@ public class BridgeMqttClient {
                             .add(
                                     CLIENT_AGENT_PROPERTY,
                                     String.format(CLIENT_AGENT_PROPERTY_VALUE, systemInformation.getHiveMQVersion()))
+                            .add(BRIDGE_MARKER_PROPERTY, BRIDGE_MARKER_PROPERTY_VALUE)
                             .build())
                     .sessionExpiryInterval(bridge.getSessionExpiry())
                     .send()
@@ -327,6 +372,12 @@ public class BridgeMqttClient {
                                 exception);
                     }
                 }
+                // Before the stop future completes, not after: whoever is waiting on that future starts
+                // the replacement bridge, and the replacement registers its own counters under the same
+                // names in the same registry. Clearing afterwards deleted the new client's metrics --
+                // the hand-over is now every configuration change, so the race is no longer rare
+                // (EDG-882 QA round 1).
+                perBridgeMetrics.clearAll(metricRegistry);
                 final var future = stopFutureRef.getAndSet(null);
                 if (future != null) {
                     future.set(null);
@@ -334,7 +385,6 @@ public class BridgeMqttClient {
                 // Only reset to IDLE if we're still in STOPPING state.
                 // Prevents overwriting a concurrent start()'s STARTING state.
                 operationState.compareAndSet(OperationState.STOPPING, OperationState.IDLE);
-                perBridgeMetrics.clearAll(metricRegistry);
                 if (log.isInfoEnabled()) {
                     log.info("Bridge '{}' stopped successfully", bridge.getId());
                 }
@@ -356,7 +406,13 @@ public class BridgeMqttClient {
         return mqtt5Client;
     }
 
+    /**
+     * @throws IllegalStateException if two local subscriptions of this bridge resolve to the same
+     *     forwarder id — see {@link #verifyForwarderIdsAreUnique(MqttBridge)}. Thrown before any
+     *     forwarder is built, so nothing is registered, started or cleared for a rejected bridge.
+     */
     public @NotNull List<MqttForwarder> createForwarders() {
+        verifyForwarderIdsAreUnique(bridge);
         final ImmutableList.Builder<@NotNull MqttForwarder> builder = ImmutableList.builder();
         final int localSubCount = bridge.getLocalSubscriptions().size();
         if (log.isDebugEnabled()) {
@@ -383,6 +439,18 @@ public class BridgeMqttClient {
 
     public @NotNull List<MqttForwarder> getActiveForwarders() {
         return forwarders;
+    }
+
+    /**
+     * Removes this bridge's counters from the registry.
+     * <p>
+     * {@link PerBridgeMetrics} registers them in this client's constructor, so a bridge that is refused
+     * before it ever starts has registered instruments and will never reach {@link #stop()}, which is
+     * where they are otherwise cleared. Called from {@code BridgeService.internalStartBridge}'s failure
+     * path (EDG-882 review v02, R2-13).
+     */
+    public void clearMetrics() {
+        perBridgeMetrics.clearAll(metricRegistry);
     }
 
     public @NotNull MqttBridge getBridge() {
@@ -473,6 +541,12 @@ public class BridgeMqttClient {
             }
             log.info("Bridge '{}' connected to {}:{}", bridge.getId(), bridge.getHost(), bridge.getPort());
             connected.set(true);
+            // Visited before anything is forwarded, on every connect rather than only the first, so
+            // that a test can attach its oracle to the remote broker while the bridge is held here.
+            // Without it a regression that asserts which messages arrived has to subscribe after the
+            // remote comes up and race the reconnect, and loses the messages forwarded in between --
+            // the assertion then fails with nothing wrong in the product (EDG-882 F-08).
+            Checkpoints.checkpoint(REMOTE_CONNECTED);
 
             // Check if this is a reconnection (not the initial connection)
             // On initial connection, we only flush buffered messages without resetting persistence state.
@@ -560,28 +634,22 @@ public class BridgeMqttClient {
                 return;
             }
             if (context.getSource() != MqttDisconnectSource.USER) {
-                // exponential backoff with 1s-2min range, 25% additive jitter for thundering herd prevention
                 final MqttClientReconnector reconnector = context.getReconnector();
                 final int attempts = reconnector.getAttempts();
-                final int exponent = Math.min(attempts, RECONNECT_MAX_BACKOFF_EXPONENT);
-                final long calculatedDelay = RECONNECT_MIN_DELAY_MS << exponent;
-                final long delayMs = Math.min(calculatedDelay, RECONNECT_MAX_DELAY_MS);
-                // Full jitter is often better for reducing load spikes
-                // This gives random delay between 0 and delayMs * JITTER_FACTOR
-                final long jitterMs = (long) (delayMs
-                        * RECONNECT_JITTER_FACTOR
-                        * ThreadLocalRandom.current().nextDouble());
-                final long totalDelayMs = delayMs + jitterMs;
+                // The whole schedule, jitter included, lives in BridgeReconnectDelay: it can be
+                // asserted there, and tests can select a non-exponential one.
+                final BridgeReconnectDelay.Delay delay = BridgeReconnectDelay.nextDelay(attempts);
                 if (log.isInfoEnabled()) {
                     log.info(
-                            "Bridge '{}' will attempt reconnection #{} in {} ms (delay: {} ms, jitter: {} ms)",
+                            "Bridge '{}' will attempt reconnection #{} in {} ms (delay: {} ms, jitter: {} ms, schedule: {})",
                             bridge.getId(),
                             attempts + 1,
-                            totalDelayMs,
-                            delayMs,
-                            jitterMs);
+                            delay.totalMs(),
+                            delay.baseDelayMs(),
+                            delay.jitterMs(),
+                            delay.mode());
                 }
-                reconnector.reconnect(true).delay(totalDelayMs, TimeUnit.MILLISECONDS);
+                reconnector.reconnect(true).delay(delay.totalMs(), TimeUnit.MILLISECONDS);
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Bridge '{}' disconnected by user, not attempting auto-reconnection", bridge.getId());

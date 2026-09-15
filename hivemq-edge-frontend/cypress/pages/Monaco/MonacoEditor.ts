@@ -28,6 +28,13 @@ export class MonacoEditorPOM {
     cy.get(containerSelector).find('.monaco-editor').should('be.visible')
     cy.get(containerSelector).find('.monaco-editor .view-lines').should('exist')
 
+    // Wait for the editor to report its changes. A visible .monaco-editor only means the editor was
+    // created: @monaco-editor/react subscribes to onDidChangeModelContent from an effect that runs
+    // after that, and a setValue() landing in between is applied to the model and never seen by
+    // React - the editor shows the new text while the form keeps the old one. CodeEditor sets this
+    // attribute from onMount, whose effect precedes the subscription in the same commit.
+    cy.get(`${containerSelector}[data-editor-ready="true"]`).should('exist')
+
     // Set the value using Monaco API
     cy.window().then((win) => {
       // @ts-ignore
@@ -41,8 +48,6 @@ export class MonacoEditorPOM {
 
       if (editor) {
         editor.setValue(value)
-        // Trigger change event to update React state
-        editor.trigger('keyboard', 'type', { text: '' })
       } else {
         throw new Error(`Monaco editor not found in ${containerSelector}`)
       }
@@ -86,6 +91,7 @@ export class MonacoEditorPOM {
 
     cy.get(containerSelector).find('.monaco-editor').should('be.visible')
     cy.get(containerSelector).find('.monaco-editor .view-lines').should('exist')
+    cy.get(`${containerSelector}[data-editor-ready="true"]`).should('exist')
   }
 
   /**

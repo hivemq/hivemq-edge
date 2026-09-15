@@ -13,6 +13,10 @@ export const $NorthboundMapping = {
             type: 'boolean',
             description: `Should the timestamp be included when sent out.`,
         },
+        includeMetadata: {
+            type: 'boolean',
+            description: `Should tag metadata entries be included when sent out.`,
+        },
         maxQoS: {
             type: 'QoS',
         },

@@ -23,7 +23,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
@@ -31,7 +30,6 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttConfig;
-import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import java.util.List;
@@ -75,9 +73,6 @@ public class EipPollingProtocolAdapterIT {
             final @NotNull String expectedName,
             final @NotNull Object expectedValue) {
 
-        final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping(
-                "topic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, tagAddress, List.of());
-
         final EipSpecificAdapterConfig config =
                 new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, true));
 
@@ -87,7 +82,6 @@ public class EipPollingProtocolAdapterIT {
                 .thenReturn(List.of(new EipTag(tagAddress, tagAddress, new EipTagDefinition(tagAddress, tagType))));
 
         final BatchPollingInput input = mock(BatchPollingInput.class);
-        final List eipToMqttMapping1 = List.of(eipToMqttMapping);
 
         final BatchPollingOutput output = mock();
 
@@ -103,11 +97,11 @@ public class EipPollingProtocolAdapterIT {
         verify(output).addDataPoint(captorName.capture(), captorValue.capture());
 
         assertThat(captorName.getAllValues()).first().isEqualTo(expectedName);
-        if (expectedValue instanceof Double) {
+        if (expectedValue instanceof final Double expectedDouble) {
             assertThat(captorValue.getValue())
                     .isInstanceOf(Double.class)
                     .asInstanceOf(InstanceOfAssertFactories.DOUBLE)
-                    .isEqualTo((Double) expectedValue, withPrecision(2d));
+                    .isEqualTo(expectedDouble, withPrecision(2d));
         } else {
             assertThat(captorValue.getValue()).isEqualTo(expectedValue);
         }
@@ -115,9 +109,6 @@ public class EipPollingProtocolAdapterIT {
 
     @Test
     public void test_PublishChangedDataOnly_False() {
-        final EipToMqttMapping eipToMqttMapping = new EipToMqttMapping(
-                "topic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, TAG_INT, List.of());
-
         final EipSpecificAdapterConfig config =
                 new EipSpecificAdapterConfig(44818, HOST, 1, 0, new EipToMqttConfig(1000, 10, false));
 

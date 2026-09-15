@@ -57,7 +57,33 @@ public class ApiErrorMessages {
     @JsonIgnore
     public List<Error> toErrorList() {
         return errors.stream()
-                .map(error -> new Error(Objects.requireNonNullElse(error.getTitle(), ""), error.getFieldName()))
+                .map(error -> new Error(describe(error), error.getFieldName()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * The category and the specific message, whichever of the two are present.
+     *
+     * <p>Only the title used to reach the caller, so every schema-validation failure arrived as the
+     * constant {@code "Invalid user supplied data"} while the message that said what was actually wrong
+     * — for an enum, the permitted values — was built, carried this far, and then dropped.
+     *
+     * <p>The detail is appended rather than substituted. The category is not recoverable from anywhere
+     * else on the response: the enclosing problem-details body carries a per-endpoint title
+     * ({@code "Authentication request failed validation"}, {@code "Adapter failed validation"}), not the
+     * per-field one, and {@link Error} has no field to put it in beside the detail. Dropping it changed
+     * the wire contract of every endpoint that builds errors this way — authentication, bridges, UNS —
+     * not just the adapter endpoint this was needed for.
+     */
+    private static @NotNull String describe(final @NotNull ApiErrorMessage error) {
+        final String title = error.getTitle();
+        final String detail = error.getDetail();
+        if (title == null || title.isBlank()) {
+            return Objects.requireNonNullElse(detail, "");
+        }
+        if (detail == null || detail.isBlank()) {
+            return title;
+        }
+        return title + ": " + detail;
     }
 }

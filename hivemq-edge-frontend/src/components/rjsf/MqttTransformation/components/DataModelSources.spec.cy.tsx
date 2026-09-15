@@ -1,38 +1,45 @@
 import DataModelSources from './DataModelSources.tsx'
-import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
-  return <h2>{children}</h2>
-}
 
 describe('DataModelSources', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
-
-    cy.intercept('/api/v1/management/sampling/schema/**', GENERATE_DATA_MODELS(true, MOCK_TOPIC_FILTER.topicFilter)).as(
-      'getSchema'
-    )
-    cy.intercept('/api/v1/management/sampling/topic/**', (req) => {
-      req.reply({ items: [] })
-    })
+    cy.intercept('/api/v1/management/topic-filters', { items: [MOCK_TOPIC_FILTER] }).as('getTopicFilters')
   })
 
-  it('should render properly', () => {
-    cy.mountWithProviders(<DataModelSources topic="test" />)
-    cy.get('h3').should('have.text', 'Sources')
-    // loading
-    cy.getByTestId('loading-spinner').should('be.visible')
-    cy.getByTestId('loading-spinner').should('not.exist')
-
-    cy.get('[role=list]').find('li').as('properties')
+  it('should render the schema when the topic filter has a valid schema assigned', () => {
+    cy.mountWithProviders(<DataModelSources topic={MOCK_TOPIC_FILTER.topicFilter} />)
+    cy.wait('@getTopicFilters')
+    cy.get('h3').first().should('have.text', 'Sources')
+    cy.get('[role=list]').find('li').should('have.length.greaterThan', 0)
   })
 
-  it('should be accessible ', () => {
+  it('should show a warning when the topic filter has no schema assigned', () => {
+    cy.intercept('/api/v1/management/topic-filters', {
+      items: [{ ...MOCK_TOPIC_FILTER, schema: undefined }],
+    }).as('getTopicFiltersNoSchema')
+    cy.mountWithProviders(<DataModelSources topic={MOCK_TOPIC_FILTER.topicFilter} />)
+    cy.wait('@getTopicFiltersNoSchema')
+    cy.get('[role=alert]').should('be.visible')
+    cy.get('[role=alert]').should('contain', 'not assigned a schema')
+  })
+
+  it('should show a warning when the selected topic is not found in the topic filter list', () => {
+    cy.mountWithProviders(<DataModelSources topic="unknown/topic" />)
+    cy.wait('@getTopicFilters')
+    cy.get('[role=alert]').should('be.visible')
+    cy.get('[role=alert]').should('contain', 'not assigned a schema')
+  })
+
+  it('should be accessible', () => {
     cy.injectAxe()
-
-    cy.mountWithProviders(<DataModelSources topic="sssss" />, { wrapper })
-
-    cy.checkAccessibility()
+    cy.mountWithProviders(<DataModelSources topic={MOCK_TOPIC_FILTER.topicFilter} />)
+    cy.wait('@getTopicFilters')
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // h5 used for sections in JsonSchemaBrowser is not in order in test context
+        'heading-order': { enabled: false },
+      },
+    })
   })
 })

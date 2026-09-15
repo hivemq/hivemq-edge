@@ -26,20 +26,19 @@ import { adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.uti
 import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
 import UpDownWidget from '@/components/rjsf/Widgets/UpDownWidget'
 
-interface CustomFormProps<T>
-  extends Pick<
-    FormProps<T>,
-    | 'id'
-    | 'schema'
-    | 'uiSchema'
-    | 'formData'
-    | 'formContext'
-    | 'customValidate'
-    | 'readonly'
-    | 'onChange'
-    | 'onError'
-    | 'extraErrors'
-  > {
+interface CustomFormProps<T> extends Pick<
+  FormProps<T>,
+  | 'id'
+  | 'schema'
+  | 'uiSchema'
+  | 'formData'
+  | 'formContext'
+  | 'customValidate'
+  | 'readonly'
+  | 'onChange'
+  | 'onError'
+  | 'extraErrors'
+> {
   onSubmit: (data: IChangeEvent) => void
   showNativeWidgets?: boolean
 }

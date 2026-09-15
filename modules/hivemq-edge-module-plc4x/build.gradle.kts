@@ -24,7 +24,7 @@ group = "com.hivemq"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
@@ -53,6 +53,8 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
+    // hivemq-edge config entities are JAXB annotated; javac needs the annotation types to read their class files
+    testCompileOnly(libs.jaxb4.bind)
     testImplementation(libs.hivemq.edge.adaptersdk)
     testImplementation(libs.plc4j.api)
 
@@ -80,6 +82,18 @@ tasks.register<Copy>("copyAllDependencies") {
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }
+
+tasks.shadowJar {
+    // ShadowJar defaults its duplicatesStrategy to EXCLUDE, and that filtering runs before the
+    // service-file merge, so without this override only the first META-INF/services file of a given
+    // name reaches the jar and every other provider is dropped silently. That is what used to hide
+    // the ADS driver behind the S7 one, and it is why this module carried hand-written copies of
+    // the PlcDriver and Transport descriptors; those are gone now that the merge does its job. The
+    // override is scoped to service files, so every other duplicated resource still lands in the
+    // jar exactly once.
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    mergeServiceFiles()
+}
 
 // ******************** artifacts ********************
 
@@ -111,5 +125,5 @@ artifacts {
 
 hivemqLicense {
     projectName.set(project.name)
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
 }

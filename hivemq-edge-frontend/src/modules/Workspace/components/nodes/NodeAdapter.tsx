@@ -3,7 +3,7 @@ import { useMemo, useEffect } from 'react'
 import type { NodeProps } from '@xyflow/react'
 import { Handle, Position, useStore, useReactFlow, useNodeConnections } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Box, HStack, Icon, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
@@ -27,6 +27,7 @@ import type { NodeAdapterType } from '@/modules/Workspace/types'
 import { NodeTypes } from '@/modules/Workspace/types'
 import { createAdapterStatusModel } from '@/modules/Workspace/utils/status-mapping.utils.ts'
 import { OperationalStatus } from '@/modules/Workspace/types/status.types.ts'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeAdapter: FC<NodeProps<NodeAdapterType>> = ({ id, data: adapter, selected, dragging }) => {
   const { t } = useTranslation()
@@ -63,15 +64,12 @@ const NodeAdapter: FC<NodeProps<NodeAdapterType>> = ({ id, data: adapter, select
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/adapter/${adapter.type}/${id}`)
   const navigate = useNavigate()
   const showSkeleton = useStore(selectorIsSkeletonZoom)
-  const { updateNodeData, setEdges, getNode } = useReactFlow()
+  const { setEdges, getNode } = useReactFlow()
 
   // Get outbound connections to update edge operational status
   const outboundConnections = useNodeConnections({ handleType: 'source', id })
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, adapter.statusModel)
 
   // Update edge operational status based on mapping types (Bug #2 fix)
   useEffect(() => {

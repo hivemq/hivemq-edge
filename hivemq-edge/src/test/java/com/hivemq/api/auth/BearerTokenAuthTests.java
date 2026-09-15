@@ -30,8 +30,10 @@ import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
+import com.hivemq.api.auth.oidc.OidcService;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
+import com.hivemq.api.config.AuthMode;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.model.ApiBearerToken;
@@ -58,6 +60,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 
 /**
  * @author Simon L Johnson
@@ -66,9 +69,15 @@ public class BearerTokenAuthTests {
 
     protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
-    static final int CONNECT_TIMEOUT = 1000;
-    static final int READ_TIMEOUT = 1000;
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
+    private static int testHttpPort;
+    // The first request against the freshly started server pays the Jersey/Jackson bootstrap cost,
+    // which is orders of magnitude slower than every later request. A 1s budget is not enough for
+    // that on a loaded CI agent, so the first test to run would time out at random. Matches
+    // JaxrsResourceTests. These timeouts only exist to stop a hung test, not to assert latency.
+    static final int CONNECT_TIMEOUT = 5000;
+    static final int READ_TIMEOUT = 5000;
     static final String HTTP = "http";
 
     protected static JaxrsHttpServer server;
@@ -76,9 +85,10 @@ public class BearerTokenAuthTests {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
 
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
         // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(objectMapper);
 
@@ -91,10 +101,15 @@ public class BearerTokenAuthTests {
         // authenticationHandlers.add(new BasicAuthenticationHandler(usernamePasswordProvider));
         final var apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
+        when(apiConfigurationService.getAuthModes()).thenReturn(Set.of(AuthMode.USERNAME_PASSWORD));
         final var apiAuthenticationFeature =
                 new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService);
         final var authenticationResource = new AuthenticationResourceImpl(
-                usernamePasswordProvider, jwtAuthenticationProvider, jwtAuthenticationProvider);
+                usernamePasswordProvider,
+                jwtAuthenticationProvider,
+                jwtAuthenticationProvider,
+                mock(OidcService.class),
+                apiConfigurationService);
 
         final var resourceConfig = new ResourceConfig();
         resourceConfig.register(apiAuthenticationFeature);
@@ -114,13 +129,13 @@ public class BearerTokenAuthTests {
 
     protected static HttpResponse get(final @NotNull String path, final @Nullable Map<String, String> headers)
             throws IOException {
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.get(headers, serverAddress, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 
     protected static HttpResponse post(final @NotNull String path, final ByteArrayInputStream body) throws IOException {
         final var headers = HttpUrlConnectionClient.JSON_HEADERS;
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.post(headers, serverAddress, body, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 
@@ -195,5 +210,50 @@ public class BearerTokenAuthTests {
         assertEquals(200, response.getStatusCode(), "Resource should be accepted");
         final ApiPrincipal user = objectMapper.readValue(response.getResponseBody(), ApiPrincipal.class);
         assertEquals("testuser", user.getName(), "Username should match that supplied at point of auth");
+    }
+
+    @Test
+    public void testRefreshTokenWithValidTokenReturnsFreshToken() throws IOException {
+        HttpResponse response;
+
+        // -- authenticate to obtain a valid bearer token
+        response = post("api/v1/auth/authenticate", bodyCredentials("testuser", "test"));
+        assertEquals(200, response.getStatusCode(), "Authenticate should be accepted");
+        final ApiBearerToken token = objectMapper.readValue(response.getResponseBody(), ApiBearerToken.class);
+        assertNotNull(token.getToken(), "Response should contain a bearer token");
+
+        // -- present it as a bearer header to /refresh-token; the auth filter installs the principal the
+        // handler reads. Before EDG-849 #6 the endpoint was annotated NO_AUTH_REQUIRED, so no filter ran,
+        // no principal was installed, and the handler's getAuthenticatedPrincipalFromContext threw 401.
+        final Map<String, String> headers = Map.of(
+                HttpConstants.AUTH_HEADER,
+                HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()),
+                "Content-Type",
+                "application/json",
+                "Accept",
+                "application/json");
+
+        response = post("api/v1/auth/refresh-token", headers, new ByteArrayInputStream(new byte[0]));
+
+        assertEquals(200, response.getStatusCode(), "A valid token must be refreshable");
+        final ApiBearerToken refreshed = objectMapper.readValue(response.getResponseBody(), ApiBearerToken.class);
+        assertNotNull(refreshed.getToken(), "Refresh response should contain a fresh bearer token");
+    }
+
+    @Test
+    public void testRefreshTokenWithoutTokenIsRejected() throws IOException {
+        // -- no Authorization header: the auth filter installs no principal and rejects the request
+        final Map<String, String> headers = Map.of("Content-Type", "application/json", "Accept", "application/json");
+
+        final HttpResponse response = post("api/v1/auth/refresh-token", headers, new ByteArrayInputStream(new byte[0]));
+
+        assertEquals(401, response.getStatusCode(), "Refresh without a token must be refused");
+    }
+
+    protected static HttpResponse post(
+            final @NotNull String path, final @NotNull Map<String, String> headers, final ByteArrayInputStream body)
+            throws IOException {
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
+        return HttpUrlConnectionClient.post(headers, serverAddress, body, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 }

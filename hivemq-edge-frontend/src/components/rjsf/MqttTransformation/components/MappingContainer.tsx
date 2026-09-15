@@ -85,7 +85,9 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
                 if (!mappings) {
                   return
                 }
-                onChange('fieldMapping', { instructions: [...(item.fieldMapping?.instructions || []), ...mappings] })
+                // The list emits a complete replacement (already pruned of read-only destinations) — appending
+                // it to the old list would duplicate every kept instruction and resurrect the pruned ones.
+                onChange('fieldMapping', { ...item.fieldMapping, instructions: mappings })
               }}
               onSchemaReady={onSchemaReadyHandler}
             />

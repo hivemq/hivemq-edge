@@ -432,8 +432,10 @@ describe('SchemaPanelSimplified', () => {
 
     cy.wait('@getSchemas')
 
-    // Component should show error message when API fails
-    cy.get('[role="alert"]').should('be.visible').should('have.attr', 'data-status', 'error')
+    // Component should show error message when API fails.
+    // Monaco injects its own visually-hidden `div.monaco-alert` live region, which also carries
+    // role="alert", so scope this to ours.
+    cy.get('[role="alert"]:not(.monaco-alert)').should('be.visible').should('have.attr', 'data-status', 'error')
 
     // Form should not be rendered when there's an error
     cy.get('form').should('not.exist')

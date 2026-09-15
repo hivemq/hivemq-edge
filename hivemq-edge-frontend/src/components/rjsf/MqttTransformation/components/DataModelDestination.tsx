@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { CardProps } from '@chakra-ui/react'
 import { Card, CardBody, CardHeader, Heading, HStack } from '@chakra-ui/react'
 
-import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema.ts'
+import { useGetSchema } from '@/api/hooks/useProtocolAdapters/useGetSchema.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
@@ -19,7 +19,9 @@ interface DataModelDestinationProps extends CardProps {
 
 const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, adapterId, validation, ...props }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error } = useGetWritingSchema(adapterId, topic)
+  // This is the write target of a southbound mapping, so it needs the SOUTHBOUND schema: the backend omits
+  // the fields that can never be written (tagName, timestamp, metadata) rather than the UI hiding them.
+  const { data, isLoading, isError, error } = useGetSchema(adapterId, topic, 'SOUTHBOUND')
 
   return (
     <Card {...props} size="sm">

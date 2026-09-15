@@ -30,8 +30,10 @@ import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
+import com.hivemq.api.auth.oidc.OidcService;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
+import com.hivemq.api.config.AuthMode;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.model.ApiBearerToken;
@@ -57,6 +59,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RandomPortGenerator;
 
 /**
  * @author Simon L Johnson
@@ -65,9 +68,13 @@ public class ChainedAuthTests {
 
     protected final Logger logger = LoggerFactory.getLogger(ChainedAuthTests.class);
 
-    static final int TEST_HTTP_PORT = 8088;
-    static final int CONNECT_TIMEOUT = 1000;
-    static final int READ_TIMEOUT = 1000;
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
+    private static int testHttpPort;
+    // See BearerTokenAuthTests: the first request pays the server bootstrap cost and a 1s budget
+    // makes whichever test runs first flaky on a loaded CI agent. Matches JaxrsResourceTests.
+    static final int CONNECT_TIMEOUT = 5000;
+    static final int READ_TIMEOUT = 5000;
     static final String HTTP = "http";
 
     protected static JaxrsHttpServer server;
@@ -75,8 +82,9 @@ public class ChainedAuthTests {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
         // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(objectMapper);
 
@@ -88,10 +96,15 @@ public class ChainedAuthTests {
         authenticationHandlers.add(new BasicAuthenticationHandler(usernamePasswordProvider));
         final var apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
+        when(apiConfigurationService.getAuthModes()).thenReturn(Set.of(AuthMode.USERNAME_PASSWORD));
         final var apiAuthenticationFeature =
                 new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService);
         final var authenticationResource = new AuthenticationResourceImpl(
-                usernamePasswordProvider, jwtAuthenticationProvider, jwtAuthenticationProvider);
+                usernamePasswordProvider,
+                jwtAuthenticationProvider,
+                jwtAuthenticationProvider,
+                mock(OidcService.class),
+                apiConfigurationService);
 
         final var resourceConfig = new ResourceConfig();
         resourceConfig.register(apiAuthenticationFeature);
@@ -113,7 +126,7 @@ public class ChainedAuthTests {
             final @com.hivemq.extension.sdk.api.annotations.NotNull String path,
             final @Nullable Map<String, String> headers)
             throws IOException {
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.get(headers, serverAddress, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 
@@ -121,7 +134,7 @@ public class ChainedAuthTests {
             final @com.hivemq.extension.sdk.api.annotations.NotNull String path, final ByteArrayInputStream body)
             throws IOException {
         final var headers = HttpUrlConnectionClient.JSON_HEADERS;
-        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", testHttpPort, path);
         return HttpUrlConnectionClient.post(headers, serverAddress, body, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 

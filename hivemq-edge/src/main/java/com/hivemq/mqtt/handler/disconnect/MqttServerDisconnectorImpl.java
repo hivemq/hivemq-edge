@@ -163,10 +163,7 @@ public class MqttServerDisconnectorImpl implements MqttServerDisconnector {
             reasonString = null;
         }
 
-        if (reasonCode != null
-                && (version == ProtocolVersion.MQTTv5
-                        || version == ProtocolVersion.MQTTSNv1_2
-                        || version == ProtocolVersion.MQTTSNv2_0)) {
+        if (reasonCode != null && version == ProtocolVersion.MQTTv5) {
             final DISCONNECT disconnect =
                     new DISCONNECT(reasonCode, reasonString, userProperties, null, SESSION_EXPIRY_NOT_SET);
             clientConnection.getChannel().writeAndFlush(disconnect).addListener(ChannelFutureListener.CLOSE);

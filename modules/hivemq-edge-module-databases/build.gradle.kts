@@ -20,24 +20,13 @@ group = "com.hivemq"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
 repositories {
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://jitpack.io")
-            }
-        }
-        filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.simon622")
-        }
-    }
 }
 
 dependencies {
@@ -81,6 +70,16 @@ tasks.register<Copy>("copyAllDependencies") {
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }
 
+tasks.shadowJar {
+    // ShadowJar defaults its duplicatesStrategy to EXCLUDE, and that filtering runs before the
+    // service-file merge: without the override below, only the first META-INF/services file of a
+    // given name survives and every other provider is dropped silently. Here that would leave the
+    // PostgreSQL driver as the only registered java.sql.Driver. The override is scoped to service
+    // files so every other duplicated resource still lands in the jar exactly once.
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    mergeServiceFiles()
+}
+
 // ******************** artifacts ********************
 
 val releaseBinary: Configuration by configurations.creating {
@@ -111,6 +110,6 @@ artifacts {
 
 hivemqLicense {
     projectName.set(project.name)
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
     ignoredGroupPrefixes.add("org.mariadb.jdbc")
 }

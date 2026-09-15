@@ -1,8 +1,8 @@
 import { computeNodeRuntimeStatus } from '@/modules/Workspace/utils/status-propagation.utils.ts'
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData } from '@xyflow/react'
 import { useTranslation } from 'react-i18next'
 import { Icon, Text, useColorModeValue, VStack } from '@chakra-ui/react'
 
@@ -19,16 +19,19 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { OperationalStatus } from '@/modules/Workspace/types/status.types'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, dragging }) => {
   const { t } = useTranslation()
   const bgColour = useColorModeValue('gray.300', 'gray.900')
   const { data: allAssets, isLoading } = useListManagedAssets()
-  const { updateNodeData } = useReactFlow()
 
   // Use React Flow's efficient hooks to get connected nodes (upstream sources)
   const connections = useNodeConnections({ id })
-  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
+  // useNodesData memoises its selector on the ids array, so a fresh array on every render makes
+  // the store recompute and return a new selection every time.
+  const connectedNodeIds = useMemo(() => connections.map((connection) => connection.source), [connections])
+  const connectedNodes = useNodesData(connectedNodeIds)
 
   const mappedAssets = useMemo<ManagedAsset[]>(() => {
     if (!allAssets?.items) return []
@@ -44,10 +47,7 @@ const NodeAssets: FC<NodeProps<NodeAssetsType>> = ({ id, data, selected, draggin
     return computeNodeRuntimeStatus(operational, connectedNodes)
   }, [connectedNodes, mappedAssets.length])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, data.statusModel)
 
   return (
     <>

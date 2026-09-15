@@ -55,7 +55,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import javax.management.modelmbean.XMLParseException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
@@ -256,7 +255,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
 
     protected @NotNull JsonNode processXml(
             final @NotNull String body, final @NotNull MtConnectAdapterTagDefinition definition)
-            throws JsonProcessingException, XMLParseException, JAXBException {
+            throws JsonProcessingException, MtConnectXmlParseException, JAXBException {
         final ObjectMapper objectMapper =
                 definition.isIncludeNull() ? OBJECT_MAPPER_INCLUDE_NULL : OBJECT_MAPPER_EXCLUDE_NULL;
         // There are some custom schemas not supported by this module.
@@ -265,25 +264,25 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
             final @Nullable String schemaLocation = MtConnectSchema.extractSchemaLocation(body);
             final @Nullable MtConnectSchema schema = MtConnectSchema.of(schemaLocation);
             if (schema == null) {
-                throw new XMLParseException("Schema " + schemaLocation + " is not support");
+                throw new MtConnectXmlParseException("Schema " + schemaLocation + " is not support");
             }
             // The unmarshal call brings additional performance overhead.
             final @Nullable Unmarshaller unmarshaller = schema.getUnmarshaller();
             if (unmarshaller == null) {
-                throw new XMLParseException("Schema " + schemaLocation + " is to be supported");
+                throw new MtConnectXmlParseException("Schema " + schemaLocation + " is to be supported");
             } else {
                 try (StringReader stringReader = new StringReader(body)) {
                     final JAXBElement<?> element = (JAXBElement<?>) unmarshaller.unmarshal(stringReader);
                     return objectMapper.convertValue(element.getValue(), JsonNode.class);
                 } catch (final Exception e) {
-                    throw new XMLParseException(e, "Incoming XML message failed to conform " + schemaLocation);
+                    throw new MtConnectXmlParseException("Incoming XML message failed to conform " + schemaLocation, e);
                 }
             }
         }
         final @NotNull JsonNode rootNode = XML_MAPPER.readTree(body);
         final @Nullable JsonNode jsonNodeSchemaLocation = rootNode.get(NODE_SCHEMA_LOCATION);
         if (jsonNodeSchemaLocation == null) {
-            throw new XMLParseException("Attribute schemaLocation is not found");
+            throw new MtConnectXmlParseException("Attribute schemaLocation is not found");
         }
         return rootNode;
     }

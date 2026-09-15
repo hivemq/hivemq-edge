@@ -2,7 +2,7 @@ import { type FC, useMemo } from 'react'
 import type { JSONSchema7 } from 'json-schema'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@chakra-ui/react'
-import { LuWand2 } from 'react-icons/lu'
+import { LuWandSparkles } from 'react-icons/lu'
 
 import type { DataCombining, DataIdentifierReference, Instruction } from '@/api/__generated__'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
@@ -91,7 +91,7 @@ export const AutoMapping: FC<AutoMappingProps> = ({ formData, formContext, onCha
   return (
     <IconButton
       isDisabled={!(schema.length && displayedSchemas.length)}
-      icon={<Icon as={LuWand2} />}
+      icon={<Icon as={LuWandSparkles} />}
       aria-label={t('combiner.schema.mapping.action.generateMappings')}
       onClick={handleMatching}
     />

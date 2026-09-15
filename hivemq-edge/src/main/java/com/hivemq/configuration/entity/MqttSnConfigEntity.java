@@ -21,12 +21,12 @@ import com.hivemq.configuration.entity.mqttsn.AllowWakingPingToHijackSessionEnti
 import com.hivemq.configuration.entity.mqttsn.DiscoveryEntity;
 import com.hivemq.configuration.entity.mqttsn.MqttsnPredefinedTopicAliasEntity;
 import com.hivemq.configuration.entity.mqttsn.TopicRegistrationsHeldDuringSleepEntity;
+import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
-import org.slj.mqtt.sn.MqttsnConstants;
 
 /**
  * @author Simon L Johnson
@@ -60,10 +60,17 @@ public class MqttSnConfigEntity {
             new TopicRegistrationsHeldDuringSleepEntity();
 
     @XmlElement(name = "max-client-identifier-length", defaultValue = "23")
-    private int maxClientIdentifierLength = MqttsnConstants.MAX_CLIENT_ID_LENGTH_v12;
+    private int maxClientIdentifierLength = 23;
 
     @XmlElement(name = "gateway-id", defaultValue = "1")
     private int gatewayId = 0x01;
+
+    /**
+     * Not bound to XML. Set via the JAXB {@link #afterUnmarshal} callback so we can detect whether a
+     * {@code <mqtt-sn>} block was actually present in the configuration. MQTT-SN is no longer supported; this is
+     * used solely to emit a deprecation warning when the (now obsolete) block is still configured.
+     */
+    private transient boolean present = false;
 
     public @NotNull AllowEmptyClientIdentifierEntity getAllowEmptyClientIdentifierEntity() {
         return allowEmptyClientIdentifierEntity;
@@ -100,6 +107,22 @@ public class MqttSnConfigEntity {
 
     public int getGatewayId() {
         return gatewayId;
+    }
+
+    /**
+     * JAXB lifecycle callback, invoked after this element has been unmarshalled from XML. Marks the block as present
+     * so callers can distinguish a configured (but obsolete) {@code <mqtt-sn>} block from the default instance.
+     */
+    @SuppressWarnings("unused")
+    void afterUnmarshal(final @NotNull Unmarshaller unmarshaller, final @NotNull Object parent) {
+        this.present = true;
+    }
+
+    /**
+     * @return {@code true} if a {@code <mqtt-sn>} block was present in the parsed configuration.
+     */
+    public boolean isPresent() {
+        return present;
     }
 
     @Override

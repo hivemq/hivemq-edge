@@ -1,6 +1,6 @@
 import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   NodeProps,
@@ -9,7 +9,7 @@ import type {
   NodeReplaceChange,
   EdgeRemoveChange,
 } from '@xyflow/react'
-import { Handle, NodeResizer, Position, useReactFlow, useNodesData } from '@xyflow/react'
+import { Handle, NodeResizer, Position, useNodesData } from '@xyflow/react'
 import { Box, Icon, Text, useColorMode, useDisclosure, useTheme, useToast } from '@chakra-ui/react'
 import { LuExpand, LuShrink } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
@@ -24,6 +24,7 @@ import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
 import { canGroupCollapse } from '../wizard/utils/groupConstraints.ts'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
@@ -34,7 +35,6 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/group/${id}`)
   const { colorMode } = useColorMode()
   const isLight = colorMode === 'light'
-  const { updateNodeData } = useReactFlow()
 
   // Use React Flow's efficient hook to get child node data directly
   const childNodesData = useNodesData(data.childrenNodeIds)
@@ -80,10 +80,7 @@ const NodeGroup: FC<NodeProps<NodeGroupType>> = ({ id, data, selected, ...props 
     }
   }, [childNodesData])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, data.statusModel)
 
   const onConfirmUngroup = () => {
     onConfirmUngroupOpen()

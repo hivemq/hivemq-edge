@@ -51,7 +51,9 @@ const PropertyItem: FC<PropertyItemProps> = ({
 
   const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
   const type = t('GenericSchema.data.type', {
-    context: property.type || 'null',
+    // i18next v26 types `context` as a plain string; narrow the same way TypeIcon does above,
+    // since the key suffix only ever uses a single type name.
+    context: (property.type || 'null') as JSONSchema7TypeName,
     arrayType: property.arrayType || 'object',
   })
   // TODO[NVL] key should be use for mapping. But what to use for display? key or title or both ?

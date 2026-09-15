@@ -55,6 +55,20 @@ post:
           schema:
             $ref: ../components/schemas/ProblemDetails.yaml
       description: Adapter does not support bulk tag browsing or browse failed
+    '503':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: >-
+        Adapter is connected but its device address-space metadata is still
+        loading; retry after the indicated delay.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying the browse.
+          schema:
+            type: integer
+          example: 2
     '504':
       content:
         application/json:

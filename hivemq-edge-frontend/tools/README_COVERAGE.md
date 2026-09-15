@@ -263,7 +263,12 @@ module.exports = {
 
 1. **NYC (Cypress coverage)** - Uses patterns from `.nycrc.json` (keep in sync with `coverage.config.cjs`)
 2. **Vitest** - Edit `vitest.config.ts` > `test.coverage.exclude`
-3. **Cypress plugin** - Edit `cypress.config.ts` > `env.codeCoverage.exclude`
+3. **Cypress plugin** - Edit `cypress.config.ts` > `expose.codeCoverage.exclude` (this moved from
+   `env.codeCoverage` in `@cypress/code-coverage` v4)
+
+**Both** 1 and 3 are needed for the Cypress run: the plugin filters the browser-side coverage using
+the `expose` patterns, then re-adds every file matching `.nycrc.json` because `all` is `true` there.
+A pattern present in only one of the two has no net effect.
 
 **Tip**: Keep all three configs in sync for consistent coverage across all test types. The `coverage.config.cjs` serves as the reference.
 

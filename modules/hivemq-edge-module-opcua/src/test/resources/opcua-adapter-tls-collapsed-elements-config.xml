@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Every shape an operator can write that Edge's XML-to-map conversion collapses into text, plus one
+  healthy adapter after them. The collapse happens whenever an element's first child element is itself
+  empty, so `tlsChecksFull` and `allowList` arrive at Jackson as Strings rather than objects.
+
+  The healthy adapter is last on purpose. Historically it was the blast-radius witness: adapter
+  configurations were converted in a single pass over every adapter, so a coercion failure on any of
+  the eight above stopped it - and every other adapter in the deployment - from being configured at
+  all. ProtocolAdapterManager converts each adapter in isolation today, so it is now the neighbour
+  witness: the eight above must not disturb it, and it must arrive unaltered rather than merely
+  present.
+-->
+<hivemq>
+    <protocol-adapters>
+
+        <!-- `<tlsChecksFull/>`: the documented spelling of "maximum validation". Collapses to "". -->
+        <protocol-adapter>
+            <adapterId>collapsed-empty-axes</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-1.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecksFull/>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-1</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/1</topic>
+                    <tagName>tag-1</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- An empty first axis collapses the whole element to the concatenated text of the rest: "NONE". -->
+        <protocol-adapter>
+            <adapterId>collapsed-partial-axes</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-2.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecksFull>
+                        <trustMode></trustMode>
+                        <revocation>NONE</revocation>
+                    </tlsChecksFull>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-2</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/2</topic>
+                    <tagName>tag-2</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- `<truststore/>` and `<keystore/>`: both collapse to "" and mean "not configured" - the JVM
+             cacerts and no client certificate. This is how the documentation's minimal TLS example
+             spells "use the system truststore", so it has to keep converting cleanly. -->
+        <protocol-adapter>
+            <adapterId>collapsed-empty-stores</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-8.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <truststore/>
+                    <keystore/>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-8</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/8</topic>
+                    <tagName>tag-8</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- An empty <path> that is NOT the first child leaves the object intact and binds a blank
+             path. It converts; the refusal is at start-up, where a blank path is no path. -->
+        <protocol-adapter>
+            <adapterId>blank-truststore-path</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-9.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <truststore>
+                        <password>pw</password>
+                        <path></path>
+                    </truststore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-9</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/9</topic>
+                    <tagName>tag-9</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- `<allowList/>`: an operator who meant to fill in the path later. Collapses to "". -->
+        <protocol-adapter>
+            <adapterId>collapsed-empty-allow-list</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-3.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecks>SELF_SIGNED</tlsChecks>
+                    <allowList/>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-3</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/3</topic>
+                    <tagName>tag-3</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- The nested element is there but empty, which collapses the same way. -->
+        <protocol-adapter>
+            <adapterId>collapsed-empty-allow-list-path</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-4.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecks>SELF_SIGNED</tlsChecks>
+                    <allowList>
+                        <path></path>
+                    </allowList>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-4</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/4</topic>
+                    <tagName>tag-4</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!--
+          The collapse is positional: it is triggered by the FIRST child element being empty, so an
+          empty axis anywhere else leaves the element an object and the other axes survive.
+        -->
+        <protocol-adapter>
+            <adapterId>empty-later-axis</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-6.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecksFull>
+                        <trustMode>CHAIN</trustMode>
+                        <revocation></revocation>
+                        <hostname>NONE</hostname>
+                    </tlsChecksFull>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-6</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/6</topic>
+                    <tagName>tag-6</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- `<tls/>`: no TLS configuration at all. Collapses to "" and means TLS disabled. -->
+        <protocol-adapter>
+            <adapterId>empty-tls</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-8.factory.local:4840</uri>
+                <tls/>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-8</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/8</topic>
+                    <tagName>tag-8</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing collapsed. This one must convert regardless of what the six above wrote. -->
+        <protocol-adapter>
+            <adapterId>healthy-neighbour</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-5.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecks>ALL</tlsChecks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-5</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/5</topic>
+                    <tagName>tag-5</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+    </protocol-adapters>
+</hivemq>

@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import debug from 'debug'
 import { Editor, useMonaco } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
+import type { MonacoInstance } from './monaco/types'
+// Side effect: binds the loader to the installed Monaco instead of the jsdelivr CDN
+import './monaco/setupMonacoLoader.ts'
 import type { WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +24,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
   const monaco = useMonaco()
   const [isLoaded, setIsLoaded] = useState(false)
   const [isConfigured, setIsConfigured] = useState(false)
+  const [isEditorMounted, setIsEditorMounted] = useState(false)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const isUserEditingRef = useRef(false)
 
@@ -50,13 +54,23 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
    * - Ctrl+H - Find and Replace
    * - Alt+Up/Down - Move line up/down
    */
-  const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
+  const handleEditorMount = (editor: editor.IStandaloneCodeEditor, monacoInstance: MonacoInstance) => {
     editorRef.current = editor
 
-    // Add DataHub custom actions to JavaScript editors
-    if (lng === 'javascript' && monaco) {
+    // Publishes "this editor now reports its changes". @monaco-editor/react creates the editor, then
+    // calls onMount and subscribes to onDidChangeModelContent from two effects of the same commit, in
+    // that order - so a content change made after this state update has rendered is guaranteed to
+    // reach onChange, while one made between create() and that subscription is silently dropped. The
+    // editor is in the DOM, visible and listed by monaco.editor.getEditors() for the whole of that
+    // window, so nothing else distinguishes it; see MonacoEditorPOM.setValue.
+    setIsEditorMounted(true)
+
+    // Add DataHub custom actions to JavaScript editors. The instance comes from the mount callback
+    // rather than the `useMonaco()` state: that state is set from an effect, so it can still be null
+    // when the editor mounts, and the actions would then silently never be registered.
+    if (lng === 'javascript') {
       try {
-        addDataHubActionsToEditor(editor, monaco)
+        addDataHubActionsToEditor(editor, monacoInstance)
         debugLogger('[javascript] DataHub actions added to editor')
       } catch (error) {
         debugLogger('[javascript] Failed to add DataHub actions:', error)
@@ -197,7 +211,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
         props.hideLabel || !props.label
       )}
 
-      <VStack gap={3} alignItems="flex-start" id={props.id}>
+      <VStack gap={3} alignItems="flex-start" id={props.id} data-editor-ready={isEditorMounted || undefined}>
         <Editor
           loading={<LoaderSpinner />}
           height="40vh"
@@ -205,8 +219,8 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           defaultValue={props.value}
           theme={isReadOnly ? 'readOnlyTheme' : 'lightTheme'}
           onChange={handleEditorChange}
-          onMount={(editor) => {
-            handleEditorMount(editor)
+          onMount={(editor, monacoInstance) => {
+            handleEditorMount(editor, monacoInstance)
             debugLogger(`[${lng}] Monaco Editor mounted successfully`)
           }}
           options={editorOptions}

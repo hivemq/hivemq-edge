@@ -307,7 +307,7 @@ export const createPulseNode = (theme: Partial<WithCSSVar<Dict>>, positionStorag
   const nodePulse: NodePulseType = {
     id: NODE_PULSE_AGENT_DEFAULT_ID,
     type: NodeTypes.PULSE_NODE,
-    data: { label: 'Pulse Agent', id: NODE_PULSE_AGENT_DEFAULT_ID },
+    data: { label: 'HiveMQ Platform', id: NODE_PULSE_AGENT_DEFAULT_ID },
     position: positionStorage?.[NODE_PULSE_AGENT_DEFAULT_ID] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x,
       y: POS_EDGE.y - POS_NODE_INC.y - GLUE_SEPARATOR,

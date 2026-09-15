@@ -131,9 +131,9 @@ When the bridge connection to the remote broker is lost:
 
 1. **Connection Monitoring**: The `BridgeMqttClient` detects disconnection via MQTT client listeners
 2. **Automatic Reconnection**: Exponential backoff reconnection strategy is triggered
-   - Initial delay: 1 second
-   - Maximum delay: 2 minutes
-   - 25% jitter to prevent thundering herd
+   - Initial delay: 1 second, doubling with each consecutive failure
+   - Ceiling: 128 seconds, reached after seven failures and held for every attempt after that
+   - Up to 25% jitter on top, to prevent thundering herd
 3. **Message Buffering**: Messages continue to be queued
 
 ### Two-Level Queueing System

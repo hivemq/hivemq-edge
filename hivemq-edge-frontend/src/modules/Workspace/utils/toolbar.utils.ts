@@ -9,9 +9,7 @@ import { arrayWithSameObjects } from './combiner.utils'
  * Type representing nodes that can be combined (adapters, bridges, pulse agents)
  */
 export type CombinerEligibleNode =
-  | Node<Adapter, NodeTypes.ADAPTER_NODE>
-  | Node<Bridge, NodeTypes.BRIDGE_NODE>
-  | NodePulseType
+  Node<Adapter, NodeTypes.ADAPTER_NODE> | Node<Bridge, NodeTypes.BRIDGE_NODE> | NodePulseType
 
 /**
  * Checks if a node is eligible to be part of a combiner based on its type and capabilities
@@ -25,7 +23,7 @@ export const isNodeCombinerCandidate = (node: Node, adapterTypes?: ProtocolAdapt
     return protocol?.capabilities?.includes('COMBINE') ?? false
   }
 
-  return node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.PULSE_NODE
+  return node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.PULSE_NODE || node.type === NodeTypes.EDGE_NODE
 }
 
 /**
@@ -33,7 +31,10 @@ export const isNodeCombinerCandidate = (node: Node, adapterTypes?: ProtocolAdapt
  * @param nodes - Array of eligible nodes to convert to entity references
  * @returns Array of EntityReference objects with proper types and IDs
  */
-export const buildEntityReferencesFromNodes = (nodes: CombinerEligibleNode[]): EntityReference[] => {
+export const buildEntityReferencesFromNodes = (
+  nodes: CombinerEligibleNode[],
+  includeEdgeBroker = false
+): EntityReference[] => {
   const references = nodes.map<EntityReference>((node) => {
     const getType = () => {
       if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
@@ -47,8 +48,9 @@ export const buildEntityReferencesFromNodes = (nodes: CombinerEligibleNode[]): E
     }
   })
 
-  // Always add the edge broker as the last reference
-  references.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
+  if (includeEdgeBroker) {
+    references.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
+  }
 
   return references
 }

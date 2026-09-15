@@ -23,11 +23,11 @@ jobs:
           echo "selected_github_ref=${workflow_call_github_ref:-${{ github.ref_name }}}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: 'temurin'
           java-version: |
-            21
+            25
 
       - uses: hivemq/hivemq-checkout-composite-action@26f72bf9994a1e9091f035e7b0bef787d82bad83 # v1
         with:
@@ -36,29 +36,37 @@ jobs:
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
       - name: Setup Snyk
-        uses: snyk/actions/setup@master
+        uses: snyk/actions/setup@8e119fbb6c251787721d34ba683ed48eba792766 # master
 
       - name: Run Snyk monitor
         shell: bash
         run: >
           snyk monitor --configuration-matching=^runtimeClasspath$ --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
           --project-name=hivemq-edge --remote-repo-url=hivemq-edge --project-lifecycle=development -d
-          --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++~~Selected~~,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\""
           hivemq-edge/hivemq-edge -- --stacktrace
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '20.13.1'
+          node-version: '24.16.0'
+
+      # Snyk only needs pnpm-lock.yaml (overrides are already resolved into it). When a
+      # pnpm-workspace.yaml sits next to the lockfile, the Snyk pnpm plugin treats the dir
+      # as a workspace and refuses to scan unless --all-projects is passed, but that flag
+      # cannot be combined with --project-name (SNYK-CLI-0004), and --project-name is what
+      # names this project in the Snyk dashboard. Removing the (settings-only) workspace
+      # file from this throwaway CI checkout lets Snyk auto-detect the single pnpm project
+      # again. Same treatment as snyk-pr.yml.
+      - name: Hide pnpm-workspace.yaml from the Snyk pnpm scan
+        run: rm -f hivemq-edge/hivemq-edge-frontend/pnpm-workspace.yaml
 
       - name: Run Snyk Frontend monitor
         shell: bash
         run: >
-          snyk monitor --file=pnpm-lock.yaml --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
+          snyk monitor --target-reference=${{ steps.select_github_ref.outputs.selected_github_ref }} --org=hivemq-edge
           --project-name=hivemq-edge-frontend --remote-repo-url=hivemq-edge-frontend --project-lifecycle=development -d
-          --project-tags="\"kanbanize_board_name=Edge,kanbanize_board_workflow_name=Development++Workflow,kanbanize_board_column_name=Requested++~~Selected~~,kanbanize_board_swimlane=Expedite,kanbanize_board_done_sections=4/5\""
           hivemq-edge/hivemq-edge-frontend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

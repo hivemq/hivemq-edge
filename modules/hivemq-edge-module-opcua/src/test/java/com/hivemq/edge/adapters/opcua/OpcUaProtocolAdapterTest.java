@@ -21,7 +21,11 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.discovery.NodeTree;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -41,6 +45,9 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -115,6 +122,15 @@ public class OpcUaProtocolAdapterTest {
         // Create adapter
         adapter = new OpcUaProtocolAdapter(adapterInformation, input);
 
+        final List<ProtocolAdapterState.ConnectionStatus> statusTransitions = new CopyOnWriteArrayList<>();
+        final AtomicReference<Boolean> browseReadyAtConnected = new AtomicReference<>();
+        ((ProtocolAdapterStateImpl) protocolAdapterState).setConnectionStatusListener(status -> {
+            statusTransitions.add(status);
+            if (status == ProtocolAdapterState.ConnectionStatus.CONNECTED) {
+                browseReadyAtConnected.set(adapter != null && adapter.isBrowseReady());
+            }
+        });
+
         // Mock module services for start
         final ModuleServices moduleServices = mock(ModuleServices.class);
         when(moduleServices.eventService()).thenReturn(eventService);
@@ -127,7 +143,7 @@ public class OpcUaProtocolAdapterTest {
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
 
         // Act - Start the adapter
-        adapter.start(startInput, startOutput);
+        adapter.start(ProtocolAdapterConnectionDirection.Northbound, startInput, startOutput);
 
         // Assert - Wait for connection to be established
         await().untilAsserted(() -> {
@@ -135,11 +151,233 @@ public class OpcUaProtocolAdapterTest {
                     .as("Adapter should be connected")
                     .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         });
+        assertThat(statusTransitions)
+                .as("an asynchronous start must remain CONNECTING until its client is usable")
+                .containsSubsequence(
+                        ProtocolAdapterState.ConnectionStatus.DISCONNECTED,
+                        ProtocolAdapterState.ConnectionStatus.CONNECTING,
+                        ProtocolAdapterState.ConnectionStatus.CONNECTED);
+        assertThat(browseReadyAtConnected)
+                .as("CONNECTED and browse readiness must be one public boundary")
+                .hasValue(true);
 
         // Verify no error events were fired
         assertThat(eventService.readEvents(null, null))
                 .as("No error events should be recorded on successful connection")
                 .noneMatch(event -> "ERROR".equals(event.getSeverity().name()));
+    }
+
+    /**
+     * EDG-891 P1. {@code start()} returns before the connection has been attempted, so the status it
+     * leaves behind is what a status consumer sees during the whole handshake — including certificate
+     * validation. It must not be {@code DISCONNECTED}: {@code ProtocolAdapterWrapper#startNorthbound}
+     * promotes a still-{@code DISCONNECTED} adapter to {@code CONNECTED} the moment {@code start()}
+     * returns, which would report a healthy adapter for a server that has not been reached.
+     */
+    @Test
+    @Timeout(120)
+    void whenStartReturns_thenStatusIsConnecting_notDisconnected() {
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final OpcuaTag tag = new OpcuaTag(
+                "testTag",
+                "Test tag",
+                new OpcuaTagDefinition(
+                        "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
+
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
+        adapter = new OpcUaProtocolAdapter(adapterInformation, createMockedInput(config, List.of(tag)));
+
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(eventService);
+        when(moduleServices.protocolAdapterTagStreamingService())
+                .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
+        final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
+        when(startInput.moduleServices()).thenReturn(moduleServices);
+
+        // Asserted on the sequence of transitions rather than on a sample taken after start() returns:
+        // against a fast server the connection can complete before any sample is read, which would let
+        // this pass whatever start() published. The listener sees every change in order.
+        final List<ProtocolAdapterState.ConnectionStatus> transitions = new CopyOnWriteArrayList<>();
+        ((ProtocolAdapterStateImpl) protocolAdapterState).setConnectionStatusListener(transitions::add);
+        transitions.clear(); // registering the listener replays the current status
+
+        adapter.start(
+                ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
+
+        await().atMost(Duration.ofSeconds(60))
+                .untilAsserted(() -> assertThat(transitions).isNotEmpty());
+
+        assertThat(transitions.get(0))
+                .as("the first thing start() publishes must be CONNECTING; leaving the status at "
+                        + "DISCONNECTED is what ProtocolAdapterWrapper promotes to CONNECTED before "
+                        + "the handshake, and certificate validation, have happened")
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTING);
+    }
+
+    /**
+     * Against a server that cannot be reached, the adapter must never report {@code CONNECTED}. Before
+     * the fix the wrapper's promotion produced exactly that, which is what made two of the EDG-883
+     * adversarial results false positives.
+     */
+    @Test
+    @Timeout(120)
+    void whenServerUnreachable_thenStatusNeverBecomesConnected() {
+        // Port 1 is reserved and never serves OPC UA, so the connection cannot succeed.
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                "opc.tcp://127.0.0.1:1/unreachable",
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final OpcuaTag tag = new OpcuaTag("testTag", "Test tag", new OpcuaTagDefinition("ns=1;i=10"));
+
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
+        adapter = new OpcUaProtocolAdapter(adapterInformation, createMockedInput(config, List.of(tag)));
+
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(eventService);
+        when(moduleServices.protocolAdapterTagStreamingService())
+                .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
+        final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
+        when(startInput.moduleServices()).thenReturn(moduleServices);
+
+        final List<ProtocolAdapterState.ConnectionStatus> observed = new CopyOnWriteArrayList<>();
+        final AtomicBoolean sampling = new AtomicBoolean(true);
+        final Thread sampler = new Thread(() -> {
+            while (sampling.get()) {
+                observed.add(protocolAdapterState.getConnectionStatus());
+                Thread.onSpinWait();
+            }
+        });
+        sampler.start();
+
+        adapter.start(
+                ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
+
+        await().atMost(Duration.ofSeconds(30))
+                .untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                        .isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR));
+        sampling.set(false);
+        try {
+            sampler.join(Duration.ofSeconds(10).toMillis());
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        assertThat(observed)
+                .as("no sample may report CONNECTED for a server that was never reached")
+                .doesNotContain(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+    }
+
+    /** Starts an adapter against the embedded server and waits until its client is usable. */
+    private @NotNull OpcUaProtocolAdapter startAdapterAgainstEmbeddedServer() {
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                null,
+                new OpcUaToMqttConfig(1, 1000),
+                null,
+                null);
+        final OpcuaTag tag = new OpcuaTag(
+                "testTag",
+                "Test tag",
+                new OpcuaTagDefinition(
+                        "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
+
+        final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
+        when(adapterInformation.getProtocolId()).thenReturn("opcua");
+
+        adapter = new OpcUaProtocolAdapter(adapterInformation, createMockedInput(config, List.of(tag)));
+
+        final ModuleServices moduleServices = mock(ModuleServices.class);
+        when(moduleServices.eventService()).thenReturn(eventService);
+        when(moduleServices.protocolAdapterTagStreamingService())
+                .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
+        final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
+        when(startInput.moduleServices()).thenReturn(moduleServices);
+
+        adapter.start(
+                ProtocolAdapterConnectionDirection.Northbound, startInput, mock(ProtocolAdapterStartOutput.class));
+
+        await().untilAsserted(() -> assertThat(protocolAdapterState.getConnectionStatus())
+                .isEqualTo(ProtocolAdapterState.ConnectionStatus.CONNECTED));
+        return adapter;
+    }
+
+    /**
+     * A browse that names no root means "start from the top", which for OPC-UA is the Objects folder (i=85).
+     * It used to fail outright, so the plain "show me this server" call returned a 500 with nothing to indicate
+     * that a root was the missing ingredient — every caller had to know to pass i=85 itself.
+     */
+    @Test
+    @Timeout(120)
+    void whenDiscoveryHasNoRootNode_thenItBrowsesFromTheObjectsFolder() throws Exception {
+        final OpcUaProtocolAdapter startedAdapter = startAdapterAgainstEmbeddedServer();
+
+        final List<String> failures = new ArrayList<>();
+        final AtomicBoolean finished = new AtomicBoolean();
+        final List<String> discovered = new CopyOnWriteArrayList<>();
+        final NodeTree nodeTree = (id, name, value, description, parentId, nodeType, selectable) -> discovered.add(id);
+
+        startedAdapter.discoverValues(
+                new ProtocolAdapterDiscoveryInput() {
+                    @Override
+                    public @Nullable String getRootNode() {
+                        return null; // the case under test
+                    }
+
+                    @Override
+                    public int getDepth() {
+                        return 1;
+                    }
+                },
+                new ProtocolAdapterDiscoveryOutput() {
+                    @Override
+                    public @NotNull NodeTree getNodeTree() {
+                        return nodeTree;
+                    }
+
+                    @Override
+                    public void finish() {
+                        finished.set(true);
+                    }
+
+                    @Override
+                    public void fail(final @NotNull Throwable t, final @Nullable String errorMessage) {
+                        failures.add(String.valueOf(errorMessage));
+                    }
+
+                    @Override
+                    public void fail(final @NotNull String errorMessage) {
+                        failures.add(errorMessage);
+                    }
+                });
+
+        await().untilAsserted(() -> assertThat(finished.get() || !failures.isEmpty())
+                .as("discovery must complete one way or the other")
+                .isTrue());
+
+        assertThat(failures)
+                .as("a browse with no root must not fail — it defaults to the Objects folder")
+                .isEmpty();
+        assertThat(discovered)
+                .as("browsing from the Objects folder must return the server's top-level objects")
+                .isNotEmpty();
     }
 
     @Test
@@ -190,7 +428,7 @@ public class OpcUaProtocolAdapterTest {
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
 
         // Act - Start the adapter (will fail to subscribe due to invalid node IDs)
-        adapter.start(startInput, startOutput);
+        adapter.start(ProtocolAdapterConnectionDirection.Northbound, startInput, startOutput);
 
         Thread.sleep(5000);
 
@@ -267,7 +505,7 @@ public class OpcUaProtocolAdapterTest {
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
 
         // Act - Start the adapter (will fail to connect)
-        adapter.start(startInput, startOutput);
+        adapter.start(ProtocolAdapterConnectionDirection.Northbound, startInput, startOutput);
 
         // Assert - Connection should fail and remain in ERROR state
         await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {

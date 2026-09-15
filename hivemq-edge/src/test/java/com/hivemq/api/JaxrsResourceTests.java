@@ -43,7 +43,9 @@ public class JaxrsResourceTests {
 
     protected final Logger logger = LoggerFactory.getLogger(JaxrsResourceTests.class);
 
-    static final int TEST_HTTP_PORT = RandomPortGenerator.get();
+    // A random free port, so that tests running in parallel do not conflict. A conflict would surface
+    // as a ProcessingException out of startServer(), logged as "The port ... is already in use".
+    static int testHttpPort;
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
     static final String HTTP = "http";
@@ -53,8 +55,9 @@ public class JaxrsResourceTests {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        testHttpPort = RandomPortGenerator.get();
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
-        config.setPort(TEST_HTTP_PORT);
+        config.setPort(testHttpPort);
         config.addResourceClasses(TestApiResource.class);
         // -- ensure we supplied our own test mapper as this can effect output
         final ObjectMapper mapper = new ObjectMapper();
@@ -70,7 +73,7 @@ public class JaxrsResourceTests {
 
     protected static String getTestServerAddress(final @NotNull String uri) {
         return String.format(
-                "%s://%s:%s/%s", JaxrsResourceTests.HTTP, "localhost", JaxrsResourceTests.TEST_HTTP_PORT, uri);
+                "%s://%s:%s/%s", JaxrsResourceTests.HTTP, "localhost", JaxrsResourceTests.testHttpPort, uri);
     }
 
     @Test

@@ -173,6 +173,30 @@ export class WorkspacePage extends ShellPage {
     return cy.get(`[role="group"][data-id="${id}"]`)
   }
 
+  /**
+   * Waits for the canvas to be ready, fits all nodes into the viewport, and optionally
+   * confirms a specific node is visible after the fit animation completes.
+   *
+   * ReactFlow positions nodes using JS-driven transforms. On initial load, nodes may be
+   * positioned outside the visible canvas viewport and appear clipped (overflow:hidden).
+   * Always call this before asserting node visibility or interacting with specific nodes.
+   *
+   * When `nodeToConfirm` is provided, the post-fit `.should('be.visible')` check serves a
+   * dual purpose: (1) it confirms the node entered the viewport after the fitView animation,
+   * and (2) its retry loop gives React time to flush the `ReactFlowWrapper.useEffect` that
+   * syncs nodes into the Zustand store — which `findExistingCombiner` reads from.
+   *
+   * @param nodeToConfirm - optional data-id of a node that must be visible after fitting
+   *   (e.g. a combiner node loaded async from an API response on page load).
+   */
+  fitCanvas(nodeToConfirm?: string) {
+    this.canvas.should('be.visible')
+    this.toolbox.fit.click()
+    if (nodeToConfirm) {
+      cy.get(`[role="group"][data-id="${nodeToConfirm}"]`).should('be.visible')
+    }
+  }
+
   combinerNodeContent(id: string) {
     return {
       get title() {

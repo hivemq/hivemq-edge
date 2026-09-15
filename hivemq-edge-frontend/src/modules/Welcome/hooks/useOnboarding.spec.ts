@@ -41,7 +41,7 @@ describe('useOnboarding()', () => {
       expect.arrayContaining([expect.objectContaining({ to: 'https://hivemq.com/cloud' })])
     )
 
-    expect(pulse).toStrictEqual(expect.objectContaining({ header: 'Connect to HiveMQ Pulse' }))
+    expect(pulse).toStrictEqual(expect.objectContaining({ header: 'Connect to HiveMQ Platform' }))
   })
 
   describe('Pulse', () => {
@@ -58,11 +58,11 @@ describe('useOnboarding()', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [_adapter, _bridge, _cloud, pulse] = result.current
 
-      expect(pulse).toStrictEqual(expect.objectContaining({ header: 'Connect to HiveMQ Pulse' }))
+      expect(pulse).toStrictEqual(expect.objectContaining({ header: 'Connect to HiveMQ Platform' }))
       expect(pulse.sections).toStrictEqual([
         expect.objectContaining({
-          label: 'Pulse Activation',
-          title: 'To access the features of HiveMQ Edge Pulse, you need to activate it first.',
+          label: 'HiveMQ Platform Connection',
+          title: 'To access Data Intelligence features, you need to connect with HiveMQ Platform first.',
         }),
       ])
     })
@@ -80,15 +80,15 @@ describe('useOnboarding()', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [_adapter, _bridge, _cloud, pulse] = result.current
 
-      expect(pulse).toStrictEqual(expect.objectContaining({ header: 'Connect to HiveMQ Pulse' }))
+      expect(pulse).toStrictEqual(expect.objectContaining({ header: 'Connect to HiveMQ Platform' }))
       expect(pulse.sections).toStrictEqual([
         expect.objectContaining({
-          label: 'Pulse Activation',
-          title: 'Pulse is currently active.',
+          label: 'HiveMQ Platform Connection',
+          title: 'Connected with HiveMQ Platform.',
         }),
         expect.objectContaining({
-          label: 'Manage Pulse Assets',
-          title: 'Use HiveMQ Edge Pulse to manage and publish assets to your HiveMQ Edge',
+          label: 'Manage Assets',
+          title: 'Use HiveMQ Platform to manage and publish assets to your HiveMQ Edge',
         }),
         expect.objectContaining({
           title: 'Stay up-to-date with your asset mappings',

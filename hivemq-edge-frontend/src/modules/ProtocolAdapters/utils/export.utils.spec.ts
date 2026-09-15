@@ -1,4 +1,5 @@
-import { describe, expect, vi } from 'vitest'
+import { beforeEach, describe, expect, vi } from 'vitest'
+import * as XLSX from 'xlsx'
 import {
   adapterExportFormats,
   downloadTableData,
@@ -6,6 +7,14 @@ import {
 } from '@/modules/ProtocolAdapters/utils/export.utils.ts'
 import { ExportFormat } from '@/modules/ProtocolAdapters/types.ts'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+
+// `writeFile` is the one step that touches the outside world. It used to throw 'cannot save file'
+// under the test environment, and these tests leaned on that to assert "something happened"; it now
+// succeeds, so stub it and assert the export itself instead.
+vi.mock('xlsx', async (importOriginal) => ({
+  ...(await importOriginal<typeof XLSX>()),
+  writeFile: vi.fn(),
+}))
 
 describe('formatSheetName', () => {
   it('should return a valid name', () => {
@@ -48,9 +57,12 @@ describe('adapterExportFormats', () => {
     expect(sub.isDisabled?.(mockProtocolAdapter)).toBeFalsy()
     expect(sub.downloader).not.toBeUndefined()
     expect(callback).not.toHaveBeenCalled()
-    // Test the exact error message
-    expect(() => sub.downloader?.('test', '.csv', mockAdapter, mockProtocolAdapter, callback)).toThrowError(
-      /^cannot save file test-(.*)\.csv$/
+    sub.downloader?.('test', '.csv', mockAdapter, mockProtocolAdapter, callback)
+    expect(callback).toHaveBeenCalled()
+    expect(XLSX.writeFile).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringMatching(/^test-(.*)\.csv$/),
+      expect.anything()
     )
   })
 
@@ -80,6 +92,10 @@ describe('adapterExportFormats', () => {
 })
 
 describe('downloadTableData', () => {
+  beforeEach(() => {
+    vi.mocked(XLSX.writeFile).mockClear()
+  })
+
   it('should throw error when no mapping path found', () => {
     const adapterWithoutMappings = {
       ...mockAdapter,
@@ -141,18 +157,28 @@ describe('downloadTableData', () => {
       config: {},
     }
 
-    // This should not throw and should create dummy rows
-    expect(() => downloadTableData('test.xlsx', adapterWithEmptyConfig, mockProtocolAdapter)).toThrow() // Will still throw because of validation or other issues
+    expect(() => downloadTableData('test.xlsx', adapterWithEmptyConfig, mockProtocolAdapter)).not.toThrow()
+    // A single placeholder row, every column blank, so the export still carries the headers
+    const [sheet] = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+      vi.mocked(XLSX.writeFile).mock.calls[0][0].Sheets[
+        vi.mocked(XLSX.writeFile).mock.calls[0][0].SheetNames[0]
+      ] as XLSX.WorkSheet,
+      { defval: '' }
+    )
+    expect(Object.values(sheet ?? {}).every((value) => value === '')).toBe(true)
   })
 
   it('should validate rows against schema', () => {
     const adapterWithInvalidData = {
       ...mockAdapter,
       config: {
-        subscriptions: [{ invalidField: 'value' }],
+        // mqttTopic is declared as a string, so a number fails the generated array schema
+        simulationToMqtt: { simulationToMqttMappings: [{ mqttTopic: 123 }] },
       },
     }
 
-    expect(() => downloadTableData('test.xlsx', adapterWithInvalidData, mockProtocolAdapter)).toThrow()
+    expect(() => downloadTableData('test.xlsx', adapterWithInvalidData, mockProtocolAdapter)).toThrow(
+      'protocolAdapter.export.error.notValid'
+    )
   })
 })

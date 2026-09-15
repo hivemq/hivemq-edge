@@ -22,6 +22,7 @@ import static com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.NO_USER_PROPERTI
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
@@ -34,8 +35,11 @@ import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.TreeSet;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import util.TestMessageUtil;
 
 /**
@@ -1384,5 +1388,114 @@ public class Mqtt5PublishEncoderTest extends AbstractMqtt5EncoderTest {
         assertEquals(0, buf.readableBytes());
 
         expected.release();
+    }
+
+    @Test
+    public void test_encode_expiryInterval_fourByteMaximum_isEncodedInFull() {
+        // EDG-811: the guard against out-of-range intervals has to start one above the four-byte maximum, not
+        // at it. 2^32-1 is the largest interval MQTT can carry and must still go out as four bytes.
+        final byte[] expected = {
+            // fixed header
+            //   type, flags
+            0b0011_0000,
+            //   remaining length
+            20,
+            // variable header
+            //   topic name
+            0,
+            5,
+            't',
+            'o',
+            'p',
+            'i',
+            'c',
+            //   properties
+            7,
+            //     message expiry interval
+            0x02,
+            (byte) 0xFF,
+            (byte) 0xFF,
+            (byte) 0xFF,
+            (byte) 0xFF,
+            //     payload format indicator
+            0x01,
+            0,
+            // payload
+            1,
+            2,
+            3,
+            4,
+            5
+        };
+
+        encodeTestBufferSize(expected, publishWithExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX));
+    }
+
+    /**
+     * EDG-811: an interval that does not fit in four bytes has no encoding, so the property is dropped
+     * instead of being truncated to its low 32 bits — 2^40 used to go out as 0, "expire immediately".
+     * <p>
+     * These assertions also pin the invariant that broke this branch once already: {@code encodeTestBufferSize}
+     * checks the exact byte sequence and that nothing is left unread, so a property length that disagrees with
+     * the bytes actually written fails here rather than in production as a protocol error.
+     */
+    @ParameterizedTest
+    @ValueSource(
+            longs = {
+                MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT,
+                PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET,
+                1L << 40,
+                JavaScriptConstants.JS_MAX_SAFE_INTEGER
+            })
+    public void test_encode_expiryInterval_outOfRange_isOmitted(final long messageExpiryInterval) {
+        final byte[] expected = {
+            // fixed header
+            //   type, flags
+            0b0011_0000,
+            //   remaining length
+            15,
+            // variable header
+            //   topic name
+            0,
+            5,
+            't',
+            'o',
+            'p',
+            'i',
+            'c',
+            //   properties — no message expiry interval
+            2,
+            //     payload format indicator
+            0x01,
+            0,
+            // payload
+            1,
+            2,
+            3,
+            4,
+            5
+        };
+
+        encodeTestBufferSize(expected, publishWithExpiryInterval(messageExpiryInterval));
+    }
+
+    private @NotNull PUBLISH publishWithExpiryInterval(final long messageExpiryInterval) {
+        return TestMessageUtil.createMqtt5Publish(
+                hiveMQId.get(),
+                "topic",
+                new byte[] {1, 2, 3, 4, 5},
+                QoS.AT_MOST_ONCE,
+                QoS.AT_MOST_ONCE,
+                false,
+                messageExpiryInterval,
+                Mqtt5PayloadFormatIndicator.UNSPECIFIED,
+                null,
+                null,
+                null,
+                NO_USER_PROPERTIES,
+                -1,
+                false,
+                true,
+                null);
     }
 }

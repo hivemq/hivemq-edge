@@ -58,8 +58,8 @@ public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterC
 
     @JsonProperty("maxValue")
     @ModuleConfigField(
-            title = "Max. Generated Value (Excl.)",
-            description = "Maximum value of the generated decimal number (excluded)",
+            title = "Max. Generated Value",
+            description = "Maximum value of the generated decimal number",
             numberMax = 1000,
             defaultValue = "1000")
     private final int maxValue;

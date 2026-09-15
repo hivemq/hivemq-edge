@@ -3,7 +3,8 @@ group = "com.hivemq"
 plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
-    id("io.github.sgtsilvio.gradle.oci") version "0.25.0"
+    id("com.hivemq.tools.oci-version-catalog") version "0.4.0"
+    id("io.github.sgtsilvio.gradle.oci") version "0.28.0"
     id("jacoco")
 }
 
@@ -24,13 +25,19 @@ tasks.register("clean") {
 tasks.register("build") {
     group = "build"
 
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("license") {
     group = "license"
 
     dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":updateThirdPartyLicenses") })
+}
+
+tasks.register("checkApprovedLicenses") {
+    group = "checkApprovedLicenses"
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":checkApprovedLicenses") })
 }
 
 tasks.register("check") {
@@ -118,6 +125,7 @@ dependencies {
     hivemq("com.hivemq:hivemq-edge")
     // ** module-deps ** //
     edgeModule("com.hivemq:hivemq-edge-module-etherip")
+    edgeModule("com.hivemq:hivemq-edge-module-etherip-cip-odva")
     edgeModule("com.hivemq:hivemq-edge-module-file")
     edgeModule("com.hivemq:hivemq-edge-module-http")
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
@@ -150,6 +158,7 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
 val edgeProjectsToUpdate = setOf(
     "hivemq-edge",
     "hivemq-edge-module-etherip",
+    "hivemq-edge-module-etherip-cip-odva",
     "hivemq-edge-module-file",
     "hivemq-edge-module-http",
     "hivemq-edge-module-modbus",

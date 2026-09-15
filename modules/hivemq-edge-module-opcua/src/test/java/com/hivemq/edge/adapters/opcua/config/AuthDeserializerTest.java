@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
@@ -79,12 +80,21 @@ class AuthDeserializerTest {
     }
 
     @Test
-    void deserialize_mapWithUnrelatedFields_ignoresThemAndReturnsNullAuth() throws Exception {
-        final String json = "{\"someOtherField\":\"value\"}";
-        final Auth auth = mapper.readValue(json, Auth.class);
-        assertThat(auth).isNotNull();
-        assertThat(auth.basicAuth()).isNull();
-        assertThat(auth.x509Auth()).isNull();
+    void deserialize_misspelledBasic_isRejectedNamingTheEntryAndTheKnownOnes() {
+        // <basc> is not <basic>. This deserializer reads a raw map, so the application-wide
+        // unknown-setting handling never sees the entry - without the rejection the credentials
+        // would be dropped and the adapter would connect anonymously.
+        assertThatThrownBy(() -> mapper.readValue(
+                        "{\"basc\":{\"username\":\"testuser\",\"password\":\"testpass\"}}", Auth.class))
+                .hasMessageContaining("'basc'")
+                .hasMessageContaining("basic, x509");
+    }
+
+    @Test
+    void deserialize_misspelledX509_isRejectedNamingTheEntryAndTheKnownOnes() {
+        assertThatThrownBy(() -> mapper.readValue("{\"x059\":{\"enabled\":true}}", Auth.class))
+                .hasMessageContaining("'x059'")
+                .hasMessageContaining("basic, x509");
     }
 
     @Test

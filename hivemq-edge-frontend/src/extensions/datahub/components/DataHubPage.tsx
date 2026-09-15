@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { Box, Flex } from '@chakra-ui/react'
 
 import { Capability } from '@/api/__generated__'

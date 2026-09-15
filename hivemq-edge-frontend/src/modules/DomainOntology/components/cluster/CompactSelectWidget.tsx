@@ -1,13 +1,20 @@
 import type { ComponentType, FC } from 'react'
 import { useCallback, useMemo } from 'react'
-import type { WidgetProps } from '@rjsf/utils'
+import type { EnumOptionsType, RJSFSchema, WidgetProps } from '@rjsf/utils'
 import { labelValue } from '@rjsf/utils'
 import { getChakra } from '@/components/rjsf/utils/getChakra'
-import type { OnChangeValue, OptionProps } from 'chakra-react-select'
+import type { GroupBase, OnChangeValue, OptionProps } from 'chakra-react-select'
 import { chakraComponents, Select } from 'chakra-react-select'
 import { FormControl, FormLabel, HStack, Text } from '@chakra-ui/react'
 
-const Option: ComponentType<OptionProps> = ({ children, ...props }) => {
+// React 19's stricter component typing no longer lets a loosely-typed Option through, so it has to
+// be declared over the same option type `Select` infers from `props.options.enumOptions`.
+type CompactOption = EnumOptionsType<RJSFSchema>
+
+const Option: ComponentType<OptionProps<CompactOption, boolean, GroupBase<CompactOption>>> = ({
+  children,
+  ...props
+}) => {
   return (
     <chakraComponents.Option {...props}>
       <HStack flexWrap="nowrap">

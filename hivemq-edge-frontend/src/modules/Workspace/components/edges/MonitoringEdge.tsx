@@ -9,7 +9,7 @@ import { useGetPoliciesMatching } from '@/modules/Workspace/hooks/useGetPolicies
 
 import { DataHubNodeType } from '@datahub/types.ts'
 import { HStack } from '@chakra-ui/react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 const MonitoringEdge: FC<EdgeProps> = (props) => {
   const { id, source, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, markerEnd, style } = props

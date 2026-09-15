@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { FC, ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type UseDisclosureProps,
@@ -20,7 +20,7 @@ import { TagSchemaPanel } from './TagSchemaPanel'
 interface TopicSchemaDrawerProps {
   tag: DomainTag
   adapterId: string
-  trigger: (disclosureProps: UseDisclosureProps) => JSX.Element
+  trigger: (disclosureProps: UseDisclosureProps) => ReactElement
 }
 
 const TagSchemaDrawer: FC<TopicSchemaDrawerProps> = ({ tag, adapterId, trigger }) => {

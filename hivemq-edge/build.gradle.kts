@@ -44,6 +44,7 @@ plugins {
     id("com.hivemq.spotless-convention")
     id("com.hivemq.errorprone-convention")
     id("com.hivemq.nullaway-convention")
+    id("com.hivemq.test-ordering-convention")
 }
 
 group = "com.hivemq"
@@ -109,7 +110,7 @@ val javadocLinksClasspath: Configuration by configurations.creating {
             objects.named(LibraryElements::class.java, LibraryElements.JAR)
         )
         attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling::class.java, Bundling.EXTERNAL))
-        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
     }
 }
 
@@ -121,7 +122,7 @@ tasks.javadocLinks {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
     withJavadocJar()
     withSourcesJar()
@@ -151,6 +152,7 @@ dependencies {
     implementation(libs.logback.classic)
 
     // security
+    implementation(platform(libs.bouncycastle.bom))
     implementation(libs.bouncycastle.prov)
     implementation(libs.bouncycastle.pkix)
 
@@ -158,10 +160,17 @@ dependencies {
     implementation(platform(libs.kotlin.bom))
     constraints {
         implementation(libs.apache.commons.compress)
+        // victools 5 pulls in Jackson 3 (tools.jackson) 3.0.3, which has known CVEs; force safe versions
+        implementation(libs.jackson3.core)
+        implementation(libs.jackson3.databind)
+    }
+
+    // victools 5 also pulls in classmate 1.7.2 transitively; take the latest patch (EDG-902)
+    constraints {
+        implementation(libs.classmate)
     }
 
     // config
-    implementation(libs.jaxb2.impl)
     implementation(libs.jaxb4.impl)
     implementation(libs.jaxb4.bind)
 
@@ -193,8 +202,6 @@ dependencies {
     implementation(libs.zeroallocationhashing)
     implementation(libs.jctools)
 
-    // mqtt-sn codec
-    implementation(libs.mqtt.sn.codec)
     implementation(libs.hivemq.mqtt.client)
 
     // JAX-RS + Http Connector + Serializers
@@ -219,6 +226,9 @@ dependencies {
     // JWT
     implementation(libs.jose4j)
 
+    // OIDC (OpenID Connect authentication — discovery, code exchange, ID token validation)
+    implementation(libs.nimbus.oauth2.oidc.sdk)
+
     // LDAP
     implementation(libs.unboundid.ldap.sdk)
 
@@ -236,6 +246,7 @@ dependencies {
 
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
+    compileOnly("com.hivemq:hivemq-edge-module-etherip-cip-odva")
     compileOnly("com.hivemq:hivemq-edge-module-plc4x")
     compileOnly("com.hivemq:hivemq-edge-module-http")
     compileOnly("com.hivemq:hivemq-edge-module-modbus")
@@ -270,8 +281,11 @@ dependencies {
     testAnnotationProcessor(libs.dagger.compiler)
 
     testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit)
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Compile-time, not runtime-only: util.ForkAttributionListener implements TestExecutionListener
+    // from this artifact (EDG-930).
+    testImplementation("org.junit.platform:junit-platform-launcher")
 
     testImplementation(libs.mockito.junit.jupiter)
 
@@ -285,12 +299,27 @@ dependencies {
     testImplementation(libs.awaitility)
     testImplementation(libs.assertj)
     testImplementation(libs.systemstubs)
-    testImplementation(libs.testcontainers)
-    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.jimfs)
 }
 
 tasks.test {
     useJUnitPlatform()
+    // Run the unit tests in parallel JVMs, one per 2 cores, overridable with -PunitTestForks=N.
+    // Same formula as the integration suite, so there is one rule rather than two to keep straight.
+    maxParallelForks = (project.findProperty("unitTestForks") as String?)?.toIntOrNull()
+        ?: (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+
+    // The records that say which JVM ran which class go to the CONSOLE and nowhere else (EDG-930,
+    // EDG-990). Gradle merges the parallel forks' output into one stream and the JUnit XML carries a
+    // hostname rather than a process, so without them nothing says how the classes were distributed --
+    // but each record names its own process and its own time, so one build log is the whole account:
+    //
+    //   ./gradlew test | tee /tmp/run.log
+    //   ../jenkins-report/bin/edge_report.py /tmp/run.log --timings gradle/test-class-timings.csv
+    //
+    // The convention plugin turns the fork's own stdout off and re-prints only these lines, so the log
+    // carries roughly 1500 of them rather than the half million it used to.
+
     minHeapSize = "128m"
     maxHeapSize = "2048m"
     jvmArgs(
@@ -322,7 +351,17 @@ tasks.test {
     }
 
     testLogging {
-        events = setOf(TestLogEvent.STARTED, TestLogEvent.FAILED)
+        // EDG-855: PASSED and SKIPPED matter as much as STARTED and FAILED. Without them a passing test
+        // logs when it began and never when it finished, so per-class durations cannot be derived from the
+        // console log — and this is the composite's largest unit-test project (~500 classes). Every other
+        // test project already logs the full set; this one was the gap.
+        events =
+            setOf(
+                TestLogEvent.STARTED,
+                TestLogEvent.PASSED,
+                TestLogEvent.SKIPPED,
+                TestLogEvent.FAILED
+            )
         exceptionFormat = TestExceptionFormat.FULL
     }
 }
@@ -394,6 +433,12 @@ tasks.named("sourcesJar") {
 }
 
 tasks.shadowJar {
+    // ShadowJar defaults its duplicatesStrategy to EXCLUDE, and that filtering runs before
+    // mergeServiceFiles() below, so without this override the merge never sees a second copy: only
+    // the first META-INF/services file of a given name reaches the jar and every other provider is
+    // dropped silently. The override is scoped to service files, so every other duplicated resource
+    // still lands in the jar exactly once.
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     mergeServiceFiles()
     from(frontendBinary) {
         into("httpd")
@@ -468,7 +513,7 @@ tasks.forbiddenApisTest { enabled = false }
 
 hivemqLicense {
     projectName.set("HiveMQ Edge")
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
     ignoredGroupPrefixes.addAll("com.hivemq", "com.github.saasquatch")
 }
 

@@ -8,7 +8,13 @@ import { OperationalStatus, RuntimeStatus, type NodeStatusModel } from '../types
  * Logic:
  * - ERROR if runtime is STOPPED or connection is ERROR
  * - ACTIVE if runtime is STARTED and connection is CONNECTED or STATELESS
- * - INACTIVE for all other cases (DISCONNECTED, UNKNOWN, etc.)
+ * - INACTIVE for all other cases (DISCONNECTED, CONNECTING, UNKNOWN, etc.)
+ *
+ * CONNECTING lands in INACTIVE, which is the right of the three: the adapter is not carrying data yet, and
+ * it is not in error either. The model has no in-progress tier and inventing one would ripple through every
+ * badge, colour and edge animation that consumes it — a design change rather than a correctness fix. What
+ * matters here is that it is not ERROR, which is where it would land if it were ever folded in with the
+ * genuinely unknown.
  *
  * @param status - The Status object from adapter or bridge
  * @returns Unified RuntimeStatus

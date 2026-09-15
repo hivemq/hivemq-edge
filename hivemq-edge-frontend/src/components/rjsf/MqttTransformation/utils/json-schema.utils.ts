@@ -47,12 +47,20 @@ export interface FlatJSONSchema7 extends Omit<JSONSchema7, 'required'> {
   required?: boolean
 }
 
+/**
+ * `readOnly` is inherited: a read-only container cannot be written, so nothing below it can be either, and
+ * JSON Schema does not require the flag to be repeated on every leaf. Callers that use `readOnly` to decide
+ * what may be a write destination need the *effective* value, so it is resolved here while flattening rather
+ * than left to each consumer. Schemas reaching this function are not only Edge-generated — the combiner
+ * accepts uploaded and inferred schemas, where an unrepeated flag is the norm rather than the exception.
+ */
 export const getProperty = (
   key: string,
   path: string[],
   property: JSONSchema7Definition,
   definitions: { [p: string]: JSONSchema7Definition } | undefined,
-  parentRequired: string[] = []
+  parentRequired: string[] = [],
+  parentReadOnly = false
 ): FlatJSONSchema7[] => {
   let tempProperty = property
 
@@ -81,6 +89,8 @@ export const getProperty = (
   // Check if this property is in the parent's required array
   const isRequired = parentRequired.includes(key)
 
+  const effectiveReadOnly = parentReadOnly || (tempProperty as JSONSchema7).readOnly === true
+
   const mainProps: FlatJSONSchema7 = {
     // internal properties
     key,
@@ -94,6 +104,8 @@ export const getProperty = (
     ...(isRequired && { required: true }),
     // other valid properties
     ...validProperties,
+    // inherited from an ancestor, so it must override the (possibly absent) own flag in validProperties
+    ...(effectiveReadOnly && { readOnly: true }),
   }
 
   const subProperties: FlatJSONSchema7[] = []
@@ -102,7 +114,9 @@ export const getProperty = (
     const { properties, required: objectRequired } = tempProperty as JSONSchema7
     if (properties) {
       for (const [subKey, subProp] of Object.entries(properties)) {
-        subProperties.push(...getProperty(subKey, [...path, key], subProp, definitions, objectRequired))
+        subProperties.push(
+          ...getProperty(subKey, [...path, key], subProp, definitions, objectRequired, effectiveReadOnly)
+        )
       }
     }
   } else if (type === 'array') {

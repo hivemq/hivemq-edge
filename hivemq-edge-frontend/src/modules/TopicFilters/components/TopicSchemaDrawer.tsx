@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { FC, ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { UseDisclosureProps } from '@chakra-ui/react'
 import {
@@ -23,7 +23,7 @@ import TopicSchemaManager from '@/modules/TopicFilters/components/TopicSchemaMan
 
 interface TopicSchemaDrawerProps {
   topicFilter: TopicFilter
-  trigger: (disclosureProps: UseDisclosureProps) => JSX.Element
+  trigger: (disclosureProps: UseDisclosureProps) => ReactElement
 }
 
 // TODO[NVL] Too similar to ArrayItemDrawer; combine?

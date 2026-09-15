@@ -1,5 +1,6 @@
 import { lazy } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router'
+import * as Sentry from '@sentry/react'
 
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 import Dashboard from '@/modules/Dashboard/Dashboard.tsx'
@@ -52,7 +53,12 @@ function getBasename(): string {
   return pathname
 }
 
-export const routes = createBrowserRouter(
+// Sentry needs to own the router to name navigation transactions after their route. The wrapper
+// silently returns `createBrowserRouter` untouched unless `Sentry.init` has already run, which is
+// why './config/sentry.config' is imported ahead of this module in main.tsx.
+const createInstrumentedBrowserRouter = Sentry.wrapCreateBrowserRouter(createBrowserRouter)
+
+export const routes = createInstrumentedBrowserRouter(
   [
     {
       path: '/',

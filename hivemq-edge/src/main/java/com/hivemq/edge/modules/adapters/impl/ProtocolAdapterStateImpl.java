@@ -144,6 +144,19 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     /**
+     * Completes an orderly wrapper-owned shutdown while keeping asynchronous status publications blocked.
+     * <p>
+     * The ordinary setter deliberately refuses every write after {@link #markShuttingDown()}; that protects
+     * the final state from late adapter callbacks, but it also means the wrapper needs this explicit terminal
+     * transition once the adapter teardown has finished. Failed-start cleanup does not call this method and
+     * therefore retains the actionable {@link ConnectionStatus#ERROR} published for the start failure.
+     */
+    public void completeShutdown() {
+        log.debug("Completing shutdown of adapter '{}' with connection status DISCONNECTED", adapterId);
+        connectionStatus.set(ConnectionStatus.DISCONNECTED);
+    }
+
+    /**
      * Clears the shutting down flag, allowing state changes again.
      * This should be called if an adapter restart is needed after a failed stop.
      */

@@ -12,7 +12,6 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # For frontend usage; secrets cannot be accessed in a conditional job
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -29,12 +28,12 @@ jobs:
       openapi-changed: ${{ steps.openapi.outputs.changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           
       - name: Check for backend changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: backend
         with:
           filters: |
@@ -46,7 +45,7 @@ jobs:
               - '.github/**'
 
       - name: Check for frontend changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: frontend
         with:
           filters: |
@@ -55,7 +54,7 @@ jobs:
               - '.github/**'
 
       - name: Check for openAPI changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: openapi
         with:
           filters: |
@@ -81,12 +80,16 @@ jobs:
     if: needs.check-for-changes.outputs.frontend-changed == 'true'
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
   check-backend:
     needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
     if: needs.check-for-changes.outputs.backend-changed == 'true'
+    permissions:
+      contents: read
+      packages: read
+      checks: write
+      pull-requests: write
 
 
   check:

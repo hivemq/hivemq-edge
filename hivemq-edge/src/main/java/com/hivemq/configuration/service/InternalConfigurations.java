@@ -227,6 +227,19 @@ public class InternalConfigurations {
 
     public static final @NotNull AtomicInteger INTERVAL_BETWEEN_CLEANUP_JOBS_SEC = new AtomicInteger(4);
 
+    /**
+     * How long a sampled topic stays sampled after it was last started or read (EDG-885). A start or a
+     * read of its samples renews the lease; a topic nobody has asked about for this long is released
+     * by the next sweep, and its queue is reclaimed by the periodic clean-up after that.
+     */
+    public static final @NotNull AtomicInteger SAMPLING_LEASE_TTL_SEC = new AtomicInteger(600);
+
+    /**
+     * How often expired sampling leases are swept. The lease is checked against the clock at sweep
+     * time, so a topic is released at most this long after its lease ran out.
+     */
+    public static final @NotNull AtomicInteger SAMPLING_LEASE_SWEEP_INTERVAL_SEC = new AtomicInteger(60);
+
     public static final @NotNull AtomicBoolean MQTT_ALLOW_DOLLAR_TOPICS = new AtomicBoolean(false);
 
     public static final @NotNull AtomicInteger MQTT_EVENT_EXECUTOR_THREAD_COUNT =

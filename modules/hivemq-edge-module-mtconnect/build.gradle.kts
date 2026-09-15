@@ -23,7 +23,7 @@ group = "com.hivemq"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
@@ -67,6 +67,15 @@ tasks.register<Copy>("copyAllDependencies") {
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }
 
+tasks.shadowJar {
+    // ShadowJar defaults its duplicatesStrategy to EXCLUDE, and that filtering runs before the
+    // service-file merge, so without this override only the first META-INF/services file of a given
+    // name reaches the jar and every other provider is dropped silently. The override is scoped to
+    // service files, so every other duplicated resource still lands in the jar exactly once.
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    mergeServiceFiles()
+}
+
 // ******************** artifacts ********************
 
 val releaseBinary: Configuration by configurations.creating {
@@ -97,5 +106,5 @@ artifacts {
 
 hivemqLicense {
     projectName.set(project.name)
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
 }

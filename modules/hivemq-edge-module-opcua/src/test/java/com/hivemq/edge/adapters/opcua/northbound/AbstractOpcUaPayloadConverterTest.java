@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -75,7 +76,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
         final var tagManager = mock(TagManager.class);
         doAnswer(invocation -> {
                     final List<DataPoint> dataPointList = invocation.getArgument(0, List.class);
-                    final var dataPoint = (DataPointWithMetadata) (dataPointList.get(0));
+                    final var dataPoint = (DataPointWithMetadata) dataPointList.get(0);
                     receivedDataPoints.put(dataPoint.getTagName(), dataPoint);
                     return null;
                 })
@@ -112,7 +113,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 startFuture.completeExceptionally(t);
             }
         };
-        protocolAdapter.start(in, out);
+        protocolAdapter.start(ProtocolAdapterConnectionDirection.Northbound, in, out);
         startFuture.get();
         return protocolAdapter;
     }

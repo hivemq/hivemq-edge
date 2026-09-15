@@ -29,8 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
-import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnSuback;
-import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnUnsuback;
 
 /**
  * After a subscribe message arrived, we have to queue all messages until the subscribe was handled.
@@ -74,10 +72,7 @@ public class SubscribeMessageBarrier extends ChannelDuplexHandler {
             final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg, final @NotNull ChannelPromise promise)
             throws Exception {
 
-        if (msg instanceof SUBACK
-                || msg instanceof UNSUBACK
-                || msg instanceof MqttsnSuback
-                || msg instanceof MqttsnUnsuback) {
+        if (msg instanceof SUBACK || msg instanceof UNSUBACK) {
             promise.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(final @NotNull ChannelFuture future) {

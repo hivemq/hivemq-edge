@@ -20,6 +20,8 @@ import com.hivemq.api.ApiResourceRegistry;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
+import com.hivemq.api.auth.oidc.OidcService;
+import com.hivemq.api.auth.oidc.OidcServiceImpl;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
@@ -76,6 +78,9 @@ public abstract class ApiModule {
 
     @Binds
     abstract @NotNull AuthenticationApi authenticationApi(@NotNull AuthenticationResourceImpl authenticationResource);
+
+    @Binds
+    abstract @NotNull OidcService oidcService(@NotNull OidcServiceImpl oidcServiceImpl);
 
     @Binds
     abstract @NotNull BridgesApi bridgeApi(@NotNull BridgeResourceImpl bridgeResource);

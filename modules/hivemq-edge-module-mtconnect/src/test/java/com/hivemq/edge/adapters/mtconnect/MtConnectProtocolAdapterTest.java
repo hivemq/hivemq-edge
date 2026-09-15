@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
@@ -56,7 +55,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import javax.management.modelmbean.XMLParseException;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +64,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 
 public class MtConnectProtocolAdapterTest {
-    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private @NotNull ProtocolAdapterInput<MtConnectAdapterConfig> adapterInput;
     private @NotNull MtConnectAdapterConfig config;
     private @NotNull HttpClient httpClient;
@@ -245,7 +242,7 @@ public class MtConnectProtocolAdapterTest {
 
     @Test
     public void whenSchemaValidationIsDisabled_thenCustomSchemaShouldPass()
-            throws IOException, XMLParseException, JAXBException {
+            throws IOException, MtConnectXmlParseException, JAXBException {
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final JsonNode jsonNode = adapter.processXml(
                 IOUtils.resourceToString("/streams/streams-1-3-smstestbed-time-series.xml", StandardCharsets.UTF_8),
@@ -258,7 +255,8 @@ public class MtConnectProtocolAdapterTest {
     @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,true", "false,false"})
     public void whenSchemaValidationIsEnabledOrDisabled_thenStandardSchemaShouldPass(
-            boolean enableSchemaValidation, boolean includeNull) throws IOException, XMLParseException, JAXBException {
+            boolean enableSchemaValidation, boolean includeNull)
+            throws IOException, MtConnectXmlParseException, JAXBException {
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final JsonNode jsonNode = adapter.processXml(
                 IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml", StandardCharsets.UTF_8),
@@ -290,8 +288,7 @@ public class MtConnectProtocolAdapterTest {
         assertThatThrownBy(() -> adapter.processXml(
                         IOUtils.resourceToString("/streams/streams-1-3-smstestbed-current.xml", StandardCharsets.UTF_8),
                         new MtConnectAdapterTagDefinition("", true, true, 10, List.of())))
-                .isInstanceOf(XMLParseException.class)
-                .hasMessage(
-                        "XML Parse Exception: Schema urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd is not support");
+                .isInstanceOf(MtConnectXmlParseException.class)
+                .hasMessage("Schema urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd is not support");
     }
 }

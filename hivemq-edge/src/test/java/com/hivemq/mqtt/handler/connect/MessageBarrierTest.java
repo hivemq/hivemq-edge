@@ -35,6 +35,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
@@ -95,10 +96,33 @@ public class MessageBarrierTest {
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
         channel.writeInbound(new PINGREQ());
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
-        channel.writeInbound(new DISCONNECT());
 
         assertTrue(channel.isActive());
-        assertEquals(6, messageBarrier.getQueue().size());
+        assertEquals(5, messageBarrier.getQueue().size());
+    }
+
+    @Test
+    void test_disconnect_bypasses_queue_before_connack() {
+        channel.writeInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1_1)
+                .withClientIdentifier("clientID")
+                .build());
+
+        final AtomicInteger disconnectCounter = new AtomicInteger(0);
+        channel.pipeline().addAfter(MQTT_MESSAGE_BARRIER, "test", new ChannelDuplexHandler() {
+
+            @Override
+            public void channelRead(final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg) {
+                if (msg instanceof DISCONNECT) {
+                    disconnectCounter.incrementAndGet();
+                }
+            }
+        });
+
+        channel.writeInbound(new DISCONNECT());
+
+        assertEquals(1, disconnectCounter.get());
+        assertEquals(0, messageBarrier.getQueue().size());
     }
 
     @Test

@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { Link as ReactRouterLink } from 'react-router-dom'
+import { Link as ReactRouterLink } from 'react-router'
 import { Icon, Link as ChakraLink, Text } from '@chakra-ui/react'
 
 import { TypeIdentifier } from '@/api/__generated__'

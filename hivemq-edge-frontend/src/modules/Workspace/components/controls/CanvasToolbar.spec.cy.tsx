@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import CanvasToolbar from '@/modules/Workspace/components/controls/CanvasToolbar.tsx'
 import { EdgeFlowProvider } from '@/modules/Workspace/hooks/EdgeFlowProvider'
@@ -8,7 +9,7 @@ describe('CanvasToolbar', () => {
     cy.intercept('/api/v1/frontend/capabilities', { statusCode: 202, log: false })
   })
 
-  const wrapper = ({ children }: { children: JSX.Element }) => (
+  const wrapper = ({ children }: { children: ReactElement }) => (
     <EdgeFlowProvider>
       <ReactFlowProvider>{children}</ReactFlowProvider>
     </EdgeFlowProvider>

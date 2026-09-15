@@ -1,0 +1,82 @@
+get:
+  description: >-
+    Get a json schema that explains the json schema that represents the tag with
+    the provided name."
+  operationId: get-schema
+  x-roles-allowed:
+    - admin
+    - super
+    - user
+  parameters:
+    - description: >-
+        The id of the adapter for which the Json Schema should be retrieved.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+    - description: >-
+        The tag name (urlencoded) for which the Json Schema should be retrieved.
+      in: path
+      name: tagName
+      required: true
+      schema:
+        type: string
+        format: urlencoded
+    - description: >-
+        The direction of the schema to retrieve. SOUTHBOUND returns the southbound (write) schema: the
+        non-writable envelope (tagName, timestamp, metadata, context) is dropped, leaving the value shape that
+        a write targets. Fields inside the value that the device does not accept a write for are marked
+        readOnly. That flag is descriptive metadata only - it is a JSON Schema annotation rather than an
+        assertion, and it is not currently enforced when a write is validated; use it to decide what to offer
+        as a write destination, not as a safety boundary. When omitted, the NORTHBOUND schema describing the
+        full data shape published for the tag is returned. Any other value is rejected with a 400.
+      in: query
+      name: direction
+      required: false
+      schema:
+        type: string
+        enum:
+          - NORTHBOUND
+          - SOUTHBOUND
+  responses:
+    '200':
+      content:
+        application/json:
+          examples:
+            opc ua domain tags example:
+              description: An example for domain tags in opc ua
+              summary: 'Example for domain tags for opc ua '
+              value:
+                items:
+                  - definition:
+                      node: ns=2;i=test
+                    name: tag1
+                  - definition:
+                      node: ns=2;i=test2
+                    name: tag2
+          schema:
+            $ref: ../components/schemas/JsonNode.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Unknown schema direction
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: >-
+    Get a json schema that represents the tag with the provided name.
+  tags:
+    - Protocol Adapters

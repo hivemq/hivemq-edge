@@ -39,16 +39,16 @@ describe('Pulse Agent Activation', () => {
       homePage.task(ONBOARDING.TASK_ADAPTER).should('contain.text', 'From Devices To HiveMQ Edge')
       homePage.task(ONBOARDING.TASK_BRIDGE).should('contain.text', 'From HiveMQ Edge to the Enterprise')
       homePage.task(ONBOARDING.TASK_CLOUD).should('contain.text', 'Connect To HiveMQ Cloud')
-      homePage.task(ONBOARDING.TASK_PULSE).should('contain.text', 'Connect to HiveMQ Pulse')
+      homePage.task(ONBOARDING.TASK_PULSE).should('contain.text', 'Connect to HiveMQ Platform')
 
       homePage.taskSections(ONBOARDING.TASK_PULSE).should('have.length', 1)
       homePage.taskSection(ONBOARDING.TASK_PULSE, 0).within(() => {
-        pulseActivationPanel.trigger.should('have.text', 'Activate Pulse')
+        pulseActivationPanel.trigger.should('have.text', 'Connect with HiveMQ Platform')
         pulseActivationPanel.trigger.click()
       })
 
       pulseActivationPanel.form.should('be.visible')
-      pulseActivationPanel.status.should('contain.text', 'Pulse is not activated')
+      pulseActivationPanel.status.should('contain.text', 'Not connected to HiveMQ Platform')
     })
 
     it('should activate the Pulse Agent', () => {
@@ -63,11 +63,11 @@ describe('Pulse Agent Activation', () => {
       })
 
       pulseActivationPanel.form.should('be.visible')
-      pulseActivationPanel.status.should('contain.text', 'Pulse is not activated')
+      pulseActivationPanel.status.should('contain.text', 'Not connected to HiveMQ Platform')
       pulseActivationPanel.submitButton.should('be.disabled')
       pulseActivationPanel
         .field(undefined)
-        .textarea.should('have.attr', 'placeholder', 'Paste or drop the activation token here')
+        .textarea.should('have.attr', 'placeholder', 'Paste or drop the connection string here')
         .should('not.have.attr', 'aria-invalid')
 
       pulseActivationPanel.field(undefined).textarea.type('my-activation-token')
@@ -81,14 +81,14 @@ describe('Pulse Agent Activation', () => {
       pulseActivationPanel.submitButton.should('not.be.disabled')
       pulseActivationPanel.submitButton.click()
 
-      homePage.toast.success.should('contain.text', 'The Pulse Agent has been successfully activated')
+      homePage.toast.success.should('contain.text', 'Successfully connected with HiveMQ Platform.')
       homePage.toast.close()
 
       homePage.taskSection(ONBOARDING.TASK_PULSE, 0).within(() => {
         pulseActivationPanel.trigger.click()
       })
       pulseActivationPanel.form.should('be.visible')
-      pulseActivationPanel.status.should('contain.text', 'Pulse is activated')
+      pulseActivationPanel.status.should('contain.text', 'HiveMQ Edge is connected with the HiveMQ Platform.')
     })
   })
 })

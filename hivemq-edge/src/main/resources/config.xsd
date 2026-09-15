@@ -1038,24 +1038,22 @@
             <xs:element name="users" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:choice minOccurs="0" maxOccurs="unbounded">
-                            <xs:element name="user" minOccurs="0">
-                                <xs:complexType>
-                                    <xs:all>
-                                        <xs:element name="username" type="xs:string"/>
-                                        <xs:element name="password" type="xs:string"/>
-                                        <xs:element name="roles">
-                                            <xs:complexType>
-                                                <xs:choice minOccurs="0" maxOccurs="unbounded">
-                                                    <xs:element name="role" minOccurs="0" maxOccurs="unbounded"
-                                                                type="xs:string"/>
-                                                </xs:choice>
-                                            </xs:complexType>
-                                        </xs:element>
-                                    </xs:all>
-                                </xs:complexType>
-                            </xs:element>
-                        </xs:choice>
+                        <xs:element name="user" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="username" type="xs:string"/>
+                                    <xs:element name="password" type="xs:string"/>
+                                    <xs:element name="roles">
+                                        <xs:complexType>
+                                            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                                                <xs:element name="role" minOccurs="0" maxOccurs="unbounded"
+                                                            type="xs:string"/>
+                                            </xs:choice>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -1065,7 +1063,13 @@
                         <xs:element name="servers" minOccurs="1" maxOccurs="1">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="ldap-server" minOccurs="1">
+                                    <xs:element name="ldap-server" minOccurs="1" maxOccurs="unbounded">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                LDAP server to authenticate against. Several may be given; connections
+                                                are distributed over them round-robin.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                         <xs:complexType>
                                             <xs:all>
                                                 <xs:element name="host" type="nonEmptyString"/>
@@ -1210,6 +1214,90 @@
                         <xs:element name="title" type="xs:string" minOccurs="0"/>
                         <xs:element name="message" type="xs:string" minOccurs="0"/>
                         <xs:element name="consent" type="xs:string" minOccurs="0"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="oidc-authentication" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="enabled" type="xs:boolean"/>
+                        <xs:element name="issuer-uri" type="xs:string" minOccurs="0"/>
+                        <xs:element name="client-id" type="xs:string" minOccurs="0"/>
+                        <xs:element name="client-secret" type="nonEmptyString" minOccurs="0"/>
+                        <xs:element name="redirect-uri" type="xs:string" minOccurs="0"/>
+                        <xs:element name="role-claim-name" type="xs:string" minOccurs="0" default="roles"/>
+                        <xs:element name="extra-scopes" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="extra-scope"
+                                                type="nonEmptyString"
+                                                minOccurs="1"
+                                                maxOccurs="unbounded"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="role-mappings" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="role-mapping" minOccurs="0" maxOccurs="unbounded">
+                                        <xs:complexType>
+                                            <xs:all>
+                                                <xs:element name="idp-role" type="xs:string"/>
+                                                <xs:element name="edge-role" type="xs:string"/>
+                                            </xs:all>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="id-token-signing-algorithms" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="id-token-signing-algorithm"
+                                                type="nonEmptyString"
+                                                minOccurs="1"
+                                                maxOccurs="unbounded"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="truststore" minOccurs="0">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="truststore-path" type="nonEmptyString" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Path to the truststore holding the CA that signs the Identity Provider certificate. If not specified, the system default CA certificates are used.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-password" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Password for the truststore.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="truststore-type" type="xs:string" minOccurs="0">
+                                        <xs:annotation>
+                                            <xs:documentation>Type of truststore (e.g., JKS, PKCS12).</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="connection-timeout-millis" minOccurs="0" default="5000">
+                            <xs:annotation>
+                                <xs:documentation>Timeout in milliseconds for each connection to the Identity Provider (discovery, token exchange, and signing keys). The default of 5000 assumes a good connection; raise it for an Identity Provider behind a slow or distant network path. The minimum is 100; a smaller value is almost always a milliseconds/seconds mix-up that would make every login time out.</xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:int">
+                                    <xs:minInclusive value="100"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="username-authentication" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="enabled" type="xs:boolean"/>
                     </xs:all>
                 </xs:complexType>
             </xs:element>

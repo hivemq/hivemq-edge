@@ -1,17 +1,15 @@
-/* generated using openapi-typescript-codegen -- do no edit */
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
 import type { ApiBearerToken } from '../models/ApiBearerToken';
+import type { AuthMode } from '../models/AuthMode';
+import type { OidcLoginRedirect } from '../models/OidcLoginRedirect';
 import type { UsernamePasswordCredentials } from '../models/UsernamePasswordCredentials';
-
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
-
 export class AuthenticationService {
-
     constructor(public readonly httpRequest: BaseHttpRequest) {}
-
     /**
      * Authorize the presented user to obtain a secure token for use on the API.
      * Authorize the presented user to obtain a secure token for use on the API.
@@ -33,7 +31,6 @@ export class AuthenticationService {
             },
         });
     }
-
     /**
      * Obtain a fresh JWT for the previously authenticated user.
      * Authorize the presented user to obtain a secure token for use on the API.
@@ -49,7 +46,6 @@ export class AuthenticationService {
             },
         });
     }
-
     /**
      * Authorize the presented user to obtain a secure token for use on the API.
      * Authorize the presented user to obtain a secure token for use on the API.
@@ -70,5 +66,65 @@ export class AuthenticationService {
             },
         });
     }
-
+    /**
+     * Report the enabled authentication mechanisms.
+     * Report which authentication mechanisms the gateway accepts, so the UI can present the matching login. Both local username/password and OIDC single sign-on may be returned when both are enabled.
+     * @returns AuthMode The enabled authentication mechanisms.
+     * @throws ApiError
+     */
+    public authMode(): CancelablePromise<AuthMode> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/auth/mode',
+        });
+    }
+    /**
+     * Begin the OIDC login flow.
+     * Begin the OIDC authorization-code flow. Mints a fresh state, nonce, and PKCE challenge and returns the Identity Provider authorization URL for the SPA to open. The SPA opens this URL in the login popup, rather than this endpoint redirecting, so that a start-time failure is a normal error response the SPA can present instead of a stranded popup.
+     * @returns OidcLoginRedirect The Identity Provider authorization URL to open.
+     * @throws ApiError
+     */
+    public oidcLogin(): CancelablePromise<OidcLoginRedirect> {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/api/v1/auth/oidc/login',
+            errors: {
+                503: `OIDC is not configured on this instance, or the Identity Provider could not be reached. The \`detail\` field distinguishes the two.`,
+            },
+        });
+    }
+    /**
+     * Complete the OIDC login flow.
+     * The OIDC redirect URI. Validates the returned state and ID token, exchanges the authorization code for tokens, maps the IdP roles to Edge roles, and issues a HiveMQ Edge JWT delivered to the SPA.
+     * @param code The authorization code returned by the Identity Provider.
+     * @param state The opaque state token echoed back by the Identity Provider.
+     * @param error An OAuth2 error code, present instead of code/state when the login failed.
+     * @param errorDescription A human-readable description of the error.
+     * @returns string Login succeeded. This is a browser endpoint: the response is an HTML page that posts
+     * `{ type: "oidc-result", token: "<the HiveMQ Edge JWT>" }` to the opener window and closes itself.
+     * @throws ApiError
+     */
+    public oidcCallback(
+        code?: string,
+        state?: string,
+        error?: string,
+        errorDescription?: string,
+    ): CancelablePromise<string> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/auth/oidc/callback',
+            query: {
+                'code': code,
+                'state': state,
+                'error': error,
+                'error_description': errorDescription,
+            },
+            errors: {
+                401: `The login could not be completed. The response is an HTML page that posts
+                \`{ type: "oidc-result", errorCode: "<code>" }\` to the opener window and closes itself, so the
+                SPA always settles the pending login. Codes: \`idp-error\`, \`invalid-request\`, \`invalid-state\`,
+                \`exchange-failed\`, \`no-roles\`. Identity Provider error descriptions are logged, not returned.`,
+            },
+        });
+    }
 }

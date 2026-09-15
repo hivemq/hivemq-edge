@@ -6,12 +6,6 @@
             <bind-address>0.0.0.0</bind-address>
         </tcp-listener>
     </mqtt-listeners>
-    <mqtt-sn-listeners>
-        <udp-listener>
-            <port>2442</port>
-            <bind-address>0.0.0.0</bind-address>
-        </udp-listener>
-    </mqtt-sn-listeners>
     <admin-api>
         <enabled>true</enabled>
         <listeners>

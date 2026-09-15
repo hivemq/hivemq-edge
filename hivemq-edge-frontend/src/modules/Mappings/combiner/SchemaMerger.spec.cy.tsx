@@ -18,8 +18,8 @@ const Wrapper: FC<PropsWithChildren> = ({ children }) => (
   </Modal>
 )
 
-const writingSchemaUrl = (adapterId: string, tagName: string) =>
-  `/api/v1/management/protocol-adapters/writing-schema/${adapterId}/${encodeURIComponent(tagName)}`
+const schemaUrl = (adapterId: string, tagName: string) =>
+  `/api/v1/management/protocol-adapters/schema/${adapterId}/${encodeURIComponent(tagName)}`
 
 describe('SchemaMerger', () => {
   beforeEach(() => {
@@ -92,12 +92,12 @@ describe('SchemaMerger', () => {
     }
 
     beforeEach(() => {
-      cy.intercept('GET', writingSchemaUrl(ADAPTER_A, TAG_NAME), {
+      cy.intercept('GET', schemaUrl(ADAPTER_A, TAG_NAME), {
         statusCode: 200,
         body: schemaAdapterA,
       }).as('schemaAdapterA')
 
-      cy.intercept('GET', writingSchemaUrl(ADAPTER_B, TAG_NAME), {
+      cy.intercept('GET', schemaUrl(ADAPTER_B, TAG_NAME), {
         statusCode: 200,
         body: schemaAdapterB,
       }).as('schemaAdapterB')

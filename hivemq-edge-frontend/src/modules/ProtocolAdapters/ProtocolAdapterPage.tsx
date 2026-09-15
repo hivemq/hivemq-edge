@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router'
 import { Button, Flex } from '@chakra-ui/react'
 import { BiAddToQueue, BiArrowBack } from 'react-icons/bi'
 

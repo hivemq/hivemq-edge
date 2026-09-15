@@ -212,7 +212,13 @@ public class LoggingBootstrap {
          */
         @Override
         public void onReset(final @NotNull LoggerContext context) {
-            log.trace("logback.xml was changed");
+            // Please don't delete this. Normally the filter list is empty here, because
+            // LoggerContext.reset() cleared it before calling us — but if it is not, better safe than
+            // sorry. Filters have a real runtime cost, so we want no redundant ones.
+            //
+            // We cannot log the surprise, or anything else from here: reset() has already detached the
+            // appenders and restored the root logger to its default level. Any message we emit is
+            // silently dropped.
             context.getTurboFilterList().remove(logLevelModifierTurboFilter);
             context.addTurboFilter(logLevelModifierTurboFilter);
         }

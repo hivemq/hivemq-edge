@@ -1,6 +1,6 @@
 import type { FC, PropsWithChildren } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router'
 import DryRunPanelController from '@datahub/components/controls/DryRunPanelController.tsx'
 
 const wrapper: FC<PropsWithChildren> = ({ children }) => (

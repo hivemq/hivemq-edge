@@ -20,7 +20,7 @@ describe('MappingContainer', () => {
     cy.intercept('/api/v1/management/topic-filters', { statusCode: 202, log: false })
     cy.intercept('/api/v1/management/sampling/schema/**', { statusCode: 202, log: false })
     cy.intercept('/api/v1/management/sampling/topic/**', { statusCode: 202, log: false })
-    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/*/*', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/schema/*/*', { statusCode: 203, log: false })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/**/tags', { statusCode: 202, log: false })
   })
 

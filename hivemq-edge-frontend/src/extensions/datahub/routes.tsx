@@ -1,5 +1,5 @@
 import { lazy } from 'react'
-import type { RouteObject } from 'react-router-dom'
+import type { RouteObject } from 'react-router'
 
 const DataHubPage = lazy(() => import('@/extensions/datahub/components/DataHubPage.tsx'))
 const PolicyEditorLoader = lazy(() => import('@datahub/components/pages/PolicyEditorLoader.tsx'))

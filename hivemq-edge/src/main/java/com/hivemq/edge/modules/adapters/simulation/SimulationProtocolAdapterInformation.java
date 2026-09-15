@@ -95,7 +95,8 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
 
     @Override
     public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
-        return EnumSet.of(ProtocolAdapterCapability.READ);
+        return EnumSet.of(
+                ProtocolAdapterCapability.READ, ProtocolAdapterCapability.COMBINE, ProtocolAdapterCapability.WRITE);
     }
 
     @Override

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { IconType } from 'react-icons'
 
 import { GrStatusUnknown, GrValidate } from 'react-icons/gr'
-import { LuFunctionSquare } from 'react-icons/lu'
+import { LuSquareFunction } from 'react-icons/lu'
 import { MdPolicy, MdSchema } from 'react-icons/md'
 import { TbTransitionRight } from 'react-icons/tb'
 import { AiOutlineCloudServer, AiOutlineInteraction } from 'react-icons/ai'
@@ -25,7 +25,7 @@ const iconMapping: Record<string, { icon: IconType; boxSize: string }> = {
   [DataHubNodeType.VALIDATOR]: { icon: GrValidate, boxSize: '24px' },
   [DataHubNodeType.SCHEMA]: { icon: MdSchema, boxSize: '24px' },
   [DataHubNodeType.OPERATION]: { icon: AiOutlineInteraction, boxSize: '24px' },
-  [DataHubNodeType.FUNCTION]: { icon: LuFunctionSquare, boxSize: '24px' },
+  [DataHubNodeType.FUNCTION]: { icon: LuSquareFunction, boxSize: '24px' },
   [DataHubNodeType.TRANSITION]: { icon: TbTransitionRight, boxSize: '24px' },
 }
 

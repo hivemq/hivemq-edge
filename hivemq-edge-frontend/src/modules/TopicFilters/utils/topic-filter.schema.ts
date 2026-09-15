@@ -58,10 +58,10 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
 
     return { mimeType: MIMETYPE_JSON, options, body: json } as UriInfo
   } catch (error) {
-    if (error instanceof SyntaxError) throw new Error(i18n.t('schema.validation.noBase64Data'))
-    if (error instanceof DOMException) throw new Error(i18n.t('schema.validation.noJSON'))
+    if (error instanceof SyntaxError) throw new Error(i18n.t('schema.validation.noBase64Data'), { cause: error })
+    if (error instanceof DOMException) throw new Error(i18n.t('schema.validation.noJSON'), { cause: error })
     if (error instanceof Error) {
-      throw new Error(`${error.message}`)
+      throw new Error(`${error.message}`, { cause: error })
     }
   }
 }

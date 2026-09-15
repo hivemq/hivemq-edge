@@ -22,8 +22,6 @@ import com.hivemq.bootstrap.factories.HandlerProvider;
 import com.hivemq.codec.decoder.mqtt.MqttConnectDecoder;
 import com.hivemq.codec.decoder.mqtt.MqttDecoders;
 import com.hivemq.codec.encoder.EncoderFactory;
-import com.hivemq.codec.transcoder.Mqtt5ToMqttsnTranscoder;
-import com.hivemq.codec.transcoder.MqttsnToMqtt5Transcoder;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -48,10 +46,6 @@ import com.hivemq.mqtt.handler.ping.PingRequestHandler;
 import com.hivemq.mqtt.handler.publish.MessageExpiryHandler;
 import com.hivemq.mqtt.handler.subscribe.SubscribeHandler;
 import com.hivemq.mqtt.handler.unsubscribe.UnsubscribeHandler;
-import com.hivemq.mqttsn.IMqttsnTopicRegistry;
-import com.hivemq.mqttsn.handler.sleep.AwakeHandler;
-import com.hivemq.mqttsn.handler.sleep.SleepHandler;
-import com.hivemq.mqttsn.services.IGatewayBroadcastService;
 import com.hivemq.security.ssl.SslParameterHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
@@ -157,16 +151,7 @@ public class ChannelDependenciesTest {
     private ShutdownHooks shutdownHooks;
 
     @Mock
-    private IMqttsnTopicRegistry mqttsnTopicRegistry;
-
-    @Mock
     private HivemqId hiveMqId;
-
-    @Mock
-    private AwakeHandler awakeHandler;
-
-    @Mock
-    private SleepHandler sleepHandler;
 
     @Mock
     private MqttConnacker mqttConnacker;
@@ -206,14 +191,8 @@ public class ChannelDependenciesTest {
                 interceptorHandler,
                 globalMQTTMessageCounter,
                 shutdownHooks,
-                mqttsnTopicRegistry,
                 hiveMqId,
-                mock(MqttsnToMqtt5Transcoder.class),
-                mock(Mqtt5ToMqttsnTranscoder.class),
-                awakeHandler,
-                sleepHandler,
                 mqttConnacker,
-                () -> mock(IGatewayBroadcastService.class),
                 mock(HandlerProvider.class));
     }
 
@@ -249,11 +228,6 @@ public class ChannelDependenciesTest {
         assertNotNull(channelDependencies.getInterceptorHandler());
         assertNotNull(channelDependencies.getGlobalMQTTMessageCounter());
         assertNotNull(channelDependencies.getHiveMqId());
-        assertNotNull(channelDependencies.getMqttsnTopicRegistry());
-        assertNotNull(channelDependencies.getMqttsnToMqttTranscoder());
-        assertNotNull(channelDependencies.getMqttToMqttsnTranscoder());
-        assertNotNull(channelDependencies.getAwakeHandler());
-        assertNotNull(channelDependencies.getSleepHandler());
         assertNotNull(channelDependencies.getMqttConnacker());
     }
 }

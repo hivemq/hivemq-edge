@@ -18,7 +18,7 @@ export const useGetCombinedDataSchemas = (dataIdentifiers: DataReference[]) => {
         ? {
             queryKey: [QUERY_KEYS.ADAPTERS, dataPoint.scope, QUERY_KEYS.DISCOVERY_TAGS, dataPoint.id],
             queryFn: () =>
-              appClient.protocolAdapters.getWritingSchema(dataPoint.scope as string, encodeURIComponent(dataPoint.id)),
+              appClient.protocolAdapters.getSchema(dataPoint.scope as string, encodeURIComponent(dataPoint.id)),
           }
         : {
             // TODO[NVL] Certainly a hack: returns topic filters. Bridges are not supported yet

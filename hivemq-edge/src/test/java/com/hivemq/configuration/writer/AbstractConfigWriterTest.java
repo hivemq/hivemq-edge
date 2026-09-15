@@ -39,6 +39,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -94,11 +95,21 @@ public abstract class AbstractConfigWriterTest {
         return configFileReader;
     }
 
+    /**
+     * The fixture, staged in a directory of this test's own.
+     * <p>
+     * It used to be one fixed path under {@code java.io.tmpdir}, shared by every test in every class and
+     * every Gradle fork on the machine — so two of them running at once wrote each other's configuration,
+     * and a leftover from a previous run was picked up by the next (EDG-882 review v02, R2-19).
+     */
     protected @NotNull File loadTestConfigFile() throws IOException {
         try (final InputStream is =
                 requireNonNull(AbstractConfigWriterTest.class.getResourceAsStream("/test-config.xml"))) {
-            final File tempFile = new File(System.getProperty("java.io.tmpdir"), "original-config.xml");
+            final File tempFile = Files.createTempDirectory("edge-config-writer-test")
+                    .resolve("original-config.xml")
+                    .toFile();
             tempFile.deleteOnExit();
+            tempFile.getParentFile().deleteOnExit();
             FileUtils.copyInputStreamToFile(is, tempFile);
             return tempFile;
         }

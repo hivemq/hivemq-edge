@@ -76,19 +76,17 @@ public class OpcUaNodeBrowser {
 
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
-    // Serialise all browse operations (including continuation-point requests) to avoid
-    // server-side throttling on resource-constrained PLCs (e.g. S7-1500). Even at
-    // concurrency 4 the S7-1500 produced non-deterministic results because browseNext
-    // requests bypassed the semaphore and overlapped with new browseAsync calls.
-    private static final int MAX_CONCURRENT_BROWSES = 1;
 
     private final @NotNull OpcUaClient client;
     private final @NotNull String adapterId;
     private final int maxReferencesPerNode;
-    private final @Nullable DataTypeTree providedDataTypeTree;
+    // Serialise all browse operations (including continuation-point requests) so they never overlap on the
+    // shared client. In production this permit is owned by the OpcUaProtocolAdapter and shared across every
+    // browse call against the device (EDG-576); standalone/test callers get their own single permit.
+    private final @NotNull Semaphore concurrency;
 
     public OpcUaNodeBrowser(final @NotNull OpcUaClient client, final @NotNull String adapterId) {
-        this(client, adapterId, 0, null);
+        this(client, adapterId, 0);
     }
 
     /**
@@ -98,23 +96,26 @@ public class OpcUaNodeBrowser {
      */
     public OpcUaNodeBrowser(
             final @NotNull OpcUaClient client, final @NotNull String adapterId, final int maxReferencesPerNode) {
-        this(client, adapterId, maxReferencesPerNode, null);
+        // Standalone default: one permit private to this browser. Production uses the constructor below to share
+        // the adapter-scoped permit so concurrent browses against the same device are serialised too (EDG-576).
+        this(client, adapterId, maxReferencesPerNode, new Semaphore(1));
     }
 
     /**
-     * @param dataTypeTree a pre-built {@link DataTypeTree} to reuse across browses, or {@code null}
-     *                     to build one lazily for each browse. The tree walk is non-trivial on most
-     *                     servers; caching it at the adapter level saves a round-trip per browse.
+     * @param maxReferencesPerNode maximum references the server should return per browse request (0 =
+     *                             server-decides).
+     * @param concurrency          permit that serialises browse operations; pass the adapter-owned semaphore to
+     *                             serialise across concurrent browse calls sharing one client (EDG-576).
      */
     public OpcUaNodeBrowser(
             final @NotNull OpcUaClient client,
             final @NotNull String adapterId,
             final int maxReferencesPerNode,
-            final @Nullable DataTypeTree dataTypeTree) {
+            final @NotNull Semaphore concurrency) {
         this.client = client;
         this.adapterId = adapterId;
         this.maxReferencesPerNode = maxReferencesPerNode;
-        this.providedDataTypeTree = dataTypeTree;
+        this.concurrency = concurrency;
     }
 
     /**
@@ -150,7 +151,6 @@ public class OpcUaNodeBrowser {
             // The visited set deduplicates nodes reachable via multiple paths in the OPC UA graph.
             final List<DiscoveredVariable> variables = new CopyOnWriteArrayList<>();
             final Set<NodeId> visited = ConcurrentHashMap.newKeySet();
-            final Semaphore concurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
             browseRecursive(
                             browseRoot,
                             "",
@@ -173,9 +173,7 @@ public class OpcUaNodeBrowser {
             final List<String> tagNameDefaults = deduplicateTagNameDefaults(variables);
 
             // Phase 2: Return a stream that lazily batch-reads attributes as it is consumed.
-            // Reuse the caller-provided DataTypeTree if one was supplied (avoids a round-trip
-            // per browse); otherwise build one now.
-            final DataTypeTree dataTypeTree = providedDataTypeTree != null ? providedDataTypeTree : getDataTypeTree();
+            final DataTypeTree dataTypeTree = getDataTypeTree();
             return StreamSupport.stream(
                     new BatchAttributeSpliterator(variables, tagNameDefaults, client, dataTypeTree, this), false);
         } catch (final ExecutionException e) {
@@ -606,7 +604,7 @@ public class OpcUaNodeBrowser {
         if (stripped.isEmpty()) {
             return "";
         }
-        final String[] segments = stripped.split("/");
+        final String[] segments = stripped.split("/", -1);
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < segments.length; i++) {
             if (i > 0) {
@@ -660,7 +658,7 @@ public class OpcUaNodeBrowser {
         if (stripped.isEmpty()) {
             return "";
         }
-        final String[] segments = stripped.split("/");
+        final String[] segments = stripped.split("/", -1);
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < segments.length; i++) {
             if (i > 0) {

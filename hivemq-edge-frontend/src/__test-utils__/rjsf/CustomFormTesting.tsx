@@ -10,21 +10,20 @@ import { FieldTemplate } from '@/components/rjsf/FieldTemplate'
 import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate'
 import { DescriptionFieldTemplate, ErrorListTemplate, TitleFieldTemplate } from '@/components/rjsf/Templates'
 
-interface CustomFormTestingProps
-  extends Pick<
-    FormProps<unknown>,
-    | 'schema'
-    | 'uiSchema'
-    | 'formData'
-    | 'onChange'
-    | 'onBlur'
-    | 'onFocus'
-    | 'onSubmit'
-    | 'onError'
-    | 'formContext'
-    | 'widgets'
-    | `customValidate`
-  > {
+interface CustomFormTestingProps extends Pick<
+  FormProps<unknown>,
+  | 'schema'
+  | 'uiSchema'
+  | 'formData'
+  | 'onChange'
+  | 'onBlur'
+  | 'onFocus'
+  | 'onSubmit'
+  | 'onError'
+  | 'formContext'
+  | 'widgets'
+  | `customValidate`
+> {
   id?: string
 }
 

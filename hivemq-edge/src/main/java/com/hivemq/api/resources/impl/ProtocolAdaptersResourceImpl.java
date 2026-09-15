@@ -27,13 +27,13 @@ import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMap
 import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
@@ -45,7 +45,6 @@ import com.hivemq.api.errors.adapters.AdapterNotFound403Error;
 import com.hivemq.api.errors.adapters.AdapterNotFoundError;
 import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
 import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
-import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
 import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
 import com.hivemq.api.errors.adapters.DuplicateTagError;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
@@ -91,14 +90,18 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
+import com.hivemq.protocols.tag.TagSchemaDirection;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -142,6 +145,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator;
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull ProtocolAdapterExtractor configExtractor;
+    private final @NotNull ProtocolAdapterConfigConverter configConverter;
 
     @Inject
     public ProtocolAdaptersResourceImpl(
@@ -153,7 +157,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull VersionProvider versionProvider,
             final @NotNull TopicFilterPersistence topicFilterPersistence,
             final @NotNull SystemInformation systemInformation,
-            final @NotNull ProtocolAdapterExtractor configExtractor) {
+            final @NotNull ProtocolAdapterExtractor configExtractor,
+            final @NotNull ProtocolAdapterConfigConverter configConverter) {
         this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
@@ -163,6 +168,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         this.topicFilterPersistence = topicFilterPersistence;
         this.systemInformation = systemInformation;
         this.configExtractor = configExtractor;
+        this.configConverter = configConverter;
         this.customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
     }
 
@@ -310,15 +316,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList()));
         }
 
+        final ProtocolAdapterEntity entity = new ProtocolAdapterEntity(
+                adapter.getId(),
+                adapterType,
+                type.get().getCurrentConfigVersion(),
+                (LinkedHashMap<String, Object>) adapter.getConfig(),
+                List.of(),
+                List.of(),
+                List.of());
+        final Optional<Response> unconvertible = refuseUnconvertibleConfiguration(entity);
+        if (unconvertible.isPresent()) {
+            return unconvertible.get();
+        }
+
         try {
-            if (configExtractor.addAdapter(new ProtocolAdapterEntity(
-                    adapter.getId(),
-                    adapterType,
-                    type.get().getCurrentConfigVersion(),
-                    (LinkedHashMap<String, Object>) adapter.getConfig(),
-                    List.of(),
-                    List.of(),
-                    List.of()))) {
+            if (configExtractor.addAdapter(entity)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getId());
                 }
@@ -350,6 +362,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                     oldInstance.getNorthboundMappings(),
                                     oldInstance.getSouthboundMappings(),
                                     oldInstance.getTags());
+                            final Optional<Response> unconvertible = refuseUnconvertibleConfiguration(newConfig);
+                            if (unconvertible.isPresent()) {
+                                return unconvertible.get();
+                            }
                             if (!configExtractor.updateAdapter(newConfig)) {
                                 return adapterCannotBeUpdatedError(adapterId);
                             }
@@ -707,8 +723,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
+    public @NotNull Response getSchema(
+            final @NotNull String adapterId, final @NotNull String tagName, final @Nullable String direction) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
+
+        // NORTHBOUND (read) is the default; SOUTHBOUND (write) drops the non-writable envelope. Anything else is
+        // a client error — silently falling back to NORTHBOUND would hand a typoed caller the wrong document.
+        final TagSchemaDirection schemaDirection;
+        if (direction == null) {
+            schemaDirection = TagSchemaDirection.NORTHBOUND;
+        } else {
+            try {
+                schemaDirection = TagSchemaDirection.valueOf(direction);
+            } catch (final IllegalArgumentException ignored) {
+                return errorResponse(new BadRequestError("Unknown schema direction: " + direction));
+            }
+        }
 
         final Optional<ProtocolAdapterWrapper> maybeWrapper =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -719,45 +749,67 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
         final com.hivemq.adapter.sdk.api.ProtocolAdapter adapter =
                 maybeWrapper.get().getAdapter();
-        if (!(adapter instanceof WritingProtocolAdapter)) {
-            log.warn(
-                    "The Json Schema for an adapter '{}' was requested, which does not support writing to PLCs.",
-                    adapterId);
-            return errorResponse(new AdapterTypeReadOnlyError(
-                    "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs."));
-        }
 
         final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
         adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
 
         try {
-            return Response.ok(tagSchemaCreationOutput.getFuture().get()).build(); // JSON schema root node
+            return Response.ok(tagSchemaCreationOutput.getSchema(schemaDirection))
+                    .build(); // JSON schema root
         } catch (final @NotNull InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Creation of json schema for writing to PLCs were interrupted.");
             log.debug("Original exception: ", e);
             return errorResponse(new InternalServerError(null));
         } catch (final @NotNull ExecutionException e) {
+            // Prefer the adapter's own account of what went wrong. TagSchemaCreationOutputImpl.fail(String)
+            // records the adapter's sentence on the output and completes the future with a fixed
+            // "Json schema creation for tag failed.", so reading only the cause discards the only text that
+            // says anything -- and every one of the OPC UA adapter's schema failures takes that route. The
+            // symptom was a 500 whose whole body was that fixed sentence, which QA could not diagnose from and
+            // reported as a possible regression in the direction parameter (EDG-894 P7); the adapter had in
+            // fact said "Discovery failed: ClientConnection not connected or not initialized" and nothing
+            // carried it to the caller.
+            //
+            // Falling back to the cause rather than replacing it: fail(Throwable, null) leaves no message on
+            // the output, and there the throwable is the only account there is.
             final Throwable cause = e.getCause();
-            if (cause == null) {
-                return errorResponse(new InternalServerError(null));
+            final String adapterReason = tagSchemaCreationOutput.getMessage();
+            final String message;
+            if (adapterReason != null && !adapterReason.isBlank()) {
+                message = adapterReason;
+            } else if (cause == null) {
+                message = "unknown error";
+            } else {
+                message = cause.getMessage();
             }
             return switch (tagSchemaCreationOutput.getStatus()) {
                 case NOT_SUPPORTED ->
-                    errorResponse(
-                            new AdapterOperationNotSupportedError("Operation not supported:" + cause.getMessage()));
+                    errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" + message));
                 case ADAPTER_NOT_STARTED ->
-                    errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + cause.getMessage()));
+                    errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + message));
                 case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
                 default -> {
                     log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                     if (log.isDebugEnabled()) {
                         log.debug("Original exception: ", e);
                     }
-                    yield errorResponse(new InternalServerError(null));
+                    yield errorResponse(new InternalServerError(message));
                 }
             };
         }
+    }
+
+    @Override
+    public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
+        // This endpoint's name means "the schema for writing", so the redirect must carry the direction — without
+        // it the replacement endpoint defaults to the northbound (read) schema.
+        final URI newLocation = UriBuilder.fromPath("/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}")
+                .queryParam("direction", TagSchemaDirection.SOUTHBOUND.name())
+                .build(adapterId, tagName);
+        return Response.status(Response.Status.MOVED_PERMANENTLY)
+                .location(newLocation)
+                .build();
     }
 
     @SuppressWarnings("unchecked")
@@ -792,19 +844,25 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return errorResponse(new DuplicateTagError(adapterId, duplicateTag.get()));
         }
 
+        final ProtocolAdapterEntity entity = new ProtocolAdapterEntity(
+                adapterId,
+                adapterType,
+                maybeInfo.get().getCurrentConfigVersion(),
+                (Map<String, Object>) adapterConfig.getConfig().getConfig(),
+                adapterConfig.getNorthboundMappings().stream()
+                        .map(NorthboundMappingEntity::fromApi)
+                        .toList(),
+                adapterConfig.getSouthboundMappings().stream()
+                        .map(this::toSouthboundMappingEntity)
+                        .toList(),
+                adapterConfig.getTags().stream().map(this::toTagEntity).toList());
+        final Optional<Response> unconvertible = refuseUnconvertibleConfiguration(entity);
+        if (unconvertible.isPresent()) {
+            return unconvertible.get();
+        }
+
         try {
-            configExtractor.addAdapter(new ProtocolAdapterEntity(
-                    adapterId,
-                    adapterType,
-                    maybeInfo.get().getCurrentConfigVersion(),
-                    (Map<String, Object>) adapterConfig.getConfig().getConfig(),
-                    adapterConfig.getNorthboundMappings().stream()
-                            .map(NorthboundMappingEntity::fromApi)
-                            .toList(),
-                    adapterConfig.getSouthboundMappings().stream()
-                            .map(this::toSouthboundMappingEntity)
-                            .toList(),
-                    adapterConfig.getTags().stream().map(this::toTagEntity).toList()));
+            configExtractor.addAdapter(entity);
         } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 addValidationError(
@@ -880,9 +938,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateAdapterSouthboundMappings(
             final @NotNull String adapterId, final @NotNull SouthboundMappingList southboundMappings) {
+
         return systemInformation.isConfigWriteable()
                 ? configExtractor
                         .getAdapterByAdapterId(adapterId)
+                        .filter(adapter -> protocolAdapterManager
+                                .getAdapterTypeById(adapter.getProtocolId())
+                                .map(type -> type.getCapabilities().contains(ProtocolAdapterCapability.WRITE))
+                                .orElse(false))
                         .map(updateAdapterSouthboundMappingsResponse(adapterId, southboundMappings))
                         .orElseGet(adapterNotFoundError(adapterId))
                 : errorResponse(new ConfigWritingDisabled());
@@ -1071,6 +1134,91 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         validator
                 .validateObject(adapter.getConfig())
                 .forEach(e -> addValidationError(apiErrorMessages, e.getFieldName(), e.getMessage()));
+    }
+
+    /**
+     * Refuses a configuration the reload would refuse, while the caller is still there to be told.
+     *
+     * <p>Writing the entity is not the end of the story: {@link ProtocolAdapterExtractor} notifies
+     * {@link ProtocolAdapterManager#refresh}, which converts the entity on its own executor, long after
+     * this response has gone out. A configuration that does not convert was therefore answered with 200
+     * and then never appeared - every later {@code GET /adapters/{id}} a 404, for good, and the reason
+     * only in Edge's log and its event stream. Anything polling for the adapter burns its full timeout
+     * and reports that timeout, which names nothing about the configuration. Converting here, with the
+     * converter and the mapper the reload itself uses, puts that verdict back in front of the caller.
+     *
+     * <p>Schema validation does not cover this and should not be made to. The generated schema does not
+     * set {@code additionalProperties: false}, and setting it would make the API stricter than the
+     * configuration file, which warns and drops an unknown setting for every adapter except the ones
+     * that opt out of that. Converting borrows each adapter's own posture instead of restating it, and
+     * covers every way a configuration can fail to convert - a rejected enum value, a value that will
+     * not coerce, a tag definition the adapter cannot read - not only an unknown setting.
+     *
+     * @param entity the entity that is about to be written to the configuration
+     * @return the response to return instead of writing, or empty when the configuration converts
+     */
+    private @NotNull Optional<Response> refuseUnconvertibleConfiguration(final @NotNull ProtocolAdapterEntity entity) {
+        try {
+            configConverter.fromEntity(entity);
+            return Optional.empty();
+        } catch (final VirtualMachineError e) {
+            // A JVM that cannot allocate is not this request's problem to report.
+            throw e;
+        } catch (final Throwable t) {
+            // Everything else is this configuration's problem, whatever its type: conversion runs
+            // adapter-module code, so enumerating the hierarchy is a losing game - the same reasoning
+            // ProtocolAdapterManager.convertConfigs applies on the reload side.
+            log.debug("Adapter '{}' was refused because its configuration could not be read", entity.getAdapterId(), t);
+            final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+            addValidationError(errorMessages, unconvertibleField(t), unconvertibleReason(t));
+            return Optional.of(errorResponse(new AdapterFailedSchemaValidationError(errorMessages.toErrorList())));
+        }
+    }
+
+    /**
+     * The path through the caller's own payload that failed, as {@code opcuaToMqtt.publishingInterval}.
+     * <p>
+     * Jackson records it as a reference chain on the mapping exception; {@code "config"} is the fallback
+     * for a failure raised before any property was reached, such as a missing adapter factory.
+     */
+    private static @NotNull String unconvertibleField(final @NotNull Throwable thrown) {
+        for (Throwable t = thrown; t != null; t = t.getCause()) {
+            if (t instanceof final JsonMappingException mapping
+                    && !mapping.getPath().isEmpty()) {
+                final StringBuilder path = new StringBuilder();
+                for (final JsonMappingException.Reference reference : mapping.getPath()) {
+                    if (reference.getFieldName() == null) {
+                        path.append('[').append(reference.getIndex()).append(']');
+                    } else {
+                        if (path.length() > 0) {
+                            path.append('.');
+                        }
+                        path.append(reference.getFieldName());
+                    }
+                }
+                return path.toString();
+            }
+            if (t.getCause() == t) {
+                break;
+            }
+        }
+        return "config";
+    }
+
+    /**
+     * The innermost message, which is the one the adapter's own configuration class wrote.
+     * <p>
+     * {@code ObjectMapper.convertValue} wraps that in an {@link IllegalArgumentException} around a
+     * {@link JsonMappingException}, and neither wrapper says anything the caller can act on - the
+     * middle one only repeats the reference chain already carried as the field name.
+     */
+    private static @NotNull String unconvertibleReason(final @NotNull Throwable thrown) {
+        Throwable root = thrown;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        final String message = root.getMessage();
+        return message == null || message.isBlank() ? root.toString() : message;
     }
 
     private @NotNull AdaptersList getAdaptersInternal(final @Nullable String adapterType) {

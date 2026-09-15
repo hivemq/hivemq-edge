@@ -1,4 +1,4 @@
-import { isRouteErrorResponse, Link as RouterLink, useRouteError } from 'react-router-dom'
+import { isRouteErrorResponse, Link as RouterLink, useRouteError } from 'react-router'
 import { chakra as Chakra, Heading, VStack, Text, Button, Box } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { FaHome } from 'react-icons/fa'

@@ -83,7 +83,7 @@ the name of the resource. It doesn't have to be added to the list of namespaces.
 
 The following libraries are used for `DataHub` and should be installed in the destination app.
 
-- react-router-dom
+- react-router
 - @chakra-ui/react
 - react-icons/
 - react-i18next

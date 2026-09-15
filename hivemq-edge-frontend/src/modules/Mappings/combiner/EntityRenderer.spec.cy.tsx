@@ -53,7 +53,7 @@ describe('EntityRenderer', () => {
 
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.EDGE_NODE)
     cy.getByTestId('node-name').should('have.text', 'HiveMQ Edge')
-    cy.getByTestId('node-description').should('have.text', 'Always added as the owner of the topic filters')
+    cy.getByTestId('node-description').should('have.text', 'Provides topic filters as a data source')
   })
 
   it('should render a Pulse Agent', () => {
@@ -64,8 +64,8 @@ describe('EntityRenderer', () => {
     cy.mountWithProviders(<EntityRenderer reference={mockPulseEntityReference} />)
 
     cy.getByTestId('node-type-icon').should('exist').should('have.attr', 'data-nodeicon', NodeTypes.PULSE_NODE)
-    cy.getByTestId('node-name').should('have.text', 'Pulse Agent')
-    cy.getByTestId('node-description').should('have.text', 'Assets managed by the Pulse Agent')
+    cy.getByTestId('node-name').should('have.text', 'HiveMQ Platform')
+    cy.getByTestId('node-description').should('have.text', 'Assets managed by the HiveMQ Platform')
   })
 
   it('should be accessible', () => {

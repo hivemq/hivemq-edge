@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hivemq xsi:schemaLocation="config.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <config-version>1</config-version>
+    <admin-api>
+        <username-authentication><enabled>false</enabled></username-authentication>
+        <users></users>
+    </admin-api>
+</hivemq>

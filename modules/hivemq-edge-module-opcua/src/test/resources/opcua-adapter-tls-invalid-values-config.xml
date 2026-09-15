@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Every way an operator can misspell a certificate-validation or security setting, plus one healthy
+  adapter after them. A misspelled VALUE (ALLL, SING) fails that adapter's conversion outright; a
+  misspelled NAME (tlsCheks, trustmode) converts but is trapped and refuses the adapter at start-up; a
+  misspelled ENCLOSING setting (tlls) or security child (polciy) fails the conversion naming the entry.
+  None may disturb the healthy neighbour: adapter configurations are converted one at a time, so a
+  mistake in one adapter is that adapter's problem and nobody else's.
+-->
+<hivemq>
+    <protocol-adapters>
+
+        <!-- 'ALLL' is not a preset. Must fail conversion, never quietly run as STANDARD. -->
+        <protocol-adapter>
+            <adapterId>misspelled-preset-value</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-1.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecks>ALLL</tlsChecks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-1</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/1</topic>
+                    <tagName>tag-1</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'tlsCheks' is not a setting. Neither door is configured, so without the trap this would
+             quietly run under the STANDARD default instead of the ALL the operator wrote. -->
+        <protocol-adapter>
+            <adapterId>misspelled-setting-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-2.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsCheks>ALL</tlsCheks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-2</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/2</topic>
+                    <tagName>tag-2</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'trustmode' is not an axis (the axis is trustMode). Without the trap the axis would be
+             "omitted" and resolve to its default, discarding a setting the operator wrote. -->
+        <protocol-adapter>
+            <adapterId>misspelled-axis-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-3.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecksFull>
+                        <trustmode>CHAIN</trustmode>
+                    </tlsChecksFull>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-3</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/3</topic>
+                    <tagName>tag-3</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- An empty FIRST child of <tls> collapses the whole tls element to the text "ALL".
+             Unreadable TLS configuration: the conversion is rejected with the mistake named. -->
+        <protocol-adapter>
+            <adapterId>collapsed-tls</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-7.factory.local:4840</uri>
+                <tls>
+                    <enabled></enabled>
+                    <tlsChecks>ALL</tlsChecks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-7</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/7</topic>
+                    <tagName>tag-7</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'tlls' is not a setting. Without the rejection the whole TLS block would be dropped and
+             the adapter would quietly run without TLS. Must fail conversion naming the entry. -->
+        <protocol-adapter>
+            <adapterId>misspelled-tls-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-5.factory.local:4840</uri>
+                <tlls>
+                    <enabled>true</enabled>
+                    <tlsChecks>ALL</tlsChecks>
+                </tlls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-5</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/5</topic>
+                    <tagName>tag-5</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'polciy' is not a child of security. Without the rejection it would be dropped and the
+             adapter would quietly run with policy NONE. Must fail conversion naming the entry. -->
+        <protocol-adapter>
+            <adapterId>misspelled-policy-name</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-6.factory.local:4840</uri>
+                <security>
+                    <polciy>BASIC256SHA256</polciy>
+                </security>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-6</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/6</topic>
+                    <tagName>tag-6</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- 'SING' is not a messageSecurityMode. Without the rejection it resolved to "unset", which
+             hands the choice to the policy - and under policy NONE that is MessageSecurityMode.None,
+             an unsigned, unencrypted connection. The correctly spelled SIGN matches no endpoint under
+             policy NONE and refuses to connect, so the typo turned a safe failure into an insecure
+             success. Must fail conversion naming the value. -->
+        <protocol-adapter>
+            <adapterId>misspelled-message-security-mode</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-8.factory.local:4840</uri>
+                <security>
+                    <policy>NONE</policy>
+                    <messageSecurityMode>SING</messageSecurityMode>
+                </security>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-8</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/8</topic>
+                    <tagName>tag-8</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- An empty FIRST child of <truststore> collapses the whole element to the text "pw" - the
+             concatenated text of what is left. Unreadable truststore configuration: the conversion is
+             rejected naming the element, rather than the raw Jackson coercion error it used to be. -->
+        <protocol-adapter>
+            <adapterId>collapsed-truststore</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-9.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <truststore>
+                        <path></path>
+                        <password>truststore-secret-sentinel</password>
+                    </truststore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-9</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/9</topic>
+                    <tagName>tag-9</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- The same collapse on the keystore, which is the worse of the two: the text that survives is
+             the store password and the private-key password concatenated. -->
+        <protocol-adapter>
+            <adapterId>collapsed-keystore</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-10.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <keystore>
+                        <path></path>
+                        <password>keystore-secret-sentinel</password>
+                        <privateKeyPassword>private-key-secret-sentinel</privateKeyPassword>
+                    </keystore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-10</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/10</topic>
+                    <tagName>tag-10</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- The worst case: an empty FIRST child of <tls> collapses the whole element to its
+             textContent, which is every descendant's text concatenated - so both stores' passwords
+             arrive as one string. This is why the <tls> refusal cannot quote what it was given. -->
+        <protocol-adapter>
+            <adapterId>collapsed-tls-with-stores</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-11.factory.local:4840</uri>
+                <tls>
+                    <enabled></enabled>
+                    <truststore>
+                        <path>/opt/hivemq/truststore.jks</path>
+                        <password>truststore-secret-sentinel</password>
+                    </truststore>
+                    <keystore>
+                        <path>/opt/hivemq/keystore.jks</path>
+                        <password>keystore-secret-sentinel</password>
+                        <privateKeyPassword>private-key-secret-sentinel</privateKeyPassword>
+                    </keystore>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-11</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/11</topic>
+                    <tagName>tag-11</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+        <!-- Nothing misspelled. This one must convert and project regardless of the ten above. -->
+        <protocol-adapter>
+            <adapterId>healthy-neighbour</adapterId>
+            <protocolId>opcua</protocolId>
+            <config>
+                <uri>opc.tcp://machine-4.factory.local:4840</uri>
+                <tls>
+                    <enabled>true</enabled>
+                    <tlsChecks>ALL</tlsChecks>
+                </tls>
+            </config>
+            <tags>
+                <tag>
+                    <name>tag-4</name>
+                    <description>description</description>
+                    <definition>
+                        <node>ns=3;s=85/0:Temperature</node>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic/4</topic>
+                    <tagName>tag-4</tagName>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+
+    </protocol-adapters>
+</hivemq>

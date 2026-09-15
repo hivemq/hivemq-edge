@@ -23,6 +23,7 @@ import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapServiceImpl;
+import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
@@ -88,6 +89,28 @@ public class HiveMQEdgeMain {
             throw new HiveMQEdgeStartupException("User aborted.");
         }
 
+        // The configuration watcher is started before the injector exists, so it registers its stop here.
+        // It must stop before anything else is dismantled: a tick during shutdown would reload into a
+        // broker that is going away, and an embedded node's JVM outlives the node, so the watcher's own
+        // JVM shutdown hook never runs for it.
+        final ConfigurationService watchedConfig = Objects.requireNonNull(configService);
+        shutdownHooks.add(new HiveMQShutdownHook() {
+            @Override
+            public @NotNull String name() {
+                return "Configuration file watcher shutdown";
+            }
+
+            @Override
+            public @NotNull Priority priority() {
+                return Priority.FIRST;
+            }
+
+            @Override
+            public void run() {
+                watchedConfig.stopWatchingConfigFile();
+            }
+        });
+
         final HiveMQEdgeGateway instance = injector.edgeGateway();
         instance.start(embeddedExtension);
 
@@ -138,6 +161,15 @@ public class HiveMQEdgeMain {
     protected void stopApiServer() {
         if (jaxrsServer != null) {
             jaxrsServer.stopServer();
+            // Drop the reference, not just the listener. stopServer() closes the HTTP endpoint but the field
+            // still points at the whole JAX-RS graph -- the HK2 injection registry, the routing tables and the
+            // provider chain -- and this object is reachable from the starting thread. In a JVM that starts and
+            // stops an embedded Edge repeatedly that retains one full REST stack per instance; a heap dump of
+            // one test JVM traced its largest retained set along
+            // HiveMQEdgeMain.jaxrsServer -> JaxrsHttpServer -> JaxrsProviders -> ..., with 1603 accumulated
+            // ApiAuthenticationFeature$AuthenticationFilter instances. startGateway() always calls
+            // initializeApiServer() before startApiServer(), so a null field is re-populated on restart.
+            jaxrsServer = null;
         }
     }
 

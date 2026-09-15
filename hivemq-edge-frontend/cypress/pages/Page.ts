@@ -32,4 +32,25 @@ export abstract class Page {
       return cy.get('[role="status"]').should('contain', text)
     },
   }
+
+  get toastRegion() {
+    return cy.get('[role="region"][aria-label="Notifications-top-right"]')
+  }
+
+  /**
+   * Dismiss every open toast and wait until the toast portal region holds no focusable content.
+   *
+   * The Chakra toast manager region (#chakra-toast-manager-top-right) briefly keeps
+   * aria-hidden="true" while a closing toast tears down. While that toast's focusable Close button
+   * is still mounted inside the hidden region, axe reports an `aria-hidden-focus` violation. Waiting
+   * only for the inner [role="status"] to disappear is not enough — the violating node is the region
+   * itself — so gate on the region being free of focusable descendants. Call this before an
+   * accessibility scan that follows a toast-producing action.
+   */
+  dismissAllToasts() {
+    // Make sure the toast has actually rendered before trying to close it.
+    this.toastRegion.find('[role="status"]').should('be.visible')
+    this.toastRegion.find('[aria-label="Close"]').click({ multiple: true })
+    this.toastRegion.find('[role="status"], button, a[href], [tabindex]:not([tabindex="-1"])').should('not.exist')
+  }
 }

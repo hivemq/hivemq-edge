@@ -1,21 +1,24 @@
 import type { FC } from 'react'
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
+import { Handle, Position, useNodeConnections, useNodesData } from '@xyflow/react'
 import { Text } from '@chakra-ui/react'
 
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import type { NodeHostType } from '../../types'
 import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/modules/Workspace/types/status.types'
+import { useSyncNodeStatusModel } from '@/modules/Workspace/hooks/useSyncNodeStatusModel.ts'
 
 const NodeHost: FC<NodeProps<NodeHostType>> = ({ id, selected, data }) => {
   const { label } = data
-  const { updateNodeData } = useReactFlow()
 
   // Use React Flow's efficient hooks to get connected nodes (parent bridge)
   const connections = useNodeConnections({ id })
-  const connectedNodes = useNodesData(connections.map((connection) => connection.source))
+  // useNodesData memoises its selector on the ids array, so a fresh array on every render makes
+  // the store recompute and return a new selection every time.
+  const connectedNodeIds = useMemo(() => connections.map((connection) => connection.source), [connections])
+  const connectedNodes = useNodesData(connectedNodeIds)
 
   // Compute unified status model - derives from parent bridge using React Flow's optimized hooks
   const statusModel = useMemo(() => {
@@ -51,10 +54,7 @@ const NodeHost: FC<NodeProps<NodeHostType>> = ({ id, selected, data }) => {
     }
   }, [connectedNodes])
 
-  // Update node data with statusModel whenever it changes
-  useEffect(() => {
-    updateNodeData(id, { statusModel })
-  }, [id, statusModel, updateNodeData])
+  useSyncNodeStatusModel(id, statusModel, data.statusModel)
   return (
     <>
       <NodeWrapper

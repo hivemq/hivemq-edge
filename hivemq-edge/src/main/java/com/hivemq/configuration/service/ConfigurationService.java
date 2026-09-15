@@ -60,14 +60,6 @@ public interface ConfigurationService {
     RestrictionsConfigurationService restrictionsConfiguration();
 
     /**
-     * Returns the configuration service for MQTTSN configuration
-     *
-     * @return the mqttsn configuration service
-     */
-    @NotNull
-    MqttsnConfigurationService mqttsnConfiguration();
-
-    /**
      * Returns the configuration service for Api configuration
      *
      * @return the api configuration service
@@ -112,6 +104,9 @@ public interface ConfigurationService {
     UnsExtractor unsExtractor();
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
+
+    /** Stops watching the configuration file for changes; a no-op when no reader is set or no watch runs. */
+    void stopWatchingConfigFile();
 
     void writeConfiguration(final @NotNull Writer writer);
 
