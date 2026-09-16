@@ -346,6 +346,9 @@ class InternalTopicFilterSubscriberAsyncTest {
 
         assertThat(outstanding).as("an iteration is in flight").hasSize(1);
 
+        // pause() first because deallocate() requires detached and paused -- and note that pausing does NOT
+        // recall the message already with the processor, which is exactly the situation under test.
+        subscriber.pause();
         subscriber.deallocate();
         verify(clientQueuePersistence, never())
                 .clear(anyString(), anyBoolean()); // NOT while the processor still holds the message
