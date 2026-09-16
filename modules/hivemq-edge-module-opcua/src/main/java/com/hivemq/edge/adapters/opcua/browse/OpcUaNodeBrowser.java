@@ -23,14 +23,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -44,11 +45,14 @@ import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
@@ -62,20 +66,30 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Browses an OPC-UA address space and collects variable nodes with their attributes.
  * Builds {@link BrowsedNode} records with informational fields and generated defaults.
  *
- * <p>The browse is two-phase: (1) async recursive traversal collects variable node references,
- * bounded by a concurrency semaphore to avoid overwhelming the server; (2) batch attribute reads
- * (DataType, AccessLevel, Description) resolve each variable's metadata. Data type names are
- * resolved via Milo's {@link DataTypeTree}, which handles both built-in and server-defined types.
+ * <p>The browse is two-phase: (1) a level-wise traversal collects variable node references, one
+ * batched {@code Browse} request per level chunk, serialised by a concurrency semaphore so browses
+ * never overlap on the device; (2) batch attribute reads (DataType, AccessLevel, Description)
+ * resolve each variable's metadata, sized to the server's advertised operation limits. Data type
+ * names are resolved via Milo's {@link DataTypeTree}, which handles both built-in and server-defined types.
  */
 public class OpcUaNodeBrowser {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaNodeBrowser.class);
+
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
+    private static final int BROWSE_CHUNK_SIZE = 100;
+    // Attributes read per variable in Phase 2 (DataType, AccessLevel, Description). A server's MaxNodesPerRead
+    // limit counts ReadValueIds, not distinct nodes, so a batch of N variables is N * ATTRIBUTES_PER_NODE
+    // operations (EDG-1034).
+    static final int ATTRIBUTES_PER_NODE = 3;
 
     private final @NotNull OpcUaClient client;
     private final @NotNull String adapterId;
@@ -121,7 +135,7 @@ public class OpcUaNodeBrowser {
     /**
      * Browse the OPC-UA address space starting from the given root node.
      *
-     * <p>Phase 1 collects all variable node references via async recursive traversal.
+     * <p>Phase 1 collects all variable node references via a level-wise batched traversal.
      * The discovered variables are then sorted by path so that the returned stream
      * is ordered without requiring the final {@link BrowsedNode} list to be materialized.
      * Phase 2 lazily batch-reads attributes (DataType, AccessLevel, Description) as the
@@ -146,19 +160,12 @@ public class OpcUaNodeBrowser {
         }
 
         try {
-            // Phase 1: Browse and collect variable node references with their paths.
-            // CopyOnWriteArrayList is safe for concurrent adds from async browse callbacks.
-            // The visited set deduplicates nodes reachable via multiple paths in the OPC UA graph.
-            final List<DiscoveredVariable> variables = new CopyOnWriteArrayList<>();
-            final Set<NodeId> visited = ConcurrentHashMap.newKeySet();
-            browseRecursive(
-                            browseRoot,
-                            "",
-                            maxDepth == 0 ? Integer.MAX_VALUE : maxDepth,
-                            variables,
-                            visited,
-                            concurrency)
-                    .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            // Fired before Phase 1 so their round-trips overlap the traversal; joined when each phase needs them.
+            final CompletableFuture<OperationLimits> limits = readOperationLimits();
+
+            // Phase 1: level-wise traversal collecting every variable reachable from the root with its path.
+            final List<DiscoveredVariable> variables =
+                    browseLevels(browseRoot, maxDepth == 0 ? Integer.MAX_VALUE : maxDepth, limits);
 
             if (variables.isEmpty()) {
                 return Stream.empty();
@@ -166,9 +173,8 @@ public class OpcUaNodeBrowser {
 
             // Sort by path early (DiscoveredVariable is small) so the output stream is ordered
             // without needing to materialize the full List<BrowsedNode>. Nodes sharing a path
-            // (e.g. Prosys simulation instances) are tie-broken on the NodeId: the async browse
-            // callbacks add them in arrival order, which varies between browses, and without the
-            // tie-break the collision suffixes in tagNameDefaults would shuffle between runs.
+            // (e.g. Prosys simulation instances) are tie-broken on the NodeId so the collision
+            // suffixes in tagNameDefaults never depend on the order the server listed them in.
             variables.sort(
                     Comparator.comparing(DiscoveredVariable::path).thenComparing(v -> v.nodeId.toParseableString()));
 
@@ -178,10 +184,15 @@ public class OpcUaNodeBrowser {
 
             // Phase 2: Return a stream that lazily batch-reads attributes as it is consumed.
             final DataTypeTree dataTypeTree = getDataTypeTree();
+            final int batchSize = initialBatchSize(
+                    limits.get(TIMEOUT_SECONDS, TimeUnit.SECONDS).maxNodesPerRead());
             return StreamSupport.stream(
-                    new BatchAttributeSpliterator(variables, tagNameDefaults, client, dataTypeTree, this), false);
+                    new BatchAttributeSpliterator(variables, tagNameDefaults, client, dataTypeTree, this, batchSize),
+                    false);
         } catch (final ExecutionException e) {
             throw new BrowseException("Browse operation failed", e.getCause());
+        } catch (final UncheckedBrowseException e) {
+            throw new BrowseException("Browse operation failed", e);
         } catch (final TimeoutException e) {
             throw new BrowseException("Browse operation timed out after " + TIMEOUT_SECONDS + " seconds", e);
         } catch (final InterruptedException e) {
@@ -190,159 +201,340 @@ public class OpcUaNodeBrowser {
         }
     }
 
-    private @NotNull CompletableFuture<Void> browseRecursive(
-            final @NotNull NodeId browseRoot,
-            final @NotNull String currentPath,
-            final int remainingDepth,
-            final @NotNull List<DiscoveredVariable> variables,
-            final @NotNull Set<NodeId> visited,
-            final @NotNull Semaphore concurrency) {
-        // Skip already-visited nodes to deduplicate and prevent cycles in the OPC UA graph.
-        if (!visited.add(browseRoot)) {
-            return CompletableFuture.completedFuture(null);
-        }
-        final BrowseDescription browseDescription = new BrowseDescription(
-                browseRoot,
-                BrowseDirection.Forward,
-                NodeIds.HierarchicalReferences,
-                true,
-                uint(0),
-                uint(BrowseResultMask.All.getValue()));
-        return CompletableFuture.runAsync(concurrency::acquireUninterruptibly)
-                .thenCompose(ignored -> {
-                    if (maxReferencesPerNode > 0) {
-                        final var viewDescription = new ViewDescription(NodeId.NULL_VALUE, DateTime.MIN_VALUE, uint(0));
-                        return client.browseAsync(
-                                        viewDescription, uint(maxReferencesPerNode), List.of(browseDescription))
-                                .thenApply(response -> response.getResults()[0]);
-                    }
-                    return client.browseAsync(browseDescription);
-                })
-                .whenComplete((result, error) -> concurrency.release())
-                .thenCompose(browseResult ->
-                        handleBrowseResult(browseResult, currentPath, remainingDepth, variables, visited, concurrency));
-    }
-
-    private @NotNull CompletableFuture<Void> handleBrowseResult(
-            final @NotNull BrowseResult browseResult,
-            final @NotNull String currentPath,
-            final int remainingDepth,
-            final @NotNull List<DiscoveredVariable> variables,
-            final @NotNull Set<NodeId> visited,
-            final @NotNull Semaphore concurrency) {
-        // Fail loudly on non-Good status. Under high concurrency the server may throttle
-        // individual browse operations (e.g. BadTooManyOperations), returning no references
-        // and no continuation point. Without this check, the entire subtree under the
-        // throttled node is silently missing from the results.
-        if (browseResult.getStatusCode() != null
-                && !browseResult.getStatusCode().isGood()) {
-            throw new UncheckedBrowseException(
-                    "Browse at path '" + currentPath + "' returned non-Good status: " + browseResult.getStatusCode(),
-                    null);
-        }
-
-        final var references = new ArrayList<ReferenceDescription>();
-
-        if (browseResult.getReferences() != null) {
-            Collections.addAll(references, browseResult.getReferences());
-        }
-
-        // Drain all continuation pages BEFORE starting child recursive browses.
-        // Continuation points are server-side cursors with a limited lifetime — resource-
-        // constrained devices (e.g. S7-1500) expire them quickly. If continuation follow-ups
-        // compete with recursive browses for the semaphore, the recursive browses may run
-        // first and the continuation point expires -> Bad_ContinuationPointInvalid.
-        // Continuation pages bypass the semaphore because they are part of the same logical
-        // browse operation that already acquired and released the semaphore.
-        final CompletableFuture<Void> continuationFuture = drainContinuationPages(
-                browseResult, currentPath, remainingDepth, references, variables, visited, concurrency);
-
-        // After all continuation pages are drained, process all collected references and
-        // start recursive browses for child nodes.
-        return continuationFuture.thenCompose(ignored -> {
-            final var childFutures = new ArrayList<CompletableFuture<Void>>();
-            final NamespaceTable nsTable = client.getNamespaceTable();
-
-            for (final ReferenceDescription rd : references) {
-                final String browseName =
-                        rd.getBrowseName() != null && rd.getBrowseName().getName() != null
-                                ? rd.getBrowseName().getName()
-                                : "";
-                final String childPath = currentPath + "/" + browseName;
-
-                final Optional<NodeId> resolvedNodeId = rd.getNodeId().toNodeId(nsTable);
-                if (resolvedNodeId.isEmpty()) {
-                    continue;
-                }
-                final NodeId nodeId = resolvedNodeId.get();
-
-                if (rd.getNodeClass() == NodeClass.Variable) {
-                    if (visited.add(nodeId)) {
-                        final int nsIndex = nodeId.getNamespaceIndex().intValue();
-                        final String nsUri =
-                                nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
-                        variables.add(new DiscoveredVariable(
-                                nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
-                    }
-                }
-
-                if (remainingDepth > 1) {
-                    childFutures.add(
-                            browseRecursive(nodeId, childPath, remainingDepth - 1, variables, visited, concurrency));
-                }
-            }
-
-            return CompletableFuture.allOf(childFutures.toArray(CompletableFuture[]::new));
-        });
+    /** The server's advertised operation limits; 0 = not advertised / unlimited. */
+    record OperationLimits(int maxNodesPerRead, int maxNodesPerBrowse, int maxBrowseContinuationPoints) {
+        static final @NotNull OperationLimits NONE = new OperationLimits(0, 0, 0);
     }
 
     /**
-     * Drain all continuation pages for a browse result, appending references to the shared list.
-     * Continuation pages bypass the browse semaphore because they are part of the same logical
-     * browse operation and must be consumed promptly before the server expires them.
+     * Reads the server's advertised {@code MaxNodesPerRead}, {@code MaxNodesPerBrowse} and
+     * {@code MaxBrowseContinuationPoints} limits in one request. A limit resolves to 0 (= not advertised / unlimited) when the node is missing, the value is
+     * not a UInt32, or the read fails — never exceptionally, so a server without operation limits browses with
+     * the defaults (EDG-1034).
      */
-    private @NotNull CompletableFuture<Void> drainContinuationPages(
-            final @NotNull BrowseResult browseResult,
-            final @NotNull String currentPath,
-            final int remainingDepth,
-            final @NotNull List<ReferenceDescription> references,
-            final @NotNull List<DiscoveredVariable> variables,
-            final @NotNull Set<NodeId> visited,
-            final @NotNull Semaphore concurrency) {
-        if (browseResult.getContinuationPoint() == null
-                || browseResult.getContinuationPoint().bytes() == null
-                || browseResult.getContinuationPoint().bytes().length == 0) {
-            return CompletableFuture.completedFuture(null);
+    private @NotNull CompletableFuture<OperationLimits> readOperationLimits() {
+        final List<ReadValueId> ids = List.of(
+                new ReadValueId(
+                        NodeIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerRead,
+                        AttributeId.Value.uid(),
+                        null,
+                        null),
+                new ReadValueId(
+                        NodeIds.Server_ServerCapabilities_OperationLimits_MaxNodesPerBrowse,
+                        AttributeId.Value.uid(),
+                        null,
+                        null),
+                new ReadValueId(
+                        NodeIds.Server_ServerCapabilities_MaxBrowseContinuationPoints,
+                        AttributeId.Value.uid(),
+                        null,
+                        null));
+        return client.readAsync(0.0, TimestampsToReturn.Neither, ids)
+                .orTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .thenApply(response -> {
+                    final DataValue[] results = response.getResults();
+                    if (results == null || results.length < ids.size()) {
+                        return OperationLimits.NONE;
+                    }
+                    return new OperationLimits(limitValue(results[0]), limitValue(results[1]), limitValue(results[2]));
+                })
+                .exceptionally(error -> OperationLimits.NONE);
+    }
+
+    private static int limitValue(final @Nullable DataValue value) {
+        if (value == null || value.getValue() == null) {
+            return 0;
         }
-        return client.browseNextAsync(false, List.of(browseResult.getContinuationPoint()))
-                .thenCompose(nextResult -> {
-                    if (nextResult.getResults() != null) {
-                        for (final BrowseResult result : nextResult.getResults()) {
-                            if (result != null) {
-                                if (result.getStatusCode() != null
-                                        && !result.getStatusCode().isGood()) {
-                                    throw new UncheckedBrowseException(
-                                            "Browse continuation at path '" + currentPath
-                                                    + "' returned non-Good status: " + result.getStatusCode(),
-                                            null);
-                                }
-                                if (result.getReferences() != null) {
-                                    Collections.addAll(references, result.getReferences());
-                                }
-                                // Recursively drain further continuation pages.
-                                return drainContinuationPages(
-                                        result,
-                                        currentPath,
-                                        remainingDepth,
-                                        references,
-                                        variables,
-                                        visited,
-                                        concurrency);
+        // MaxNodesPerRead / MaxNodesPerBrowse are UInt32, MaxBrowseContinuationPoints is UInt16.
+        return value.getValue().getValue() instanceof final Number limit ? limit.intValue() : 0;
+    }
+
+    /**
+     * Number of variables per Phase 2 read so that {@code variables * ATTRIBUTES_PER_NODE} stays within the
+     * server's advertised {@code MaxNodesPerRead}; 0 or below means the server did not advertise a limit and
+     * the default applies. Never below 1. WAGO PFC200 / Codesys servers advertise 100 and enforce it on the
+     * ReadValueId count, so they get 33 variables per read instead of the default 100 (EDG-1034).
+     */
+    static int initialBatchSize(final int maxNodesPerRead) {
+        if (maxNodesPerRead <= 0) {
+            return READ_BATCH_SIZE;
+        }
+        return Math.max(1, Math.min(READ_BATCH_SIZE, maxNodesPerRead / ATTRIBUTES_PER_NODE));
+    }
+
+    /** A node whose children are still to be browsed. */
+    private record PendingNode(
+            @NotNull NodeId nodeId, @NotNull String path, int remainingDepth) {}
+
+    /**
+     * Phase 1. Breadth-first: every node of a level is browsed in as few {@code Browse} requests as the server's
+     * {@code MaxNodesPerBrowse} allows, and every continuation point of a level is drained before the next level
+     * is requested. One request per node was the previous shape; on a real PLC over a WAN link (95 ms RTT to
+     * the lab S7-1500) that put a full-depth browse near the 120 s timeout once nested variables were included.
+     *
+     * <p>Variables are collected in a map keyed by NodeId so a node reachable through several paths is emitted
+     * once, under the first (shallowest) path met. The visited set only guards the traversal. Keeping the two
+     * apart is what lets a Variable's own children be browsed: struct members, array elements and properties are
+     * Variables under a Variable, and were silently missing when one set did both jobs (EDG-1034).
+     *
+     * <p>Continuation points are drained while the browse permit is held, so no other browse against the same
+     * device can run before the server-side cursor is consumed — resource-constrained servers (S7-1500) expire
+     * them quickly, see EDG-465.
+     */
+    private @NotNull List<DiscoveredVariable> browseLevels(
+            final @NotNull NodeId browseRoot,
+            final int maxDepth,
+            final @NotNull CompletableFuture<OperationLimits> limits)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS);
+        final Map<NodeId, DiscoveredVariable> variables = new LinkedHashMap<>();
+        final Set<NodeId> visited = new HashSet<>();
+        visited.add(browseRoot);
+        List<PendingNode> level = List.of(new PendingNode(browseRoot, "", maxDepth));
+        final OperationLimits serverLimits = limits.get(remaining(deadline), TimeUnit.NANOSECONDS);
+        int chunkSize = initialBrowseChunkSize(serverLimits.maxNodesPerBrowse());
+
+        while (!level.isEmpty()) {
+            final List<PendingNode> next = new ArrayList<>();
+            int offset = 0;
+            while (offset < level.size()) {
+                final List<PendingNode> chunk = level.subList(offset, Math.min(offset + chunkSize, level.size()));
+                final ChunkResult result;
+                try {
+                    result = browseChunk(chunk, deadline);
+                } catch (final ExecutionException e) {
+                    if (isTooManyOperations(e.getCause()) && chunk.size() > 1) {
+                        final int rejected = chunk.size();
+                        chunkSize = Math.max(1, rejected / 2);
+                        log.info(
+                                "OPC UA server rejected a browse of {} nodes for adapter '{}' with Bad_TooManyOperations, retrying with {} nodes per browse",
+                                rejected,
+                                adapterId,
+                                chunkSize);
+                        continue;
+                    }
+                    throw e;
+                }
+                for (int i = 0; i < chunk.size(); i++) {
+                    if (result.references.get(i) != null) {
+                        collectReferences(chunk.get(i), result.references.get(i), variables, visited, next);
+                    }
+                }
+                offset += chunk.size();
+                // Nodes the server could not page because it ran out of continuation points: browse them again
+                // in chunks small enough that every node of a chunk can hold a point at once. The S7-1500
+                // advertises 5, so a level chunk of 100 nodes with six overflowing folders fails six times over.
+                List<PendingNode> exhausted = result.exhausted;
+                int retrySize = chunk.size();
+                while (!exhausted.isEmpty()) {
+                    retrySize = retryChunkSize(retrySize, serverLimits.maxBrowseContinuationPoints());
+                    log.info(
+                            "OPC UA server ran out of continuation points for {} of {} browsed nodes for adapter '{}', re-browsing them {} at a time",
+                            exhausted.size(),
+                            chunk.size(),
+                            adapterId,
+                            retrySize);
+                    final List<PendingNode> stillExhausted = new ArrayList<>();
+                    for (int start = 0; start < exhausted.size(); start += retrySize) {
+                        final List<PendingNode> retry =
+                                exhausted.subList(start, Math.min(start + retrySize, exhausted.size()));
+                        final ChunkResult retried = browseChunk(retry, deadline);
+                        for (int i = 0; i < retry.size(); i++) {
+                            if (retried.references.get(i) != null) {
+                                collectReferences(retry.get(i), retried.references.get(i), variables, visited, next);
                             }
                         }
+                        stillExhausted.addAll(retried.exhausted);
                     }
-                    return CompletableFuture.completedFuture(null);
-                });
+                    exhausted = stillExhausted;
+                }
+            }
+            level = next;
+        }
+        return new ArrayList<>(variables.values());
+    }
+
+    /**
+     * Chunk size for re-browsing nodes that got {@code Bad_NoContinuationPoints}: the advertised
+     * {@code MaxBrowseContinuationPoints} when the server has one and it is smaller than what was just tried,
+     * otherwise half of what was just tried. Never below 1; at 1 a repeat of the fault fails the browse.
+     */
+    static int retryChunkSize(final int tried, final int maxBrowseContinuationPoints) {
+        if (maxBrowseContinuationPoints > 0 && maxBrowseContinuationPoints < tried) {
+            return maxBrowseContinuationPoints;
+        }
+        return Math.max(1, tried / 2);
+    }
+
+    /**
+     * Nodes per {@code Browse} request: the default, or fewer if the server advertises a smaller
+     * {@code MaxNodesPerBrowse}; 0 or below means not advertised. Never below 1.
+     */
+    static int initialBrowseChunkSize(final int maxNodesPerBrowse) {
+        if (maxNodesPerBrowse <= 0) {
+            return BROWSE_CHUNK_SIZE;
+        }
+        return Math.max(1, Math.min(BROWSE_CHUNK_SIZE, maxNodesPerBrowse));
+    }
+
+    /**
+     * References per node of a chunk, aligned with the chunk ({@code null} for a node listed in
+     * {@code exhausted}), plus the nodes whose result was {@code Bad_NoContinuationPoints} and must be
+     * browsed again in a smaller chunk.
+     */
+    private record ChunkResult(
+            @NotNull List<@Nullable List<ReferenceDescription>> references,
+            @NotNull List<PendingNode> exhausted) {}
+
+    /**
+     * Browses one chunk of nodes in a single request and drains all continuation points, holding the browse
+     * permit throughout.
+     */
+    private @NotNull ChunkResult browseChunk(final @NotNull List<PendingNode> chunk, final long deadline)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        final List<BrowseDescription> descriptions = new ArrayList<>(chunk.size());
+        for (final PendingNode node : chunk) {
+            descriptions.add(new BrowseDescription(
+                    node.nodeId,
+                    BrowseDirection.Forward,
+                    NodeIds.HierarchicalReferences,
+                    true,
+                    uint(0),
+                    uint(BrowseResultMask.All.getValue())));
+        }
+        final var viewDescription = new ViewDescription(NodeId.NULL_VALUE, DateTime.MIN_VALUE, uint(0));
+        concurrency.acquireUninterruptibly();
+        try {
+            final BrowseResult[] results = client.browseAsync(viewDescription, uint(maxReferencesPerNode), descriptions)
+                    .get(remaining(deadline), TimeUnit.NANOSECONDS)
+                    .getResults();
+            final List<List<ReferenceDescription>> references = new ArrayList<>(chunk.size());
+            final List<PendingNode> exhausted = new ArrayList<>();
+            // Continuation points still open after the first page, with the chunk index they belong to.
+            final List<ByteString> continuationPoints = new ArrayList<>();
+            final List<Integer> continuationOwners = new ArrayList<>();
+            for (int i = 0; i < chunk.size(); i++) {
+                final BrowseResult result = results != null && i < results.length ? results[i] : null;
+                final List<ReferenceDescription> refs = new ArrayList<>();
+                references.add(refs);
+                if (result == null) {
+                    continue;
+                }
+                // A server out of continuation points cannot page this node's children now; a smaller chunk
+                // will. Only a chunk of one that still gets the fault is a real failure.
+                if (isNoContinuationPoints(result.getStatusCode()) && chunk.size() > 1) {
+                    references.set(i, null);
+                    exhausted.add(chunk.get(i));
+                    continue;
+                }
+                // Fail loudly on non-Good status. Under load the server may throttle individual browse
+                // operations, returning no references and no continuation point; without this check the
+                // entire subtree under the throttled node is silently missing from the results.
+                if (result.getStatusCode() != null && !result.getStatusCode().isGood()) {
+                    throw new UncheckedBrowseException(
+                            "Browse at path '" + chunk.get(i).path + "' returned non-Good status: "
+                                    + result.getStatusCode(),
+                            null);
+                }
+                if (result.getReferences() != null) {
+                    Collections.addAll(refs, result.getReferences());
+                }
+                if (hasContinuationPoint(result)) {
+                    continuationPoints.add(result.getContinuationPoint());
+                    continuationOwners.add(i);
+                }
+            }
+            // Drain every continuation page of this chunk before returning (and releasing the permit).
+            while (!continuationPoints.isEmpty()) {
+                final BrowseResult[] pages = client.browseNextAsync(false, List.copyOf(continuationPoints))
+                        .get(remaining(deadline), TimeUnit.NANOSECONDS)
+                        .getResults();
+                final List<ByteString> nextPoints = new ArrayList<>();
+                final List<Integer> nextOwners = new ArrayList<>();
+                for (int i = 0; i < continuationPoints.size(); i++) {
+                    final int owner = continuationOwners.get(i);
+                    final BrowseResult page = pages != null && i < pages.length ? pages[i] : null;
+                    if (page == null) {
+                        continue;
+                    }
+                    if (page.getStatusCode() != null && !page.getStatusCode().isGood()) {
+                        throw new UncheckedBrowseException(
+                                "Browse continuation at path '" + chunk.get(owner).path + "' returned non-Good status: "
+                                        + page.getStatusCode(),
+                                null);
+                    }
+                    if (page.getReferences() != null) {
+                        Collections.addAll(references.get(owner), page.getReferences());
+                    }
+                    if (hasContinuationPoint(page)) {
+                        nextPoints.add(page.getContinuationPoint());
+                        nextOwners.add(owner);
+                    }
+                }
+                continuationPoints.clear();
+                continuationPoints.addAll(nextPoints);
+                continuationOwners.clear();
+                continuationOwners.addAll(nextOwners);
+            }
+            return new ChunkResult(references, exhausted);
+        } finally {
+            concurrency.release();
+        }
+    }
+
+    private static boolean isNoContinuationPoints(final @Nullable StatusCode status) {
+        return status != null && status.getValue() == StatusCodes.Bad_NoContinuationPoints;
+    }
+
+    private static boolean hasContinuationPoint(final @NotNull BrowseResult result) {
+        return result.getContinuationPoint() != null
+                && result.getContinuationPoint().bytes() != null
+                && result.getContinuationPoint().bytes().length > 0;
+    }
+
+    /** Records the variables among {@code references} and queues every unvisited child for the next level. */
+    private void collectReferences(
+            final @NotNull PendingNode parent,
+            final @NotNull List<ReferenceDescription> references,
+            final @NotNull Map<NodeId, DiscoveredVariable> variables,
+            final @NotNull Set<NodeId> visited,
+            final @NotNull List<PendingNode> next) {
+        final NamespaceTable nsTable = client.getNamespaceTable();
+        for (final ReferenceDescription rd : references) {
+            final String browseName =
+                    rd.getBrowseName() != null && rd.getBrowseName().getName() != null
+                            ? rd.getBrowseName().getName()
+                            : "";
+            final String childPath = parent.path + "/" + browseName;
+
+            final Optional<NodeId> resolvedNodeId = rd.getNodeId().toNodeId(nsTable);
+            if (resolvedNodeId.isEmpty()) {
+                continue;
+            }
+            final NodeId nodeId = resolvedNodeId.get();
+
+            if (rd.getNodeClass() == NodeClass.Variable && !variables.containsKey(nodeId)) {
+                final int nsIndex = nodeId.getNamespaceIndex().intValue();
+                final String nsUri =
+                        nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
+                variables.put(
+                        nodeId,
+                        new DiscoveredVariable(nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
+            }
+
+            if (parent.remainingDepth > 1 && visited.add(nodeId)) {
+                next.add(new PendingNode(nodeId, childPath, parent.remainingDepth - 1));
+            }
+        }
+    }
+
+    private static long remaining(final long deadline) {
+        return Math.max(1, deadline - System.nanoTime());
+    }
+
+    static boolean isTooManyOperations(final @Nullable Throwable cause) {
+        return cause instanceof final UaException ua
+                && ua.getStatusCode().getValue() == StatusCodes.Bad_TooManyOperations;
     }
 
     /**
@@ -374,6 +566,12 @@ public class OpcUaNodeBrowser {
         // Tracked so estimateSize() can correctly count the in-flight batch as remaining,
         // which is required by the SIZED characteristic contract.
         private int pendingBatchSize;
+        // Variables per read. Starts from the server's advertised MaxNodesPerRead and is halved
+        // whenever a read comes back Bad_TooManyOperations, so a server that enforces a tighter
+        // limit than it advertises still gets browsed instead of failing the stream (EDG-1034).
+        private int batchSize;
+        // Offset of the in-flight batch, so a rejected read can be re-issued for the same slice.
+        private int inFlightStart;
 
         private final @NotNull List<String> tagNameDefaults;
 
@@ -382,12 +580,14 @@ public class OpcUaNodeBrowser {
                 final @NotNull List<String> tagNameDefaults,
                 final @NotNull OpcUaClient client,
                 final @Nullable DataTypeTree dataTypeTree,
-                final @NotNull OpcUaNodeBrowser browser) {
+                final @NotNull OpcUaNodeBrowser browser,
+                final int batchSize) {
             this.variables = variables;
             this.tagNameDefaults = tagNameDefaults;
             this.client = client;
             this.dataTypeTree = dataTypeTree;
             this.browser = browser;
+            this.batchSize = batchSize;
             this.globalOffset = 0;
             this.currentBatch = null;
             this.batchIndex = 0;
@@ -431,14 +631,15 @@ public class OpcUaNodeBrowser {
                 return null;
             }
             final int batchStart = globalOffset;
-            final int end = Math.min(globalOffset + READ_BATCH_SIZE, variables.size());
+            final int end = Math.min(globalOffset + batchSize, variables.size());
             // Snapshot the slice so later globalOffset updates can't mutate the view used by
             // the async callback.
             final List<DiscoveredVariable> batch = List.copyOf(variables.subList(globalOffset, end));
             pendingBatchSize = end - batchStart;
+            inFlightStart = batchStart;
             globalOffset = end;
 
-            final List<ReadValueId> readValueIds = new ArrayList<>(batch.size() * 3);
+            final List<ReadValueId> readValueIds = new ArrayList<>(batch.size() * ATTRIBUTES_PER_NODE);
             for (final DiscoveredVariable var : batch) {
                 readValueIds.add(new ReadValueId(var.nodeId, AttributeId.DataType.uid(), null, null));
                 readValueIds.add(new ReadValueId(var.nodeId, AttributeId.AccessLevel.uid(), null, null));
@@ -477,19 +678,42 @@ public class OpcUaNodeBrowser {
             return result;
         }
 
+        /**
+         * Waits for the in-flight batch. A {@code Bad_TooManyOperations} service fault means the server enforces
+         * a smaller read limit than it advertised (or none was advertised): the batch size is halved and the
+         * same slice re-read, until a single variable per read is rejected — only then is the stream failed.
+         */
         private @NotNull List<BrowsedNode> await(final @NotNull CompletableFuture<List<BrowsedNode>> future) {
-            try {
-                return future.get();
-            } catch (final ExecutionException e) {
-                final Throwable cause = e.getCause();
-                if (cause instanceof TimeoutException) {
-                    throw new UncheckedBrowseException(
-                            "Attribute read timed out after " + TIMEOUT_SECONDS + " seconds", cause);
+            CompletableFuture<List<BrowsedNode>> pending = future;
+            while (true) {
+                try {
+                    return pending.get();
+                } catch (final ExecutionException e) {
+                    final Throwable cause = e.getCause();
+                    if (cause instanceof TimeoutException) {
+                        throw new UncheckedBrowseException(
+                                "Attribute read timed out after " + TIMEOUT_SECONDS + " seconds", cause);
+                    }
+                    // Halve the slice that was actually rejected (the last slice can be shorter than batchSize).
+                    if (isTooManyOperations(cause) && pendingBatchSize > 1) {
+                        final int rejected = pendingBatchSize;
+                        batchSize = rejected / 2;
+                        log.info(
+                                "OPC UA server rejected a read of {} variables ({} attributes) for adapter '{}' with Bad_TooManyOperations, retrying with {} variables per read",
+                                rejected,
+                                rejected * ATTRIBUTES_PER_NODE,
+                                browser.adapterId,
+                                batchSize);
+                        globalOffset = inFlightStart;
+                        // inFlightStart < variables.size(), so there is always a batch to re-issue.
+                        pending = Objects.requireNonNull(firePrefetch());
+                        continue;
+                    }
+                    throw new UncheckedBrowseException("Failed to read node attributes", cause);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new UncheckedBrowseException("Attribute read interrupted", e);
                 }
-                throw new UncheckedBrowseException("Failed to read node attributes", cause);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new UncheckedBrowseException("Attribute read interrupted", e);
             }
         }
 
