@@ -73,6 +73,10 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
     private final @NotNull LocalTopicTree topicTree;
     private final @NotNull ConnectionPersistence connectionPersistence;
     private final @NotNull Lazy<PublishPollService> publishPollService;
+
+    // Lazy for the same reason as the poll service above: the factory depends on this persistence, so an
+    // eager reference would be a construction cycle. Only consulted for an internal subscriber's queue.
+    private final @NotNull Lazy<InternalTopicFilterSubscriberFactory> subscriberFactory;
     private final @NotNull MessageForwarder messageForwarder;
     private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull Map<String, PublishAvailableCallback> queueidCallbackMap;
@@ -87,8 +91,10 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final @NotNull LocalTopicTree topicTree,
             final @NotNull ConnectionPersistence connectionPersistence,
             final @NotNull Lazy<PublishPollService> publishPollService,
+            final @NotNull Lazy<InternalTopicFilterSubscriberFactory> subscriberFactory,
             final @NotNull MessageForwarder messageForwarder,
             final @NotNull ShutdownHooks shutdownHooks) {
+        this.subscriberFactory = subscriberFactory;
         this.shutdownHooks = shutdownHooks;
         this.localPersistence = localPersistence;
         this.mqttConfigurationService = mqttConfigurationService;
@@ -100,6 +106,50 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         singleWriter = singleWriterService.getQueuedMessagesQueue();
         this.messageForwarder = messageForwarder;
         this.queueidCallbackMap = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * What to drop when this queue is full.
+     * <p>
+     * <b>The producer's {@link QueuePolicy} decides first.</b> {@code SAMPLE_RING} is sampling saying it wants
+     * a ring buffer of the most recent messages, and nothing overrides that.
+     * <p>
+     * Within {@code DEFAULT}, an internal subscriber may declare its own strategy at its builder -- which is
+     * where a consumer says everything else about itself. Declaring none leaves the broker-wide setting, which
+     * is what every queue got before this existed.
+     * <p>
+     * <b>ONLY FOR A NON-SHARED QUEUE, and {@code shared} is the only thing that can tell.</b> A shared queue's
+     * id is built from a share name, and a share name is the client's to choose -- so a subscription to
+     * {@code $share/$INTERNAL::<a live subscriber's name>/} yields a queue id that, once the {@code $share/}
+     * prefix is stripped, is indistinguishable from that subscriber's own. Asking the factory does not help:
+     * an internal subscriber's id carries no topic suffix, so nothing recoverable from the string separates
+     * "the subscriber called X" from "a client's share group called X". The flag the caller already holds is
+     * the answer, and without it a client could take an internal subscriber's overflow strategy for its own
+     * queue.
+     * <p>
+     * This is the third time the same shape has bitten: reading a queue's policy off its id gave a legitimate
+     * client a sampler's ten-message ring (EDG-882 F-05) and, a round later, a bridge's queue limit and a
+     * rewritten QoS (EDG-882 QA round 2). Both were fixed by asking the owning service instead. That remedy
+     * does not transfer here -- see above -- so this branch is gated on {@code shared} rather than made
+     * name-independent.
+     * <p>
+     * The factory is resolved lazily, and only for a queue whose id says it could be an internal subscriber:
+     * the factory depends on this persistence, so holding it eagerly would be a construction cycle.
+     */
+    private @NotNull MqttConfigurationService.QueuedMessagesStrategy overflowStrategyFor(
+            final @NotNull String queueId, final boolean shared, final @NotNull QueuePolicy policy) {
+
+        if (policy == QueuePolicy.SAMPLE_RING) {
+            return MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
+        }
+        if (!shared && queueId.startsWith(InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX)) {
+            final InternalTopicFilterSubscriber subscriber =
+                    subscriberFactory.get().getSubscriber(queueId);
+            if (subscriber != null && subscriber.queueOverflow() != null) {
+                return subscriber.queueOverflow();
+            }
+        }
+        return mqttConfigurationService.getQueuedMessagesStrategy();
     }
 
     @Override
@@ -119,14 +169,10 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         }
 
         return singleWriter.submit(queueId, (bucketIndex) -> {
-            // What to do when the queue is full comes from the producer (see QueuePolicy). It used to be
-            // read off the queue ID -- a share name a client chooses -- so an ordinary subscription to
-            // $share/$SAMPLER::customer/alerts had its own messages discarded under a policy meant for
-            // diagnostics (EDG-882 F-05).
-            final MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
-                    policy == QueuePolicy.SAMPLE_RING
-                            ? MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST
-                            : mqttConfigurationService.getQueuedMessagesStrategy();
+            // What to do when the queue is full comes from the producer's QueuePolicy, and within DEFAULT from
+            // whatever an internal subscriber declared -- see overflowStrategyFor. Whether the count bound also
+            // applies to QoS 0 remains the policy's alone: it is sampling's ring-buffer semantics, not
+            // something a consumer picks.
             final boolean applyMaxToQos0 = policy == QueuePolicy.SAMPLE_RING;
 
             localPersistence.add(
@@ -134,7 +180,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                     shared,
                     publish,
                     queueLimit,
-                    queuedMessagesStrategy,
+                    overflowStrategyFor(queueId, shared, policy),
                     retained,
                     applyMaxToQos0,
                     bucketIndex);
@@ -168,14 +214,8 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
         return singleWriter.submit(queueId, (bucketIndex) -> {
             final boolean queueWasEmpty = localPersistence.size(queueId, shared, bucketIndex) == 0;
-            // What to do when the queue is full comes from the producer (see QueuePolicy). It used to be
-            // read off the queue ID -- a share name a client chooses -- so an ordinary subscription to
-            // $share/$SAMPLER::customer/alerts had its own messages discarded under a policy meant for
-            // diagnostics (EDG-882 F-05).
-            final MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
-                    policy == QueuePolicy.SAMPLE_RING
-                            ? MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST
-                            : mqttConfigurationService.getQueuedMessagesStrategy();
+            // As in the single-message add above: the policy decides, an internal subscriber's declaration
+            // refines it within DEFAULT, and applying the bound to QoS 0 stays the policy's own business.
             final boolean applyMaxToQos0 = policy == QueuePolicy.SAMPLE_RING;
 
             localPersistence.add(
@@ -183,7 +223,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                     shared,
                     publishes,
                     queueLimit,
-                    queuedMessagesStrategy,
+                    overflowStrategyFor(queueId, shared, policy),
                     retained,
                     applyMaxToQos0,
                     bucketIndex);

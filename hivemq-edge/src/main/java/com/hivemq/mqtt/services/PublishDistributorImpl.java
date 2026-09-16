@@ -43,6 +43,8 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriberFactory;
 import com.hivemq.persistence.clientqueue.QueuePolicy;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
@@ -81,6 +83,11 @@ public class PublishDistributorImpl implements PublishDistributor {
     @NotNull
     private final Lazy<ClientSessionPersistence> clientSessionPersistence;
 
+    // Lazy, like the session persistence beside it: this is only consulted for an internal subscriber, and
+    // resolving the factory eagerly would drag the topic tree and queue persistence into this object's
+    // construction for a path most messages never take.
+    private final Lazy<InternalTopicFilterSubscriberFactory> subscriberFactory;
+
     @NotNull
     private final MqttConfigurationService mqttConfigurationService;
 
@@ -105,11 +112,13 @@ public class PublishDistributorImpl implements PublishDistributor {
     public PublishDistributorImpl(
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
+            final @NotNull Lazy<InternalTopicFilterSubscriberFactory> subscriberFactory,
             final @NotNull ConfigurationService configurationService,
             final @NotNull Lazy<SamplingService> samplingService,
             final @NotNull Lazy<MessageForwarder> messageForwarder) {
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionPersistence = clientSessionPersistence;
+        this.subscriberFactory = subscriberFactory;
         this.mqttConfigurationService = configurationService.mqttConfiguration();
         this.bridgeConfiguration = configurationService.bridgeExtractor();
         this.samplingService = samplingService;
@@ -237,7 +246,16 @@ public class PublishDistributorImpl implements PublishDistributor {
         final boolean qos0Message = Math.min(subscriptionQos, publish.getQoS().getQosNumber()) == 0;
         Long queueLimit = null;
 
-        if (!client.startsWith(INTERNAL_SUBSCRIBER_PREFIX)) {
+        if (client.startsWith(INTERNAL_SUBSCRIBER_PREFIX)) {
+            // An internal subscriber has no client session, so there is no session-scoped limit to read; it
+            // declares its own instead, at the builder. Null here means it declared none, and queuePublish
+            // then falls back to the broker-wide maxQueuedMessages -- the same value it got before this.
+            final InternalTopicFilterSubscriber subscriber =
+                    subscriberFactory.get().getSubscriber(client);
+            if (subscriber != null) {
+                queueLimit = subscriber.queueLimit();
+            }
+        } else {
             final ClientSession clientSession = clientSessionPersistence.get().getSession(client, false);
             final boolean clientConnected = clientSession != null && clientSession.isConnected();
 
