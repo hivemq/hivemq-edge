@@ -100,7 +100,7 @@ public class InternalTopicFilterSubscriberFactory {
     public @NotNull InternalTopicFilterSubscriber.Builder builder(
             final @NotNull String componentPrefix, final @NotNull String instanceId) {
         return new InternalTopicFilterSubscriber.Builder(
-                componentPrefix, instanceId, this, topicTree, clientQueuePersistence, singleWriterService);
+                topicTree, clientQueuePersistence, singleWriterService, this, componentPrefix, instanceId);
     }
 }
 
