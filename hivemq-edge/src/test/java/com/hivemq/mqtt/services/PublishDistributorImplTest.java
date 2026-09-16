@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -78,6 +79,7 @@ public class PublishDistributorImplTest {
     private final @NotNull MessageForwarder messageForwarder = mock();
 
     private @NotNull PublishDistributorImpl publishDistributor;
+    private @NotNull InternalTopicFilterSubscriberFactory subscriberFactory;
     private @NotNull SingleWriterService singleWriterService;
 
     private final @NotNull InternalConfigurationService internalConfigurationService =
@@ -88,11 +90,13 @@ public class PublishDistributorImplTest {
         when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
         when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
+        // Only consulted for an internal subscriber; most of these tests use ordinary client ids. Held here
+        // so a test about an internal recipient can say what the registry answers.
+        subscriberFactory = mock(InternalTopicFilterSubscriberFactory.class);
         publishDistributor = new PublishDistributorImpl(
                 clientQueuePersistence,
                 () -> clientSessionPersistence,
-                // Only consulted for an internal subscriber's queue; these tests use ordinary client ids.
-                () -> mock(InternalTopicFilterSubscriberFactory.class),
+                () -> subscriberFactory,
                 configurationService,
                 () -> samplingService,
                 () -> messageForwarder);
@@ -102,6 +106,33 @@ public class PublishDistributorImplTest {
     @AfterEach
     public void tearDown() throws Exception {
         singleWriterService.stop();
+    }
+
+    /**
+     * An internal subscriber that no longer exists must not get a queue.
+     *
+     * <p>The topic tree is consulted first and answers with client-id STRINGS; delivery happens afterwards. So
+     * a subscriber can be deallocated in between, and the id arrives here owned by nobody. Queueing for it
+     * creates an orphan: nothing drains that queue, and nothing clears it either -- clearing is what the
+     * subscriber's own teardown does, and that has already run.
+     *
+     * <p>Raised in review, 2026-09-14. The fall-through predates the queueless variant.
+     */
+    @Test
+    @Timeout(5)
+    public void anInternalSubscriberThatIsGoneGetsNoQueue() throws ExecutionException, InterruptedException {
+        // Neither kind owns the id: both registry lookups answer null, as they do once a subscriber has been
+        // deallocated.
+        final String goneSubscriber = "$INTERNAL::erwin::meier";
+
+        final PublishStatus status = publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), goneSubscriber, 0, false, false, ImmutableIntArray.of(1))
+                .get();
+
+        assertEquals(PublishStatus.NOT_CONNECTED, status);
+        verify(clientQueuePersistence, never())
+                .add(eq(goneSubscriber), anyBoolean(), any(PUBLISH.class), anyBoolean(), anyLong(), any());
     }
 
     @Test
