@@ -1784,13 +1784,18 @@ public final class InternalTopicFilterSubscriber {
     /// what stops a teardown racing a loop that is reading from or acknowledging to the very queue it
     /// destroys. See [#tearDown].
     ///
-    /// **No precondition.** It used to demand being detached and paused, because it could not safely tear
-    /// down a live subscriber. Now it detaches and pauses on the caller's behalf and lets the loop finish.
+    /// **PRECONDITION: detached and paused.** This verb does ONE thing -- hand back the identity and destroy
+    /// the queue -- and refuses to do a second on the caller's behalf. **[#stop] is the convenience**: it
+    /// orders [#detach], [#pause] and this one, and is what a caller who just wants the subscriber gone
+    /// should use.
     ///
-    /// **Synchronized, so that the check and the two verbs it calls cannot interleave.** Unsynchronized, two
-    /// threads could both pass the check below; one would complete the release, and the other would then enter
-    /// [#detach], which refuses a dead subscriber and throws -- during shutdown, where an unexpected exception
-    /// is most likely to abandon the rest of the cleanup. Raised in review, 2026-09-15.
+    /// It briefly did the composing itself, and that was the wrong line to draw: a terminal verb guessing
+    /// that the caller also meant to stop the flow is exactly the guess that hides a caller's mistake. The
+    /// queueless sibling has demanded the precondition from the start, and the two now agree.
+    ///
+    /// **Synchronized, so that the check and the state write cannot interleave.** Unsynchronized, two threads
+    /// could both pass the check below and both submit a teardown -- during shutdown, where an unexpected
+    /// exception is most likely to abandon the rest of the cleanup. Raised in review, 2026-09-15.
     ///
     /// Holding the monitor across the teardown submit is safe for the same reason [#pause] already does it:
     /// acting on that command never runs consumer code.
@@ -1798,11 +1803,14 @@ public final class InternalTopicFilterSubscriber {
         if (state == SubscriberState.DEALLOCATED || state == SubscriberState.DEREGISTERED) {
             return;
         }
-        detach();
-        pause();
-        // DEALLOCATED here, before the command and after the two verbs that still had work to do. The teardown
-        // runs later, on the loop's thread; without this the subscriber would stay alive to its caller in the
-        // meantime, and a start() in that window would re-attach filters the teardown does not remove.
+        if (ifStateAttached() || ifStateConsuming()) {
+            throw new IllegalStateException("InternalTopicFilterSubscriber '" + clientId
+                    + "' is still attached or consuming; deallocate() requires it detached and paused."
+                    + " Call detach() and pause() first, or stop(), which does all three in order");
+        }
+        // DEALLOCATED before the command. The teardown runs later, on the loop's thread; without this the
+        // subscriber would stay alive to its caller in the meantime, and a start() in that window would
+        // re-attach filters the teardown does not remove.
         state = SubscriberState.DEALLOCATED;
         sendPpfLoopCommand(PpfLoopCommand.RECORD_TEARDOWN_AND_DOIT, false);
     }
@@ -1820,10 +1828,27 @@ public final class InternalTopicFilterSubscriber {
         return this;
     }
 
-    /// Safe on a dead subscriber, and safe against itself: it is one call to [#deallocate], which is
-    /// synchronized and idempotent, so there is no gap here of its own.
-    public void stop() {
-        deallocate(); // which detaches and pauses first, then asks the ppf-loop to tear down
+    /// Stops the flow and releases the identity, in that order. **The convenience for a caller who just wants
+    /// the subscriber gone**, and the reason [#deallocate] can insist on its precondition rather than guess.
+    ///
+    /// **Safe on a dead subscriber, and that is why it tests first.** [#detach] and [#pause] REFUSE a dead
+    /// subscriber -- they open with the deallocated guard and throw -- so composing them unconditionally would
+    /// make a second `stop()` throw at the first verb. Only [#deallocate] itself returns quietly, which is
+    /// what the previous one-line version relied on.
+    ///
+    /// **Synchronized, because it composes THREE verbs rather than delegating to one.** Each is individually
+    /// synchronized, but that leaves gaps between them: two threads could interleave so that one completes the
+    /// release while the other sits between [#pause] and [#deallocate], and the second then meets the dead
+    /// subscriber its own test had already cleared. Holding the monitor across all three closes that, and is
+    /// safe here for the same reason [#deallocate] may hold it -- none of these three runs consumer code.
+    /// [#start] must NOT be synchronized, for precisely the opposite reason; see there.
+    public synchronized void stop() {
+        if (state == SubscriberState.DEALLOCATED || state == SubscriberState.DEREGISTERED) {
+            return;
+        }
+        detach();
+        pause();
+        deallocate();
     }
 
     // endregion

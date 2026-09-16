@@ -135,19 +135,29 @@ class InternalTopicFilterSubscriberTest {
     }
 
     @Test
-    void deallocate_onALiveSubscriber_detachesAndPausesItself() {
-        // It used to demand being detached and paused first, because it tore down inline and could not do
-        // that safely under a running ppf-loop. It now submits the teardown to the loop, so it can do the
-        // detaching and pausing on the caller's behalf.
+    void deallocate_onALiveSubscriber_isRefused() {
+        // THE PRECONDITION IS DETACHED AND PAUSED, and deallocate() does not meet it on the caller's behalf.
+        // It briefly did, and that was the wrong line: a terminal verb guessing that the caller also meant to
+        // stop the flow hides the caller's mistake instead of reporting it. stop() is the convenience that
+        // orders all three, and the queueless sibling has demanded the same precondition from the start.
         final InternalTopicFilterSubscriber s = build("sensors/#").start(); // attached + consuming
 
-        s.deallocate();
+        assertThatThrownBy(s::deallocate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("requires it detached and paused")
+                .as("and it names both ways out")
+                .hasMessageContaining("stop()");
 
         assertThat(topicTree.findTopicSubscribers("sensors/temp").getSubscribers())
-                .as("detached: out of the topic tree")
-                .isEmpty();
+                .as("and nothing was torn down: the refusal leaves the subscriber exactly as it was")
+                .isNotEmpty();
+
+        s.detach();
+        s.pause();
+        s.deallocate(); // now legal
+
         assertThatThrownBy(s::attach)
-                .as("and dead: every verb but deallocate/stop throws")
+                .as("and dead once the precondition is met")
                 .isInstanceOf(IllegalStateException.class);
     }
 
