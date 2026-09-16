@@ -32,6 +32,7 @@ import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.UPDA
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.WILDCARD_NO_DEFAULT;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.util.concurrent.Striped;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataIdentifierReference;
@@ -62,8 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,8 +83,11 @@ public class DeviceTagImporter {
 
     // Per-adapter locks so concurrent imports on different adapters can proceed in parallel.
     // Previously the entire import serialized on the shared adapterExtractor monitor, which
-    // was stricter than needed — TOCTOU protection is per-adapter, not global.
-    private final @NotNull ConcurrentMap<String, Object> perAdapterLocks = new ConcurrentHashMap<>();
+    // was stricter than needed — TOCTOU protection is per-adapter, not global. Striped and
+    // weakly held rather than a map keyed by adapter id, so nothing accumulates as adapters
+    // come and go: a stripe's lock exists only while an import holds it. Two adapters can
+    // share a stripe (1 in 64), which only costs some parallelism, never correctness.
+    private final @NotNull Striped<Lock> importLocks = Striped.lazyWeakLock(64);
 
     @Inject
     public DeviceTagImporter(
@@ -127,9 +130,12 @@ public class DeviceTagImporter {
         // between concurrent OVERWRITE operations on the same adapter), but imports on
         // different adapters can proceed in parallel. This matters for multi-adapter
         // scripted-provisioning workflows where a global lock was a needless bottleneck.
-        final Object lock = perAdapterLocks.computeIfAbsent(adapterId, id -> new Object());
-        synchronized (lock) {
+        final Lock lock = importLocks.get(adapterId);
+        lock.lock();
+        try {
             return doImportLocked(rows, mode, adapterId, browser);
+        } finally {
+            lock.unlock();
         }
     }
 
