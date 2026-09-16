@@ -96,11 +96,18 @@ public class InternalTopicFilterSubscriberFactory {
         }
     }
 
-    synchronized void deregister(final @NotNull InternalTopicFilterSubscriber subscriber) {
+    // NOT SYNCHRONIZED, unlike register above, and the asymmetry is the point: each of these is ONE atomic
+    // operation on a ConcurrentHashMap, so there is no check-then-act gap for a monitor to close.
+    //
+    // Nor is one needed against a replacement claiming the same id: remove(key, value) is the VALUE-CONDITIONAL
+    // form, so it removes the entry only while it still holds THIS subscriber. A replacement that registered
+    // first leaves a different object under that key, and the removal correctly does nothing rather than
+    // evicting the live one. Raised in review, 2026-09-15.
+    void deregister(final @NotNull InternalTopicFilterSubscriber subscriber) {
         registry.remove(subscriber.clientId(), subscriber);
     }
 
-    synchronized void deregister(final @NotNull InternalTopicFilterSubscriberWithoutQueue subscriber) {
+    void deregister(final @NotNull InternalTopicFilterSubscriberWithoutQueue subscriber) {
         registryWithoutQueue.remove(subscriber.clientId(), subscriber);
     }
 
