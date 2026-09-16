@@ -262,7 +262,15 @@ public class InternalConfigurations {
 
     public static final int SHARED_SUBSCRIBER_CACHE_MAX_SIZE_SUBSCRIBERS = 10000;
 
-    public static final int CLEANUP_JOB_PARALLELISM = 1;
+    /**
+     * How many clean-up jobs {@link com.hivemq.persistence.ScheduledCleanUpService} keeps in flight.
+     * Each job cleans one persistence of one bucket and schedules the next job {@link
+     * #INTERVAL_BETWEEN_CLEANUP_JOBS_SEC} later, so with one job the four persistences of a bucket take
+     * turns and each of them is visited every fourth interval. Read once, when the service is
+     * constructed; a test that needs a persistence swept every interval sets it to the number of
+     * persistences before starting the node.
+     */
+    public static final @NotNull AtomicInteger CLEANUP_JOB_PARALLELISM = new AtomicInteger(1);
 
     /**
      * The timeout for a cleanup job task.
