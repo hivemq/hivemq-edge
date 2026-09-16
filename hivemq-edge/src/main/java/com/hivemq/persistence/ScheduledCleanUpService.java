@@ -57,7 +57,11 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public class ScheduledCleanUpService {
 
-    static final int NUMBER_OF_PERSISTENCES = 4;
+    /**
+     * How many persistences take turns in the clean-up cycle. Public because a test that has to see one
+     * of them swept every interval sets {@code CLEANUP_JOB_PARALLELISM} to exactly this many jobs.
+     */
+    public static final int NUMBER_OF_PERSISTENCES = 4;
 
     /**
      * The counter index that is associated with the client session persistence in the clean up job scheduling logic
@@ -91,6 +95,7 @@ public class ScheduledCleanUpService {
     private int persistenceIndex = 0;
     private final int persistenceBucketCount;
     private final int cleanUpJobSchedule;
+    private final int cleanUpJobParallelism;
     private final int cleanUpTaskTimeoutSec;
 
     @Inject
@@ -109,12 +114,13 @@ public class ScheduledCleanUpService {
         this.clientQueuePersistence = clientQueuePersistence;
         this.persistenceBucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
         this.cleanUpJobSchedule = INTERVAL_BETWEEN_CLEANUP_JOBS_SEC.get();
+        this.cleanUpJobParallelism = CLEANUP_JOB_PARALLELISM.get();
         this.cleanUpTaskTimeoutSec = CLEANUP_JOB_TASK_TIMEOUT_SEC;
     }
 
     @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
-        for (int i = 0; i < CLEANUP_JOB_PARALLELISM; i++) {
+        for (int i = 0; i < cleanUpJobParallelism; i++) {
             scheduleCleanUpTask();
         }
     }
