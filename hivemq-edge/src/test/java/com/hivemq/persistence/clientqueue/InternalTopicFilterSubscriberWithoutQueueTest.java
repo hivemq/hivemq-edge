@@ -422,8 +422,13 @@ class InternalTopicFilterSubscriberWithoutQueueTest {
 
     @Test
     void deallocateRefusesToRunWhileStillDelivering() {
-        // Not repaired silently: deallocating a live subscriber would leave its filters in the tree under an id
-        // that no longer belongs to anyone. stop() is the composition that orders the two correctly.
+        // THE PRECONDITION IS DETACHED AND PAUSED, and deallocate() does not meet it on the caller's behalf.
+        // Deallocating a live subscriber would leave its filters in the tree under an id that no longer belongs
+        // to anyone, and guessing the caller wanted them removed is the guess a terminal verb should not make.
+        // stop() is the convenience that orders the two correctly.
+        //
+        // One flag answers both halves: without a queue, attachConsume()/pauseDetach() each set the flag and
+        // reconcile the tree in one synchronized step, so not delivering means the filters are out too.
         final InternalTopicFilterSubscriberWithoutQueue subscriber = factory.builderWithoutQueue("test", "live")
                 .withProcessor(m -> {})
                 .withTopicFilter("commands/#")
@@ -432,7 +437,10 @@ class InternalTopicFilterSubscriberWithoutQueueTest {
 
         assertThatThrownBy(subscriber::deallocate)
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("still delivering");
+                .hasMessageContaining("requires it detached and paused")
+                .as("and it names both ways out")
+                .hasMessageContaining("pauseDetach()")
+                .hasMessageContaining("stop()");
 
         subscriber.stop();
         assertThat(factory.getSubscriberWithoutQueue(subscriber.clientId())).isNull();
@@ -494,6 +502,40 @@ class InternalTopicFilterSubscriberWithoutQueueTest {
                         .withProcessor(m -> {}))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("one processor, not two");
+    }
+
+    @Test
+    void aSecondAbsoluteFilterDeclarationIsRejected() {
+        // withTopicFilter replaces the WHOLE set, so a second call silently discards the first -- and nobody
+        // means that; they meant addTopicFilter. The queued sibling's builder has refused this from the start
+        // and this one did not, which made the Lore page false of this class. Raised in review, 2026-09-14.
+        assertThatThrownBy(() -> factory.builderWithoutQueue("test", "twoabsolute")
+                        .withProcessor(m -> {})
+                        .withTopicFilter("commands/#")
+                        .withTopicFilter("sensors/#"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already declared")
+                .hasMessageContaining("commands/#")
+                .as("and it names the verb the caller almost certainly meant")
+                .hasMessageContaining("addTopicFilter");
+    }
+
+    @Test
+    void theRelativeFilterVerbsStillStackAfterAnAbsoluteOne() {
+        // The guard is on the ABSOLUTE verb only. One absolute declaration followed by relative ones is the
+        // ordinary way to build a set, and must stay legal.
+        final InternalTopicFilterSubscriberWithoutQueue subscriber = factory.builderWithoutQueue("test", "stacked")
+                .withProcessor(m -> {})
+                .withTopicFilter("commands/#")
+                .addTopicFilter("sensors/temperature")
+                .addTopicFilter(List.of("sensors/humidity"))
+                .removeTopicFilter("sensors/humidity")
+                .build()
+                .start();
+
+        assertThat(subscribersOf("commands/setpoint")).contains(subscriber.clientId());
+        assertThat(subscribersOf("sensors/temperature")).contains(subscriber.clientId());
+        assertThat(subscribersOf("sensors/humidity")).doesNotContain(subscriber.clientId());
     }
 
     @Test

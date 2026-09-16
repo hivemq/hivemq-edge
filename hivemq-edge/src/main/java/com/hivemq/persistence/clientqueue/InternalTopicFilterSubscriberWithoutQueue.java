@@ -235,9 +235,26 @@ public final class InternalTopicFilterSubscriberWithoutQueue {
         }
 
         public @NotNull Builder withTopicFilter(final @NotNull List<String> newFilters) {
-            topicFilters.clear();
+            throwIfFiltersAlreadyDeclared();
             topicFilters.addAll(newFilters);
             return this;
+        }
+
+        /// Refuses a SECOND absolute declaration, naming what is already there.
+        ///
+        /// This verb replaces the whole set, so a second call silently discards the first -- and nobody means
+        /// that. They meant [#addTopicFilter]. On a LIVE subscriber the absolute verb replaces quietly and
+        /// rightly, because reconciling to a new set is a real operation; on a builder there is nothing to
+        /// reconcile with, only your own earlier line. The queued sibling's builder has refused this from the
+        /// start; raised in review of the Lore page, 2026-09-14.
+        private void throwIfFiltersAlreadyDeclared() {
+            if (topicFilters.isEmpty()) {
+                return;
+            }
+            throw new IllegalStateException(
+                    "InternalTopicFilterSubscriberWithoutQueue.Builder.withTopicFilter(...) replaces the whole"
+                            + " filter set, but these are already declared: " + topicFilters
+                            + ". Use addTopicFilter(...) to add to them.");
         }
 
         public @NotNull Builder addTopicFilter(final @NotNull String topicFilter) {
@@ -547,15 +564,25 @@ public final class InternalTopicFilterSubscriberWithoutQueue {
     /// Releases this subscriber's client id for reuse. Terminal; calling it on an already-dead subscriber is a
     /// no-op rather than an error.
     ///
-    /// **Refuses a subscriber that is still delivering**, rather than stopping it first: that would leave
-    /// filters in the topic tree under an id the next owner may take. Use [#stop], which orders the two.
+    /// **PRECONDITION: detached and paused.** This verb does ONE thing -- hand back the identity -- and refuses
+    /// to do a second on the caller's behalf. Releasing an id while filters are still in the tree would leave
+    /// them there under a name the next owner may take, and guessing that the caller wanted them removed is
+    /// exactly the guess a terminal verb should not make. **[#stop] is the convenience**: it orders
+    /// [#pauseDetach] and this one, and is what a caller who just wants the subscriber gone should use.
+    ///
+    /// One flag answers both halves of the precondition. Without a queue there is no buffer between collecting
+    /// and processing, so attached and consuming are not independent here: [#attachConsume] and [#pauseDetach]
+    /// each set [#delivering] and reconcile the tree in one synchronized step, so the flag being false means
+    /// the filters are out of the tree as well. The queued sibling, where the two axes ARE independent, needs
+    /// two questions to ask this one.
     public synchronized void deallocate() {
         if (deallocated) {
             return;
         }
         if (delivering) {
             throw new IllegalStateException("InternalTopicFilterSubscriberWithoutQueue '" + clientId
-                    + "' is still delivering; call pauseDetach() first, or stop() which does both");
+                    + "' is still attached and delivering; deallocate() requires it detached and paused."
+                    + " Call pauseDetach() first, or stop(), which does both in order");
         }
         factory.deregister(this);
         deallocated = true;
