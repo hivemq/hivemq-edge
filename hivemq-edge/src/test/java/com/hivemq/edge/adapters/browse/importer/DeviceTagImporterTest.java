@@ -40,13 +40,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 class DeviceTagImporterTest {
@@ -295,6 +300,92 @@ class DeviceTagImporterTest {
 
         // At least one should succeed; the key assertion is no deadlock (test completes)
         assertThat(successCount.get()).isGreaterThanOrEqualTo(1);
+    }
+
+    /**
+     * Makes the mocked extractor stateful, the way the real one is: reads return what the last successful
+     * update wrote. The read is slowed down so that a read-compute-write cycle that is NOT serialised has a
+     * wide window to base itself on stale state — that is the race the importer's lock exists to close.
+     */
+    private Map<String, ProtocolAdapterEntity> statefulExtractor(final String... adapterIds) {
+        final Map<String, ProtocolAdapterEntity> store = new ConcurrentHashMap<>();
+        for (final String id : adapterIds) {
+            store.put(id, new ProtocolAdapterEntity(id, "opcua", 1, Map.of(), List.of(), List.of(), List.of()));
+        }
+        when(adapterExtractor.getAdapterByAdapterId(any())).thenAnswer(inv -> {
+            Thread.sleep(2);
+            return Optional.ofNullable(store.get(inv.<String>getArgument(0)));
+        });
+        when(adapterExtractor.getAllConfigs()).thenAnswer(inv -> List.copyOf(store.values()));
+        when(adapterExtractor.updateAdapter(any())).thenAnswer(inv -> {
+            final ProtocolAdapterEntity e = inv.getArgument(0);
+            store.put(e.getAdapterId(), e);
+            return true;
+        });
+        return store;
+    }
+
+    @Test
+    @Timeout(30)
+    void concurrentImports_sameAdapter_everyImportLands() throws Exception {
+        // 16 imports race on one adapter, each adding a distinct tag in MERGE_SAFE. Every one reads the current
+        // tag list, adds its tag and writes the list back; without serialisation of the whole cycle two of them
+        // read the same list and the second write silently drops the first's tag.
+        final int imports = 16;
+        final Map<String, ProtocolAdapterEntity> store = statefulExtractor(ADAPTER_ID);
+        final ExecutorService pool = Executors.newFixedThreadPool(imports);
+        try {
+            final List<Future<ImportResult>> results = IntStream.range(0, imports)
+                    .mapToObj(i -> pool.submit(() -> importer.doImport(
+                            List.of(tagRow("tag-" + i, "ns=2;i=" + i)), ImportMode.MERGE_SAFE, ADAPTER_ID)))
+                    .toList();
+            for (final Future<ImportResult> f : results) {
+                assertThat(f.get(10, TimeUnit.SECONDS).tagsCreated()).isEqualTo(1);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        assertThat(store.get(ADAPTER_ID).getTags())
+                .as("no import's write was based on a stale read")
+                .extracting(TagEntity::getName)
+                .containsExactlyInAnyOrder(
+                        IntStream.range(0, imports).mapToObj(i -> "tag-" + i).toArray(String[]::new));
+    }
+
+    @Test
+    @Timeout(30)
+    void concurrentImports_differentAdapters_noCrossTalkAndNoStarvation() throws Exception {
+        // 8 adapters x 4 imports each, all in flight at once. Each adapter must end with exactly its own 4 tags:
+        // serialising the cycle on the shared extractor must not leak state between adapters, and 32 queued
+        // imports must all complete — the lock is held for one cycle at a time, never across imports.
+        final int adapters = 8;
+        final int perAdapter = 4;
+        final String[] ids =
+                IntStream.range(0, adapters).mapToObj(a -> "adapter-" + a).toArray(String[]::new);
+        final Map<String, ProtocolAdapterEntity> store = statefulExtractor(ids);
+        final ExecutorService pool = Executors.newFixedThreadPool(adapters * perAdapter);
+        try {
+            final List<Future<ImportResult>> results = new ArrayList<>();
+            for (final String id : ids) {
+                for (int i = 0; i < perAdapter; i++) {
+                    final int n = i;
+                    results.add(pool.submit(() -> importer.doImport(
+                            List.of(tagRow(id + "-tag-" + n, "ns=2;s=" + id + "/" + n)), ImportMode.MERGE_SAFE, id)));
+                }
+            }
+            for (final Future<ImportResult> f : results) {
+                assertThat(f.get(10, TimeUnit.SECONDS).tagsCreated()).isEqualTo(1);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        for (final String id : ids) {
+            assertThat(store.get(id).getTags())
+                    .extracting(TagEntity::getName)
+                    .containsExactlyInAnyOrder(IntStream.range(0, perAdapter)
+                            .mapToObj(n -> id + "-tag-" + n)
+                            .toArray(String[]::new));
+        }
     }
 
     // --- CREATE mode ---

@@ -1348,7 +1348,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // The recursive browse of the DataType hierarchy, and the whole cost and failure surface of this
             // method. Lazy in Milo, and its slot is cleared on failure rather than poisoned, so whoever needs
             // it next -- a browse, a southbound write, a schema request -- rebuilds it.
-            client.getDataTypeTree(); // feeds the EDG-488 cache when that lands
+            client.getDataTypeTree(); // cached on the client by Milo; every later browse reuses it (EDG-488)
         } catch (final @NotNull Exception e) {
             throw new IllegalStateException("OPC UA browse metadata warm-up failed", e);
         }

@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import jakarta.inject.Inject;
@@ -52,9 +51,10 @@ public class DeviceTagJsonSerializer {
     }
 
     static @NotNull ObjectMapper createDefaultMapper() {
+        // INDENT_OUTPUT is intentionally off: for large browses the whitespace roughly doubles the
+        // wire size. Consumers that want human-readable JSON can pipe through `jq`.
         return new ObjectMapper()
                 .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
-                .configure(SerializationFeature.INDENT_OUTPUT, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
@@ -181,6 +181,12 @@ public class DeviceTagJsonSerializer {
     public void serialize(final @NotNull Iterable<DeviceTagRow> rows, final @NotNull OutputStream out)
             throws IOException {
         try (final JsonGenerator gen = mapper.createGenerator(out)) {
+            // The rows are read lazily from the device while this streams, and the HTTP status has already
+            // been committed as 200 by the time the first row is written. If a read fails mid-stream, the
+            // generator's close() must NOT terminate the open array and object: that would hand the client
+            // a well-formed document with a silently truncated row set. Leaving it unterminated is the only
+            // signal that survives the committed status.
+            gen.disable(JsonGenerator.Feature.AUTO_CLOSE_JSON_CONTENT);
             gen.writeStartObject();
             gen.writeFieldName("rows");
             gen.writeStartArray();

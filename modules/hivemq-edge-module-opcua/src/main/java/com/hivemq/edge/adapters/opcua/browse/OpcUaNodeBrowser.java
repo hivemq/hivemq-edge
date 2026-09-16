@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -166,8 +165,12 @@ public class OpcUaNodeBrowser {
             }
 
             // Sort by path early (DiscoveredVariable is small) so the output stream is ordered
-            // without needing to materialize the full List<BrowsedNode>.
-            variables.sort(Comparator.comparing(DiscoveredVariable::path));
+            // without needing to materialize the full List<BrowsedNode>. Nodes sharing a path
+            // (e.g. Prosys simulation instances) are tie-broken on the NodeId: the async browse
+            // callbacks add them in arrival order, which varies between browses, and without the
+            // tie-break the collision suffixes in tagNameDefaults would shuffle between runs.
+            variables.sort(
+                    Comparator.comparing(DiscoveredVariable::path).thenComparing(v -> v.nodeId.toParseableString()));
 
             // Pre-compute unique tag name defaults. Multiple nodes can share the same browse
             // path (e.g. Prosys simulation instances), so we append a numeric suffix on collision.
@@ -344,9 +347,17 @@ public class OpcUaNodeBrowser {
 
     /**
      * Spliterator that lazily batch-reads OPC-UA attributes and produces {@link BrowsedNode} records.
-     * Each {@link #tryAdvance} call reads one batch of up to {@link #READ_BATCH_SIZE} nodes from the
-     * OPC-UA server, resolves attributes, and emits the resulting {@link BrowsedNode} records one at
-     * a time. This keeps at most one batch of {@code BrowsedNode} objects alive at any point.
+     * Each {@link #tryAdvance} call consumes one {@link BrowsedNode} from the current batch and,
+     * when a batch is exhausted, waits for the already-in-flight next batch before firing the
+     * one after. Prefetching keeps the wire busy while the HTTP serializer drains the current
+     * batch — the attribute-read round-trip for batch N+1 overlaps with the serialization of
+     * batch N.
+     *
+     * <p>Milo's channel is strictly serial, so prefetching does not add concurrent server load:
+     * the next read is dispatched only after the previous response has landed on the client,
+     * but before the client has finished emitting the current batch. For a typical browse the
+     * two costs (serialization + transfer vs attribute read round-trip) are close to equal, so
+     * prefetching roughly halves Phase 2 wall time on large address spaces.
      */
     private static final class BatchAttributeSpliterator implements Spliterator<BrowsedNode> {
 
@@ -358,6 +369,11 @@ public class OpcUaNodeBrowser {
         private int globalOffset;
         private @Nullable List<BrowsedNode> currentBatch;
         private int batchIndex;
+        private @Nullable CompletableFuture<List<BrowsedNode>> nextBatchFuture;
+        // Size of the prefetched batch that globalOffset has already been advanced past.
+        // Tracked so estimateSize() can correctly count the in-flight batch as remaining,
+        // which is required by the SIZED characteristic contract.
+        private int pendingBatchSize;
 
         private final @NotNull List<String> tagNameDefaults;
 
@@ -375,21 +391,28 @@ public class OpcUaNodeBrowser {
             this.globalOffset = 0;
             this.currentBatch = null;
             this.batchIndex = 0;
+            this.pendingBatchSize = 0;
+            // Prime the pipeline: fire the first batch eagerly so it is in flight before the
+            // first tryAdvance() call.
+            this.nextBatchFuture = firePrefetch();
         }
 
         @Override
         public boolean tryAdvance(final @NotNull Consumer<? super BrowsedNode> action) {
-            // Serve from current batch if available
+            // Serve from current batch if available.
             if (currentBatch != null && batchIndex < currentBatch.size()) {
                 action.accept(currentBatch.get(batchIndex++));
                 return true;
             }
-            // Load next batch if variables remain
-            if (globalOffset >= variables.size()) {
+            // No prefetched batch left — we're done.
+            if (nextBatchFuture == null) {
                 return false;
             }
-            currentBatch = readNextBatch();
+            // Wait for the prefetched batch, then fire the next one so it overlaps with the
+            // consumption of the batch we just received.
+            currentBatch = await(nextBatchFuture);
             batchIndex = 0;
+            nextBatchFuture = firePrefetch();
             if (currentBatch.isEmpty()) {
                 return false;
             }
@@ -397,10 +420,22 @@ public class OpcUaNodeBrowser {
             return true;
         }
 
-        private @NotNull List<BrowsedNode> readNextBatch() {
+        /**
+         * Schedule the next attribute-read batch if there are still variables to process.
+         * Returns {@code null} when the end of the variable list has been reached. Updates
+         * {@code pendingBatchSize} so {@link #estimateSize()} can count the in-flight batch.
+         */
+        private @Nullable CompletableFuture<List<BrowsedNode>> firePrefetch() {
+            if (globalOffset >= variables.size()) {
+                pendingBatchSize = 0;
+                return null;
+            }
             final int batchStart = globalOffset;
             final int end = Math.min(globalOffset + READ_BATCH_SIZE, variables.size());
-            final List<DiscoveredVariable> batch = variables.subList(globalOffset, end);
+            // Snapshot the slice so later globalOffset updates can't mutate the view used by
+            // the async callback.
+            final List<DiscoveredVariable> batch = List.copyOf(variables.subList(globalOffset, end));
+            pendingBatchSize = end - batchStart;
             globalOffset = end;
 
             final List<ReadValueId> readValueIds = new ArrayList<>(batch.size() * 3);
@@ -410,21 +445,15 @@ public class OpcUaNodeBrowser {
                 readValueIds.add(new ReadValueId(var.nodeId, AttributeId.Description.uid(), null, null));
             }
 
-            final DataValue[] values;
-            try {
-                values = client.readAsync(0.0, TimestampsToReturn.Neither, readValueIds)
-                        .get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                        .getResults();
-            } catch (final ExecutionException e) {
-                throw new UncheckedBrowseException("Failed to read node attributes", e.getCause());
-            } catch (final TimeoutException e) {
-                throw new UncheckedBrowseException("Attribute read timed out after " + TIMEOUT_SECONDS + " seconds", e);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new UncheckedBrowseException("Attribute read interrupted", e);
-            }
-            assert values != null;
+            return client.readAsync(0.0, TimestampsToReturn.Neither, readValueIds)
+                    .orTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .thenApply(response -> buildBatch(batch, batchStart, response.getResults()));
+        }
 
+        private @NotNull List<BrowsedNode> buildBatch(
+                final @NotNull List<DiscoveredVariable> batch,
+                final int batchStart,
+                final @NotNull DataValue[] values) {
             final List<BrowsedNode> result = new ArrayList<>(batch.size());
             for (int i = 0; i < batch.size(); i++) {
                 final DiscoveredVariable var = batch.get(i);
@@ -448,6 +477,22 @@ public class OpcUaNodeBrowser {
             return result;
         }
 
+        private @NotNull List<BrowsedNode> await(final @NotNull CompletableFuture<List<BrowsedNode>> future) {
+            try {
+                return future.get();
+            } catch (final ExecutionException e) {
+                final Throwable cause = e.getCause();
+                if (cause instanceof TimeoutException) {
+                    throw new UncheckedBrowseException(
+                            "Attribute read timed out after " + TIMEOUT_SECONDS + " seconds", cause);
+                }
+                throw new UncheckedBrowseException("Failed to read node attributes", cause);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new UncheckedBrowseException("Attribute read interrupted", e);
+            }
+        }
+
         @Override
         public @Nullable Spliterator<BrowsedNode> trySplit() {
             return null; // sequential only
@@ -455,9 +500,12 @@ public class OpcUaNodeBrowser {
 
         @Override
         public long estimateSize() {
-            return (long) variables.size()
-                    - globalOffset
-                    + (currentBatch != null ? currentBatch.size() - batchIndex : 0);
+            // Must be exact to satisfy the SIZED characteristic contract. Three sources of
+            // yet-to-emit items: (a) tail of the currentBatch we're iterating, (b) the
+            // prefetched batch that's already been scheduled but not yet received, (c) the
+            // tail of the variables list that we haven't fired a read for yet.
+            final int currentRemaining = currentBatch != null ? currentBatch.size() - batchIndex : 0;
+            return (long) currentRemaining + pendingBatchSize + (variables.size() - globalOffset);
         }
 
         @Override
@@ -581,11 +629,32 @@ public class OpcUaNodeBrowser {
         return adapterId + "/write/" + sanitizePath(path);
     }
 
+    /**
+     * Produces a kebab-case-safe identifier: lowercases, replaces runs of non-alphanumeric
+     * characters with a single dash, strips leading/trailing dashes. Single-pass character
+     * walk — no regex allocation or intermediate strings. Equivalent to the three-regex
+     * formulation previously used, but measurably faster in the Phase 2 hot path.
+     */
     static @NotNull String sanitize(final @NotNull String input) {
-        return input.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]", "-")
-                .replaceAll("-+", "-")
-                .replaceAll("^-|-$", "");
+        final int len = input.length();
+        final StringBuilder sb = new StringBuilder(len);
+        boolean lastWasDash = false;
+        for (int i = 0; i < len; i++) {
+            final char lower = Character.toLowerCase(input.charAt(i));
+            if ((lower >= 'a' && lower <= 'z') || (lower >= '0' && lower <= '9')) {
+                sb.append(lower);
+                lastWasDash = false;
+            } else if (!lastWasDash && sb.length() > 0) {
+                // Collapse runs of non-alphanumeric characters and drop leading dashes.
+                sb.append('-');
+                lastWasDash = true;
+            }
+        }
+        // Strip trailing dash.
+        if (sb.length() > 0 && sb.charAt(sb.length() - 1) == '-') {
+            sb.setLength(sb.length() - 1);
+        }
+        return sb.toString();
     }
 
     static @NotNull String sanitizePath(final @NotNull String path) {
