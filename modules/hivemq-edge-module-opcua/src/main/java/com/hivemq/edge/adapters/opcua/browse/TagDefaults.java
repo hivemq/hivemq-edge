@@ -34,7 +34,7 @@ final class TagDefaults {
      * uniqueness — {@code /Aliases/FindAlias/InputArguments} → {@code aliases-findalias-inputarguments}.
      */
     static @NotNull String tagName(final @NotNull String path) {
-        final String stripped = path.startsWith("/") ? path.substring(1) : path;
+        final String stripped = ensureNoRootSlash(path);
         if (stripped.isEmpty()) {
             return "";
         }
@@ -96,14 +96,14 @@ final class TagDefaults {
             if ((lower >= 'a' && lower <= 'z') || (lower >= '0' && lower <= '9')) {
                 sb.append(lower);
                 lastWasDash = false;
-            } else if (!lastWasDash && sb.length() > 0) {
+            } else if (!lastWasDash && !sb.isEmpty()) {
                 // Collapse runs of non-alphanumeric characters and drop leading dashes.
                 sb.append('-');
                 lastWasDash = true;
             }
         }
         // Strip trailing dash.
-        if (sb.length() > 0 && sb.charAt(sb.length() - 1) == '-') {
+        if (!sb.isEmpty() && sb.charAt(sb.length() - 1) == '-') {
             sb.setLength(sb.length() - 1);
         }
         return sb.toString();
@@ -111,7 +111,7 @@ final class TagDefaults {
 
     /** Every segment of the path sanitised, joined with slashes, leading slash dropped. */
     static @NotNull String sanitizePath(final @NotNull String path) {
-        final String stripped = path.startsWith("/") ? path.substring(1) : path;
+        final String stripped = ensureNoRootSlash(path);
         if (stripped.isEmpty()) {
             return "";
         }
@@ -124,5 +124,9 @@ final class TagDefaults {
             sb.append(sanitize(segments[i]));
         }
         return sb.toString();
+    }
+
+    static @NotNull String ensureNoRootSlash(final @NotNull String path) {
+        return path.startsWith("/") ? path.substring(1) : path;
     }
 }

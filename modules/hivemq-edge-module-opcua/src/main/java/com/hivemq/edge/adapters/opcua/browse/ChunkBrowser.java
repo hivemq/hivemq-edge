@@ -149,8 +149,6 @@ final class ChunkBrowser {
                 final List<Integer> pendingOwners = new ArrayList<>();
                 for (int i = 0; i < chunk.size(); i++) {
                     final BrowseResult result = results != null && i < results.length ? results[i] : null;
-                    final List<ReferenceDescription> refs = new ArrayList<>();
-                    references.add(refs);
                     if (result == null) {
                         // One result per description is the service contract; a missing one is not "no
                         // children", it is a subtree we know nothing about.
@@ -161,7 +159,7 @@ final class ChunkBrowser {
                     // chunk, or a moment later, will. Whether a chunk of one that still gets the fault is a
                     // real failure is decided by the caller, which bounds the retries.
                     if (isNoContinuationPoints(result.getStatusCode())) {
-                        references.set(i, null);
+                        references.add(null);
                         exhausted.add(chunk.get(i));
                         continue;
                     }
@@ -175,6 +173,8 @@ final class ChunkBrowser {
                                         + result.getStatusCode(),
                                 null);
                     }
+                    final List<ReferenceDescription> refs = new ArrayList<>();
+                    references.add(refs);
                     if (result.getReferences() != null) {
                         Collections.addAll(refs, result.getReferences());
                     }
@@ -188,7 +188,7 @@ final class ChunkBrowser {
                 // cursors per Browse than it accepts per BrowseNext — and is halved on Bad_TooManyOperations.
                 int pointsPerRequest = limits.continuationPointsPerBrowseNext(pendingPoints.size());
                 while (!pendingPoints.isEmpty()) {
-                    final int n = Math.max(1, Math.min(pointsPerRequest, pendingPoints.size()));
+                    final int n = Math.clamp(pointsPerRequest, 1, pendingPoints.size());
                     final List<ByteString> batch = List.copyOf(pendingPoints.subList(0, n));
                     final List<Integer> batchOwners = List.copyOf(pendingOwners.subList(0, n));
                     final BrowseResult[] pages;
@@ -197,7 +197,7 @@ final class ChunkBrowser {
                                 client.browseNextAsync(false, batch), BrowseNextResponse::getResults, deadline);
                     } catch (final ExecutionException e) {
                         if (isTooManyOperations(e.getCause()) && n > 1) {
-                            pointsPerRequest = Math.max(1, n / 2);
+                            pointsPerRequest = n / 2;
                             continue;
                         }
                         throw e;

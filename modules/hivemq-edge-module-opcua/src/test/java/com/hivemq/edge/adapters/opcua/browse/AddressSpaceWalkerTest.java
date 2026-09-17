@@ -28,6 +28,7 @@ import com.hivemq.edge.adapters.opcua.browse.FakeOpcUaServer.FakeBrowseServer;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
@@ -384,7 +385,7 @@ class AddressSpaceWalkerTest {
                         .walk(NodeIds.ObjectsFolder, Integer.MAX_VALUE, now))
                 .isInstanceOf(UncheckedBrowseException.class)
                 .hasMessageContaining("after 3 retries");
-        assertThat(System.nanoTime() - start).isLessThan(java.util.concurrent.TimeUnit.SECONDS.toNanos(1));
+        assertThat(System.nanoTime() - start).isLessThan(TimeUnit.SECONDS.toNanos(1));
     }
 
     @Test

@@ -166,13 +166,13 @@ public class OpcUaNodeBrowser {
                             timeoutSeconds,
                             limits.readBatchSize()),
                     false);
-        } catch (final ExecutionException e) {
+        } catch (final @NotNull ExecutionException e) {
             throw new BrowseException("Browse operation failed", e.getCause());
-        } catch (final UncheckedBrowseException e) {
+        } catch (final @NotNull UncheckedBrowseException e) {
             throw new BrowseException("Browse operation failed", e);
-        } catch (final TimeoutException e) {
+        } catch (final @NotNull TimeoutException e) {
             throw new BrowseException("Browse operation timed out after " + timeoutSeconds + " seconds", e);
-        } catch (final InterruptedException e) {
+        } catch (final @NotNull InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BrowseException("Browse operation interrupted", e);
         }

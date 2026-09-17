@@ -24,10 +24,14 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.IntStream;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
@@ -56,6 +60,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ResponseHeader;
 import org.eclipse.milo.opcua.stack.core.types.structured.ServiceFault;
 import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Test doubles for the OPC UA server as the browser sees it through {@link OpcUaClient}: a Browse/BrowseNext
@@ -133,7 +138,7 @@ final class FakeOpcUaServer {
 
     /** The folder nodes {@code F000..F(count-1)} as a Phase 1 chunk, each with one level of depth left. */
     static @NotNull List<PendingNode> folderChunk(final int count) {
-        final List<PendingNode> chunk = new java.util.ArrayList<>(count);
+        final List<PendingNode> chunk = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             final String name = "F" + String.format("%03d", i);
             chunk.add(new PendingNode(NodeId.parse("ns=2;s=" + name), "/" + name, 1));
@@ -152,7 +157,7 @@ final class FakeOpcUaServer {
 
     /** {@code count} discovered variables {@code /Var000..}, the shape Phase 1 hands to Phase 2. */
     static @NotNull List<DiscoveredVariable> discovered(final int count) {
-        final List<DiscoveredVariable> vars = new java.util.ArrayList<>(count);
+        final List<DiscoveredVariable> vars = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             final String name = "Var" + String.format("%03d", i);
             vars.add(new DiscoveredVariable(NodeId.parse(nodeId(i)), "/" + name, "urn:test:plc", 2, name));
@@ -166,9 +171,7 @@ final class FakeOpcUaServer {
     }
 
     static @NotNull List<String> nodeIds(final int count) {
-        return java.util.stream.IntStream.range(0, count)
-                .mapToObj(FakeOpcUaServer::nodeId)
-                .toList();
+        return IntStream.range(0, count).mapToObj(FakeOpcUaServer::nodeId).toList();
     }
 
     /**
@@ -177,9 +180,9 @@ final class FakeOpcUaServer {
      * requests of more than {@code enforced} nodes with Bad_TooManyOperations, and records every call.
      */
     static final class FakeBrowseServer {
-        private final Map<NodeId, ReferenceDescription[]> children = new java.util.HashMap<>();
-        private final Map<NodeId, BrowseResult> fixedResults = new java.util.HashMap<>();
-        private final Map<ByteString, List<ReferenceDescription>> continuations = new java.util.HashMap<>();
+        private final Map<NodeId, ReferenceDescription[]> children = new HashMap<>();
+        private final Map<NodeId, BrowseResult> fixedResults = new HashMap<>();
+        private final Map<ByteString, List<ReferenceDescription>> continuations = new HashMap<>();
         private int enforced = Integer.MAX_VALUE;
         private int pageSize = Integer.MAX_VALUE;
         private int continuationCapacity = Integer.MAX_VALUE;
@@ -190,14 +193,14 @@ final class FakeOpcUaServer {
         /** BrowseNext with more points than this is refused as a whole with Bad_TooManyOperations (Milo does this). */
         int maxPointsPerBrowseNext = Integer.MAX_VALUE;
 
-        final List<Integer> exhaustedPerRequest = new java.util.ArrayList<>();
+        final List<Integer> exhaustedPerRequest = new ArrayList<>();
         private int nextContinuation;
 
-        @org.jetbrains.annotations.Nullable
+        @Nullable
         StatusCode nextStatus;
 
         /** When set, {@code nextStatus} applies only to pages whose first reference's node id starts with this. */
-        @org.jetbrains.annotations.Nullable
+        @Nullable
         String nextStatusOwnerPrefix;
 
         /** When set, every Browse response omits its last result (a server violating one-result-per-description). */
@@ -234,11 +237,10 @@ final class FakeOpcUaServer {
         /** When non-zero, every release request fails with this service fault; TooManyOperations halves, others log. */
         long releaseFault;
 
-        private @org.jetbrains.annotations.Nullable Runnable deferredCompletion;
+        private @Nullable Runnable deferredCompletion;
 
         void completeDeferred() {
-            java.util.Objects.requireNonNull(deferredCompletion, "no deferred response")
-                    .run();
+            Objects.requireNonNull(deferredCompletion, "no deferred response").run();
         }
 
         /** Continuation points the server still holds. */
@@ -246,10 +248,10 @@ final class FakeOpcUaServer {
             return continuations.size();
         }
 
-        final List<Integer> browseSizes = new java.util.ArrayList<>();
-        final List<String> calls = new java.util.ArrayList<>();
-        final List<String> browsedNodes = new java.util.ArrayList<>();
-        final List<Integer> requestedMaxReferences = new java.util.ArrayList<>();
+        final List<Integer> browseSizes = new ArrayList<>();
+        final List<String> calls = new ArrayList<>();
+        final List<String> browsedNodes = new ArrayList<>();
+        final List<Integer> requestedMaxReferences = new ArrayList<>();
 
         @NotNull
         FakeBrowseServer children(final @NotNull NodeId parent, final @NotNull ReferenceDescription... refs) {
@@ -431,9 +433,9 @@ final class FakeOpcUaServer {
         boolean limitReadFails;
         int limitReads;
         long rejectStatus = StatusCodes.Bad_TooManyOperations;
-        final List<Integer> attributeReadSizes = new java.util.ArrayList<>();
+        final List<Integer> attributeReadSizes = new ArrayList<>();
         /** Index (within the browse's variable list) of the first variable of each attribute read. */
-        final List<Integer> attributeReadOffsets = new java.util.ArrayList<>();
+        final List<Integer> attributeReadOffsets = new ArrayList<>();
 
         final int advertisedBrowse;
         int advertisedContinuationPoints;

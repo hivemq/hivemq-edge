@@ -101,7 +101,7 @@ final class AddressSpaceWalker {
                 } catch (final ExecutionException e) {
                     if (isTooManyOperations(e.getCause()) && chunk.size() > 1) {
                         final int rejected = chunk.size();
-                        chunkSize = Math.max(1, rejected / 2);
+                        chunkSize = rejected / 2;
                         log.info(
                                 "OPC UA server rejected a browse of {} nodes for adapter '{}' ({}), retrying with {} nodes per browse",
                                 rejected,
@@ -143,7 +143,7 @@ final class AddressSpaceWalker {
                 // (UaExpert, TIA Portal, a second adapter). Give it a moment, a few times.
                 if (++singleNodeAttempts > SINGLE_NODE_CONTINUATION_RETRIES) {
                     throw new UncheckedBrowseException(
-                            "Browse at path '" + exhausted.get(0).path()
+                            "Browse at path '" + exhausted.getFirst().path()
                                     + "' returned non-Good status: Bad_NoContinuationPoints after "
                                     + SINGLE_NODE_CONTINUATION_RETRIES + " retries",
                             null);
@@ -205,11 +205,16 @@ final class AddressSpaceWalker {
 
             if (rd.getNodeClass() == NodeClass.Variable && !variables.containsKey(nodeId)) {
                 final int nsIndex = nodeId.getNamespaceIndex().intValue();
-                final String nsUri =
-                        nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
+                // An index the client's table does not know is reported by number.
+                final String nsUri = nsTable.get(nsIndex);
                 variables.put(
                         nodeId,
-                        new DiscoveredVariable(nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
+                        new DiscoveredVariable(
+                                nodeId,
+                                childPath,
+                                nsUri != null ? nsUri : String.valueOf(nsIndex),
+                                nsIndex,
+                                browseName));
             }
 
             if (parent.remainingDepth() > 1 && visited.add(nodeId)) {

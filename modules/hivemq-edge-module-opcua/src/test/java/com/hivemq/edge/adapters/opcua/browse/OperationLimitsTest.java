@@ -29,12 +29,14 @@ import com.hivemq.edge.adapters.opcua.browse.FakeOpcUaServer.FakeReadServer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadResponse;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
@@ -63,8 +65,7 @@ class OperationLimitsTest {
     @Test
     void read_requestsTheValueAttributeOfExactlyTheThreeLimitNodes() {
         final OpcUaClient client = mock(OpcUaClient.class);
-        final java.util.concurrent.atomic.AtomicReference<List<ReadValueId>> requested =
-                new java.util.concurrent.atomic.AtomicReference<>();
+        final AtomicReference<List<ReadValueId>> requested = new AtomicReference<>();
         when(client.readAsync(anyDouble(), any(), anyList())).thenAnswer(invocation -> {
             requested.set(invocation.getArgument(2));
             return new CompletableFuture<>();
@@ -144,10 +145,8 @@ class OperationLimitsTest {
                 .isZero();
         assertThat(OperationLimits.limitValue(new DataValue(null, null, null))).isZero();
         assertThat(OperationLimits.limitValue(null)).isZero();
-        assertThat(OperationLimits.limitValue(new DataValue(
-                        new Variant(uint(3)),
-                        new org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode(StatusCodes.Bad_NodeIdUnknown),
-                        null)))
+        assertThat(OperationLimits.limitValue(
+                        new DataValue(new Variant(uint(3)), new StatusCode(StatusCodes.Bad_NodeIdUnknown), null)))
                 .as("the value is taken as read; a bad status with a value is the server's problem")
                 .isEqualTo(3);
     }

@@ -47,7 +47,7 @@ final class AttributeResolver {
     static @NotNull AttributeResolver forClient(final @NotNull OpcUaClient client) {
         try {
             return new AttributeResolver(client.getDataTypeTree());
-        } catch (final UaException e) {
+        } catch (final @NotNull UaException e) {
             return new AttributeResolver(null);
         }
     }

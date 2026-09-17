@@ -70,14 +70,12 @@ final class BatchAttributeSpliterator implements Spliterator<BrowsedNode> {
     private @Nullable List<BrowsedNode> currentBatch;
     private int batchIndex;
     private @Nullable CompletableFuture<List<BrowsedNode>> nextBatchFuture;
-    // Size of the prefetched batch that globalOffset has already been advanced past.
-    // Tracked so estimateSize() can correctly count the in-flight batch as remaining,
-    // which is required by the SIZED characteristic contract.
+    // Size of the prefetched batch that globalOffset has already been advanced past. Tracked so
+    // estimateSize() can count the in-flight batch as remaining (the SIZED contract), and so a rejected
+    // read can rewind globalOffset to the start of its slice.
     private int pendingBatchSize;
     // Variables per read; halved on rejection, never regrown.
     private int batchSize;
-    // Offset of the in-flight batch, so a rejected read can be re-issued for the same slice.
-    private int inFlightStart;
 
     /**
      * @param variables       the sorted Phase 1 result
@@ -100,10 +98,6 @@ final class BatchAttributeSpliterator implements Spliterator<BrowsedNode> {
         this.adapterId = adapterId;
         this.timeoutSeconds = timeoutSeconds;
         this.batchSize = batchSize;
-        this.globalOffset = 0;
-        this.currentBatch = null;
-        this.batchIndex = 0;
-        this.pendingBatchSize = 0;
         // Prime the pipeline: fire the first batch eagerly so it is in flight before the
         // first tryAdvance() call.
         this.nextBatchFuture = firePrefetch();
@@ -141,12 +135,11 @@ final class BatchAttributeSpliterator implements Spliterator<BrowsedNode> {
             return null;
         }
         final int batchStart = globalOffset;
-        final int end = Math.min(globalOffset + batchSize, variables.size());
+        final int end = Math.min(batchStart + batchSize, variables.size());
         // Snapshot the slice so later globalOffset updates can't mutate the view used by
         // the async callback.
-        final List<DiscoveredVariable> batch = List.copyOf(variables.subList(globalOffset, end));
+        final List<DiscoveredVariable> batch = List.copyOf(variables.subList(batchStart, end));
         pendingBatchSize = end - batchStart;
-        inFlightStart = batchStart;
         globalOffset = end;
 
         final List<ReadValueId> readValueIds = new ArrayList<>(batch.size() * ATTRIBUTES_PER_NODE);
@@ -225,8 +218,9 @@ final class BatchAttributeSpliterator implements Spliterator<BrowsedNode> {
                             adapterId,
                             statusOf(cause),
                             batchSize);
-                    globalOffset = inFlightStart;
-                    // inFlightStart < variables.size(), so there is always a batch to re-issue.
+                    // Rewind to the start of the rejected slice; it lies before the end of the variable
+                    // list, so there is always a batch to re-issue.
+                    globalOffset -= rejected;
                     pending = Objects.requireNonNull(firePrefetch());
                     continue;
                 }

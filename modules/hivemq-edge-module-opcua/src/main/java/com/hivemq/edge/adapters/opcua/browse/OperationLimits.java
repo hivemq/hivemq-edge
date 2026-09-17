@@ -82,15 +82,14 @@ record OperationLimits(int maxNodesPerRead, int maxNodesPerBrowse, int maxBrowse
                     }
                     return new OperationLimits(limitValue(results[0]), limitValue(results[1]), limitValue(results[2]));
                 })
-                .exceptionally(error -> NONE);
+                .exceptionally(_ -> NONE);
     }
 
     static int limitValue(final @Nullable DataValue value) {
-        if (value == null || value.getValue() == null) {
-            return 0;
-        }
         // MaxNodesPerRead / MaxNodesPerBrowse are UInt32, MaxBrowseContinuationPoints is UInt16.
-        return value.getValue().getValue() instanceof final Number limit ? limit.intValue() : 0;
+        return value != null && value.getValue() != null && value.getValue().getValue() instanceof final Number limit
+                ? limit.intValue()
+                : 0;
     }
 
     /**
@@ -99,18 +98,14 @@ record OperationLimits(int maxNodesPerRead, int maxNodesPerBrowse, int maxBrowse
      * ReadValueId count, so they get 33 variables per read instead of the default 100.
      */
     int readBatchSize() {
-        if (maxNodesPerRead <= 0) {
-            return READ_BATCH_SIZE;
-        }
-        return Math.max(1, Math.min(READ_BATCH_SIZE, maxNodesPerRead / ATTRIBUTES_PER_NODE));
+        return maxNodesPerRead <= 0
+                ? READ_BATCH_SIZE
+                : Math.max(1, Math.min(READ_BATCH_SIZE, maxNodesPerRead / ATTRIBUTES_PER_NODE));
     }
 
     /** Nodes per Browse request: the default, or fewer if {@code MaxNodesPerBrowse} is smaller. Never below 1. */
     int browseChunkSize() {
-        if (maxNodesPerBrowse <= 0) {
-            return BROWSE_CHUNK_SIZE;
-        }
-        return Math.max(1, Math.min(BROWSE_CHUNK_SIZE, maxNodesPerBrowse));
+        return maxNodesPerBrowse <= 0 ? BROWSE_CHUNK_SIZE : Math.max(1, Math.min(BROWSE_CHUNK_SIZE, maxNodesPerBrowse));
     }
 
     /**
@@ -119,10 +114,9 @@ record OperationLimits(int maxNodesPerRead, int maxNodesPerBrowse, int maxBrowse
      * otherwise half of what was just tried. Never below 1; at 1 a repeat of the fault fails the browse.
      */
     int retryChunkSize(final int tried) {
-        if (maxBrowseContinuationPoints > 0 && maxBrowseContinuationPoints < tried) {
-            return maxBrowseContinuationPoints;
-        }
-        return Math.max(1, tried / 2);
+        return maxBrowseContinuationPoints > 0 && maxBrowseContinuationPoints < tried
+                ? maxBrowseContinuationPoints
+                : Math.max(1, tried / 2);
     }
 
     /**
