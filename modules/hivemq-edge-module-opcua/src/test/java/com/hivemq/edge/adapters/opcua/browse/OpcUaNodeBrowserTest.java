@@ -334,6 +334,130 @@ class OpcUaNodeBrowserTest {
     }
 
     @Test
+    void browse_responseTooLargeForTheChannel_halvesTheChunkLikeTooManyOperations() throws BrowseException {
+        // A folder level of 250 nodes whose Browse response does not fit the negotiated message size: the
+        // server answers Bad_ResponseTooLarge (or Bad_RequestTooLarge / Bad_EncodingLimitsExceeded /
+        // Bad_TcpMessageTooLarge) — the cure is the same as for too many operations: send less per request.
+        final FakeBrowseServer server = folders(250).enforce(40);
+        server.rejectStatus = StatusCodes.Bad_ResponseTooLarge;
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE, 0));
+
+        final List<BrowsedNode> nodes =
+                new OpcUaNodeBrowser(client, "adapter").browse(null, 0).toList();
+
+        assertThat(server.browseSizes).startsWith(1, 100, 50, 25);
+        assertThat(nodes).hasSize(250);
+    }
+
+    @Test
+    void browse_readResponseTooLarge_halvesTheAttributeBatch() throws BrowseException {
+        final FakeReadServer server = new FakeReadServer(0, 100);
+        server.rejectStatus = StatusCodes.Bad_ResponseTooLarge;
+        final List<BrowsedNode> nodes = browseVariables(server, 82);
+
+        assertThat(server.attributeReadSizes).startsWith(246, 123, 60);
+        assertThat(nodes).extracting(BrowsedNode::nodeId).containsExactlyElementsOf(nodeIds(82));
+    }
+
+    @Test
+    void browse_anotherClientHoldsAllContinuationPoints_retriesAloneAndSucceeds() throws BrowseException {
+        // Two paged folders; the server refuses continuation points for the first three requests as if another
+        // session held the whole pool, then frees up. The browse must wait it out, not fail.
+        final FakeBrowseServer server = wideFolders(2, 4).pageSize(3);
+        server.refuseContinuationsForRequests =
+                3; // root browse counts too, so this covers the level and one retry round
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE, 0));
+
+        final List<BrowsedNode> nodes =
+                new OpcUaNodeBrowser(client, "adapter").browse(null, 0).toList();
+
+        assertThat(nodes).hasSize(8);
+        assertThat(nodes).extracting(BrowsedNode::nodeId).doesNotHaveDuplicates();
+    }
+
+    @Test
+    void browse_serverHandsOutMoreCursorsThanBrowseNextAccepts_drainsInBatchesOfTheAdvertisedCapacity()
+            throws BrowseException {
+        // Milo (and who knows which PLC) hands out six cursors in one Browse response but refuses a BrowseNext
+        // carrying more than its advertised five. Found by OpcUaNodeBrowserServerLimitsIT: the six-point
+        // BrowseNext was refused, the release of six was refused too, and the leaked cursors starved every
+        // later browse. Drain — and release — in batches of the advertised capacity.
+        final FakeBrowseServer server = wideFolders(6, 4).pageSize(3).continuationCapacity(6);
+        server.maxPointsPerBrowseNext = 5;
+        final FakeReadServer read = new FakeReadServer(0, Integer.MAX_VALUE, 0);
+        read.advertisedContinuationPoints = 5;
+        final OpcUaClient client = client(server, read);
+
+        final List<BrowsedNode> nodes =
+                new OpcUaNodeBrowser(client, "adapter").browse(null, 0).toList();
+
+        assertThat(nodes).hasSize(24);
+        // root (6 folders, paged) -> the 6 folders in one request -> their cursors drained as 5 + 1 -> leaves
+        assertThat(server.calls)
+                .containsExactly("browse[1]", "next[1]", "browse[6]", "next[5]", "next[1]", "browse[24]");
+        assertThat(server.openContinuationPoints()).isZero();
+    }
+
+    @Test
+    void browse_browseNextRefusedAsTooManyOperations_halvesThePointBatch() throws BrowseException {
+        // Nothing advertised, so the first BrowseNext carries all six cursors; the server refuses it and the
+        // batch is halved until it goes through. No cursor is lost.
+        final FakeBrowseServer server = wideFolders(6, 4).pageSize(3).continuationCapacity(6);
+        server.maxPointsPerBrowseNext = 5;
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE, 0));
+
+        final List<BrowsedNode> nodes =
+                new OpcUaNodeBrowser(client, "adapter").browse(null, 0).toList();
+
+        assertThat(nodes).hasSize(24);
+        assertThat(server.calls)
+                .containsExactly("browse[1]", "next[1]", "browse[6]", "next[6]", "next[3]", "next[3]", "browse[24]");
+        assertThat(server.openContinuationPoints()).isZero();
+    }
+
+    @Test
+    void browse_releaseOnFailure_isBatchedToTheAdvertisedCapacity() {
+        // Six open cursors, a bad sibling, capacity five: the release must go out as 5 + 1 — a single request
+        // of six would be refused and leak all of them.
+        final FakeBrowseServer server = wideFolders(7, 4).pageSize(3).continuationCapacity(6);
+        server.maxPointsPerBrowseNext = 5;
+        server.status(
+                NodeId.parse("ns=2;s=F006"),
+                new BrowseResult(
+                        new StatusCode(StatusCodes.Bad_NodeIdUnknown),
+                        ByteString.NULL_VALUE,
+                        new ReferenceDescription[0]));
+        final FakeReadServer read = new FakeReadServer(0, Integer.MAX_VALUE, 0);
+        read.advertisedContinuationPoints = 5;
+        final OpcUaClient client = client(server, read);
+
+        assertThatThrownBy(() -> new OpcUaNodeBrowser(client, "adapter").browse(null, 0))
+                .isInstanceOf(BrowseException.class);
+        assertThat(server.calls)
+                .containsExactly("browse[1]", "next[1]", "next[1]", "browse[7]", "release[5]", "release[1]");
+        assertThat(server.openContinuationPoints()).isZero();
+    }
+
+    @Test
+    void browse_releaseOnFailure_noCapacityAdvertised_releasesOnePerRequest() {
+        final FakeBrowseServer server = wideFolders(4, 4).pageSize(3).continuationCapacity(6);
+        server.maxPointsPerBrowseNext = 2;
+        server.status(
+                NodeId.parse("ns=2;s=F003"),
+                new BrowseResult(
+                        new StatusCode(StatusCodes.Bad_NodeIdUnknown),
+                        ByteString.NULL_VALUE,
+                        new ReferenceDescription[0]));
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE, 0));
+
+        assertThatThrownBy(() -> new OpcUaNodeBrowser(client, "adapter").browse(null, 0))
+                .isInstanceOf(BrowseException.class);
+        assertThat(server.calls)
+                .containsExactly("browse[1]", "next[1]", "browse[4]", "release[1]", "release[1]", "release[1]");
+        assertThat(server.openContinuationPoints()).isZero();
+    }
+
+    @Test
     void browse_singleNodeStillOutOfContinuationPoints_failsWithThePath() {
         final FakeBrowseServer server = wideFolders(2, 4).pageSize(3).continuationCapacity(0);
         final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE, 0));
@@ -342,7 +466,7 @@ class OpcUaNodeBrowserTest {
                 .isInstanceOf(BrowseException.class)
                 .cause()
                 .hasMessageContaining("Browse at path '/F000'")
-                .hasMessageContaining("Bad_NoContinuationPoints");
+                .hasMessageContaining("Bad_NoContinuationPoints after 3 retries");
     }
 
     @ParameterizedTest(name = "tried {0}, advertised {1} -> {2}")
@@ -462,6 +586,13 @@ class OpcUaNodeBrowserTest {
         private int enforced = Integer.MAX_VALUE;
         private int pageSize = Integer.MAX_VALUE;
         private int continuationCapacity = Integer.MAX_VALUE;
+        /** Status of the service fault for a request above {@code enforced}; Bad_TooManyOperations by default. */
+        long rejectStatus = StatusCodes.Bad_TooManyOperations;
+        /** While positive, every paged result answers Bad_NoContinuationPoints (another client holds the pool). */
+        int refuseContinuationsForRequests;
+        /** BrowseNext with more points than this is refused as a whole with Bad_TooManyOperations (Milo does this). */
+        int maxPointsPerBrowseNext = Integer.MAX_VALUE;
+
         final List<Integer> exhaustedPerRequest = new java.util.ArrayList<>();
         private int nextContinuation;
 
@@ -529,8 +660,9 @@ class OpcUaNodeBrowserTest {
                         browseSizes.add(descriptions.size());
                         calls.add("browse[" + descriptions.size() + "]");
                         if (descriptions.size() > enforced) {
-                            return CompletableFuture.failedFuture(tooManyOperations());
+                            return CompletableFuture.failedFuture(serviceFault(rejectStatus));
                         }
+                        final boolean refuseAll = refuseContinuationsForRequests-- > 0;
                         final BrowseResult[] results = new BrowseResult[descriptions.size()];
                         int pointsInUse = continuations.size();
                         int exhausted = 0;
@@ -544,7 +676,7 @@ class OpcUaNodeBrowserTest {
                             }
                             final ReferenceDescription[] refs =
                                     children.getOrDefault(node, new ReferenceDescription[0]);
-                            if (refs.length > pageSize && pointsInUse >= continuationCapacity) {
+                            if (refs.length > pageSize && (refuseAll || pointsInUse >= continuationCapacity)) {
                                 results[i] = new BrowseResult(
                                         new StatusCode(StatusCodes.Bad_NoContinuationPoints),
                                         ByteString.NULL_VALUE,
@@ -566,6 +698,9 @@ class OpcUaNodeBrowserTest {
                 final boolean release = invocation.getArgument(0);
                 final List<ByteString> points = invocation.getArgument(1);
                 calls.add((release ? "release[" : "next[") + points.size() + "]");
+                if (points.size() > maxPointsPerBrowseNext) {
+                    return CompletableFuture.failedFuture(serviceFault(StatusCodes.Bad_TooManyOperations));
+                }
                 final BrowseResult[] results = new BrowseResult[points.size()];
                 for (int i = 0; i < results.length; i++) {
                     final List<ReferenceDescription> rest = continuations.remove(points.get(i));
@@ -598,9 +733,9 @@ class OpcUaNodeBrowserTest {
         }
     }
 
-    private static @NotNull UaServiceFaultException tooManyOperations() {
-        final ResponseHeader header = new ResponseHeader(
-                DateTime.now(), uint(0), new StatusCode(StatusCodes.Bad_TooManyOperations), null, null, null);
+    private static @NotNull UaServiceFaultException serviceFault(final long status) {
+        final ResponseHeader header =
+                new ResponseHeader(DateTime.now(), uint(0), new StatusCode(status), null, null, null);
         return new UaServiceFaultException(new ServiceFault(header));
     }
 
@@ -858,6 +993,7 @@ class OpcUaNodeBrowserTest {
         final int enforced;
         boolean limitReadFails;
         int limitReads;
+        long rejectStatus = StatusCodes.Bad_TooManyOperations;
         final List<Integer> attributeReadSizes = new java.util.ArrayList<>();
         /** Index (within the browse's variable list) of the first variable of each attribute read. */
         final List<Integer> attributeReadOffsets = new java.util.ArrayList<>();
@@ -908,7 +1044,7 @@ class OpcUaNodeBrowserTest {
                     attributeReadOffsets.add(Integer.parseInt(first.substring(first.length() - 3)));
                 }
                 if (ids.size() > enforced) {
-                    return CompletableFuture.failedFuture(tooManyOperations());
+                    return CompletableFuture.failedFuture(serviceFault(rejectStatus));
                 }
                 final DataValue[] values = new DataValue[ids.size()];
                 Arrays.fill(values, new DataValue(Variant.NULL_VALUE));

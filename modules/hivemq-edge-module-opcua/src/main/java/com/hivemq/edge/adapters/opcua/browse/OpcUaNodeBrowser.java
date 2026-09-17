@@ -86,6 +86,10 @@ public class OpcUaNodeBrowser {
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
     private static final int BROWSE_CHUNK_SIZE = 100;
+    // A node refused with Bad_NoContinuationPoints even when browsed alone is retried this often, pausing in
+    // between, before the browse fails: the pool is per session and another client may be draining it.
+    private static final int SINGLE_NODE_CONTINUATION_RETRIES = 3;
+    private static final long CONTINUATION_RETRY_PAUSE_MILLIS = 500;
     // Attributes read per variable in Phase 2 (DataType, AccessLevel, Description). A server's MaxNodesPerRead
     // limit counts ReadValueIds, not distinct nodes, so a batch of N variables is N * ATTRIBUTES_PER_NODE
     // operations (EDG-1034).
@@ -314,15 +318,16 @@ public class OpcUaNodeBrowser {
                 final List<PendingNode> chunk = level.subList(offset, Math.min(offset + chunkSize, level.size()));
                 final ChunkResult result;
                 try {
-                    result = browseChunk(chunk, deadline);
+                    result = browseChunk(chunk, deadline, serverLimits.maxBrowseContinuationPoints());
                 } catch (final ExecutionException e) {
                     if (isTooManyOperations(e.getCause()) && chunk.size() > 1) {
                         final int rejected = chunk.size();
                         chunkSize = Math.max(1, rejected / 2);
                         log.info(
-                                "OPC UA server rejected a browse of {} nodes for adapter '{}' with Bad_TooManyOperations, retrying with {} nodes per browse",
+                                "OPC UA server rejected a browse of {} nodes for adapter '{}' ({}), retrying with {} nodes per browse",
                                 rejected,
                                 adapterId,
+                                statusOf(e.getCause()),
                                 chunkSize);
                         continue;
                     }
@@ -339,7 +344,21 @@ public class OpcUaNodeBrowser {
                 // advertises 5, so a level chunk of 100 nodes with six overflowing folders fails six times over.
                 List<PendingNode> exhausted = result.exhausted;
                 int retrySize = chunk.size();
+                int singleNodeAttempts = 0;
                 while (!exhausted.isEmpty()) {
+                    if (retrySize == 1) {
+                        // Even one node at a time is refused: another client is holding the server's whole
+                        // pool (UaExpert, TIA Portal, a second adapter). Give it a moment, a few times.
+                        if (++singleNodeAttempts > SINGLE_NODE_CONTINUATION_RETRIES) {
+                            throw new UncheckedBrowseException(
+                                    "Browse at path '" + exhausted.get(0).path
+                                            + "' returned non-Good status: Bad_NoContinuationPoints after "
+                                            + SINGLE_NODE_CONTINUATION_RETRIES + " retries",
+                                    null);
+                        }
+                        Thread.sleep(Math.min(
+                                CONTINUATION_RETRY_PAUSE_MILLIS, TimeUnit.NANOSECONDS.toMillis(remaining(deadline))));
+                    }
                     retrySize = retryChunkSize(retrySize, serverLimits.maxBrowseContinuationPoints());
                     log.info(
                             "OPC UA server ran out of continuation points for {} of {} browsed nodes for adapter '{}', re-browsing them {} at a time",
@@ -351,7 +370,8 @@ public class OpcUaNodeBrowser {
                     for (int start = 0; start < exhausted.size(); start += retrySize) {
                         final List<PendingNode> retry =
                                 exhausted.subList(start, Math.min(start + retrySize, exhausted.size()));
-                        final ChunkResult retried = browseChunk(retry, deadline);
+                        final ChunkResult retried =
+                                browseChunk(retry, deadline, serverLimits.maxBrowseContinuationPoints());
                         for (int i = 0; i < retry.size(); i++) {
                             if (retried.references.get(i) != null) {
                                 collectReferences(retry.get(i), retried.references.get(i), variables, visited, next);
@@ -406,7 +426,8 @@ public class OpcUaNodeBrowser {
      * cancellation. Whatever fails after the server handed out continuation points, every cursor still open
      * on the server is released before the failure propagates — the S7-1500 has five per session.
      */
-    private @NotNull ChunkResult browseChunk(final @NotNull List<PendingNode> chunk, final long deadline)
+    private @NotNull ChunkResult browseChunk(
+            final @NotNull List<PendingNode> chunk, final long deadline, final int maxBrowseContinuationPoints)
             throws ExecutionException, InterruptedException, TimeoutException {
         final List<BrowseDescription> descriptions = new ArrayList<>(chunk.size());
         for (final PendingNode node : chunk) {
@@ -426,15 +447,16 @@ public class OpcUaNodeBrowser {
             final BrowseResult[] results = client.browseAsync(viewDescription, uint(maxReferencesPerNode), descriptions)
                     .get(remaining(deadline), TimeUnit.NANOSECONDS)
                     .getResults();
-            // Every cursor the server handed out in this response, tracked before any status is judged, so a
-            // failure on one node releases its siblings' cursors instead of leaking them.
-            List<ByteString> openPoints = continuationPointsOf(results);
+            // Every cursor still open on the server: the ones not drained yet plus, while a BrowseNext is in
+            // flight, the ones it carries. Tracked before any status is judged, so a failure on one node
+            // releases its siblings' cursors instead of leaking them.
+            final List<ByteString> open = new ArrayList<>(continuationPointsOf(results));
             try {
                 final List<List<ReferenceDescription>> references = new ArrayList<>(chunk.size());
                 final List<PendingNode> exhausted = new ArrayList<>();
                 // Continuation points still to drain, with the chunk index they belong to.
-                final List<ByteString> continuationPoints = new ArrayList<>();
-                final List<Integer> continuationOwners = new ArrayList<>();
+                final List<ByteString> pendingPoints = new ArrayList<>();
+                final List<Integer> pendingOwners = new ArrayList<>();
                 for (int i = 0; i < chunk.size(); i++) {
                     final BrowseResult result = results != null && i < results.length ? results[i] : null;
                     final List<ReferenceDescription> refs = new ArrayList<>();
@@ -446,8 +468,9 @@ public class OpcUaNodeBrowser {
                                 "Browse at path '" + chunk.get(i).path + "' returned no result", null);
                     }
                     // A server out of continuation points cannot page this node's children now; a smaller
-                    // chunk will. Only a chunk of one that still gets the fault is a real failure.
-                    if (isNoContinuationPoints(result.getStatusCode()) && chunk.size() > 1) {
+                    // chunk, or a moment later, will. Whether a chunk of one that still gets the fault is a
+                    // real failure is decided by the caller, which bounds the retries.
+                    if (isNoContinuationPoints(result.getStatusCode())) {
                         references.set(i, null);
                         exhausted.add(chunk.get(i));
                         continue;
@@ -466,20 +489,39 @@ public class OpcUaNodeBrowser {
                         Collections.addAll(refs, result.getReferences());
                     }
                     if (hasContinuationPoint(result)) {
-                        continuationPoints.add(result.getContinuationPoint());
-                        continuationOwners.add(i);
+                        pendingPoints.add(result.getContinuationPoint());
+                        pendingOwners.add(i);
                     }
                 }
-                // Drain every continuation page of this chunk before returning (and releasing the permit).
-                while (!continuationPoints.isEmpty()) {
-                    final BrowseResult[] pages = client.browseNextAsync(false, List.copyOf(continuationPoints))
-                            .get(remaining(deadline), TimeUnit.NANOSECONDS)
-                            .getResults();
-                    openPoints = continuationPointsOf(pages);
-                    final List<ByteString> nextPoints = new ArrayList<>();
-                    final List<Integer> nextOwners = new ArrayList<>();
-                    for (int i = 0; i < continuationPoints.size(); i++) {
-                        final int owner = continuationOwners.get(i);
+                // Drain every continuation page of this chunk before returning (and releasing the permit). A
+                // BrowseNext carries at most the server's continuation-point capacity — Milo hands out more
+                // cursors per Browse than it accepts per BrowseNext — and is halved on Bad_TooManyOperations.
+                int pointsPerRequest =
+                        maxBrowseContinuationPoints > 0 ? maxBrowseContinuationPoints : pendingPoints.size();
+                while (!pendingPoints.isEmpty()) {
+                    final int n = Math.max(1, Math.min(pointsPerRequest, pendingPoints.size()));
+                    final List<ByteString> batch = List.copyOf(pendingPoints.subList(0, n));
+                    final List<Integer> batchOwners = List.copyOf(pendingOwners.subList(0, n));
+                    final BrowseResult[] pages;
+                    try {
+                        pages = client.browseNextAsync(false, batch)
+                                .get(remaining(deadline), TimeUnit.NANOSECONDS)
+                                .getResults();
+                    } catch (final ExecutionException e) {
+                        if (isTooManyOperations(e.getCause()) && n > 1) {
+                            pointsPerRequest = Math.max(1, n / 2);
+                            continue;
+                        }
+                        throw e;
+                    }
+                    // The batch's cursors are consumed; whatever the pages carry is open now.
+                    pendingPoints.subList(0, n).clear();
+                    pendingOwners.subList(0, n).clear();
+                    open.clear();
+                    open.addAll(pendingPoints);
+                    open.addAll(continuationPointsOf(pages));
+                    for (int i = 0; i < batch.size(); i++) {
+                        final int owner = batchOwners.get(i);
                         final BrowseResult page = pages != null && i < pages.length ? pages[i] : null;
                         if (page == null) {
                             throw new UncheckedBrowseException(
@@ -497,18 +539,14 @@ public class OpcUaNodeBrowser {
                             Collections.addAll(references.get(owner), page.getReferences());
                         }
                         if (hasContinuationPoint(page)) {
-                            nextPoints.add(page.getContinuationPoint());
-                            nextOwners.add(owner);
+                            pendingPoints.add(page.getContinuationPoint());
+                            pendingOwners.add(owner);
                         }
                     }
-                    continuationPoints.clear();
-                    continuationPoints.addAll(nextPoints);
-                    continuationOwners.clear();
-                    continuationOwners.addAll(nextOwners);
                 }
                 return new ChunkResult(references, exhausted);
             } catch (final Exception e) {
-                releaseContinuationPoints(openPoints);
+                releaseContinuationPoints(open, maxBrowseContinuationPoints);
                 throw e;
             }
         } finally {
@@ -535,18 +573,26 @@ public class OpcUaNodeBrowser {
      * {@code releaseContinuationPoints = true}). Fire-and-forget: the browse is already failing, possibly by
      * timeout or interrupt, so nothing waits on the answer and a failure is only logged.
      */
-    private void releaseContinuationPoints(final @NotNull List<ByteString> points) {
+    private void releaseContinuationPoints(
+            final @NotNull List<ByteString> points, final int maxBrowseContinuationPoints) {
         if (points.isEmpty()) {
             return;
         }
-        client.browseNextAsync(true, points).exceptionally(error -> {
-            log.debug(
-                    "Could not release {} continuation point(s) after a failed browse for adapter '{}'",
-                    points.size(),
-                    adapterId,
-                    error);
-            return null;
-        });
+        // A BrowseNext above the server's capacity is refused as a whole, which would leak the very cursors
+        // this is meant to free: batch to the advertised capacity, one per request when none is advertised.
+        final int perRequest = maxBrowseContinuationPoints > 0 ? maxBrowseContinuationPoints : 1;
+        for (int start = 0; start < points.size(); start += perRequest) {
+            final List<ByteString> batch =
+                    List.copyOf(points.subList(start, Math.min(start + perRequest, points.size())));
+            client.browseNextAsync(true, batch).exceptionally(error -> {
+                log.debug(
+                        "Could not release {} continuation point(s) after a failed browse for adapter '{}'",
+                        batch.size(),
+                        adapterId,
+                        error);
+                return null;
+            });
+        }
     }
 
     private static boolean isNoContinuationPoints(final @Nullable StatusCode status) {
@@ -599,9 +645,26 @@ public class OpcUaNodeBrowser {
         return Math.max(1, deadline - System.nanoTime());
     }
 
+    /** The status of a Milo fault, for log lines; empty when the cause is not one. */
+    static @NotNull String statusOf(final @Nullable Throwable cause) {
+        return cause instanceof final UaException ua ? String.valueOf(ua.getStatusCode()) : "";
+    }
+
+    /**
+     * A service fault that says the request was too big for the server in one way or another: too many
+     * operations, or a request/response the negotiated message size cannot carry. All of them are answered by
+     * sending less per request.
+     */
     static boolean isTooManyOperations(final @Nullable Throwable cause) {
-        return cause instanceof final UaException ua
-                && ua.getStatusCode().getValue() == StatusCodes.Bad_TooManyOperations;
+        if (!(cause instanceof final UaException ua)) {
+            return false;
+        }
+        final long status = ua.getStatusCode().getValue();
+        return status == StatusCodes.Bad_TooManyOperations
+                || status == StatusCodes.Bad_ResponseTooLarge
+                || status == StatusCodes.Bad_RequestTooLarge
+                || status == StatusCodes.Bad_EncodingLimitsExceeded
+                || status == StatusCodes.Bad_TcpMessageTooLarge;
     }
 
     /**
@@ -766,10 +829,11 @@ public class OpcUaNodeBrowser {
                         final int rejected = pendingBatchSize;
                         batchSize = rejected / 2;
                         log.info(
-                                "OPC UA server rejected a read of {} variables ({} attributes) for adapter '{}' with Bad_TooManyOperations, retrying with {} variables per read",
+                                "OPC UA server rejected a read of {} variables ({} attributes) for adapter '{}' ({}), retrying with {} variables per read",
                                 rejected,
                                 rejected * ATTRIBUTES_PER_NODE,
                                 browser.adapterId,
+                                statusOf(cause),
                                 batchSize);
                         globalOffset = inFlightStart;
                         // inFlightStart < variables.size(), so there is always a batch to re-issue.
