@@ -347,6 +347,59 @@ class AddressSpaceWalkerTest {
     }
 
     @Test
+    void walk_retryOfExhaustedNodes_rejectedAsTooLarge_isHalvedFromTheSameOffset() throws Exception {
+        // Four paged folders, a pool of two: the level browse pages two and refuses two for lack of
+        // continuation points. The retry of those two is refused as too large — they are the widest nodes of
+        // the level, their responses the biggest — and must be halved like any other request, not fail the
+        // browse (Sam's round 3).
+        final FakeBrowseServer server = wideFolders(4, 4).pageSize(3).continuationCapacity(2);
+        server.rejectCall = 5;
+        server.rejectStatus = StatusCodes.Bad_ResponseTooLarge;
+
+        final List<DiscoveredVariable> variables = walk(server);
+
+        assertThat(variables).hasSize(4 * 4);
+        assertThat(variables).extracting(AddressSpaceWalkerTest::id).doesNotHaveDuplicates();
+        assertThat(server.calls)
+                .containsExactly(
+                        "browse[1]", // root, paged
+                        "next[1]",
+                        "browse[4]", // the level: two paged, two refused
+                        "next[2]",
+                        "browse[2]", // the retry, refused as too large
+                        "browse[1]", // the same two, one at a time
+                        "next[1]",
+                        "browse[1]",
+                        "next[1]",
+                        "browse[16]"); // the leaves
+    }
+
+    @Test
+    void walk_retryOfASingleExhaustedNode_rejected_fails() {
+        // One paged folder next to one refused; the single-node retry is refused as too large: nothing left to
+        // halve, the fault propagates.
+        final FakeBrowseServer server = wideFolders(2, 4).pageSize(3).continuationCapacity(1);
+        server.rejectCall = 4;
+        server.rejectStatus = StatusCodes.Bad_ResponseTooLarge;
+
+        assertThatThrownBy(() -> walk(server))
+                .isInstanceOf(ExecutionException.class)
+                .cause()
+                .isInstanceOf(UaServiceFaultException.class);
+        assertThat(server.calls).containsExactly("browse[1]", "browse[2]", "next[1]", "browse[1]");
+    }
+
+    @Test
+    void walk_retryOfExhaustedNodes_otherFault_propagatesWithoutHalving() {
+        final FakeBrowseServer server = wideFolders(4, 4).pageSize(3).continuationCapacity(2);
+        server.rejectCall = 5;
+        server.rejectStatus = StatusCodes.Bad_ConnectionClosed;
+
+        assertThatThrownBy(() -> walk(server)).isInstanceOf(ExecutionException.class);
+        assertThat(server.calls).last().isEqualTo("browse[2]");
+    }
+
+    @Test
     void walk_anotherClientHoldsAllContinuationPoints_retriesAloneAndSucceeds() throws Exception {
         // Two paged folders; the server refuses continuation points for the first three requests as if another
         // session held the whole pool, then frees up. The browse must wait it out, not fail.

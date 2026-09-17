@@ -188,6 +188,12 @@ final class FakeOpcUaServer {
         private int continuationCapacity = Integer.MAX_VALUE;
         /** Status of the service fault for a request above {@code enforced}; Bad_TooManyOperations by default. */
         long rejectStatus = StatusCodes.Bad_TooManyOperations;
+        /**
+         * The n-th call (Browse or BrowseNext, 1-based) is refused with {@code rejectStatus} whatever its size:
+         * a request the server cannot answer because of what the response would carry, not how many nodes
+         * were asked for.
+         */
+        int rejectCall;
         /** While positive, every paged result answers Bad_NoContinuationPoints (another client holds the pool). */
         int refuseContinuationsForRequests;
         /** BrowseNext with more points than this is refused as a whole with Bad_TooManyOperations (Milo does this). */
@@ -296,7 +302,7 @@ final class FakeOpcUaServer {
                         requestedMaxReferences.add(maxReferences.intValue());
                         browseSizes.add(descriptions.size());
                         calls.add("browse[" + descriptions.size() + "]");
-                        if (descriptions.size() > enforced) {
+                        if (descriptions.size() > enforced || calls.size() == rejectCall) {
                             return fault(rejectStatus);
                         }
                         final boolean refuseAll = refuseContinuationsForRequests-- > 0;

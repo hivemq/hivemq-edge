@@ -33,6 +33,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,22 +96,10 @@ final class AddressSpaceWalker {
             int offset = 0;
             while (offset < level.size()) {
                 final List<PendingNode> chunk = level.subList(offset, Math.min(offset + chunkSize, level.size()));
-                final ChunkBrowser.ChunkResult result;
-                try {
-                    result = chunkBrowser.browse(chunk, deadline);
-                } catch (final ExecutionException e) {
-                    if (isTooManyOperations(e.getCause()) && chunk.size() > 1) {
-                        final int rejected = chunk.size();
-                        chunkSize = rejected / 2;
-                        log.info(
-                                "OPC UA server rejected a browse of {} nodes for adapter '{}' ({}), retrying with {} nodes per browse",
-                                rejected,
-                                adapterId,
-                                statusOf(e.getCause()),
-                                chunkSize);
-                        continue;
-                    }
-                    throw e;
+                final ChunkBrowser.ChunkResult result = browseOrShrink(chunk, deadline);
+                if (result == null) {
+                    chunkSize = chunk.size() / 2;
+                    continue;
                 }
                 collect(chunk, result, variables, visited, next);
                 offset += chunk.size();
@@ -122,9 +111,37 @@ final class AddressSpaceWalker {
     }
 
     /**
+     * Browses {@code nodes} as one request; {@code null} when the server refused the request as too big and
+     * it can still be split — the caller re-issues the slice at half the size, from the same offset.
+     */
+    private ChunkBrowser.@Nullable ChunkResult browseOrShrink(
+            final @NotNull List<PendingNode> nodes, final @NotNull Deadline deadline)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        try {
+            return chunkBrowser.browse(nodes, deadline);
+        } catch (final ExecutionException e) {
+            if (isTooManyOperations(e.getCause()) && nodes.size() > 1) {
+                log.info(
+                        "OPC UA server rejected a browse of {} nodes for adapter '{}' ({}), retrying with {} nodes per browse",
+                        nodes.size(),
+                        adapterId,
+                        statusOf(e.getCause()),
+                        nodes.size() / 2);
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    /**
      * Nodes the server could not page because it ran out of continuation points: browse them again in chunks
      * small enough that every node of a chunk can hold a point at once. The S7-1500 advertises 5, so a level
      * chunk of 100 nodes with six overflowing folders fails six times over.
+     *
+     * <p>A retry the server refuses as too big is halved like any other request: the nodes it was refused for
+     * are the ones with the most references, so their responses are the largest of the level. Once a retry
+     * size shrinks to one node for that reason, a node still exhausted afterwards is treated like one refused
+     * alone — a few paused attempts, then the browse fails.
      */
     private void rebrowseExhausted(
             final @NotNull List<PendingNode> chunk,
@@ -158,11 +175,17 @@ final class AddressSpaceWalker {
                     adapterId,
                     retrySize);
             final List<PendingNode> stillExhausted = new ArrayList<>();
-            for (int start = 0; start < exhausted.size(); start += retrySize) {
+            int start = 0;
+            while (start < exhausted.size()) {
                 final List<PendingNode> retry = exhausted.subList(start, Math.min(start + retrySize, exhausted.size()));
-                final ChunkBrowser.ChunkResult retried = chunkBrowser.browse(retry, deadline);
+                final ChunkBrowser.ChunkResult retried = browseOrShrink(retry, deadline);
+                if (retried == null) {
+                    retrySize = retry.size() / 2;
+                    continue;
+                }
                 collect(retry, retried, variables, visited, next);
                 stillExhausted.addAll(retried.exhausted());
+                start += retry.size();
             }
             exhausted = stillExhausted;
         }

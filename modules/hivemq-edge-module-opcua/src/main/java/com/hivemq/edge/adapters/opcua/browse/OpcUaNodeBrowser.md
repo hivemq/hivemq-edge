@@ -181,7 +181,10 @@ none is left behind:
   `MaxBrowseContinuationPoints` (or half the previous chunk when none is
   advertised); a single node still refused is retried three times with a 500 ms
   pause — another client (UaExpert, TIA Portal) may be holding the pool — and
-  only then fails the browse with the node's path.
+  only then fails the browse with the node's path. A re-browse request the
+  server refuses as too big is halved and re-issued from the same offset, like
+  a level request: the refused nodes are the widest of their level, so their
+  responses are the largest.
 
 ### Deduplication
 
