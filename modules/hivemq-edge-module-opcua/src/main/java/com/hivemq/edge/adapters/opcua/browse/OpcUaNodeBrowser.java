@@ -98,6 +98,8 @@ public class OpcUaNodeBrowser {
     // shared client. In production this permit is owned by the OpcUaProtocolAdapter and shared across every
     // browse call against the device (EDG-576); standalone/test callers get their own single permit.
     private final @NotNull Semaphore concurrency;
+    // Overall budget for one browse call: Phase 1 including the wait for the permit, and each Phase 2 read.
+    private final long timeoutSeconds;
 
     public OpcUaNodeBrowser(final @NotNull OpcUaClient client, final @NotNull String adapterId) {
         this(client, adapterId, 0);
@@ -126,10 +128,21 @@ public class OpcUaNodeBrowser {
             final @NotNull String adapterId,
             final int maxReferencesPerNode,
             final @NotNull Semaphore concurrency) {
+        this(client, adapterId, maxReferencesPerNode, concurrency, TIMEOUT_SECONDS);
+    }
+
+    /** Test seam: like the constructor above, with the browse timeout in seconds instead of the default. */
+    OpcUaNodeBrowser(
+            final @NotNull OpcUaClient client,
+            final @NotNull String adapterId,
+            final int maxReferencesPerNode,
+            final @NotNull Semaphore concurrency,
+            final long timeoutSeconds) {
         this.client = client;
         this.adapterId = adapterId;
         this.maxReferencesPerNode = maxReferencesPerNode;
         this.concurrency = concurrency;
+        this.timeoutSeconds = timeoutSeconds;
     }
 
     /**
@@ -185,7 +198,7 @@ public class OpcUaNodeBrowser {
             // Phase 2: Return a stream that lazily batch-reads attributes as it is consumed.
             final DataTypeTree dataTypeTree = getDataTypeTree();
             final int batchSize = initialBatchSize(
-                    limits.get(TIMEOUT_SECONDS, TimeUnit.SECONDS).maxNodesPerRead());
+                    limits.get(timeoutSeconds, TimeUnit.SECONDS).maxNodesPerRead());
             return StreamSupport.stream(
                     new BatchAttributeSpliterator(variables, tagNameDefaults, client, dataTypeTree, this, batchSize),
                     false);
@@ -194,7 +207,7 @@ public class OpcUaNodeBrowser {
         } catch (final UncheckedBrowseException e) {
             throw new BrowseException("Browse operation failed", e);
         } catch (final TimeoutException e) {
-            throw new BrowseException("Browse operation timed out after " + TIMEOUT_SECONDS + " seconds", e);
+            throw new BrowseException("Browse operation timed out after " + timeoutSeconds + " seconds", e);
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BrowseException("Browse operation interrupted", e);
@@ -230,7 +243,7 @@ public class OpcUaNodeBrowser {
                         null,
                         null));
         return client.readAsync(0.0, TimestampsToReturn.Neither, ids)
-                .orTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .orTimeout(timeoutSeconds, TimeUnit.SECONDS)
                 .thenApply(response -> {
                     final DataValue[] results = response.getResults();
                     if (results == null || results.length < ids.size()) {
@@ -286,7 +299,7 @@ public class OpcUaNodeBrowser {
             final int maxDepth,
             final @NotNull CompletableFuture<OperationLimits> limits)
             throws ExecutionException, InterruptedException, TimeoutException {
-        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS);
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
         final Map<NodeId, DiscoveredVariable> variables = new LinkedHashMap<>();
         final Set<NodeId> visited = new HashSet<>();
         visited.add(browseRoot);
@@ -388,7 +401,10 @@ public class OpcUaNodeBrowser {
 
     /**
      * Browses one chunk of nodes in a single request and drains all continuation points, holding the browse
-     * permit throughout.
+     * permit throughout. The wait for the permit counts against the browse deadline and stays interruptible,
+     * so a browse queued behind another one on the same adapter can neither outlive the timeout nor ignore
+     * cancellation. Whatever fails after the server handed out continuation points, every cursor still open
+     * on the server is released before the failure propagates — the S7-1500 has five per session.
      */
     private @NotNull ChunkResult browseChunk(final @NotNull List<PendingNode> chunk, final long deadline)
             throws ExecutionException, InterruptedException, TimeoutException {
@@ -403,83 +419,134 @@ public class OpcUaNodeBrowser {
                     uint(BrowseResultMask.All.getValue())));
         }
         final var viewDescription = new ViewDescription(NodeId.NULL_VALUE, DateTime.MIN_VALUE, uint(0));
-        concurrency.acquireUninterruptibly();
+        if (!concurrency.tryAcquire(remaining(deadline), TimeUnit.NANOSECONDS)) {
+            throw new TimeoutException("Timed out waiting for the browse permit of adapter '" + adapterId + "'");
+        }
         try {
             final BrowseResult[] results = client.browseAsync(viewDescription, uint(maxReferencesPerNode), descriptions)
                     .get(remaining(deadline), TimeUnit.NANOSECONDS)
                     .getResults();
-            final List<List<ReferenceDescription>> references = new ArrayList<>(chunk.size());
-            final List<PendingNode> exhausted = new ArrayList<>();
-            // Continuation points still open after the first page, with the chunk index they belong to.
-            final List<ByteString> continuationPoints = new ArrayList<>();
-            final List<Integer> continuationOwners = new ArrayList<>();
-            for (int i = 0; i < chunk.size(); i++) {
-                final BrowseResult result = results != null && i < results.length ? results[i] : null;
-                final List<ReferenceDescription> refs = new ArrayList<>();
-                references.add(refs);
-                if (result == null) {
-                    continue;
-                }
-                // A server out of continuation points cannot page this node's children now; a smaller chunk
-                // will. Only a chunk of one that still gets the fault is a real failure.
-                if (isNoContinuationPoints(result.getStatusCode()) && chunk.size() > 1) {
-                    references.set(i, null);
-                    exhausted.add(chunk.get(i));
-                    continue;
-                }
-                // Fail loudly on non-Good status. Under load the server may throttle individual browse
-                // operations, returning no references and no continuation point; without this check the
-                // entire subtree under the throttled node is silently missing from the results.
-                if (result.getStatusCode() != null && !result.getStatusCode().isGood()) {
-                    throw new UncheckedBrowseException(
-                            "Browse at path '" + chunk.get(i).path + "' returned non-Good status: "
-                                    + result.getStatusCode(),
-                            null);
-                }
-                if (result.getReferences() != null) {
-                    Collections.addAll(refs, result.getReferences());
-                }
-                if (hasContinuationPoint(result)) {
-                    continuationPoints.add(result.getContinuationPoint());
-                    continuationOwners.add(i);
-                }
-            }
-            // Drain every continuation page of this chunk before returning (and releasing the permit).
-            while (!continuationPoints.isEmpty()) {
-                final BrowseResult[] pages = client.browseNextAsync(false, List.copyOf(continuationPoints))
-                        .get(remaining(deadline), TimeUnit.NANOSECONDS)
-                        .getResults();
-                final List<ByteString> nextPoints = new ArrayList<>();
-                final List<Integer> nextOwners = new ArrayList<>();
-                for (int i = 0; i < continuationPoints.size(); i++) {
-                    final int owner = continuationOwners.get(i);
-                    final BrowseResult page = pages != null && i < pages.length ? pages[i] : null;
-                    if (page == null) {
+            // Every cursor the server handed out in this response, tracked before any status is judged, so a
+            // failure on one node releases its siblings' cursors instead of leaking them.
+            List<ByteString> openPoints = continuationPointsOf(results);
+            try {
+                final List<List<ReferenceDescription>> references = new ArrayList<>(chunk.size());
+                final List<PendingNode> exhausted = new ArrayList<>();
+                // Continuation points still to drain, with the chunk index they belong to.
+                final List<ByteString> continuationPoints = new ArrayList<>();
+                final List<Integer> continuationOwners = new ArrayList<>();
+                for (int i = 0; i < chunk.size(); i++) {
+                    final BrowseResult result = results != null && i < results.length ? results[i] : null;
+                    final List<ReferenceDescription> refs = new ArrayList<>();
+                    references.add(refs);
+                    if (result == null) {
+                        // One result per description is the service contract; a missing one is not "no
+                        // children", it is a subtree we know nothing about.
+                        throw new UncheckedBrowseException(
+                                "Browse at path '" + chunk.get(i).path + "' returned no result", null);
+                    }
+                    // A server out of continuation points cannot page this node's children now; a smaller
+                    // chunk will. Only a chunk of one that still gets the fault is a real failure.
+                    if (isNoContinuationPoints(result.getStatusCode()) && chunk.size() > 1) {
+                        references.set(i, null);
+                        exhausted.add(chunk.get(i));
                         continue;
                     }
-                    if (page.getStatusCode() != null && !page.getStatusCode().isGood()) {
+                    // Fail loudly on non-Good status. Under load the server may throttle individual browse
+                    // operations, returning no references and no continuation point; without this check the
+                    // entire subtree under the throttled node is silently missing from the results.
+                    if (result.getStatusCode() != null
+                            && !result.getStatusCode().isGood()) {
                         throw new UncheckedBrowseException(
-                                "Browse continuation at path '" + chunk.get(owner).path + "' returned non-Good status: "
-                                        + page.getStatusCode(),
+                                "Browse at path '" + chunk.get(i).path + "' returned non-Good status: "
+                                        + result.getStatusCode(),
                                 null);
                     }
-                    if (page.getReferences() != null) {
-                        Collections.addAll(references.get(owner), page.getReferences());
+                    if (result.getReferences() != null) {
+                        Collections.addAll(refs, result.getReferences());
                     }
-                    if (hasContinuationPoint(page)) {
-                        nextPoints.add(page.getContinuationPoint());
-                        nextOwners.add(owner);
+                    if (hasContinuationPoint(result)) {
+                        continuationPoints.add(result.getContinuationPoint());
+                        continuationOwners.add(i);
                     }
                 }
-                continuationPoints.clear();
-                continuationPoints.addAll(nextPoints);
-                continuationOwners.clear();
-                continuationOwners.addAll(nextOwners);
+                // Drain every continuation page of this chunk before returning (and releasing the permit).
+                while (!continuationPoints.isEmpty()) {
+                    final BrowseResult[] pages = client.browseNextAsync(false, List.copyOf(continuationPoints))
+                            .get(remaining(deadline), TimeUnit.NANOSECONDS)
+                            .getResults();
+                    openPoints = continuationPointsOf(pages);
+                    final List<ByteString> nextPoints = new ArrayList<>();
+                    final List<Integer> nextOwners = new ArrayList<>();
+                    for (int i = 0; i < continuationPoints.size(); i++) {
+                        final int owner = continuationOwners.get(i);
+                        final BrowseResult page = pages != null && i < pages.length ? pages[i] : null;
+                        if (page == null) {
+                            throw new UncheckedBrowseException(
+                                    "Browse continuation at path '" + chunk.get(owner).path + "' returned no result",
+                                    null);
+                        }
+                        if (page.getStatusCode() != null
+                                && !page.getStatusCode().isGood()) {
+                            throw new UncheckedBrowseException(
+                                    "Browse continuation at path '" + chunk.get(owner).path
+                                            + "' returned non-Good status: " + page.getStatusCode(),
+                                    null);
+                        }
+                        if (page.getReferences() != null) {
+                            Collections.addAll(references.get(owner), page.getReferences());
+                        }
+                        if (hasContinuationPoint(page)) {
+                            nextPoints.add(page.getContinuationPoint());
+                            nextOwners.add(owner);
+                        }
+                    }
+                    continuationPoints.clear();
+                    continuationPoints.addAll(nextPoints);
+                    continuationOwners.clear();
+                    continuationOwners.addAll(nextOwners);
+                }
+                return new ChunkResult(references, exhausted);
+            } catch (final Exception e) {
+                releaseContinuationPoints(openPoints);
+                throw e;
             }
-            return new ChunkResult(references, exhausted);
         } finally {
             concurrency.release();
         }
+    }
+
+    /** All continuation points present in {@code results}, whatever each result's status. */
+    private static @NotNull List<ByteString> continuationPointsOf(final @Nullable BrowseResult[] results) {
+        if (results == null) {
+            return List.of();
+        }
+        final List<ByteString> points = new ArrayList<>();
+        for (final BrowseResult result : results) {
+            if (result != null && hasContinuationPoint(result)) {
+                points.add(result.getContinuationPoint());
+            }
+        }
+        return points;
+    }
+
+    /**
+     * Best-effort release of cursors the browse will not drain ({@code BrowseNext} with
+     * {@code releaseContinuationPoints = true}). Fire-and-forget: the browse is already failing, possibly by
+     * timeout or interrupt, so nothing waits on the answer and a failure is only logged.
+     */
+    private void releaseContinuationPoints(final @NotNull List<ByteString> points) {
+        if (points.isEmpty()) {
+            return;
+        }
+        client.browseNextAsync(true, points).exceptionally(error -> {
+            log.debug(
+                    "Could not release {} continuation point(s) after a failed browse for adapter '{}'",
+                    points.size(),
+                    adapterId,
+                    error);
+            return null;
+        });
     }
 
     private static boolean isNoContinuationPoints(final @Nullable StatusCode status) {
@@ -647,7 +714,7 @@ public class OpcUaNodeBrowser {
             }
 
             return client.readAsync(0.0, TimestampsToReturn.Neither, readValueIds)
-                    .orTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .orTimeout(browser.timeoutSeconds, TimeUnit.SECONDS)
                     .thenApply(response -> buildBatch(batch, batchStart, response.getResults()));
         }
 
@@ -692,7 +759,7 @@ public class OpcUaNodeBrowser {
                     final Throwable cause = e.getCause();
                     if (cause instanceof TimeoutException) {
                         throw new UncheckedBrowseException(
-                                "Attribute read timed out after " + TIMEOUT_SECONDS + " seconds", cause);
+                                "Attribute read timed out after " + browser.timeoutSeconds + " seconds", cause);
                     }
                     // Halve the slice that was actually rejected (the last slice can be shorter than batchSize).
                     if (isTooManyOperations(cause) && pendingBatchSize > 1) {

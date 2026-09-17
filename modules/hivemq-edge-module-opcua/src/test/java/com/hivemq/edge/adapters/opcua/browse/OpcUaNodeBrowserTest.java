@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
@@ -68,6 +69,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ServiceFault;
 import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -466,6 +468,18 @@ class OpcUaNodeBrowserTest {
         @org.jetbrains.annotations.Nullable
         StatusCode nextStatus;
 
+        /** When set, {@code nextStatus} applies only to pages whose first reference's node id starts with this. */
+        @org.jetbrains.annotations.Nullable
+        String nextStatusOwnerPrefix;
+
+        /** When set, every Browse response omits its last result (a server violating one-result-per-description). */
+        boolean dropLastResult;
+
+        /** Continuation points the server still holds. */
+        int openContinuationPoints() {
+            return continuations.size();
+        }
+
         final List<Integer> browseSizes = new java.util.ArrayList<>();
         final List<String> calls = new java.util.ArrayList<>();
         final List<String> browsedNodes = new java.util.ArrayList<>();
@@ -544,17 +558,31 @@ class OpcUaNodeBrowserTest {
                             }
                         }
                         exhaustedPerRequest.add(exhausted);
-                        return CompletableFuture.completedFuture(new BrowseResponse(null, results, null));
+                        final BrowseResult[] returned =
+                                dropLastResult ? Arrays.copyOf(results, results.length - 1) : results;
+                        return CompletableFuture.completedFuture(new BrowseResponse(null, returned, null));
                     });
             when(client.browseNextAsync(anyBoolean(), anyList())).thenAnswer(invocation -> {
+                final boolean release = invocation.getArgument(0);
                 final List<ByteString> points = invocation.getArgument(1);
-                calls.add("next[" + points.size() + "]");
+                calls.add((release ? "release[" : "next[") + points.size() + "]");
                 final BrowseResult[] results = new BrowseResult[points.size()];
                 for (int i = 0; i < results.length; i++) {
                     final List<ReferenceDescription> rest = continuations.remove(points.get(i));
-                    results[i] = nextStatus != null
-                            ? new BrowseResult(nextStatus, ByteString.NULL_VALUE, new ReferenceDescription[0])
-                            : page(rest.toArray(ReferenceDescription[]::new));
+                    if (release) {
+                        results[i] =
+                                new BrowseResult(StatusCode.GOOD, ByteString.NULL_VALUE, new ReferenceDescription[0]);
+                        continue;
+                    }
+                    final String owner = rest != null && !rest.isEmpty()
+                            ? rest.get(0).getNodeId().toParseableString()
+                            : "";
+                    if (nextStatus != null
+                            && (nextStatusOwnerPrefix == null || owner.startsWith(nextStatusOwnerPrefix))) {
+                        results[i] = new BrowseResult(nextStatus, ByteString.NULL_VALUE, new ReferenceDescription[0]);
+                        continue;
+                    }
+                    results[i] = page(rest.toArray(ReferenceDescription[]::new));
                 }
                 return CompletableFuture.completedFuture(new BrowseNextResponse(null, results, null));
             });
@@ -574,6 +602,121 @@ class OpcUaNodeBrowserTest {
         final ResponseHeader header = new ResponseHeader(
                 DateTime.now(), uint(0), new StatusCode(StatusCodes.Bad_TooManyOperations), null, null, null);
         return new UaServiceFaultException(new ServiceFault(header));
+    }
+
+    // --- review findings on #1759: permit wait bounded by the deadline; sibling cursors released on failure ---
+
+    @Test
+    @Timeout(value = 10, threadMode = Timeout.ThreadMode.SEPARATE_THREAD) // the un-fixed code blocks uninterruptibly
+    void browse_waitingForThePermit_countsAgainstTheDeadline() throws Exception {
+        // Another browse on the same adapter holds the permit for longer than this browse's timeout. The
+        // waiting browse must fail with the timeout, not sit on the permit until the other one is done.
+        final Semaphore shared = new Semaphore(1);
+        shared.acquire(); // held by "another browse" for the whole test
+        final OpcUaClient client = client(folders(1), new FakeReadServer(0, Integer.MAX_VALUE));
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(client, "adapter", 0, shared, 1);
+
+        final long start = System.nanoTime();
+        assertThatThrownBy(() -> browser.browse(null, 0))
+                .isInstanceOf(BrowseException.class)
+                .hasMessage("Browse operation timed out after 1 seconds");
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(5_000);
+        assertThat(shared.availablePermits())
+                .as("the waiter never took the permit")
+                .isZero();
+    }
+
+    @Test
+    void browse_waitingForThePermit_isInterruptible() throws Exception {
+        final Semaphore shared = new Semaphore(1);
+        shared.acquire();
+        final OpcUaClient client = client(folders(1), new FakeReadServer(0, Integer.MAX_VALUE));
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(client, "adapter", 0, shared);
+
+        final AtomicReference<Throwable> failure = new AtomicReference<>();
+        final Thread waiter = new Thread(() -> {
+            try {
+                browser.browse(null, 0);
+            } catch (final Throwable t) {
+                failure.set(t);
+            }
+        });
+        waiter.start();
+        Thread.sleep(300); // let it block on the permit
+        waiter.interrupt();
+        waiter.join(5_000);
+
+        assertThat(waiter.isAlive())
+                .as("an interrupted waiter gives up promptly")
+                .isFalse();
+        assertThat(failure.get()).isInstanceOf(BrowseException.class).hasMessage("Browse operation interrupted");
+    }
+
+    @Test
+    void browse_badSiblingInAChunk_releasesTheOtherNodesContinuationPoints() {
+        // F000 pages (the server hands out a cursor), F001 answers Bad_NodeIdUnknown in the same response. The
+        // browse fails — and must hand F000's cursor back (BrowseNext with releaseContinuationPoints) instead of
+        // leaving it for the server to time out; the S7-1500 has five of them per session.
+        final FakeBrowseServer server = wideFolders(2, 4).pageSize(3);
+        server.status(
+                NodeId.parse("ns=2;s=F001"),
+                new BrowseResult(
+                        new StatusCode(StatusCodes.Bad_NodeIdUnknown),
+                        ByteString.NULL_VALUE,
+                        new ReferenceDescription[0]));
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE));
+
+        assertThatThrownBy(() -> new OpcUaNodeBrowser(client, "adapter").browse(null, 0))
+                .isInstanceOf(BrowseException.class)
+                .cause()
+                .hasMessageContaining("Browse at path '/F001'")
+                .hasMessageContaining("Bad_NodeIdUnknown");
+        assertThat(server.calls).containsExactly("browse[1]", "browse[2]", "release[1]");
+        assertThat(server.openContinuationPoints())
+                .as("no cursor left open on the server")
+                .isZero();
+    }
+
+    @Test
+    void browse_badContinuationPage_releasesTheOtherNodesRemainingCursors() {
+        // Two paged folders; F001's continuation page fails while F000 still has a page to go. F000's fresh
+        // cursor from the same BrowseNext response must be released.
+        final FakeBrowseServer server = wideFolders(2, 7).pageSize(3);
+        server.nextStatus = new StatusCode(StatusCodes.Bad_ContinuationPointInvalid);
+        server.nextStatusOwnerPrefix = "ns=2;s=F001";
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE));
+
+        assertThatThrownBy(() -> new OpcUaNodeBrowser(client, "adapter").browse(null, 0))
+                .isInstanceOf(BrowseException.class)
+                .cause()
+                .hasMessageContaining("Browse continuation at path '/F001'");
+        assertThat(server.calls).containsExactly("browse[1]", "browse[2]", "next[2]", "release[1]");
+        assertThat(server.openContinuationPoints()).isZero();
+    }
+
+    @Test
+    void browse_serverReturnsFewerResultsThanRequested_failsInsteadOfAssumingNoChildren() {
+        final FakeBrowseServer server = wideFolders(2, 4);
+        server.dropLastResult = true;
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE));
+
+        assertThatThrownBy(() -> new OpcUaNodeBrowser(client, "adapter").browse(null, 0))
+                .isInstanceOf(BrowseException.class)
+                .cause()
+                .hasMessage("Browse at path '' returned no result");
+    }
+
+    @Test
+    void browse_successfulChunk_releasesNothing() throws BrowseException {
+        final FakeBrowseServer server = wideFolders(2, 7).pageSize(3);
+        final OpcUaClient client = client(server, new FakeReadServer(0, Integer.MAX_VALUE));
+
+        final List<BrowsedNode> nodes =
+                new OpcUaNodeBrowser(client, "adapter").browse(null, 0).toList();
+
+        assertThat(nodes).hasSize(14);
+        assertThat(server.calls).noneMatch(c -> c.startsWith("release"));
+        assertThat(server.openContinuationPoints()).isZero();
     }
 
     // --- Phase 2 read batching against the server's MaxNodesPerRead (EDG-1034) ---
