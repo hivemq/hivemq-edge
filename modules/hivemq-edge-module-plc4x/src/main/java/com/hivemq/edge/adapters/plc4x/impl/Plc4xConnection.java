@@ -89,37 +89,37 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                     if (log.isTraceEnabled()) {
                         log.trace("Connecting via PLC4X to {}.", connectionString);
                     }
+                    final CompletableFuture<Optional<PlcConnection>> pending = CompletableFuture.supplyAsync(() -> {
+                        try {
+                            // This call may block well past our timeout. It must never be abandoned: by the time
+                            // it returns, the driver has already started its own retry loop on a private thread,
+                            // and closing the connection is the only way to cancel that loop.
+                            return Optional.of(
+                                    plcDriverManager.getConnectionManager().getConnection(connectionString));
+                        } catch (final Throwable e) {
+                            log.info("Error encountered connecting to external device", e);
+                        }
+                        return Optional.<PlcConnection>empty();
+                    });
                     try {
-                        plcConnection = CompletableFuture.supplyAsync(() -> {
-                                    try {
-                                        // This is not working in all cases. An exception is thrown if PLC4X actually
-                                        // catches
-                                        // the connection problem. In many cases this call will simply get stuck.
-                                        // Afterwards
-                                        // a new connection CANNOT be opened.
-                                        return Optional.of(plcDriverManager
-                                                .getConnectionManager()
-                                                .getConnection(connectionString));
-                                    } catch (final Throwable e) {
-                                        log.info("Error encountered connecting to external device", e);
-                                    }
-                                    return Optional.<PlcConnection>empty();
-                                })
-                                .get(2_000, TimeUnit.MILLISECONDS)
+                        plcConnection = pending.get(2_000, TimeUnit.MILLISECONDS)
                                 .orElseThrow(
                                         () -> new Plc4xException("Error encountered connecting to external device"));
                     } catch (final TimeoutException te) {
-                        // PLC4X is stuck, no way to recover from this than to restart edge
+                        // The driver is still mid-connect and has already scheduled its own 1 Hz retry loop.
+                        // Close whatever it eventually produces, otherwise that loop becomes unreachable and
+                        // leaks a Netty channel plus event loop group every second until the JVM exits.
+                        closeWhenComplete(pending);
 
                         eventService
                                 .createAdapterEvent(adpaterId, protocolId)
                                 .withSeverity(Event.SEVERITY.ERROR)
-                                .withMessage("Due to a connection error a restart if edge is required.")
+                                .withMessage("Timed out connecting to the device; the connection attempt was "
+                                        + "abandoned and will be retried.")
                                 .fire();
 
-                        log.error("Error encountered connecting to external device, restart of edge required", te);
-                        throw new Plc4xException(
-                                "Error encountered connecting to external device, restart of edge required");
+                        log.error("Timed out connecting to external device, abandoning this attempt", te);
+                        throw new Plc4xException("Error encountered connecting to external device");
                     } catch (final Throwable e) {
                         log.error("Error encountered connecting to external device", e);
                         throw new Plc4xException("Error encountered connecting to external device");
@@ -127,6 +127,25 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                 }
             }
         }
+    }
+
+    /**
+     * Closes the connection produced by an abandoned connection attempt, whenever it eventually arrives.
+     * <p>
+     * The PLC4X driver schedules its own retry loop as soon as the underlying channel is established, and that loop
+     * can only be cancelled through the connection object. Dropping the object therefore leaks it, and everything
+     * the loop retains, for the lifetime of the JVM.
+     */
+    private static void closeWhenComplete(final @NotNull CompletableFuture<Optional<PlcConnection>> pending) {
+        @SuppressWarnings("unused")
+        final var unused = pending.thenAccept(maybeConnection -> maybeConnection.ifPresent(connection -> {
+            try {
+                connection.close();
+                log.info("Closed connection from an abandoned connection attempt.");
+            } catch (final Exception e) {
+                log.warn("Error closing connection from an abandoned connection attempt.", e);
+            }
+        }));
     }
 
     protected void lazyConnectionCheck() {

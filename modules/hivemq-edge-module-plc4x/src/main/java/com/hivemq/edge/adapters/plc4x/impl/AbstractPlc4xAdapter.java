@@ -21,6 +21,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -83,6 +84,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private final AtomicBoolean connecting = new AtomicBoolean(false);
 
     protected volatile @Nullable Plc4xConnection<T> connection;
+    private volatile @Nullable EventService eventService;
 
     public AbstractPlc4xAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation, final ProtocolAdapterInput<T> input) {
@@ -123,12 +125,23 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 tempConnection.lazyConnectionCheck();
                 dataPointsPublisher.publish();
             }
+        } else if (connecting.get()) {
+            dataPointsPublisher.publish();
         } else {
-            if (!connecting.get()) {
-                pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
-            } else {
-                dataPointsPublisher.publish();
+            // No usable connection. Tear down whatever is left -- that is what stops the driver's internal retry
+            // loop and releases what it has retained -- then start a fresh attempt. Pacing comes from the polling
+            // task's own error backoff, so this neither spins nor needs a timer of its own.
+            final String reason = tempConnection == null ? "no connection was established" : "the connection was lost";
+            if (tempConnection != null) {
+                connection = null;
+                disconnectQuietly(tempConnection);
             }
+            try {
+                connect();
+            } catch (final Exception e) {
+                log.debug("Reconnect attempt for adapter '{}' failed to start", adapterId, e);
+            }
+            pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because " + reason + ".");
         }
     }
 
@@ -140,52 +153,86 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     @Override
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+        this.eventService = input.moduleServices().eventService();
         try {
-            if (connection == null) {
-                synchronized (lock) {
-                    if (connection == null) {
-                        // we do not subscribe anymore as no current adapter type supports it anyway
-                        if (log.isTraceEnabled()) {
-                            log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
-                        }
-                        connecting.set(true);
-                        final Plc4xConnection<T> tempConnection = createConnection();
-                        this.connection = tempConnection;
-                        output.startedSuccessfully();
-                        @SuppressWarnings("unused")
-                        final var unusedFuture = CompletableFuture.runAsync(() -> {
-                                    try {
-                                        tempConnection.startConnection(
-                                                input.moduleServices().eventService(),
-                                                adapterId,
-                                                getProtocolAdapterInformation().getProtocolId());
-                                        protocolAdapterState.setConnectionStatus(CONNECTED);
-                                    } catch (final Plc4xException e) {
-                                        try {
-                                            tempConnection.disconnect();
-                                        } catch (final Exception ex) {
-                                            log.debug(
-                                                    "Tried disconnecting after connection error and caught exception",
-                                                    ex);
-                                        }
-                                        this.connection = null;
-                                        log.error("Plc4x connection failed to start", e);
-                                        protocolAdapterState.setConnectionStatus(ERROR);
-                                    }
-                                    connecting.set(false);
-                                })
-                                .whenComplete((sample, t) -> {
-                                    if (t != null) {
-                                        log.error("Error starting PLC4X connection", t);
-                                    }
-                                });
-                    }
-                }
-            } else {
-                output.startedSuccessfully();
-            }
+            connect();
+            output.startedSuccessfully();
         } catch (final Exception e) {
             output.failStart(e, null);
+        }
+    }
+
+    /**
+     * Builds a connection and starts it asynchronously, unless one is already established or in flight.
+     * <p>
+     * Safe to call repeatedly from the polling thread: a failed attempt leaves no connection behind, so the next
+     * call starts from scratch. Tearing the previous connection down first is what stops the driver's internal
+     * retry loop and releases everything that loop has retained.
+     */
+    private void connect() throws Plc4xException {
+        if (connection != null) {
+            return;
+        }
+        final EventService currentEventService = eventService;
+        if (currentEventService == null) {
+            // start() has not run yet, so there is nothing to reconnect to.
+            return;
+        }
+        synchronized (lock) {
+            if (connection != null) {
+                return;
+            }
+            // Re-entrant from the polling thread, so claim the attempt rather than merely announcing it.
+            if (!connecting.compareAndSet(false, true)) {
+                return;
+            }
+            // we do not subscribe anymore as no current adapter type supports it anyway
+            if (log.isTraceEnabled()) {
+                log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
+            }
+            final Plc4xConnection<T> tempConnection;
+            try {
+                tempConnection = createConnection();
+            } catch (final Plc4xException e) {
+                connecting.set(false);
+                throw e;
+            }
+            this.connection = tempConnection;
+            @SuppressWarnings("unused")
+            final var unusedFuture = CompletableFuture.runAsync(() -> {
+                        try {
+                            tempConnection.startConnection(
+                                    currentEventService,
+                                    adapterId,
+                                    getProtocolAdapterInformation().getProtocolId());
+                            protocolAdapterState.setConnectionStatus(CONNECTED);
+                        } catch (final Plc4xException e) {
+                            disconnectQuietly(tempConnection);
+                            this.connection = null;
+                            log.error("Plc4x connection failed to start", e);
+                            protocolAdapterState.setConnectionStatus(ERROR);
+                        }
+                        connecting.set(false);
+                    })
+                    .whenComplete((sample, t) -> {
+                        if (t != null) {
+                            connecting.set(false);
+                            log.error("Error starting PLC4X connection", t);
+                        }
+                    });
+        }
+    }
+
+    /** Visible for testing: whether a connection attempt is currently in flight. */
+    protected boolean isConnecting() {
+        return connecting.get();
+    }
+
+    private void disconnectQuietly(final @NotNull Plc4xConnection<T> toDisconnect) {
+        try {
+            toDisconnect.disconnect();
+        } catch (final Exception e) {
+            log.debug("Tried disconnecting after connection error and caught exception", e);
         }
     }
 
