@@ -26,7 +26,7 @@ overrides:
   postcss@^8: ^8.5.18
   nanoid@^3: ^3.3.17
   '@babel/core@^7': ^7.29.7
-  yaml@^1: ^1.10.3
+  yaml@^1: ^2.0.0
   yaml@^2: ^2.8.3
   js-yaml@^3: ^5.2.2
   js-yaml@^4: ^5.2.2
@@ -8933,10 +8933,6 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
-  yaml@1.10.3:
-    resolution: {integrity: sha512-vIYeF1u3CjlhAFekPPAk2h/Kv4T3mAkMox5OymRiJQB0spDP10LHvt+K7G9Ny6NuuMAb25/6n1qyUjAcGNf/AA==}
-    engines: {node: '>= 6'}
-
   yaml@2.8.3:
     resolution: {integrity: sha512-AvbaCLOO2Otw/lW5bmh9d/WEdcDFdQp2Z2ZUH3pX9U2ihyUY0nvLv7J6TrWowklRGPYbB/IuIMfYgxaCPg5Bpg==}
     engines: {node: '>= 14.6'}
@@ -13955,7 +13951,7 @@ snapshots:
       import-fresh: 3.3.1
       parse-json: 5.2.0
       path-type: 4.0.0
-      yaml: 1.10.3
+      yaml: 2.8.3
 
   cosmiconfig@8.3.6(typescript@5.9.3):
     dependencies:
@@ -18696,8 +18692,6 @@ snapshots:
   y18n@5.0.8: {}
 
   yallist@3.1.1: {}
-
-  yaml@1.10.3: {}
 
   yaml@2.8.3: {}
 
