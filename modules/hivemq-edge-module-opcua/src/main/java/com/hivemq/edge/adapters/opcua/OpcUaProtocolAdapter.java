@@ -878,6 +878,19 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 return;
                             }
 
+                            // Refused rather than allowed to fall through. A method tag names an object, and an
+                            // object has no Value attribute -- so the value write below would reach the server
+                            // and come back as a status code about an attribute the caller never mentioned.
+                            // Answering here names the actual reason.
+                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD) {
+                                log.error("Attempted to write a value to method tag '{}'", tagName);
+                                output.fail("Tag '"
+                                        + tagName
+                                        + "' is a method tag: a request must name the method to call in "
+                                        + "'methodName'. Calling methods is not implemented yet.");
+                                return;
+                            }
+
                             final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
                             @SuppressWarnings("unused")
@@ -1030,7 +1043,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // differ — a transition report northbound, and southbound either a command to move the state machine
         // or nothing at all.
         final OpcuaTagKind tagKind = tag.getDefinition().getKind();
-        if (tagKind != OpcuaTagKind.VALUE) {
+        // METHOD joins VALUE on the device-derived path rather than this one. Its shape comes from the object's
+        // methods and their declared Argument lists, which only a browse can supply -- the declared `type` says
+        // nothing about it. Everything else here derives its shape from that declared type instead.
+        if (tagKind != OpcuaTagKind.VALUE && tagKind != OpcuaTagKind.METHOD) {
             // getPublishedFields(), the same accessor the select clause and the decoder use, so the schema
             // cannot promise a field the server was never asked for. They differ only for a REFRESH tag.
             final EventFieldSet publishedFields = tag.getDefinition().getPublishedFields();
@@ -1046,7 +1062,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     switch (tagKind) {
                         case CONDITION -> ConditionSchemas.writeSchema();
                         case REFRESH -> ConditionSchemas.refreshCommandSchema();
-                        case EVENT_SUBSCRIPTION, VALUE -> ConditionSchemas.unwritableSchema();
+                        // VALUE and METHOD never reach here -- both are answered from the device below.
+                        case EVENT_SUBSCRIPTION, VALUE, METHOD -> ConditionSchemas.unwritableSchema();
                     };
             output.finish(new TagSchemaCreationOutput.DataPointSchema(
                     ConditionSchemas.readSchema(publishedFields), null, null, writeSchema));

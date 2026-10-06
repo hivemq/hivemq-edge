@@ -478,7 +478,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // rather than reusing the broken one. Keying by tag removes the trap either way.
         //
         // The dispatch path stopped keying by node id in 6b83694c5; these two maps were the last of it.
-        final Set<OpcuaTag> wanted = new LinkedHashSet<>(tags);
+        // A METHOD tag is not observed at all: it names an object whose methods are called southbound, and an
+        // object has no Value attribute to sample and emits no events of its own. It is excluded here rather
+        // than handled in the item-creation switch below, because there is no item it could yield -- and
+        // excluding it from `wanted` also keeps it out of the remove set, which is what stops the sync
+        // deleting items it never created.
+        final List<OpcuaTag> observableTags = tags.stream()
+                .filter(tag -> tag.getDefinition().getKind() != OpcuaTagKind.METHOD)
+                .toList();
+
+        final Set<OpcuaTag> wanted = new LinkedHashSet<>(observableTags);
         final Set<OpcuaTag> subscribed = subscription.getMonitoredItems().stream()
                 .map(this::tagOf)
                 .filter(Objects::nonNull)
@@ -493,7 +502,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 })
                 .toList();
         final var monitoredItemsToAdd =
-                tags.stream().filter(tag -> !subscribed.contains(tag)).toList();
+                observableTags.stream().filter(tag -> !subscribed.contains(tag)).toList();
 
         // clear deleted monitored items
         if (!monitoredItemsToRemove.isEmpty()) {
@@ -564,6 +573,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
                         switch (opcuaTag.getDefinition().getKind()) {
+                            // Unreachable: a METHOD tag is filtered out of the candidate list above, because an
+                            // object has nothing to monitor. Stated rather than folded into the value branch so
+                            // that a future kind cannot reach the value path by forgetting to decide.
+                            case METHOD ->
+                                throw new IllegalStateException(
+                                        "A METHOD tag has no monitored item: " + opcuaTag.getName());
                             case CONDITION, EVENT_SUBSCRIPTION, REFRESH -> {
                                 // All three are event items, but they name different nodes. A condition tag
                                 // names the condition and its events arrive from a notifier above it, found
@@ -1357,8 +1372,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // The Server object is a notifier by convention and the root of the notifier hierarchy, so an
             // item there sees the refresh bracket the server broadcasts to every notifier item.
             case REFRESH -> NodeIds.Server;
-            // A query names its notifier directly; a value item never reaches here.
-            case EVENT_SUBSCRIPTION, VALUE -> Objects.requireNonNull(nodeId);
+            // A query names its notifier directly. A value item never reaches here, and nor does a method tag:
+            // it has no monitored item of any sort.
+            case EVENT_SUBSCRIPTION, VALUE, METHOD -> Objects.requireNonNull(nodeId);
         };
     }
 
@@ -1376,7 +1392,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                         definition.getFilterType(),
                         definition.getPublishedFields());
             case REFRESH -> ConditionEventFilters.forRefresh();
-            case CONDITION, VALUE ->
+            // VALUE and METHOD never reach here -- neither has an event item to filter.
+            case CONDITION, VALUE, METHOD ->
                 ConditionEventFilters.forCondition(
                         Objects.requireNonNull(verified.node()), definition.getPublishedFields());
         };
@@ -2091,6 +2108,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 case VALUE, REFRESH -> Optional.of(new VerifiedTag(opcuaTag, node, null, null, null));
                 case EVENT_SUBSCRIPTION -> verifyEventSubscription(opcuaTag, node, tagName);
                 case CONDITION -> verifyCondition(opcuaTag, Objects.requireNonNull(node), tagName);
+                // A METHOD tag is verified by browsing the object for its methods, which is a southbound
+                // concern and happens outside the subscription: it is filtered out of the candidate list
+                // before this runs, because the thing it verifies is not a monitored item.
+                case METHOD -> Optional.empty();
             };
         } catch (final MalformedNodeIdException e) {
             reportUnsubscribableTag(tagName, describe(e));

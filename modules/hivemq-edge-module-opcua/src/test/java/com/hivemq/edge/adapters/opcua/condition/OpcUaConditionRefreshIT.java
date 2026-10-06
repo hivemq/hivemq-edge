@@ -242,7 +242,7 @@ public class OpcUaConditionRefreshIT {
 
         final WritingInput writingInput = mock(WritingInput.class);
         when(writingInput.getWritingContext()).thenReturn(writingContext);
-        when(writingInput.getWritingPayload()).thenReturn(new OpcUaPayload(new ObjectMapper().readTree(json)));
+        when(writingInput.getWritingPayload()).thenReturn(OpcUaPayload.ofValue(new ObjectMapper().readTree(json)));
 
         final WritingOutput output = mock(WritingOutput.class);
         final OpcUaProtocolAdapter started = adapter;
