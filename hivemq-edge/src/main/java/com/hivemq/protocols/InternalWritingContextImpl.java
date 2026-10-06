@@ -27,11 +27,29 @@ public class InternalWritingContextImpl implements InternalWritingContext {
         this.southboundMapping = southboundMapping;
     }
 
+    /**
+     * The field mapping the southbound transform is generated from, with a method request's own fields added.
+     * <p>
+     * Added here rather than when the mapping is stored, because this is the last point before the script
+     * generator and the first at which nothing else reads the result: the synthetic instructions therefore exist
+     * only in the generated transform, never in the persisted configuration, the REST model or the mapping editor.
+     * <p>
+     * A mapping that carries no method calls gets its own instructions back unchanged, which is every southbound
+     * mapping that exists today.
+     */
     @Override
     @SuppressWarnings(
             "NullAway") // southboundMapping.getFieldMapping() may return null but the interface declares @NotNull
     public FieldMapping getFieldMapping() {
-        return southboundMapping.getFieldMapping();
+        final FieldMapping configured = southboundMapping.getFieldMapping();
+        if (configured == null) {
+            return configured;
+        }
+        return MethodRequestInstructions.augment(
+                configured,
+                southboundMapping.isMethodCalls(),
+                southboundMapping.isCorrelationData(),
+                southboundMapping.isResponseTopic());
     }
 
     @Override
