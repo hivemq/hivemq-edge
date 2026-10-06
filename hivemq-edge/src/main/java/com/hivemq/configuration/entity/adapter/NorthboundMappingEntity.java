@@ -58,6 +58,19 @@ public class NorthboundMappingEntity implements EntityValidatable {
     @XmlElement(name = "includeMetadata", required = true)
     private final @NotNull Boolean includeMetadata;
 
+    // Not `required`, unlike the three include* flags above. Those date from before any config existed; these
+    // two do not, so every file written until now omits them and a required element would make JaxB reject
+    // those files -- an adapter that worked yesterday refusing to start after an upgrade.
+    //
+    // Boxed and left null when unset, rather than a primitive boolean. JaxB marshals a primitive
+    // unconditionally, so emitting these would have rewritten every existing mapping with two new lines on the
+    // first config write after an upgrade. Null means absent on the way out and false on the way in.
+    @XmlElement(name = "writeCorrelationData")
+    private final @Nullable Boolean writeCorrelationData;
+
+    @XmlElement(name = "useRequestResponseTopic")
+    private final @Nullable Boolean useRequestResponseTopic;
+
     @XmlElementWrapper(name = "mqttUserProperties", required = true)
     @XmlElement(name = "mqttUserProperty")
     private final @NotNull List<MqttUserPropertyEntity> userProperties;
@@ -77,6 +90,10 @@ public class NorthboundMappingEntity implements EntityValidatable {
         userProperties = new ArrayList<>();
         messageExpiryInterval = Long.MAX_VALUE;
         messageHandlingOptions = NORTHBOUND_OPTS;
+        // Null, not false: that is what keeps the element out of the file again when it is rewritten. JaxB
+        // overwrites only the fields its XML names, so these two stay null whenever the file omits them.
+        writeCorrelationData = null;
+        useRequestResponseTopic = null;
     }
 
     public NorthboundMappingEntity(
@@ -89,6 +106,32 @@ public class NorthboundMappingEntity implements EntityValidatable {
             final boolean includeMetadata,
             final @NotNull List<MqttUserPropertyEntity> userProperties,
             final @Nullable Long messageExpiryInterval) {
+        this(
+                tagName,
+                topic,
+                maxQoS,
+                ignore,
+                includeTagNames,
+                includeTimestamp,
+                includeMetadata,
+                userProperties,
+                messageExpiryInterval,
+                false,
+                false);
+    }
+
+    public NorthboundMappingEntity(
+            final @NotNull String tagName,
+            final @NotNull String topic,
+            final int maxQoS,
+            final @Nullable MessageHandlingOptions ignore,
+            final boolean includeTagNames,
+            final boolean includeTimestamp,
+            final boolean includeMetadata,
+            final @NotNull List<MqttUserPropertyEntity> userProperties,
+            final @Nullable Long messageExpiryInterval,
+            final boolean writeCorrelationData,
+            final boolean useRequestResponseTopic) {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
@@ -100,6 +143,18 @@ public class NorthboundMappingEntity implements EntityValidatable {
         this.includeMetadata = includeMetadata;
         this.userProperties = userProperties;
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : Long.MAX_VALUE;
+        // False stored as null so it marshals to nothing: every mapping that exists today has no method calls,
+        // and writing two elements to say so would make a rewrite stop being a no-op.
+        this.writeCorrelationData = writeCorrelationData ? Boolean.TRUE : null;
+        this.useRequestResponseTopic = useRequestResponseTopic ? Boolean.TRUE : null;
+    }
+
+    public boolean isWriteCorrelationData() {
+        return Boolean.TRUE.equals(writeCorrelationData);
+    }
+
+    public boolean isUseRequestResponseTopic() {
+        return Boolean.TRUE.equals(useRequestResponseTopic);
     }
 
     public static @NotNull NorthboundMappingEntity fromPersistence(final @NotNull NorthboundMapping mapping) {
@@ -114,7 +169,9 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 mapping.getUserProperties().stream()
                         .map(NorthboundMappingEntity::userProp)
                         .toList(),
-                mapping.getMessageExpiryInterval());
+                mapping.getMessageExpiryInterval(),
+                mapping.isWriteCorrelationData(),
+                mapping.isUseRequestResponseTopic());
     }
 
     private static @NotNull MqttUserPropertyEntity userProp(final @NotNull MqttUserProperty p) {
@@ -143,7 +200,9 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 mapping.getUserProperties().stream()
                         .map(NorthboundMappingEntity::userProp)
                         .toList(),
-                mapping.getMessageExpiryInterval());
+                mapping.getMessageExpiryInterval(),
+                Boolean.TRUE.equals(mapping.getWriteCorrelationData()),
+                Boolean.TRUE.equals(mapping.getUseRequestResponseTopic()));
     }
 
     public @NotNull String getTagName() {
@@ -210,7 +269,9 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 userProperties.stream()
                         .map(p -> new MqttUserProperty(p.getName(), p.getValue()))
                         .toList(),
-                messageExpiryInterval);
+                messageExpiryInterval,
+                isWriteCorrelationData(),
+                isUseRequestResponseTopic());
     }
 
     @Override
@@ -244,7 +305,13 @@ public class NorthboundMappingEntity implements EntityValidatable {
                     && Objects.equals(includeTagNames, that.includeTagNames)
                     && Objects.equals(includeTimestamp, that.includeTimestamp)
                     && Objects.equals(userProperties, that.userProperties)
-                    && Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
+                    && Objects.equals(messageExpiryInterval, that.messageExpiryInterval)
+                    // Through the accessors, not the fields: null and false are the same state, so an entity
+                    // read from a file that omits the element must equal one built with the flag off. Included
+                    // at all because a flag change IS a mapping change -- adapter-level equality compares its
+                    // mapping lists to decide whether anything has to be reapplied.
+                    && isWriteCorrelationData() == that.isWriteCorrelationData()
+                    && isUseRequestResponseTopic() == that.isUseRequestResponseTopic();
         }
         return false;
     }
@@ -259,6 +326,8 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 includeTagNames,
                 includeTimestamp,
                 userProperties,
-                messageExpiryInterval);
+                messageExpiryInterval,
+                isWriteCorrelationData(),
+                isUseRequestResponseTopic());
     }
 }
