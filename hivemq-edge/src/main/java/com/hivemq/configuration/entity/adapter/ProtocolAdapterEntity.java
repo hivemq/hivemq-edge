@@ -39,9 +39,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class ProtocolAdapterEntity implements EntityValidatable {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterEntity.class);
 
     private static final @NotNull TypeReference<Map<String, Object>> AS_MAP_TYPE_REF = new TypeReference<>() {
                 // no-op
@@ -203,6 +207,49 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                                 () -> "Tag name [" + tagName + "] in southbound mapping is not found"));
             }
         }
+
+        warnAboutOneSidedResponseAddressing();
+    }
+
+    /**
+     * Warns when a tag reads a response address but nothing honours it, or honours one nothing reads.
+     * <p>
+     * A caller-chosen response address needs both mappings of a tag configured for it: the southbound side
+     * extracts the address, the northbound side publishes to it. Either alone is inert — a caller sets
+     * {@code responseTopic}, the answer arrives on the configured topic instead, and nothing anywhere says why.
+     * <p>
+     * Warned rather than rejected, and that is the decisive choice here. Every helper in
+     * {@link EntityValidatable} raises {@code FATAL_ERROR}, which fails the whole configuration; an adapter whose
+     * response addressing is half-configured still reads its tags, still writes its values and still calls its
+     * methods, so refusing to start would cost more than the misconfiguration does. A {@code WARNING} validation
+     * event is not an option either: {@code ProtocolAdapterExtractor} keeps only ERROR and FATAL_ERROR, so one
+     * would be collected and dropped unseen.
+     */
+    private void warnAboutOneSidedResponseAddressing() {
+        final Set<String> readsResponseAddress = southboundMappings.stream()
+                .filter(SouthboundMappingEntity::isResponseTopic)
+                .map(SouthboundMappingEntity::getTagName)
+                .collect(Collectors.toSet());
+        final Set<String> honoursResponseAddress = northboundMappings.stream()
+                .filter(NorthboundMappingEntity::isUseRequestResponseTopic)
+                .map(NorthboundMappingEntity::getTagName)
+                .collect(Collectors.toSet());
+
+        readsResponseAddress.stream()
+                .filter(tag -> !honoursResponseAddress.contains(tag))
+                .forEach(tag -> log.warn(
+                        "Adapter '{}': tag '{}' reads a response topic from requests, but no northbound mapping for it is "
+                                + "set to publish there. Responses will go to the mapping's own topic and the "
+                                + "'responseTopic' a caller sends will be ignored.",
+                        adapterId,
+                        tag));
+        honoursResponseAddress.stream()
+                .filter(tag -> !readsResponseAddress.contains(tag))
+                .forEach(tag -> log.warn(
+                        "Adapter '{}': tag '{}' is set to publish responses to the address a request asked for, but no "
+                                + "southbound mapping for it reads one. Responses will go to the mapping's own topic.",
+                        adapterId,
+                        tag));
     }
 
     @Override
