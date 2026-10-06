@@ -40,6 +40,21 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     }
 
     @Override
+    public boolean isMethodCalls() {
+        return southboundMapping.isMethodCalls();
+    }
+
+    @Override
+    public boolean isCorrelationData() {
+        return southboundMapping.isCorrelationData();
+    }
+
+    @Override
+    public boolean isResponseTopic() {
+        return southboundMapping.isResponseTopic();
+    }
+
+    @Override
     public @NotNull String getTagName() {
         return southboundMapping.getTagName();
     }

@@ -39,6 +39,8 @@ public class NorthboundMapping {
     private final @NotNull Boolean includeMetadata;
     private final @NotNull List<MqttUserProperty> userProperties;
     private final @Nullable Long messageExpiryInterval;
+    private final boolean writeCorrelationData;
+    private final boolean useRequestResponseTopic;
 
     public NorthboundMapping(
             final @NotNull String tagName,
@@ -49,6 +51,30 @@ public class NorthboundMapping {
             final @Nullable Boolean includeMetadata,
             final @Nullable List<MqttUserProperty> userProperties,
             final @Nullable Long messageExpiryInterval) {
+        this(
+                tagName,
+                topic,
+                maxQoS,
+                includeTagNames,
+                includeTimestamp,
+                includeMetadata,
+                userProperties,
+                messageExpiryInterval,
+                false,
+                false);
+    }
+
+    public NorthboundMapping(
+            final @NotNull String tagName,
+            final @NotNull String topic,
+            final int maxQoS,
+            final @Nullable Boolean includeTagNames,
+            final @Nullable Boolean includeTimestamp,
+            final @Nullable Boolean includeMetadata,
+            final @Nullable List<MqttUserProperty> userProperties,
+            final @Nullable Long messageExpiryInterval,
+            final boolean writeCorrelationData,
+            final boolean useRequestResponseTopic) {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
@@ -57,6 +83,22 @@ public class NorthboundMapping {
         this.includeMetadata = includeMetadata != null && includeMetadata;
         this.userProperties = userProperties != null ? userProperties : new ArrayList<>();
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY;
+        this.writeCorrelationData = writeCorrelationData;
+        this.useRequestResponseTopic = useRequestResponseTopic;
+    }
+
+    /** Whether a method call's correlation token is written into the response message. */
+    public boolean isWriteCorrelationData() {
+        return writeCorrelationData;
+    }
+
+    /**
+     * Whether a response goes to the address its request named, rather than to {@link #getMqttTopic()}.
+     * <p>
+     * Needs the southbound mapping to be reading a response topic from requests; neither side alone does anything.
+     */
+    public boolean isUseRequestResponseTopic() {
+        return useRequestResponseTopic;
     }
 
     private static @NotNull MqttUserProperty userProp(final @NotNull com.hivemq.edge.api.model.MqttUserProperty u) {
@@ -77,7 +119,9 @@ public class NorthboundMapping {
                                 .map(NorthboundMapping::userProp)
                                 .toList()
                         : List.of(),
-                model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY);
+                model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY,
+                Boolean.TRUE.equals(model.getWriteCorrelationData()),
+                Boolean.TRUE.equals(model.getUseRequestResponseTopic()));
     }
 
     public @NotNull String getMqttTopic() {

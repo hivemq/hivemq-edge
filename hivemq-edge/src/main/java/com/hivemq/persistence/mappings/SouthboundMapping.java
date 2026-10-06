@@ -26,16 +26,57 @@ public class SouthboundMapping implements InternalWritingContext {
     private final @NotNull String tagName;
     private final @NotNull FieldMapping fieldMapping;
     private final @NotNull String schema;
+    private final boolean methodCalls;
+    private final boolean correlationData;
+    private final boolean responseTopic;
 
     public SouthboundMapping(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
             final @NotNull FieldMapping fieldMapping,
             final @NotNull String schema) {
+        this(tagName, topicFilter, fieldMapping, schema, false, false, false);
+    }
+
+    public SouthboundMapping(
+            final @NotNull String tagName,
+            final @NotNull String topicFilter,
+            final @NotNull FieldMapping fieldMapping,
+            final @NotNull String schema,
+            final boolean methodCalls,
+            final boolean correlationData,
+            final boolean responseTopic) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.fieldMapping = fieldMapping;
         this.schema = schema;
+        this.methodCalls = methodCalls;
+        this.correlationData = correlationData;
+        this.responseTopic = responseTopic;
+    }
+
+    /**
+     * Whether messages on this mapping are method calls, naming the method in {@code methodName}.
+     * <p>
+     * This is what marks a mapping as carrying method requests at all, and the other two refine it. It cannot be
+     * inferred from them: a fire-and-forget call sets neither, and inferring would then strip the method name from
+     * the simplest request there is.
+     */
+    @Override
+    public boolean isMethodCalls() {
+        return methodCalls;
+    }
+
+    /** Whether requests carry a correlation token to be read and echoed on the response. */
+    @Override
+    public boolean isCorrelationData() {
+        return correlationData;
+    }
+
+    /** Whether requests may name their own response topic. */
+    @Override
+    public boolean isResponseTopic() {
+        return responseTopic;
     }
 
     @Override
@@ -63,14 +104,20 @@ public class SouthboundMapping implements InternalWritingContext {
                 southboundMapping.getFieldMapping() != null
                         ? FieldMapping.fromModel(southboundMapping.getFieldMapping())
                         : FieldMapping.DEFAULT_FIELD_MAPPING,
-                schema);
+                schema,
+                Boolean.TRUE.equals(southboundMapping.getMethodCalls()),
+                Boolean.TRUE.equals(southboundMapping.getCorrelationData()),
+                Boolean.TRUE.equals(southboundMapping.getResponseTopic()));
     }
 
     public @NotNull com.hivemq.edge.api.model.SouthboundMapping toModel() {
         return new com.hivemq.edge.api.model.SouthboundMapping()
                 .topicFilter(this.getTopicFilter())
                 .tagName(this.getTagName())
-                .fieldMapping(this.fieldMapping.toModel());
+                .fieldMapping(this.fieldMapping.toModel())
+                .methodCalls(this.methodCalls)
+                .correlationData(this.correlationData)
+                .responseTopic(this.responseTopic);
     }
 
     @Override

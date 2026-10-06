@@ -27,4 +27,19 @@ public interface InternalWritingContext extends WritingContext {
 
     @NotNull
     String getSchema();
+
+    /**
+     * Whether messages on this mapping are method calls rather than value writes.
+     * <p>
+     * Decides whether the fields a method request carries beside {@code value} survive the southbound transform:
+     * the field mapping is a whitelist that rebuilds the payload from nothing, so a field no instruction names is
+     * dropped. These three flags are what add those instructions.
+     */
+    boolean isMethodCalls();
+
+    /** Whether a request's correlation token is read, so the response can echo it. */
+    boolean isCorrelationData();
+
+    /** Whether a request may name the topic its response is published to. */
+    boolean isResponseTopic();
 }
