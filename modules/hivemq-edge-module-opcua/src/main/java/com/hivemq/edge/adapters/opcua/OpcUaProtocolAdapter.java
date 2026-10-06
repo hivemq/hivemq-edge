@@ -53,7 +53,10 @@ import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
+import com.hivemq.edge.adapters.opcua.method.MethodArguments;
+import com.hivemq.edge.adapters.opcua.method.MethodCallResult;
 import com.hivemq.edge.adapters.opcua.method.MethodSchemas;
+import com.hivemq.edge.adapters.opcua.method.MethodSignature;
 import com.hivemq.edge.adapters.opcua.method.MethodVerifier;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
@@ -82,6 +85,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -880,16 +884,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 return;
                             }
 
-                            // Refused rather than allowed to fall through. A method tag names an object, and an
-                            // object has no Value attribute -- so the value write below would reach the server
-                            // and come back as a status code about an attribute the caller never mentioned.
-                            // Answering here names the actual reason.
+                            // A method tag names an object, so there is no Value attribute to assign to: the
+                            // request names a method and this calls it.
                             if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD) {
-                                log.error("Attempted to write a value to method tag '{}'", tagName);
-                                output.fail("Tag '"
-                                        + tagName
-                                        + "' is a method tag: a request must name the method to call in "
-                                        + "'methodName'. Calling methods is not implemented yet.");
+                                callMethod(client, nodeId, opcUAWritePayload, tagName, output);
                                 return;
                             }
 
@@ -1022,6 +1020,117 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         output.finish();
                     }
                 });
+    }
+
+    /**
+     * Calls the method a request names, on the object a method tag names.
+     * <p>
+     * The methods are read from the device on each call rather than cached at connect. Two reasons. The browse
+     * metadata warm-up is explicitly allowed to fail without failing the connection — the adapter is then
+     * connected and not browse-ready — so a cache filled there would be silently empty on exactly the servers
+     * that need the most patience. And a server may gain or lose methods while the adapter runs, which a cache
+     * keyed to connect time would never see.
+     * <p>
+     * The cost is one browse per call. That is the wrong trade for a high-rate path and the right one here: a
+     * method call is an operator or an MES acting on a machine, not a sampled value, and the alternative is
+     * answering a request with a stale picture of the device.
+     */
+    private void callMethod(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNodeId,
+            final @NotNull OpcUaPayload payload,
+            final @NotNull String tagName,
+            final @NotNull WritingOutput output) {
+
+        final String methodName = payload.methodName();
+        if (methodName == null || methodName.isBlank()) {
+            log.error("Request to method tag '{}' names no method", tagName);
+            output.fail("A request to method tag '" + tagName + "' must name the method to call in 'methodName'");
+            return;
+        }
+
+        @SuppressWarnings("unused")
+        final var unused = MethodVerifier.verify(client, objectNodeId, tagName).whenComplete((result, throwable) -> {
+            if (throwable != null) {
+                log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
+                output.fail(throwable, null);
+                return;
+            }
+            switch (result) {
+                case MethodVerifier.Result.Verified verified ->
+                    invoke(client, objectNodeId, verified.methods(), methodName, payload, tagName, output);
+                case MethodVerifier.Result.Rejected rejected -> {
+                    log.error("Cannot call a method on tag '{}': {}", tagName, rejected.reason());
+                    output.fail(rejected.reason());
+                }
+                case MethodVerifier.Result.Unverifiable unverifiable -> {
+                    log.error("Cannot call a method on tag '{}': {}", tagName, unverifiable.reason());
+                    output.fail(unverifiable.reason());
+                }
+            }
+        });
+    }
+
+    /**
+     * Sends the Call, once the method is known.
+     * <p>
+     * An unknown method name is answered here rather than by the server. The server's answer would be
+     * {@code Bad_MethodInvalid} and nothing else; this one names what the object does offer, which is what an
+     * operator who mistyped a method actually needs.
+     */
+    private void invoke(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNodeId,
+            final @NotNull Map<String, MethodSignature> methods,
+            final @NotNull String methodName,
+            final @NotNull OpcUaPayload payload,
+            final @NotNull String tagName,
+            final @NotNull WritingOutput output) {
+
+        final MethodSignature signature = methods.get(methodName);
+        if (signature == null) {
+            log.error("Method '{}' is not one of the methods of tag '{}'", methodName, tagName);
+            output.fail("Object of tag '"
+                    + tagName
+                    + "' has no method '"
+                    + methodName
+                    + "'. It offers: "
+                    + (methods.isEmpty() ? "none" : String.join(", ", methods.keySet())));
+            return;
+        }
+
+        final Variant[] arguments;
+        try {
+            arguments = MethodArguments.forCall(signature, payload.value());
+        } catch (final MethodArguments.InvalidArgumentException e) {
+            // The request is wrong about the method, which is a client error and not a device one. Sending it
+            // anyway would get Bad_InvalidArgument back with no indication of which argument was at fault.
+            log.error("Rejected a call to '{}' on tag '{}': {}", methodName, tagName, e.reason());
+            output.fail(e.reason());
+            return;
+        }
+
+        final CallMethodRequest request = new CallMethodRequest(objectNodeId, signature.nodeId(), arguments);
+
+        @SuppressWarnings("unused")
+        final var unused = client.callAsync(List.of(request)).whenComplete((response, throwable) -> {
+            if (throwable != null) {
+                log.error("Exception while calling '{}' on tag '{}'", methodName, tagName, throwable);
+                output.fail(throwable, null);
+                return;
+            }
+            final MethodCallResult result = MethodCallResult.of(response, signature);
+            if (result.succeeded()) {
+                log.debug("Called '{}' on tag '{}'", methodName, tagName);
+                output.finish();
+            } else {
+                // The failure reaches the caller as a failed write for now. The response message that carries
+                // errorCode and statusInfo northbound is where the detail in `result` belongs, and a caller
+                // relying on that detail cannot get it from a write outcome.
+                log.error("Call to '{}' on tag '{}' failed: {}", methodName, tagName, result.statusName());
+                output.fail("Call to '" + methodName + "' on tag '" + tagName + "' failed: " + result.statusName());
+            }
+        });
     }
 
     @Override

@@ -40,8 +40,20 @@ public final class MethodArguments {
     /// offending argument -- an OPC UA server answers the same mistakes with `Bad_InvalidArgument` and no
     /// indication of which argument was wrong.
     public static final class InvalidArgumentException extends RuntimeException {
+        private final @NotNull String reason;
+
         InvalidArgumentException(final @NotNull String message) {
             super(message);
+            this.reason = message;
+        }
+
+        /// The message, as a non-null value.
+        ///
+        /// `getMessage()` is declared nullable on `Throwable`, so a caller reporting this to a user has to
+        /// defend against a null that cannot occur here. Kept as its own field rather than asserted at each
+        /// call site.
+        public @NotNull String reason() {
+            return reason;
         }
     }
 
