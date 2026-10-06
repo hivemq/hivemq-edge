@@ -18,5 +18,17 @@ export type SouthboundMapping = {
      * The filter defining what topics we will receive messages from.
      */
     topicFilter: string;
+    /**
+     * Whether messages on this mapping are method calls. When enabled, each message must name the method to call in 'methodName', and that method is called on the tag's object. Required for a method tag; without it a message is treated as an ordinary value write.
+     */
+    methodCalls?: boolean;
+    /**
+     * Whether requests carry a correlation token in 'correlationData', which is read and echoed unchanged on the response. A field that is not enabled is discarded rather than passed on.
+     */
+    correlationData?: boolean;
+    /**
+     * Whether requests may name their own response topic in 'responseTopic'. Only has an effect when the northbound mapping is also configured to publish to the address the request carried.
+     */
+    responseTopic?: boolean;
 };
 

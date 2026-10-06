@@ -57,6 +57,21 @@ export const northboundMappingListSchema: JSONSchema7 = {
         userProperties: {
           $ref: '#/definitions/MqttUserProperty',
         },
+        // The two method-call response settings, both needing their southbound counterpart to do anything.
+        writeCorrelationData: {
+          type: 'boolean',
+          title: 'Write correlation data into the response',
+          description:
+            'Echo the correlation token a method call carried, so a caller can match the answer to its request. Needs the southbound mapping set to read one.',
+          default: false,
+        },
+        useRequestResponseTopic: {
+          type: 'boolean',
+          title: 'Publish a response to the topic the request asked for',
+          description:
+            'Publish a method call response to the address its request named, instead of this topic. Needs the southbound mapping set to read a response topic from requests.',
+          default: false,
+        },
       },
       required: ['topic', 'tagName', 'maxQoS'],
     },

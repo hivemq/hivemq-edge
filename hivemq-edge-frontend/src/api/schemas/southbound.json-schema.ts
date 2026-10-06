@@ -84,6 +84,29 @@ export const southboundMappingListSchema: JSONSchema7 = {
         fieldMapping: {
           $ref: '#/definitions/FieldMapping',
         },
+        // The three method-call settings. Optional and defaulting to false, so a mapping that predates them is
+        // unaffected -- and so that turning one on is always a deliberate act.
+        methodCalls: {
+          type: 'boolean',
+          title: 'This mapping carries method calls',
+          description:
+            'Read the method to call from each message and call it on the tag object. Required for a method tag; without it a message is treated as an ordinary value write.',
+          default: false,
+        },
+        correlationData: {
+          type: 'boolean',
+          title: 'Requests carry correlation data',
+          description:
+            'Read the correlation token a request carries, so the response can echo it. A field that is not enabled is discarded rather than passed on.',
+          default: false,
+        },
+        responseTopic: {
+          type: 'boolean',
+          title: 'Requests carry a response topic',
+          description:
+            'Let a request name the topic its response is published to. Also needs the northbound mapping set to publish to the address the request carried.',
+          default: false,
+        },
       },
 
       required: ['topicFilter', 'tagName', 'maxQoS'],
