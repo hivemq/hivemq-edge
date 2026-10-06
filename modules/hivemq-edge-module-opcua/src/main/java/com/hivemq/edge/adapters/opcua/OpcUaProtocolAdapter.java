@@ -54,6 +54,7 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.method.MethodArguments;
+import com.hivemq.edge.adapters.opcua.method.MethodCache;
 import com.hivemq.edge.adapters.opcua.method.MethodCallResult;
 import com.hivemq.edge.adapters.opcua.method.MethodSchemas;
 import com.hivemq.edge.adapters.opcua.method.MethodSignature;
@@ -104,6 +105,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     private final @NotNull Map<String, OpcuaTag> tagNameToTag;
     private final @NotNull List<OpcuaTag> tagList;
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
+
+    /**
+     * A method tag's methods, read on first use and kept for the session. Cleared whenever the connection is
+     * replaced, because a server restart is what can renumber the NodeIds it holds.
+     */
+    private final @NotNull MethodCache methodCache = new MethodCache();
 
     /** Serializes connection-generation changes with every generation-owned status publication. */
     private final @NotNull ReentrantLock connectionOwnershipLock = new ReentrantLock();
@@ -1025,15 +1032,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     /**
      * Calls the method a request names, on the object a method tag names.
      * <p>
-     * The methods are read from the device on each call rather than cached at connect. Two reasons. The browse
-     * metadata warm-up is explicitly allowed to fail without failing the connection — the adapter is then
-     * connected and not browse-ready — so a cache filled there would be silently empty on exactly the servers
-     * that need the most patience. And a server may gain or lose methods while the adapter runs, which a cache
-     * keyed to connect time would never see.
-     * <p>
-     * The cost is one browse per call. That is the wrong trade for a high-rate path and the right one here: a
-     * method call is an operator or an MES acting on a machine, not a sampled value, and the alternative is
-     * answering a request with a stale picture of the device.
+     * The object's methods are read on the first call against a tag and kept for the session (see
+     * {@link MethodCache}). Lazily rather than at connect, because the browse-metadata warm-up is allowed to
+     * fail without failing the connection: a cache filled there would be silently empty on an adapter that is
+     * connected and not browse-ready, and every call would then report a method that exists as absent. Read on
+     * first use, the failure is reported to the request that provoked it and the next request tries again.
      */
     private void callMethod(
             final @NotNull OpcUaClient client,
@@ -1050,25 +1053,27 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
 
         @SuppressWarnings("unused")
-        final var unused = MethodVerifier.verify(client, objectNodeId, tagName).whenComplete((result, throwable) -> {
-            if (throwable != null) {
-                log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
-                output.fail(throwable, null);
-                return;
-            }
-            switch (result) {
-                case MethodVerifier.Result.Verified verified ->
-                    invoke(client, objectNodeId, verified.methods(), methodName, payload, tagName, output);
-                case MethodVerifier.Result.Rejected rejected -> {
-                    log.error("Cannot call a method on tag '{}': {}", tagName, rejected.reason());
-                    output.fail(rejected.reason());
-                }
-                case MethodVerifier.Result.Unverifiable unverifiable -> {
-                    log.error("Cannot call a method on tag '{}': {}", tagName, unverifiable.reason());
-                    output.fail(unverifiable.reason());
-                }
-            }
-        });
+        final var unused = methodCache
+                .get(tagName, () -> MethodVerifier.verify(client, objectNodeId, tagName))
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
+                        output.fail(throwable, null);
+                        return;
+                    }
+                    switch (result) {
+                        case MethodVerifier.Result.Verified verified ->
+                            invoke(client, objectNodeId, verified.methods(), methodName, payload, tagName, output);
+                        case MethodVerifier.Result.Rejected rejected -> {
+                            log.error("Cannot call a method on tag '{}': {}", tagName, rejected.reason());
+                            output.fail(rejected.reason());
+                        }
+                        case MethodVerifier.Result.Unverifiable unverifiable -> {
+                            log.error("Cannot call a method on tag '{}': {}", tagName, unverifiable.reason());
+                            output.fail(unverifiable.reason());
+                        }
+                    }
+                });
     }
 
     /**
@@ -1240,29 +1245,34 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
 
         @SuppressWarnings("unused")
-        final var unused = MethodVerifier.verify(client, objectNode, tagName).whenComplete((result, throwable) -> {
-            if (throwable != null) {
-                log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
-                output.fail(throwable, null);
-                return;
-            }
-            switch (result) {
-                case MethodVerifier.Result.Verified verified -> {
-                    final var methods = verified.methods().values();
-                    log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
-                    output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                            MethodSchemas.responseSchema(methods), null, null, MethodSchemas.requestSchema(methods)));
-                }
-                case MethodVerifier.Result.Rejected rejected -> {
-                    log.error("Cannot describe method tag '{}': {}", tagName, rejected.reason());
-                    output.fail(rejected.reason());
-                }
-                case MethodVerifier.Result.Unverifiable unverifiable -> {
-                    log.error("Cannot describe method tag '{}': {}", tagName, unverifiable.reason());
-                    output.fail(unverifiable.reason());
-                }
-            }
-        });
+        final var unused = methodCache
+                .get(tagName, () -> MethodVerifier.verify(client, objectNode, tagName))
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
+                        output.fail(throwable, null);
+                        return;
+                    }
+                    switch (result) {
+                        case MethodVerifier.Result.Verified verified -> {
+                            final var methods = verified.methods().values();
+                            log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
+                            output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                                    MethodSchemas.responseSchema(methods),
+                                    null,
+                                    null,
+                                    MethodSchemas.requestSchema(methods)));
+                        }
+                        case MethodVerifier.Result.Rejected rejected -> {
+                            log.error("Cannot describe method tag '{}': {}", tagName, rejected.reason());
+                            output.fail(rejected.reason());
+                        }
+                        case MethodVerifier.Result.Unverifiable unverifiable -> {
+                            log.error("Cannot describe method tag '{}': {}", tagName, unverifiable.reason());
+                            output.fail(unverifiable.reason());
+                        }
+                    }
+                });
     }
 
     @Override
@@ -1290,7 +1300,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     boolean claimConnection(final @NotNull OpcUaClientConnection connection) {
         connectionOwnershipLock.lock();
         try {
-            return opcUaClientConnection.compareAndSet(null, connection);
+            final boolean claimed = opcUaClientConnection.compareAndSet(null, connection);
+            if (claimed) {
+                // A method NodeId is the server's to assign and stable for a session, so the cache is keyed to
+                // the session rather than given an expiry. This is the seam that defines that: a new generation
+                // -- first connect or any reconnect -- starts with nothing remembered, which is what makes a
+                // server restart that renumbers its nodes safe.
+                methodCache.invalidate();
+            }
+            return claimed;
         } finally {
             connectionOwnershipLock.unlock();
         }
