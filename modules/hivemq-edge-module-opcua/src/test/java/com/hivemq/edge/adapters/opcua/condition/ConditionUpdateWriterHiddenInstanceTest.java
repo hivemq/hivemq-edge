@@ -25,6 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.edge.adapters.opcua.browse.Browsing;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;

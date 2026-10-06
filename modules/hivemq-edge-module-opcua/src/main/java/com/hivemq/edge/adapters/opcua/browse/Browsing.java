@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.condition;
+package com.hivemq.edge.adapters.opcua.browse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,8 +50,13 @@ import org.jetbrains.annotations.Nullable;
  * have almost nothing in common, and a helper trying to cover them all would need a direction, a reference
  * type, a subtype flag, a class mask and a predicate before it did anything. So this returns the complete
  * reference list and leaves the searching to the caller.
+ * <p>
+ * It lives in {@code browse} rather than {@code condition}, where it was written, because nothing about it is
+ * condition-specific — it imports only Milo and the JDK. Method tags need the same paging for the same reason:
+ * a truncated browse of an object turns a present method into an absent one, and a method that cannot be
+ * found cannot be called at all.
  */
-final class Browsing {
+public final class Browsing {
 
     /**
      * How many pages to read before giving up.
@@ -76,7 +81,7 @@ final class Browsing {
      * act on the first. Treating the second as the first is how a transient network error became "this
      * condition has no Acknowledge method" and then a fallback to a different call.
      */
-    static final class BrowseFailedException extends RuntimeException {
+    public static final class BrowseFailedException extends RuntimeException {
 
         @java.io.Serial
         private static final long serialVersionUID = 1L;
@@ -127,7 +132,7 @@ final class Browsing {
      * — authorization, transport, timeouts, a truncated continuation — keeps propagating, since none of them
      * is evidence about whether the node exists.
      */
-    static boolean nodeNotInAddressSpace(final @Nullable Throwable throwable) {
+    public static boolean nodeNotInAddressSpace(final @Nullable Throwable throwable) {
         return throwable != null
                 && rootOf(throwable) instanceof final BrowseFailedException failure
                 && failure.status() != null
@@ -174,7 +179,7 @@ final class Browsing {
      * @param browse what to browse; the caller owns the direction, reference type and node class mask.
      * @return the references, in server order. Empty when the node genuinely has none.
      */
-    static @NotNull CompletableFuture<List<ReferenceDescription>> browseAll(
+    public static @NotNull CompletableFuture<List<ReferenceDescription>> browseAll(
             final @NotNull OpcUaClient client, final @NotNull BrowseDescription browse) {
 
         return client.browseAsync(browse)
@@ -209,7 +214,7 @@ final class Browsing {
      * the async plumbing wraps everything in. Falls back to the class name where there is no message, since
      * several of the exceptions reachable here carry none and "failed: null" describes nothing.
      */
-    static @NotNull String describeException(final @NotNull Throwable throwable) {
+    public static @NotNull String describeException(final @NotNull Throwable throwable) {
         final Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
                 ? throwable.getCause()
                 : throwable;
@@ -313,7 +318,7 @@ final class Browsing {
      * Namespace 0 is the one index safe to hardcode. Part 5 warns that a server may renumber its namespace
      * table between sessions, but 0 is reserved and fixed.
      */
-    static boolean isStandardName(final @Nullable QualifiedName browseName, final @NotNull String expected) {
+    public static boolean isStandardName(final @Nullable QualifiedName browseName, final @NotNull String expected) {
         return browseName != null
                 && browseName.getNamespaceIndex() != null
                 && browseName.getNamespaceIndex().intValue() == 0
