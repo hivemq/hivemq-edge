@@ -56,6 +56,7 @@ import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.method.MethodArguments;
 import com.hivemq.edge.adapters.opcua.method.MethodCache;
 import com.hivemq.edge.adapters.opcua.method.MethodCallResult;
+import com.hivemq.edge.adapters.opcua.method.MethodResponse;
 import com.hivemq.edge.adapters.opcua.method.MethodSchemas;
 import com.hivemq.edge.adapters.opcua.method.MethodSignature;
 import com.hivemq.edge.adapters.opcua.method.MethodVerifier;
@@ -894,7 +895,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             // A method tag names an object, so there is no Value attribute to assign to: the
                             // request names a method and this calls it.
                             if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD) {
-                                callMethod(client, nodeId, opcUAWritePayload, tagName, output);
+                                callMethod(client, nodeId, opcUAWritePayload, opcuaTag, output);
                                 return;
                             }
 
@@ -1042,9 +1043,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull OpcUaClient client,
             final @NotNull NodeId objectNodeId,
             final @NotNull OpcUaPayload payload,
-            final @NotNull String tagName,
+            final @NotNull OpcuaTag opcuaTag,
             final @NotNull WritingOutput output) {
 
+        final String tagName = opcuaTag.getName();
         final String methodName = payload.methodName();
         if (methodName == null || methodName.isBlank()) {
             log.error("Request to method tag '{}' names no method", tagName);
@@ -1063,7 +1065,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     }
                     switch (result) {
                         case MethodVerifier.Result.Verified verified ->
-                            invoke(client, objectNodeId, verified.methods(), methodName, payload, tagName, output);
+                            invoke(client, objectNodeId, verified.methods(), methodName, payload, opcuaTag, output);
                         case MethodVerifier.Result.Rejected rejected -> {
                             log.error("Cannot call a method on tag '{}': {}", tagName, rejected.reason());
                             output.fail(rejected.reason());
@@ -1089,9 +1091,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull Map<String, MethodSignature> methods,
             final @NotNull String methodName,
             final @NotNull OpcUaPayload payload,
-            final @NotNull String tagName,
+            final @NotNull OpcuaTag opcuaTag,
             final @NotNull WritingOutput output) {
 
+        final String tagName = opcuaTag.getName();
         final MethodSignature signature = methods.get(methodName);
         if (signature == null) {
             log.error("Method '{}' is not one of the methods of tag '{}'", methodName, tagName);
@@ -1125,17 +1128,67 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 return;
             }
             final MethodCallResult result = MethodCallResult.of(response, signature);
+
+            // The response goes out before the write completes. A caller waiting on the answer is waiting for
+            // the message, not for the write, and publishing after completing the write would let a fast caller
+            // see its request acknowledged while the answer is still in flight.
+            publishMethodResponse(opcuaTag, methodName, payload.correlationData(), result);
+
             if (result.succeeded()) {
                 log.debug("Called '{}' on tag '{}'", methodName, tagName);
                 output.finish();
             } else {
-                // The failure reaches the caller as a failed write for now. The response message that carries
-                // errorCode and statusInfo northbound is where the detail in `result` belongs, and a caller
-                // relying on that detail cannot get it from a write outcome.
+                // Failed as a write too, not only as a response. The response carries the detail; failing the
+                // write is what makes the failure visible in the adapter's own metrics and log rather than only
+                // in a message the operator has to be subscribed to.
                 log.error("Call to '{}' on tag '{}' failed: {}", methodName, tagName, result.statusName());
                 output.fail("Call to '" + methodName + "' on tag '" + tagName + "' failed: " + result.statusName());
             }
         });
+    }
+
+    /**
+     * Publishes a call's outcome as a datapoint on the tag that received the request.
+     * <p>
+     * The tag is the routing key: a northbound mapping is configured per tag, so the response reaches the topic
+     * that mapping names without anything here knowing what it is.
+     * <p>
+     * A failure to publish does not fail the call. The method already ran on the device — reporting the write as
+     * failed because the answer could not be published would invite a retry of something that already happened,
+     * and a method call is not generally safe to repeat.
+     */
+    private void publishMethodResponse(
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull String methodName,
+            final @Nullable String correlationData,
+            final @NotNull MethodCallResult result) {
+
+        final ModuleServices services = moduleServices;
+        if (services == null) {
+            // Stopped between the call being sent and its answer arriving. The device acted; there is nothing
+            // left to publish through.
+            log.warn(
+                    "Adapter '{}' has no module services, so the answer from '{}' on tag '{}' is not published",
+                    adapterId,
+                    methodName,
+                    opcuaTag.getName());
+            return;
+        }
+
+        try {
+            final var publisher = services.protocolAdapterTagStreamingService().dataPointsPublisher();
+            final var builder = publisher.addDataPoint(opcuaTag);
+            MethodResponse.write(builder, methodName, correlationData, result);
+            builder.endDataPoint();
+            publisher.publish();
+        } catch (final Exception e) {
+            log.error(
+                    "Adapter '{}' could not publish the answer from '{}' on tag '{}'",
+                    adapterId,
+                    methodName,
+                    opcuaTag.getName(),
+                    e);
+        }
     }
 
     @Override
