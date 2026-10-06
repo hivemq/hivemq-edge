@@ -53,6 +53,8 @@ import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
+import com.hivemq.edge.adapters.opcua.method.MethodSchemas;
+import com.hivemq.edge.adapters.opcua.method.MethodVerifier;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
@@ -1078,6 +1080,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         conn.client()
                 .ifPresentOrElse(
                         client -> {
+                            // A method tag's shape comes from the object's methods, not from a value's type, so
+                            // it browses rather than reading a DataType. Both schemas come from one browse: the
+                            // request's arguments and the response's results are the same methods seen from
+                            // opposite ends.
+                            if (tagKind == OpcuaTagKind.METHOD) {
+                                createMethodTagSchema(client, tag, tagName, output);
+                                return;
+                            }
+
                             final var generator = new JsonSchemaGenerator(client);
                             @SuppressWarnings("unused")
                             final var unused = generator.collectTypeInfo(tag).whenComplete((fieldInfo, throwable) -> {
@@ -1094,6 +1105,55 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             log.error("Discovery failed: Client not connected or not initialized");
                             output.fail("Discovery failed: Client not connected or not initialized");
                         });
+    }
+
+    /**
+     * Both schemas of a method tag, from one browse of its object.
+     * <p>
+     * The three verification outcomes answer differently on purpose. A rejection is a mistake in the tag and
+     * says so. An unverifiable device is <em>not</em> answered with a schema describing no methods: that would
+     * look exactly like an object that genuinely has none, and the operator would go looking at their
+     * configuration for a problem that is in the connection.
+     */
+    private void createMethodTagSchema(
+            final @NotNull OpcUaClient client,
+            final @NotNull OpcuaTag tag,
+            final @NotNull String tagName,
+            final @NotNull TagSchemaCreationOutput output) {
+
+        final NodeId objectNode;
+        try {
+            objectNode = NodeId.parse(tag.getDefinition().getNode());
+        } catch (final Exception e) {
+            output.fail("Tag '" + tagName + "' has a malformed node id: "
+                    + tag.getDefinition().getNode());
+            return;
+        }
+
+        @SuppressWarnings("unused")
+        final var unused = MethodVerifier.verify(client, objectNode, tagName).whenComplete((result, throwable) -> {
+            if (throwable != null) {
+                log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
+                output.fail(throwable, null);
+                return;
+            }
+            switch (result) {
+                case MethodVerifier.Result.Verified verified -> {
+                    final var methods = verified.methods().values();
+                    log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
+                    output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                            MethodSchemas.responseSchema(methods), null, null, MethodSchemas.requestSchema(methods)));
+                }
+                case MethodVerifier.Result.Rejected rejected -> {
+                    log.error("Cannot describe method tag '{}': {}", tagName, rejected.reason());
+                    output.fail(rejected.reason());
+                }
+                case MethodVerifier.Result.Unverifiable unverifiable -> {
+                    log.error("Cannot describe method tag '{}': {}", tagName, unverifiable.reason());
+                    output.fail(unverifiable.reason());
+                }
+            }
+        });
     }
 
     @Override

@@ -335,6 +335,22 @@ public class JsonSchemaGenerator {
         applyMinMax(schema, opcUaType);
     }
 
+    /// Describes a property as the given OPC UA type, whatever that type is.
+    ///
+    /// The one entry point a caller outside this class should use, because it owns the whole decision: a type
+    /// with no JSON scalar form becomes `any`, `QualifiedName` becomes its two-field object, and everything else
+    /// becomes a scalar with its width's range constraints. Calling {@link #applyScalarType} directly requires
+    /// knowing that it throws for the four non-scalar types, and that is exactly the pairing a second caller
+    /// would get wrong.
+    public static void describeAs(
+            final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
+        if (!isScalarMappable(opcUaType)) {
+            prop.any();
+            return;
+        }
+        applyScalarType(prop, opcUaType);
+    }
+
     private static void applyScalarType(
             final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
         if (opcUaType == OpcUaDataType.QualifiedName) {
