@@ -33,6 +33,7 @@ import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
@@ -78,9 +79,12 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                 "QoS needs to be a valid QoS value (0,1,2)");
         try {
             final byte[] jsonToSend = convertDataPointToJson(dataPoint, objectMapper);
+            // Resolved before the payload is sent and after it is built, because the datapoint is the source of
+            // both: the payload omits the response address and the topic consumes it.
+            final String topic = topicFor(dataPoint);
             final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService
                     .createPublish()
-                    .withTopic(northboundMapping.getMqttTopic())
+                    .withTopic(topic)
                     .withQoS(northboundMapping.getMqttQos())
                     .withPayload(jsonToSend)
                     .withAdapter(protocolAdapter.getAdapter());
@@ -99,7 +103,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                                     .withTimestamp(System.currentTimeMillis())
                                     .withMessage(String.format(
                                             "Adapter '%s' took first sample to be published to '%s'",
-                                            protocolAdapter.getId(), northboundMapping.getMqttTopic()))
+                                            protocolAdapter.getId(), topic))
                                     .withPayload(
                                             Payload.ContentType.JSON, new String(jsonToSend, StandardCharsets.UTF_8))
                                     .fire();
@@ -118,6 +122,44 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
     @Override
     public @NotNull String getTagName() {
         return northboundMapping.getTagName();
+    }
+
+    /**
+     * The {@code context} entry naming where a response should go, read rather than published.
+     */
+    private static final @NotNull String RESPONSE_TOPIC = "responseTopic";
+
+    /**
+     * The topic to publish a datapoint on: the address it carries when the mapping is configured to honour one,
+     * and the mapping's own topic otherwise.
+     * <p>
+     * Both halves are required, which is the whole point of the setting. A datapoint carrying a
+     * {@code responseTopic} that the mapping was not told to honour publishes to the configured topic, because a
+     * caller must not be able to redirect an adapter's output by sending a field — that is a privilege the
+     * configuration grants, not one a message claims.
+     */
+    private @NotNull String topicFor(final @NotNull DataPoint dataPoint) {
+        if (!northboundMapping.isUseRequestResponseTopic()) {
+            return northboundMapping.getMqttTopic();
+        }
+        return responseTopicOf(dataPoint).orElseGet(northboundMapping::getMqttTopic);
+    }
+
+    /**
+     * The response address a datapoint carries, if it carries a usable one.
+     * <p>
+     * Blank is treated as absent rather than as an error: a caller that sends an empty string has named no topic,
+     * and publishing to {@code ""} would fail far from the cause.
+     */
+    private static @NotNull Optional<String> responseTopicOf(final @NotNull DataPoint dataPoint) {
+        if (!(dataPoint instanceof final DataPointWithMetadata dpMeta)) {
+            return Optional.empty();
+        }
+        return dpMeta.getContext()
+                .map(context -> context.get(RESPONSE_TOPIC))
+                .filter(JsonNode::isTextual)
+                .map(JsonNode::textValue)
+                .filter(topic -> !topic.isBlank());
     }
 
     private byte @NotNull [] convertDataPointToJson(
@@ -158,7 +200,38 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                     "mqttUserProperties",
                     objectMapper.convertValue(northboundMapping.getUserProperties(), JsonNode.class));
         }
+        if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
+            dpMeta.getContext().ifPresent(context -> flattenContext(node, context));
+        }
         return objectMapper.writeValueAsBytes(node);
+    }
+
+    /**
+     * Copies a datapoint's {@code context} entries alongside {@code value} rather than nesting them under a
+     * {@code context} key.
+     * <p>
+     * An adapter uses {@code context} for fields that belong to the message but are not the value — a method
+     * call's {@code methodName}, the caller's {@code correlationData}, an {@code errorCode}. Flattening is what
+     * makes the published message read {@code {"methodName": "Start", "value": {...}}}: the child is a carrier
+     * inside Edge, not a level a consumer should have to descend.
+     * <p>
+     * <b>{@code responseTopic} is deliberately excluded.</b> It is the one entry that says <em>where</em> the
+     * answer goes rather than anything about the answer, and {@link #responseTopicOf} consumes it to choose the
+     * topic. Publishing it as well would put a routing instruction into the routed message.
+     * <p>
+     * An existing key is never overwritten. Nothing in Edge fills {@code context} with an aspect name today, but
+     * a copy that silently replaced {@code value} would be far harder to diagnose than one that declines to.
+     */
+    private static void flattenContext(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
+        if (!context.isObject()) {
+            return;
+        }
+        context.properties().forEach(entry -> {
+            if (RESPONSE_TOPIC.equals(entry.getKey()) || node.has(entry.getKey())) {
+                return;
+            }
+            node.set(entry.getKey(), entry.getValue());
+        });
     }
 
     @Override
