@@ -108,18 +108,9 @@ class NorthboundTagConsumerContextTest {
         return new Published(topic.get(), new ObjectMapper().readTree(payload.get()));
     }
 
-    private static @NotNull NorthboundMapping mapping(final boolean useRequestResponseTopic) {
+    private static @NotNull NorthboundMapping mapping() {
         return new NorthboundMapping(
-                "boiler1",
-                "plant/boiler1/result",
-                1,
-                false,
-                false,
-                false,
-                List.of(),
-                Long.MAX_VALUE,
-                false,
-                useRequestResponseTopic);
+                "boiler1", "plant/boiler1/result", 1, false, false, false, List.of(), Long.MAX_VALUE, false);
     }
 
     /// Builds a datapoint carrying a value and the given context entries.
@@ -141,7 +132,7 @@ class NorthboundTagConsumerContextTest {
     @Test
     void contextEntries_arePublishedBesideValue_notNested() throws Exception {
         final Published published =
-                publish(mapping(false), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
+                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
 
         assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
@@ -155,7 +146,7 @@ class NorthboundTagConsumerContextTest {
         // The one entry that says where the answer goes rather than anything about it. Publishing it as well would
         // put a routing instruction into the routed message.
         final Published published =
-                publish(mapping(true), dataPoint("methodName", "Start", "responseTopic", "plant/mes-east"));
+                publish(mapping(), dataPoint("methodName", "Start", "responseTopic", "plant/mes-east"));
 
         assertThat(published.topic()).isEqualTo("plant/mes-east");
         assertThat(published.payload().has("responseTopic")).isFalse();
@@ -163,18 +154,24 @@ class NorthboundTagConsumerContextTest {
     }
 
     @Test
-    void responseTopic_isIgnoredWhenTheMappingWasNotToldToHonourIt() throws Exception {
-        // The decisive test. A caller must not be able to redirect an adapter's output by sending a field: that is
-        // a privilege the configuration grants, not one a message claims.
-        final Published published = publish(mapping(false), dataPoint("responseTopic", "plant/somewhere-else"));
+    void aResponseTopicIsAlwaysHonoured_withNoNorthboundSettingGatingIt() throws Exception {
+        // The decisive test, and it pins a deliberate reversal. An earlier design had a northbound flag here, so a
+        // response address was honoured only when the mapping had been told to -- the reasoning being that a caller
+        // must not redirect an adapter's output by sending a field.
+        //
+        // That protection lives southbound instead, and only there. The field mapping is a whitelist: a southbound
+        // mapping not configured to read a response topic drops the field, so the adapter never receives it and a
+        // datapoint never carries it. By the time a datapoint reaches here, the address being present already means
+        // the configuration asked for it. A second gate added no safety and only let the pair be half-configured.
+        final Published published = publish(mapping(), dataPoint("responseTopic", "plant/mes-east"));
 
-        assertThat(published.topic()).isEqualTo("plant/boiler1/result");
+        assertThat(published.topic()).isEqualTo("plant/mes-east");
     }
 
     @Test
     void aBlankResponseTopic_fallsBackToTheConfiguredTopic() throws Exception {
         // A caller sending an empty string has named no topic; publishing to "" would fail far from the cause.
-        final Published published = publish(mapping(true), dataPoint("responseTopic", "   "));
+        final Published published = publish(mapping(), dataPoint("responseTopic", "   "));
 
         assertThat(published.topic()).isEqualTo("plant/boiler1/result");
     }
@@ -182,7 +179,7 @@ class NorthboundTagConsumerContextTest {
     @Test
     void noResponseTopic_withTheFlagOn_fallsBackToTheConfiguredTopic() throws Exception {
         // A fire-and-forget call on a mapping that would honour an address: there is none to honour.
-        final Published published = publish(mapping(true), dataPoint("methodName", "Stop"));
+        final Published published = publish(mapping(), dataPoint("methodName", "Stop"));
 
         assertThat(published.topic()).isEqualTo("plant/boiler1/result");
     }
@@ -190,7 +187,7 @@ class NorthboundTagConsumerContextTest {
     @Test
     void aDatapointWithNoContext_isUnaffected() throws Exception {
         // Every value tag that exists today. The flattening must be invisible to them.
-        final Published published = publish(mapping(false), dataPoint());
+        final Published published = publish(mapping(), dataPoint());
 
         assertThat(published.topic()).isEqualTo("plant/boiler1/result");
         assertThat(published.payload().get("value").intValue()).isEqualTo(42);
@@ -201,7 +198,7 @@ class NorthboundTagConsumerContextTest {
     void aContextEntryNeverOverwritesAnAspect() throws Exception {
         // Nothing in Edge fills context with an aspect name today, but a copy that silently replaced `value` would
         // be far harder to diagnose than one that declines to.
-        final Published published = publish(mapping(false), dataPoint("value", "hijacked"));
+        final Published published = publish(mapping(), dataPoint("value", "hijacked"));
 
         assertThat(published.payload().get("value").intValue()).isEqualTo(42);
     }

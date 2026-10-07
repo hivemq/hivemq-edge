@@ -64,13 +64,10 @@ export const northboundMappingListSchema: JSONSchema7 = {
           description:
             'Echo the correlation token a method call carried, so a caller can match the answer to its request. Needs the southbound mapping set to read one.',
           default: false,
-        },
-        useRequestResponseTopic: {
-          type: 'boolean',
-          title: 'Publish a response to the topic the request asked for',
-          description:
-            'Publish a method call response to the address its request named, instead of this topic. Needs the southbound mapping set to read a response topic from requests.',
-          default: false,
+          // There is deliberately no setting here for the response topic. A response goes to the address its
+          // request named whenever one arrived, and to this mapping's topic otherwise -- and whether an address
+          // arrives at all is decided southbound, where the field mapping drops it unless that mapping was
+          // configured to read one. A switch here would add no control, only a pair that can be half-configured.
         },
       },
       required: ['topic', 'tagName', 'maxQoS'],

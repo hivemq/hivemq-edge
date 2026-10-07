@@ -40,7 +40,6 @@ public class NorthboundMapping {
     private final @NotNull List<MqttUserProperty> userProperties;
     private final @Nullable Long messageExpiryInterval;
     private final boolean writeCorrelationData;
-    private final boolean useRequestResponseTopic;
 
     public NorthboundMapping(
             final @NotNull String tagName,
@@ -60,7 +59,6 @@ public class NorthboundMapping {
                 includeMetadata,
                 userProperties,
                 messageExpiryInterval,
-                false,
                 false);
     }
 
@@ -73,8 +71,7 @@ public class NorthboundMapping {
             final @Nullable Boolean includeMetadata,
             final @Nullable List<MqttUserProperty> userProperties,
             final @Nullable Long messageExpiryInterval,
-            final boolean writeCorrelationData,
-            final boolean useRequestResponseTopic) {
+            final boolean writeCorrelationData) {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
@@ -84,7 +81,6 @@ public class NorthboundMapping {
         this.userProperties = userProperties != null ? userProperties : new ArrayList<>();
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY;
         this.writeCorrelationData = writeCorrelationData;
-        this.useRequestResponseTopic = useRequestResponseTopic;
     }
 
     /** Whether a method call's correlation token is written into the response message. */
@@ -92,14 +88,10 @@ public class NorthboundMapping {
         return writeCorrelationData;
     }
 
-    /**
-     * Whether a response goes to the address its request named, rather than to {@link #getMqttTopic()}.
-     * <p>
-     * Needs the southbound mapping to be reading a response topic from requests; neither side alone does anything.
-     */
-    public boolean isUseRequestResponseTopic() {
-        return useRequestResponseTopic;
-    }
+    // There is deliberately no setting for the response address here. A response goes to the address its datapoint
+    // carries and to getMqttTopic() when it carries none, and whether a datapoint carries one at all is decided
+    // southbound: the field mapping is a whitelist, so a mapping not configured to read a response topic drops it
+    // before the adapter sees it. See NorthboundTagConsumer.topicFor.
 
     private static @NotNull MqttUserProperty userProp(final @NotNull com.hivemq.edge.api.model.MqttUserProperty u) {
         return new MqttUserProperty(u.getName(), u.getValue());
@@ -120,8 +112,7 @@ public class NorthboundMapping {
                                 .toList()
                         : List.of(),
                 model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY,
-                Boolean.TRUE.equals(model.getWriteCorrelationData()),
-                Boolean.TRUE.equals(model.getUseRequestResponseTopic()));
+                Boolean.TRUE.equals(model.getWriteCorrelationData()));
     }
 
     public @NotNull String getMqttTopic() {

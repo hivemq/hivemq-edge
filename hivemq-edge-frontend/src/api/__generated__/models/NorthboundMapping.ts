@@ -26,10 +26,6 @@ export type NorthboundMapping = {
      * Whether a method call's correlation token is written into the response message, so a caller can match the answer to its request.
      */
     writeCorrelationData?: boolean;
-    /**
-     * Whether a method call's response is published to the address the request named, instead of this mapping's own topic. Only has an effect when the southbound mapping is also configured to read a response topic from requests.
-     */
-    useRequestResponseTopic?: boolean;
     maxQoS?: QoS;
     /**
      * The message expiry interval.

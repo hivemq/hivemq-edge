@@ -38,8 +38,7 @@ public final class NorthboundMappingEntityConverter
                 entity.getIncludeMetadata(),
                 MqttUserPropertyEntityConverter.INSTANCE.toInternalEntities(entity.getUserProperties()),
                 entity.getMessageExpiryInterval(),
-                Boolean.TRUE.equals(entity.getWriteCorrelationData()),
-                Boolean.TRUE.equals(entity.getUseRequestResponseTopic()));
+                Boolean.TRUE.equals(entity.getWriteCorrelationData()));
     }
 
     @Override
@@ -52,7 +51,6 @@ public final class NorthboundMappingEntityConverter
                 .maxQoS(QoSConverter.INSTANCE.toRestEntity(entity.getMaxQoS()))
                 .messageExpiryInterval(entity.getMessageExpiryInterval())
                 .userProperties(MqttUserPropertyEntityConverter.INSTANCE.toRestEntities(entity.getUserProperties()))
-                .writeCorrelationData(entity.isWriteCorrelationData())
-                .useRequestResponseTopic(entity.isUseRequestResponseTopic());
+                .writeCorrelationData(entity.isWriteCorrelationData());
     }
 }

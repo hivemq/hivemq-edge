@@ -258,6 +258,37 @@ class MethodResponseTest {
     }
 
     @Test
+    void aRefusalEdgeMakesItself_looksExactlyLikeADeviceFailure() {
+        // The decisive property of answering pre-dispatch refusals. A caller matching answers to requests must not
+        // need to know where in Edge a refusal happened: an unknown method name, refused by Edge before the call is
+        // sent, has to arrive in the same shape as a refusal the device reported. Both are built from a
+        // MethodCallResult with no outputs, so both render value null plus an errorCode.
+        final JsonNode edgeRefusal = write("Cube", "c-1", failure(0x80750000L, Map.of()));
+        final JsonNode deviceRefusal = write("Cube", "c-1", failure(0x81110000L, Map.of()));
+
+        assertThat(edgeRefusal.get("value").isNull()).isTrue();
+        assertThat(edgeRefusal.get("context").get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
+        assertThat(edgeRefusal.get("context").get("correlationData").textValue())
+                .isEqualTo("c-1");
+
+        // Same field set, different status. That sameness is the contract.
+        assertThat(edgeRefusal.get("context").properties().stream().map(java.util.Map.Entry::getKey))
+                .containsExactlyElementsOf(deviceRefusal.get("context").properties().stream()
+                        .map(java.util.Map.Entry::getKey)
+                        .toList());
+    }
+
+    @Test
+    void aRefusalOfARequestThatNamedNoMethod_stillCarriesTheField() {
+        // A request with no methodName has none to echo. The field is written as empty rather than omitted, so every
+        // response has the same shape and a consumer never has to ask whether methodName exists.
+        final JsonNode json = write("", "c-2", failure(0x80750000L, Map.of()));
+
+        assertThat(json.get("context").get("methodName").textValue()).isEmpty();
+        assertThat(json.get("context").get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
+    }
+
+    @Test
     void responseTopic_isCarriedOnAFailureToo() {
         // A caller that asked for its answer somewhere still wants the refusal there, not on a topic it is not
         // listening to.

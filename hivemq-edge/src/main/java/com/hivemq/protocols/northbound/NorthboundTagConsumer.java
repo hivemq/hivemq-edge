@@ -130,18 +130,18 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
     private static final @NotNull String RESPONSE_TOPIC = "responseTopic";
 
     /**
-     * The topic to publish a datapoint on: the address it carries when the mapping is configured to honour one,
-     * and the mapping's own topic otherwise.
+     * The topic to publish a datapoint on: the address it carries, and the mapping's own topic when it carries
+     * none.
      * <p>
-     * Both halves are required, which is the whole point of the setting. A datapoint carrying a
-     * {@code responseTopic} that the mapping was not told to honour publishes to the configured topic, because a
-     * caller must not be able to redirect an adapter's output by sending a field — that is a privilege the
-     * configuration grants, not one a message claims.
+     * There is deliberately no northbound setting gating this, and that is a decision rather than an omission. The
+     * concern a gate would answer — a caller redirecting an adapter's output by sending a field — is already
+     * answered on the southbound side, where the field mapping is a whitelist: with its response-topic flag off,
+     * no instruction names {@code responseTopic}, the generated transform drops it, and the adapter never receives
+     * it. So a datapoint carries a response address only when the southbound mapping asked for one <em>and</em>
+     * the request supplied it. A second switch here would not add protection; it would only add a pair that can be
+     * configured on one side and silently do nothing.
      */
     private @NotNull String topicFor(final @NotNull DataPoint dataPoint) {
-        if (!northboundMapping.isUseRequestResponseTopic()) {
-            return northboundMapping.getMqttTopic();
-        }
         return responseTopicOf(dataPoint).orElseGet(northboundMapping::getMqttTopic);
     }
 

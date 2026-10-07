@@ -186,4 +186,42 @@ class MethodSchemasArrayTest {
         assertThat(prop.get("type").textValue()).isEqualTo("array");
         assertThat(prop.get("items").get("type").textValue()).isEqualTo("integer");
     }
+
+    @Test
+    void requestArguments_areWritable() {
+        // A request's arguments are exactly what a caller supplies, so marking them read-only states the opposite of
+        // the truth. The builder defaults every node to not-writable, which renders readOnly: true, so the request
+        // path has to say otherwise -- without it every argument of every method was advertised as read-only, and
+        // the mapping editor treats a read-only field as somewhere a field mapping may not write.
+        final JsonNode prop = requestProperties(method("Square", argument("input1", NodeIds.Int32, -1, null)))
+                .get("input1");
+
+        assertThat(prop.has("readOnly")).isFalse();
+    }
+
+    @Test
+    void requestArrayArguments_areWritableAtEveryDepth() {
+        // An array is written by supplying its elements, so read-only elements describe a shape nothing can be
+        // written to -- the degenerate "array of read-only items admits only []" case.
+        final JsonNode prop = requestProperties(
+                        method("AddArray", argument("points", NodeIds.Int32, 1, new UInteger[] {uint(5)})))
+                .get("points");
+
+        assertThat(prop.has("readOnly")).isFalse();
+        assertThat(prop.get("items").has("readOnly")).isFalse();
+    }
+
+    @Test
+    void responseOutputs_stayReadOnly() {
+        // The counterpart, and the reason this is a flag rather than a blanket change: a response's outputs are what
+        // the device produced. Nobody writes them, and claiming they are writable would be the inverse mistake.
+        final MethodSignature withOutput =
+                new MethodSignature("Square", NODE, List.of(), List.of(argument("output1", NodeIds.Int32, -1, null)));
+
+        final JsonNode schema = SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(
+                MethodSchemas.responseSchema(List.of(withOutput)));
+        final JsonNode prop = schema.get("anyOf").get(0).get("properties").get("output1");
+
+        assertThat(prop.get("readOnly").booleanValue()).isTrue();
+    }
 }

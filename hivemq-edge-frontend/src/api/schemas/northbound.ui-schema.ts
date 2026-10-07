@@ -12,9 +12,9 @@ export const northboundMappingListUISchema: UiSchema = {
     'ui:title': 'List of northbound mappings',
     'ui:description': 'The list of all the mappings delivering messages from this adapter onto the Edge',
     items: {
-      // The two method-call response settings go last: they are inert unless the southbound mapping is
-      // configured for method calls, so they should not sit among the settings that always apply.
-      'ui:order': ['tagName', 'topic', '*', 'writeCorrelationData', 'useRequestResponseTopic'],
+      // The method-call setting goes last: it is inert unless the southbound mapping is configured for method
+      // calls, so it should not sit among the settings that always apply.
+      'ui:order': ['tagName', 'topic', '*', 'writeCorrelationData'],
       'ui:collapsable': {
         titleKey: 'tagName',
         name: 'Mapping',

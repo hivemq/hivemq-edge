@@ -83,6 +83,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -1049,8 +1050,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         final String tagName = opcuaTag.getName();
         final String methodName = payload.methodName();
         if (methodName == null || methodName.isBlank()) {
-            log.error("Request to method tag '{}' names no method", tagName);
-            output.fail("A request to method tag '" + tagName + "' must name the method to call in 'methodName'");
+            // Reachable despite the schema requiring methodName: a mapping whose stored schema predates that
+            // requirement, or one edited by hand, still arrives here.
+            refuseWithResponse(
+                    opcuaTag,
+                    "",
+                    payload,
+                    StatusCodes.Bad_MethodInvalid,
+                    "A request to method tag '" + tagName + "' must name the method to call in 'methodName'",
+                    output);
             return;
         }
 
@@ -1059,21 +1067,42 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 .get(tagName, () -> MethodVerifier.verify(client, objectNodeId, tagName))
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
+                        // Reading the object's methods failed outright. Bad_InternalError rather than a
+                        // method-specific code: nothing was learned about the method, so nothing can be claimed
+                        // about it.
                         log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
-                        output.fail(throwable, null);
+                        refuseWithResponse(
+                                opcuaTag,
+                                methodName,
+                                payload,
+                                StatusCodes.Bad_InternalError,
+                                "Could not read the methods of tag '" + tagName + "': "
+                                        + Objects.requireNonNullElse(throwable.getMessage(), "unknown error"),
+                                output);
                         return;
                     }
                     switch (result) {
                         case MethodVerifier.Result.Verified verified ->
                             invoke(client, objectNodeId, verified.methods(), methodName, payload, opcuaTag, output);
-                        case MethodVerifier.Result.Rejected rejected -> {
-                            log.error("Cannot call a method on tag '{}': {}", tagName, rejected.reason());
-                            output.fail(rejected.reason());
-                        }
-                        case MethodVerifier.Result.Unverifiable unverifiable -> {
-                            log.error("Cannot call a method on tag '{}': {}", tagName, unverifiable.reason());
-                            output.fail(unverifiable.reason());
-                        }
+                        // The tag names something that is not a callable object, so no method on it can exist.
+                        case MethodVerifier.Result.Rejected rejected ->
+                            refuseWithResponse(
+                                    opcuaTag,
+                                    methodName,
+                                    payload,
+                                    StatusCodes.Bad_NodeIdUnknown,
+                                    rejected.reason(),
+                                    output);
+                        // The object may well be fine; Edge could not find out. Distinct from Rejected on
+                        // purpose -- a caller retrying later may succeed, which is not true of a rejection.
+                        case MethodVerifier.Result.Unverifiable unverifiable ->
+                            refuseWithResponse(
+                                    opcuaTag,
+                                    methodName,
+                                    payload,
+                                    StatusCodes.Bad_InternalError,
+                                    unverifiable.reason(),
+                                    output);
                     }
                 });
     }
@@ -1097,13 +1126,20 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         final String tagName = opcuaTag.getName();
         final MethodSignature signature = methods.get(methodName);
         if (signature == null) {
-            log.error("Method '{}' is not one of the methods of tag '{}'", methodName, tagName);
-            output.fail("Object of tag '"
-                    + tagName
-                    + "' has no method '"
-                    + methodName
-                    + "'. It offers: "
-                    + (methods.isEmpty() ? "none" : String.join(", ", methods.keySet())));
+            // The same status the server would have returned, with a message it could not have produced: naming
+            // what the object does offer is what an operator who mistyped a method actually needs.
+            refuseWithResponse(
+                    opcuaTag,
+                    methodName,
+                    payload,
+                    StatusCodes.Bad_MethodInvalid,
+                    "Object of tag '"
+                            + tagName
+                            + "' has no method '"
+                            + methodName
+                            + "'. It offers: "
+                            + (methods.isEmpty() ? "none" : String.join(", ", methods.keySet())),
+                    output);
             return;
         }
 
@@ -1113,8 +1149,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         } catch (final MethodArguments.InvalidArgumentException e) {
             // The request is wrong about the method, which is a client error and not a device one. Sending it
             // anyway would get Bad_InvalidArgument back with no indication of which argument was at fault.
-            log.error("Rejected a call to '{}' on tag '{}': {}", methodName, tagName, e.reason());
-            output.fail(e.reason());
+            refuseWithResponse(opcuaTag, methodName, payload, StatusCodes.Bad_InvalidArgument, e.reason(), output);
             return;
         }
 
@@ -1123,8 +1158,22 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         @SuppressWarnings("unused")
         final var unused = client.callAsync(List.of(request)).whenComplete((response, throwable) -> {
             if (throwable != null) {
+                // The call was sent and no answer came back -- a timeout or a transport failure. WARNING: this is
+                // NOT proof the method did not run, so the response says the call failed without claiming the
+                // device did nothing. A caller retrying on it needs the method to be idempotent.
                 log.error("Exception while calling '{}' on tag '{}'", methodName, tagName, throwable);
-                output.fail(throwable, null);
+                refuseWithResponse(
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        StatusCodes.Bad_InternalError,
+                        "Call to '"
+                                + methodName
+                                + "' on tag '"
+                                + tagName
+                                + "' did not complete: "
+                                + Objects.requireNonNullElse(throwable.getMessage(), "unknown error"),
+                        output);
                 return;
             }
             final MethodCallResult result = MethodCallResult.of(response, signature);
@@ -1145,6 +1194,41 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 output.fail("Call to '" + methodName + "' on tag '" + tagName + "' failed: " + result.statusName());
             }
         });
+    }
+
+    /**
+     * Fails a request and publishes the failure as a response, for every outcome the device did not report itself.
+     * <p>
+     * The decisive property is that <strong>a caller sees the same shape whatever refused it</strong>. A failure
+     * the device reports and one Edge spots before dispatch both arrive as a response with {@code value} null, an
+     * {@code errorCode} naming the status, and the correlation token the request carried — so a caller matching
+     * answers to requests needs to know nothing about where in Edge the refusal happened, and never waits for an
+     * answer that is not coming. Without this, a pre-dispatch refusal was visible only in the adapter's log, which
+     * a caller cannot read.
+     * <p>
+     * The write is failed as well, which is what puts the refusal in the adapter's own log and metrics rather than
+     * only in a message an operator has to be subscribed to. {@code methodName} may be empty — a request that named
+     * no method has none to echo — and the response then carries the field as an empty string rather than omitting
+     * it, keeping every response the same shape.
+     *
+     * @param statusCode the OPC UA status this refusal reports, chosen to match what a server would have said for
+     *                   the same fault. Edge answers these itself because its message can name what the object
+     *                   actually offers, which the server's bare status code cannot.
+     */
+    private void refuseWithResponse(
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull String methodName,
+            final @NotNull OpcUaPayload payload,
+            final long statusCode,
+            final @NotNull String reason,
+            final @NotNull WritingOutput output) {
+
+        log.error("Refused a method call on tag '{}': {}", opcuaTag.getName(), reason);
+
+        final MethodCallResult refusal = new MethodCallResult(new StatusCode(statusCode), Map.of(), Map.of());
+        publishMethodResponse(opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), refusal);
+
+        output.fail(reason);
     }
 
     /**
@@ -1253,7 +1337,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             // request's arguments and the response's results are the same methods seen from
                             // opposite ends.
                             if (tagKind == OpcuaTagKind.METHOD) {
-                                createMethodTagSchema(client, tag, tagName, output);
+                                createMethodTagSchema(client, tag, tagName, input, output);
                                 return;
                             }
 
@@ -1287,6 +1371,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull OpcUaClient client,
             final @NotNull OpcuaTag tag,
             final @NotNull String tagName,
+            final @NotNull TagSchemaCreationInput input,
             final @NotNull TagSchemaCreationOutput output) {
 
         final NodeId objectNode;
@@ -1315,7 +1400,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     MethodSchemas.responseSchema(methods),
                                     null,
                                     MethodSchemas.responseContextSchema(),
-                                    MethodSchemas.requestSchema(methods)));
+                                    MethodSchemas.requestSchema(methods),
+                                    // The request's own fields, required exactly as the mapping's flags say. A
+                                    // mapping that promised to read a reply address makes one mandatory, so a
+                                    // request omitting it is refused by schema validation rather than running the
+                                    // method and answering somewhere its caller is not listening.
+                                    MethodSchemas.requestEnvelopeSchema(
+                                            input.isMethodCalls(),
+                                            input.isCorrelationData(),
+                                            input.isResponseTopic())));
                         }
                         case MethodVerifier.Result.Rejected rejected -> {
                             log.error("Cannot describe method tag '{}': {}", tagName, rejected.reason());

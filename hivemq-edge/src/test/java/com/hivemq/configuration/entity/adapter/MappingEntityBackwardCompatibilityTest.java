@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 /// A configuration written before method calls existed must still parse.
 ///
-/// The five method-call flags are optional elements with a default of false. That is not a style choice: a
+/// The four method-call flags are optional elements with a default of false. That is not a style choice: a
 /// `required` element would make JaxB reject every file written until now, so an adapter that worked before an
 /// upgrade would refuse to start after it. These tests read XML that omits the elements entirely -- which is what
 /// every existing config on disk looks like -- and assert that it parses and that the flags come out off.
@@ -138,11 +138,10 @@ class MappingEntityBackwardCompatibilityTest {
 
         assertThat(entity.getTagName()).isEqualTo("boiler1");
         assertThat(entity.isWriteCorrelationData()).isFalse();
-        assertThat(entity.isUseRequestResponseTopic()).isFalse();
     }
 
     @Test
-    void northboundMappingWithTheFlags_parsesThemThrough() throws Exception {
+    void northboundMappingWithTheFlag_parsesItThrough() throws Exception {
         final String newConfig = """
                 <northboundMapping>
                   <topic>plant/boiler1/result</topic>
@@ -153,14 +152,12 @@ class MappingEntityBackwardCompatibilityTest {
                   <includeMetadata>false</includeMetadata>
                   <mqttUserProperties/>
                   <writeCorrelationData>true</writeCorrelationData>
-                  <useRequestResponseTopic>true</useRequestResponseTopic>
                 </northboundMapping>
                 """;
 
         final NorthboundMappingEntity entity = unmarshal(NorthboundMappingEntity.class, newConfig);
 
         assertThat(entity.isWriteCorrelationData()).isTrue();
-        assertThat(entity.isUseRequestResponseTopic()).isTrue();
     }
 
     @Test
@@ -179,7 +176,7 @@ class MappingEntityBackwardCompatibilityTest {
     }
 
     @Test
-    void northboundFlagsSurviveARoundTripThroughPersistence() throws Exception {
+    void theNorthboundFlagSurvivesARoundTripThroughPersistence() throws Exception {
         final NorthboundMappingEntity original = new NorthboundMappingEntity(
                 "boiler1",
                 "plant/boiler1/result",
@@ -190,13 +187,11 @@ class MappingEntityBackwardCompatibilityTest {
                 false,
                 java.util.List.of(),
                 Long.MAX_VALUE,
-                true,
                 true);
 
         final var roundTripped = NorthboundMappingEntity.fromPersistence(original.toPersistence());
 
         assertThat(roundTripped.isWriteCorrelationData()).isTrue();
-        assertThat(roundTripped.isUseRequestResponseTopic()).isTrue();
     }
 
     @Test
@@ -235,7 +230,6 @@ class MappingEntityBackwardCompatibilityTest {
         final String xml = marshal(NorthboundMappingEntity.class, noFlags);
 
         assertThat(xml).doesNotContain("writeCorrelationData");
-        assertThat(xml).doesNotContain("useRequestResponseTopic");
     }
 
     @Test

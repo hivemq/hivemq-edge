@@ -110,4 +110,59 @@ class MethodSchemasEnvelopeTest {
         assertThat(required.toString()).contains("methodName");
         assertThat(required.toString()).doesNotContain("errorCode");
     }
+
+    @Test
+    void requestSchema_rejectsAnArgumentNameNoMethodDeclares() {
+        // The decisive one. Listing properties in JSON Schema is permissive by default, so the union stated every
+        // argument's type while silently admitting any other name beside them -- and a misspelled argument then
+        // passed validation, reached the adapter, and was refused there instead of at the gate meant to catch it.
+        final JsonNode schema = json(MethodSchemas.requestSchema(List.of(method())));
+
+        assertThat(schema.get("additionalProperties").booleanValue()).isFalse();
+        assertThat(schema.get("properties").has("input1")).isTrue();
+    }
+
+    @Test
+    void requestSchema_withNoArgumentsAtAll_permitsNothing() {
+        // A method taking no arguments. A closed object with no properties is the true statement about it; leaving
+        // it open would accept any object, which is the opposite claim.
+        final MethodSignature noArguments = new MethodSignature("Stop", NODE, List.of(), List.of());
+
+        final JsonNode schema = json(MethodSchemas.requestSchema(List.of(noArguments)));
+
+        // `properties` is always rendered, empty here. Empty properties plus additionalProperties false is what
+        // "permits nothing" looks like in JSON Schema -- only `{}` satisfies it.
+        assertThat(schema.get("additionalProperties").booleanValue()).isFalse();
+        assertThat(schema.get("properties")).isEmpty();
+    }
+
+    @Test
+    void requestSchema_stillAcceptsAnArgumentTwoMethodsDisagreeAbout() {
+        // Closing the object must not cost the union anything. An argument whose type two methods declare
+        // differently is described as `any` rather than dropped, so it is still a listed property and a request
+        // carrying it is still valid.
+        final MethodSignature asInt = new MethodSignature(
+                "A", NODE, List.of(new Argument("mode", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)), List.of());
+        final MethodSignature asText = new MethodSignature(
+                "B",
+                NODE,
+                List.of(new Argument("mode", NodeIds.String, -1, null, LocalizedText.NULL_VALUE)),
+                List.of());
+
+        final JsonNode schema = json(MethodSchemas.requestSchema(List.of(asInt, asText)));
+
+        assertThat(schema.get("properties").has("mode")).isTrue();
+        assertThat(schema.get("additionalProperties").booleanValue()).isFalse();
+    }
+
+    @Test
+    void responseSchema_staysOpen() {
+        // The asymmetry is deliberate. The request schema is a contract a caller must meet, so closing it refuses
+        // what no method declares. The response schema describes what Edge produces, and closing that would be a
+        // promise about Edge's own output that a later field would break.
+        final JsonNode schema = json(MethodSchemas.responseSchema(List.of(method())));
+        final JsonNode objectBranch = schema.get("anyOf").get(0);
+
+        assertThat(objectBranch.has("additionalProperties")).isFalse();
+    }
 }

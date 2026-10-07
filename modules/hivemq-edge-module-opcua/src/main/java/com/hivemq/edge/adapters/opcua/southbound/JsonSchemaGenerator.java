@@ -371,8 +371,22 @@ public class JsonSchemaGenerator {
             final @Nullable OpcUaDataType opcUaType,
             final @NotNull UInteger @NotNull [] dimensions) {
 
+        describeAsArray(prop, opcUaType, dimensions, true);
+    }
+
+    /// As above, with the elements' access flags stated.
+    ///
+    /// An array is written by supplying its elements, so elements claiming to be read-only describe a shape nothing
+    /// can be written to -- which is why the writable case has to say so at every depth. A response's outputs are
+    /// the opposite: the device produced them and nobody writes them.
+    public static void describeAsArray(
+            final @NotNull PropertySchemaBuilder<?> prop,
+            final @Nullable OpcUaDataType opcUaType,
+            final @NotNull UInteger @NotNull [] dimensions,
+            final boolean writable) {
+
         final OpcUaDataType elementType = opcUaType != null && isScalarMappable(opcUaType) ? opcUaType : null;
-        applyArrayType(prop.startArray(), elementType, dimensions, 0, true, true);
+        applyArrayType(prop.startArray(), elementType, dimensions, 0, true, writable);
     }
 
     private static void applyScalarType(

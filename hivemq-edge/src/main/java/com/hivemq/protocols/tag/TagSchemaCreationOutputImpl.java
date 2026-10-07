@@ -17,6 +17,7 @@ package com.hivemq.protocols.tag;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.hivemq.adapter.sdk.api.schema.ObjectSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
@@ -157,6 +158,26 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         // the adapter put on its own schema root — identical to the northbound rendering of the same value,
         // which is what lets a consumer detect "read and write use the same schema" by comparing value shapes.
         builder.property("value").required().schema(writeValue);
+
+        // Fields a southbound message carries beside `value`, when the adapter describes any. The northbound view
+        // has always rendered siblings this way -- `metadata` and `context` sit beside `value` there -- and this is
+        // the same thing southbound, for a command whose own fields are not arguments: an OPC-UA method request
+        // names its method outside `value`, because the device names what is inside and Edge names what is outside.
+        //
+        // Merged property by property rather than nested under a wrapper key, because these ARE siblings of
+        // `value` on the wire. Their `required` flags come across too, which is the point: it lets an adapter make
+        // a field mandatory and have schema validation refuse a request that omits it, naming the path, instead of
+        // the omission being discovered deeper in or not at all.
+        final Schema envelope = tagSchemas.southboundEnvelopeSchema();
+        if (envelope instanceof final ObjectSchema envelopeObject) {
+            envelopeObject.properties().forEach((name, propertySchema) -> {
+                final var prop = builder.property(name);
+                if (envelopeObject.required().contains(name)) {
+                    prop.required();
+                }
+                prop.schema(propertySchema);
+            });
+        }
         // The wrapper itself is writable, and saying so matters. SchemaBuilder defaults every node to
         // writable = false, which renders readOnly on the document root — on the one document whose entire
         // purpose is to be written. Harmless while readOnly is only an annotation, but the moment it becomes

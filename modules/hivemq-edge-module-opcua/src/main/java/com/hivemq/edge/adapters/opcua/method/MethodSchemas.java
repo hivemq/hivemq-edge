@@ -69,14 +69,81 @@ public final class MethodSchemas {
     /// writes them to the payload root for exactly that reason. So they cannot be declared here without landing a
     /// level too deep -- which is what an earlier version of this method did, producing a schema that required
     /// `methodName` inside `value` while every writer put it outside, so every request failed validation with
-    /// `$.value: required property 'methodName' not found`.
+    /// `$.value: required property 'methodName' not found`. They are described by
+    /// {@link #requestEnvelopeSchema}, which renders beside this one.
     ///
-    /// They are therefore not described by a schema at all. Nothing is lost: they are not destinations a user
-    /// wires -- the synthetic instructions carry them -- and the mapping editor offers this schema's writable
-    /// leaves, which are the arguments and only the arguments.
+    /// ## Why the object is closed
+    ///
+    /// `additionalProperties(false)`: a name this schema does not list is **not** an argument of any method on the
+    /// object, so a request carrying one is wrong however it is spelled. Listing properties in JSON Schema is
+    /// permissive by default -- it constrains the names it mentions and says nothing about the rest -- which left
+    /// the union stating every argument's type while silently admitting any other name beside them. The case that
+    /// matters is the common one: a misspelled argument passed validation, reached the adapter, and was refused
+    /// there instead of at the gate whose whole purpose is to catch it.
+    ///
+    /// An object with no arguments is then a schema that permits nothing, which is the true statement about a
+    /// method taking none -- the same construction and the same reason as
+    /// {@link com.hivemq.edge.adapters.opcua.condition.ConditionSchemas#unwritableSchema()}. A closed object does
+    /// not cost the union anything: every name it carries gets a declared property, including one whose type two
+    /// methods disagree about, so nothing legitimately named is rejected.
     public static @NotNull Schema requestSchema(final @NotNull Collection<MethodSignature> methods) {
         final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
-        describeArguments(root, unionOfInputs(methods));
+        describeArguments(root, unionOfInputs(methods), true);
+        return root.additionalProperties(false).endObject().writable().build();
+    }
+
+    /// The fields a request carries **beside** `value`, as the southbound envelope schema.
+    ///
+    /// Rendered as siblings of `value` by `TagSchemaCreationOutputImpl.southboundSchema`, which is where they
+    /// belong: the whole MQTT payload is read into {@code OpcUaPayload}, whose `methodName`, `correlationData` and
+    /// `responseTopic` are top-level components. The device names what is inside `value`; Edge names what is
+    /// outside it.
+    ///
+    /// ## What the mapping's flags decide
+    ///
+    /// Each flag says the mapping **will read** that field, which makes it mandatory rather than merely allowed --
+    /// so `required` here follows the flags exactly. That is what turns a missing field into a schema failure,
+    /// caught before anything reaches the device and reported with the JSON path, rather than a fault discovered
+    /// deeper in or not at all. `methodName` is required whenever this is a method mapping, because a request that
+    /// names no method cannot be dispatched under any configuration.
+    ///
+    /// A field whose flag is off is **not declared at all**, not declared-and-optional. The southbound transform
+    /// is a whitelist and drops it, so a schema that accepted it would describe a field the adapter can never
+    /// receive -- and a caller sending it would pass validation and then be silently ignored, which is the failure
+    /// this design exists to remove.
+    ///
+    /// @param methodCalls     whether the mapping carries method calls at all.
+    /// @param correlationData whether it reads a correlation token.
+    /// @param responseTopic   whether it reads a response address.
+    /// @return null when the mapping carries no method calls -- there is then no envelope, and the southbound
+    ///         document is exactly what it was before method calls existed.
+    public static @Nullable Schema requestEnvelopeSchema(
+            final boolean methodCalls, final boolean correlationData, final boolean responseTopic) {
+
+        if (!methodCalls) {
+            return null;
+        }
+
+        final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
+        root.property("methodName")
+                .required()
+                .scalar(ScalarType.STRING)
+                .description("the method to call, as the device names it")
+                .writable();
+        if (correlationData) {
+            root.property("correlationData")
+                    .required()
+                    .scalar(ScalarType.STRING)
+                    .description("a token echoed unchanged on the response, so a caller can match the two")
+                    .writable();
+        }
+        if (responseTopic) {
+            root.property("responseTopic")
+                    .required()
+                    .scalar(ScalarType.STRING)
+                    .description("the topic the response is published to, instead of the mapping's own")
+                    .writable();
+        }
         return root.endObject().writable().build();
     }
 
@@ -94,7 +161,8 @@ public final class MethodSchemas {
     /// `DataPointSchema` and is described by {@link #responseContextSchema}.
     public static @NotNull Schema responseSchema(final @NotNull Collection<MethodSignature> methods) {
         final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
-        describeArguments(root, unionOfOutputs(methods));
+        // Not writable: a response's outputs are what the device produced, and nobody writes them.
+        describeArguments(root, unionOfOutputs(methods), false);
         return root.endObject().nullable().build();
     }
 
@@ -201,18 +269,30 @@ public final class MethodSchemas {
     }
 
     /// Describes each argument of the union as an optional property of `value`.
+    ///
+    /// @param writable whether these arguments can be written. True for a request, whose arguments are exactly
+    ///                 what a caller supplies; false for a response, whose outputs the device produces and nobody
+    ///                 writes. The builder defaults every node to not-writable, which renders `readOnly: true`, so
+    ///                 a request's arguments had to say otherwise explicitly -- without it every argument of every
+    ///                 method was marked read-only, which is the opposite of what a request's own fields are.
     private static void describeArguments(
-            final @NotNull ObjectSchemaBuilder<?> value, final @NotNull Map<String, ArgumentShape> arguments) {
+            final @NotNull ObjectSchemaBuilder<?> value,
+            final @NotNull Map<String, ArgumentShape> arguments,
+            final boolean writable) {
+
         arguments.forEach((name, shape) -> {
+            // Set before the structure, because the describe helpers consume the property builder and return void.
+            // Annotations and structure are independent in the builder, so the order does not otherwise matter.
+            final var property = value.property(name).writable(writable);
             if (shape.isArray()) {
                 // Element type may still be null -- an array of a custom structure. describeAsArray answers that
                 // with `any` elements, which keeps the array-ness (the part it can state) rather than losing it.
-                JsonSchemaGenerator.describeAsArray(value.property(name), shape.type(), shape.dimensionsArray());
+                JsonSchemaGenerator.describeAsArray(property, shape.type(), shape.dimensionsArray(), writable);
             } else if (shape.type() == null) {
                 // Two methods disagreed, or the type is a custom structure. `any` is the honest answer.
-                value.property(name).description("type varies by method").any();
+                property.description("type varies by method").any();
             } else {
-                JsonSchemaGenerator.describeAs(value.property(name), shape.type());
+                JsonSchemaGenerator.describeAs(property, shape.type());
             }
         });
     }
