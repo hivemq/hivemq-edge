@@ -129,6 +129,8 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
      */
     private static final @NotNull String RESPONSE_TOPIC = "responseTopic";
 
+    private static final @NotNull String CORRELATION_DATA = "correlationData";
+
     /**
      * The topic to publish a datapoint on: the address it carries, and the mapping's own topic when it carries
      * none.
@@ -215,19 +217,27 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
      * makes the published message read {@code {"methodName": "Start", "value": {...}}}: the child is a carrier
      * inside Edge, not a level a consumer should have to descend.
      * <p>
-     * <b>{@code responseTopic} is deliberately excluded.</b> It is the one entry that says <em>where</em> the
+     * <b>{@code responseTopic} is always excluded.</b> It is the one entry that says <em>where</em> the
      * answer goes rather than anything about the answer, and {@link #responseTopicOf} consumes it to choose the
      * topic. Publishing it as well would put a routing instruction into the routed message.
+     * <p>
+     * <b>{@code correlationData} is excluded unless the mapping asks for it.</b> Echoing a caller's token is a
+     * northbound choice, because it is the published message that carries it: a deployment may read a token
+     * southbound to correlate inside Edge and still not want it on the wire. The southbound flag decides whether
+     * the token is read at all, this one whether it is published.
      * <p>
      * An existing key is never overwritten. Nothing in Edge fills {@code context} with an aspect name today, but
      * a copy that silently replaced {@code value} would be far harder to diagnose than one that declines to.
      */
-    private static void flattenContext(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
+    private void flattenContext(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
         if (!context.isObject()) {
             return;
         }
         context.properties().forEach(entry -> {
             if (RESPONSE_TOPIC.equals(entry.getKey()) || node.has(entry.getKey())) {
+                return;
+            }
+            if (CORRELATION_DATA.equals(entry.getKey()) && !northboundMapping.isWriteCorrelationData()) {
                 return;
             }
             node.set(entry.getKey(), entry.getValue());

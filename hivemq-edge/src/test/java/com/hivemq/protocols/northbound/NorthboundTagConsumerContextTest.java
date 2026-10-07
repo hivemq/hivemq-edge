@@ -108,9 +108,23 @@ class NorthboundTagConsumerContextTest {
         return new Published(topic.get(), new ObjectMapper().readTree(payload.get()));
     }
 
+    /// A mapping that echoes a caller's correlation token, which is what every test here but
+    /// {@link #correlationData_isWithheldWhenTheMappingSaysNotToWriteIt()} is about.
     private static @NotNull NorthboundMapping mapping() {
+        return mapping(true);
+    }
+
+    private static @NotNull NorthboundMapping mapping(final boolean writeCorrelationData) {
         return new NorthboundMapping(
-                "boiler1", "plant/boiler1/result", 1, false, false, false, List.of(), Long.MAX_VALUE, false);
+                "boiler1",
+                "plant/boiler1/result",
+                1,
+                false,
+                false,
+                false,
+                List.of(),
+                Long.MAX_VALUE,
+                writeCorrelationData);
     }
 
     /// Builds a datapoint carrying a value and the given context entries.
@@ -139,6 +153,28 @@ class NorthboundTagConsumerContextTest {
         // The child is a carrier inside Edge, not a level a consumer should descend.
         assertThat(published.payload().has("context")).isFalse();
         assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void correlationData_isWithheldWhenTheMappingSaysNotToWriteIt() throws Exception {
+        // The northbound flag has to actually govern the published message. It was offered in the mapping form,
+        // persisted, and carried into the runtime mapping while nothing read it -- so a deployment that turned it
+        // off still published the token. A visible setting that does nothing is worse than no setting.
+        final Published published =
+                publish(mapping(false), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
+
+        assertThat(published.payload().has("correlationData")).isFalse();
+        // Only that one entry is withheld: the rest of the response is unaffected.
+        assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
+        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void correlationData_isPublishedWhenTheMappingSaysToWriteIt() throws Exception {
+        final Published published =
+                publish(mapping(true), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
+
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
     }
 
     @Test
