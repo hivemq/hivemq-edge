@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 /// that declared its own envelope made every southbound write fail validation with `$.value: required property
 /// 'methodName' not found`, while every half of the feature remained individually green. `methodName` is the
 /// canary -- it is required, so a schema that names it at the wrong level rejects every request.
-class MethodSchemasEnvelopeTest {
+class MethodSchemasShapeTest {
 
     private static final @NotNull NodeId NODE = new NodeId(2, "Boiler1.M");
 
