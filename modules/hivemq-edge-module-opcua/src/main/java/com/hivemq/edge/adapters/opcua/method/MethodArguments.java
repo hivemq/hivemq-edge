@@ -16,11 +16,13 @@
 package com.hivemq.edge.adapters.opcua.method;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
@@ -120,6 +122,10 @@ public final class MethodArguments {
     /// Only the builtin types are handled. An argument of a custom structure type is refused rather than guessed
     /// at: the generated schema already says `any` for it, so a caller has no contract to write against, and
     /// encoding a structure needs the DataTypeTree machinery the value path uses.
+    ///
+    /// An argument the device declares with a positive value rank is an array, and its value has to be built as a
+    /// Java array of the element type's backing class -- `Integer[]` rather than `Object[]` -- because that is how
+    /// the encoder decides what it is writing.
     private static @NotNull Variant convert(
             final @NotNull String methodName,
             final @NotNull String argumentName,
@@ -136,18 +142,72 @@ public final class MethodArguments {
                     + "' has a type this version cannot encode. Only the builtin OPC UA types are supported");
         }
 
+        final Integer rank = argument.getValueRank();
+        final int dimensions = rank == null || rank < 1 ? 0 : rank;
+
         try {
-            return Variant.of(toJavaValue(type, supplied));
+            if (dimensions == 0) {
+                return Variant.of(toJavaValue(type, supplied));
+            }
+            final Object array = toJavaArray(type, supplied, dimensions);
+            // A one-dimensional array goes into a Variant as itself; anything deeper has to be wrapped in a
+            // Matrix, which is Milo's representation of a multi-dimensional value and what `Variant.of` demands
+            // ("Multi-dimensional arrays must be wrapped in Matrix"). The wrapper carries the dimension lengths,
+            // which it derives from the nested array it is given.
+            return Variant.of(dimensions == 1 ? array : new Matrix(array));
         } catch (final IllegalArgumentException e) {
             throw new InvalidArgumentException("argument '"
                     + argumentName
                     + "' of method '"
                     + methodName
                     + "' expects "
-                    + type.name()
+                    + describeExpected(type, dimensions)
                     + ", and the value supplied is not one: "
                     + e.getMessage());
         }
+    }
+
+    /// What the argument wanted, for an error message. A rank is worth naming: "expects Int32" against a value
+    /// that is a perfectly good Int32 but should have been wrapped in an array reads as a contradiction.
+    private static @NotNull String describeExpected(final @NotNull OpcUaDataType type, final int dimensions) {
+        if (dimensions == 0) {
+            return type.name();
+        }
+        return type.name() + "[]".repeat(dimensions);
+    }
+
+    /// Builds a nested Java array of the element type's backing class, one level per declared dimension.
+    ///
+    /// The depth comes from the declared value rank rather than from how deeply the JSON happens to nest, so a
+    /// flat list supplied for a two-dimensional argument is reported as the wrong shape instead of being encoded
+    /// as something the device did not ask for. Dimension *lengths* are not checked here -- the generated schema
+    /// states them, and the device enforces them; duplicating that would mean two places to keep in agreement.
+    private static @NotNull Object toJavaArray(
+            final @NotNull OpcUaDataType type, final @NotNull JsonNode node, final int remainingDimensions) {
+
+        if (!node.isArray()) {
+            throw new IllegalArgumentException(
+                    "expected an array of " + remainingDimensions + " more dimension(s), got " + node.getNodeType());
+        }
+
+        if (remainingDimensions == 1) {
+            final Object[] elements = (Object[]) Array.newInstance(type.getBackingClass(), node.size());
+            for (int i = 0; i < node.size(); i++) {
+                elements[i] = toJavaValue(type, node.get(i));
+            }
+            return elements;
+        }
+
+        // A dimension above the innermost: each element is itself an array, so the component type has one array
+        // level per remaining inner dimension -- `Integer[]` at depth 2, `Integer[][]` at depth 3. Building it
+        // with an int[] of zero lengths asks the JDK for exactly that class without allocating anything.
+        final Class<?> componentType = Array.newInstance(type.getBackingClass(), new int[remainingDimensions - 1])
+                .getClass();
+        final Object[] rows = (Object[]) Array.newInstance(componentType, node.size());
+        for (int i = 0; i < node.size(); i++) {
+            rows[i] = toJavaArray(type, node.get(i), remainingDimensions - 1);
+        }
+        return rows;
     }
 
     private static @NotNull Object toJavaValue(final @NotNull OpcUaDataType type, final @NotNull JsonNode node) {

@@ -1132,7 +1132,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // The response goes out before the write completes. A caller waiting on the answer is waiting for
             // the message, not for the write, and publishing after completing the write would let a fast caller
             // see its request acknowledged while the answer is still in flight.
-            publishMethodResponse(opcuaTag, methodName, payload.correlationData(), result);
+            publishMethodResponse(opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), result);
 
             if (result.succeeded()) {
                 log.debug("Called '{}' on tag '{}'", methodName, tagName);
@@ -1161,6 +1161,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull OpcuaTag opcuaTag,
             final @NotNull String methodName,
             final @Nullable String correlationData,
+            final @Nullable String responseTopic,
             final @NotNull MethodCallResult result) {
 
         final ModuleServices services = moduleServices;
@@ -1178,7 +1179,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         try {
             final var publisher = services.protocolAdapterTagStreamingService().dataPointsPublisher();
             final var builder = publisher.addDataPoint(opcuaTag);
-            MethodResponse.write(builder, methodName, correlationData, result);
+            MethodResponse.write(builder, methodName, correlationData, responseTopic, result);
             builder.endDataPoint();
             publisher.publish();
         } catch (final Exception e) {
@@ -1313,7 +1314,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             output.finish(new TagSchemaCreationOutput.DataPointSchema(
                                     MethodSchemas.responseSchema(methods),
                                     null,
-                                    null,
+                                    MethodSchemas.responseContextSchema(),
                                     MethodSchemas.requestSchema(methods)));
                         }
                         case MethodVerifier.Result.Rejected rejected -> {

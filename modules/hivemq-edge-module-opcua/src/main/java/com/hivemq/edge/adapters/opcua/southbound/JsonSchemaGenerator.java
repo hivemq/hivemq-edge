@@ -351,6 +351,30 @@ public class JsonSchemaGenerator {
         applyScalarType(prop, opcUaType);
     }
 
+    /// Describes a property as an array of the given OPC UA type, with one nesting level per dimension.
+    ///
+    /// The array counterpart of {@link #describeAs}, for a caller that has an OPC UA value rank rather than a
+    /// node's `FieldInformation` -- a method's {@code Argument} is the case this exists for. Delegates to the
+    /// same {@link #applyArrayType} the value-tag path uses, so a method's array argument and a value tag's
+    /// array node are described identically, nesting and element constraints included.
+    ///
+    /// A declared dimension length becomes an exact-size constraint, which is what the OPC UA declaration means:
+    /// an `Argument` whose `ArrayDimensions` says 5 takes exactly five elements. A zero or absent length means
+    /// "any length" and constrains nothing.
+    ///
+    /// @param prop       the property to describe.
+    /// @param opcUaType  the element type, or null when it is not one Edge can state -- then the elements are
+    ///                   `any`, which is the same answer {@link #describeAs} gives for an unmappable scalar.
+    /// @param dimensions one entry per dimension; its length is the nesting depth.
+    public static void describeAsArray(
+            final @NotNull PropertySchemaBuilder<?> prop,
+            final @Nullable OpcUaDataType opcUaType,
+            final @NotNull UInteger @NotNull [] dimensions) {
+
+        final OpcUaDataType elementType = opcUaType != null && isScalarMappable(opcUaType) ? opcUaType : null;
+        applyArrayType(prop.startArray(), elementType, dimensions, 0, true, true);
+    }
+
     private static void applyScalarType(
             final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
         if (opcUaType == OpcUaDataType.QualifiedName) {

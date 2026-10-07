@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import java.util.Map;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.jetbrains.annotations.NotNull;
@@ -50,11 +51,17 @@ public final class MethodResponse {
     /// @param builder         the datapoint being built for the method tag.
     /// @param methodName      which method this answers, echoed so a consumer reading one topic can tell.
     /// @param correlationData the caller's token, or null when it sent none or the mapping does not read one.
+    /// @param responseTopic   the address the request asked for, or null when it named none. Passed on rather
+    ///                        than acted on here: whether it is honoured is the northbound mapping's decision,
+    ///                        and {@code NorthboundTagConsumer} makes it. Carried in `context` because that is
+    ///                        where that consumer looks -- it is the one entry it consumes instead of
+    ///                        publishing, so a routing instruction never appears inside the routed message.
     /// @param result          what the call answered.
     public static void write(
             final @NotNull DataPointBuilder<?> builder,
             final @NotNull String methodName,
             final @Nullable String correlationData,
+            final @Nullable String responseTopic,
             final @NotNull MethodCallResult result) {
 
         if (result.succeeded()) {
@@ -70,6 +77,9 @@ public final class MethodResponse {
         context.put("methodName", methodName);
         if (correlationData != null) {
             context.put("correlationData", correlationData);
+        }
+        if (responseTopic != null && !responseTopic.isBlank()) {
+            context.put("responseTopic", responseTopic);
         }
         if (!result.succeeded()) {
             context.put("errorCode", result.statusName());
@@ -133,9 +143,20 @@ public final class MethodResponse {
             final @NotNull String key,
             final @Nullable Variant variant) {
 
-        final Object value = variant == null ? null : variant.value();
+        // A multi-dimensional output arrives as a Matrix rather than a nested Java array, which is how Milo
+        // represents one inside a Variant. Its nested form is what the published shape should mirror.
+        final Object raw = variant == null ? null : variant.value();
+        final Object value = raw instanceof final Matrix matrix ? matrix.nestedArrayValue() : raw;
+
         if (value == null) {
             target.putNull(key);
+        } else if (value instanceof final Object[] elements) {
+            // An array-valued output argument. Without this it fell into the toString branch below and published
+            // a Java array identity -- `[Ljava.lang.Integer;@1a2b3c` -- for a method whose schema promised a JSON
+            // array. Nested arrays recurse, so a multi-dimensional output keeps its shape.
+            final var array = target.startArray(key);
+            addElements(array, elements);
+            array.endArray();
         } else if (value instanceof final Boolean b) {
             target.put(key, b.booleanValue());
         } else if (value instanceof final Integer i) {
@@ -157,6 +178,42 @@ public final class MethodResponse {
             // the read path publishes for them, so matching it keeps a method's output and a variable's value
             // looking the same for the same OPC UA type.
             target.put(key, value.toString());
+        }
+    }
+
+    /// Appends each element of an array output, as the JSON type that matches it.
+    ///
+    /// The same dispatch as {@link #putVariant}, by element rather than by key: one list of branches would need a
+    /// target that is both an object and an array, and the two builders have no common supertype for that.
+    private static void addElements(
+            final DataPointBuilder.@NotNull ArrayBuilder<?> target, final @NotNull Object @NotNull [] elements) {
+
+        for (final Object element : elements) {
+            if (element == null) {
+                target.addNull();
+            } else if (element instanceof final Object[] inner) {
+                final var nested = target.startArray();
+                addElements(nested, inner);
+                nested.endArray();
+            } else if (element instanceof final Boolean b) {
+                target.add(b.booleanValue());
+            } else if (element instanceof final Integer i) {
+                target.add(i.intValue());
+            } else if (element instanceof final Long l) {
+                target.add(l.longValue());
+            } else if (element instanceof final Short s) {
+                target.add(s.shortValue());
+            } else if (element instanceof final Byte b) {
+                target.add(b.byteValue());
+            } else if (element instanceof final Double d) {
+                target.add(d.doubleValue());
+            } else if (element instanceof final Float f) {
+                target.add(f.floatValue());
+            } else if (element instanceof final String s) {
+                target.add(s);
+            } else {
+                target.add(element.toString());
+            }
         }
     }
 

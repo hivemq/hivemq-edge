@@ -20,10 +20,13 @@ import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,53 +53,63 @@ public final class MethodSchemas {
 
     private MethodSchemas() {}
 
-    /// The southbound schema: what a request may carry.
+    /// The southbound schema: what a request's arguments may carry.
     ///
-    /// `methodName` is required -- a request that names no method cannot be dispatched. The three fields Edge
-    /// reads from a request are **read-only**, which is what keeps them out of the mapping editor's destination
-    /// list: the editor offers the writable leaves of this schema as places a field mapping may write to, and
-    /// these are not destinations a user wires, they are the request's own envelope.
+    /// ## Why this describes only the arguments
+    ///
+    /// A `DataPointSchema`'s southbound schema describes the **contents of `value`**, not a whole message:
+    /// `TagSchemaCreationOutputImpl.southboundSchema` wraps whatever an adapter supplies in a `value` property.
+    /// A condition tag is the precedent -- `ConditionSchemas.writeSchema()` declares `method`, `eventId`,
+    /// `comment` and `duration` at its root, they render under `value`, and the adapter reads them back out of
+    /// `payload.value()`.
+    ///
+    /// A method request's other three fields are **not** inside `value`. They are siblings of it: the whole MQTT
+    /// payload is deserialised into {@code OpcUaPayload}, whose `methodName`, `correlationData` and
+    /// `responseTopic` are top-level record components, and {@link com.hivemq.protocols.MethodRequestInstructions}
+    /// writes them to the payload root for exactly that reason. So they cannot be declared here without landing a
+    /// level too deep -- which is what an earlier version of this method did, producing a schema that required
+    /// `methodName` inside `value` while every writer put it outside, so every request failed validation with
+    /// `$.value: required property 'methodName' not found`.
+    ///
+    /// They are therefore not described by a schema at all. Nothing is lost: they are not destinations a user
+    /// wires -- the synthetic instructions carry them -- and the mapping editor offers this schema's writable
+    /// leaves, which are the arguments and only the arguments.
     public static @NotNull Schema requestSchema(final @NotNull Collection<MethodSignature> methods) {
         final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
-
-        root.property("methodName")
-                .required()
-                .scalar(ScalarType.STRING)
-                .description("the method to call, as the device names it")
-                .writable(false);
-        root.property("correlationData")
-                .scalar(ScalarType.STRING)
-                .description("a token echoed unchanged on the response, so a caller can match the two")
-                .writable(false);
-        root.property("responseTopic")
-                .scalar(ScalarType.STRING)
-                .description("where to publish the response, overriding the northbound mapping's own topic")
-                .writable(false);
-
-        final ObjectSchemaBuilder<?> value = root.property("value").required().startObject();
-        describeArguments(value, unionOfInputs(methods));
-        value.endObject();
-
+        describeArguments(root, unionOfInputs(methods));
         return root.endObject().writable().build();
     }
 
-    /// The northbound schema: what a response carries.
+    /// The northbound value schema: the output arguments a response carries.
     ///
-    /// `value` holds the output arguments of whichever method ran, so it is the union of every method's outputs
-    /// for the same reason the request's is. `errorCode` and `statusInfo` appear only on a failure, and `value`
-    /// is null then -- which is why none of the three is required.
+    /// Describes only the contents of `value`, for the mirror of the reason given on
+    /// {@link #requestSchema}: `TagSchemaCreationOutputImpl.northboundSchema` wraps an adapter's `valueSchema`
+    /// in a `value` property, so declaring `value` here would land the outputs one level too deep.
+    ///
+    /// The union of every method's outputs, since one tag answers for all of them. On a failure `value` is
+    /// published as null -- see {@link MethodResponse} -- which the nullable root states.
+    ///
+    /// Everything else a response carries (`methodName`, `correlationData`, `errorCode`, `statusInfo`) is not in
+    /// `value`: {@link MethodResponse} writes it into the datapoint's `context`, which is a separate slot of a
+    /// `DataPointSchema` and is described by {@link #responseContextSchema}.
     public static @NotNull Schema responseSchema(final @NotNull Collection<MethodSignature> methods) {
+        final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
+        describeArguments(root, unionOfOutputs(methods));
+        return root.endObject().nullable().build();
+    }
+
+    /// The northbound context schema: what a response carries beside its outputs.
+    ///
+    /// These are the fields {@link MethodResponse} puts in the datapoint's `context` child, which the northbound
+    /// consumer flattens onto the published message beside `value`. `errorCode` and `statusInfo` appear only on a
+    /// failure and `correlationData` only when the caller sent one, so none is required.
+    public static @NotNull Schema responseContextSchema() {
         final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
 
         root.property("methodName")
                 .required()
                 .scalar(ScalarType.STRING)
                 .description("the method this is the answer to");
-
-        final ObjectSchemaBuilder<?> value = root.property("value").nullable().startObject();
-        describeArguments(value, unionOfOutputs(methods));
-        value.endObject();
-
         root.property("correlationData")
                 .scalar(ScalarType.STRING)
                 .description("the token the request carried, unchanged");
@@ -122,39 +135,106 @@ public final class MethodSchemas {
         return root.endObject().build();
     }
 
+    /// What one argument name resolves to across every method that declares it.
+    ///
+    /// `type` is the element type -- null meaning "cannot be stated", from either a custom structure or a
+    /// disagreement between two methods. `dimensions` is empty for a scalar and otherwise holds one entry per
+    /// dimension, so it carries the OPC UA value rank in the form {@link JsonSchemaGenerator#describeAsArray}
+    /// consumes.
+    ///
+    /// Shape is part of the identity, not an attribute of the type: two methods declaring `data` as an Int32
+    /// scalar and an Int32 array disagree just as surely as if the types differed, and the honest answer for
+    /// both is the same `any`. Keeping the rank alongside the type is what lets that comparison happen at all --
+    /// an earlier version kept only the type, so an array argument was described as a scalar of its element type
+    /// and every correct array request was rejected by Edge before it could reach the device.
+    record ArgumentShape(
+            @Nullable OpcUaDataType type, @NotNull List<UInteger> dimensions) {
+
+        /// Null type and no dimensions: nothing true can be said about this name.
+        static final @NotNull ArgumentShape UNSTATEABLE = new ArgumentShape(null, List.of());
+
+        boolean isArray() {
+            return !dimensions.isEmpty();
+        }
+
+        /// The dimensions in the form {@link JsonSchemaGenerator#describeAsArray} takes.
+        @NotNull
+        UInteger @NotNull [] dimensionsArray() {
+            return dimensions.toArray(new UInteger[0]);
+        }
+
+        /// Whether two declarations of one name describe the same shape. Array-ness and depth count, individual
+        /// dimension lengths do not: a method taking five elements and another taking three still agree that
+        // the
+        /// argument is a one-dimensional array of the same type, and the union states that rather than giving
+        // up.
+        boolean agreesWith(final @NotNull ArgumentShape other) {
+            return type == other.type && dimensions.size() == other.dimensions.size();
+        }
+
+        /// The shape of an argument as the device declared it.
+        static @NotNull ArgumentShape of(final @NotNull Argument argument) {
+            final OpcUaDataType type =
+                    argument.getDataType() == null ? null : OpcUaDataType.fromNodeId(argument.getDataType());
+
+            // A rank of -1 (scalar), -2 (any) or -3 (scalar or one dimension) is not a declaration of an array,
+            // and only a positive rank is. OPC 10000-3 section 5.6.2: a positive rank is the number of
+            // dimensions. ArrayDimensions may be absent or shorter than the rank claims, so the rank decides the
+            // nesting depth and the dimensions only supply lengths where they are given.
+            final Integer rank = argument.getValueRank();
+            if (rank == null || rank < 1) {
+                return new ArgumentShape(type, List.of());
+            }
+
+            final UInteger[] declared = argument.getArrayDimensions();
+            final List<UInteger> dimensions = new ArrayList<>(rank);
+            for (int i = 0; i < rank; i++) {
+                // Zero means "any length" in OPC UA and constrains nothing, which is also what a dimension the
+                // device left out has to mean.
+                dimensions.add(
+                        declared != null && i < declared.length && declared[i] != null
+                                ? declared[i]
+                                : UInteger.valueOf(0));
+            }
+            return new ArgumentShape(type, List.copyOf(dimensions));
+        }
+    }
+
     /// Describes each argument of the union as an optional property of `value`.
     private static void describeArguments(
-            final @NotNull ObjectSchemaBuilder<?> value, final @NotNull Map<String, OpcUaDataType> arguments) {
-        arguments.forEach((name, type) -> {
-            if (type == null) {
-                // Two methods disagreed about this argument's type. `any` is the honest answer.
+            final @NotNull ObjectSchemaBuilder<?> value, final @NotNull Map<String, ArgumentShape> arguments) {
+        arguments.forEach((name, shape) -> {
+            if (shape.isArray()) {
+                // Element type may still be null -- an array of a custom structure. describeAsArray answers that
+                // with `any` elements, which keeps the array-ness (the part it can state) rather than losing it.
+                JsonSchemaGenerator.describeAsArray(value.property(name), shape.type(), shape.dimensionsArray());
+            } else if (shape.type() == null) {
+                // Two methods disagreed, or the type is a custom structure. `any` is the honest answer.
                 value.property(name).description("type varies by method").any();
             } else {
-                JsonSchemaGenerator.describeAs(value.property(name), type);
+                JsonSchemaGenerator.describeAs(value.property(name), shape.type());
             }
         });
     }
 
-    /// The union of every method's input arguments, mapping a name to its type -- or to null where two methods
-    /// declare that name with different types.
-    static @NotNull Map<String, @Nullable OpcUaDataType> unionOfInputs(
-            final @NotNull Collection<MethodSignature> methods) {
+    /// The union of every method's input arguments, mapping a name to its shape -- or to
+    /// {@link ArgumentShape#UNSTATEABLE} where two methods declare that name differently.
+    static @NotNull Map<String, ArgumentShape> unionOfInputs(final @NotNull Collection<MethodSignature> methods) {
         return union(methods, MethodSignature::inputArguments);
     }
 
     /// The union of every method's output arguments, with the same collision rule as the inputs.
-    static @NotNull Map<String, @Nullable OpcUaDataType> unionOfOutputs(
-            final @NotNull Collection<MethodSignature> methods) {
+    static @NotNull Map<String, ArgumentShape> unionOfOutputs(final @NotNull Collection<MethodSignature> methods) {
         return union(methods, MethodSignature::outputArguments);
     }
 
-    private static @NotNull Map<String, @Nullable OpcUaDataType> union(
+    private static @NotNull Map<String, ArgumentShape> union(
             final @NotNull Collection<MethodSignature> methods,
             final @NotNull java.util.function.Function<MethodSignature, java.util.List<Argument>> arguments) {
 
         // Insertion-ordered, so the schema lists arguments in the order the device reported its methods. That is
         // stable for a given server, which is what makes a schema diff readable when the device changes.
-        final Map<String, OpcUaDataType> types = new LinkedHashMap<>();
+        final Map<String, ArgumentShape> shapes = new LinkedHashMap<>();
 
         for (final MethodSignature method : methods) {
             for (final Argument argument : arguments.apply(method)) {
@@ -164,29 +244,17 @@ public final class MethodSchemas {
                     // in the schema either. It is still callable positionally -- the signature keeps it.
                     continue;
                 }
-                final OpcUaDataType type = builtinTypeOf(argument);
-                if (!types.containsKey(name)) {
-                    types.put(name, type);
-                } else if (types.get(name) != type) {
-                    // Disagreement is absorbing: null never equals a later method's real type, so once a name
-                    // collapses to `any` it stays there however many methods follow. No separate record of which
-                    // names conflicted is needed -- and one was tried, then removed when no test could tell the
-                    // two versions apart.
-                    types.put(name, null);
+                final ArgumentShape shape = ArgumentShape.of(argument);
+                final ArgumentShape seen = shapes.get(name);
+                if (seen == null) {
+                    shapes.put(name, shape);
+                } else if (!seen.agreesWith(shape)) {
+                    // Disagreement is absorbing: UNSTATEABLE never agrees with a later method's real shape, so
+                    // once a name collapses to `any` it stays there however many methods follow.
+                    shapes.put(name, ArgumentShape.UNSTATEABLE);
                 }
             }
         }
-        return types;
-    }
-
-    /// The builtin type of an argument's DataType, or null when it is not one of the builtins.
-    ///
-    /// A DataType naming a custom structure resolves to no builtin, and `any` is then the only true answer --
-    /// the same answer a collision gets, for the same reason.
-    private static @Nullable OpcUaDataType builtinTypeOf(final @NotNull Argument argument) {
-        if (argument.getDataType() == null) {
-            return null;
-        }
-        return OpcUaDataType.fromNodeId(argument.getDataType());
+        return shapes;
     }
 }

@@ -24,6 +24,7 @@ import com.hivemq.datapoint.DataPointWithMetadata;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.jetbrains.annotations.NotNull;
@@ -56,9 +57,19 @@ class MethodResponseTest {
     private static @NotNull JsonNode write(
             final @NotNull String methodName, final String correlationData, final @NotNull MethodCallResult result) {
 
+        return write(methodName, correlationData, null, result);
+    }
+
+    /// As above, for a request that named its own response topic.
+    private static @NotNull JsonNode write(
+            final @NotNull String methodName,
+            final String correlationData,
+            final String responseTopic,
+            final @NotNull MethodCallResult result) {
+
         final var builder =
                 (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
-        MethodResponse.write(builder, methodName, correlationData, result);
+        MethodResponse.write(builder, methodName, correlationData, responseTopic, result);
         builder.endDataPoint();
         return ((DataPointWithMetadata) builder.build("test-adapter")).getJsonNode();
     }
@@ -178,5 +189,82 @@ class MethodResponseTest {
         assertThat(value.get("count").isNumber()).isTrue();
         assertThat(value.get("ratio").isNumber()).isTrue();
         assertThat(value.get("label").isTextual()).isTrue();
+    }
+
+    @Test
+    void anArrayOutput_isPublishedAsAJsonArray() {
+        // Without an array branch this fell through to toString and published a Java array identity --
+        // `[Ljava.lang.Integer;@1a2b3c` -- for a method whose schema promised an array of integers.
+        final JsonNode value = write("AddArray", null, success(Map.of("out", Variant.of(new Integer[] {11, 12, 13}))))
+                .get("value");
+
+        assertThat(value.get("out").isArray()).isTrue();
+        assertThat(value.get("out").get(0).intValue()).isEqualTo(11);
+        assertThat(value.get("out").get(2).intValue()).isEqualTo(13);
+    }
+
+    @Test
+    void anEmptyArrayOutput_isPublishedAsAnEmptyArray() {
+        final JsonNode value = write("Take", null, success(Map.of("out", Variant.of(new Integer[0]))))
+                .get("value");
+
+        assertThat(value.get("out").isArray()).isTrue();
+        assertThat(value.get("out")).isEmpty();
+    }
+
+    @Test
+    void aNestedArrayOutput_keepsItsShape() {
+        // A device returns a multi-dimensional value as a Matrix, not a nested Java array -- Milo refuses to put
+        // the latter in a Variant at all. So the published shape has to come from the Matrix's nested form.
+        final JsonNode value = write(
+                        "Grid", null, success(Map.of("out", Variant.of(new Matrix(new Integer[][] {{1, 2}, {3, 4}})))))
+                .get("value");
+
+        assertThat(value.get("out").get(0).isArray()).isTrue();
+        assertThat(value.get("out").get(1).get(1).intValue()).isEqualTo(4);
+    }
+
+    @Test
+    void aStringArrayOutput_keepsItsElementsAsStrings() {
+        final JsonNode value = write("Names", null, success(Map.of("out", Variant.of(new String[] {"a", "b"}))))
+                .get("value");
+
+        assertThat(value.get("out").get(0).textValue()).isEqualTo("a");
+        assertThat(value.get("out").get(1).isTextual()).isTrue();
+    }
+
+    @Test
+    void responseTopic_isCarriedSoThePublisherCanRouteOnIt() {
+        // The decisive one. NorthboundTagConsumer chooses the response's topic by reading `responseTopic` from
+        // this context -- it is the one entry that names a destination rather than describing the answer, so the
+        // consumer consumes it instead of publishing it. Omitting it here left a request's own response topic
+        // reaching the adapter correctly and then being silently dropped, so every answer went to the mapping's
+        // configured topic however the caller addressed it. Nothing failed; the address was just ignored.
+        assertThat(write("Start", null, "plant/mes-east", success(Map.of()))
+                        .get("context")
+                        .get("responseTopic")
+                        .textValue())
+                .isEqualTo("plant/mes-east");
+    }
+
+    @Test
+    void noResponseTopic_leavesTheEntryOut() {
+        // A fire-and-forget call. An absent entry is how the publisher is told to use its configured topic, so
+        // writing an empty or null one would make "no address" indistinguishable from a malformed address.
+        assertThat(write("Start", null, null, success(Map.of())).get("context").has("responseTopic"))
+                .isFalse();
+        assertThat(write("Start", null, "   ", success(Map.of())).get("context").has("responseTopic"))
+                .isFalse();
+    }
+
+    @Test
+    void responseTopic_isCarriedOnAFailureToo() {
+        // A caller that asked for its answer somewhere still wants the refusal there, not on a topic it is not
+        // listening to.
+        assertThat(write("Start", "c-1", "plant/mes-east", failure(0x80AB0000L, Map.of()))
+                        .get("context")
+                        .get("responseTopic")
+                        .textValue())
+                .isEqualTo("plant/mes-east");
     }
 }
