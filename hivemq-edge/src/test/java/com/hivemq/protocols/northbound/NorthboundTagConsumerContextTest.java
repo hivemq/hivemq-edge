@@ -156,6 +156,32 @@ class NorthboundTagConsumerContextTest {
     }
 
     @Test
+    void aContextEntryTheConsumerDoesNotName_isNotPublished() throws Exception {
+        // The consumer publishes four named fields, not whatever `context` holds. `context` is the protocol's
+        // namespace -- Edge does not own it and must not republish it wholesale.
+        //
+        // An earlier version copied every entry, which published `{"key": "value"}` -- a placeholder the polling
+        // datapoint builder has written into `context` since 2026-03, shipped unseen in nine releases because
+        // nothing published `context` -- on every message of all eight polling adapters. SimpleHttpToMqttIT
+        // caught it on a strict comparison; this catches it here instead.
+        final Published published = publish(mapping(), dataPoint("methodName", "Start", "key", "value"));
+
+        assertThat(published.payload().has("key"))
+                .withFailMessage("an unnamed context entry reached the message: %s", published.payload())
+                .isFalse();
+        assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
+        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void statusInfo_isPublishedWhenTheResponseCarriesIt() throws Exception {
+        // The fourth named field, and the only one this class did not already cover.
+        final Published published = publish(mapping(), dataPoint("methodName", "Start", "statusInfo", "detail"));
+
+        assertThat(published.payload().get("statusInfo").textValue()).isEqualTo("detail");
+    }
+
+    @Test
     void correlationData_isWithheldWhenTheMappingSaysNotToWriteIt() throws Exception {
         // The northbound flag has to actually govern the published message. It was offered in the mapping form,
         // persisted, and carried into the runtime mapping while nothing read it -- so a deployment that turned it

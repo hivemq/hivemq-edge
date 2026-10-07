@@ -132,6 +132,16 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
     private static final @NotNull String CORRELATION_DATA = "correlationData";
 
     /**
+     * The {@code context} entries a method response carries, each published by name in
+     * {@link #publishResponseFields}. {@code methodName} is on every response; the other two only on a failure.
+     */
+    private static final @NotNull String METHOD_NAME = "methodName";
+
+    private static final @NotNull String ERROR_CODE = "errorCode";
+
+    private static final @NotNull String STATUS_INFO = "statusInfo";
+
+    /**
      * The topic to publish a datapoint on: the address it carries, and the mapping's own topic when it carries
      * none.
      * <p>
@@ -203,45 +213,63 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                     objectMapper.convertValue(northboundMapping.getUserProperties(), JsonNode.class));
         }
         if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
-            dpMeta.getContext().ifPresent(context -> flattenContext(node, context));
+            dpMeta.getContext().ifPresent(context -> publishResponseFields(node, context));
         }
         return objectMapper.writeValueAsBytes(node);
     }
 
     /**
-     * Copies a datapoint's {@code context} entries alongside {@code value} rather than nesting them under a
-     * {@code context} key.
+     * Publishes the four method-response fields a datapoint carries in its {@code context} child, each beside
+     * {@code value} rather than nested under a {@code context} key — so the message reads
+     * {@code {"methodName": "Start", "value": {...}}}.
      * <p>
-     * An adapter uses {@code context} for fields that belong to the message but are not the value — a method
-     * call's {@code methodName}, the caller's {@code correlationData}, an {@code errorCode}. Flattening is what
-     * makes the published message read {@code {"methodName": "Start", "value": {...}}}: the child is a carrier
-     * inside Edge, not a level a consumer should have to descend.
+     * <b>Each field is named here, one statement apiece.</b> This deliberately does not copy whatever
+     * {@code context} happens to hold. {@code context} is the <em>protocol's</em> namespace for what describes a
+     * tag or device and does not change — units, a node id — so Edge does not own it and must not republish it
+     * wholesale. A method response's fields are per-message and belong in {@code metadata} by that model; they
+     * ride here only because carrying them properly needs new datapoint aspects, which is an SDK change this
+     * release does not make. Edge-2 gives them named aspects.
      * <p>
-     * <b>{@code responseTopic} is always excluded.</b> It is the one entry that says <em>where</em> the
-     * answer goes rather than anything about the answer, and {@link #responseTopicOf} consumes it to choose the
-     * topic. Publishing it as well would put a routing instruction into the routed message.
+     * An earlier version copied every entry. That published {@code {"key": "value"}} — a placeholder the polling
+     * datapoint builder had written into {@code context} since 2026-03 and that nine releases shipped unseen,
+     * because nothing published {@code context} — on every message of all eight polling adapters, and
+     * {@code SimpleHttpToMqttIT} caught it on a strict comparison. Naming the fields is what makes that class of
+     * surprise impossible: a field reaches the wire only if this method says so.
      * <p>
-     * <b>{@code correlationData} is excluded unless the mapping asks for it.</b> Echoing a caller's token is a
-     * northbound choice, because it is the published message that carries it: a deployment may read a token
-     * southbound to correlate inside Edge and still not want it on the wire. The southbound flag decides whether
-     * the token is read at all, this one whether it is published.
+     * <b>{@code responseTopic} is read, never published.</b> It says <em>where</em> the answer goes rather than
+     * anything about the answer, and {@link #responseTopicOf} consumes it to choose the topic; publishing it too
+     * would put a routing instruction inside the routed message.
      * <p>
-     * An existing key is never overwritten. Nothing in Edge fills {@code context} with an aspect name today, but
-     * a copy that silently replaced {@code value} would be far harder to diagnose than one that declines to.
+     * <b>{@code correlationData} is published only when the mapping asks.</b> The southbound flag decides whether
+     * the token is read at all, this one whether it goes on the wire: a deployment may correlate inside Edge and
+     * still keep the token off its MQTT messages.
      */
-    private void flattenContext(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
+    private void publishResponseFields(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
         if (!context.isObject()) {
             return;
         }
-        context.properties().forEach(entry -> {
-            if (RESPONSE_TOPIC.equals(entry.getKey()) || node.has(entry.getKey())) {
-                return;
-            }
-            if (CORRELATION_DATA.equals(entry.getKey()) && !northboundMapping.isWriteCorrelationData()) {
-                return;
-            }
-            node.set(entry.getKey(), entry.getValue());
-        });
+        copy(node, context, METHOD_NAME);
+        if (northboundMapping.isWriteCorrelationData()) {
+            copy(node, context, CORRELATION_DATA);
+        }
+        copy(node, context, ERROR_CODE);
+        copy(node, context, STATUS_INFO);
+    }
+
+    /**
+     * Copies one named field, when the datapoint carries it and the message has no such field yet.
+     * <p>
+     * The present-check is what makes a field optional: {@code errorCode} and {@code statusInfo} appear only on a
+     * failure, {@code correlationData} only when the caller sent a token. The not-already-set check keeps a
+     * context entry from overwriting an aspect written above — it cannot happen for these four names today, and a
+     * silent replacement of {@code value} would be far harder to diagnose than one that declines.
+     */
+    private static void copy(
+            final @NotNull ObjectNode node, final @NotNull JsonNode context, final @NotNull String field) {
+        final JsonNode value = context.get(field);
+        if (value != null && !node.has(field)) {
+            node.set(field, value);
+        }
     }
 
     @Override
