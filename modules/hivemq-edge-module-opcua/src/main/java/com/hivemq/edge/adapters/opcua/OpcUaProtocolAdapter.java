@@ -1337,7 +1337,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             // request's arguments and the response's results are the same methods seen from
                             // opposite ends.
                             if (tagKind == OpcuaTagKind.METHOD) {
-                                createMethodTagSchema(client, tag, tagName, input, output);
+                                createMethodTagSchema(client, tag, tagName, output);
                                 return;
                             }
 
@@ -1371,7 +1371,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull OpcUaClient client,
             final @NotNull OpcuaTag tag,
             final @NotNull String tagName,
-            final @NotNull TagSchemaCreationInput input,
             final @NotNull TagSchemaCreationOutput output) {
 
         final NodeId objectNode;
@@ -1396,19 +1395,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         case MethodVerifier.Result.Verified verified -> {
                             final var methods = verified.methods().values();
                             log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
+                            // Only the arguments: what the device declares, which is the one part of a request
+                            // this adapter knows. The fields a request carries beside `value` -- its method name,
+                            // and optionally `correlationData` and `responseTopic` -- follow the mapping's own
+                            // flags rather than the device, so Edge declares those when it assembles the document.
                             output.finish(new TagSchemaCreationOutput.DataPointSchema(
                                     MethodSchemas.responseSchema(methods),
                                     null,
                                     MethodSchemas.responseContextSchema(),
-                                    MethodSchemas.requestSchema(methods),
-                                    // The request's own fields, required exactly as the mapping's flags say. A
-                                    // mapping that promised to read a reply address makes one mandatory, so a
-                                    // request omitting it is refused by schema validation rather than running the
-                                    // method and answering somewhere its caller is not listening.
-                                    MethodSchemas.requestEnvelopeSchema(
-                                            input.isMethodCalls(),
-                                            input.isCorrelationData(),
-                                            input.isResponseTopic())));
+                                    MethodSchemas.requestSchema(methods)));
                         }
                         case MethodVerifier.Result.Rejected rejected -> {
                             log.error("Cannot describe method tag '{}': {}", tagName, rejected.reason());

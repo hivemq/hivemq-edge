@@ -21,51 +21,13 @@ import org.jetbrains.annotations.NotNull;
 public class TagSchemaCreationInputImpl implements TagSchemaCreationInput {
 
     private final @NotNull String tagName;
-    private final boolean methodCalls;
-    private final boolean correlationData;
-    private final boolean responseTopic;
 
-    /**
-     * For schema generation with no mapping behind it — discovery, browsing, the REST tag-schema endpoint.
-     * <p>
-     * All three mapping flags are false, which is what "no mapping asked for anything" means: the generated
-     * southbound schema then requires none of the request fields.
-     */
     public TagSchemaCreationInputImpl(final @NotNull String tagName) {
-        this(tagName, false, false, false);
-    }
-
-    /**
-     * For schema generation on behalf of one southbound mapping, carrying what that mapping asked to read.
-     */
-    public TagSchemaCreationInputImpl(
-            final @NotNull String tagName,
-            final boolean methodCalls,
-            final boolean correlationData,
-            final boolean responseTopic) {
         this.tagName = tagName;
-        this.methodCalls = methodCalls;
-        this.correlationData = correlationData;
-        this.responseTopic = responseTopic;
     }
 
     @Override
     public @NotNull String getTagName() {
         return tagName;
-    }
-
-    @Override
-    public boolean isMethodCalls() {
-        return methodCalls;
-    }
-
-    @Override
-    public boolean isCorrelationData() {
-        return correlationData;
-    }
-
-    @Override
-    public boolean isResponseTopic() {
-        return responseTopic;
     }
 }

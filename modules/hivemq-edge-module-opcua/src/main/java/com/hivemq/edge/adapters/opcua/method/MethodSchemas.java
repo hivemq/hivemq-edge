@@ -69,8 +69,12 @@ public final class MethodSchemas {
     /// writes them to the payload root for exactly that reason. So they cannot be declared here without landing a
     /// level too deep -- which is what an earlier version of this method did, producing a schema that required
     /// `methodName` inside `value` while every writer put it outside, so every request failed validation with
-    /// `$.value: required property 'methodName' not found`. They are described by
-    /// {@link #requestEnvelopeSchema}, which renders beside this one.
+    /// `$.value: required property 'methodName' not found`.
+    ///
+    /// They are not this adapter's to declare either: which of them a request must carry follows the southbound
+    /// mapping's flags, not the device, and those flags are offered for every protocol. Edge declares them beside
+    /// this schema when it assembles the southbound document -- see
+    /// {@code TagSchemaCreationOutputImpl.describeRequestFields}.
     ///
     /// ## Why the object is closed
     ///
@@ -90,61 +94,6 @@ public final class MethodSchemas {
         final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
         describeArguments(root, unionOfInputs(methods), true);
         return root.additionalProperties(false).endObject().writable().build();
-    }
-
-    /// The fields a request carries **beside** `value`, as the southbound envelope schema.
-    ///
-    /// Rendered as siblings of `value` by `TagSchemaCreationOutputImpl.southboundSchema`, which is where they
-    /// belong: the whole MQTT payload is read into {@code OpcUaPayload}, whose `methodName`, `correlationData` and
-    /// `responseTopic` are top-level components. The device names what is inside `value`; Edge names what is
-    /// outside it.
-    ///
-    /// ## What the mapping's flags decide
-    ///
-    /// Each flag says the mapping **will read** that field, which makes it mandatory rather than merely allowed --
-    /// so `required` here follows the flags exactly. That is what turns a missing field into a schema failure,
-    /// caught before anything reaches the device and reported with the JSON path, rather than a fault discovered
-    /// deeper in or not at all. `methodName` is required whenever this is a method mapping, because a request that
-    /// names no method cannot be dispatched under any configuration.
-    ///
-    /// A field whose flag is off is **not declared at all**, not declared-and-optional. The southbound transform
-    /// is a whitelist and drops it, so a schema that accepted it would describe a field the adapter can never
-    /// receive -- and a caller sending it would pass validation and then be silently ignored, which is the failure
-    /// this design exists to remove.
-    ///
-    /// @param methodCalls     whether the mapping carries method calls at all.
-    /// @param correlationData whether it reads a correlation token.
-    /// @param responseTopic   whether it reads a response address.
-    /// @return null when the mapping carries no method calls -- there is then no envelope, and the southbound
-    ///         document is exactly what it was before method calls existed.
-    public static @Nullable Schema requestEnvelopeSchema(
-            final boolean methodCalls, final boolean correlationData, final boolean responseTopic) {
-
-        if (!methodCalls) {
-            return null;
-        }
-
-        final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
-        root.property("methodName")
-                .required()
-                .scalar(ScalarType.STRING)
-                .description("the method to call, as the device names it")
-                .writable();
-        if (correlationData) {
-            root.property("correlationData")
-                    .required()
-                    .scalar(ScalarType.STRING)
-                    .description("a token echoed unchanged on the response, so a caller can match the two")
-                    .writable();
-        }
-        if (responseTopic) {
-            root.property("responseTopic")
-                    .required()
-                    .scalar(ScalarType.STRING)
-                    .description("the topic the response is published to, instead of the mapping's own")
-                    .writable();
-        }
-        return root.endObject().writable().build();
     }
 
     /// The northbound value schema: the output arguments a response carries.
