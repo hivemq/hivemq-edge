@@ -111,6 +111,42 @@ class MethodArgumentsTest {
     }
 
     @Test
+    void valueWiderThanSixtyFourBits_isRefusedRatherThanWrappedIntoRange() throws Exception {
+        // The decisive one, and the reason the check reads the value as a BigInteger. Jackson's longValue()
+        // answers a JSON integer wider than 64 bits modulo 2^64 instead of refusing, so a range check performed
+        // on its result validates a different number than the caller sent: 18446744073709551617 narrows to 1,
+        // which satisfies every Int32 bound. Before this was fixed the device was started with a setpoint of 1.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("setpoint", NodeIds.Int32)), json("{\"setpoint\": 18446744073709551617}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("18446744073709551617");
+
+        // 2^64 itself narrows to 0, which is in range for every unsigned type.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("count", NodeIds.UInt64)), json("{\"count\": 18446744073709551616}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("18446744073709551616");
+    }
+
+    @Test
+    void theWholeUInt64RangeIsAccepted() throws Exception {
+        // The counterpart refusal: bounding UInt64 by Long.MAX_VALUE refused the upper half of the type, and
+        // narrowing made it total -- 2^64-1 arrived as -1 and failed the lower bound of zero. Nothing else checks
+        // this type's range, because its bounds are BigIntegers the schema generator cannot carry, so a legitimate
+        // value refused here is refused outright.
+        final Variant[] arguments = MethodArguments.forCall(
+                signature(argument("count", NodeIds.UInt64)), json("{\"count\": 18446744073709551615}"));
+
+        assertThat(arguments[0].value()).hasToString("18446744073709551615");
+
+        // And one above the signed ceiling, the first value the old bound rejected.
+        final Variant[] justAboveSigned = MethodArguments.forCall(
+                signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9223372036854775808}"));
+
+        assertThat(justAboveSigned[0].value()).hasToString("9223372036854775808");
+    }
+
+    @Test
     void wrongJsonShape_isRefusedNamingTheExpectedType() throws Exception {
         assertThatThrownBy(() -> MethodArguments.forCall(
                         signature(argument("setpoint", NodeIds.Int32)), json("{\"setpoint\": \"180\"}")))

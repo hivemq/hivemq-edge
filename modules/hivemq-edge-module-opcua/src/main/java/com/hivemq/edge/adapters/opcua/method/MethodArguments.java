@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
@@ -35,6 +36,11 @@ import org.jetbrains.annotations.NotNull;
 /// request omits still occupies its position, and one the request carries but the method does not declare is a
 /// mistake worth naming rather than silently dropping.
 public final class MethodArguments {
+
+    /// 2^64 - 1, the largest UInt64. Milo states it as `ULong.MAX_VALUE`, but that constant is a `BigInteger` the
+    /// schema generator cannot carry -- it writes bounds through a `Number` the SDK renders with `longValue()` --
+    /// so a UInt64 argument's schema states no range and this is the only gate the value passes.
+    private static final @NotNull BigInteger UINT64_MAX = BigInteger.TWO.pow(64).subtract(BigInteger.ONE);
 
     private MethodArguments() {}
 
@@ -220,7 +226,9 @@ public final class MethodArguments {
             case Int32 -> (int) requireIntegral(node, Integer.MIN_VALUE, Integer.MAX_VALUE);
             case UInt32 -> Unsigned.uint(requireIntegral(node, 0, 4294967295L));
             case Int64 -> requireIntegral(node, Long.MIN_VALUE, Long.MAX_VALUE);
-            case UInt64 -> Unsigned.ulong(requireIntegral(node, 0, Long.MAX_VALUE));
+            // UInt64 is the one type whose range does not fit a signed long, so it is bounded and built as a
+            // BigInteger throughout. Bounding it by Long.MAX_VALUE would refuse the upper half of the type.
+            case UInt64 -> Unsigned.ulong(requireInRange(node, BigInteger.ZERO, UINT64_MAX));
             case Float -> (float) requireNumber(node);
             case Double -> requireNumber(node);
             case String -> requireText(node);
@@ -239,13 +247,26 @@ public final class MethodArguments {
     }
 
     private static long requireIntegral(final @NotNull JsonNode node, final long min, final long max) {
+        return requireInRange(node, BigInteger.valueOf(min), BigInteger.valueOf(max))
+                .longValue();
+    }
+
+    /// The range check every integral argument passes through, comparing the value the caller actually sent.
+    ///
+    /// `JsonNode.longValue()` is not a safe first step: for a JSON integer wider than 64 bits it answers the value
+    /// modulo 2^64 rather than refusing, so a check performed on its result validates a different number.
+    /// `18446744073709551617` narrows to `1`, which satisfies every Int32 bound and reaches the device as `1`.
+    /// `bigIntegerValue()` answers the value as written, so the comparison happens before anything narrows.
+    ///
+    /// Checked here rather than left to the server, because the narrowing cast at each call site wraps silently --
+    /// 300 arriving at a Byte argument as 44, which the device would act on.
+    private static @NotNull BigInteger requireInRange(
+            final @NotNull JsonNode node, final @NotNull BigInteger min, final @NotNull BigInteger max) {
         if (!node.isIntegralNumber()) {
             throw new IllegalArgumentException("expected a whole number, got " + node.getNodeType());
         }
-        final long value = node.longValue();
-        if (value < min || value > max) {
-            // Checked here rather than left to the server, because the narrowing cast below would otherwise
-            // wrap silently -- 300 arriving at a Byte argument as 44, which the device would act on.
+        final BigInteger value = node.bigIntegerValue();
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
             throw new IllegalArgumentException("expected a value in [" + min + ", " + max + "], got " + value);
         }
         return value;
