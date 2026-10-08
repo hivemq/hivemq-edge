@@ -358,14 +358,13 @@ public class JsonSchemaGenerator {
     /// same {@link #applyArrayType} the value-tag path uses, so a method's array argument and a value tag's
     /// array node are described identically, nesting and element constraints included.
     ///
-    /// A declared dimension length becomes an exact-size constraint, which is what the OPC UA declaration means:
-    /// an `Argument` whose `ArrayDimensions` says 5 takes exactly five elements. A zero or absent length means
-    /// "any length" and constrains nothing.
+    /// **No length is stated.** `dimensions` supplies the nesting depth and nothing else -- see
+    /// {@link #applyArrayType} for why a declared length is neither emitted nor emittable here.
     ///
     /// @param prop       the property to describe.
     /// @param opcUaType  the element type, or null when it is not one Edge can state -- then the elements are
     ///                   `any`, which is the same answer {@link #describeAs} gives for an unmappable scalar.
-    /// @param dimensions one entry per dimension; its length is the nesting depth.
+    /// @param dimensions one entry per dimension; its length is the nesting depth, and its entries are unused.
     public static void describeAsArray(
             final @NotNull PropertySchemaBuilder<?> prop,
             final @Nullable OpcUaDataType opcUaType,
@@ -500,10 +499,24 @@ public class JsonSchemaGenerator {
             applyArrayType(items.startArray(), opcUaType, dimensions, depth + 1, readable, writable);
         }
         items.readable(readable).writable(writable);
-        final long maxSize = dimensions[depth].longValue();
-        if (maxSize > 0) {
-            items.minContains((int) maxSize).maxContains((int) maxSize);
-        }
+        // No length constraint is stated, and `dimensions` is consulted only for the nesting depth.
+        //
+        // This used to emit minContains and maxContains, both set to the declared length. Three things were
+        // wrong with that, and they compound:
+        //
+        //   - The keywords do nothing. They count how many elements match a `contains` keyword, and no
+        //     `contains` is ever emitted -- so a schema saying minContains 3 accepted [], [1] and [1,2,3,4].
+        //     Measured against the validator Edge uses.
+        //   - Equal minimum and maximum misstates the declaration. OPC 10000-3 section 5.6.2: ArrayDimensions
+        //     "specifies the maximum supported length of each dimension. If the maximum is unknown the value
+        //     shall be 0". A maximum of 5 does not mean exactly five elements.
+        //   - A union over several methods had no length to agree on, so whichever method the browse reported
+        //     first supplied the number; reversing the browse order changed the schema.
+        //
+        // The honest statement needs maxItems, which this cannot emit: the shared SDK's array builder offers
+        // only minContains and maxContains, and the SDK is unchanged in this release. So the length rests with
+        // the device, which refuses a wrong-sized array and whose refusal reaches the caller as a response --
+        // where it already rested in practice, since the keywords never constrained anything.
         items.endArray();
     }
 

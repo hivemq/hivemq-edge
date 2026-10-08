@@ -80,27 +80,54 @@ class MethodSchemasArrayTest {
     }
 
     @Test
-    void aDeclaredDimensionLengthBecomesAnExactSize() {
-        // ArrayDimensions of 5 means exactly five elements, not "up to five". The SDK renders the bound as
-        // minContains/maxContains, which is the vocabulary the value-tag array path already uses.
-        final JsonNode prop = requestProperties(
+    void noLengthIsStated_whateverTheDeviceDeclared() {
+        // This used to emit minContains and maxContains, both set to the declared length, and a test pinned
+        // that. Three things were wrong with it:
+        //
+        //   - The keywords do nothing. They count elements matching a `contains` keyword, and none is emitted,
+        //     so a schema saying minContains 5 accepted [], [1] and [1,2,3,4,5,6] alike -- measured against the
+        //     validator Edge uses.
+        //   - Equal minimum and maximum misstates the declaration. OPC 10000-3 section 5.6.2: ArrayDimensions
+        //     "specifies the maximum supported length of each dimension", so 5 does not mean exactly five.
+        //   - A union over several methods had no length to agree on, so the first browsed supplied the number
+        //     and reversing the browse order changed the schema.
+        //
+        // Saying nothing needs maxItems, which the shared SDK's array builder cannot emit, and the SDK is
+        // unchanged this release. So the length rests with the device -- where it already rested, since the
+        // keywords never constrained anything.
+        final JsonNode declared = requestProperties(
                         method("AddArray", argument("Array input1", NodeIds.Int32, 1, new UInteger[] {uint(5)})))
                 .get("Array input1");
 
-        assertThat(prop.get("minContains").intValue()).isEqualTo(5);
-        assertThat(prop.get("maxContains").intValue()).isEqualTo(5);
-    }
+        assertThat(declared.get("type").textValue()).isEqualTo("array");
+        assertThat(declared.has("minContains"))
+                .withFailMessage("a length was stated: %s", declared)
+                .isFalse();
+        assertThat(declared.has("maxContains")).isFalse();
 
-    @Test
-    void aZeroDimension_constrainsNothing() {
-        // Zero means "any length" in OPC UA. Stating a size of zero would admit only the empty array.
-        final JsonNode prop = requestProperties(
+        // Zero already meant "any length" and emitted nothing; it still does.
+        final JsonNode unknown = requestProperties(
                         method("Take", argument("values", NodeIds.Int32, 1, new UInteger[] {uint(0)})))
                 .get("values");
 
-        assertThat(prop.get("type").textValue()).isEqualTo("array");
-        assertThat(prop.has("minContains")).isFalse();
-        assertThat(prop.has("maxContains")).isFalse();
+        assertThat(unknown.get("type").textValue()).isEqualTo("array");
+        assertThat(unknown.has("minContains")).isFalse();
+    }
+
+    @Test
+    void twoMethodsDeclaringDifferentLengths_giveTheSameSchemaInEitherBrowseOrder() {
+        // What the length removal fixes beyond the inert keywords. With a length emitted, the union took it
+        // from whichever method the browse reported first, so an identical object produced a different schema
+        // depending on the order the server happened to answer in.
+        final MethodSignature three = method("A", argument("v", NodeIds.Int32, 1, new UInteger[] {uint(3)}));
+        final MethodSignature five = method("B", argument("v", NodeIds.Int32, 1, new UInteger[] {uint(5)}));
+
+        final JsonNode oneOrder = requestProperties(three, five);
+        final JsonNode otherOrder = requestProperties(five, three);
+
+        assertThat(oneOrder).isEqualTo(otherOrder);
+        // And both still describe an array of the element type, rather than giving up on the argument.
+        assertThat(oneOrder.get("v").get("type").textValue()).isEqualTo("array");
     }
 
     @Test

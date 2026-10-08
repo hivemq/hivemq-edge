@@ -201,6 +201,11 @@ public final class MethodSchemas {
         // the
         /// argument is a one-dimensional array of the same type, and the union states that rather than giving
         // up.
+        ///
+        /// Lengths now count for nothing anywhere -- the generated schema states none, because the keywords it
+        /// could reach were inert and said the wrong thing besides (see
+        /// {@code JsonSchemaGenerator.applyArrayType}). So this comparison no longer hides a disagreement the
+        /// schema would have had to resolve; it simply agrees with what the schema says.
         boolean agreesWith(final @NotNull ArgumentShape other) {
             return type == other.type && dimensions.size() == other.dimensions.size();
         }
