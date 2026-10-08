@@ -19,9 +19,7 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 
 import com.hivemq.edge.adapters.opcua.browse.Browsing;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaMethodNode;
@@ -61,7 +59,14 @@ public final class MethodVerifier {
         /// The object was browsed and its methods read. Empty when the object genuinely exposes none, which is
         /// a usable tag that can never serve a request -- recorded rather than rejected, because the methods an
         /// object exposes may be added later without the tag changing.
-        record Verified(@NotNull Map<String, MethodSignature> methods) implements Result {}
+        ///
+        /// A list rather than a map keyed on the browse name, because that name is not unique on an object: OPC
+        /// 10000-3 requires unique browse names only for TypeDefinitionNodes and InstanceDeclarations, "not for
+        /// other instances", so two Interfaces may each contribute a `Start`. A map silently kept whichever the
+        /// browse reported last. {@link MethodReference} resolves a request's `methodName` against this list
+        // and
+        /// refuses an unadorned name that several methods carry.
+        record Verified(@NotNull List<MethodSignature> methods) implements Result {}
 
         /// The tag is wrong about the device: the node is absent, or is not an object. No retry will help.
         record Rejected(@NotNull String reason) implements Result {}
@@ -157,17 +162,20 @@ public final class MethodVerifier {
 
         return CompletableFuture.allOf(pending.toArray(new CompletableFuture[0]))
                 .thenApply(ignored -> {
-                    // Insertion-ordered so that a generated schema lists arguments in the order the server
+                    // Browse order is kept so that a generated schema lists arguments in the order the server
                     // reported its methods, which is stable for a given server and makes a schema diff
                     // readable when the device changes.
-                    final Map<String, MethodSignature> methods = new LinkedHashMap<>();
+                    //
+                    // Every method is kept, including two that share a browse name. Keying on the name dropped
+                    // one of them, and which one survived depended on browse order.
+                    final List<MethodSignature> methods = new ArrayList<>(pending.size());
                     for (final CompletableFuture<MethodSignature> future : pending) {
                         final MethodSignature signature = future.join();
                         if (signature != null) {
-                            methods.put(signature.name(), signature);
+                            methods.add(signature);
                         }
                     }
-                    return (Result) new Result.Verified(methods);
+                    return (Result) new Result.Verified(List.copyOf(methods));
                 })
                 .exceptionally(throwable -> new Result.Unverifiable("could not read the arguments of a method of '"
                         + tagName

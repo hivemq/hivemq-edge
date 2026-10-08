@@ -136,7 +136,9 @@ public final class MethodSchemas {
         // direction. The presence of `methodName` is what marks the part as a method tag's.
         root.property("methodName")
                 .scalar(ScalarType.STRING)
-                .description("the method to call, or the method an answer belongs to");
+                .description("the method to call, or the method an answer belongs to. Its name, which must be "
+                        + "unique among the object's methods, or the method node itself as "
+                        + "nsu=<namespace uri>;<identifier> when two methods share a name");
         root.property("correlationData")
                 .scalar(ScalarType.STRING)
                 .description("a token echoed unchanged from the request to its response");

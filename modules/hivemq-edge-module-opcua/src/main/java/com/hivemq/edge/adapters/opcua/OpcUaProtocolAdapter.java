@@ -56,6 +56,7 @@ import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.method.MethodArguments;
 import com.hivemq.edge.adapters.opcua.method.MethodCache;
 import com.hivemq.edge.adapters.opcua.method.MethodCallResult;
+import com.hivemq.edge.adapters.opcua.method.MethodReference;
 import com.hivemq.edge.adapters.opcua.method.MethodResponse;
 import com.hivemq.edge.adapters.opcua.method.MethodSchemas;
 import com.hivemq.edge.adapters.opcua.method.MethodSignature;
@@ -1117,30 +1118,54 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     private void invoke(
             final @NotNull OpcUaClient client,
             final @NotNull NodeId objectNodeId,
-            final @NotNull Map<String, MethodSignature> methods,
+            final @NotNull List<MethodSignature> methods,
             final @NotNull String methodName,
             final @NotNull OpcUaPayload payload,
             final @NotNull OpcuaTag opcuaTag,
             final @NotNull WritingOutput output) {
 
         final String tagName = opcuaTag.getName();
-        final MethodSignature signature = methods.get(methodName);
-        if (signature == null) {
+        final MethodSignature signature;
+        // `methodName` is either an unadorned browse name, which must be unique among the object's methods, or
+        // a node id naming the method itself. Resolution is separate because a browse name is not unique on an
+        // object, and picking by browse order called whichever method the server reported second.
+        switch (MethodReference.resolve(methods, methodName, client.getNamespaceTable())) {
+            case MethodReference.Resolution.Matched matched -> signature = matched.method();
             // The same status the server would have returned, with a message it could not have produced: naming
             // what the object does offer is what an operator who mistyped a method actually needs.
-            refuseWithResponse(
-                    opcuaTag,
-                    methodName,
-                    payload,
-                    StatusCodes.Bad_MethodInvalid,
-                    "Object of tag '"
-                            + tagName
-                            + "' has no method '"
-                            + methodName
-                            + "'. It offers: "
-                            + (methods.isEmpty() ? "none" : String.join(", ", methods.keySet())),
-                    output);
-            return;
+            case MethodReference.Resolution.NoSuchMethod noSuch -> {
+                refuseWithResponse(
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        StatusCodes.Bad_MethodInvalid,
+                        "Object of tag '" + tagName + "' " + noSuch.reason(),
+                        output);
+                return;
+            }
+            // Bad_MethodInvalid as well: the request did not identify a method, which is the same fault as
+            // naming one that does not exist. The message carries the node ids that would identify them.
+            case MethodReference.Resolution.Ambiguous ambiguous -> {
+                refuseWithResponse(
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        StatusCodes.Bad_MethodInvalid,
+                        "Object of tag '" + tagName + "' " + ambiguous.reason(),
+                        output);
+                return;
+            }
+            // The request is malformed rather than wrong about the device, which is why this one differs.
+            case MethodReference.Resolution.Malformed malformed -> {
+                refuseWithResponse(
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        StatusCodes.Bad_InvalidArgument,
+                        "Request to tag '" + tagName + "': " + malformed.reason(),
+                        output);
+                return;
+            }
         }
 
         final Variant[] arguments;
@@ -1393,7 +1418,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     }
                     switch (result) {
                         case MethodVerifier.Result.Verified verified -> {
-                            final var methods = verified.methods().values();
+                            final var methods = verified.methods();
                             log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
                             // The context part names the fields a method tag's messages carry beside `value`, and
                             // is what tells the runtime this is a method tag -- it lifts them to the document

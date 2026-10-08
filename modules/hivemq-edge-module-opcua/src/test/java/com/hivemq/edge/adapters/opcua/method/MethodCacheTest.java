@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 /// must not keep.
 class MethodCacheTest {
 
-    private static final MethodVerifier.Result VERIFIED = new MethodVerifier.Result.Verified(Map.of());
+    private static final MethodVerifier.Result VERIFIED = new MethodVerifier.Result.Verified(List.of());
 
     @Test
     void secondCallForOneTag_doesNotReadAgain() {
