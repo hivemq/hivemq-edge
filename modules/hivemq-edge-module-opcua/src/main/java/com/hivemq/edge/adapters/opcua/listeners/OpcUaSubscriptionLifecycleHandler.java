@@ -418,10 +418,45 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @return an Optional containing the created or transferred subscription, or empty if failed
      */
     public @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
+        reportMethodTagsWithAnUnusableNode();
         return newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
                 .flatMap(this::establishInitial);
+    }
+
+    /**
+     * Reports a METHOD tag whose configured node is not a node id at all.
+     * <p>
+     * A method tag is excluded from {@code observableTags} before {@link #verify} runs, correctly — it names an
+     * object, which has no Value attribute to sample and emits no events, so there is no monitored item it
+     * could yield. The side effect was that nothing looked at such a tag during startup at all, not even to
+     * parse its node: the {@code case METHOD} arm in {@code verify} is unreachable. An operator who mistyped
+     * the node therefore learned of it from the first request, which may be hours later and is reported to
+     * whoever sent that request rather than to whoever wrote the configuration.
+     * <p>
+     * Only the parse is checked here, which is the part that needs no server: whether the node exists, and
+     * whether it is an object with methods, stays where it is — read on the first call against the tag. That
+     * laziness is deliberate (see {@code OpcUaProtocolAdapter#callMethod}): the browse-metadata warm-up is
+     * allowed to fail without failing the connection, so a browse done here would leave an adapter that is
+     * connected and not browse-ready reporting every method that exists as absent.
+     * <p>
+     * Run from {@link #subscribe} rather than from the monitored-item sync, because a configured string cannot
+     * change between connects and repeating the warning on every reconnect would only bury it.
+     */
+    private void reportMethodTagsWithAnUnusableNode() {
+        for (final OpcuaTag tag : tags) {
+            if (tag.getDefinition().getKind() != OpcuaTagKind.METHOD) {
+                continue;
+            }
+            try {
+                parseField(tag.getDefinition().getNode(), "node");
+            } catch (final MalformedNodeIdException e) {
+                // Not "unsubscribable": a method tag is never subscribed, so saying so would describe every
+                // method tag and tell the operator nothing. This one cannot serve a request either.
+                reportUnusableTag(tag.getName(), describe(e));
+            }
+        }
     }
 
     /**
@@ -2108,9 +2143,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 case VALUE, REFRESH -> Optional.of(new VerifiedTag(opcuaTag, node, null, null, null));
                 case EVENT_SUBSCRIPTION -> verifyEventSubscription(opcuaTag, node, tagName);
                 case CONDITION -> verifyCondition(opcuaTag, Objects.requireNonNull(node), tagName);
-                // A METHOD tag is verified by browsing the object for its methods, which is a southbound
-                // concern and happens outside the subscription: it is filtered out of the candidate list
-                // before this runs, because the thing it verifies is not a monitored item.
+                // Unreachable: a METHOD tag is filtered out of the candidate list before this runs, because
+                // what this verifies is a monitored item and a method tag has none. Its own checks live
+                // elsewhere -- the node is parsed by reportMethodTagsWithAnUnusableNode at subscribe, and the
+                // object's methods are browsed on the first call against the tag. The arm exists because the
+                // switch is exhaustive over the kinds, which is what stops a sixth kind silently inheriting
+                // another's requirements.
                 case METHOD -> Optional.empty();
             };
         } catch (final MalformedNodeIdException e) {
@@ -2422,6 +2460,23 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                 .withSeverity(Event.SEVERITY.WARN)
                 .withMessage(String.format("Adapter '%s' did not subscribe tag '%s': %s", adapterId, tagName, reason))
+                .fire();
+    }
+
+    /**
+     * Tells the operator a tag cannot serve a request, for a tag that was never going to be subscribed.
+     * <p>
+     * Distinct from {@link #reportUnsubscribableTag} because a METHOD tag has no monitored item by design:
+     * "did not subscribe tag" is true of every method tag and would say nothing about this one. What it says
+     * instead is that the tag is unusable, which is the part the operator can act on.
+     */
+    private void reportUnusableTag(final @NotNull String tagName, final @NotNull String reason) {
+        log.warn("Adapter '{}': tag '{}' cannot serve a request — {}", adapterId, tagName, reason);
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withSeverity(Event.SEVERITY.WARN)
+                .withMessage(
+                        String.format("Adapter '%s': tag '%s' cannot serve a request: %s", adapterId, tagName, reason))
                 .fire();
     }
 
