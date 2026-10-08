@@ -148,6 +148,65 @@ class MethodArgumentsArrayTest {
     }
 
     @Test
+    void aMatrixWithRowsOfUnequalLength_isRefusedNamingTheRow() throws Exception {
+        // The decisive one, and the reason rectangularity is checked while length is not. Matrix takes each
+        // dimension's length from the first row and flattens against it, and its own consistency check is an
+        // assert, disabled at runtime. So a short row made it read past that row's end: [[1],[2,3]] reached the
+        // device as [[1],[2]] -- the 2 relocated out of row 0 into row 1, which is worse than a dropped element
+        // because nothing about the result looks truncated.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("grid", NodeIds.Int32, 2, new UInteger[] {uint(2), uint(2)})),
+                        json("{\"grid\": [[1], [2, 3]]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("grid")
+                .hasMessageContaining("row 1");
+
+        // The other direction threw ArrayIndexOutOfBoundsException from inside Matrix. That descends from
+        // IndexOutOfBoundsException, not IllegalArgumentException, so it escaped the conversion's catch as itself
+        // and the caller got no response at all rather than a refusal.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("grid", NodeIds.Int32, 2, new UInteger[] {uint(2), uint(2)})),
+                        json("{\"grid\": [[1, 2], [3]]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("row 1");
+    }
+
+    @Test
+    void aMatrixWhoseFirstRowIsEmpty_isRefused() throws Exception {
+        // Taking the length from row 0 makes an empty first row discard everything: [[],[1]] reached the device as
+        // [[],[]], a matrix with no values at all.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("grid", NodeIds.Int32, 2, new UInteger[] {uint(2), uint(1)})),
+                        json("{\"grid\": [[], [1]]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("row 1");
+    }
+
+    @Test
+    void aRectangularMatrixOfTheWrongSize_isStillAccepted() throws Exception {
+        // Rectangularity is checked; length is not. A 2x3 supplied for an argument declaring 2x2 is well-formed and
+        // reaches the device unchanged, which is where a length disagreement is answered. Without this the fix
+        // would have quietly become a length check as well.
+        final Variant[] arguments = MethodArguments.forCall(
+                signature(argument("grid", NodeIds.Int32, 2, new UInteger[] {uint(2), uint(2)})),
+                json("{\"grid\": [[1, 2, 3], [4, 5, 6]]}"));
+
+        final Matrix matrix = (Matrix) arguments[0].value();
+        assertThat(matrix.getDimensions()).containsExactly(2, 3);
+    }
+
+    @Test
+    void aRaggedInnerDimension_isRefused() throws Exception {
+        // Checked at every level, not only the outermost: the two outer rows agree in length, and the raggedness
+        // sits one dimension in.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("cube", NodeIds.Int32, 3, new UInteger[] {uint(2), uint(2), uint(2)})),
+                        json("{\"cube\": [[[1, 2], [3, 4]], [[5, 6], [7]]]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("row 1");
+    }
+
+    @Test
     void aFlatArrayForATwoDimensionalArgument_isRefused() throws Exception {
         // The declared rank decides the depth, not how deeply the JSON happens to nest. Encoding a flat list as a
         // two-dimensional array is not possible, and silently treating it as one row would be worse.

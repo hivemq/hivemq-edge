@@ -188,6 +188,11 @@ public final class MethodArguments {
     /// flat list supplied for a two-dimensional argument is reported as the wrong shape instead of being encoded
     /// as something the device did not ask for. Dimension *lengths* are not checked here -- the generated schema
     /// states them, and the device enforces them; duplicating that would mean two places to keep in agreement.
+    ///
+    /// Rectangularity is a different question from length, and is checked. Sibling rows of unequal length do not
+    /// reach the device as sent: `Matrix` takes each dimension's length from the first row and flattens against
+    /// those, so a short row makes it read beyond that row's end and a long row makes it stop early. Its own
+    /// consistency check is a Java `assert`, disabled at runtime, so it reports nothing.
     private static @NotNull Object toJavaArray(
             final @NotNull OpcUaDataType type, final @NotNull JsonNode node, final int remainingDimensions) {
 
@@ -211,7 +216,18 @@ public final class MethodArguments {
                 .getClass();
         final Object[] rows = (Object[]) Array.newInstance(componentType, node.size());
         for (int i = 0; i < node.size(); i++) {
-            rows[i] = toJavaArray(type, node.get(i), remainingDimensions - 1);
+            final JsonNode row = node.get(i);
+            // Compared against the first row, which is the one Matrix would take the length from. Checked at every
+            // level rather than only the outermost, because a ragged dimension anywhere has the same effect.
+            if (i > 0 && row.isArray() && row.size() != node.get(0).size()) {
+                throw new IllegalArgumentException("every row of a dimension must have the same length, and row "
+                        + i
+                        + " has "
+                        + row.size()
+                        + " element(s) where row 0 has "
+                        + node.get(0).size());
+            }
+            rows[i] = toJavaArray(type, row, remainingDimensions - 1);
         }
         return rows;
     }
