@@ -20,8 +20,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
 import java.util.List;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -144,6 +146,39 @@ class MethodArgumentsTest {
                 signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9223372036854775808}"));
 
         assertThat(justAboveSigned[0].value()).hasToString("9223372036854775808");
+    }
+
+    @Test
+    void aTimestampJavaCannotParse_isRefusedRatherThanEscaping() throws Exception {
+        // The decisive one. A DateTime argument is converted with Instant.parse, which throws
+        // DateTimeParseException -- a RuntimeException, but not an IllegalArgumentException, which is what this
+        // conversion used to catch. So it escaped here, escaped `invoke` (which catches only
+        // InvalidArgumentException), and surfaced inside a whenComplete consumer where nothing completes the
+        // WritingOutput: the caller got no response and no refusal until the write timed out 30 seconds later.
+        //
+        // A timestamp without a zone offset is the case that matters. It does not look malformed -- it is how a
+        // timestamp is usually written by hand -- and the generated schema passes it, because the schema states
+        // `format: date-time` and format is an annotation unless a validator is configured to assert it.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("at", NodeIds.DateTime)), json("{\"at\": \"2026-10-08T12:00:00\"}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("at")
+                .hasMessageContaining("DateTime");
+
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("at", NodeIds.DateTime)), json("{\"at\": \"not-a-timestamp\"}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("at");
+    }
+
+    @Test
+    void aWellFormedTimestamp_isStillAccepted() throws Exception {
+        // The counterpart: widening the catch must not turn a good value into a refusal.
+        final Variant[] arguments = MethodArguments.forCall(
+                signature(argument("at", NodeIds.DateTime)), json("{\"at\": \"2026-10-08T12:00:00Z\"}"));
+
+        assertThat(arguments[0].value()).isInstanceOf(DateTime.class);
+        assertThat(((DateTime) arguments[0].value()).getJavaInstant()).isEqualTo(Instant.parse("2026-10-08T12:00:00Z"));
     }
 
     @Test

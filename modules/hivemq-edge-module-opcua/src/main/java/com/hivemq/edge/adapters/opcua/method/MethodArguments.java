@@ -161,7 +161,15 @@ public final class MethodArguments {
             // ("Multi-dimensional arrays must be wrapped in Matrix"). The wrapper carries the dimension lengths,
             // which it derives from the nested array it is given.
             return Variant.of(dimensions == 1 ? array : new Matrix(array));
-        } catch (final IllegalArgumentException e) {
+            // Every runtime failure of a conversion, not only IllegalArgumentException. A conversion reaches for
+            // whatever parser the type needs and those do not agree on an exception type: `Instant.parse` throws
+            // DateTimeParseException, which is a RuntimeException and not an IllegalArgumentException, so a
+            // timestamp written without a zone offset -- `2026-10-08T12:00:00` -- escaped this method entirely.
+            // It then escaped `invoke`, which catches only InvalidArgumentException, into a whenComplete consumer
+            // where nothing completes the WritingOutput, so the caller got no response and no refusal until the
+            // write timed out 30 seconds later. The generated schema does not catch it either: it states
+            // `format: date-time`, and format is an annotation unless a validator is configured to assert it.
+        } catch (final RuntimeException e) {
             throw new InvalidArgumentException("argument '"
                     + argumentName
                     + "' of method '"
