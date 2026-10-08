@@ -20,6 +20,7 @@ import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -148,8 +149,7 @@ public final class MethodArguments {
                     + "' has a type this version cannot encode. Only the builtin OPC UA types are supported");
         }
 
-        final Integer rank = argument.getValueRank();
-        final int dimensions = rank == null || rank < 1 ? 0 : rank;
+        final int dimensions = depthFor(argument, supplied, argumentName, methodName);
 
         try {
             if (dimensions == 0) {
@@ -179,6 +179,78 @@ public final class MethodArguments {
                     + ", and the value supplied is not one: "
                     + e.getMessage());
         }
+    }
+
+    /// How deeply to nest this argument's value: a declared depth where the device fixed one, otherwise the
+    /// depth the request itself has.
+    ///
+    /// OPC 10000-3 table 28 gives a value rank six meanings, and only three of them fix a depth:
+    ///
+    ///   - `n >= 1` -- an array with exactly n dimensions. The declaration decides, and a request that nests
+    ///     differently is refused: a flat list for a two-dimensional argument is a mistake worth naming rather
+    ///     than something to reshape.
+    ///   - `-1` (Scalar) -- not an array.
+    ///   - `0` (OneOrMoreDimensions) -- an array, of a depth the server declined to fix.
+    ///   - `-2` (Any) -- a scalar or an array of any depth.
+    ///   - `-3` (ScalarOrOneDimension) -- a scalar or a one-dimensional array.
+    ///
+    /// For the last three the request is the only thing that knows, so the depth is counted from it and then
+    /// checked against what the rank permits. This is what makes such an argument callable at all: a rank-0
+    /// argument accepts nothing but arrays, so treating it as a scalar -- which this did -- refused every legal
+    /// value and the method could not be invoked. The generated schema says `any` for these three, so nothing
+    /// before this point has constrained the shape either.
+    ///
+    /// Whatever passes here may still be wrong about the real signature, and the device is left to say so. That
+    /// is the trade: an argument whose shape the declaration leaves open is answered by the server rather than
+    /// by Edge guessing.
+    private static int depthFor(
+            final @NotNull Argument argument,
+            final @NotNull JsonNode supplied,
+            final @NotNull String argumentName,
+            final @NotNull String methodName) {
+
+        final Integer rank = argument.getValueRank();
+        if (rank == null || rank == ValueRanks.Scalar) {
+            return 0;
+        }
+        if (rank >= 1) {
+            return rank;
+        }
+
+        final int suppliedDepth = depthOf(supplied);
+        if (rank == ValueRanks.OneOrMoreDimensions && suppliedDepth == 0) {
+            throw new InvalidArgumentException("argument '"
+                    + argumentName
+                    + "' of method '"
+                    + methodName
+                    + "' is declared as an array of one or more dimensions, so a single value is not one of its "
+                    + "values. Send an array");
+        }
+        if (rank == ValueRanks.ScalarOrOneDimension && suppliedDepth > 1) {
+            throw new InvalidArgumentException("argument '"
+                    + argumentName
+                    + "' of method '"
+                    + methodName
+                    + "' is declared as a single value or a one-dimensional array, and the value supplied nests "
+                    + suppliedDepth
+                    + " deep");
+        }
+        return suppliedDepth;
+    }
+
+    /// How many array levels a JSON value has. Zero for anything that is not an array, and an empty array counts
+    /// as one level -- it is an array with no elements, not a scalar.
+    private static int depthOf(final @NotNull JsonNode node) {
+        int depth = 0;
+        JsonNode current = node;
+        while (current.isArray()) {
+            depth++;
+            if (current.isEmpty()) {
+                break;
+            }
+            current = current.get(0);
+        }
+        return depth;
     }
 
     /// What the argument wanted, for an error message. A rank is worth naming: "expects Int32" against a value

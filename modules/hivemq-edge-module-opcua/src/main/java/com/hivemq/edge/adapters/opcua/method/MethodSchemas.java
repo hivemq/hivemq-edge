@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
@@ -209,13 +210,30 @@ public final class MethodSchemas {
             final OpcUaDataType type =
                     argument.getDataType() == null ? null : OpcUaDataType.fromNodeId(argument.getDataType());
 
-            // A rank of -1 (scalar), -2 (any) or -3 (scalar or one dimension) is not a declaration of an array,
-            // and only a positive rank is. OPC 10000-3 section 5.6.2: a positive rank is the number of
-            // dimensions. ArrayDimensions may be absent or shorter than the rank claims, so the rank decides the
-            // nesting depth and the dimensions only supply lengths where they are given.
+            // The rank decides the shape, and OPC 10000-3 table 28 gives it six values -- the same table as for
+            // a Variable, because a method argument is described by the same attribute:
+            //
+            //   n >= 1  an array with exactly n dimensions
+            //   0       an array, one dimension or more; never a scalar
+            //   -1      a scalar, never an array
+            //   -2      a scalar OR an array of any number of dimensions
+            //   -3      a scalar OR a one-dimensional array
+            //
+            // Only -1 is a scalar declaration. The three vague ones cannot be stated by this schema model: it has
+            // no union, so "a scalar or an array" has no form, and 0 promises an array of a depth the server
+            // declined to fix. Each becomes UNSTATEABLE, which renders as `any` -- the same answer already given
+            // to an argument of a custom structure and to one two methods declare differently.
+            //
+            // The alternative was to keep describing them as scalars, which is what this did. For rank 0 that
+            // made every legal value invalid, because an array is the only thing such an argument accepts: the
+            // method could not be called at all. `any` accepts anything and leaves the judgement to the device,
+            // which is the only party that knows the real signature.
             final Integer rank = argument.getValueRank();
-            if (rank == null || rank < 1) {
+            if (rank == null || rank == ValueRanks.Scalar) {
                 return new ArgumentShape(type, List.of());
+            }
+            if (rank < 1) {
+                return ArgumentShape.UNSTATEABLE;
             }
 
             final UInteger[] declared = argument.getArrayDimensions();

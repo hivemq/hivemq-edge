@@ -207,6 +207,94 @@ class MethodArgumentsArrayTest {
     }
 
     @Test
+    void rankZero_takesTheDepthFromTheRequest() throws Exception {
+        // The decisive test. OPC 10000-3 table 28: rank 0 (OneOrMoreDimensions) declares an array of one
+        // dimension or more, and never a scalar -- the server has simply declined to fix the depth. Treating it
+        // as a scalar, which is what `rank < 1` did, refused every legal value: an array is the only thing such
+        // an argument accepts, so the method could not be invoked at all.
+        //
+        // The depth therefore comes from the request, which is sound because nothing earlier constrains it --
+        // the generated schema says `any` for this rank, having no way to state "an array of unknown depth".
+        final Variant[] oneDimension = MethodArguments.forCall(
+                signature(argument("values", NodeIds.Int32, 0, null)), json("{\"values\": [1, 2, 3]}"));
+
+        assertThat(oneDimension[0].value()).isInstanceOf(Integer[].class);
+        assertThat((Integer[]) oneDimension[0].value()).containsExactly(1, 2, 3);
+
+        final Variant[] twoDimensions = MethodArguments.forCall(
+                signature(argument("values", NodeIds.Int32, 0, null)), json("{\"values\": [[1, 2], [3, 4]]}"));
+
+        assertThat(twoDimensions[0].value()).isInstanceOf(Matrix.class);
+        assertThat(((Matrix) twoDimensions[0].value()).getDimensions()).containsExactly(2, 2);
+    }
+
+    @Test
+    void rankZero_refusesASingleValueNamingWhyItCannotBeOne() throws Exception {
+        // The one thing rank 0 excludes. Checked here rather than left to the device so the caller is told what
+        // the declaration says, which a server's bare Bad_InvalidArgument would not convey.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("values", NodeIds.Int32, 0, null)), json("{\"values\": 7}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("values")
+                .hasMessageContaining("one or more dimensions");
+    }
+
+    @Test
+    void rankAny_acceptsEitherAScalarOrAnArray() throws Exception {
+        // Rank -2 (Any): a scalar or an array of any number of dimensions. Both halves are legal, and only the
+        // scalar half used to work.
+        final Variant[] scalar =
+                MethodArguments.forCall(signature(argument("v", NodeIds.Int32, -2, null)), json("{\"v\": 7}"));
+        assertThat(scalar[0].value()).isEqualTo(7);
+
+        final Variant[] flat =
+                MethodArguments.forCall(signature(argument("v", NodeIds.Int32, -2, null)), json("{\"v\": [1, 2]}"));
+        assertThat(flat[0].value()).isInstanceOf(Integer[].class);
+
+        final Variant[] nested = MethodArguments.forCall(
+                signature(argument("v", NodeIds.Int32, -2, null)), json("{\"v\": [[1, 2], [3, 4]]}"));
+        assertThat(nested[0].value()).isInstanceOf(Matrix.class);
+    }
+
+    @Test
+    void rankScalarOrOneDimension_acceptsBothAndRefusesDeeper() throws Exception {
+        // Rank -3 (ScalarOrOneDimension) permits exactly two shapes, so unlike rank -2 there is something to
+        // refuse -- and refusing it here names the declaration rather than leaving the device to object.
+        final Variant[] scalar =
+                MethodArguments.forCall(signature(argument("v", NodeIds.Int32, -3, null)), json("{\"v\": 7}"));
+        assertThat(scalar[0].value()).isEqualTo(7);
+
+        final Variant[] flat =
+                MethodArguments.forCall(signature(argument("v", NodeIds.Int32, -3, null)), json("{\"v\": [1, 2]}"));
+        assertThat(flat[0].value()).isInstanceOf(Integer[].class);
+
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("v", NodeIds.Int32, -3, null)), json("{\"v\": [[1, 2]]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("one-dimensional");
+    }
+
+    @Test
+    void rankScalar_stillRefusesAnArray() throws Exception {
+        // The counterpart: rank -1 is the one negative rank that genuinely means scalar, and inferring a depth
+        // from the request must not start reshaping it.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("v", NodeIds.Int32, -1, null)), json("{\"v\": [1, 2]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("v");
+    }
+
+    @Test
+    void aDeclaredRank_stillDecidesTheDepthRatherThanTheRequest() throws Exception {
+        // And a positive rank keeps deciding: a flat list for a two-dimensional argument is a caller's mistake,
+        // not something to reshape into one row.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("grid", NodeIds.Int32, 2, null)), json("{\"grid\": [1, 2, 3]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("expected an array");
+    }
+
+    @Test
     void aFlatArrayForATwoDimensionalArgument_isRefused() throws Exception {
         // The declared rank decides the depth, not how deeply the JSON happens to nest. Encoding a flat list as a
         // two-dimensional array is not possible, and silently treating it as one row would be worse.

@@ -162,6 +162,51 @@ class MethodSchemasShapeTest {
     }
 
     @Test
+    void anArgumentWhoseRankFixesNoShape_isDescribedAsAny() {
+        // OPC 10000-3 table 28 gives a value rank six meanings, and three of them fix no shape this model can
+        // state: 0 (an array of one or more dimensions), -2 (a scalar or an array of any depth) and -3 (a
+        // scalar or a one-dimensional array). There is no union here, so "a scalar or an array" has no form, and
+        // rank 0 promises an array of a depth the server declined to fix.
+        //
+        // `any` is the honest answer -- the same one already given to an argument of a custom structure and to
+        // one two methods declare differently. What it replaces is worse than vague: these were described as
+        // scalars, so for rank 0, whose only legal values are arrays, every legal value was invalid and the
+        // method could not be called.
+        for (final int rank : new int[] {0, -2, -3}) {
+            final MethodSignature method = new MethodSignature(
+                    "Start",
+                    NODE,
+                    List.of(new Argument("v", NodeIds.Int32, rank, null, LocalizedText.NULL_VALUE)),
+                    List.of());
+
+            final JsonNode property = json(MethodSchemas.requestSchema(List.of(method)))
+                    .get("properties")
+                    .get("v");
+
+            assertThat(property.has("type"))
+                    .withFailMessage("rank %d was given a type rather than `any`: %s", rank, property)
+                    .isFalse();
+        }
+    }
+
+    @Test
+    void aScalarRank_isStillDescribedAsItsType() {
+        // Rank -1 is the one negative rank that genuinely means scalar, and it keeps its type: widening it to
+        // `any` would throw away a constraint the device did state.
+        final MethodSignature method = new MethodSignature(
+                "Start",
+                NODE,
+                List.of(new Argument("v", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
+                List.of());
+
+        final JsonNode property = json(MethodSchemas.requestSchema(List.of(method)))
+                .get("properties")
+                .get("v");
+
+        assertThat(property.get("type").textValue()).isEqualTo("integer");
+    }
+
+    @Test
     void responseSchema_staysOpen() {
         // The asymmetry is deliberate. The request schema is a contract a caller must meet, so closing it refuses
         // what no method declares. The response schema describes what Edge produces, and closing that would be a
