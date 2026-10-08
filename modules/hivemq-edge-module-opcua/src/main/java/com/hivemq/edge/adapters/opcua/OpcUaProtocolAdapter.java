@@ -339,7 +339,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 opcUaServiceFaultListener,
                 this::publishStatusFrom,
                 this::warmUpBrowseMetadata,
-                this::publishReadyFrom);
+                this::publishReadyFrom,
+                methodCache::invalidate);
         if (claimConnection(conn)) {
             // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
             // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
@@ -496,7 +497,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     opcUaServiceFaultListener,
                     this::publishStatusFrom,
                     this::warmUpBrowseMetadata,
-                    this::publishReadyFrom);
+                    this::publishReadyFrom,
+                    methodCache::invalidate);
 
             // Set as current connection and attempt connection with retry logic
             if (claimConnection(newConn)) {
@@ -1470,9 +1472,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final boolean claimed = opcUaClientConnection.compareAndSet(null, connection);
             if (claimed) {
                 // A method NodeId is the server's to assign and stable for a session, so the cache is keyed to
-                // the session rather than given an expiry. This is the seam that defines that: a new generation
-                // -- first connect or any reconnect -- starts with nothing remembered, which is what makes a
-                // server restart that renumbers its nodes safe.
+                // the session rather than given an expiry. One of the two seams that start a session: this one
+                // covers a first connect and every reconnect the adapter drives by building a replacement
+                // connection. The other is the session-active hook, for a reconnect Milo performs inside the
+                // existing client -- see OpcUaClientConnection#onSessionReplaced. Both are needed; this one
+                // alone kept entries across precisely the event that may renumber them.
                 methodCache.invalidate();
             }
             return claimed;
@@ -1789,7 +1793,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 opcUaServiceFaultListener,
                                 this::publishStatusFrom,
                                 this::warmUpBrowseMetadata,
-                                this::publishReadyFrom);
+                                this::publishReadyFrom,
+                                methodCache::invalidate);
 
                         // Set as current connection and attempt
                         if (claimConnection(newConn)) {

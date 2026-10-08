@@ -29,10 +29,23 @@ import org.jetbrains.annotations.NotNull;
 /// does renumbers it. So reading it once per tag and reusing it is correct, and re-browsing on every call would
 /// pay a round trip to learn what has not changed.
 ///
-/// What *can* renumber it is a server restart, or anything else that ends the session. The cache is therefore
-/// owned by the connection rather than by the adapter: {@link #invalidate()} is called when a connection is
-/// replaced, so a new session starts with nothing remembered. That is the whole invalidation rule -- there is no
-/// expiry to tune, because the thing that makes an entry stale is exactly the thing that ends the session.
+/// What *can* change it is a new session. OPC 10000-3 §5.2.2 is precise about which part: a server **shall**
+/// persist a node's identifier and the namespace URI its index refers to, but **may** change the
+/// `namespaceIndex` "with future Sessions and therefore a Client shall not assume the namespaceIndex will not
+/// change". A remembered NodeId carries an index, so an entry that outlives its session may name a different
+/// node than the one it was read for.
+///
+/// So the invalidation rule is **one session, one set of entries**, and {@link #invalidate()} is called from
+/// both seams that start a session:
+///
+///   - claiming the connection, which covers a first connect and every reconnect the adapter drives by
+///     building a replacement connection;
+///   - the session-active hook, which covers a reconnect Milo performs *inside* the existing client. Milo owns
+///     the session lifecycle: when the link drops and recovers it activates a fresh session and no connection
+///     is swapped, so this seam is the only thing that learns of it. Attaching invalidation solely to the
+///     connection swap left those entries in place across exactly the event that can renumber them.
+///
+/// There is still no expiry to tune, because what makes an entry stale is precisely what starts a new session.
 ///
 /// ## Reading is lazy
 ///
