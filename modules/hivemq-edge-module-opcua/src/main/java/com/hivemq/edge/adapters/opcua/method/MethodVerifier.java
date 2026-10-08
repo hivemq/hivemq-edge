@@ -192,17 +192,24 @@ public final class MethodVerifier {
                     }
                     return (Result) new Result.Verified(List.copyOf(methods));
                 })
-                .exceptionally(throwable -> new Result.Unverifiable("could not read the arguments of a method of '"
+                // Rejected rather than Unverifiable, which the cache drops so the next request asks again. In
+                // Edge-1 a failure is final: a tag whose methods could not be described stays unusable for the
+                // session rather than retrying per request. The message names the method and the cause, so an
+                // operator can tell an access refusal from a server that went away.
+                .exceptionally(throwable -> new Result.Rejected("the methods of tag '"
                         + tagName
-                        + "': "
+                        + "' could not be described, so no request against it can be turned into a call: "
                         + Browsing.describeException(throwable)));
     }
 
     /// Reads one method's NodeId and argument lists.
     ///
-    /// Yields null for a reference the address space cannot resolve to a method node, rather than failing the
-    /// whole tag: one unreadable method among several is a gap in what the tag can do, and rejecting the tag
-    /// would take the other methods down with it.
+    /// Yields null for a reference that is not a method node, which is a gap in what the tag can do rather than
+    /// a fault -- the other methods stay callable.
+    ///
+    /// A **failure** is not tolerated and propagates, so {@link #readSignatures} rejects the tag. Everything
+    /// here was previously swallowed: an unreadable argument list became "this method takes no arguments", and
+    /// the method was then offered with a signature that was not its own.
     private static @NotNull CompletableFuture<MethodSignature> readSignature(
             final @NotNull OpcUaClient client,
             final @NotNull ReferenceDescription reference,
@@ -221,20 +228,35 @@ public final class MethodVerifier {
                             if (!(node instanceof final UaMethodNode methodNode)) {
                                 return CompletableFuture.completedFuture((MethodSignature) null);
                             }
-                            // An absent InputArguments property reads as an empty array rather than an error, which
-                            // is Milo's own behaviour and the right one: a method taking no arguments and one whose
-                            // property the server omits are indistinguishable over the wire, and both are callable.
-                            // The difference shows only in how much the generated schema can say.
+                            // An absent arguments property means the method takes none: OPC 10000-3 section
+                            // 5.7 makes the property optional and says "a Property that is not provided
+                            // indicates that there are no input arguments or output arguments", so that is how
+                            // an argument-less method is normally modelled. Milo reports it as Bad_NotFound.
+                            //
+                            // Every other failure propagates. It used to be caught here and recorded as an
+                            // empty list, which claimed the method takes no arguments: the schema said so and
+                            // admitted no properties, so every correct request was refused for the session with
+                            // nothing to distinguish it from a method that genuinely takes none.
                             final CompletableFuture<Argument[]> inputs =
-                                    methodNode.readInputArgumentsAsync().exceptionally(t -> new Argument[0]);
+                                    emptyWhenAbsent(methodNode.readInputArgumentsAsync());
                             final CompletableFuture<Argument[]> outputs =
-                                    methodNode.readOutputArgumentsAsync().exceptionally(t -> new Argument[0]);
+                                    emptyWhenAbsent(methodNode.readOutputArgumentsAsync());
                             return inputs.thenCombine(
                                     outputs,
                                     (in, out) ->
                                             new MethodSignature(name, nodeId, objectId, List.of(in), List.of(out)));
-                        }))
-                .exceptionally(throwable -> null);
+                        }));
+    }
+
+    /// Reads an arguments property, treating "the server does not expose it" as "the method has none".
+    ///
+    /// The one failure that is an answer about the method. Every other -- a timeout, an access refusal, a
+    /// transport failure -- propagates, and `readSignatures` rejects the tag.
+    static @NotNull CompletableFuture<Argument[]> emptyWhenAbsent(final @NotNull CompletableFuture<Argument[]> read) {
+
+        return read.exceptionallyCompose(throwable -> Browsing.notFound(throwable)
+                ? CompletableFuture.completedFuture(new Argument[0])
+                : CompletableFuture.failedFuture(throwable));
     }
 
     /// Adds the methods the object's type exposes but the object itself does not.

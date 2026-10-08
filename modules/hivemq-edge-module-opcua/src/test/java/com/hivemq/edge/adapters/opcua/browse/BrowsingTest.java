@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -353,5 +354,39 @@ class BrowsingTest {
                 .thenReturn(CompletableFuture.completedFuture(page(ByteString.NULL_VALUE)));
 
         assertThat(Browsing.browseAll(client, BROWSE).join()).isEmpty();
+    }
+
+    @Test
+    void notFound_distinguishesAnAbsentOptionalPropertyFromAFailedRead() {
+        // The one failure that is an answer about a node rather than about the read. Milo answers
+        // Bad_NotFound when its browse for an optional property finds none, and OPC 10000-3 section 5.7 makes
+        // a method's InputArguments optional, stating that "a Property that is not provided indicates that
+        // there are no input arguments" -- so an argument-less method is normally modelled with no property.
+        //
+        // The method path used to treat *every* read failure as "no arguments", so a timeout or an access
+        // refusal described a method as taking none: the schema said so and admitted no properties, and every
+        // correct request was refused for the session.
+        assertThat(Browsing.notFound(new UaException(StatusCodes.Bad_NotFound))).isTrue();
+
+        assertThat(Browsing.notFound(new UaException(StatusCodes.Bad_Timeout)))
+                .as("a timeout says nothing about the node")
+                .isFalse();
+        assertThat(Browsing.notFound(new UaException(StatusCodes.Bad_UserAccessDenied)))
+                .as("a refusal to answer says nothing about the node")
+                .isFalse();
+        // Something that carries no status at all cannot be the absent case, and guessing that it is would
+        // reinstate the defect for exactly the failures hardest to explain.
+        assertThat(Browsing.notFound(new IllegalStateException("not connected")))
+                .isFalse();
+        assertThat(Browsing.notFound(null)).isFalse();
+    }
+
+    @Test
+    void notFound_seesThroughTheWrappersAFailedFutureAdds() {
+        // Called on what a join() or an exceptionally() hands over, which is a CompletionException around the
+        // real cause -- so the unwrapping is part of the contract rather than an implementation detail.
+        assertThat(Browsing.notFound(
+                        new java.util.concurrent.CompletionException(new UaException(StatusCodes.Bad_NotFound))))
+                .isTrue();
     }
 }

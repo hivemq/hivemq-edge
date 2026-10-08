@@ -23,6 +23,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -137,6 +138,22 @@ public final class Browsing {
                 && rootOf(throwable) instanceof final BrowseFailedException failure
                 && failure.status() != null
                 && failure.status().value() == StatusCodes.Bad_NodeIdUnknown;
+    }
+
+    /**
+     * Whether a failed read says the server does not expose that node, rather than that the read went wrong.
+     * <p>
+     * Milo answers {@code Bad_NotFound} when its browse for an optional property finds none
+     * ({@code UaNode.getPropertyNodeAsync}). That is the one failure which is an answer about the node: OPC
+     * 10000-3 §5.7 makes a method's {@code InputArguments} and {@code OutputArguments} optional and states that
+     * "a Property that is not provided indicates that there are no input arguments or output arguments", so an
+     * argument-less method is normally modelled with no property at all. Everything else — a timeout, an
+     * authorization refusal, a transport failure — says nothing and keeps propagating.
+     */
+    public static boolean notFound(final @Nullable Throwable throwable) {
+        return throwable != null
+                && rootOf(throwable) instanceof final UaException failure
+                && failure.getStatusCode().value() == StatusCodes.Bad_NotFound;
     }
 
     /**
