@@ -1056,6 +1056,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // Reachable despite the schema requiring methodName: a mapping whose stored schema predates that
             // requirement, or one edited by hand, still arrives here.
             refuseWithResponse(
+                    client,
                     opcuaTag,
                     "",
                     payload,
@@ -1075,6 +1076,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         // about it.
                         log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
                         refuseWithResponse(
+                                client,
                                 opcuaTag,
                                 methodName,
                                 payload,
@@ -1090,6 +1092,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         // The tag names something that is not a callable object, so no method on it can exist.
                         case MethodVerifier.Result.Rejected rejected ->
                             refuseWithResponse(
+                                    client,
                                     opcuaTag,
                                     methodName,
                                     payload,
@@ -1100,6 +1103,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         // purpose -- a caller retrying later may succeed, which is not true of a rejection.
                         case MethodVerifier.Result.Unverifiable unverifiable ->
                             refuseWithResponse(
+                                    client,
                                     opcuaTag,
                                     methodName,
                                     payload,
@@ -1137,6 +1141,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // what the object does offer is what an operator who mistyped a method actually needs.
             case MethodReference.Resolution.NoSuchMethod noSuch -> {
                 refuseWithResponse(
+                        client,
                         opcuaTag,
                         methodName,
                         payload,
@@ -1149,6 +1154,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // naming one that does not exist. The message carries the node ids that would identify them.
             case MethodReference.Resolution.Ambiguous ambiguous -> {
                 refuseWithResponse(
+                        client,
                         opcuaTag,
                         methodName,
                         payload,
@@ -1160,6 +1166,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // The request is malformed rather than wrong about the device, which is why this one differs.
             case MethodReference.Resolution.Malformed malformed -> {
                 refuseWithResponse(
+                        client,
                         opcuaTag,
                         methodName,
                         payload,
@@ -1176,7 +1183,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         } catch (final MethodArguments.InvalidArgumentException e) {
             // The request is wrong about the method, which is a client error and not a device one. Sending it
             // anyway would get Bad_InvalidArgument back with no indication of which argument was at fault.
-            refuseWithResponse(opcuaTag, methodName, payload, StatusCodes.Bad_InvalidArgument, e.reason(), output);
+            refuseWithResponse(
+                    client, opcuaTag, methodName, payload, StatusCodes.Bad_InvalidArgument, e.reason(), output);
             return;
         }
 
@@ -1190,6 +1198,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 // device did nothing. A caller retrying on it needs the method to be idempotent.
                 log.error("Exception while calling '{}' on tag '{}'", methodName, tagName, throwable);
                 refuseWithResponse(
+                        client,
                         opcuaTag,
                         methodName,
                         payload,
@@ -1208,7 +1217,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // The response goes out before the write completes. A caller waiting on the answer is waiting for
             // the message, not for the write, and publishing after completing the write would let a fast caller
             // see its request acknowledged while the answer is still in flight.
-            publishMethodResponse(opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), result);
+            publishMethodResponse(
+                    client, opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), result);
 
             if (result.succeeded()) {
                 log.debug("Called '{}' on tag '{}'", methodName, tagName);
@@ -1243,6 +1253,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      *                   actually offers, which the server's bare status code cannot.
      */
     private void refuseWithResponse(
+            final @NotNull OpcUaClient client,
             final @NotNull OpcuaTag opcuaTag,
             final @NotNull String methodName,
             final @NotNull OpcUaPayload payload,
@@ -1253,7 +1264,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         log.error("Refused a method call on tag '{}': {}", opcuaTag.getName(), reason);
 
         final MethodCallResult refusal = new MethodCallResult(new StatusCode(statusCode), Map.of(), Map.of());
-        publishMethodResponse(opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), refusal);
+        publishMethodResponse(
+                client, opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), refusal);
 
         output.fail(reason);
     }
@@ -1269,6 +1281,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      * and a method call is not generally safe to repeat.
      */
     private void publishMethodResponse(
+            final @NotNull OpcUaClient client,
             final @NotNull OpcuaTag opcuaTag,
             final @NotNull String methodName,
             final @Nullable String correlationData,
@@ -1290,7 +1303,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         try {
             final var publisher = services.protocolAdapterTagStreamingService().dataPointsPublisher();
             final var builder = publisher.addDataPoint(opcuaTag);
-            MethodResponse.write(builder, methodName, correlationData, responseTopic, result);
+            // The client's encoding context, so a method's output is converted by the same code as a variable's
+            // value of the same type -- see MethodResponse#putVariant.
+            MethodResponse.write(
+                    builder, methodName, correlationData, responseTopic, result, client.getDynamicEncodingContext());
             builder.endDataPoint();
             publisher.publish();
         } catch (final Exception e) {

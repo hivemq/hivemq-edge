@@ -16,14 +16,20 @@
 package com.hivemq.edge.adapters.opcua.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.datapoint.DataPointWithMetadata;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -69,7 +75,10 @@ class MethodResponseTest {
 
         final var builder =
                 (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
-        MethodResponse.write(builder, methodName, correlationData, responseTopic, result);
+        // The builtin types are all these tests use. A custom structure would need the client's own context,
+        // which is what production passes.
+        MethodResponse.write(
+                builder, methodName, correlationData, responseTopic, result, DefaultEncodingContext.INSTANCE);
         builder.endDataPoint();
         return ((DataPointWithMetadata) builder.build("test-adapter")).getJsonNode();
     }
@@ -189,6 +198,29 @@ class MethodResponseTest {
         assertThat(value.get("count").isNumber()).isTrue();
         assertThat(value.get("ratio").isNumber()).isTrue();
         assertThat(value.get("label").isTextual()).isTrue();
+    }
+
+    @Test
+    void theTypesWithNoJavaEquivalent_arePublishedAsTheSchemaDescribesThem() {
+        // The decisive test. These are the types a private dispatch does not cover, and they used to reach the
+        // message as Java debug text: an unsigned 32-bit 7 as "7", a ByteString as
+        // "ByteString[bytes=010203]", a DateTime as "DateTime{date=..., instant=...}". Every one contradicted
+        // the generated schema, which promises a number, base64 text and an ISO instant -- so a consumer
+        // validating a successful response was rejected for a value Edge itself produced.
+        //
+        // Published through the same converter as a variable's value now, which is what makes a method's output
+        // of a given OPC UA type look like a variable's value of that type rather than merely being asserted to.
+        final Map<String, Variant> outputs = new LinkedHashMap<>();
+        outputs.put("counter", Variant.of(uint(7)));
+        outputs.put("blob", Variant.of(ByteString.of(new byte[] {1, 2, 3})));
+        outputs.put("at", Variant.of(new DateTime(Instant.parse("2026-10-08T12:00:00Z"))));
+
+        final JsonNode value = write("Status", null, success(outputs)).get("value");
+
+        assertThat(value.get("counter").isNumber()).isTrue();
+        assertThat(value.get("counter").intValue()).isEqualTo(7);
+        assertThat(value.get("blob").textValue()).isEqualTo(Base64.getEncoder().encodeToString(new byte[] {1, 2, 3}));
+        assertThat(value.get("at").textValue()).isEqualTo("2026-10-08T12:00:00Z");
     }
 
     @Test

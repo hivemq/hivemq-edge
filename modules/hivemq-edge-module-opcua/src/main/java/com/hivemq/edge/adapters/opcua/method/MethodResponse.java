@@ -16,8 +16,9 @@
 package com.hivemq.edge.adapters.opcua.method;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import java.util.Map;
-import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.jetbrains.annotations.NotNull;
@@ -57,15 +58,19 @@ public final class MethodResponse {
     ///                        where that consumer looks -- it is the one entry it consumes instead of
     ///                        publishing, so a routing instruction never appears inside the routed message.
     /// @param result          what the call answered.
+    /// @param ctx             the client's encoding context, which the shared converter needs to decode a value
+    ///                        of a custom structure type. A method *argument* of such a type is refused as
+    ///                        unencodable, but a device may still return one.
     public static void write(
             final @NotNull DataPointBuilder<?> builder,
             final @NotNull String methodName,
             final @Nullable String correlationData,
             final @Nullable String responseTopic,
-            final @NotNull MethodCallResult result) {
+            final @NotNull MethodCallResult result,
+            final @NotNull EncodingContext ctx) {
 
         if (result.succeeded()) {
-            writeOutputArguments(builder, result.outputArguments());
+            writeOutputArguments(builder, result.outputArguments(), ctx);
         } else {
             // Present and null rather than absent. Absence would mean a consumer reading `value` has to ask
             // whether the field exists before asking what it holds, and the two questions have different
@@ -83,7 +88,7 @@ public final class MethodResponse {
         }
         if (!result.succeeded()) {
             context.put("errorCode", result.statusName());
-            writeStatusInfo(context, result);
+            writeStatusInfo(context, result, ctx);
         }
         context.endObject();
     }
@@ -93,10 +98,12 @@ public final class MethodResponse {
     /// An empty object for a method that returns nothing: it ran and had nothing to report, which a consumer
     /// should be able to distinguish from the null that says it did not run.
     private static void writeOutputArguments(
-            final @NotNull DataPointBuilder<?> builder, final @NotNull Map<String, Variant> outputs) {
+            final @NotNull DataPointBuilder<?> builder,
+            final @NotNull Map<String, Variant> outputs,
+            final @NotNull EncodingContext ctx) {
 
         final var value = builder.startObjectValue();
-        outputs.forEach((name, variant) -> putVariant(value, name, variant));
+        outputs.forEach((name, variant) -> putVariant(value, name, variant, ctx));
         value.endObject();
     }
 
@@ -106,7 +113,9 @@ public final class MethodResponse {
     /// the method itself returned. Each part appears only when the device supplied it, so `statusInfo` with one
     /// key is normal and the whole object is absent when the device supplied neither.
     private static void writeStatusInfo(
-            final DataPointBuilder.@NotNull ObjectBuilder<?> context, final @NotNull MethodCallResult result) {
+            final DataPointBuilder.@NotNull ObjectBuilder<?> context,
+            final @NotNull MethodCallResult result,
+            final @NotNull EncodingContext ctx) {
 
         final boolean hasArguments = !result.argumentStatuses().isEmpty();
         final boolean hasDeviceOutput = !result.outputArguments().isEmpty();
@@ -127,94 +136,32 @@ public final class MethodResponse {
             // device's explanation rather than the method's result, which is why they are here and not in
             // `value`.
             final var deviceOutput = statusInfo.startObject("deviceOutput");
-            result.outputArguments().forEach((name, variant) -> putVariant(deviceOutput, name, variant));
+            result.outputArguments().forEach((name, variant) -> putVariant(deviceOutput, name, variant, ctx));
             deviceOutput.endObject();
         }
         statusInfo.endObject();
     }
 
-    /// Writes one OPC UA value under a key, as the JSON type that matches it.
+    /// Writes one OPC UA value under a key, through the same converter the read path uses.
     ///
-    /// Each branch is explicit rather than deferring to `toString`, which would publish a number as a quoted
-    /// string and a boolean as `"true"` -- a consumer validating against the generated schema would then be
-    /// rejected for a value Edge itself produced.
+    /// Delegated rather than dispatched here. An earlier version handled the primitives itself and fell back to
+    /// `toString` for everything else, on the stated grounds that `toString` was what the read path published for
+    /// those types. It is not: {@link OpcUaToJsonConverter} converts every one of them explicitly -- an unsigned
+    /// integer becomes a number, a ByteString base64 text, a DateTime an ISO instant, a NodeId and a
+    /// QualifiedName objects. So a method returning a `UInt32` of 7 published `"7"` where the generated schema
+    /// promised `7`, and a ByteString published `ByteString[bytes=010203]` where the schema promised base64.
+    ///
+    /// The same type must look the same whether it arrives as a variable's value or a method's output, and the
+    /// way to get that is one converter rather than two that agree by assertion. A multi-dimensional output
+    /// needs nothing special here either: the converter unwraps a `Matrix` to its nested array itself, which it
+    /// has to do anyway for a variable whose value is one.
     private static void putVariant(
             final DataPointBuilder.@NotNull ObjectBuilder<?> target,
             final @NotNull String key,
-            final @Nullable Variant variant) {
+            final @Nullable Variant variant,
+            final @NotNull EncodingContext ctx) {
 
-        // A multi-dimensional output arrives as a Matrix rather than a nested Java array, which is how Milo
-        // represents one inside a Variant. Its nested form is what the published shape should mirror.
-        final Object raw = variant == null ? null : variant.value();
-        final Object value = raw instanceof final Matrix matrix ? matrix.nestedArrayValue() : raw;
-
-        if (value == null) {
-            target.putNull(key);
-        } else if (value instanceof final Object[] elements) {
-            // An array-valued output argument. Without this it fell into the toString branch below and published
-            // a Java array identity -- `[Ljava.lang.Integer;@1a2b3c` -- for a method whose schema promised a JSON
-            // array. Nested arrays recurse, so a multi-dimensional output keeps its shape.
-            final var array = target.startArray(key);
-            addElements(array, elements);
-            array.endArray();
-        } else if (value instanceof final Boolean b) {
-            target.put(key, b.booleanValue());
-        } else if (value instanceof final Integer i) {
-            target.put(key, i.intValue());
-        } else if (value instanceof final Long l) {
-            target.put(key, l.longValue());
-        } else if (value instanceof final Short s) {
-            target.put(key, s.shortValue());
-        } else if (value instanceof final Byte b) {
-            target.put(key, b.byteValue());
-        } else if (value instanceof final Double d) {
-            target.put(key, d.doubleValue());
-        } else if (value instanceof final Float f) {
-            target.put(key, f.floatValue());
-        } else if (value instanceof final String s) {
-            target.put(key, s);
-        } else {
-            // Unsigned integers, DateTime, ByteString, NodeId and the rest. Their own toString is the wire form
-            // the read path publishes for them, so matching it keeps a method's output and a variable's value
-            // looking the same for the same OPC UA type.
-            target.put(key, value.toString());
-        }
-    }
-
-    /// Appends each element of an array output, as the JSON type that matches it.
-    ///
-    /// The same dispatch as {@link #putVariant}, by element rather than by key: one list of branches would need a
-    /// target that is both an object and an array, and the two builders have no common supertype for that.
-    private static void addElements(
-            final DataPointBuilder.@NotNull ArrayBuilder<?> target, final @NotNull Object @NotNull [] elements) {
-
-        for (final Object element : elements) {
-            if (element == null) {
-                target.addNull();
-            } else if (element instanceof final Object[] inner) {
-                final var nested = target.startArray();
-                addElements(nested, inner);
-                nested.endArray();
-            } else if (element instanceof final Boolean b) {
-                target.add(b.booleanValue());
-            } else if (element instanceof final Integer i) {
-                target.add(i.intValue());
-            } else if (element instanceof final Long l) {
-                target.add(l.longValue());
-            } else if (element instanceof final Short s) {
-                target.add(s.shortValue());
-            } else if (element instanceof final Byte b) {
-                target.add(b.byteValue());
-            } else if (element instanceof final Double d) {
-                target.add(d.doubleValue());
-            } else if (element instanceof final Float f) {
-                target.add(f.floatValue());
-            } else if (element instanceof final String s) {
-                target.add(s);
-            } else {
-                target.add(element.toString());
-            }
-        }
+        OpcUaToJsonConverter.addValueToObject(target, key, variant == null ? null : variant.value(), ctx);
     }
 
     /// A status code's specification name, falling back to its hexadecimal value.
