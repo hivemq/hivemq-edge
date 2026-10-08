@@ -17,6 +17,7 @@ package com.hivemq.protocols.tag;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.hivemq.adapter.sdk.api.schema.ObjectSchema;
 import com.hivemq.adapter.sdk.api.schema.ObjectSchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
@@ -24,7 +25,6 @@ import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
-import com.hivemq.persistence.mappings.SouthboundMapping;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,74 +42,27 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     private final @NotNull CompletableFuture<DataPointSchema> future =
             new CompletableFuture<DataPointSchema>().orTimeout(30, TimeUnit.SECONDS);
 
-    // Which fields a method request carries beside `value`, as the mapping declared. Not the adapter's to decide:
-    // the adapter describes the device, and these three describe Edge's own request/response convention, which is
-    // configured per mapping and offered for every protocol.
-    private final boolean methodCalls;
-    private final boolean correlationData;
-    private final boolean responseTopic;
+    /**
+     * The field whose presence in the {@code context} part marks a tag as a method tag.
+     */
+    private static final @NotNull String METHOD_NAME = "methodName";
 
     /**
-     * For schema generation with no mapping behind it — discovery, browsing, the REST tag-schema endpoint.
+     * What a response carries beside {@code value}, in the order they are declared.
      * <p>
-     * No mapping means nothing declared any request fields, so the southbound document is a bare {@code value}:
-     * exactly what it was before method calls existed.
+     * {@code responseTopic} is absent on purpose: it says where an answer goes rather than anything about the
+     * answer, and {@code NorthboundTagConsumer} consumes it to choose the topic instead of publishing it.
      */
-    public TagSchemaCreationOutputImpl() {
-        this(false, false, false);
-    }
+    private static final @NotNull List<String> NORTHBOUND_METHOD_FIELDS =
+            List.of(METHOD_NAME, "correlationData", "errorCode", "statusInfo");
 
     /**
-     * For schema generation on behalf of one southbound mapping, carrying what that mapping declared it reads.
-     *
-     * @param methodCalls     whether the mapping carries method calls at all.
-     * @param correlationData whether requests carry a correlation token.
-     * @param responseTopic   whether requests may name their own response topic.
+     * What a request carries beside {@code value}.
+     * <p>
+     * {@code errorCode} and {@code statusInfo} are absent: a caller does not send a failure.
      */
-    public TagSchemaCreationOutputImpl(
-            final boolean methodCalls, final boolean correlationData, final boolean responseTopic) {
-        this.methodCalls = methodCalls;
-        this.correlationData = correlationData;
-        this.responseTopic = responseTopic;
-    }
-
-    /**
-     * For a tag's schema, derived from <em>every</em> southbound mapping that names that tag.
-     * <p>
-     * A tag has one schema but may be reached by several mappings, so the request fields it declares cannot be
-     * read off any single one. This resolves them across all of them, which is what lets a caller supply nothing
-     * but the tag it wants described.
-     * <p>
-     * <b>Whether a tag carries method calls is a property of the tag, so the mappings must agree.</b> One method
-     * mapping is enough to make it a method tag; a mapping that disagrees is a configuration error, not a reason
-     * to produce two schemas. Nothing refuses such a configuration today — the tag's own {@code kind} already
-     * records the same fact, and the two are unchecked against each other — so this takes the permissive reading
-     * and declares the fields, which fails a request loudly rather than discarding one silently.
-     * <p>
-     * <b>The two optional fields are declared only where every method mapping reads them.</b> A field required by
-     * one mapping and dropped by another cannot be mandatory: a caller publishing to the second would be refused
-     * for omitting a field that mapping would have discarded anyway. A declared field is a required one here, so
-     * where the mappings disagree the field is left out — the permissive reading, which lets a caller send it to
-     * the mapping that wants it without the other mapping refusing the message.
-     *
-     * @param southboundMappings every southbound mapping of the adapter, not only those naming this tag.
-     * @param tagName            the tag being described.
-     */
-    public static @NotNull TagSchemaCreationOutputImpl forTag(
-            final @NotNull List<SouthboundMapping> southboundMappings, final @NotNull String tagName) {
-        final List<SouthboundMapping> forThisTag = southboundMappings.stream()
-                .filter(mapping -> tagName.equals(mapping.getTagName()))
-                .toList();
-        final List<SouthboundMapping> methodMappings =
-                forThisTag.stream().filter(SouthboundMapping::isMethodCalls).toList();
-        if (methodMappings.isEmpty()) {
-            return new TagSchemaCreationOutputImpl();
-        }
-        return new TagSchemaCreationOutputImpl(
-                true,
-                methodMappings.stream().allMatch(SouthboundMapping::isCorrelationData),
-                methodMappings.stream().allMatch(SouthboundMapping::isResponseTopic));
-    }
+    private static final @NotNull List<String> SOUTHBOUND_METHOD_FIELDS =
+            List.of(METHOD_NAME, "correlationData", "responseTopic");
 
     public @Nullable String getMessage() {
         return message;
@@ -185,11 +138,52 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
                     .readable()
                     .writable(false);
         }
-        if (tagSchemas.context() != null) {
+        final ObjectSchema methodFields = methodFields(tagSchemas);
+        if (methodFields != null) {
+            // Lifted to the root, not nested under `context`: NorthboundTagConsumer copies these onto the
+            // published message beside `value`, so a nested `context` would describe a shape no message has.
+            liftMethodFields(builder, methodFields, NORTHBOUND_METHOD_FIELDS);
+        } else if (tagSchemas.context() != null) {
             builder.property("context").schema(tagSchemas.context()).readable().writable(false);
         }
 
         return builder.endObject().build();
+    }
+
+    /**
+     * The fields a method tag's messages carry beside {@code value}, or null for every other tag.
+     * <p>
+     * An adapter states them in the {@code context} part of what it produces, and a part naming
+     * {@code methodName} is what makes a tag a method tag. Nothing else tells the runtime: the tag's kind lives
+     * in the adapter's own module and the shared layer cannot name it, and the mapping flags that decide which
+     * fields a request carries are not reachable from here. The adapter already knows, and says so in the data.
+     */
+    private static @Nullable ObjectSchema methodFields(final @NotNull DataPointSchema tagSchemas) {
+        if (tagSchemas.context() instanceof final ObjectSchema context
+                && context.properties().containsKey(METHOD_NAME)) {
+            return context;
+        }
+        return null;
+    }
+
+    /**
+     * Declares the named fields the given part carries, at the document root, each optional.
+     * <p>
+     * Optional throughout, deliberately. A request and a response carry different subsets — a reply address is
+     * request-only, an error code response-only — and one part describes both directions, so requiring any of
+     * them would state something false about the other. Nothing is lost: a request that omits what it promised
+     * is refused by the adapter with a message naming the omission.
+     */
+    private static void liftMethodFields(
+            final @NotNull ObjectSchemaBuilder<SchemaBuilder> builder,
+            final @NotNull ObjectSchema methodFields,
+            final @NotNull List<String> fields) {
+        fields.forEach(field -> {
+            final Schema fieldSchema = methodFields.properties().get(field);
+            if (fieldSchema != null) {
+                builder.property(field).schema(fieldSchema);
+            }
+        });
     }
 
     /**
@@ -229,7 +223,13 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         // the adapter put on its own schema root — identical to the northbound rendering of the same value,
         // which is what lets a consumer detect "read and write use the same schema" by comparing value shapes.
         builder.property("value").required().schema(writeValue);
-        describeRequestFields(builder);
+        final ObjectSchema methodFields = methodFields(tagSchemas);
+        if (methodFields != null) {
+            // The same part the northbound document lifts, restricted to what a request carries. At the root
+            // because that is where a caller puts them: the southbound transform copies them through unmoved,
+            // and the adapter reads them off the payload root.
+            liftMethodFields(builder, methodFields, SOUTHBOUND_METHOD_FIELDS);
+        }
         // The wrapper itself is writable, and saying so matters. SchemaBuilder defaults every node to
         // writable = false, which renders readOnly on the document root — on the one document whose entire
         // purpose is to be written. Harmless while readOnly is only an annotation, but the moment it becomes
@@ -241,51 +241,6 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         // The northbound wrapper keeps its readOnly, and correctly so: that document describes what is
         // published, and it genuinely cannot be written. The asymmetry is the point, not an oversight.
         return builder.endObject().writable().build();
-    }
-
-    /**
-     * Declares the fields a method request carries <em>beside</em> {@code value}, as siblings of it.
-     * <p>
-     * These are Edge's vocabulary, not the device's: the device names what is inside {@code value}, and Edge names
-     * what is outside it. So they are described here rather than by the adapter — the three mapping flags they
-     * follow live on the generic southbound mapping and are offered for every protocol, which makes them a
-     * mapping-level concept that no single adapter owns. The field names are the ones
-     * {@link com.hivemq.protocols.MethodRequestInstructions} carries through the transform, and must stay in step
-     * with them: a name declared here but not carried would describe a field the adapter can never receive.
-     * <p>
-     * <b>A declared field is required, not merely allowed.</b> Each flag says the mapping <em>will read</em> that
-     * field, so a request omitting it cannot be served as configured — which makes it a schema failure, caught
-     * before anything reaches the device and reported with the JSON path, rather than a fault discovered deeper in
-     * or not at all. {@code methodName} is required whenever the mapping carries method calls, because a request
-     * naming no method cannot be dispatched under any configuration.
-     * <p>
-     * A field whose flag is off is <b>not declared at all</b>, rather than declared-and-optional. The southbound
-     * transform is a whitelist and drops it, so a schema accepting it would describe a field that can never
-     * arrive, and a caller sending it would pass validation and then be silently ignored.
-     */
-    private void describeRequestFields(final @NotNull ObjectSchemaBuilder<SchemaBuilder> builder) {
-        if (!methodCalls) {
-            return;
-        }
-        builder.property("methodName")
-                .required()
-                .scalar(ScalarType.STRING)
-                .description("the method to call, as the device names it")
-                .writable();
-        if (correlationData) {
-            builder.property("correlationData")
-                    .required()
-                    .scalar(ScalarType.STRING)
-                    .description("a token echoed unchanged on the response, so a caller can match the two")
-                    .writable();
-        }
-        if (responseTopic) {
-            builder.property("responseTopic")
-                    .required()
-                    .scalar(ScalarType.STRING)
-                    .description("the topic the response is published to, instead of the mapping's own")
-                    .writable();
-        }
     }
 
     @Override

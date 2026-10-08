@@ -94,21 +94,27 @@ class MethodSchemasShapeTest {
     }
 
     @Test
-    void responseContextSchema_carriesWhatMethodResponsePutsInContext() {
-        // The counterpart: these four do not belong in `value`, and MethodResponse writes them to the datapoint's
-        // context. Only methodName is always there, so only it is required.
-        final JsonNode schema = json(MethodSchemas.responseContextSchema());
-        final JsonNode properties = schema.get("properties");
+    void methodFieldsSchema_namesEveryFieldCarriedBesideValue() {
+        // The counterpart: these five do not belong in `value`. This one part serves both directions -- the
+        // runtime reads the names from it and lifts them to the document root -- so it names the union.
+        final JsonNode properties = json(MethodSchemas.methodFieldsSchema()).get("properties");
 
         assertThat(properties.has("methodName")).isTrue();
         assertThat(properties.has("correlationData")).isTrue();
+        assertThat(properties.has("responseTopic")).isTrue();
         assertThat(properties.has("errorCode")).isTrue();
         assertThat(properties.has("statusInfo")).isTrue();
+    }
 
-        final var required = schema.get("required");
-        assertThat(required).isNotNull();
-        assertThat(required.toString()).contains("methodName");
-        assertThat(required.toString()).doesNotContain("errorCode");
+    @Test
+    void methodFieldsSchema_requiresNothing() {
+        // Every field optional, methodName included. A request and a response carry different subsets of this
+        // one part, so requiring any field would state something false about the other direction.
+        final JsonNode schema = json(MethodSchemas.methodFieldsSchema());
+
+        assertThat(schema.has("required"))
+                .withFailMessage("the method-fields part requires something: %s", schema)
+                .isFalse();
     }
 
     @Test

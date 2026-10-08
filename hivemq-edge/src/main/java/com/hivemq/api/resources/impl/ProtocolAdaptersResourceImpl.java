@@ -750,10 +750,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final com.hivemq.adapter.sdk.api.ProtocolAdapter adapter =
                 maybeWrapper.get().getAdapter();
 
-        // Derived from the adapter's southbound mappings rather than passed in: a tag has one schema but may be
-        // reached by several mappings, so which request fields it declares is a question about all of them.
-        final TagSchemaCreationOutputImpl tagSchemaCreationOutput =
-                TagSchemaCreationOutputImpl.forTag(maybeWrapper.get().getSouthboundMappings(), decodedTagName);
+        final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
         adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
 
         try {

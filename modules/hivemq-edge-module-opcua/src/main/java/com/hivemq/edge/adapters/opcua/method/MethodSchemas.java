@@ -107,7 +107,7 @@ public final class MethodSchemas {
     ///
     /// Everything else a response carries (`methodName`, `correlationData`, `errorCode`, `statusInfo`) is not in
     /// `value`: {@link MethodResponse} writes it into the datapoint's `context`, which is a separate slot of a
-    /// `DataPointSchema` and is described by {@link #responseContextSchema}.
+    /// `DataPointSchema` and is described by {@link #methodFieldsSchema}.
     public static @NotNull Schema responseSchema(final @NotNull Collection<MethodSignature> methods) {
         final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
         // Not writable: a response's outputs are what the device produced, and nobody writes them.
@@ -115,24 +115,37 @@ public final class MethodSchemas {
         return root.endObject().nullable().build();
     }
 
-    /// The northbound context schema: what a response carries beside its outputs.
+    /// The fields a method tag's messages carry **beside** `value`, in either direction.
     ///
-    /// These are the fields {@link MethodResponse} puts in the datapoint's `context` child, which the northbound
-    /// consumer flattens onto the published message beside `value`. `errorCode` and `statusInfo` appear only on a
-    /// failure and `correlationData` only when the caller sent one, so none is required.
-    public static @NotNull Schema responseContextSchema() {
+    /// This is the datapoint's `context` part, and it is the only place the field names are stated. The runtime
+    /// reads them from here when it assembles a schema document and lifts them to the document root, which is
+    /// where they sit on the wire -- so a tag whose context part names `methodName` is a method tag, and nothing
+    /// has to tell the runtime so.
+    ///
+    /// On the way out {@link MethodResponse} writes them into the datapoint's `context` child and the northbound
+    /// consumer lifts them onto the published message. On the way in they arrive at the message root already,
+    /// and the southbound transform copies them through unmoved -- an asymmetry worth the trade, because a
+    /// caller should not have to nest Edge's own fields inside a `context` object to make a call.
+    public static @NotNull Schema methodFieldsSchema() {
         final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
 
+        // Every field optional, methodName included. This one schema part describes a method tag's extra fields
+        // in both directions -- the runtime reads the names from here rather than being told them -- and a
+        // request and a response do not carry the same subset. `responseTopic` is request-only, `errorCode` and
+        // `statusInfo` response-only, and none of them is worth making mandatory for the sake of the other
+        // direction. The presence of `methodName` is what marks the part as a method tag's.
         root.property("methodName")
-                .required()
                 .scalar(ScalarType.STRING)
-                .description("the method this is the answer to");
+                .description("the method to call, or the method an answer belongs to");
         root.property("correlationData")
                 .scalar(ScalarType.STRING)
-                .description("the token the request carried, unchanged");
+                .description("a token echoed unchanged from the request to its response");
+        root.property("responseTopic")
+                .scalar(ScalarType.STRING)
+                .description("request only: the topic the response is published to, instead of the mapping's own");
         root.property("errorCode")
                 .scalar(ScalarType.STRING)
-                .description("the OPC UA status code by name when the call failed; absent when it succeeded");
+                .description("response only: the OPC UA status code by name when the call failed");
 
         // Two optional halves rather than one shape, because OPC UA reports a failure's detail in two unrelated
         // forms: a status per input argument, and whatever the method itself returned to explain the refusal.

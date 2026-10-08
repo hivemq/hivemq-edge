@@ -17,8 +17,6 @@ package com.hivemq.persistence.mappings;
 
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.protocols.InternalWritingContext;
-import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
-import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
@@ -79,19 +77,6 @@ public class SouthboundMapping implements InternalWritingContext {
     @Override
     public boolean isResponseTopic() {
         return responseTopic;
-    }
-
-    /**
-     * A schema builder resolved from this mapping alone.
-     * <p>
-     * A stored mapping knows nothing of its siblings, so it cannot answer the question properly — a tag reached
-     * by two mappings would need both. {@link com.hivemq.protocols.InternalWritingContextImpl} is the view that
-     * carries the list and resolves it across all of them; this exists only because a stored mapping also
-     * implements the same interface, and is the honest answer for an object that has one mapping in hand.
-     */
-    @Override
-    public @NotNull TagSchemaCreationOutputImpl tagSchemaOutput() {
-        return TagSchemaCreationOutputImpl.forTag(List.of(this), tagName);
     }
 
     @Override

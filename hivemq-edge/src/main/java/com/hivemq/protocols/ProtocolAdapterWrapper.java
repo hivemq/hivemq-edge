@@ -847,11 +847,8 @@ public class ProtocolAdapterWrapper {
             return true;
         }
         LOGGER.debug("Start writing for protocol adapter with id '{}'", getId());
-        // Each context carries the whole list, not just its own mapping: a tag's schema declares the request
-        // fields its mappings read, and several mappings may name one tag.
-        final var southboundMappings = getSouthboundMappings();
-        final var writingContexts = southboundMappings.stream()
-                .map(mapping -> new InternalWritingContextImpl(mapping, southboundMappings))
+        final var writingContexts = getSouthboundMappings().stream()
+                .map(InternalWritingContextImpl::new)
                 .collect(Collectors.<InternalWritingContext>toList());
         try {
             final boolean success = protocolAdapterWritingService
