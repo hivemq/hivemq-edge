@@ -53,10 +53,15 @@ class MethodReferenceTest {
         namespaces.add(VENDOR_B);
     }
 
+    /// The object these methods hang off. Resolution never reads it -- it matches on the method node -- but a
+    /// signature carries it because a method found on the object's type is called with the type as the object.
+    private static final @NotNull NodeId OBJECT = new NodeId(1, "Boiler1");
+
     private static @NotNull MethodSignature method(final @NotNull String name, final @NotNull NodeId nodeId) {
         return new MethodSignature(
                 name,
                 nodeId,
+                OBJECT,
                 List.of(new Argument("input1", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
                 List.of());
     }

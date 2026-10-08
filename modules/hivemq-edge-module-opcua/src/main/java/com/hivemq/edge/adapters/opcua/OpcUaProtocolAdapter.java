@@ -1088,7 +1088,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     }
                     switch (result) {
                         case MethodVerifier.Result.Verified verified ->
-                            invoke(client, objectNodeId, verified.methods(), methodName, payload, opcuaTag, output);
+                            invoke(client, verified.methods(), methodName, payload, opcuaTag, output);
                         // The tag names something that is not a callable object, so no method on it can exist.
                         case MethodVerifier.Result.Rejected rejected ->
                             refuseWithResponse(
@@ -1123,7 +1123,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      */
     private void invoke(
             final @NotNull OpcUaClient client,
-            final @NotNull NodeId objectNodeId,
             final @NotNull List<MethodSignature> methods,
             final @NotNull String methodName,
             final @NotNull OpcUaPayload payload,
@@ -1188,7 +1187,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
-        final CallMethodRequest request = new CallMethodRequest(objectNodeId, signature.nodeId(), arguments);
+        // The object id comes from the signature, not from the tag. A method found only on the object's type --
+        // one carrying no modelling rule, so mirrored onto no instance -- is invoked by naming the type, which
+        // OPC 10000-4's Call service permits and requires. For every method the object itself exposes this is
+        // the tag's own node, so the common case is unchanged.
+        final CallMethodRequest request = new CallMethodRequest(signature.objectId(), signature.nodeId(), arguments);
 
         @SuppressWarnings("unused")
         final var unused = client.callAsync(List.of(request)).whenComplete((response, throwable) -> {

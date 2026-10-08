@@ -43,7 +43,7 @@ class MethodSchemasUnionTest {
     }
 
     private static @NotNull MethodSignature method(final @NotNull String name, final @NotNull Argument... inputs) {
-        return new MethodSignature(name, NODE, List.of(inputs), List.of());
+        return new MethodSignature(name, NODE, NODE, List.of(inputs), List.of());
     }
 
     /// The union projected back to name -> element type, which is what these tests are about.
@@ -148,6 +148,7 @@ class MethodSchemasUnionTest {
     void outputsUnionIndependentlyOfInputs() {
         final MethodSignature start = new MethodSignature(
                 "Start",
+                NODE,
                 NODE,
                 List.of(argument("setpoint", NodeIds.Int32)),
                 List.of(argument("started", NodeIds.Boolean)));

@@ -35,6 +35,10 @@ class MethodSignatureTest {
 
     private static final @NotNull NodeId METHOD_NODE = new NodeId(2, "Boiler1.Start");
 
+    /// The object a `Call` names. Distinct from the method node here, which is the ordinary case: a method is a
+    /// component of its object rather than the object itself.
+    private static final @NotNull NodeId OBJECT_NODE = new NodeId(2, "Boiler1");
+
     private static @NotNull Argument argument(final @NotNull String name) {
         return new Argument(name, NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE);
     }
@@ -43,6 +47,7 @@ class MethodSignatureTest {
         return new MethodSignature(
                 "Start",
                 METHOD_NODE,
+                OBJECT_NODE,
                 List.of(inputNames).stream().map(MethodSignatureTest::argument).toList(),
                 List.of());
     }
@@ -90,6 +95,7 @@ class MethodSignatureTest {
         final MethodSignature signature = new MethodSignature(
                 "Start",
                 METHOD_NODE,
+                OBJECT_NODE,
                 List.of(argument("setpoint"), argument("ramp")),
                 List.of(argument("started"), argument("actualSetpoint")));
 
@@ -110,7 +116,7 @@ class MethodSignatureTest {
     @Test
     void argumentLists_areDefensivelyCopied() {
         final List<Argument> inputs = new java.util.ArrayList<>(List.of(argument("setpoint")));
-        final MethodSignature signature = new MethodSignature("Start", METHOD_NODE, inputs, List.of());
+        final MethodSignature signature = new MethodSignature("Start", METHOD_NODE, OBJECT_NODE, inputs, List.of());
 
         inputs.add(argument("sneaked"));
 

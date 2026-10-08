@@ -34,6 +34,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /// Reads the methods a `METHOD` tag's object exposes, so they can be called and described.
 ///
@@ -48,6 +50,13 @@ import org.jetbrains.annotations.NotNull;
 /// undescribed, which is the opposite of a value tag -- there, a failed browse costs metadata and the tag still
 /// works.
 public final class MethodVerifier {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(MethodVerifier.class);
+
+    /// How many levels of the ObjectType hierarchy to climb before giving up. The standard tree is four deep at
+    /// most, so ten leaves room for a vendor hierarchy while still stopping a server that reports a cycle. The
+    /// same bound {@code ConditionTypeVerifier} uses for the same walk.
+    private static final int MAX_TYPE_WALK_DEPTH = 10;
 
     private MethodVerifier() {}
 
@@ -105,7 +114,9 @@ public final class MethodVerifier {
                         return CompletableFuture.completedFuture(rejection);
                     }
                     return Browsing.browseAll(client, browse)
-                            .thenCompose(references -> readSignatures(client, references, tagName));
+                            .thenCompose(references -> readSignatures(client, references, objectNode, tagName))
+                            .thenCompose(
+                                    fromInstance -> addInheritedMethods(client, objectNode, fromInstance, tagName));
                 })
                 .exceptionally(throwable -> {
                     // A node the server does not expose is a rejection here, not the "unverifiable" it is for
@@ -150,14 +161,18 @@ public final class MethodVerifier {
     }
 
     /// Reads the input and output argument lists of every method the browse found.
+    ///
+    /// @param objectId what a `Call` to one of these methods names as its object -- the tag's own node for the
+    ///                 methods the object exposes, and the ObjectType for those found by climbing to it.
     private static @NotNull CompletableFuture<Result> readSignatures(
             final @NotNull OpcUaClient client,
             final @NotNull List<ReferenceDescription> references,
+            final @NotNull NodeId objectId,
             final @NotNull String tagName) {
 
         final List<CompletableFuture<MethodSignature>> pending = new ArrayList<>(references.size());
         for (final ReferenceDescription reference : references) {
-            pending.add(readSignature(client, reference));
+            pending.add(readSignature(client, reference, objectId));
         }
 
         return CompletableFuture.allOf(pending.toArray(new CompletableFuture[0]))
@@ -189,7 +204,9 @@ public final class MethodVerifier {
     /// whole tag: one unreadable method among several is a gap in what the tag can do, and rejecting the tag
     /// would take the other methods down with it.
     private static @NotNull CompletableFuture<MethodSignature> readSignature(
-            final @NotNull OpcUaClient client, final @NotNull ReferenceDescription reference) {
+            final @NotNull OpcUaClient client,
+            final @NotNull ReferenceDescription reference,
+            final @NotNull NodeId objectId) {
 
         final QualifiedName browseName = reference.getBrowseName();
         if (browseName == null || browseName.getName() == null) {
@@ -213,8 +230,178 @@ public final class MethodVerifier {
                             final CompletableFuture<Argument[]> outputs =
                                     methodNode.readOutputArgumentsAsync().exceptionally(t -> new Argument[0]);
                             return inputs.thenCombine(
-                                    outputs, (in, out) -> new MethodSignature(name, nodeId, List.of(in), List.of(out)));
+                                    outputs,
+                                    (in, out) ->
+                                            new MethodSignature(name, nodeId, objectId, List.of(in), List.of(out)));
                         }))
                 .exceptionally(throwable -> null);
+    }
+
+    /// Adds the methods the object's type exposes but the object itself does not.
+    ///
+    /// **Why this is needed.** A method need not be mirrored onto the instances of its type. OPC 10000-3
+    /// section 4.5.3 describes one whose scope is the ObjectType, "similar to static methods of a class"; such a
+    /// method carries no modelling rule, so section 6.2.2 keeps it off every instance. OPC 10000-4's Call
+    /// service expects a client to find it anyway: the object id may name "the Object or ObjectType on which the
+    /// Method is invoked", and for an Object the method may hang off that Object, "the ObjectType of the Object
+    /// or a super type of that ObjectType". Browsing the instance alone therefore reported a method the server
+    /// supports as absent.
+    ///
+    /// Mandatory and Optional declarations *are* mirrored -- section 6.4.4.4.1 requires a similar node on the
+    /// instance -- so this adds nothing for them, which is why the common case worked without it.
+    ///
+    /// **Nearest wins.** A method found on the instance shadows one of the same name further up. That is sound
+    /// rather than a guess: section 6.2.6 fixes an instance's browse name to the declaration's, and section
+    /// 6.4.4.4.1's subtype rules forbid removing or retyping an inherited argument, so the nearer node is the
+    /// same method specialised rather than a different one. Calling it needs the instance's own node id.
+    ///
+    /// **Tolerant.** A failed climb yields the methods already found rather than failing the tag. Browsing a
+    /// server's type nodes is not guaranteed -- a server may restrict access to them -- and a tag that works
+    /// today must not start failing because an addition could not complete. The cost is one browse per level,
+    /// paid once per tag per session.
+    private static @NotNull CompletableFuture<Result> addInheritedMethods(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNode,
+            final @NotNull Result fromInstance,
+            final @NotNull String tagName) {
+
+        // Only a verified result is extended. A rejection or an unverifiable outcome is about the tag's own
+        // node, and climbing above it would answer a question nobody asked.
+        if (!(fromInstance instanceof final Result.Verified verified)) {
+            return CompletableFuture.completedFuture(fromInstance);
+        }
+
+        return typeOf(client, objectNode, tagName)
+                .thenCompose(type -> type == null
+                        ? CompletableFuture.completedFuture(verified.methods())
+                        : collectUpwards(client, type, verified.methods(), tagName, 0))
+                .thenApply(methods -> (Result) new Result.Verified(methods))
+                .exceptionally(throwable -> {
+                    log.debug(
+                            "Tag '{}': could not read the methods of its type, so only the ones its object "
+                                    + "exposes are known: {}",
+                            tagName,
+                            Browsing.describeException(throwable));
+                    return fromInstance;
+                });
+    }
+
+    /// The object's ObjectType, or null when the server reports none.
+    private static @NotNull CompletableFuture<NodeId> typeOf(
+            final @NotNull OpcUaClient client, final @NotNull NodeId objectNode, final @NotNull String tagName) {
+
+        final BrowseDescription browse = new BrowseDescription(
+                objectNode,
+                BrowseDirection.Forward,
+                NodeIds.HasTypeDefinition,
+                false,
+                uint(NodeClass.ObjectType.getValue()),
+                uint(BrowseResultMask.All.getValue()));
+
+        return Browsing.browseAll(client, browse).thenCompose(references -> {
+            for (final ReferenceDescription reference : references) {
+                final NodeId type = reference
+                        .getNodeId()
+                        .toNodeId(client.getNamespaceTable())
+                        .orElse(null);
+                if (type != null) {
+                    return CompletableFuture.completedFuture(type);
+                }
+            }
+            log.debug("Tag '{}': {} reports no ObjectType, so there is nothing to inherit.", tagName, objectNode);
+            return CompletableFuture.completedFuture(null);
+        });
+    }
+
+    /// Gathers each level's methods, keeping what is already known, then climbs to the supertype.
+    ///
+    /// `HasSubtype` points downward -- a supertype *has* subtypes -- so climbing means following it inversely,
+    /// the same walk {@code ConditionTypeVerifier} performs for condition types.
+    private static @NotNull CompletableFuture<List<MethodSignature>> collectUpwards(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId type,
+            final @NotNull List<MethodSignature> known,
+            final @NotNull String tagName,
+            final int depth) {
+
+        if (depth >= MAX_TYPE_WALK_DEPTH) {
+            // Bounded for the reason the condition walk is: a server reporting a cycle, or a hierarchy deeper
+            // than any real one, must stop rather than browse forever.
+            log.debug(
+                    "Tag '{}': gave up climbing the type hierarchy after {} levels, last at {}. A hierarchy this "
+                            + "deep is more likely a cycle than a real one.",
+                    tagName,
+                    depth,
+                    type);
+            return CompletableFuture.completedFuture(known);
+        }
+
+        final BrowseDescription methods = new BrowseDescription(
+                type,
+                BrowseDirection.Forward,
+                NodeIds.HasComponent,
+                true,
+                uint(NodeClass.Method.getValue()),
+                uint(BrowseResultMask.All.getValue()));
+
+        return Browsing.browseAll(client, methods)
+                .thenCompose(references -> readSignatures(client, references, type, tagName))
+                .thenCompose(result -> {
+                    final List<MethodSignature> merged = result instanceof final Result.Verified verified
+                            ? keepingNearest(known, verified.methods())
+                            : known;
+                    return supertypeOf(client, type)
+                            .thenCompose(supertype -> supertype == null
+                                    ? CompletableFuture.completedFuture(List.copyOf(merged))
+                                    : collectUpwards(client, supertype, merged, tagName, depth + 1));
+                });
+    }
+
+    /// Adds the further-away methods whose names nothing nearer already provides.
+    ///
+    /// **Why nearest wins is sound rather than a guess.** An instance keeps the browse name of the declaration
+    /// it derives from (OPC 10000-3 section 6.2.6), and a subtype may not remove an inherited argument, retype
+    /// one declared with a concrete DataType, or add a mandatory one (section 6.4.4.4.1). So a nearer node of
+    /// the same name is the same method, specialised -- not a different method that happens to share a string.
+    /// Calling it needs the nearer node's own id, which is what keeping it does.
+    ///
+    /// Package-private so the rule can be tested without a server: the climb around it needs a live address
+    /// space, and this is the part that decides what a caller can reach.
+    static @NotNull List<MethodSignature> keepingNearest(
+            final @NotNull List<MethodSignature> nearer, final @NotNull List<MethodSignature> further) {
+
+        final List<MethodSignature> merged = new ArrayList<>(nearer);
+        for (final MethodSignature candidate : further) {
+            if (nearer.stream().noneMatch(method -> method.name().equals(candidate.name()))) {
+                merged.add(candidate);
+            }
+        }
+        return List.copyOf(merged);
+    }
+
+    /// The type this type derives from, or null at the top of the hierarchy.
+    private static @NotNull CompletableFuture<NodeId> supertypeOf(
+            final @NotNull OpcUaClient client, final @NotNull NodeId type) {
+
+        final BrowseDescription browse = new BrowseDescription(
+                type,
+                BrowseDirection.Inverse,
+                NodeIds.HasSubtype,
+                false,
+                uint(NodeClass.ObjectType.getValue()),
+                uint(BrowseResultMask.All.getValue()));
+
+        return Browsing.browseAll(client, browse).thenApply(references -> {
+            for (final ReferenceDescription reference : references) {
+                final NodeId supertype = reference
+                        .getNodeId()
+                        .toNodeId(client.getNamespaceTable())
+                        .orElse(null);
+                if (supertype != null) {
+                    return supertype;
+                }
+            }
+            return null;
+        });
     }
 }

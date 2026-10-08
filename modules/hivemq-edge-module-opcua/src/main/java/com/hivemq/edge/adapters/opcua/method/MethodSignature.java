@@ -41,6 +41,17 @@ public record MethodSignature(
         @NotNull String name,
         /// The method node itself, passed as the `methodId` of a `Call`.
         @NotNull NodeId nodeId,
+        /// What to pass as the `objectId` of a `Call`: the tag's own object for a method the object exposes, and
+        /// the **ObjectType** for one found only by walking the type chain.
+        ///
+        /// OPC 10000-4, Call: the object id "shall be that of the Object or ObjectType on which the Method is
+        /// invoked", and when it names an Object the method must hang off that Object, its ObjectType, or a
+        /// supertype of it. A method a type keeps to itself -- the "static method" of OPC 10000-3 section
+        // 4.5.3,
+        /// carrying no modelling rule and therefore mirrored onto no instance -- is invoked by naming the type.
+        /// So the object id cannot be assumed to be the tag's node, and travels with the signature that was
+        /// found rather than being reconstructed at the call.
+        @NotNull NodeId objectId,
         /// Input arguments in wire order. Empty for a method taking none -- see the class note on absence.
         @NotNull List<Argument> inputArguments,
         /// Output arguments in wire order, naming what a successful call returns.

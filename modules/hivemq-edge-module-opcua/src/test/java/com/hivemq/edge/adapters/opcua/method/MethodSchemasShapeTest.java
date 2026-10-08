@@ -46,6 +46,7 @@ class MethodSchemasShapeTest {
         return new MethodSignature(
                 "Square",
                 NODE,
+                NODE,
                 List.of(new Argument("input1", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
                 List.of(new Argument("output1", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)));
     }
@@ -132,7 +133,7 @@ class MethodSchemasShapeTest {
     void requestSchema_withNoArgumentsAtAll_permitsNothing() {
         // A method taking no arguments. A closed object with no properties is the true statement about it; leaving
         // it open would accept any object, which is the opposite claim.
-        final MethodSignature noArguments = new MethodSignature("Stop", NODE, List.of(), List.of());
+        final MethodSignature noArguments = new MethodSignature("Stop", NODE, NODE, List.of(), List.of());
 
         final JsonNode schema = json(MethodSchemas.requestSchema(List.of(noArguments)));
 
@@ -148,9 +149,14 @@ class MethodSchemasShapeTest {
         // differently is described as `any` rather than dropped, so it is still a listed property and a request
         // carrying it is still valid.
         final MethodSignature asInt = new MethodSignature(
-                "A", NODE, List.of(new Argument("mode", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)), List.of());
+                "A",
+                NODE,
+                NODE,
+                List.of(new Argument("mode", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
+                List.of());
         final MethodSignature asText = new MethodSignature(
                 "B",
+                NODE,
                 NODE,
                 List.of(new Argument("mode", NodeIds.String, -1, null, LocalizedText.NULL_VALUE)),
                 List.of());
@@ -176,6 +182,7 @@ class MethodSchemasShapeTest {
             final MethodSignature method = new MethodSignature(
                     "Start",
                     NODE,
+                    NODE,
                     List.of(new Argument("v", NodeIds.Int32, rank, null, LocalizedText.NULL_VALUE)),
                     List.of());
 
@@ -195,6 +202,7 @@ class MethodSchemasShapeTest {
         // `any` would throw away a constraint the device did state.
         final MethodSignature method = new MethodSignature(
                 "Start",
+                NODE,
                 NODE,
                 List.of(new Argument("v", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
                 List.of());
