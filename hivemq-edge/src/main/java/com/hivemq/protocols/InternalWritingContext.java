@@ -17,6 +17,7 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
+import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import org.jetbrains.annotations.NotNull;
 
 // internal view on a writing context.
@@ -42,4 +43,14 @@ public interface InternalWritingContext extends WritingContext {
 
     /** Whether a request may name the topic its response is published to. */
     boolean isResponseTopic();
+
+    /**
+     * A schema builder for this mapping's tag, with the request fields a method request carries already resolved.
+     * <p>
+     * A tag has one schema but may be reached by several mappings, so which fields that schema declares is a
+     * question about all of them — not about this one. Resolving it here keeps the caller from having to know
+     * that, and keeps the mapping list out of the caller's hands.
+     */
+    @NotNull
+    TagSchemaCreationOutputImpl tagSchemaOutput();
 }

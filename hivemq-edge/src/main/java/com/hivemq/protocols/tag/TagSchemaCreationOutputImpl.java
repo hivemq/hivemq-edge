@@ -24,6 +24,8 @@ import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
+import com.hivemq.persistence.mappings.SouthboundMapping;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +71,44 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         this.methodCalls = methodCalls;
         this.correlationData = correlationData;
         this.responseTopic = responseTopic;
+    }
+
+    /**
+     * For a tag's schema, derived from <em>every</em> southbound mapping that names that tag.
+     * <p>
+     * A tag has one schema but may be reached by several mappings, so the request fields it declares cannot be
+     * read off any single one. This resolves them across all of them, which is what lets a caller supply nothing
+     * but the tag it wants described.
+     * <p>
+     * <b>Whether a tag carries method calls is a property of the tag, so the mappings must agree.</b> One method
+     * mapping is enough to make it a method tag; a mapping that disagrees is a configuration error, not a reason
+     * to produce two schemas. Nothing refuses such a configuration today — the tag's own {@code kind} already
+     * records the same fact, and the two are unchecked against each other — so this takes the permissive reading
+     * and declares the fields, which fails a request loudly rather than discarding one silently.
+     * <p>
+     * <b>The two optional fields are declared only where every method mapping reads them.</b> A field required by
+     * one mapping and dropped by another cannot be mandatory: a caller publishing to the second would be refused
+     * for omitting a field that mapping would have discarded anyway. A declared field is a required one here, so
+     * where the mappings disagree the field is left out — the permissive reading, which lets a caller send it to
+     * the mapping that wants it without the other mapping refusing the message.
+     *
+     * @param southboundMappings every southbound mapping of the adapter, not only those naming this tag.
+     * @param tagName            the tag being described.
+     */
+    public static @NotNull TagSchemaCreationOutputImpl forTag(
+            final @NotNull List<SouthboundMapping> southboundMappings, final @NotNull String tagName) {
+        final List<SouthboundMapping> forThisTag = southboundMappings.stream()
+                .filter(mapping -> tagName.equals(mapping.getTagName()))
+                .toList();
+        final List<SouthboundMapping> methodMappings =
+                forThisTag.stream().filter(SouthboundMapping::isMethodCalls).toList();
+        if (methodMappings.isEmpty()) {
+            return new TagSchemaCreationOutputImpl();
+        }
+        return new TagSchemaCreationOutputImpl(
+                true,
+                methodMappings.stream().allMatch(SouthboundMapping::isCorrelationData),
+                methodMappings.stream().allMatch(SouthboundMapping::isResponseTopic));
     }
 
     public @Nullable String getMessage() {

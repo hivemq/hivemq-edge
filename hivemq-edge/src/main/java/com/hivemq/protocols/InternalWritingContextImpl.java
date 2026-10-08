@@ -17,14 +17,41 @@ package com.hivemq.protocols;
 
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
+import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public class InternalWritingContextImpl implements InternalWritingContext {
 
     private final @NotNull SouthboundMapping southboundMapping;
 
+    /**
+     * Every southbound mapping of the same adapter, this one included.
+     * <p>
+     * Kept so {@link #tagSchemaOutput()} can resolve a tag's request fields across all the mappings that name it:
+     * a tag has one schema, and which fields it declares cannot be read off a single mapping.
+     */
+    private final @NotNull List<SouthboundMapping> siblings;
+
     public InternalWritingContextImpl(final @NotNull SouthboundMapping southboundMapping) {
+        this(southboundMapping, List.of(southboundMapping));
+    }
+
+    public InternalWritingContextImpl(
+            final @NotNull SouthboundMapping southboundMapping, final @NotNull List<SouthboundMapping> siblings) {
         this.southboundMapping = southboundMapping;
+        this.siblings = siblings;
+    }
+
+    /**
+     * A schema builder for this mapping's tag, with the request fields already resolved.
+     * <p>
+     * Here rather than at the caller because the resolution needs every mapping that names the tag, and this is
+     * the object that has them. A caller asks for a tag's schema and supplies nothing else.
+     */
+    @Override
+    public @NotNull TagSchemaCreationOutputImpl tagSchemaOutput() {
+        return TagSchemaCreationOutputImpl.forTag(siblings, southboundMapping.getTagName());
     }
 
     /**
