@@ -17,6 +17,7 @@ package util;
 
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 import static util.EmbeddedOpcUaServerExtension.NS_URI;
 
@@ -57,6 +58,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -803,6 +805,115 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             parent.addReference(new Reference(
                     parentNodeId, NodeIds.HasComponent, method.getNodeId().expanded(), true));
         }
+    }
+
+    /**
+     * Adds an object whose methods <em>declare</em> their arguments, for testing how Edge reads a signature.
+     * <p>
+     * The condition methods above deliberately declare none: their signatures are fixed by OPC 10000-9, so the
+     * handler finds arguments by type and the tests never needed the metadata. Reading a signature is exactly
+     * reading the {@code InputArguments} and {@code OutputArguments} properties, so none of them can exercise
+     * it — which is why {@code MethodVerifier} had no test against a server.
+     * <p>
+     * {@code setInputArguments} creates a real property node reachable by browse ({@code UaNode.setProperty}),
+     * which is what the client-side read looks for.
+     *
+     * @param objectName the browse name of the object a METHOD tag would point at.
+     * @return the object's node id, for the tag definition.
+     */
+    public @NotNull NodeId addMethodObject(final @NotNull String objectName) {
+        final NodeId objectId = newNodeId(objectName);
+        final UaObjectNode object = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(objectId)
+                .setBrowseName(newQualifiedName(objectName))
+                .setDisplayName(LocalizedText.english(objectName))
+                .setTypeDefinition(NodeIds.BaseObjectType)
+                .build();
+        getNodeManager().addNode(object);
+        requireNonNull(testFolder).addOrganizes(object);
+
+        // Two inputs and one output, every one named and typed: the ordinary case, and what a generated schema
+        // is built from.
+        addDeclaredMethod(
+                objectId,
+                "Square",
+                new Argument[] {argument("input1", NodeIds.Int32)},
+                new Argument[] {argument("output1", NodeIds.Int32)},
+                (context, request) -> {
+                    final Integer value = (Integer) request.getInputArguments()[0].getValue();
+                    return new CallMethodResult(
+                            StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {
+                                Variant.of(value * value)
+                            });
+                });
+
+        // No arguments at all, and the properties are left off rather than set empty: OPC 10000-3 section 5.7
+        // makes them optional and says an absent property means the method has none, so this is how an
+        // argument-less method is normally modelled -- and the case that must not be read as a failure.
+        addDeclaredMethod(
+                objectId,
+                "Stop",
+                null,
+                null,
+                (context, request) -> new CallMethodResult(
+                        StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]));
+
+        // An array argument with a declared dimension, so the nesting depth of a generated schema can be
+        // checked against what the device says.
+        final Argument values = new Argument(
+                "values", NodeIds.Int32, 1, new UInteger[] {uint(3)}, LocalizedText.english("three Int32s"));
+        addDeclaredMethod(
+                objectId,
+                "SumArray",
+                new Argument[] {values},
+                new Argument[] {argument("total", NodeIds.Int32)},
+                (context, request) -> {
+                    final Integer[] supplied = (Integer[]) request.getInputArguments()[0].getValue();
+                    int total = 0;
+                    for (final Integer element : supplied) {
+                        total += element;
+                    }
+                    return new CallMethodResult(
+                            StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {Variant.of(total)
+                            });
+                });
+
+        return objectId;
+    }
+
+    /** One method node that declares its arguments, hung off {@code parentNodeId} by {@code HasComponent}. */
+    private void addDeclaredMethod(
+            final @NotNull NodeId parentNodeId,
+            final @NotNull String methodName,
+            final Argument @Nullable [] inputs,
+            final Argument @Nullable [] outputs,
+            final @NotNull MethodInvocationHandler handler) {
+
+        final UaMethodNode method = UaMethodNode.builder(getNodeContext())
+                .setNodeId(newNodeId(parentNodeId.getIdentifier() + "." + methodName))
+                .setBrowseName(newQualifiedName(methodName))
+                .setDisplayName(LocalizedText.english(methodName))
+                .setExecutable(true)
+                .setUserExecutable(true)
+                .build();
+        if (inputs != null) {
+            method.setInputArguments(inputs);
+        }
+        if (outputs != null) {
+            method.setOutputArguments(outputs);
+        }
+        method.setInvocationHandler(handler);
+        getNodeManager().addNode(method);
+
+        final UaNode parent = getNodeManager().get(parentNodeId);
+        if (parent != null) {
+            parent.addReference(new Reference(
+                    parentNodeId, NodeIds.HasComponent, method.getNodeId().expanded(), true));
+        }
+    }
+
+    private static @NotNull Argument argument(final @NotNull String name, final @NotNull NodeId dataType) {
+        return new Argument(name, dataType, -1, null, LocalizedText.english(name));
     }
 
     /**

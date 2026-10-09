@@ -92,7 +92,7 @@ public final class Browsing {
          * <p>
          * Null for a transport failure, a timeout, or an incomplete continuation — cases where no server
          * verdict about the node exists to record. Carried rather than only rendered into the message
-         * because one of these statuses is load-bearing: see {@link #nodeNotInAddressSpace}.
+         * because one of these statuses is decisive: see {@link #nodeNotInAddressSpace}.
          */
         private final transient @Nullable StatusCode status;
 
@@ -117,7 +117,7 @@ public final class Browsing {
     }
 
     /**
-     * Whether a browse failure is the server stating that the node is not in its AddressSpace at all.
+     * Whether a failure is the server stating that the node is not in its AddressSpace at all.
      * <p>
      * This is the one distinction that must survive the trip out of {@link #browseAll}, because OPC 10000-9
      * builds a whole server model on it: §5.7.3, §5.5.6 and §5.8.17.2 each note that "some Servers do not
@@ -132,12 +132,24 @@ public final class Browsing {
      * reading it as "hidden instance" would take a typo as licence to call a method with it. Everything else
      * — authorization, transport, timeouts, a truncated continuation — keeps propagating, since none of them
      * is evidence about whether the node exists.
+     * <p>
+     * <b>A read says it as plainly as a browse.</b> Both forms are recognised because a caller may reach the
+     * same server verdict either way: {@link #browseAll} wraps it in a {@link BrowseFailedException}, while a
+     * read of the node — {@code AddressSpace.getNodeAsync}, which {@code MethodVerifier} performs first to
+     * check the node class — fails with a bare {@link UaException} carrying the identical status. Recognising
+     * only the browse's form made an absent node depend on which call happened to touch it first, and the read
+     * being first meant the one case this method exists for was the case it missed.
      */
     public static boolean nodeNotInAddressSpace(final @Nullable Throwable throwable) {
-        return throwable != null
-                && rootOf(throwable) instanceof final BrowseFailedException failure
-                && failure.status() != null
-                && failure.status().value() == StatusCodes.Bad_NodeIdUnknown;
+        if (throwable == null) {
+            return false;
+        }
+        final Throwable root = rootOf(throwable);
+        if (root instanceof final BrowseFailedException failure) {
+            return failure.status() != null && failure.status().value() == StatusCodes.Bad_NodeIdUnknown;
+        }
+        return root instanceof final UaException failure
+                && failure.getStatusCode().value() == StatusCodes.Bad_NodeIdUnknown;
     }
 
     /**

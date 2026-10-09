@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -325,6 +326,30 @@ class BrowsingTest {
 
         assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
         assertThat(Browsing.nodeNotInAddressSpace(null)).isFalse();
+    }
+
+    @Test
+    void aReadSayingTheNodeIsUnknown_isRecognisedAsPlainlyAsABrowse() {
+        // Not every caller reaches this verdict by browsing. MethodVerifier reads the node first, to check its
+        // node class, and a read of an absent node fails with a bare UaException rather than the
+        // BrowseFailedException browseAll wraps. Recognising only the browse's form made an absent node depend
+        // on which call happened to touch it first -- and since the read is first, the one case this predicate
+        // exists for was the case it missed: a method tag naming a node the server does not have was reported
+        // as "the device could not be asked" instead of "the tag is wrong".
+        final Throwable thrown = new CompletionException(
+                new UaException(StatusCodes.Bad_NodeIdUnknown, "the node id refers to a node that does not exist"));
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isTrue();
+    }
+
+    @Test
+    void aReadRefusedForAnotherReason_isStillNotAnAbsentNode() {
+        // The same boundary as for a browse, on the read's form: a refusal says nothing about whether the node
+        // exists, and the widening must not have blurred that.
+        final Throwable thrown =
+                new CompletionException(new UaException(StatusCodes.Bad_UserAccessDenied, "access denied"));
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
     }
 
     @Test
