@@ -1479,7 +1479,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         try {
             objectNode = NodeId.parse(tag.getDefinition().getNode());
         } catch (final Exception e) {
-            output.fail("Tag '" + tagName + "' has a malformed node id: "
+            // tagNotFound rather than fail: the tag cannot be resolved against the device, which is the
+            // operator's configuration being wrong rather than Edge or the device misbehaving. The runtime maps
+            // fail() to 500, and a 500 tells an operator to look at Edge for a mistake that is in their tag.
+            output.tagNotFound("Tag '" + tagName + "' has a malformed node id: "
                     + tag.getDefinition().getNode());
             return;
         }
@@ -1507,10 +1510,18 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     MethodSchemas.methodFieldsSchema(),
                                     MethodSchemas.requestSchema(methods)));
                         }
+                        // The tag is wrong about the device: the node is absent, or is not an object. The
+                        // operator's configuration is at fault, so this is reported as a tag that cannot be
+                        // resolved (4xx) rather than as a failure (500). The distinction is the whole point of
+                        // Rejected existing beside Unverifiable -- a 500 sends an operator to look at Edge, or
+                        // at us, for a mistake that is in their own tag definition.
                         case MethodVerifier.Result.Rejected rejected -> {
                             log.error("Cannot describe method tag '{}': {}", tagName, rejected.reason());
-                            output.fail(rejected.reason());
+                            output.tagNotFound(rejected.reason());
                         }
+                        // Left as a failure, deliberately. The tag may be perfectly correct and Edge could not
+                        // find out -- a timeout, a refusal, a server that went away. Reporting that as a
+                        // configuration error would send the operator to fix something that is not broken.
                         case MethodVerifier.Result.Unverifiable unverifiable -> {
                             log.error("Cannot describe method tag '{}': {}", tagName, unverifiable.reason());
                             output.fail(unverifiable.reason());

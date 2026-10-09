@@ -1024,6 +1024,70 @@ class ProtocolAdaptersResourceImplTest {
         assertThat((JsonNode) okWithout.getEntity()).isEqualTo((JsonNode) okNorthbound.getEntity());
     }
 
+    /**
+     * EDG-1100 P10: a tag the device cannot resolve is the operator's mistake, so it must not answer 500.
+     * <p>
+     * QA met this on an OPC UA method tag pointing at a node the server does not expose, and on one pointing at a
+     * Variable rather than an Object. Both answered {@code 500 InternalServerError}. The report was explicit that
+     * the detail text was exactly right and only the status misled: a 500 sends an operator to look at Edge, or
+     * at us, for a fault that is in their own tag definition.
+     * <p>
+     * The adapter now reports such a tag through {@code tagNotFound} rather than {@code fail}, which this layer
+     * already maps to 404. What {@code fail} still means is unchanged — see the 500 tests above, where a
+     * connection that is not established must stay a 500 because the tag may be perfectly correct.
+     */
+    @Test
+    void getSchema_whenTheTagCannotBeResolvedAgainstTheDevice_thenItIsNotAServerError() {
+        mockAdapterRejectingTagWith("node ns=2;s=NoSuchObject of tag 'boiler' is a Variable, not an Object");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    void getSchema_whenTheTagCannotBeResolved_thenTheAdaptersOwnSentenceSurvives() {
+        // The status was the finding; this is the part that must not be lost in fixing it. Every other
+        // TAG_NOT_FOUND in this resource answers a lookup that either found a tag or did not, where the name is
+        // the whole story -- so that branch passed the name and discarded the message. Here the tag exists and
+        // cannot be resolved against the device, and only the adapter can say why.
+        mockAdapterRejectingTagWith("node ns=2;s=NoSuchObject of tag 'boiler' is a Variable, not an Object");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertThat(response.getEntity().toString())
+                .as("the operator has to be told what is wrong with the tag, not merely that it was not found")
+                .contains("is a Variable, not an Object");
+    }
+
+    @Test
+    void getSchema_whenTheDeviceCouldNotBeAsked_thenItIsStillAServerError() {
+        // The boundary, and the reason this is two outcomes rather than one. A tag that is wrong about the
+        // device is the operator's to fix; a device that could not be asked may leave the tag perfectly
+        // correct, and reporting that as a configuration error sends them to fix something that is not broken.
+        mockAdapterFailingSchemaWith("could not read the methods of 'boiler' from the device: timed out");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertEquals(500, response.getStatus());
+        assertThat(response.getEntity().toString()).contains("timed out");
+    }
+
+    private void mockAdapterRejectingTagWith(final @NotNull String reason) {
+        final ProtocolAdapterWrapper wrapper = mock();
+        final ProtocolAdapter adapter = mock();
+        when(wrapper.getAdapter()).thenReturn(adapter);
+        doAnswer(invocation -> {
+                    final TagSchemaCreationOutput output = invocation.getArgument(1);
+                    output.tagNotFound(reason);
+                    return null;
+                })
+                .when(adapter)
+                .createTagSchema(any(), any());
+        when(protocolAdapterManager.getProtocolAdapterWrapperByAdapterId("adapter"))
+                .thenReturn(Optional.of(wrapper));
+    }
+
     private void mockAdapterFailingSchemaWith(final @NotNull String reason) {
         final ProtocolAdapterWrapper wrapper = mock();
         final ProtocolAdapter adapter = mock();

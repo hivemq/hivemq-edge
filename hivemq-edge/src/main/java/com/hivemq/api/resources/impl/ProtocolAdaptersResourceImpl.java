@@ -788,7 +788,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" + message));
                 case ADAPTER_NOT_STARTED ->
                     errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + message));
-                case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
+                // The adapter's own sentence, not just the tag name. Every other TAG_NOT_FOUND in this class
+                // answers a lookup that either found a tag or did not, where the name is the whole story. Here
+                // the tag exists and cannot be resolved against the device -- absent node, wrong node class,
+                // malformed id -- and only the adapter can say which. Passing the name discarded that: QA
+                // recorded the detail text as exactly right while the status misled, and keeping the status
+                // honest must not cost the text.
+                case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(message != null ? message : tagName));
                 default -> {
                     log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                     if (log.isDebugEnabled()) {
