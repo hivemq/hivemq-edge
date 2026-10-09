@@ -1354,8 +1354,18 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // conditions too, so a query-only adapter needs the refresh just as much. The call itself names no
         // node of ours -- both the object and the method are fixed by the specification -- so there is no
         // entry point to find, only a reason to bother asking.
-        final boolean hasEventItems =
-                tags.stream().anyMatch(tag -> tag.getDefinition().getKind() != OpcuaTagKind.VALUE);
+        //
+        // The kinds that mean alarms are named, rather than excluding the one that does not. "Not a VALUE tag"
+        // was equivalent while four kinds existed, and METHOD made it wrong: a method tag monitors nothing, so
+        // a method-only adapter asked a server -- possibly one with no Alarms and Conditions support at all --
+        // to re-report alarms it was not listening for. A switch so a sixth kind cannot inherit the same way:
+        // it will not compile without stating its own answer, which is the shape `verify` uses for the same
+        // reason.
+        final boolean hasEventItems = tags.stream()
+                .anyMatch(tag -> switch (tag.getDefinition().getKind()) {
+                    case CONDITION, REFRESH, EVENT_SUBSCRIPTION -> true;
+                    case VALUE, METHOD -> false;
+                });
         if (!hasEventItems) {
             return;
         }

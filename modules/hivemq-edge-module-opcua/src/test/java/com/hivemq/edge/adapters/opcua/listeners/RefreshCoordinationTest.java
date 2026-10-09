@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -494,6 +495,68 @@ class RefreshCoordinationTest {
         assertThat(clock.isWaiting()).isFalse();
     }
 
+    // ── which tag kinds warrant a refresh at all ────────────────────────────────────────────────────
+
+    @Test
+    void aMethodOnlyAdapterDoesNotAskTheServerToReReportAlarms() {
+        // The decisive test. The gate used to be "any tag that is not a VALUE tag", which was equivalent to
+        // "an alarm-channel tag" while four kinds existed. METHOD made it wrong: a method tag monitors
+        // nothing -- it names an object whose methods are called southbound -- so a method-only adapter asked
+        // for a refresh of alarms it was not listening for, at every connect and every reconnect, possibly of
+        // a server with no Alarms and Conditions support at all.
+        final var handler = handlerFor(methodTag("boiler-methods"));
+        established(handler, 4711);
+
+        handler.onSessionReactivated();
+
+        verify(client, never()).callAsync(any());
+    }
+
+    @Test
+    void anAdapterWithAMethodTagBesideAConditionTagStillAsksForOne() {
+        // The counterpart: a method tag must not suppress a refresh its sibling condition tag needs. The gate
+        // asks whether *any* tag monitors alarms, not whether all of them do.
+        final var handler = handlerFor(methodTag("boiler-methods"), conditionTag("boiler-high-temp"));
+        established(handler, 4711);
+        when(client.callAsync(any())).thenReturn(completedRefreshCall());
+
+        handler.onSessionReactivated();
+
+        assertThat(refreshCallCount()).isOne();
+    }
+
+    @Test
+    void everyAlarmChannelKindStillWarrantsARefresh() {
+        // The three kinds that do monitor alarms, each on its own. An event-subscription tag monitors
+        // conditions through a query, and a refresh tag exists to ask for exactly this -- so naming the kinds
+        // explicitly must not have dropped either while excluding METHOD.
+        for (final OpcuaTag tag :
+                List.of(conditionTag("boiler-high-temp"), eventSubscriptionTag("all-alarms"), refreshTag("ask"))) {
+            final var handler = handlerFor(tag);
+            established(handler, 4711);
+            final OpcUaClient perTag = client;
+            when(perTag.callAsync(any())).thenReturn(completedRefreshCall());
+
+            final int before = refreshCallCount();
+            handler.onSessionReactivated();
+
+            assertThat(refreshCallCount())
+                    .as("a %s tag warrants a refresh", tag.getDefinition().getKind())
+                    .isEqualTo(before + 1);
+        }
+    }
+
+    @Test
+    void aValueOnlyAdapterStillDoesNotAskForOne() {
+        // Unchanged, and worth keeping: this is the case the original gate got right.
+        final var handler = handlerFor(valueTag("temperature"));
+        established(handler, 4711);
+
+        handler.onSessionReactivated();
+
+        verify(client, never()).callAsync(any());
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     /**
@@ -637,6 +700,25 @@ class RefreshCoordinationTest {
                 name,
                 "a condition tag",
                 new OpcuaTagDefinition("ns=2;s=" + name, OpcuaTagKind.CONDITION, OpcuaConditionType.ALARM_CONDITION));
+    }
+
+    private static @NotNull OpcuaTag methodTag(final @NotNull String name) {
+        return new OpcuaTag(name, "a method tag", new OpcuaTagDefinition("ns=2;s=" + name, OpcuaTagKind.METHOD));
+    }
+
+    private static @NotNull OpcuaTag valueTag(final @NotNull String name) {
+        return new OpcuaTag(name, "a value tag", new OpcuaTagDefinition("ns=2;s=" + name, OpcuaTagKind.VALUE));
+    }
+
+    private static @NotNull OpcuaTag eventSubscriptionTag(final @NotNull String name) {
+        return new OpcuaTag(
+                name,
+                "an event subscription tag",
+                new OpcuaTagDefinition("ns=2;s=" + name, OpcuaTagKind.EVENT_SUBSCRIPTION));
+    }
+
+    private static @NotNull OpcuaTag refreshTag(final @NotNull String name) {
+        return new OpcuaTag(name, "a refresh tag", new OpcuaTagDefinition("ns=2;s=" + name, OpcuaTagKind.REFRESH));
     }
 
     private static @NotNull OpcUaMonitoredItem itemFor(final @NotNull OpcuaTag tag) {
