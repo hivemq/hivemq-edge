@@ -90,7 +90,7 @@ export const southboundMappingListSchema: JSONSchema7 = {
           type: 'boolean',
           title: 'This mapping carries method calls',
           description:
-            'Read the method to call from each message and call it on the tag object. Required for a method tag; without it a message is treated as an ordinary value write.',
+            'Read the method to call from each message and call it on the tag object. Required for a method tag: without it the request fields are left out of the transform, so a message cannot name its method and the call is refused.',
           default: false,
         },
         correlationData: {
@@ -104,7 +104,7 @@ export const southboundMappingListSchema: JSONSchema7 = {
           type: 'boolean',
           title: 'Requests carry a response topic',
           description:
-            'Let a request name the topic its response is published to. Also needs the northbound mapping set to publish to the address the request carried.',
+            "Let a request name the topic its response is published to, instead of the northbound mapping's own topic. A field that is not enabled is discarded rather than passed on.",
           default: false,
         },
       },
