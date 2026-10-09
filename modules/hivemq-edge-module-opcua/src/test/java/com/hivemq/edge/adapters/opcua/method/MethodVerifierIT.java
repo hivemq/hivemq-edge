@@ -145,6 +145,23 @@ class MethodVerifierIT {
     }
 
     @Test
+    void anObjectExposingNoMethods_isVerifiedWithNoneRatherThanRejected() {
+        // EDG-1100 P12's second half. An object may legitimately expose no methods, and more may be added
+        // later without the tag changing -- so this is Verified-with-nothing rather than a rejection. What was
+        // missing is that Edge said so only at DEBUG: the adapter stayed connected, the generated schema
+        // admitted no arguments, and every call was quarantined by the validation gate, so an operator saw a
+        // configured tag, a connected device and calls that vanished. MethodVerifier now logs a WARN naming
+        // the node; the outcome asserted here is what that warning accompanies.
+        final NodeId bare = namespace().addBareObject("EmptyBoiler");
+
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(client, bare, "empty-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        assertThat(((MethodVerifier.Result.Verified) result).methods()).isEmpty();
+    }
+
+    @Test
     void aTagPointingAtAVariableIsRejected_namingWhatItFound() {
         // Not "an object with no methods", which is what browsing alone would have reported: a usable tag that
         // can never serve a request, and a mistake the operator never hears about.

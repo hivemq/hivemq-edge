@@ -822,15 +822,7 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * @return the object's node id, for the tag definition.
      */
     public @NotNull NodeId addMethodObject(final @NotNull String objectName) {
-        final NodeId objectId = newNodeId(objectName);
-        final UaObjectNode object = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
-                .setNodeId(objectId)
-                .setBrowseName(newQualifiedName(objectName))
-                .setDisplayName(LocalizedText.english(objectName))
-                .setTypeDefinition(NodeIds.BaseObjectType)
-                .build();
-        getNodeManager().addNode(object);
-        requireNonNull(testFolder).addOrganizes(object);
+        final NodeId objectId = addBareObject(objectName);
 
         // Two inputs and one output, every one named and typed: the ordinary case, and what a generated schema
         // is built from.
@@ -878,6 +870,29 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                             });
                 });
 
+        return objectId;
+    }
+
+    /**
+     * An object of {@code BaseObjectType} with nothing hanging off it.
+     * <p>
+     * A method tag may legitimately point at one: an object exposes whatever methods it exposes, and they may be
+     * added later without the tag changing. What matters is that Edge <em>says so</em> rather than installing a
+     * writer that quarantines every request in silence.
+     *
+     * @param objectName the browse name of the object a METHOD tag would point at.
+     * @return the object's node id, for the tag definition.
+     */
+    public @NotNull NodeId addBareObject(final @NotNull String objectName) {
+        final NodeId objectId = newNodeId(objectName);
+        final UaObjectNode object = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(objectId)
+                .setBrowseName(newQualifiedName(objectName))
+                .setDisplayName(LocalizedText.english(objectName))
+                .setTypeDefinition(NodeIds.BaseObjectType)
+                .build();
+        getNodeManager().addNode(object);
+        requireNonNull(testFolder).addOrganizes(object);
         return objectId;
     }
 

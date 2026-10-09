@@ -93,16 +93,10 @@ public final class MethodVerifier {
     public static @NotNull CompletableFuture<Result> verify(
             final @NotNull OpcUaClient client, final @NotNull NodeId objectNode, final @NotNull String tagName) {
 
-        // Forward HasComponent references with the Method node class: that is how a method hangs off its
-        // object (OPC 10000-3 §4.5.3). Subtypes of HasComponent are included -- a server may use a more
-        // specific reference type, and excluding them would hide methods that are genuinely there.
-        final BrowseDescription browse = new BrowseDescription(
-                objectNode,
-                BrowseDirection.Forward,
-                NodeIds.HasComponent,
-                true,
-                uint(NodeClass.Method.getValue()),
-                uint(BrowseResultMask.All.getValue()));
+        // Forward HasComponent references: that is how a method hangs off its object (OPC 10000-3 §4.5.3).
+        // Subtypes of HasComponent are included -- a server may use a more specific reference type, and
+        // excluding them would hide methods that are genuinely there.
+        final BrowseDescription browse = methodsOf(objectNode);
 
         // The node class is checked before the browse, not inferred from it. A variable or a method named by
         // mistake has no HasComponent methods either, so browsing alone would report it as an object with none
@@ -136,6 +130,51 @@ public final class MethodVerifier {
                             + "' from the device: "
                             + Browsing.describeException(throwable));
                 });
+    }
+
+    /// A browse for the methods hanging off a node, asking the server to filter nothing.
+    ///
+    /// **Why the node-class filter is not used.** `BrowseDescription` can ask the server to return only Method
+    /// nodes, and OPC 10000-4 §5.8.2 is unambiguous that it must: "Only TargetNodes with the selected
+    /// NodeClasses are returned". A Siemens S7-1500 (firmware V02.08.03) does not honour it for a user method
+    /// defined in an instance DB -- it reports that node's class as **Object**, so a mask of `Method` returns
+    /// nothing while an unfiltered browse lists the method correctly, and below the method node it ignores the
+    /// mask entirely. With the filter in place no user-written method on that PLC could be found: the object
+    /// resolved to zero methods, the generated schema admitted no arguments, and every call was quarantined
+    /// while the adapter stayed connected and said nothing above DEBUG.
+    ///
+    /// That is the device family this feature exists for, and the firmware is fielded, so Edge filters instead
+    /// of the server. The cost is a few more references per object, discarded in {@link #isMethod}. Other
+    /// clients -- UaExpert, asyncua -- never met this because they browse unfiltered too.
+    ///
+    /// Reported by QA as P12 on EDG-1100, with a 16-cell browse matrix and an 8-mask characterisation.
+    ///
+    /// Package-private so the mask can be asserted without a server: a device that misreports a node class
+    /// cannot be imitated by the embedded one, since Milo derives the browse's node class from the real node.
+    static @NotNull BrowseDescription methodsOf(final @NotNull NodeId node) {
+        return new BrowseDescription(
+                node,
+                BrowseDirection.Forward,
+                NodeIds.HasComponent,
+                true,
+                uint(0),
+                uint(BrowseResultMask.All.getValue()));
+    }
+
+    /// Whether a browsed reference is a method, by what the server reported about it.
+    ///
+    /// The filter the server was asked not to apply. A reference whose node class is unknown is kept rather
+    /// than dropped: {@link #readSignature} resolves the node and discards anything that is not a method node,
+    /// so a server that under-reports here costs a round trip rather than a method. The S7-1500 reports
+    /// `Object` for a method node, which is exactly the case this cannot be strict about -- so "unknown" and
+    /// "says Object" are both resolved rather than refused, and only a node class that is positively something
+    /// else is dropped here.
+    ///
+    /// Package-private for the same reason as {@link #methodsOf}: this is the half of the decision that an
+    /// embedded server cannot exercise, because it reports node classes correctly.
+    static boolean isMethod(final @NotNull ReferenceDescription reference) {
+        final NodeClass nodeClass = reference.getNodeClass();
+        return nodeClass == NodeClass.Method || nodeClass == NodeClass.Object || nodeClass == NodeClass.Unspecified;
     }
 
     /// Confirms the tag's node is an object, yielding a rejection when it is not and null when it is.
@@ -172,7 +211,11 @@ public final class MethodVerifier {
 
         final List<CompletableFuture<MethodSignature>> pending = new ArrayList<>(references.size());
         for (final ReferenceDescription reference : references) {
-            pending.add(readSignature(client, reference, objectId));
+            // The node-class filter the server was asked not to apply -- see methodsOf. Applied before the
+            // node is resolved, so a Variable sitting beside a method costs nothing rather than a round trip.
+            if (isMethod(reference)) {
+                pending.add(readSignature(client, reference, objectId));
+            }
         }
 
         return CompletableFuture.allOf(pending.toArray(new CompletableFuture[0]))
@@ -297,7 +340,10 @@ public final class MethodVerifier {
                 .thenCompose(type -> type == null
                         ? CompletableFuture.completedFuture(verified.methods())
                         : collectUpwards(client, type, verified.methods(), tagName, 0))
-                .thenApply(methods -> (Result) new Result.Verified(methods))
+                .thenApply(methods -> {
+                    warnWhenNoneWereFound(methods, objectNode, tagName);
+                    return (Result) new Result.Verified(methods);
+                })
                 .exceptionally(throwable -> {
                     log.debug(
                             "Tag '{}': could not read the methods of its type, so only the ones its object "
@@ -306,6 +352,35 @@ public final class MethodVerifier {
                             Browsing.describeException(throwable));
                     return fromInstance;
                 });
+    }
+
+    /// Warns when a method tag's object turned out to expose nothing callable.
+    ///
+    /// **Why this is a WARN rather than a DEBUG.** The outcome is a tag that looks healthy and can never serve
+    /// a request: the adapter stays connected, the generated schema admits no arguments, and every call is
+    /// quarantined by the validation gate. An operator sees a configured tag, a connected device, the method
+    /// plainly visible in another OPC-UA client, and calls that vanish -- with nothing above DEBUG to explain
+    /// it. This class's own comments already name "a usable tag that can never serve a request" as the outcome
+    /// to avoid; said at DEBUG, that warning reached nobody.
+    ///
+    /// Not a rejection, deliberately. An object may legitimately expose no methods, and the methods an object
+    /// exposes can be added later without the tag changing -- so this is reported rather than refused. QA
+    /// raised it alongside the node-class filter (P12 on EDG-1100), and it is the half that survives whatever
+    /// a given server does with that filter.
+    private static void warnWhenNoneWereFound(
+            final @NotNull List<MethodSignature> methods,
+            final @NotNull NodeId objectNode,
+            final @NotNull String tagName) {
+
+        if (methods.isEmpty()) {
+            log.warn(
+                    "Method tag '{}' points at node {}, which exposes no callable methods -- neither on the "
+                            + "object nor on its type. Every request against this tag will be refused. Check "
+                            + "that the node is the object that owns the methods, and that the server lists "
+                            + "them as components of it.",
+                    tagName,
+                    objectNode);
+        }
     }
 
     /// The object's ObjectType, or null when the server reports none.
@@ -358,13 +433,9 @@ public final class MethodVerifier {
             return CompletableFuture.completedFuture(known);
         }
 
-        final BrowseDescription methods = new BrowseDescription(
-                type,
-                BrowseDirection.Forward,
-                NodeIds.HasComponent,
-                true,
-                uint(NodeClass.Method.getValue()),
-                uint(BrowseResultMask.All.getValue()));
+        // Unfiltered for the same reason as the instance browse -- see methodsOf. A server whose node-class
+        // filter hides a method on an object hides it on the type too, and a static method lives only there.
+        final BrowseDescription methods = methodsOf(type);
 
         return Browsing.browseAll(client, methods)
                 .thenCompose(references -> readSignatures(client, references, type, tagName))
