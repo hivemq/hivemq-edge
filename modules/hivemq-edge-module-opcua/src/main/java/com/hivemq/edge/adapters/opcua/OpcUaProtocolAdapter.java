@@ -64,6 +64,7 @@ import com.hivemq.edge.adapters.opcua.method.MethodVerifier;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import com.hivemq.util.Topics;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1066,6 +1067,32 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
+        // Checked here, beside the method name, because this is the last point at which nothing has happened
+        // yet: the object's methods have not been read and no Call has been sent, so refusing costs the caller
+        // an answer rather than an unrepeatable side effect. A reply address that cannot be published to is
+        // worth refusing before the device acts -- the method would otherwise run and its answer then vanish
+        // in the publish, leaving the caller waiting for something nobody can deliver.
+        // Asked as "it named one, and it is not the one we would use", so the rule lives in exactly one place:
+        // whatever publishableReplyTopic rejects is what gets refused here.
+        final String requestedReplyTopic = payload.responseTopic();
+        if (requestedReplyTopic != null && !requestedReplyTopic.isBlank() && publishableReplyTopic(payload) == null) {
+            refuseWithResponse(
+                    client,
+                    opcuaTag,
+                    methodName,
+                    payload,
+                    StatusCodes.Bad_InvalidArgument,
+                    "Request to tag '"
+                            + tagName
+                            + "' names '"
+                            + requestedReplyTopic
+                            + "' as its 'responseTopic', which cannot be published to: an MQTT topic to publish on "
+                            + "may not contain the wildcards '#' or '+'. This answer went to the mapping's own "
+                            + "topic instead",
+                    output);
+            return;
+        }
+
         @SuppressWarnings("unused")
         final var unused = methodCache
                 .get(tagName, () -> MethodVerifier.verify(client, objectNodeId, tagName))
@@ -1221,7 +1248,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // the message, not for the write, and publishing after completing the write would let a fast caller
             // see its request acknowledged while the answer is still in flight.
             publishMethodResponse(
-                    client, opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), result);
+                    client, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), result);
 
             if (result.succeeded()) {
                 log.debug("Called '{}' on tag '{}'", methodName, tagName);
@@ -1268,9 +1295,38 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         final MethodCallResult refusal = new MethodCallResult(new StatusCode(statusCode), Map.of(), Map.of());
         publishMethodResponse(
-                client, opcuaTag, methodName, payload.correlationData(), payload.responseTopic(), refusal);
+                client, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), refusal);
 
         output.fail(reason);
+    }
+
+    /**
+     * The reply address a response may be sent to: the one the request named, or null when that cannot be published
+     * to.
+     * <p>
+     * Null is how a response reaches the northbound mapping's own topic. The mapping holds the configured topic and
+     * the adapter never sees it — a datapoint carrying no reply address falls back to it in
+     * {@code NorthboundTagConsumer}, so omitting the field here <em>is</em> the instruction to use the default.
+     * <p>
+     * <b>Why a refusal cannot simply echo what the request asked for.</b> Every other refusal honours the caller's
+     * address, which is what makes a refusal indistinguishable from an answer. This one cannot: when the address
+     * itself is the fault, publishing the refusal there would fail in exactly the way being reported, and the
+     * caller would be told nothing. So an unpublishable address is dropped rather than passed on, and a missing
+     * address and a rejected one both land on the mapping's own topic.
+     * <p>
+     * Applied on the success path too, not only to refusals. A valid request cannot reach it — an invalid address
+     * is refused in {@link #callMethod} before the device is touched — but a second reader of the payload must not
+     * be able to reintroduce the gap this closes.
+     * <p>
+     * Package-private so the routing decision can be tested without a device and a broker: this is the part that
+     * decides where an answer goes, and the rest of the path around it is driven by a live connection.
+     */
+    static @Nullable String publishableReplyTopic(final @NotNull OpcUaPayload payload) {
+        final String requested = payload.responseTopic();
+        if (requested == null || requested.isBlank() || !Topics.isValidTopicToPublish(requested)) {
+            return null;
+        }
+        return requested;
     }
 
     /**
