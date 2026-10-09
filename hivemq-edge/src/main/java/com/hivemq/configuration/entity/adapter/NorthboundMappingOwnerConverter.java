@@ -37,7 +37,11 @@ public final class NorthboundMappingOwnerConverter
                 entity.getIncludeTimestamp(),
                 entity.getIncludeMetadata(),
                 MqttUserPropertyEntityConverter.INSTANCE.toInternalEntities(entity.getUserProperties()),
-                entity.getMessageExpiryInterval());
+                entity.getMessageExpiryInterval(),
+                // The inbound half matters more than the read-back: without it a mapping arriving through this
+                // path loses the flag on the way in, so a read-then-save does not merely display the wrong
+                // value, it stores one.
+                Boolean.TRUE.equals(entity.getWriteCorrelationData()));
     }
 
     public @NotNull NorthboundMappingOwner toRestEntity(
@@ -55,6 +59,12 @@ public final class NorthboundMappingOwnerConverter
                 .maxQoS(QoSConverter.INSTANCE.toRestEntity(entity.getMaxQoS()))
                 .messageExpiryInterval(entity.getMessageExpiryInterval())
                 .userProperties(MqttUserPropertyEntityConverter.INSTANCE.toRestEntities(entity.getUserProperties()))
+                // Carried in both directions, like every other field here. Omitted when method calls landed,
+                // because the sibling NorthboundMappingEntityConverter was updated and this one was not -- so a
+                // flag that was accepted and is being applied read back as false, and the frontend renders what
+                // the read returns. An operator opening such a mapping and saving it wrote false back and
+                // silently stopped the token.
+                .writeCorrelationData(entity.isWriteCorrelationData())
                 .build();
     }
 }
