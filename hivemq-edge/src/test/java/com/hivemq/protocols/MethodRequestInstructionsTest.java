@@ -113,6 +113,82 @@ class MethodRequestInstructionsTest {
     }
 
     @Test
+    void aConfiguredInstructionCannotDefeatASwitchedOffFlag() {
+        // The decisive test. The flags work by omission: a southbound mapping is a whitelist, so switching
+        // `responseTopic` off simply adds no instruction and the field is deleted before the adapter sees it.
+        // A configured instruction naming the field was therefore enough to keep it -- the whitelist mentioned
+        // it either way, the adapter read it, and an administrator who had disabled caller-chosen reply topics
+        // still had requests redirected. The stored flag described nothing.
+        final FieldMapping configured =
+                new FieldMapping(List.of(new Instruction("$.theirField", "$.responseTopic", null)));
+
+        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, false);
+
+        assertThat(destinations(augmented))
+                .as("a switched-off field must not survive in the transform")
+                .containsExactly("methodName");
+    }
+
+    @Test
+    void theSameHoldsForCorrelationData() {
+        final FieldMapping configured =
+                new FieldMapping(List.of(new Instruction("$.theirField", "$.correlationData", null)));
+
+        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, false);
+
+        assertThat(destinations(augmented)).containsExactly("methodName");
+    }
+
+    @Test
+    void aConfiguredInstructionForASwitchedOnFieldIsKept() {
+        // The counterpart. With the flag on, the field belongs in the transform -- and the configured
+        // instruction is the one that writes it, since two instructions naming one destination would make the
+        // result depend on their order. So the source stays the user's, not an identity copy.
+        final FieldMapping configured =
+                new FieldMapping(List.of(new Instruction("$.theirField", "$.responseTopic", null)));
+
+        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, true);
+
+        assertThat(destinations(augmented)).containsExactly("responseTopic", "methodName");
+        assertThat(augmented.getInstructions().get(0).toSourceJsonPath()).isEqualTo("$.theirField");
+    }
+
+    @Test
+    void anInstructionNamingMethodNameIsNeverDiscarded() {
+        // `methodName` is not reserved: it has no flag to contradict, and it is added whenever the mapping
+        // carries method calls -- so an instruction naming it agrees with what Edge would have added anyway.
+        // Discarding it would delete the one field without which no request can be dispatched.
+        final FieldMapping configured =
+                new FieldMapping(List.of(new Instruction("$.theirField", "$.methodName", null)));
+
+        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, false);
+
+        assertThat(destinations(augmented)).containsExactly("methodName");
+        assertThat(augmented.getInstructions().get(0).toSourceJsonPath()).isEqualTo("$.theirField");
+    }
+
+    @Test
+    void anOrdinaryInstructionIsUntouchedWhateverTheFlagsSay() {
+        // The reserved destinations are two names, not a general filter: a user's own mapping of a value field
+        // must survive with every combination of the flags.
+        final FieldMapping augmented = MethodRequestInstructions.augment(userMapping(), true, false, false);
+
+        assertThat(destinations(augmented)).containsExactly("value.setpoint", "methodName");
+    }
+
+    @Test
+    void aMappingThatCarriesNoMethodCalls_keepsEvenAReservedDestination() {
+        // Nothing is reserved when this is not a method mapping. Every southbound mapping that exists today
+        // takes this path, and its transform has to stay byte-identical.
+        final FieldMapping configured =
+                new FieldMapping(List.of(new Instruction("$.theirField", "$.responseTopic", null)));
+
+        final FieldMapping augmented = MethodRequestInstructions.augment(configured, false, false, false);
+
+        assertThat(augmented).isSameAs(configured);
+    }
+
+    @Test
     void anEmptyUserMapping_stillGetsTheRequestFields() {
         // A method tag needs no value instruction at all when its methods take no arguments.
         final FieldMapping augmented = MethodRequestInstructions.augment(new FieldMapping(List.of()), true, true, true);

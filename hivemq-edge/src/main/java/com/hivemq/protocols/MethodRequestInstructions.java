@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 /// Adds the field-mapping instructions a method request needs to survive the southbound transform.
@@ -84,18 +85,39 @@ public final class MethodRequestInstructions {
             fields.add(RESPONSE_TOPIC);
         }
 
-        // A user instruction already naming one of these destinations wins. It should not be reachable -- the
-        // fields are read-only in the schema the editor offers -- but a hand-written configuration or a direct API
-        // call can still produce one, and two instructions writing the same destination would make the result
-        // depend on their order.
-        final Set<String> alreadyWritten = new LinkedHashSet<>();
-        configured.getInstructions().forEach(instruction -> alreadyWritten.add(instruction.toDestinationJsonPath()));
+        // A configured instruction naming a switched-off destination is dropped, so the flags describe
+        // behaviour.
+        //
+        // The flags work by omission: a southbound mapping is a whitelist, so switching `responseTopic` off
+        // simply adds no instruction for it and the field is deleted before the adapter sees it. That makes a
+        // configured instruction naming the field sufficient to defeat the switch -- the whitelist mentions the
+        // field either way, the adapter reads it, and the stored flag then describes nothing. An administrator
+        // could disable caller-chosen reply topics while an old instruction kept them working.
+        //
+        // Unreachable from the mapping editor, which offers only the writable leaves of a tag's southbound
+        // schema and declares these fields read-only. A configuration file written by hand, or a mapping posted
+        // to the API, is not filtered that way -- and the generated schema does not catch it either, because it
+        // closes the object holding the method's arguments while the message root these fields sit at stays
+        // open.
+        //
+        // `methodName` is not reserved: it has no flag to contradict, and it is added whenever this is a method
+        // mapping, so an instruction naming it agrees with what Edge would have added anyway.
+        final Set<String> switchedOff = new LinkedHashSet<>(Set.of(CORRELATION_DATA, RESPONSE_TOPIC));
+        switchedOff.removeAll(fields);
 
-        final List<Instruction> augmented = new ArrayList<>(configured.getInstructions());
+        final List<Instruction> kept = configured.getInstructions().stream()
+                .filter(instruction -> !switchedOff.contains(instruction.toDestinationJsonPath()))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        // What remains may still name a destination this would add. Two instructions writing one destination
+        // would make the result depend on their order, so the configured one wins and nothing is appended.
+        final Set<String> alreadyWritten = new LinkedHashSet<>();
+        kept.forEach(instruction -> alreadyWritten.add(instruction.toDestinationJsonPath()));
+
         fields.stream()
                 .filter(field -> !alreadyWritten.contains(field))
-                .forEach(field -> augmented.add(new Instruction("$." + field, "$." + field, null)));
+                .forEach(field -> kept.add(new Instruction("$." + field, "$." + field, null)));
 
-        return new FieldMapping(augmented);
+        return new FieldMapping(kept);
     }
 }
