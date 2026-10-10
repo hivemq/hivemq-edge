@@ -441,8 +441,20 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * allowed to fail without failing the connection, so a browse done here would leave an adapter that is
      * connected and not browse-ready reporting every method that exists as absent.
      * <p>
-     * Run from {@link #subscribe} rather than from the monitored-item sync, because a configured string cannot
-     * change between connects and repeating the warning on every reconnect would only bury it.
+     * Run from {@link #subscribe} rather than from the monitored-item sync, so it happens once per connection
+     * rather than once per subscription rebuild.
+     * <p>
+     * <b>It therefore repeats on every reconnect, and that is accepted rather than overlooked.</b> This comment
+     * used to claim the opposite -- that the placement avoided repetition, since a configured string cannot
+     * change between connects. The first half is true and the second does not follow: {@code subscribe} runs on
+     * every connect, a reconnect included, so the report recurs for as long as the tag stays broken. Reported by
+     * Miguel as M9b on PR 1765, observed live after a health-check reconnect.
+     * <p>
+     * Left as it is deliberately. A correct configuration produces nothing here at all, so the repetition can
+     * only follow a real misconfiguration, and each report is accurate every time it fires -- the tag still
+     * cannot serve a request. Reporting once would mean a restart silently clears the only standing evidence of
+     * a fault that has not been fixed, which is the "have you tried rebooting" failure mode: the operator sees
+     * the complaint stop and concludes the problem went away.
      */
     private void reportMethodTagsWithAnUnusableNode() {
         for (final OpcuaTag tag : tags) {
