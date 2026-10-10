@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.method;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,12 +48,21 @@ import org.jetbrains.annotations.NotNull;
 ///
 /// There is still no expiry to tune, because what makes an entry stale is precisely what starts a new session.
 ///
-/// ## Reading is lazy
+/// ## Who fills it
 ///
-/// The first call against a tag populates it. Filling it at connect time would tie it to the browse-metadata
-/// warm-up, which is deliberately allowed to fail without failing the connection -- so an adapter that is
-/// connected and not browse-ready would hold an empty cache and report every method as absent. Reading on first
-/// use means the failure is reported to the request that provoked it, and the next request tries again.
+/// The adapter pre-warms every method tag once it is connected, one tag at a time, so that a request is
+/// normally a hit -- on a device that serves metadata slowly the browse can take minutes, and paying for it in
+/// the first request made it time out while a later one succeeded.
+///
+/// A request still fills what the pre-warm did not reach, because the pre-warm is allowed to fail and is
+/// abandoned when a new session begins. That costs nothing: a failure leaves no entry (below), so the request
+/// browses exactly as it would have, and reports the failure to the caller that provoked it.
+///
+/// This used to be filled only on first use, on the stated grounds that a cache filled at connect would be
+/// "silently empty on an adapter that is connected and not browse-ready", reporting a method that exists as
+/// absent for the whole session. That is not a hazard this cache has: an entry is kept only for a verdict that
+/// is durable, and everything else is evicted, so there is no state in which it answers "absent" from a browse
+/// that did not happen.
 ///
 /// ## In-flight requests share one browse
 ///
@@ -65,6 +75,8 @@ import org.jetbrains.annotations.NotNull;
 public final class MethodCache {
 
     private final @NotNull Map<String, CompletableFuture<MethodVerifier.Result>> perTag = new ConcurrentHashMap<>();
+
+    private final @NotNull AtomicLong generation = new AtomicLong();
 
     /// The methods of this tag's object, read if they are not already known.
     ///
@@ -113,6 +125,33 @@ public final class MethodCache {
 
     /// Forgets everything, because the session that made it true has ended.
     public void invalidate() {
+        generation.incrementAndGet();
         perTag.clear();
+    }
+
+    /// Whether this tag's methods are already known, without asking the device if they are not.
+    ///
+    /// {@link #get} cannot answer this: on a miss it browses, which is its job. This exists so a test can check
+    /// that the connect-time pre-warm filled the cache rather than inferring it from a later request, which
+    /// would fill the cache itself and prove nothing.
+    public boolean isKnown(final @NotNull String tagName) {
+        final CompletableFuture<MethodVerifier.Result> entry = perTag.get(tagName);
+        return entry != null && entry.isDone() && !entry.isCompletedExceptionally();
+    }
+
+    /// Which set of entries is current. Changes on every {@link #invalidate()}.
+    ///
+    /// For a caller that fills the cache over a long stretch rather than in one request -- the connect-time
+    /// pre-warm, which browses one tag at a time and may run for minutes on a slow device. Such a run can still
+    /// be going when its session ends, and an entry it then stored would belong to the dead session while the
+    /// cache had already been cleared for the live one. Reading this before a run and comparing before each tag
+    /// is how the run notices.
+    ///
+    /// Object identity of the connection is not enough to notice: Milo can activate a fresh session *inside* an
+    /// existing client, so the connection object is unchanged across exactly the event that renumbers node ids.
+    /// That seam is one of the two that calls {@link #invalidate()}, which is why the counter lives here rather
+    /// than being inferred from the connection.
+    public long generation() {
+        return generation.get();
     }
 }

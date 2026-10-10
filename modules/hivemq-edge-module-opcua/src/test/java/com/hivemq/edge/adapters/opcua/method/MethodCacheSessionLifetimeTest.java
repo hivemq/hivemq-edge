@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -162,5 +163,64 @@ class MethodCacheSessionLifetimeTest {
 
         assertThat(browses).hasValue(3);
         assertThat(refreshes).hasValue(2);
+    }
+
+    @Test
+    void theGenerationChangesOnEveryInvalidation_soALongRunCanTellItsSessionEnded() {
+        // What the connect-time pre-warm reads before it starts and compares before each tag. It browses one
+        // tag at a time and may run for minutes on a device that serves metadata slowly, so it can still be
+        // going when its session ends -- and an entry stored then would belong to the dead session while the
+        // cache had already been cleared for the live one.
+        //
+        // Object identity of the connection cannot detect this: Milo activates a fresh session *inside* the
+        // existing client on a reconnect, so the connection object is unchanged across exactly the event that
+        // may renumber the node ids being stored. That is the seam exercised here.
+        sessionActive();
+        final long first = cache.generation();
+
+        read("boiler1");
+        assertThat(cache.generation()).isEqualTo(first);
+
+        sessionActive();
+
+        assertThat(cache.generation()).isNotEqualTo(first);
+    }
+
+    @Test
+    void aFailedBrowseLeavesNoEntry_whichIsWhatMakesPrewarmingSafe() {
+        // The reason the pre-warm may fail without escalating, and the reason the old "a cache filled at
+        // connect would be silently empty and report every method as absent" objection does not apply: there is
+        // no state in which this cache answers from a browse that did not happen.
+        sessionActive();
+
+        assertThatThrownBy(() -> cache.get(
+                                "boiler1",
+                                () -> CompletableFuture.failedFuture(
+                                        new IllegalStateException("device did not answer")))
+                        .join())
+                .hasRootCauseMessage("device did not answer");
+
+        // The next read browses again rather than inheriting the failure.
+        read("boiler1");
+
+        assertThat(browses).hasValue(1);
+    }
+
+    @Test
+    void anUnverifiableOutcomeLeavesNoEntry() {
+        // The other evicted case: the device could not be asked, so nothing was learned. A pre-warm that gets
+        // this answer must not turn it into a fact for the session.
+        sessionActive();
+
+        final MethodVerifier.Result first = cache.get(
+                        "boiler1",
+                        () -> CompletableFuture.completedFuture(new MethodVerifier.Result.Unverifiable("no answer")))
+                .join();
+        assertThat(first).isInstanceOf(MethodVerifier.Result.Unverifiable.class);
+
+        final MethodVerifier.Result second = read("boiler1");
+
+        assertThat(second).isInstanceOf(MethodVerifier.Result.Verified.class);
+        assertThat(browses).hasValue(1);
     }
 }

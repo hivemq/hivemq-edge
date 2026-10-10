@@ -69,7 +69,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -111,10 +113,24 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
 
     /**
-     * A method tag's methods, read on first use and kept for the session. Cleared whenever the connection is
-     * replaced, because a server restart is what can renumber the NodeIds it holds.
+     * A method tag's methods, read once per tag and kept for the session. Cleared whenever a session starts,
+     * because a new session is what can renumber the NodeIds it holds.
+     * <p>
+     * Filled by {@link #prewarmMethodTags} once the adapter is connected, and by the request path for anything
+     * that pre-warm did not reach.
      */
     private final @NotNull MethodCache methodCache = new MethodCache();
+
+    /**
+     * The single thread that pre-warms method tags, and the handle on the run in progress.
+     * <p>
+     * Its own thread rather than the retry or health-check scheduler, because a pre-warm may run for minutes on
+     * a device that serves metadata slowly, and both of those have work that must not wait that long — the
+     * health check in particular is what notices a dead connection.
+     */
+    private volatile @Nullable ExecutorService methodPrewarmExecutor = null;
+
+    private final @NotNull AtomicReference<Future<?>> methodPrewarmRun = new AtomicReference<>();
 
     /** Serializes connection-generation changes with every generation-owned status publication. */
     private final @NotNull ReentrantLock connectionOwnershipLock = new ReentrantLock();
@@ -655,6 +671,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 Thread.currentThread().interrupt();
             }
         }
+
+        // The method pre-warm. Interrupted but not waited for: a run may be blocked in a browse against a
+        // device that is answering slowly, which is the whole reason it has its own thread, and nothing depends
+        // on it finishing. shutdownNow interrupts it, and the run checks that flag before each tag and abandons
+        // the rest. Waiting here would make a slow device able to delay every stop by the wait.
+        final var prewarmExecutor = this.methodPrewarmExecutor;
+        this.methodPrewarmExecutor = null;
+        if (prewarmExecutor != null && !prewarmExecutor.isShutdown()) {
+            prewarmExecutor.shutdownNow();
+        }
     }
 
     /**
@@ -676,6 +702,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
         retryScheduler = Executors.newSingleThreadScheduledExecutor();
         healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
+        // One thread, which is what keeps the pre-warm sequential: a run submitted while another is still
+        // going waits rather than adding concurrent browses to a device that is already answering slowly.
+        methodPrewarmExecutor = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -1038,11 +1067,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     /**
      * Calls the method a request names, on the object a method tag names.
      * <p>
-     * The object's methods are read on the first call against a tag and kept for the session (see
-     * {@link MethodCache}). Lazily rather than at connect, because the browse-metadata warm-up is allowed to
-     * fail without failing the connection: a cache filled there would be silently empty on an adapter that is
-     * connected and not browse-ready, and every call would then report a method that exists as absent. Read on
-     * first use, the failure is reported to the request that provoked it and the next request tries again.
+     * The object's methods are read once per tag and kept for the session (see {@link MethodCache}). Normally
+     * {@link #prewarmMethodTags} has already read them, so this is a cache hit; a tag the pre-warm did not
+     * reach -- because it failed, or because the run was abandoned when a new session began -- is read here
+     * instead, and the failure is then reported to the request that provoked it.
      */
     private void callMethod(
             final @NotNull OpcUaClient client,
@@ -1666,6 +1694,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     + "the preceding warning for the cause.",
                             adapterId);
                 }
+                prewarmMethodTags(source);
             } else {
                 log.debug(
                         "OPC UA adapter '{}': not publishing readiness from a connection the adapter no longer owns",
@@ -1673,6 +1702,161 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             }
         } finally {
             connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * Reads every method tag's methods now, so that a caller's first request does not have to.
+     * <p>
+     * <b>Why this exists.</b> A method tag's methods used to be read on the first request against that tag. On a
+     * device that serves metadata slowly that browse can take minutes, so the first request paid for it and
+     * could time out while a later one succeeded — and waiting after connect did not help, because nothing was
+     * reading anything until a request arrived. Reported by Miguel as part of M11 on EDG-1087: the symptom
+     * reproduced on two unrelated devices, and patience was no remedy for this half of it.
+     * <p>
+     * <b>Why not in the connect-time metadata warm-up.</b> That warm-up — which builds the server's DataType
+     * hierarchy — runs inside a task the connect sequence waits on, bounded by the smaller of the connection
+     * timeout and 30 seconds. Exceeding the bound abandons the work and carries on. A browse that is allowed to
+     * take minutes placed there would hold the adapter back from reporting itself connected and then throw away
+     * what it had done. So this runs from the readiness hook instead: after {@code CONNECTED} is published, on
+     * its own thread, unbounded, blocking nothing.
+     * <p>
+     * <b>One tag at a time.</b> A device gets no more concurrent metadata load from the pre-warm than a single
+     * caller would produce. The cost is wall-clock time, which nothing is waiting on, rather than pressure on a
+     * device that is already answering slowly.
+     * <p>
+     * <b>Why a failure is only logged.</b> The cache keeps a {@code Rejected} verdict — "this node is not an
+     * object", "this node is not there" — because that is durable for the session, and evicts everything else: a
+     * browse that threw and an {@code Unverifiable} outcome both leave no entry. So a pre-warm that fails leaves
+     * the cache exactly as it found it and the first request browses again, reporting the failure to the caller
+     * that provoked it as it always did. There is nothing for this to escalate: the adapter is connected,
+     * streaming, and no worse off than before the pre-warm existed.
+     * <p>
+     * <b>The generation check is what makes this safe.</b> A run may still be in flight when its session ends,
+     * and the cache is cleared on every new session because a remembered NodeId may name a different node in the
+     * next one. Checking ownership once at the start is not enough — the check is repeated before each tag, so a
+     * run whose connection has been replaced stops instead of writing entries belonging to a dead session into
+     * the cache of the live one.
+     */
+    private void prewarmMethodTags(final @NotNull OpcUaClientConnection source) {
+        final List<OpcuaTag> methodTags = tagList.stream()
+                .filter(tag -> tag.getDefinition().getKind() == OpcuaTagKind.METHOD)
+                .toList();
+        if (methodTags.isEmpty()) {
+            return;
+        }
+        final ExecutorService executor = methodPrewarmExecutor;
+        if (executor == null || executor.isShutdown()) {
+            return;
+        }
+        log.info(
+                "OPC UA adapter '{}': reading the methods of {} method tag(s) now, one at a time. A device that "
+                        + "serves metadata slowly may take several minutes; nothing waits on this, and a request "
+                        + "arriving meanwhile is served as before.",
+                adapterId,
+                methodTags.size());
+        final long generation = methodCache.generation();
+        methodPrewarmRun.set(executor.submit(() -> runMethodPrewarm(source, methodTags, generation)));
+    }
+
+    /**
+     * The pre-warm run started by the most recent readiness publication, for a test that needs to wait for it.
+     * <p>
+     * Nothing in production waits on this: the point of the run is that nothing does.
+     */
+    @VisibleForTesting
+    @Nullable
+    Future<?> methodPrewarmRun() {
+        return methodPrewarmRun.get();
+    }
+
+    /** Whether a tag's methods are already known, for a test checking what the pre-warm achieved. */
+    @VisibleForTesting
+    boolean methodsKnownFor(final @NotNull String tagName) {
+        return methodCache.isKnown(tagName);
+    }
+
+    /** One pre-warm run: each tag in turn, abandoned as soon as the session it belongs to has ended. */
+    private void runMethodPrewarm(
+            final @NotNull OpcUaClientConnection source,
+            final @NotNull List<OpcuaTag> methodTags,
+            final long generation) {
+
+        int read = 0;
+        for (final OpcuaTag tag : methodTags) {
+            // Three ways this run becomes obsolete, and all three are checked before every tag rather than once
+            // at the start: the thread was interrupted by a stop, the adapter was stopped, or the cache was
+            // invalidated because a new session began. The last is the one object identity cannot see -- Milo
+            // activates a fresh session inside the existing client on a reconnect, so `source` is unchanged
+            // across exactly the event that may renumber the node ids this run is storing.
+            if (Thread.currentThread().isInterrupted()
+                    || stopped
+                    || opcUaClientConnection.get() != source
+                    || methodCache.generation() != generation) {
+                log.debug(
+                        "OPC UA adapter '{}': abandoning the method pre-warm after {} of {} tag(s); the session "
+                                + "it belongs to has ended",
+                        adapterId,
+                        read,
+                        methodTags.size());
+                return;
+            }
+            final OpcUaClient client = source.client().orElse(null);
+            if (client == null) {
+                return;
+            }
+            final String tagName = tag.getName();
+            final NodeId objectNode;
+            try {
+                objectNode = NodeId.parse(tag.getDefinition().getNode());
+            } catch (final Exception e) {
+                // The request path reports this to the caller as a malformed tag. Nothing to add here: a
+                // pre-warm cannot refuse a request that has not arrived.
+                log.debug(
+                        "OPC UA adapter '{}': not pre-warming tag '{}', whose node id is malformed",
+                        adapterId,
+                        tagName);
+                continue;
+            }
+            try {
+                // Blocking deliberately, which is what makes the run sequential. One tag's browse completes
+                // before the next begins, so the device sees one outstanding request at a time.
+                methodCache
+                        .get(tagName, () -> MethodVerifier.verify(client, objectNode, tagName))
+                        .join();
+                // The generation may have changed while that browse was in flight, in which case this entry was
+                // written into a cache that had just been cleared for a new session. Clearing again is the
+                // honest repair: the entry cannot be told apart from a current one, and losing a correct entry
+                // only costs the next request a browse, while keeping a stale one costs a call against the
+                // wrong node.
+                if (methodCache.generation() != generation) {
+                    methodCache.invalidate();
+                    log.debug(
+                            "OPC UA adapter '{}': a new session began while pre-warming tag '{}'; the cache was "
+                                    + "cleared again so nothing from the previous session survives",
+                            adapterId,
+                            tagName);
+                    return;
+                }
+                read++;
+            } catch (final RuntimeException e) {
+                // Logged, not escalated: the cache evicted the failure, so the first request against this tag
+                // browses again and tells its caller what went wrong.
+                log.debug(
+                        "OPC UA adapter '{}': could not pre-warm the methods of tag '{}'; the first request "
+                                + "against it will read them again",
+                        adapterId,
+                        tagName,
+                        e);
+            }
+        }
+        if (opcUaClientConnection.get() == source && !stopped) {
+            log.info(
+                    "OPC UA adapter '{}': pre-warmed {} of {} method tag(s); a request against one of them no "
+                            + "longer waits for a browse",
+                    adapterId,
+                    read,
+                    methodTags.size());
         }
     }
 
