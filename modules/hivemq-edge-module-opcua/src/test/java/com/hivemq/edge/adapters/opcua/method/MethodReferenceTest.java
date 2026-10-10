@@ -102,8 +102,9 @@ class MethodReferenceTest {
 
         assertThat(resolution).isInstanceOf(MethodReference.Resolution.Ambiguous.class);
         final String reason = ((MethodReference.Resolution.Ambiguous) resolution).reason();
-        // Both node ids, so an operator can paste one straight back into `methodName`.
-        assertThat(reason).contains("ns=1;s=A.Start").contains("ns=2;s=B.Start");
+        // Both node ids, so an operator can paste one straight back into `methodName` -- in the URI form,
+        // which is the spelling that survives a server renumbering its namespace table.
+        assertThat(reason).contains("nsu=" + VENDOR_A + ";s=A.Start").contains("nsu=" + VENDOR_B + ";s=B.Start");
         assertThat(reason).contains("'Start'");
     }
 
@@ -201,16 +202,34 @@ class MethodReferenceTest {
     }
 
     @Test
-    void aNamespaceIndex_isRefusedRatherThanHonoured() {
-        // Milo parses `ns=2;s=...` perfectly well, so this refusal is a decision rather than a parse failure.
-        // An index is meaningful only for the session that read the table; a request may be stored, retained or
-        // replayed, and an index in it can then name a different method -- the fault this resolution prevents.
+    void aNamespaceIndex_isAcceptedLikeATagsOwnNodeId() {
+        // Reversed deliberately (EDG-1087 M9a). This used to be refused, on the sound-sounding grounds that an
+        // index is a per-session handle and a stored request carrying one can come to name a different method.
+        // The hazard is real; refusing it here was still wrong. A tag's own node id is parsed with
+        // `NodeId.parse`, so `ns=2;s=Boiler` is what every configuration already contains -- an operator who
+        // writes that for a tag and then has `methodName` refuse the same spelling meets an inconsistency Edge
+        // invented, while the exposure stays exactly where it was.
         final var resolution = MethodReference.resolve(collidingStarts(), "ns=2;s=B.Start", namespaces);
 
-        assertThat(resolution).isInstanceOf(MethodReference.Resolution.Malformed.class);
-        assertThat(((MethodReference.Resolution.Malformed) resolution).reason())
-                .contains("index")
-                .contains("nsu=");
+        assertThat(resolution).isInstanceOf(MethodReference.Resolution.Matched.class);
+        assertThat(((MethodReference.Resolution.Matched) resolution).method().nodeId())
+                .isEqualTo(new NodeId(2, "B.Start"));
+    }
+
+    @Test
+    void aRefusalPrintsTheUriForm_notTheIndexForm() {
+        // The other half of M9a, and the part that made the refusal self-defeating: the message asked for
+        // `nsu=` and then listed candidates rendered as `ns=2;s=...`, so pasting one back earned a second
+        // refusal. Both forms parse now, but a message is an invitation to copy -- so it offers the spelling
+        // that survives a renumbered namespace table.
+        final var resolution = MethodReference.resolve(collidingStarts(), "Start", namespaces);
+
+        final String reason = ((MethodReference.Resolution.Ambiguous) resolution).reason();
+        assertThat(reason)
+                .as("the node ids a caller is told to paste back must be the stable spelling")
+                .contains("nsu=" + VENDOR_A)
+                .contains("nsu=" + VENDOR_B);
+        assertThat(reason).doesNotContain("ns=1;").doesNotContain("ns=2;");
     }
 
     @Test
@@ -256,7 +275,7 @@ class MethodReferenceTest {
 
         assertThat(resolution).isInstanceOf(MethodReference.Resolution.NoSuchMethod.class);
         assertThat(((MethodReference.Resolution.NoSuchMethod) resolution).reason())
-                .contains("ns=1;s=Elsewhere");
+                .contains("nsu=" + VENDOR_A + ";s=Elsewhere");
     }
 
     @Test
@@ -268,7 +287,26 @@ class MethodReferenceTest {
         assertThat(reason).contains("'Halt'").contains("Stop");
         // A name two methods share is listed with its node id, because the name alone would not get the caller
         // there -- naming it bare would send them straight back to the ambiguity refusal.
-        assertThat(reason).contains("ns=1;s=A.Start").contains("ns=2;s=B.Start");
+        assertThat(reason).contains("nsu=" + VENDOR_A + ";s=A.Start").contains("nsu=" + VENDOR_B + ";s=B.Start");
+    }
+
+    @Test
+    void aNameThatResolvesIsNotAnnotatedWithANodeId() {
+        // The listing and the resolution rule have to agree. A name carried by the object's own method and by
+        // its type's declaration of it resolves to the object's -- so printing a node id beside it would offer
+        // a caller something they do not need, and imply the bare name will be refused when it will not.
+        final MethodSignature itsOwn = method("Start", new NodeId(1, "Boiler1.Start"));
+        final MethodSignature declaration =
+                method("Start", new NodeId(1, "BoilerType.Start"), MethodSignature.Origin.TYPE_DECLARATION);
+
+        final var resolution = MethodReference.resolve(List.of(itsOwn, declaration), "Halt", namespaces);
+
+        final String reason = ((MethodReference.Resolution.NoSuchMethod) resolution).reason();
+        assertThat(reason).contains("Start");
+        assertThat(reason)
+                .as("the name resolves, so no node id is needed beside it")
+                .doesNotContain("Boiler1.Start")
+                .doesNotContain("BoilerType.Start");
     }
 
     @Test

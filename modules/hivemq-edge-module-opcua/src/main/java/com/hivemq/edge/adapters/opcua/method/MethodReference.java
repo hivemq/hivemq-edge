@@ -34,16 +34,22 @@ import org.jetbrains.annotations.Nullable;
 ///     namespace, may both contribute a `Start` to one object. Keying a lookup on the string alone let the
 ///     later browse result replace the earlier, so a request invoked whichever the server happened to report
 ///     second -- and if both take the same arguments, nothing revealed the substitution.
-///   - **a node id** -- `nsu=http://vendor.example/Boiler;s=Start`, or `;i=42`, `;g=<uuid>`, `;b=<base64>`.
-///     Names the method node itself, so it is unambiguous whatever the object exposes.
+///   - **a node id** -- by namespace URI, `nsu=http://vendor.example/Boiler;s=Start`, or by namespace index,
+///     `ns=2;s=Start`; either with `;i=42`, `;g=<uuid>` or `;b=<base64>` as the identifier. Names the method
+///     node itself, so it is unambiguous whatever the object exposes.
 ///
-/// **Why the qualified form carries a URI and not a namespace index.** An index is a position in the server's
-/// namespace table, which is a per-session handle rather than an identity: OPC 10000-5 §5.4.2 says servers
-/// should not change indexes but "it might not always be possible" to avoid it, and tells clients to re-verify
-/// cached indexes when starting a session. A request is written once and may be stored, retained or replayed,
-/// so an index in it would silently come to mean a different method -- the very fault this resolution exists to
-/// prevent. A URI is stable, and the index is looked up from it against the live table on each call. This is
-/// the same trade the adapter already makes for tag node ids, which store a URI and are re-indexed at connect.
+/// **Both forms are accepted, and the URI form is what a refusal prints.** An index is a position in the
+/// server's namespace table, which is a per-session handle rather than an identity: OPC 10000-5 §5.4.2 says
+/// servers should not change indexes but "it might not always be possible" to avoid it, and tells clients to
+/// re-verify cached indexes when starting a session. So an index in a request that is stored, retained or
+/// replayed can come to mean a different method.
+///
+/// That hazard is real and is **not** grounds for refusing the form here, because a tag's own node id is
+/// parsed with `NodeId.parse` and is therefore written `ns=2;s=Boiler` in every configuration that exists. An
+/// operator who writes a tag that way and then has `methodName` refuse the same spelling meets an
+/// inconsistency Edge invented, while the exposure stays exactly where it was. Refusing it bought nothing and
+/// cost that. The URI form is offered, preferred in every message Edge prints, and documented as the stable
+/// one -- the choice is the caller's.
 ///
 /// The `nsu=...;...` spelling is not an invention: it is the string form OPC 10000-6 defines for an
 /// ExpandedNodeId, which is also why a `;` is the separator and why a URI containing a raw `;` is not
@@ -80,7 +86,7 @@ public final class MethodReference {
             final @NotNull NamespaceTable namespaceTable) {
 
         if (methodName.indexOf(';') < 0) {
-            return byName(methods, methodName);
+            return byName(methods, methodName, namespaceTable);
         }
         return byNodeId(methods, methodName, namespaceTable);
     }
@@ -98,7 +104,9 @@ public final class MethodReference {
     /// genuinely different things -- one acts on the device, the other on the class -- so a bare name cannot say
     /// which, and the caller is asked for a node id.
     private static @NotNull Resolution byName(
-            final @NotNull List<MethodSignature> methods, final @NotNull String methodName) {
+            final @NotNull List<MethodSignature> methods,
+            final @NotNull String methodName,
+            final @NotNull NamespaceTable namespaceTable) {
 
         final List<MethodSignature> matches = new ArrayList<>(2);
         for (final MethodSignature method : methods) {
@@ -114,7 +122,8 @@ public final class MethodReference {
             return new Resolution.Matched(itsOwn);
         }
         if (matches.isEmpty()) {
-            return new Resolution.NoSuchMethod("has no method '" + methodName + "'. It offers: " + offered(methods));
+            return new Resolution.NoSuchMethod(
+                    "has no method '" + methodName + "'. It offers: " + offered(methods, namespaceTable));
         }
         // Refused rather than resolved by browse order. A request has no way to say which of the two it means,
         // so naming them is the only answer that does not guess -- and each node id printed here is a value
@@ -124,14 +133,14 @@ public final class MethodReference {
             if (!nodeIds.isEmpty()) {
                 nodeIds.append(", ");
             }
-            nodeIds.append(method.nodeId().toParseableString());
+            nodeIds.append(render(method.nodeId(), namespaceTable));
         }
         return new Resolution.Ambiguous("has "
                 + matches.size()
                 + " methods named '"
                 + methodName
-                + "', so the name does not say which to call. Name one of these node ids in 'methodName' "
-                + "instead, as nsu=<namespace uri>;<identifier>: "
+                + "', so the name does not say which to call. Put one of these node ids in 'methodName' "
+                + "instead: "
                 + nodeIds);
     }
 
@@ -149,35 +158,48 @@ public final class MethodReference {
                     + methodName
                     + "' is neither a plain method name nor a node id: "
                     + e.getMessage()
-                    + ". A node id is written nsu=<namespace uri>;<identifier>, for example "
-                    + "nsu=http://example.org/Boiler;s=Start");
+                    + ". A node id is written nsu=<namespace uri>;<identifier> or ns=<index>;<identifier>, for "
+                    + "example nsu=http://example.org/Boiler;s=Start");
         }
-        // An index is deliberately not accepted, even though Milo parses it. `ns=2;s=Start` means whatever
-        // position 2 holds in this session's namespace table, and a server may renumber the table between
-        // sessions -- so a stored or retained request carrying an index can come to name a different method.
-        if (parsed.getNamespaceUri() == null) {
-            return new Resolution.Malformed("'"
-                    + methodName
-                    + "' identifies a namespace by index. An index is only meaningful for one session, because "
-                    + "a server may renumber its namespace table, so name the namespace by URI instead: "
-                    + "nsu=<namespace uri>;<identifier>");
-        }
+        // An index is accepted as well as a URI. It is the weaker spelling -- see the class note -- but it is
+        // the spelling a tag's own node id uses, so refusing it here would be an inconsistency of Edge's own
+        // making rather than a protection. `toNodeId` resolves either: a URI through the live table, an index
+        // as itself.
         final NodeId wanted = parsed.toNodeId(namespaceTable).orElse(null);
         if (wanted == null) {
+            // Only reachable for the URI form; an index needs no lookup, so it cannot fail this way.
             return new Resolution.NoSuchMethod("is on a server that does not publish the namespace '"
                     + parsed.getNamespaceUri()
                     + "', so '"
                     + methodName
                     + "' names no node on it. It offers: "
-                    + offered(methods));
+                    + offered(methods, namespaceTable));
         }
         for (final MethodSignature method : methods) {
             if (method.nodeId().equals(wanted)) {
                 return new Resolution.Matched(method);
             }
         }
-        return new Resolution.NoSuchMethod(
-                "exposes no method with node id " + wanted.toParseableString() + ". It offers: " + offered(methods));
+        return new Resolution.NoSuchMethod("exposes no method with node id "
+                + render(wanted, namespaceTable)
+                + ". It offers: "
+                + offered(methods, namespaceTable));
+    }
+
+    /// A node id as a caller should write it back: the namespace by URI when the server publishes one.
+    ///
+    /// **Why not `toParseableString`.** That renders the namespace as an **index**, and every message Edge
+    /// prints is a value an operator is being invited to paste into `methodName`. An index is a per-session
+    /// handle (see the class note), so handing one back as the canonical spelling teaches the weaker form --
+    /// and the three places that printed one had each reached for the same convenient method, which is how
+    /// they drifted from what the parser documents. One helper now, so they cannot drift again.
+    ///
+    /// Falls back to the index form when the table has no URI for the namespace, which is the honest answer:
+    /// it is what the node id is, and it still parses.
+    private static @NotNull String render(final @NotNull NodeId nodeId, final @NotNull NamespaceTable namespaceTable) {
+
+        final ExpandedNodeId expanded = nodeId.expanded(namespaceTable);
+        return expanded.getNamespaceUri() != null ? expanded.toParseableString() : nodeId.toParseableString();
     }
 
     /// The object's own method when the only other match is a non-static declaration of it, else null.
@@ -206,7 +228,9 @@ public final class MethodReference {
 
     /// The object's methods, for a refusal message: the browse name of each, and its node id where the name
     /// alone would not get the caller there.
-    private static @NotNull String offered(final @NotNull List<MethodSignature> methods) {
+    private static @NotNull String offered(
+            final @NotNull List<MethodSignature> methods, final @NotNull NamespaceTable namespaceTable) {
+
         if (methods.isEmpty()) {
             return "none";
         }
@@ -217,19 +241,27 @@ public final class MethodReference {
             }
             offered.append(method.name());
             if (isAmbiguous(methods, method.name())) {
-                offered.append(" (").append(method.nodeId().toParseableString()).append(')');
+                offered.append(" (")
+                        .append(render(method.nodeId(), namespaceTable))
+                        .append(')');
             }
         }
         return offered.toString();
     }
 
+    /// Whether a bare name would be refused, which is the only reason to print a node id beside it.
+    ///
+    /// Not simply "appears more than once": a name carried by the object's own method and by its type's
+    /// declaration of that method resolves to the object's, so annotating it would offer a node id for a name
+    /// that works. {@link #byName} and this must agree, or a refusal lists node ids the caller does not need
+    /// while a genuine collision goes unannotated.
     private static boolean isAmbiguous(final @NotNull List<MethodSignature> methods, final @Nullable String name) {
-        int seen = 0;
+        final List<MethodSignature> matches = new ArrayList<>(2);
         for (final MethodSignature method : methods) {
             if (method.name().equals(name)) {
-                seen++;
+                matches.add(method);
             }
         }
-        return seen > 1;
+        return matches.size() > 1 && theObjectsOwnAmongADeclarationOfIt(matches) == null;
     }
 }
