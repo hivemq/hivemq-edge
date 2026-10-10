@@ -27,6 +27,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -131,21 +132,56 @@ class MethodArgumentsTest {
     }
 
     @Test
-    void theWholeUInt64RangeIsAccepted() throws Exception {
+    void aUInt64IsNotBoundedByTheSignedCeiling() throws Exception {
         // The counterpart refusal: bounding UInt64 by Long.MAX_VALUE refused the upper half of the type, and
         // narrowing made it total -- 2^64-1 arrived as -1 and failed the lower bound of zero. Nothing else checks
         // this type's range, because its bounds are BigIntegers the schema generator cannot carry, so a legitimate
         // value refused here is refused outright.
+        //
+        // The type's whole range is no longer reachable, but for a reason that has nothing to do with the type:
+        // the magnitude limit below. What this still asserts is that the *type* bound is the unsigned one -- a
+        // value is converted as an unsigned 64-bit number rather than measured against a signed ceiling.
         final Variant[] arguments = MethodArguments.forCall(
-                signature(argument("count", NodeIds.UInt64)), json("{\"count\": 18446744073709551615}"));
+                signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9007199254740992}"));
 
-        assertThat(arguments[0].value()).hasToString("18446744073709551615");
+        assertThat(arguments[0].value()).hasToString("9007199254740992");
+        assertThat(arguments[0].value()).isInstanceOf(ULong.class);
+    }
 
-        // And one above the signed ceiling, the first value the old bound rejected.
-        final Variant[] justAboveSigned = MethodArguments.forCall(
-                signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9223372036854775808}"));
+    @Test
+    void aWholeNumberTooLargeToCrossTheTransformIsRefused() throws Exception {
+        // 2^53 is the largest whole number that survives the southbound field-mapping transform, which Data Hub
+        // runs as JavaScript: its wrapper parses the payload with JSON.parse before any Edge code sees it, and
+        // JavaScript has only the IEEE double. 9007199254740993 arrives here as 9007199254740992, and the two are
+        // then indistinguishable -- which is why this refuses rather than detects.
+        //
+        // Both 64-bit types, since only they have a range reaching past the limit.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9007199254740993}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("9007199254740993")
+                .hasMessageContaining("2^53");
 
-        assertThat(justAboveSigned[0].value()).hasToString("9223372036854775808");
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": -9007199254740993}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("-9007199254740993");
+
+        // The limit itself passes: it is the largest value that crosses unchanged, not the first that fails.
+        final Variant[] atTheLimit = MethodArguments.forCall(
+                signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": 9007199254740992}"));
+
+        assertThat(atTheLimit[0].value()).isEqualTo(9007199254740992L);
+    }
+
+    @Test
+    void aNarrowIntegerTypeIsUnaffectedByTheMagnitudeLimit() throws Exception {
+        // The limit can only bite on Int64 and UInt64; every narrower type's own range stops far below it, so
+        // this records that the guard changed nothing for them.
+        final Variant[] arguments = MethodArguments.forCall(
+                signature(argument("setpoint", NodeIds.Int32)), json("{\"setpoint\": 2147483647}"));
+
+        assertThat(arguments[0].value()).isEqualTo(2147483647);
     }
 
     @Test

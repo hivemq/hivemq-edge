@@ -44,6 +44,35 @@ public final class MethodArguments {
     /// so a UInt64 argument's schema states no range and this is the only gate the value passes.
     private static final @NotNull BigInteger UINT64_MAX = BigInteger.TWO.pow(64).subtract(BigInteger.ONE);
 
+    /// 2^53, the largest magnitude a whole number can have and still survive the journey to this method.
+    ///
+    /// **Why a limit unrelated to any OPC UA type.** A southbound request does not arrive here as the caller
+    /// wrote it. It passes through the field-mapping transform, which Data Hub runs as JavaScript, and that
+    /// wrapper's first act is `JSON.parse` on the payload. JavaScript has one numeric type, the IEEE double, so
+    /// every whole number beyond 2^53 lands on the nearest representable double before any Edge code sees it.
+    /// `9007199254740993` arrives as `9007199254740992`; the maximum signed 64-bit integer,
+    /// `9223372036854775807`, arrives as `9223372036854776000`.
+    ///
+    /// **Why refuse rather than detect.** There is nothing left to detect. `...993` and `...992` both arrive as
+    /// `...992`, so a corrupted value and a legitimate one are byte-identical here -- no residue, no flag, no
+    /// lost-precision bit. The only honest question this code can ask is whether the value *could* have crossed
+    /// intact, and the only honest answer to "no" is a refusal. A caller then learns the limit instead of a PLC
+    /// acting on a number nobody requested.
+    ///
+    /// **What this does and does not add.** Values near the top of a type's range already fail: they round
+    /// *outward*, past the type's own maximum, and the range check above catches them. This closes the interior
+    /// -- 2^53 up to the type maximum -- where a value rounds to a different but perfectly legal number and
+    /// passed every gate. Only `Int64` and `UInt64` can reach it; every narrower type is bounded far below.
+    ///
+    /// **Not fixable here, and not fixable in the transform either.** The generated script receives an already
+    /// parsed payload and cannot reach the original text -- the wrapper builds its argument as
+    /// `{...publishData, payload}`, which replaces the raw string. A real fix belongs at Data Hub's parse
+    /// boundary, which would affect every data policy in every deployment, so it is not this adapter's to make.
+    ///
+    /// The limit is the same for every adapter whose southbound path carries a field mapping; it is stated here
+    /// because this is where a method argument is converted. Raised by Miguel as M3 on EDG-1087.
+    private static final @NotNull BigInteger PRECISION_LIMIT = BigInteger.TWO.pow(53);
+
     private MethodArguments() {}
 
     /// Why a request could not be turned into a call. Carries the message a caller sees, which names the
@@ -362,6 +391,9 @@ public final class MethodArguments {
     ///
     /// Checked here rather than left to the server, because the narrowing cast at each call site wraps silently --
     /// 300 arriving at a Byte argument as 44, which the device would act on.
+    ///
+    /// **The magnitude limit is separate, and it is about the journey rather than the type.** See
+    /// {@link #PRECISION_LIMIT}.
     private static @NotNull BigInteger requireInRange(
             final @NotNull JsonNode node, final @NotNull BigInteger min, final @NotNull BigInteger max) {
         if (!node.isIntegralNumber()) {
@@ -370,6 +402,15 @@ public final class MethodArguments {
         final BigInteger value = node.bigIntegerValue();
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
             throw new IllegalArgumentException("expected a value in [" + min + ", " + max + "], got " + value);
+        }
+        if (value.abs().compareTo(PRECISION_LIMIT) > 0) {
+            throw new IllegalArgumentException("expected a magnitude of at most "
+                    + PRECISION_LIMIT
+                    + " (2^53), got "
+                    + value
+                    + ". A larger whole number cannot reach a device unchanged: the southbound transform carries"
+                    + " it through JavaScript, which has only the IEEE double and rounds it. Refused rather than"
+                    + " sent, because the value the device would receive is not the value requested");
         }
         return value;
     }
