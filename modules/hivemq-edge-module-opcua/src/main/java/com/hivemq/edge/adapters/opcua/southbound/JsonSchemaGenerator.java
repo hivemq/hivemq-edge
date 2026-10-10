@@ -513,10 +513,21 @@ public class JsonSchemaGenerator {
         //   - A union over several methods had no length to agree on, so whichever method the browse reported
         //     first supplied the number; reversing the browse order changed the schema.
         //
-        // The honest statement needs maxItems, which this cannot emit: the shared SDK's array builder offers
-        // only minContains and maxContains, and the SDK is unchanged in this release. So the length rests with
-        // the device, which refuses a wrong-sized array and whose refusal reaches the caller as a response --
-        // where it already rested in practice, since the keywords never constrained anything.
+        // The honest statement would be maxItems, which this builder cannot emit: the shared SDK's array
+        // builder offers only minContains and maxContains, and the SDK is unchanged in this release. It could
+        // be added to the rendered JSON afterwards -- `SchemaJsonRepresentation.toJsonSchemaDocument` returns a
+        // mutable ObjectNode to code in this repository -- so the SDK is not what stops it.
+        //
+        // What stops it is that there is nothing to gain. The length rests with the device, which refuses an
+        // array longer than it declared and whose refusal reaches the caller as a response. A *shorter* array
+        // is a legal request -- OPC 10000-3 Table 28 defines an argument's ArrayDimensions as "the maximum
+        // supported length", and gives a device no way to say "exactly five" -- so maxItems would duplicate a
+        // refusal the device already makes, and minItems would refuse requests the specification permits.
+        //
+        // Measured on an S7-1500 (EDG-1087 M1): seven elements for a declared five were refused
+        // Bad_InvalidArgument; three were accepted and the method computed on whatever remained in the unsent
+        // slots. Nothing is wrong in that, and it is the caller's to get right -- the reference document says
+        // so, because no gate anywhere will catch it.
         items.endArray();
     }
 
