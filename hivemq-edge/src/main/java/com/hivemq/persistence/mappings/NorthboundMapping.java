@@ -151,6 +151,16 @@ public class NorthboundMapping {
         return messageExpiryInterval;
     }
 
+    /**
+     * Compares every field, the correlation-token flag included.
+     * <p>
+     * <b>That flag was missing, and leaving it out became dangerous the moment {@code FieldMapping} gained
+     * value equality.</b> Until then a configuration edit always restarted an adapter that had a southbound
+     * mapping, because that comparison could never return true -- which masked this gap. With it fixed, a
+     * mapping whose only difference is this flag would have compared equal and the restart would have been
+     * skipped: the flag stored, never taking effect, with the persisted entity comparing it and the running
+     * adapter not. Lands in the same change for that reason (Miguel's M2 on PR 1765).
+     */
     @Override
     public boolean equals(final @Nullable Object o) {
         if (o instanceof final NorthboundMapping that) {
@@ -161,15 +171,29 @@ public class NorthboundMapping {
                     && Objects.equals(includeTimestamp, that.includeTimestamp)
                     && Objects.equals(includeMetadata, that.includeMetadata)
                     && Objects.equals(userProperties, that.userProperties)
-                    && Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
+                    && Objects.equals(messageExpiryInterval, that.messageExpiryInterval)
+                    && writeCorrelationData == that.writeCorrelationData;
         }
         return false;
     }
 
+    /**
+     * Every field {@link #equals} compares, which previously was not true: {@code includeMetadata} was compared
+     * and not hashed. Two mappings differing only in it were unequal with equal hash codes -- legal, but it
+     * degrades any hash-based lookup and is the kind of drift that appears when the two are edited separately.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(
-                tagName, topic, maxQoS, includeTagNames, includeTimestamp, userProperties, messageExpiryInterval);
+                tagName,
+                topic,
+                maxQoS,
+                includeTagNames,
+                includeTimestamp,
+                includeMetadata,
+                userProperties,
+                messageExpiryInterval,
+                writeCorrelationData);
     }
 
     @Override
