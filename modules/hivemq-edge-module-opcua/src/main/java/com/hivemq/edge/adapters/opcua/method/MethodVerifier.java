@@ -108,7 +108,8 @@ public final class MethodVerifier {
                         return CompletableFuture.completedFuture(rejection);
                     }
                     return Browsing.browseAll(client, browse)
-                            .thenCompose(references -> readSignatures(client, references, objectNode, tagName))
+                            .thenCompose(references ->
+                                    readSignatures(client, references, objectNode, false, objectNode, tagName))
                             .thenCompose(
                                     fromInstance -> addInheritedMethods(client, objectNode, fromInstance, tagName));
                 })
@@ -201,11 +202,15 @@ public final class MethodVerifier {
 
     /// Reads the input and output argument lists of every method the browse found.
     ///
-    /// @param objectId what a `Call` to one of these methods names as its object -- the tag's own node for the
-    ///                 methods the object exposes, and the ObjectType for those found by climbing to it.
+    /// @param owner    the node that was browsed: the tag's own object, or a type reached by climbing.
+    /// @param onAType  whether `owner` is a type. When it is, each method's modelling rule decides whether it
+    ///                 is static (so a call names the type) or a declaration (so a call names the object).
+    /// @param objectId what a `Call` names as its object for a method found on the **object**: the tag's node.
     private static @NotNull CompletableFuture<Result> readSignatures(
             final @NotNull OpcUaClient client,
             final @NotNull List<ReferenceDescription> references,
+            final @NotNull NodeId owner,
+            final boolean onAType,
             final @NotNull NodeId objectId,
             final @NotNull String tagName) {
 
@@ -214,7 +219,7 @@ public final class MethodVerifier {
             // The node-class filter the server was asked not to apply -- see methodsOf. Applied before the
             // node is resolved, so a Variable sitting beside a method costs nothing rather than a round trip.
             if (isMethod(reference)) {
-                pending.add(readSignature(client, reference, objectId));
+                pending.add(readSignature(client, reference, onAType, owner, objectId));
             }
         }
 
@@ -256,6 +261,8 @@ public final class MethodVerifier {
     private static @NotNull CompletableFuture<MethodSignature> readSignature(
             final @NotNull OpcUaClient client,
             final @NotNull ReferenceDescription reference,
+            final boolean onAType,
+            final @NotNull NodeId owner,
             final @NotNull NodeId objectId) {
 
         final QualifiedName browseName = reference.getBrowseName();
@@ -284,11 +291,65 @@ public final class MethodVerifier {
                                     emptyWhenAbsent(methodNode.readInputArgumentsAsync());
                             final CompletableFuture<Argument[]> outputs =
                                     emptyWhenAbsent(methodNode.readOutputArgumentsAsync());
-                            return inputs.thenCombine(
-                                    outputs,
-                                    (in, out) ->
-                                            new MethodSignature(name, nodeId, objectId, List.of(in), List.of(out)));
+                            if (!onAType) {
+                                return inputs.thenCombine(
+                                        outputs,
+                                        (in, out) -> new MethodSignature(
+                                                name,
+                                                nodeId,
+                                                objectId,
+                                                MethodSignature.Origin.OBJECT,
+                                                List.of(in),
+                                                List.of(out)));
+                            }
+                            return hasModellingRule(client, nodeId)
+                                    .thenCompose(declared -> inputs.thenCombine(
+                                            outputs,
+                                            (in, out) -> new MethodSignature(
+                                                    name,
+                                                    nodeId,
+                                                    // A static method is invoked by naming the type; a declaration
+                                                    // describes a method of the instance, so a call names the object.
+                                                    declared ? objectId : owner,
+                                                    declared
+                                                            ? MethodSignature.Origin.TYPE_DECLARATION
+                                                            : MethodSignature.Origin.TYPE_STATIC,
+                                                    List.of(in),
+                                                    List.of(out))));
                         }));
+    }
+
+    /// Whether a node on a type carries a modelling rule, making it a declaration rather than a static method.
+    ///
+    /// A node with no modelling rule "is neither considered for instantiation of a type nor for subtyping" (OPC
+    /// 10000-3 section 6.4.4.2), so it exists on the type alone -- the static method of section 4.8. One
+    /// carrying Mandatory or Optional describes what instances have instead.
+    ///
+    /// **A failed read is treated as "declared", which is the safe direction.** Not knowing, and guessing
+    /// static, would name the type as a call's object and run something against the class; guessing declared
+    /// calls the object, where a device that does not have the method simply refuses. So the uncertain case
+    /// costs a refusal rather than an action on the wrong node.
+    private static @NotNull CompletableFuture<Boolean> hasModellingRule(
+            final @NotNull OpcUaClient client, final @NotNull NodeId method) {
+
+        final BrowseDescription browse = new BrowseDescription(
+                method,
+                BrowseDirection.Forward,
+                NodeIds.HasModellingRule,
+                false,
+                uint(0),
+                uint(BrowseResultMask.All.getValue()));
+
+        return Browsing.browseAll(client, browse)
+                .thenApply(references -> !references.isEmpty())
+                .exceptionally(throwable -> {
+                    log.debug(
+                            "Could not read the modelling rule of method {}, so it is taken as a declaration "
+                                    + "and called on the object: {}",
+                            method,
+                            Browsing.describeException(throwable));
+                    return true;
+                });
     }
 
     /// Reads an arguments property, treating "the server does not expose it" as "the method has none".
@@ -339,7 +400,7 @@ public final class MethodVerifier {
         return typeOf(client, objectNode, tagName)
                 .thenCompose(type -> type == null
                         ? CompletableFuture.completedFuture(verified.methods())
-                        : collectUpwards(client, type, verified.methods(), tagName, 0))
+                        : collectUpwards(client, type, objectNode, verified.methods(), tagName, 0))
                 .thenApply(methods -> {
                     warnWhenNoneWereFound(methods, objectNode, tagName);
                     return (Result) new Result.Verified(methods);
@@ -417,6 +478,7 @@ public final class MethodVerifier {
     private static @NotNull CompletableFuture<List<MethodSignature>> collectUpwards(
             final @NotNull OpcUaClient client,
             final @NotNull NodeId type,
+            final @NotNull NodeId objectNode,
             final @NotNull List<MethodSignature> known,
             final @NotNull String tagName,
             final int depth) {
@@ -438,7 +500,7 @@ public final class MethodVerifier {
         final BrowseDescription methods = methodsOf(type);
 
         return Browsing.browseAll(client, methods)
-                .thenCompose(references -> readSignatures(client, references, type, tagName))
+                .thenCompose(references -> readSignatures(client, references, type, true, objectNode, tagName))
                 .thenCompose(result -> {
                     final List<MethodSignature> merged = result instanceof final Result.Verified verified
                             ? keepingNearest(known, verified.methods())
@@ -446,17 +508,24 @@ public final class MethodVerifier {
                     return supertypeOf(client, type)
                             .thenCompose(supertype -> supertype == null
                                     ? CompletableFuture.completedFuture(List.copyOf(merged))
-                                    : collectUpwards(client, supertype, merged, tagName, depth + 1));
+                                    : collectUpwards(client, supertype, objectNode, merged, tagName, depth + 1));
                 });
     }
 
-    /// Adds the further-away methods whose names nothing nearer already provides.
+    /// Adds the further-away methods whose names no nearer **type level** already provides.
     ///
-    /// **Why nearest wins is sound rather than a guess.** An instance keeps the browse name of the declaration
-    /// it derives from (OPC 10000-3 section 6.2.6), and a subtype may not remove an inherited argument, retype
-    /// one declared with a concrete DataType, or add a mandatory one (section 6.4.4.4.1). So a nearer node of
-    /// the same name is the same method, specialised -- not a different method that happens to share a string.
-    /// Calling it needs the nearer node's own id, which is what keeping it does.
+    /// Two levels of a type hierarchy may declare the same name; the nearer declaration is the one a subtype
+    /// specialised, so it supersedes the one above it. An instance keeps the browse name of the declaration it
+    /// derives from (OPC 10000-3 section 6.2.6), and a subtype may not remove an inherited argument, retype one
+    /// declared with a concrete DataType, or add a mandatory one (section 6.4.4.4.1) -- so a nearer node of the
+    /// same name is the same method specialised, not a different method sharing a string.
+    ///
+    /// **A method the object itself declares no longer suppresses the type's declaration of that name**, which
+    /// it used to. Both are kept, and {@link MethodReference} decides between them: a bare `methodName` matching
+    /// one object method and one non-static declaration resolves to the object's, because that is the node the
+    /// device actually has. Dropping the declaration here instead made the preference a side effect of merge
+    /// order rather than a stated rule, and left resolution unable to tell that pairing -- the ordinary shape of
+    /// a Mandatory declaration and its instance -- from two genuinely rival methods.
     ///
     /// Package-private so the rule can be tested without a server: the climb around it needs a live address
     /// space, and this is the part that decides what a caller can reach.
@@ -465,7 +534,10 @@ public final class MethodVerifier {
 
         final List<MethodSignature> merged = new ArrayList<>(nearer);
         for (final MethodSignature candidate : further) {
-            if (nearer.stream().noneMatch(method -> method.name().equals(candidate.name()))) {
+            final boolean shadowedByANearerTypeLevel = nearer.stream()
+                    .anyMatch(method -> method.origin() != MethodSignature.Origin.OBJECT
+                            && method.name().equals(candidate.name()));
+            if (!shadowedByANearerTypeLevel) {
                 merged.add(candidate);
             }
         }

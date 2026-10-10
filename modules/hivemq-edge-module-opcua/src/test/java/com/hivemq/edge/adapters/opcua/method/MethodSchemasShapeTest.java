@@ -43,7 +43,7 @@ class MethodSchemasShapeTest {
     private static final @NotNull NodeId NODE = new NodeId(2, "Boiler1.M");
 
     private static @NotNull MethodSignature method() {
-        return new MethodSignature(
+        return MethodSignature.ofObject(
                 "Square",
                 NODE,
                 NODE,
@@ -133,7 +133,7 @@ class MethodSchemasShapeTest {
     void requestSchema_withNoArgumentsAtAll_permitsNothing() {
         // A method taking no arguments. A closed object with no properties is the true statement about it; leaving
         // it open would accept any object, which is the opposite claim.
-        final MethodSignature noArguments = new MethodSignature("Stop", NODE, NODE, List.of(), List.of());
+        final MethodSignature noArguments = MethodSignature.ofObject("Stop", NODE, NODE, List.of(), List.of());
 
         final JsonNode schema = json(MethodSchemas.requestSchema(List.of(noArguments)));
 
@@ -148,13 +148,13 @@ class MethodSchemasShapeTest {
         // Closing the object must not cost the union anything. An argument whose type two methods declare
         // differently is described as `any` rather than dropped, so it is still a listed property and a request
         // carrying it is still valid.
-        final MethodSignature asInt = new MethodSignature(
+        final MethodSignature asInt = MethodSignature.ofObject(
                 "A",
                 NODE,
                 NODE,
                 List.of(new Argument("mode", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
                 List.of());
-        final MethodSignature asText = new MethodSignature(
+        final MethodSignature asText = MethodSignature.ofObject(
                 "B",
                 NODE,
                 NODE,
@@ -179,7 +179,7 @@ class MethodSchemasShapeTest {
         // scalars, so for rank 0, whose only legal values are arrays, every legal value was invalid and the
         // method could not be called.
         for (final int rank : new int[] {0, -2, -3}) {
-            final MethodSignature method = new MethodSignature(
+            final MethodSignature method = MethodSignature.ofObject(
                     "Start",
                     NODE,
                     NODE,
@@ -200,7 +200,7 @@ class MethodSchemasShapeTest {
     void aScalarRank_isStillDescribedAsItsType() {
         // Rank -1 is the one negative rank that genuinely means scalar, and it keeps its type: widening it to
         // `any` would throw away a constraint the device did state.
-        final MethodSignature method = new MethodSignature(
+        final MethodSignature method = MethodSignature.ofObject(
                 "Start",
                 NODE,
                 NODE,

@@ -51,7 +51,7 @@ class MethodSchemasArrayTest {
     }
 
     private static @NotNull MethodSignature method(final @NotNull String name, final @NotNull Argument... inputs) {
-        return new MethodSignature(name, NODE, NODE, List.of(inputs), List.of());
+        return MethodSignature.ofObject(name, NODE, NODE, List.of(inputs), List.of());
     }
 
     private static @NotNull JsonNode requestProperties(final @NotNull MethodSignature... methods) {
@@ -202,7 +202,7 @@ class MethodSchemasArrayTest {
 
     @Test
     void outputArrays_areDescribedTheSameWay() {
-        final MethodSignature grid = new MethodSignature(
+        final MethodSignature grid = MethodSignature.ofObject(
                 "Grid", NODE, NODE, List.of(), List.of(argument("out", NodeIds.Int32, 1, new UInteger[] {uint(5)})));
 
         final JsonNode schema =
@@ -242,7 +242,7 @@ class MethodSchemasArrayTest {
     void responseOutputs_stayReadOnly() {
         // The counterpart, and the reason this is a flag rather than a blanket change: a response's outputs are what
         // the device produced. Nobody writes them, and claiming they are writable would be the inverse mistake.
-        final MethodSignature withOutput = new MethodSignature(
+        final MethodSignature withOutput = MethodSignature.ofObject(
                 "Square", NODE, NODE, List.of(), List.of(argument("output1", NodeIds.Int32, -1, null)));
 
         final JsonNode schema = SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(

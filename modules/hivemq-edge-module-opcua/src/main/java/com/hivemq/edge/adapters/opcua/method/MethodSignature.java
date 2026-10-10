@@ -41,17 +41,21 @@ public record MethodSignature(
         @NotNull String name,
         /// The method node itself, passed as the `methodId` of a `Call`.
         @NotNull NodeId nodeId,
-        /// What to pass as the `objectId` of a `Call`: the tag's own object for a method the object exposes, and
-        /// the **ObjectType** for one found only by walking the type chain.
+        /// What to pass as the `objectId` of a `Call`: the **type** for a static method, and the tag's own
+        /// object for everything else.
         ///
         /// OPC 10000-4, Call: the object id "shall be that of the Object or ObjectType on which the Method is
         /// invoked", and when it names an Object the method must hang off that Object, its ObjectType, or a
-        /// supertype of it. A method a type keeps to itself -- the "static method" of OPC 10000-3 section
-        // 4.5.3,
-        /// carrying no modelling rule and therefore mirrored onto no instance -- is invoked by naming the type.
-        /// So the object id cannot be assumed to be the tag's node, and travels with the signature that was
-        /// found rather than being reconstructed at the call.
+        /// supertype of it. A method a type keeps to itself carries no modelling rule, is mirrored onto no
+        /// instance, and is therefore invoked by naming the type.
+        ///
+        /// **Only {@link Origin#TYPE_STATIC} names the type.** A declaration found on the type
+        /// ({@link Origin#TYPE_DECLARATION}) is called on the object, because the method it describes belongs
+        /// to the instance. Naming the type for one of those was the defect: on a server whose type node is
+        /// executable, a caller asking about one boiler had something run against the class instead.
         @NotNull NodeId objectId,
+        /// Where this method node was found, which decides what a bare `methodName` may resolve to.
+        @NotNull Origin origin,
         /// Input arguments in wire order. Empty for a method taking none -- see the class note on absence.
         @NotNull List<Argument> inputArguments,
         /// Output arguments in wire order, naming what a successful call returns.
@@ -60,6 +64,39 @@ public record MethodSignature(
     public MethodSignature {
         inputArguments = List.copyOf(inputArguments);
         outputArguments = List.copyOf(outputArguments);
+    }
+
+    /// A method the tag's own object declares -- the ordinary case, and the only one a test usually needs.
+    public static @NotNull MethodSignature ofObject(
+            final @NotNull String name,
+            final @NotNull NodeId nodeId,
+            final @NotNull NodeId objectId,
+            final @NotNull List<Argument> inputArguments,
+            final @NotNull List<Argument> outputArguments) {
+
+        return new MethodSignature(name, nodeId, objectId, Origin.OBJECT, inputArguments, outputArguments);
+    }
+
+    /// Where a method node was found, and therefore what it is.
+    ///
+    /// Three cases, and they are not interchangeable. OPC 10000-3 section 6.4.4.4 gives a node on a type an
+    /// optional **modelling rule** saying what instances do with it, and section 6.4.4.4.4 is explicit for
+    /// methods: a declaration marked Optional is a *template*, and an instance "does not implement the Method",
+    /// implements it "with no arguments", or implements it "accepting a mode argument" -- so the declaration's
+    /// own argument list is not the instance's. A node carrying **no** modelling rule is different again:
+    /// section 6.4.4.2 says it "is neither considered for instantiation of a type nor for subtyping", so it
+    /// lives on the type alone, which is the "static method" of section 4.8.
+    public enum Origin {
+        /// Declared by the tag's own object. The method exists on the device; call it on that object.
+        OBJECT,
+        /// Found on the type carrying no modelling rule: it exists only there, so the **type** is what a call
+        /// names as its object.
+        TYPE_STATIC,
+        /// Found on the type carrying a modelling rule (Mandatory or Optional). A declaration rather than a
+        /// method: if this instance implements it, the object's own browse found the real node. Still offered,
+        /// and called on the **object** -- a device that does not implement it refuses, and that refusal is a
+        /// better answer than claiming no such method exists.
+        TYPE_DECLARATION
     }
 
     /// The wire position of the input argument with this name, or `null` when the method declares none such.

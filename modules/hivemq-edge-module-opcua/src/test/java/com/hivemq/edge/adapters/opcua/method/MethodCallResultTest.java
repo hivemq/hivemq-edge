@@ -45,7 +45,7 @@ class MethodCallResultTest {
 
     private static @NotNull MethodSignature signature(
             final @NotNull List<Argument> inputs, final @NotNull List<Argument> outputs) {
-        return new MethodSignature("Start", NODE, NODE, inputs, outputs);
+        return MethodSignature.ofObject("Start", NODE, NODE, inputs, outputs);
     }
 
     private static @NotNull CallResponse response(final @NotNull CallMethodResult... results) {

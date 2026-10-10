@@ -46,18 +46,48 @@ class InheritedMethodsTest {
     private static final @NotNull NodeId TYPE = NodeId.parse("ns=2;i=5000");
     private static final @NotNull NodeId SUPERTYPE = NodeId.parse("ns=2;i=4000");
 
-    /// One method, with the node it would be called on.
+    /// One method, with the node it would be called on. `owner` being OBJECT makes it the object's own; anything
+    /// else makes it a **static** type method, which is the case the climb exists for.
     private static @NotNull MethodSignature method(
             final @NotNull String name, final @NotNull NodeId owner, final @NotNull String... inputs) {
 
+        return method(
+                name,
+                owner,
+                owner.equals(OBJECT) ? MethodSignature.Origin.OBJECT : MethodSignature.Origin.TYPE_STATIC,
+                inputs);
+    }
+
+    /// One method with its origin stated, for the cases where that is what is under test.
+    ///
+    /// The call target follows from the origin rather than from where the node was found, exactly as discovery
+    /// sets it: only a **static** type method names the type, because only it exists nowhere else. A
+    /// declaration describes a method of the instance, so it is called on the object.
+    private static @NotNull MethodSignature method(
+            final @NotNull String name,
+            final @NotNull NodeId owner,
+            final MethodSignature.@NotNull Origin origin,
+            final @NotNull String... inputs) {
+
         return new MethodSignature(
                 name,
-                owner.equals(OBJECT) ? NodeId.parse("ns=2;s=Boiler1." + name) : NodeId.parse("ns=2;s=Type." + name),
-                owner,
+                owner.equals(OBJECT)
+                        ? NodeId.parse("ns=2;s=Boiler1." + name)
+                        : NodeId.parse("ns=2;s=" + owner.getIdentifier() + "." + name),
+                origin == MethodSignature.Origin.TYPE_STATIC ? owner : OBJECT,
+                origin,
                 List.of(inputs).stream()
                         .map(input -> new Argument(input, NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE))
                         .toList(),
                 List.of());
+    }
+
+    /// A Mandatory or Optional declaration on the type: a template for the instance's own method. Called on the
+    /// **object**, never on the type -- see MethodSignature.Origin.
+    private static @NotNull MethodSignature declaredOnType(
+            final @NotNull String name, final @NotNull String... inputs) {
+
+        return method(name, TYPE, MethodSignature.Origin.TYPE_DECLARATION, inputs);
     }
 
     private static @NotNull List<String> namesOf(final @NotNull List<MethodSignature> methods) {
@@ -85,26 +115,39 @@ class InheritedMethodsTest {
     }
 
     @Test
-    void theObjectsOwnMethodWins_andKeepsItsOwnNodeAndObject() {
-        // Nearest wins. A Mandatory declaration is mirrored onto the instance, so the same name appears at both
-        // levels -- and the instance's node is the one to call. Keeping the type's copy instead would send the
-        // call to the type, which for a mirrored method is not where the instance's state lives.
+    void aDeclarationOfTheObjectsOwnMethod_isKeptRatherThanDropped() {
+        // Changed deliberately (Miguel's M7). A Mandatory declaration is mirrored onto the instance, so the
+        // same name appears at both levels -- and this used to drop the type's copy here, which made preferring
+        // the object's node a side effect of merge order rather than a stated rule. Both are kept now, and
+        // MethodReference decides: a bare name matching one object method and one declaration resolves to the
+        // object's. Keeping both is what lets resolution tell that ordinary pairing from two rival methods.
         final List<MethodSignature> merged =
-                MethodVerifier.keepingNearest(List.of(method("Start", OBJECT)), List.of(method("Start", TYPE)));
+                MethodVerifier.keepingNearest(List.of(method("Start", OBJECT)), List.of(declaredOnType("Start")));
 
-        assertThat(merged).hasSize(1);
-        assertThat(merged.get(0).objectId()).isEqualTo(OBJECT);
-        assertThat(merged.get(0).nodeId()).isEqualTo(NodeId.parse("ns=2;s=Boiler1.Start"));
+        assertThat(merged).hasSize(2);
+        assertThat(merged)
+                .extracting(MethodSignature::origin)
+                .containsExactly(MethodSignature.Origin.OBJECT, MethodSignature.Origin.TYPE_DECLARATION);
     }
 
     @Test
-    void shadowingIsByNameAlone_notBySignature() {
-        // Sound because the specification constrains what a subtype may change: it may not remove an inherited
-        // argument, retype one declared with a concrete DataType, or add a mandatory one. So the nearer node of
-        // the same name is the same method specialised, and comparing arguments would only let a server's
-        // sloppy modelling produce two entries a caller cannot tell apart.
+    void aStaticTypeMethodSharingAnObjectMethodsName_isAlsoKept() {
+        // Not the same as the pairing above, and not resolvable by a bare name: one acts on the device and the
+        // other on the class, so they are genuinely different methods. Kept here; refused at resolution.
+        final List<MethodSignature> merged =
+                MethodVerifier.keepingNearest(List.of(method("Start", OBJECT)), List.of(method("Start", TYPE)));
+
+        assertThat(merged).hasSize(2);
+    }
+
+    @Test
+    void aNearerTypeLevelStillShadowsAFurtherOne() {
+        // Unchanged, and the shadowing the merge is actually for: two levels of the hierarchy declaring one
+        // name. The nearer is the one a subtype specialised. The specification constrains what a subtype may
+        // change -- it may not remove an inherited argument, retype one declared with a concrete DataType, or
+        // add a mandatory one -- so the nearer node is the same method specialised.
         final List<MethodSignature> merged = MethodVerifier.keepingNearest(
-                List.of(method("Start", OBJECT, "setpoint")), List.of(method("Start", TYPE, "setpoint", "ramp")));
+                List.of(method("Start", TYPE, "setpoint")), List.of(method("Start", SUPERTYPE, "setpoint", "ramp")));
 
         assertThat(merged).hasSize(1);
         assertThat(merged.get(0).inputArgumentNames()).containsExactly("setpoint");
@@ -123,15 +166,16 @@ class InheritedMethodsTest {
     }
 
     @Test
-    void theNearestOfThreeLevelsWins() {
-        // A name at every level resolves to the object's, not to whichever level was browsed last.
+    void theNearestOfTwoDeclarationLevelsWins_andTheObjectsIsKeptBeside() {
+        // A declaration at every level: the two type levels shadow each other, nearest first, and the object's
+        // own method is kept alongside the surviving one rather than suppressing it.
         final List<MethodSignature> withType =
-                MethodVerifier.keepingNearest(List.of(method("Start", OBJECT)), List.of(method("Start", TYPE)));
-        final List<MethodSignature> withSupertype =
-                MethodVerifier.keepingNearest(withType, List.of(method("Start", SUPERTYPE)));
+                MethodVerifier.keepingNearest(List.of(method("Start", OBJECT)), List.of(declaredOnType("Start")));
+        final List<MethodSignature> withSupertype = MethodVerifier.keepingNearest(
+                withType, List.of(method("Start", SUPERTYPE, MethodSignature.Origin.TYPE_DECLARATION)));
 
-        assertThat(withSupertype).hasSize(1);
-        assertThat(withSupertype.get(0).objectId()).isEqualTo(OBJECT);
+        assertThat(withSupertype).hasSize(2);
+        assertThat(withSupertype).extracting(MethodSignature::objectId).containsOnly(OBJECT);
     }
 
     @Test
@@ -147,17 +191,21 @@ class InheritedMethodsTest {
     @Test
     void twoMethodsSharingANameOnTheObject_bothSurvive() {
         // The namespace-collision case must not be collapsed by this merge: two methods of one name on the
-        // object itself are both kept, and a request naming them unqualified is refused with both node ids. A
-        // further-away method of that name is still shadowed -- there is already something nearer.
+        // object itself are both kept, and a request naming them unqualified is refused with both node ids.
         final MethodSignature first =
-                new MethodSignature("Start", NodeId.parse("ns=1;s=A.Start"), OBJECT, List.of(), List.of());
+                MethodSignature.ofObject("Start", NodeId.parse("ns=1;s=A.Start"), OBJECT, List.of(), List.of());
         final MethodSignature second =
-                new MethodSignature("Start", NodeId.parse("ns=2;s=B.Start"), OBJECT, List.of(), List.of());
+                MethodSignature.ofObject("Start", NodeId.parse("ns=2;s=B.Start"), OBJECT, List.of(), List.of());
 
         final List<MethodSignature> merged =
-                MethodVerifier.keepingNearest(List.of(first, second), List.of(method("Start", TYPE)));
+                MethodVerifier.keepingNearest(List.of(first, second), List.of(declaredOnType("Start")));
 
-        assertThat(merged).hasSize(2);
-        assertThat(merged).allSatisfy(method -> assertThat(method.objectId()).isEqualTo(OBJECT));
+        assertThat(merged)
+                .extracting(MethodSignature::origin)
+                .as("the object's two are kept, and so is the type's declaration -- resolution refuses the name")
+                .containsExactly(
+                        MethodSignature.Origin.OBJECT,
+                        MethodSignature.Origin.OBJECT,
+                        MethodSignature.Origin.TYPE_DECLARATION);
     }
 }

@@ -145,6 +145,56 @@ class MethodVerifierIT {
     }
 
     @Test
+    void aStaticTypeMethodIsCalledOnTheType_aDeclarationOnTheObject() {
+        // EDG-1087 M7, against a live address space. The type carries two method nodes that a browse cannot
+        // tell apart without reading their modelling rule: StaticOp has none, so it exists only on the type and
+        // OPC 10000-4's Call names the type as its object; OptionalOp is declared Optional, which per OPC
+        // 10000-3 section 6.4.4.4.4 means this instance may simply not implement it -- so it describes a method
+        // of the object, and naming the type would run something against the class instead. That is what
+        // happened: a caller asking about one boiler had the method executed on BoilerType.
+        final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Kettle");
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(client, object, "kettle-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        final List<MethodSignature> methods = ((MethodVerifier.Result.Verified) result).methods();
+
+        final MethodSignature staticOp = methods.stream()
+                .filter(method -> method.name().equals("StaticOp"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("the static type method must still be callable: " + methods));
+        assertThat(staticOp.origin()).isEqualTo(MethodSignature.Origin.TYPE_STATIC);
+        assertThat(staticOp.objectId())
+                .as("a method that exists only on the type is invoked by naming the type")
+                .isNotEqualTo(object);
+
+        final MethodSignature optionalOp = methods.stream()
+                .filter(method -> method.name().equals("OptionalOp"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("an Optional declaration is still offered: " + methods));
+        assertThat(optionalOp.origin()).isEqualTo(MethodSignature.Origin.TYPE_DECLARATION);
+        assertThat(optionalOp.objectId())
+                .as("a declaration describes a method of the instance, so the call names the object")
+                .isEqualTo(object);
+    }
+
+    @Test
+    void theObjectsOwnMethodIsUnaffectedByItsTypesDeclarations() {
+        final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Kettle");
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(client, object, "kettle-methods").join();
+
+        final MethodSignature square = ((MethodVerifier.Result.Verified) result)
+                .methods().stream()
+                        .filter(method -> method.name().equals("Square"))
+                        .findFirst()
+                        .orElseThrow();
+
+        assertThat(square.origin()).isEqualTo(MethodSignature.Origin.OBJECT);
+        assertThat(square.objectId()).isEqualTo(object);
+    }
+
+    @Test
     void anObjectExposingNoMethods_isVerifiedWithNoneRatherThanRejected() {
         // EDG-1100 P12's second half. An object may legitimately expose no methods, and more may be added
         // later without the tag changing -- so this is Verified-with-nothing rather than a rejection. What was

@@ -85,7 +85,18 @@ public final class MethodReference {
         return byNodeId(methods, methodName, namespaceTable);
     }
 
-    /// An unadorned name: resolves only when it is unique among the object's methods.
+    /// An unadorned name: resolves when it is unique, or when the only collision is a declaration of itself.
+    ///
+    /// **The exception, and why it is not a special case so much as the ordinary shape.** A type declares a
+    /// method Mandatory, every instance is required to have its own node for it (OPC 10000-3 section
+    /// 6.4.4.4.1), and both get browsed -- so the same name appears twice for an entirely conventional device.
+    /// Those two are not rivals: the declaration on the type is the template and the object's node is the real
+    /// method, with the device's own arguments. Resolving to the object's node is therefore not a guess.
+    ///
+    /// Refused, by contrast, when the pair is anything else: two methods on the object (two Interfaces each
+    /// contributing one), or an object method sharing a name with a **static** type method. The latter are
+    /// genuinely different things -- one acts on the device, the other on the class -- so a bare name cannot say
+    /// which, and the caller is asked for a node id.
     private static @NotNull Resolution byName(
             final @NotNull List<MethodSignature> methods, final @NotNull String methodName) {
 
@@ -97,6 +108,10 @@ public final class MethodReference {
         }
         if (matches.size() == 1) {
             return new Resolution.Matched(matches.get(0));
+        }
+        final MethodSignature itsOwn = theObjectsOwnAmongADeclarationOfIt(matches);
+        if (itsOwn != null) {
+            return new Resolution.Matched(itsOwn);
         }
         if (matches.isEmpty()) {
             return new Resolution.NoSuchMethod("has no method '" + methodName + "'. It offers: " + offered(methods));
@@ -163,6 +178,30 @@ public final class MethodReference {
         }
         return new Resolution.NoSuchMethod(
                 "exposes no method with node id " + wanted.toParseableString() + ". It offers: " + offered(methods));
+    }
+
+    /// The object's own method when the only other match is a non-static declaration of it, else null.
+    ///
+    /// Exactly two matches, one from the object and one from the type carrying a modelling rule. Any other
+    /// shape -- a different count, two object methods, or a static type method among them -- is a collision a
+    /// bare name cannot settle, and is left to the caller's node id.
+    private static @Nullable MethodSignature theObjectsOwnAmongADeclarationOfIt(
+            final @NotNull List<MethodSignature> matches) {
+
+        if (matches.size() != 2) {
+            return null;
+        }
+        final MethodSignature first = matches.get(0);
+        final MethodSignature second = matches.get(1);
+        if (first.origin() == MethodSignature.Origin.OBJECT
+                && second.origin() == MethodSignature.Origin.TYPE_DECLARATION) {
+            return first;
+        }
+        if (second.origin() == MethodSignature.Origin.OBJECT
+                && first.origin() == MethodSignature.Origin.TYPE_DECLARATION) {
+            return second;
+        }
+        return null;
     }
 
     /// The object's methods, for a refusal message: the browse name of each, and its node id where the name

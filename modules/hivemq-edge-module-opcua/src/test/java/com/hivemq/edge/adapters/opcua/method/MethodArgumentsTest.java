@@ -46,7 +46,7 @@ class MethodArgumentsTest {
     }
 
     private static @NotNull MethodSignature signature(final @NotNull Argument... inputs) {
-        return new MethodSignature("Start", NODE, NODE, List.of(inputs), List.of());
+        return MethodSignature.ofObject("Start", NODE, NODE, List.of(inputs), List.of());
     }
 
     private static @NotNull JsonNode json(final @NotNull String raw) throws Exception {

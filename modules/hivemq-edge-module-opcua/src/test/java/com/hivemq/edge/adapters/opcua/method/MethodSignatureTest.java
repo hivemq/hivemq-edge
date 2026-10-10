@@ -44,7 +44,7 @@ class MethodSignatureTest {
     }
 
     private static @NotNull MethodSignature signature(final @NotNull String... inputNames) {
-        return new MethodSignature(
+        return MethodSignature.ofObject(
                 "Start",
                 METHOD_NODE,
                 OBJECT_NODE,
@@ -92,7 +92,7 @@ class MethodSignatureTest {
 
     @Test
     void argumentNames_areInWireOrder() {
-        final MethodSignature signature = new MethodSignature(
+        final MethodSignature signature = MethodSignature.ofObject(
                 "Start",
                 METHOD_NODE,
                 OBJECT_NODE,
@@ -116,7 +116,8 @@ class MethodSignatureTest {
     @Test
     void argumentLists_areDefensivelyCopied() {
         final List<Argument> inputs = new java.util.ArrayList<>(List.of(argument("setpoint")));
-        final MethodSignature signature = new MethodSignature("Start", METHOD_NODE, OBJECT_NODE, inputs, List.of());
+        final MethodSignature signature =
+                MethodSignature.ofObject("Start", METHOD_NODE, OBJECT_NODE, inputs, List.of());
 
         inputs.add(argument("sneaked"));
 

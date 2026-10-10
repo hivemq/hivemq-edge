@@ -58,10 +58,17 @@ class MethodReferenceTest {
     private static final @NotNull NodeId OBJECT = new NodeId(1, "Boiler1");
 
     private static @NotNull MethodSignature method(final @NotNull String name, final @NotNull NodeId nodeId) {
+        return method(name, nodeId, MethodSignature.Origin.OBJECT);
+    }
+
+    private static @NotNull MethodSignature method(
+            final @NotNull String name, final @NotNull NodeId nodeId, final MethodSignature.@NotNull Origin origin) {
+
         return new MethodSignature(
                 name,
                 nodeId,
                 OBJECT,
+                origin,
                 List.of(new Argument("input1", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
                 List.of());
     }
@@ -98,6 +105,67 @@ class MethodReferenceTest {
         // Both node ids, so an operator can paste one straight back into `methodName`.
         assertThat(reason).contains("ns=1;s=A.Start").contains("ns=2;s=B.Start");
         assertThat(reason).contains("'Start'");
+    }
+
+    @Test
+    void aNameSharedByTheObjectAndTheTypesDeclarationOfIt_resolvesToTheObjects() {
+        // The ordinary shape of a conventional device, not an edge case: a type declares a method Mandatory,
+        // every instance is required to have its own node for it, and both get browsed -- so the name appears
+        // twice. The two are not rivals. The declaration on the type is a template; the object's node is the
+        // real method, with the device's own arguments. Refusing this would force a caller to node ids for a
+        // device that is modelled exactly as the specification intends.
+        final MethodSignature itsOwn = method("Start", new NodeId(1, "Boiler1.Start"));
+        final MethodSignature declaration =
+                method("Start", new NodeId(1, "BoilerType.Start"), MethodSignature.Origin.TYPE_DECLARATION);
+
+        final var resolution = MethodReference.resolve(List.of(itsOwn, declaration), "Start", namespaces);
+
+        assertThat(resolution).isInstanceOf(MethodReference.Resolution.Matched.class);
+        assertThat(((MethodReference.Resolution.Matched) resolution).method().nodeId())
+                .as("the object's own node is the one the device actually has")
+                .isEqualTo(new NodeId(1, "Boiler1.Start"));
+    }
+
+    @Test
+    void theSamePairInEitherOrder_resolvesTheSameWay() {
+        // Browse order must not decide it, which is the mistake the whole class exists to prevent.
+        final MethodSignature itsOwn = method("Start", new NodeId(1, "Boiler1.Start"));
+        final MethodSignature declaration =
+                method("Start", new NodeId(1, "BoilerType.Start"), MethodSignature.Origin.TYPE_DECLARATION);
+
+        final var reversed = MethodReference.resolve(List.of(declaration, itsOwn), "Start", namespaces);
+
+        assertThat(reversed).isInstanceOf(MethodReference.Resolution.Matched.class);
+        assertThat(((MethodReference.Resolution.Matched) reversed).method().nodeId())
+                .isEqualTo(new NodeId(1, "Boiler1.Start"));
+    }
+
+    @Test
+    void aNameSharedByAnObjectMethodAndAStaticTypeMethod_isRefused() {
+        // The boundary, and why the exception above is narrow. A static type method is not a template for the
+        // object's method -- it is a different method, invoked on the class rather than on the device. A bare
+        // name cannot say which is meant, so the caller is asked for a node id.
+        final MethodSignature itsOwn = method("Start", new NodeId(1, "Boiler1.Start"));
+        final MethodSignature onTheType =
+                method("Start", new NodeId(1, "BoilerType.Start"), MethodSignature.Origin.TYPE_STATIC);
+
+        final var resolution = MethodReference.resolve(List.of(itsOwn, onTheType), "Start", namespaces);
+
+        assertThat(resolution).isInstanceOf(MethodReference.Resolution.Ambiguous.class);
+    }
+
+    @Test
+    void twoDeclarationsOfOneNameWithNoObjectMethod_areStillRefused() {
+        // Two supertypes contributing the same name, and nothing on the object to prefer. The exception needs
+        // an object method to resolve to; without one there is nothing to choose.
+        final MethodSignature first =
+                method("Start", new NodeId(1, "TypeA.Start"), MethodSignature.Origin.TYPE_DECLARATION);
+        final MethodSignature second =
+                method("Start", new NodeId(2, "TypeB.Start"), MethodSignature.Origin.TYPE_DECLARATION);
+
+        final var resolution = MethodReference.resolve(List.of(first, second), "Start", namespaces);
+
+        assertThat(resolution).isInstanceOf(MethodReference.Resolution.Ambiguous.class);
     }
 
     @Test
