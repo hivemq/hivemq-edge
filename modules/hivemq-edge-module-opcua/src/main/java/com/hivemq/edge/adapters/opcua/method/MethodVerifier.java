@@ -206,7 +206,11 @@ public final class MethodVerifier {
     /// @param onAType  whether `owner` is a type. When it is, each method's modelling rule decides whether it
     ///                 is static (so a call names the type) or a declaration (so a call names the object).
     /// @param objectId what a `Call` names as its object for a method found on the **object**: the tag's node.
-    private static @NotNull CompletableFuture<Result> readSignatures(
+    ///
+    /// Package-private so the outcome a failed read produces can be asserted without a server: whether it is
+    /// durable or retried is the question this method answers, and reaching it through `verify` needs a device
+    /// that fails in a particular way mid-read.
+    static @NotNull CompletableFuture<Result> readSignatures(
             final @NotNull OpcUaClient client,
             final @NotNull List<ReferenceDescription> references,
             final @NotNull NodeId owner,
@@ -240,11 +244,19 @@ public final class MethodVerifier {
                     }
                     return (Result) new Result.Verified(List.copyOf(methods));
                 })
-                // Rejected rather than Unverifiable, which the cache drops so the next request asks again. In
-                // Edge-1 a failure is final: a tag whose methods could not be described stays unusable for the
-                // session rather than retrying per request. The message names the method and the cause, so an
-                // operator can tell an access refusal from a server that went away.
-                .exceptionally(throwable -> new Result.Rejected("the methods of tag '"
+                // Unverifiable, not Rejected. A read that failed says nothing about the tag -- a timeout, an
+                // access refusal, a Bad_TooManyOperations from a busy server -- so it is not a verdict to keep.
+                // This used to be Rejected, which the cache keeps for the session, so one timed-out argument
+                // read made a tag unusable until the session was replaced.
+                //
+                // The inconsistency is what settles it rather than any doctrine about retrying: the *object*
+                // browse one level up already answers a transport failure with Unverifiable and is retried.
+                // Same device, same class of fault, and the two differed only in which code path met it.
+                //
+                // No promise about *when* a retry happens is made or intended. The cache simply does not keep
+                // this outcome, so the next request that finds no entry asks again; a reconnect clears
+                // everything regardless. See MethodCache.
+                .exceptionally(throwable -> new Result.Unverifiable("the methods of tag '"
                         + tagName
                         + "' could not be described, so no request against it can be turned into a call: "
                         + Browsing.describeException(throwable)));
