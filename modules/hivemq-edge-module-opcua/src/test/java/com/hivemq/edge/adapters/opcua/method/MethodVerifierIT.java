@@ -16,15 +16,20 @@
 package com.hivemq.edge.adapters.opcua.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import java.util.List;
 import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -87,7 +92,61 @@ class MethodVerifierIT {
     void everyMethodTheObjectExposes_isFound() {
         assertThat(verified())
                 .extracting(MethodSignature::name)
-                .containsExactlyInAnyOrder("Square", "Stop", "SumArray");
+                .containsExactlyInAnyOrder("Square", "Stop", "SumArray", "Wait", "SetState");
+    }
+
+    @Test
+    void anEnumerationArgument_isRefusedRatherThanEncodedAsItsInteger() {
+        // The limit of the reduction, stated because the reference document states it. An enumeration's
+        // DataType reduces to Variant rather than to the Int32 it is carried as, so the argument renders as
+        // `any` and the call is refused. Encoding one is not part of this release; this records the behaviour
+        // so a later change to it is deliberate.
+        final MethodSignature setState = verified("SetState");
+
+        assertThat(setState.builtinTypeOf(setState.inputArguments().get(0))).isEqualTo(OpcUaDataType.Variant);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        setState, JsonNodeFactory.instance.objectNode().put("state", 1)))
+                .hasMessageContaining("Variant is not supported as a method argument");
+    }
+
+    @Test
+    void anArgumentTypedAsASimpleDataType_reducesToItsBuiltinSupertype() {
+        // `Duration` is a subtype of Double, and OPC 10000-3 section 5.8.2 says such a Simple DataType is
+        // "handled on the wire like the Built-in DataType, i.e. they cannot be distinguished on the wire from
+        // their Built-in supertypes" -- Duration is the specification's own example. Only the server's DataType
+        // hierarchy says so: the id is not one of the 25 builtins, so the table that discovery used to consult
+        // answered null and the argument was refused outright (EDG-1087 M6).
+        final MethodSignature wait = verified("Wait");
+        final Argument timeout = wait.inputArguments().get(0);
+
+        assertThat(timeout.getDataType()).isEqualTo(NodeIds.Duration);
+        assertThat(wait.builtinTypeOf(timeout)).isEqualTo(OpcUaDataType.Double);
+        assertThat(wait.builtinTypeOf(wait.outputArguments().get(0))).isEqualTo(OpcUaDataType.Double);
+    }
+
+    @Test
+    void anArgumentTypedAsASimpleDataType_isEncodedRatherThanRefused() {
+        // What the reviewer actually hit: a method taking a timeout could not be called at all.
+        final MethodSignature wait = verified("Wait");
+
+        final ObjectNode request = JsonNodeFactory.instance.objectNode().put("timeout", 2500);
+        final Variant[] arguments = MethodArguments.forCall(wait, request);
+
+        assertThat(arguments).hasSize(1);
+        assertThat(arguments[0].getValue()).isEqualTo(2500.0);
+    }
+
+    @Test
+    void aSimpleDataTypeArgumentIsStatedInTheSchema_ratherThanRenderedAsAny() {
+        // The second half of the same defect: an unresolved type renders as `any` -- an empty subschema -- so
+        // even a caller who could somehow get the call through had no contract to write against.
+        final JsonNode timeout = SchemaJsonRepresentation.INSTANCE
+                .toJsonSchemaDocument(MethodSchemas.requestSchema(verified()))
+                .get("properties")
+                .get("timeout");
+
+        assertThat(timeout).isNotNull();
+        assertThat(timeout.get("type").asText()).isEqualTo("number");
     }
 
     @Test

@@ -29,6 +29,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /// Turns a request's named arguments into the positional `Variant[]` a `Call` takes.
 ///
@@ -97,7 +98,7 @@ public final class MethodArguments {
                         + "', which the request does not carry. It declares: "
                         + String.join(", ", signature.inputArgumentNames()));
             }
-            arguments[i] = convert(signature.name(), name, argument, supplied);
+            arguments[i] = convert(signature.name(), name, argument, signature.builtinTypeOf(argument), supplied);
         }
         return arguments;
     }
@@ -126,9 +127,15 @@ public final class MethodArguments {
 
     /// Converts one JSON value to the Java type the argument's DataType expects.
     ///
-    /// Only the builtin types are handled. An argument of a custom structure type is refused rather than guessed
-    /// at: the generated schema already says `any` for it, so a caller has no contract to write against, and
-    /// encoding a structure needs the DataTypeTree machinery the value path uses.
+    /// Only the builtin types are handled, but the argument's own DataType need not *be* one: a **Simple
+    /// DataType** is a subtype of a builtin and, per OPC 10000-3 section 5.8.2, is "handled on the wire like the
+    /// Built-in DataType". `Duration` -- a Double in milliseconds -- is the specification's example and the
+    /// standard type for a timeout argument. Reducing one needs the server's DataType hierarchy, so the
+    /// {@link MethodSignature} carries the answer, resolved during the browse that discovered the method.
+    ///
+    /// An argument of a custom structure type reduces to no builtin and is refused rather than guessed at: the
+    /// generated schema already says `any` for it, so a caller has no contract to write against, and encoding a
+    /// structure needs the DataTypeTree machinery the value path uses.
     ///
     /// An argument the device declares with a positive value rank is an array, and its value has to be built as a
     /// Java array of the element type's backing class -- `Integer[]` rather than `Object[]` -- because that is how
@@ -137,10 +144,9 @@ public final class MethodArguments {
             final @NotNull String methodName,
             final @NotNull String argumentName,
             final @NotNull Argument argument,
+            final @Nullable OpcUaDataType type,
             final @NotNull JsonNode supplied) {
 
-        final OpcUaDataType type =
-                argument.getDataType() == null ? null : OpcUaDataType.fromNodeId(argument.getDataType());
         if (type == null) {
             throw new InvalidArgumentException("argument '"
                     + argumentName

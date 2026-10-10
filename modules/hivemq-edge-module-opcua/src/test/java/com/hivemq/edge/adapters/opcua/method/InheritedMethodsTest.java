@@ -69,6 +69,9 @@ class InheritedMethodsTest {
             final MethodSignature.@NotNull Origin origin,
             final @NotNull String... inputs) {
 
+        final List<Argument> inputArguments = List.of(inputs).stream()
+                .map(input -> new Argument(input, NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE))
+                .toList();
         return new MethodSignature(
                 name,
                 owner.equals(OBJECT)
@@ -76,10 +79,9 @@ class InheritedMethodsTest {
                         : NodeId.parse("ns=2;s=" + owner.getIdentifier() + "." + name),
                 origin == MethodSignature.Origin.TYPE_STATIC ? owner : OBJECT,
                 origin,
-                List.of(inputs).stream()
-                        .map(input -> new Argument(input, NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE))
-                        .toList(),
-                List.of());
+                inputArguments,
+                List.of(),
+                MethodSignature.builtinsOf(inputArguments));
     }
 
     /// A Mandatory or Optional declaration on the type: a template for the instance's own method. Called on the

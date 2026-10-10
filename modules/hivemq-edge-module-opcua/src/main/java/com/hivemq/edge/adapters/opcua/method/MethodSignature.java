@@ -15,7 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua.method;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
@@ -59,11 +62,35 @@ public record MethodSignature(
         /// Input arguments in wire order. Empty for a method taking none -- see the class note on absence.
         @NotNull List<Argument> inputArguments,
         /// Output arguments in wire order, naming what a successful call returns.
-        @NotNull List<Argument> outputArguments) {
+        @NotNull List<Argument> outputArguments,
+        /// The builtin type each input argument reduces to, by the argument's own DataType node id.
+        ///
+        /// **Why this is resolved once, here, rather than at the point of use.** An argument's DataType may be
+        /// a **Simple DataType** -- a subtype of a builtin, which OPC 10000-3 section 5.8.2 says is "handled on
+        /// the wire like the Built-in DataType, i.e. they cannot be distinguished on the wire from their
+        /// Built-in supertypes". `Duration` is the specification's own example: a Double holding milliseconds,
+        /// and the standard type for a timeout argument. Reducing it needs the server's DataType hierarchy,
+        /// which only a connected client can walk -- and neither the argument converter nor the schema
+        /// generator has one. So the walk happens during the browse that produced this signature, where the
+        /// client is in hand, and the answer travels with it.
+        ///
+        /// Empty for a type that reduces to no builtin at all, which is a custom structure -- still refused,
+        /// deliberately and as documented.
+        @NotNull Map<NodeId, OpcUaDataType> builtinTypes) {
 
     public MethodSignature {
         inputArguments = List.copyOf(inputArguments);
         outputArguments = List.copyOf(outputArguments);
+        builtinTypes = Map.copyOf(builtinTypes);
+    }
+
+    /// The builtin type this argument reduces to, or null when it reduces to none.
+    ///
+    /// Keyed on the DataType node id rather than the argument's name or position, because a name is not unique
+    /// on a badly-described server and a position would have to be kept in step with two separate lists.
+    public @Nullable OpcUaDataType builtinTypeOf(final @NotNull Argument argument) {
+        final NodeId dataType = argument.getDataType();
+        return dataType == null ? null : builtinTypes.get(dataType);
     }
 
     /// A method the tag's own object declares -- the ordinary case, and the only one a test usually needs.
@@ -74,7 +101,35 @@ public record MethodSignature(
             final @NotNull List<Argument> inputArguments,
             final @NotNull List<Argument> outputArguments) {
 
-        return new MethodSignature(name, nodeId, objectId, Origin.OBJECT, inputArguments, outputArguments);
+        return new MethodSignature(
+                name,
+                nodeId,
+                objectId,
+                Origin.OBJECT,
+                inputArguments,
+                outputArguments,
+                builtinsOf(inputArguments, outputArguments));
+    }
+
+    /// The builtin types of these arguments taken at face value, for a signature built without a server.
+    ///
+    /// Every argument whose DataType *is* a builtin maps to itself; a Simple DataType maps to nothing, because
+    /// reducing it needs the server's hierarchy. Tests that need a subtype reduced must say so explicitly.
+    @SafeVarargs
+    public static @NotNull Map<NodeId, OpcUaDataType> builtinsOf(final @NotNull List<Argument>... argumentLists) {
+        final Map<NodeId, OpcUaDataType> builtins = new LinkedHashMap<>();
+        for (final List<Argument> arguments : argumentLists) {
+            for (final Argument argument : arguments) {
+                final NodeId dataType = argument.getDataType();
+                if (dataType != null) {
+                    final OpcUaDataType builtin = OpcUaDataType.fromNodeId(dataType);
+                    if (builtin != null) {
+                        builtins.put(dataType, builtin);
+                    }
+                }
+            }
+        }
+        return builtins;
     }
 
     /// Where a method node was found, and therefore what it is.

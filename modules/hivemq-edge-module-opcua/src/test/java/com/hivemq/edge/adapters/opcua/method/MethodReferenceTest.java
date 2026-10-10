@@ -64,13 +64,10 @@ class MethodReferenceTest {
     private static @NotNull MethodSignature method(
             final @NotNull String name, final @NotNull NodeId nodeId, final MethodSignature.@NotNull Origin origin) {
 
+        final List<Argument> inputArguments =
+                List.of(new Argument("input1", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE));
         return new MethodSignature(
-                name,
-                nodeId,
-                OBJECT,
-                origin,
-                List.of(new Argument("input1", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE)),
-                List.of());
+                name, nodeId, OBJECT, origin, inputArguments, List.of(), MethodSignature.builtinsOf(inputArguments));
     }
 
     /// Two methods both called `Start`, contributed by two namespaces -- the case the whole class exists for.

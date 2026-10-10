@@ -211,9 +211,14 @@ public final class MethodSchemas {
         }
 
         /// The shape of an argument as the device declared it.
-        static @NotNull ArgumentShape of(final @NotNull Argument argument) {
-            final OpcUaDataType type =
-                    argument.getDataType() == null ? null : OpcUaDataType.fromNodeId(argument.getDataType());
+        ///
+        /// The builtin type is resolved by the browse that discovered the method and passed in, rather than
+        /// looked up here: an argument declared as a **Simple DataType** -- `Duration`, `UtcTime`, `IntegerId`
+        /// and the rest -- is a subtype of a builtin and encodes identically to it (OPC 10000-3 section 5.8.2),
+        /// but reducing it to that builtin needs the server's DataType hierarchy, which this has no client to
+        /// walk. Looking the id up in the table of the 25 builtins answered null for every one of them, and the
+        /// argument rendered as `any`.
+        static @NotNull ArgumentShape of(final @NotNull Argument argument, final @Nullable OpcUaDataType type) {
 
             // The rank decides the shape, and OPC 10000-3 table 28 gives it six values -- the same table as for
             // a Variable, because a method argument is described by the same attribute:
@@ -311,7 +316,7 @@ public final class MethodSchemas {
                     // in the schema either. It is still callable positionally -- the signature keeps it.
                     continue;
                 }
-                final ArgumentShape shape = ArgumentShape.of(argument);
+                final ArgumentShape shape = ArgumentShape.of(argument, method.builtinTypeOf(argument));
                 final ArgumentShape seen = shapes.get(name);
                 if (seen == null) {
                     shapes.put(name, shape);

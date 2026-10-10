@@ -870,6 +870,35 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                             });
                 });
 
+        // An argument typed as a Simple DataType: `Duration` is a subtype of Double, and OPC 10000-3 section
+        // 5.8.2 says such a type is "handled on the wire like the Built-in DataType, i.e. they cannot be
+        // distinguished on the wire from their Built-in supertypes". Reducing it to Double needs the server's
+        // DataType hierarchy -- the table of the 25 builtin ids does not contain it. Reaching for that table was
+        // EDG-1087 M6: every method taking a timeout was refused as "a type this version cannot encode".
+        addDeclaredMethod(
+                objectId,
+                "Wait",
+                new Argument[] {argument("timeout", NodeIds.Duration)},
+                new Argument[] {argument("waited", NodeIds.Duration)},
+                (context, request) -> {
+                    final Double value = (Double) request.getInputArguments()[0].getValue();
+                    return new CallMethodResult(
+                            StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {Variant.of(value)
+                            });
+                });
+
+        // An enumeration argument, which marks the other side of the same boundary: the reduction answers
+        // Variant for it rather than the Int32 it is carried as, so it renders as `any` and the call is
+        // refused. Encoding one is not part of this release, and this pins that so a change to it is
+        // deliberate.
+        addDeclaredMethod(
+                objectId,
+                "SetState",
+                new Argument[] {argument("state", NodeIds.ServerState)},
+                new Argument[0],
+                (context, request) -> new CallMethodResult(
+                        StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]));
+
         return objectId;
     }
 

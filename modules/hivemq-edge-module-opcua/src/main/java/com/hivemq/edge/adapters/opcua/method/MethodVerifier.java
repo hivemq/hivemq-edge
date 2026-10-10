@@ -19,12 +19,17 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 
 import com.hivemq.edge.adapters.opcua.browse.Browsing;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaObjectNode;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
@@ -312,7 +317,8 @@ public final class MethodVerifier {
                                                 objectId,
                                                 MethodSignature.Origin.OBJECT,
                                                 List.of(in),
-                                                List.of(out)));
+                                                List.of(out),
+                                                builtinTypesOf(client, in, out)));
                             }
                             return hasModellingRule(client, nodeId)
                                     .thenCompose(declared -> inputs.thenCombine(
@@ -327,7 +333,8 @@ public final class MethodVerifier {
                                                             ? MethodSignature.Origin.TYPE_DECLARATION
                                                             : MethodSignature.Origin.TYPE_STATIC,
                                                     List.of(in),
-                                                    List.of(out))));
+                                                    List.of(out),
+                                                    builtinTypesOf(client, in, out))));
                         }));
     }
 
@@ -362,6 +369,69 @@ public final class MethodVerifier {
                             Browsing.describeException(throwable));
                     return true;
                 });
+    }
+
+    /// The builtin type each argument's DataType reduces to, walked through the server's DataType hierarchy.
+    ///
+    /// Covers the outputs as well as the inputs: an output declared `Duration` rendered as `any` in the response
+    /// schema for the same reason a `Duration` input could not be encoded at all.
+    ///
+    /// **Why a lookup table is not enough.** `OpcUaDataType.fromNodeId` knows the 25 builtin ids and nothing
+    /// else, so it answers null for a **Simple DataType** -- a subtype of a builtin, which OPC 10000-3 section
+    /// 5.8.2 says is "handled on the wire like the Built-in DataType, i.e. they cannot be distinguished on the
+    /// wire from their Built-in supertypes". `Duration` is the specification's own example, and the standard
+    /// type for a timeout argument; `UtcTime`, `LocaleId`, `Counter`, `IntegerId`, `Index` and `NumericRange`
+    /// are others. Every method taking one was refused with "a type this version cannot encode" -- for a type
+    /// that encodes exactly like the Double or UInt32 it is.
+    ///
+    /// The client's DataType tree does the walk, which is what the ordinary value-write path has always used
+    /// ({@code JsonToOpcUAConverter}, {@code JsonSchemaGenerator}). The method path reached for the table
+    /// instead, which is the whole of the defect. Resolved here because this is where a client exists: the
+    /// argument converter and the schema generator both work from a {@link MethodSignature} alone.
+    ///
+    /// A type reducing to no builtin is left out, and is then refused at conversion -- a custom structure,
+    /// which stays deliberately unencodable in this release.
+    ///
+    /// Reported by Miguel as M6 on EDG-1087.
+    private static @NotNull Map<NodeId, OpcUaDataType> builtinTypesOf(
+            final @NotNull OpcUaClient client, final Argument @NotNull [] inputs, final Argument @NotNull [] outputs) {
+
+        final Map<NodeId, OpcUaDataType> builtins = new LinkedHashMap<>();
+        // A tree this client cannot build leaves every argument unresolved rather than failing the browse: the
+        // method is then refused at conversion, naming the argument, which is exactly what happened before this
+        // existed. Losing the types is better than losing the tag. Milo caches the tree on the client, so this
+        // is a lookup on every browse but the first.
+        final DataTypeTree tree;
+        try {
+            tree = client.getDataTypeTree();
+        } catch (final UaException | RuntimeException e) {
+            log.warn(
+                    "Could not read the DataType hierarchy; method argument types stay unresolved: {}", e.getMessage());
+            return builtins;
+        }
+        for (final Argument argument : concat(inputs, outputs)) {
+            final NodeId dataType = argument.getDataType();
+            if (dataType == null || builtins.containsKey(dataType)) {
+                continue;
+            }
+            try {
+                final OpcUaDataType builtin = tree.getBuiltinType(dataType);
+                if (builtin != null) {
+                    builtins.put(dataType, builtin);
+                }
+            } catch (final RuntimeException e) {
+                log.debug("Could not reduce DataType {} to a builtin type: {}", dataType, e.getMessage());
+            }
+        }
+        return builtins;
+    }
+
+    private static @NotNull List<Argument> concat(final Argument @NotNull [] first, final Argument @NotNull [] second) {
+
+        final List<Argument> all = new ArrayList<>(first.length + second.length);
+        all.addAll(List.of(first));
+        all.addAll(List.of(second));
+        return all;
     }
 
     /// Reads an arguments property, treating "the server does not expose it" as "the method has none".
