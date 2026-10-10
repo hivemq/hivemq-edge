@@ -28,6 +28,7 @@ import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
@@ -35,6 +36,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.error.ApiException;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
@@ -87,6 +89,7 @@ import com.hivemq.edge.api.model.StatusTransitionCommand;
 import com.hivemq.edge.api.model.StatusTransitionResult;
 import com.hivemq.edge.api.model.TagSchema;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
+import com.hivemq.http.HttpStatus;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
@@ -108,6 +111,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1049,9 +1053,103 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             throw new IllegalStateException("Cannot create Southbound mapping with topic filter '" + topicFilter
                     + "', because it has no schema attached");
         }
-        return SouthboundMappingEntity.fromApi(
-                model,
-                new String(Base64.getDecoder().decode(topicFilter.getSchema().getData()), StandardCharsets.UTF_8));
+        final String schema =
+                new String(Base64.getDecoder().decode(topicFilter.getSchema().getData()), StandardCharsets.UTF_8);
+        refusePromisedFieldTheSchemaDoesNotRequire(model, schema);
+        return SouthboundMappingEntity.fromApi(model, schema);
+    }
+
+    /**
+     * Refuses a method mapping whose topic filter's schema does not require the fields the mapping promises.
+     * <p>
+     * <b>Why this is the only place the promise can be kept.</b> A method request carries {@code methodName}, and
+     * optionally a correlation token and a reply address, beside its {@code value}. Acceptance criterion 7 says a
+     * request omitting one the mapping promised is refused. The adapter cannot keep that promise: the southbound
+     * field mapping is a whitelist that rebuilds the payload from nothing, so a switched-off field is <em>deleted
+     * before the adapter is called</em> — by which point "the caller omitted it" and "the mapping does not carry
+     * it" are indistinguishable. The distinction survives only here, where the flags are still readable.
+     * <p>
+     * So the promise is enforced one gate earlier, by the schema on the topic filter: a request omitting a
+     * required field fails validation and is quarantined with its payload intact, before the device is touched.
+     * For a method call that is strictly better than refusing afterwards — nothing runs on the device.
+     * <p>
+     * <b>Refused rather than amended.</b> The schema is the operator's document; Edge rewriting it silently would
+     * leave them with a schema they did not write and no reason recorded. The message names both sides and the
+     * literal entry to add.
+     * <p>
+     * A schema shared by two mappings that promise different fields cannot satisfy both. That is a pre-existing
+     * tension in pairing one schema with one topic filter, not one this check introduces: such a pair already
+     * claims "everything arriving here has this shape", and two mappings disagreeing about the shape were already
+     * incoherent. This refusal makes the disagreement visible at save time instead of at runtime.
+     */
+    private void refusePromisedFieldTheSchemaDoesNotRequire(
+            final @NotNull com.hivemq.edge.api.model.SouthboundMapping model, final @NotNull String schema) {
+
+        if (!Boolean.TRUE.equals(model.getMethodCalls())) {
+            return;
+        }
+
+        // methodName is unconditional once this is a method mapping: a request without it names no method to
+        // call, so it is promised whether or not any flag is set.
+        final Map<String, Boolean> promised = new LinkedHashMap<>();
+        promised.put("methodName", true);
+        promised.put("correlationData", Boolean.TRUE.equals(model.getCorrelationData()));
+        promised.put("responseTopic", Boolean.TRUE.equals(model.getResponseTopic()));
+
+        final Set<String> required = requiredFieldsOf(schema);
+        final List<String> missing = promised.entrySet().stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .filter(field -> !required.contains(field))
+                .toList();
+
+        if (missing.isEmpty()) {
+            return;
+        }
+
+        final String entries = missing.stream().map(field -> '"' + field + '"').collect(Collectors.joining(", "));
+        throw new ApiException(
+                "The southbound mapping for tag '"
+                        + model.getTagName()
+                        + "' promises that every request carries "
+                        + String.join(", ", missing)
+                        + ", but the schema on topic filter '"
+                        + model.getTopicFilter()
+                        + "' does not require "
+                        + (missing.size() == 1 ? "it" : "them")
+                        + ". Add "
+                        + entries
+                        + " to that schema's \"required\" array, or switch the corresponding setting off.",
+                HttpStatus.BAD_REQUEST_400);
+    }
+
+    /**
+     * The field names a JSON schema document requires at its root, or an empty set when it requires none.
+     * <p>
+     * A schema that cannot be read yields an empty set, so a method mapping resting on it is refused by the
+     * caller. That is the right outcome rather than a side effect: a schema nothing can parse requires nothing,
+     * so it cannot keep the promise either, and the mapping is broken whether or not the save says so. Refusing
+     * names it once, at save time, instead of leaving every request to fail unexplained at runtime. A mapping
+     * that promises nothing -- every value write that exists today -- is unaffected, because the caller returns
+     * before reaching here.
+     */
+    private @NotNull Set<String> requiredFieldsOf(final @NotNull String schema) {
+        try {
+            final JsonNode required = objectMapper.readTree(schema).get("required");
+            if (required == null || !required.isArray()) {
+                return Set.of();
+            }
+            final Set<String> names = new LinkedHashSet<>();
+            required.forEach(entry -> {
+                if (entry.isTextual()) {
+                    names.add(entry.textValue());
+                }
+            });
+            return names;
+        } catch (final Exception e) {
+            log.debug("Could not read the 'required' list from a topic filter's schema", e);
+            return Set.of();
+        }
     }
 
     private @NotNull TagEntity toTagEntity(final @NotNull DomainTag dmt) {

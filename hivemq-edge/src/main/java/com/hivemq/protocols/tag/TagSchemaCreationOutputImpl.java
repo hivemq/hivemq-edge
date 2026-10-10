@@ -171,8 +171,15 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * <p>
      * Optional throughout, deliberately. A request and a response carry different subsets — a reply address is
      * request-only, an error code response-only — and one part describes both directions, so requiring any of
-     * them would state something false about the other. Nothing is lost: a request that omits what it promised
-     * is refused by the adapter with a message naming the omission.
+     * them would state something false about the other.
+     * <p>
+     * <b>What enforces a promised field is therefore not this document.</b> It used to say the adapter refuses a
+     * request that omits one, which the adapter cannot do: the southbound field mapping is a whitelist, so a
+     * switched-off field is deleted before the adapter is called and "the caller omitted it" is by then
+     * indistinguishable from "the mapping does not carry it". The promise is kept one gate earlier instead —
+     * {@code ProtocolAdaptersResourceImpl.refusePromisedFieldTheSchemaDoesNotRequire} refuses a method mapping
+     * whose topic filter's schema does not require what the mapping promises, so such a request fails
+     * validation and is quarantined before the device is touched.
      */
     private static void liftMethodFields(
             final @NotNull ObjectSchemaBuilder<SchemaBuilder> builder,

@@ -16,6 +16,7 @@
 package com.hivemq.api.resources.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,12 +32,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
+import com.hivemq.api.error.ApiException;
+import com.hivemq.api.format.DataUrl;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.DomainTagOwnerConverter;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
@@ -59,12 +63,14 @@ import com.hivemq.edge.api.model.DomainTagOwnerList;
 import com.hivemq.edge.api.model.FieldMapping;
 import com.hivemq.edge.api.model.NorthboundMappingOwner;
 import com.hivemq.edge.api.model.NorthboundMappingOwnerList;
+import com.hivemq.edge.api.model.SouthboundMappingList;
 import com.hivemq.edge.api.model.SouthboundMappingOwner;
 import com.hivemq.edge.api.model.SouthboundMappingOwnerList;
 import com.hivemq.http.error.ProblemDetails;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
+import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -1071,6 +1077,158 @@ class ProtocolAdaptersResourceImplTest {
 
         assertEquals(500, response.getStatus());
         assertThat(response.getEntity().toString()).contains("timed out");
+    }
+
+    // ── EDG-1087 M4: a promised request field the topic filter's schema does not require ──────────
+    //
+    // A method request carries `methodName`, and optionally a correlation token and a reply address, beside its
+    // `value`. AC 7 says a request omitting one the mapping promised is refused. The adapter cannot keep that
+    // promise: the southbound field mapping is a whitelist, so a switched-off field is deleted before the
+    // adapter is called, and by then "the caller omitted it" and "the mapping does not carry it" are the same
+    // thing. The promise is therefore kept one gate earlier, by the schema on the topic filter — and that only
+    // works if the schema and the mapping agree, which is what these pin.
+
+    private static final @NotNull String SCHEMA_REQUIRING_VALUE_ONLY =
+            "{\"type\":\"object\",\"required\":[\"value\"],\"properties\":{\"value\":{\"type\":\"object\"}}}";
+
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME =
+            "{\"type\":\"object\",\"required\":[\"value\",\"methodName\"]," + "\"properties\":{\"value\":{}}}";
+
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_AND_TOKEN =
+            "{\"type\":\"object\",\"required\":[\"value\",\"methodName\",\"correlationData\"]," + "\"properties\":{}}";
+
+    private void mockWritableAdapterWithTopicFilter(final @NotNull String schema) {
+        final ProtocolAdapterEntity existing = mock();
+        when(existing.getAdapterId()).thenReturn("adapter");
+        when(existing.getProtocolId()).thenReturn("opcua");
+        when(existing.getTags())
+                .thenReturn(List.of(new TagEntity("boiler", "the boiler", Map.of("node", "ns=2;s=Boiler"))));
+        when(protocolAdapterExtractor.getAdapterByAdapterId("adapter")).thenReturn(Optional.of(existing));
+
+        final ProtocolAdapterInformation info = mock();
+        when(info.getCapabilities()).thenReturn(java.util.EnumSet.of(ProtocolAdapterCapability.WRITE));
+        when(protocolAdapterManager.getAdapterTypeById("opcua")).thenReturn(Optional.of(info));
+
+        // createBase64JsonDataUrl labels the encoding; it does not encode. The resource base64-decodes what it
+        // finds, so the fixture has to hold encoded bytes.
+        final String encoded =
+                java.util.Base64.getEncoder().encodeToString(schema.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        when(topicFilterPersistence.getTopicFilter("plant/boiler1/call"))
+                .thenReturn(new TopicFilterPojo(
+                        "plant/boiler1/call", "the command topic", DataUrl.createBase64JsonDataUrl(encoded)));
+    }
+
+    private static @NotNull com.hivemq.edge.api.model.FieldMapping valueToValue() {
+        return new com.hivemq.edge.api.model.FieldMapping()
+                .instructions(List.of(new com.hivemq.edge.api.model.Instruction()
+                        .source("value")
+                        .destination("value")));
+    }
+
+    private @NotNull SouthboundMappingList methodMapping(final boolean correlationData) {
+        final com.hivemq.edge.api.model.SouthboundMapping mapping = new com.hivemq.edge.api.model.SouthboundMapping()
+                .tagName("boiler")
+                .topicFilter("plant/boiler1/call")
+                .fieldMapping(valueToValue())
+                .methodCalls(true)
+                .correlationData(correlationData);
+        return new SouthboundMappingList().items(List.of(mapping));
+    }
+
+    @Test
+    void southboundMapping_promisingACorrelationToken_isRefusedWhenTheSchemaDoesNotRequireIt() {
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME);
+
+        final ApiException thrown = catchThrowableOfType(
+                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(true)),
+                ApiException.class);
+
+        assertThat(thrown).isNotNull();
+        assertThat(thrown.getHttpStatusCode())
+                .as("the operator's configuration is at fault, so this is not a server error")
+                .isEqualTo(400);
+        assertThat(thrown.getMessage())
+                .as("the refusal has to name both sides and the entry to add")
+                .contains("correlationData")
+                .contains("plant/boiler1/call")
+                .contains("required");
+    }
+
+    @Test
+    void southboundMapping_carryingMethodCalls_isRefusedWhenTheSchemaDoesNotRequireMethodName() {
+        // methodName is promised whenever the mapping carries method calls: a request without it names no
+        // method to call, so there is no setting that could make it optional.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_VALUE_ONLY);
+
+        final ApiException thrown = catchThrowableOfType(
+                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
+                ApiException.class);
+
+        assertThat(thrown).isNotNull();
+        assertThat(thrown.getMessage()).contains("methodName");
+    }
+
+    @Test
+    void southboundMapping_isAcceptedWhenTheSchemaRequiresEverythingPromised() {
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_AND_TOKEN);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(true));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void southboundMapping_withoutMethodCalls_isNotCheckedAtAll() {
+        // Every southbound mapping that exists today. The check must not refuse one for lacking fields that
+        // only a method request carries.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_VALUE_ONLY);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final com.hivemq.edge.api.model.SouthboundMapping valueWrite = new com.hivemq.edge.api.model.SouthboundMapping()
+                .tagName("boiler")
+                .topicFilter("plant/boiler1/call")
+                .fieldMapping(valueToValue());
+
+        final Response response = protocolAdaptersResource.updateAdapterSouthboundMappings(
+                "adapter", new SouthboundMappingList().items(List.of(valueWrite)));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void aMethodMappingOnAnUnreadableSchema_isRefusedRatherThanTrusted() {
+        // A schema that cannot be read requires nothing, so it cannot keep the promise either -- and a method
+        // mapping resting on it is broken whether or not we say so. Refusing names the problem at save time
+        // instead of leaving requests to fail unexplained at runtime. The message still asks for the field
+        // rather than complaining about the syntax, which is the actionable half.
+        mockWritableAdapterWithTopicFilter("not a schema at all");
+
+        final ApiException thrown = catchThrowableOfType(
+                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
+                ApiException.class);
+
+        assertThat(thrown).isNotNull();
+        assertThat(thrown.getHttpStatusCode()).isEqualTo(400);
+    }
+
+    @Test
+    void aValueMappingOnAnUnreadableSchema_isStillAccepted() {
+        // The boundary: only a method mapping promises these fields, so a plain value write must not be
+        // refused for a schema this check cannot read.
+        mockWritableAdapterWithTopicFilter("not a schema at all");
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final com.hivemq.edge.api.model.SouthboundMapping valueWrite = new com.hivemq.edge.api.model.SouthboundMapping()
+                .tagName("boiler")
+                .topicFilter("plant/boiler1/call")
+                .fieldMapping(valueToValue());
+
+        final Response response = protocolAdaptersResource.updateAdapterSouthboundMappings(
+                "adapter", new SouthboundMappingList().items(List.of(valueWrite)));
+
+        assertEquals(200, response.getStatus());
     }
 
     private void mockAdapterRejectingTagWith(final @NotNull String reason) {
