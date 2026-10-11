@@ -142,36 +142,57 @@ class MethodArgumentsTest {
         // the magnitude limit below. What this still asserts is that the *type* bound is the unsigned one -- a
         // value is converted as an unsigned 64-bit number rather than measured against a signed ceiling.
         final Variant[] arguments = MethodArguments.forCall(
-                signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9007199254740992}"));
+                signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9007199254740991}"));
 
-        assertThat(arguments[0].value()).hasToString("9007199254740992");
+        assertThat(arguments[0].value()).hasToString("9007199254740991");
         assertThat(arguments[0].value()).isInstanceOf(ULong.class);
     }
 
     @Test
-    void aWholeNumberTooLargeToCrossTheTransformIsRefused() throws Exception {
-        // 2^53 is the largest whole number that survives the southbound field-mapping transform, which Data Hub
-        // runs as JavaScript: its wrapper parses the payload with JSON.parse before any Edge code sees it, and
-        // JavaScript has only the IEEE double. 9007199254740993 arrives here as 9007199254740992, and the two are
-        // then indistinguishable -- which is why this refuses rather than detects.
+    void theValueARoundedNumberArrivesAs_isRefused() throws Exception {
+        // The decisive case, and the one the first version of this guard let through. The southbound
+        // field-mapping transform runs as JavaScript, whose wrapper parses the payload with JSON.parse before any
+        // Edge code sees it, and JSON.parse rounds to nearest-even. So 9007199254740993 does not arrive here at
+        // all -- it arrives as 9007199254740992, which is exactly 2^53.
         //
-        // Both 64-bit types, since only they have a range reaching past the limit.
+        // A guard that refuses only above 2^53 therefore never sees a corrupted value: it sees the rounding
+        // *target* and accepts it. These two assertions feed the values that genuinely arrive.
         assertThatThrownBy(() -> MethodArguments.forCall(
-                        signature(argument("count", NodeIds.UInt64)), json("{\"count\": 9007199254740993}")))
+                        signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": 9007199254740992}")))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class)
-                .hasMessageContaining("9007199254740993")
+                .hasMessageContaining("9007199254740992")
                 .hasMessageContaining("2^53");
 
         assertThatThrownBy(() -> MethodArguments.forCall(
-                        signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": -9007199254740993}")))
+                        signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": -9007199254740992}")))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class)
-                .hasMessageContaining("-9007199254740993");
+                .hasMessageContaining("-9007199254740992");
 
-        // The limit itself passes: it is the largest value that crosses unchanged, not the first that fails.
-        final Variant[] atTheLimit = MethodArguments.forCall(
-                signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": 9007199254740992}"));
+        // The largest value no rounding can have produced, which is JavaScript's own MAX_SAFE_INTEGER. One below
+        // the limit, and the boundary that has to keep working.
+        final Variant[] belowTheLimit = MethodArguments.forCall(
+                signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": 9007199254740991}"));
 
-        assertThat(atTheLimit[0].value()).isEqualTo(9007199254740992L);
+        assertThat(belowTheLimit[0].value()).isEqualTo(9007199254740991L);
+    }
+
+    @Test
+    void aWholeNumberFarAboveTheLimitIsRefused() throws Exception {
+        // Both 64-bit types, since only they have a range reaching past the limit.
+        //
+        // These two are exactly representable as doubles, so they cross the transform unchanged. They are still
+        // refused, and that is the intended reading of the guard: above the limit a value cannot be *trusted*,
+        // not proven corrupted. Which values survive by luck is a property of their bit pattern, and asking a
+        // caller to know that is worse than one flat limit.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("count", NodeIds.UInt64)), json("{\"count\": 18000000000000000}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("2^53");
+
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("ticks", NodeIds.Int64)), json("{\"ticks\": -18000000000000000}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("2^53");
     }
 
     @Test

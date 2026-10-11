@@ -44,7 +44,18 @@ public final class MethodArguments {
     /// so a UInt64 argument's schema states no range and this is the only gate the value passes.
     private static final @NotNull BigInteger UINT64_MAX = BigInteger.TWO.pow(64).subtract(BigInteger.ONE);
 
-    /// 2^53, the largest magnitude a whole number can have and still survive the journey to this method.
+    /// 2^53, the first magnitude a whole number cannot be trusted at. The largest trustworthy one is 2^53 - 1.
+    ///
+    /// **Why the limit excludes 2^53 itself rather than including it.** `JSON.parse` rounds to nearest-even, so
+    /// 2^53 is the value a rounded number *arrives as*: `9007199254740993` becomes `9007199254740992`, and
+    /// `-...993` becomes `-2^53`. Accepting 2^53 therefore accepts exactly the corrupted case this guard exists
+    /// for -- the first measured row of the original report. A caller that genuinely means 2^53 is refused as
+    /// collateral, which is the right side to err on: 2^53 and "something that was 2^53 + 1" are the same bits
+    /// here, and nothing can tell them apart. 2^53 - 1 is JavaScript's own `Number.MAX_SAFE_INTEGER`, defined as
+    /// the largest integer for which that ambiguity does not arise.
+    ///
+    /// Found by Miguel in round 2 of EDG-1087: the first version of this guard compared `> 2^53` and let the
+    /// rounded value through, and its test pinned that value as accepted.
     ///
     /// **Why a limit unrelated to any OPC UA type.** A southbound request does not arrive here as the caller
     /// wrote it. It passes through the field-mapping transform, which Data Hub runs as JavaScript, and that
@@ -403,8 +414,8 @@ public final class MethodArguments {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
             throw new IllegalArgumentException("expected a value in [" + min + ", " + max + "], got " + value);
         }
-        if (value.abs().compareTo(PRECISION_LIMIT) > 0) {
-            throw new IllegalArgumentException("expected a magnitude of at most "
+        if (value.abs().compareTo(PRECISION_LIMIT) >= 0) {
+            throw new IllegalArgumentException("expected a magnitude below "
                     + PRECISION_LIMIT
                     + " (2^53), got "
                     + value
