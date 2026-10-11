@@ -176,11 +176,11 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     /**
-     * Declares the named fields the given part carries, at the document root, each optional.
+     * Declares the named fields the given part carries, inside a {@code context} object.
      * <p>
-     * Optional throughout, deliberately. A request and a response carry different subsets — a reply address is
-     * request-only, an error code response-only — and one part describes both directions, so requiring any of
-     * them would state something false about the other.
+     * Optional throughout except {@code methodName}, deliberately. A request and a response carry different
+     * subsets — a reply address is request-only, an error code response-only — and one part describes both
+     * directions, so requiring either would state something false about the other.
      * <p>
      * <b>What enforces a promised field is therefore not this document.</b> It used to say the adapter refuses a
      * request that omits one, which the adapter cannot do: the southbound field mapping is a whitelist, so a
