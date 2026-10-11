@@ -66,9 +66,14 @@ class MethodCacheSessionLifetimeTest {
         final ProtocolAdapterState state = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
         listener =
                 new OpcUaSessionActivityListener(mock(), new FakeEventService(), "test-adapter-id", state, () -> true);
-        // Exactly what OpcUaClientConnection installs: discard the per-session state, then ask the server to
-        // re-report its conditions. Invalidation first, so a request admitted during the refresh round trip
-        // cannot be served from what the previous session reported.
+        // The invalidation half of what the connection's reconnect hook does, which is what this class is about:
+        // discard the per-session state, then ask the server to re-report its conditions. Invalidation first, so
+        // a request admitted during the refresh round trip cannot be served from what the previous session
+        // reported.
+        //
+        // The adapter's real hook also re-runs the method pre-warm after invalidating -- see
+        // `OpcUaProtocolAdapter.onSessionReplaced` and `MethodPrewarmIT`. That half needs a server and an
+        // adapter, so it is tested there; here the cache's own contract is what matters.
         listener.setOnReconnect(() -> {
             cache.invalidate();
             refreshes.incrementAndGet();
@@ -79,7 +84,7 @@ class MethodCacheSessionLifetimeTest {
     private @NotNull MethodVerifier.Result read(final @NotNull String tagName) {
         return cache.get(tagName, () -> {
                     browses.incrementAndGet();
-                    return CompletableFuture.completedFuture(new MethodVerifier.Result.Verified(List.of()));
+                    return CompletableFuture.completedFuture(MethodVerifier.Result.Verified.of(List.of()));
                 })
                 .join();
     }

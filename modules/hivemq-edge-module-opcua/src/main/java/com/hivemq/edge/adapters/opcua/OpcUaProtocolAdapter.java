@@ -357,7 +357,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 this::publishStatusFrom,
                 this::warmUpBrowseMetadata,
                 this::publishReadyFrom,
-                methodCache::invalidate);
+                this::onSessionReplaced);
         if (claimConnection(conn)) {
             // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
             // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
@@ -515,7 +515,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     this::publishStatusFrom,
                     this::warmUpBrowseMetadata,
                     this::publishReadyFrom,
-                    methodCache::invalidate);
+                    this::onSessionReplaced);
 
             // Set as current connection and attempt connection with retry logic
             if (claimConnection(newConn)) {
@@ -1706,6 +1706,31 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     /**
+     * What a new session means for the per-tag method cache: forget it, then read it again.
+     *
+     * <p><b>Why both halves, and why here.</b> A method NodeId is the server's to assign and stable only for the
+     * session that reported it, so a new session must discard the cache. The two seams that start one are not
+     * alike: claiming a connection covers a first connect and every reconnect the adapter drives by building a
+     * replacement, and reaches {@link #prewarmMethodTags} through {@link #publishReadyFrom}; a session Milo
+     * activates <em>inside</em> the existing client swaps no connection and reaches only this hook. Wiring this
+     * hook to invalidation alone therefore cleared the cache and left nothing to refill it, so for the rest of
+     * that session a slow device's first request paid for the browse again — the very case the pre-warm exists
+     * for. Found by Miguel in round 2 of EDG-1087.
+     *
+     * <p>Invalidate first, so a request admitted during the pre-warm cannot be served from what the previous
+     * session reported. A run already in flight notices the generation change and abandons itself; the
+     * single-thread executor then serialises the replacement behind it.
+     */
+    @VisibleForTesting
+    void onSessionReplaced() {
+        methodCache.invalidate();
+        final OpcUaClientConnection current = opcUaClientConnection.get();
+        if (current != null && !stopped) {
+            prewarmMethodTags(current);
+        }
+    }
+
+    /**
      * Reads every method tag's methods now, so that a caller's first request does not have to.
      * <p>
      * <b>Why this exists.</b> A method tag's methods used to be read on the first request against that tag. On a
@@ -1713,6 +1738,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      * could time out while a later one succeeded — and waiting after connect did not help, because nothing was
      * reading anything until a request arrived. Reported by Miguel as part of M11 on EDG-1087: the symptom
      * reproduced on two unrelated devices, and patience was no remedy for this half of it.
+     * <p>
+     * Called from {@link #publishReadyFrom} for a new connection and from {@link #onSessionReplaced} for a
+     * session Milo activates inside an existing one.
      * <p>
      * <b>Why not in the connect-time metadata warm-up.</b> That warm-up — which builds the server's DataType
      * hierarchy — runs inside a task the connect sequence waits on, bounded by the smaller of the connection
@@ -2064,7 +2092,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 this::publishStatusFrom,
                                 this::warmUpBrowseMetadata,
                                 this::publishReadyFrom,
-                                methodCache::invalidate);
+                                this::onSessionReplaced);
 
                         // Set as current connection and attempt
                         if (claimConnection(newConn)) {

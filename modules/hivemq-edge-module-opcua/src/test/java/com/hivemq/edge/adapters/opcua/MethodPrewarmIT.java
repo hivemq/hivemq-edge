@@ -46,6 +46,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -133,6 +134,21 @@ class MethodPrewarmIT {
         run.get(30, TimeUnit.SECONDS);
     }
 
+    /// Waits for a pre-warm run that is not the one given, and returns it.
+    private static @NotNull Future<?> awaitDifferentPrewarm(
+            final @NotNull OpcUaProtocolAdapter adapter, final @Nullable Future<?> previous) throws Exception {
+
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        Future<?> run = adapter.methodPrewarmRun();
+        while (run == previous && System.nanoTime() < deadline) {
+            Thread.sleep(25);
+            run = adapter.methodPrewarmRun();
+        }
+        assertThat(run).as("a new pre-warm run should have been submitted").isNotSameAs(previous);
+        Objects.requireNonNull(run).get(30, TimeUnit.SECONDS);
+        return run;
+    }
+
     private static @NotNull OpcuaTag methodTag(final @NotNull String name, final @NotNull String node) {
         return new OpcuaTag(name, "", new OpcuaTagDefinition(node, OpcuaTagKind.METHOD));
     }
@@ -173,6 +189,31 @@ class MethodPrewarmIT {
 
         assertThat(adapter.methodsKnownFor("boiler")).isTrue();
         assertThat(adapter.methodsKnownFor("plain")).isFalse();
+    }
+
+    @Test
+    void aSessionReplacedInsideTheClient_prewarmsAgain() throws Exception {
+        // The seam that invalidation alone used to leave empty. Milo activates a fresh session inside the
+        // existing client on a reconnect, so no connection is swapped and the readiness hook -- which runs once
+        // per connection object -- never fires again. Wiring that hook to invalidation alone therefore cleared
+        // the cache and left nothing to refill it, and a slow device's first request paid for the browse again:
+        // the case the pre-warm exists for. Found by Miguel in round 2 of EDG-1087.
+        final String object = namespace().addMethodObject("Boiler").toParseableString();
+        final OpcUaProtocolAdapter adapter = started(methodTag("boiler", object));
+
+        awaitPrewarm(adapter);
+        assertThat(adapter.methodsKnownFor("boiler")).isTrue();
+        final Future<?> firstRun = adapter.methodPrewarmRun();
+
+        // Exactly what the connection's reconnect hook invokes.
+        adapter.onSessionReplaced();
+
+        // A *different* run, not the completed first one: the field still holds that until the new task is
+        // submitted, so waiting on "whatever is there" would prove nothing.
+        final Future<?> secondRun = awaitDifferentPrewarm(adapter, firstRun);
+
+        assertThat(secondRun).isNotSameAs(firstRun);
+        assertThat(adapter.methodsKnownFor("boiler")).isTrue();
     }
 
     @Test
