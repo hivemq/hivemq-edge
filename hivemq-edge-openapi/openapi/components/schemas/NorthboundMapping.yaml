@@ -13,12 +13,6 @@ properties:
     type: boolean
     description: Should tag metadata entries be included when sent out.
     default: false
-  writeCorrelationData:
-    type: boolean
-    default: false
-    description: >-
-      Whether a method call's correlation token is written into the response message, so a caller can
-      match the answer to its request.
   maxQoS:
     $ref: ./QoS.yaml
   messageExpiryInterval:

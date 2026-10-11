@@ -240,18 +240,18 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
      * anything about the answer, and {@link #responseTopicOf} consumes it to choose the topic; publishing it too
      * would put a routing instruction inside the routed message.
      * <p>
-     * <b>{@code correlationData} is published only when the mapping asks.</b> The southbound flag decides whether
-     * the token is read at all, this one whether it goes on the wire: a deployment may correlate inside Edge and
-     * still keep the token off its MQTT messages.
+     * <b>{@code correlationData} always goes into the payload, and into the MQTT 5 Correlation Data property.</b>
+     * There is no northbound setting for it. Whether a token is read at all is decided southbound; what each
+     * subscriber then receives is decided by the publish encoder, per subscriber: a version-5 client gets the
+     * property, a version-3 client has no field for it. A flag withholding the payload copy would hide the token
+     * from some clients for no statable reason, which is why the one that did was removed.
      */
     private void publishResponseFields(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
         if (!context.isObject()) {
             return;
         }
         copy(node, context, METHOD_NAME);
-        if (northboundMapping.isWriteCorrelationData()) {
-            copy(node, context, CORRELATION_DATA);
-        }
+        copy(node, context, CORRELATION_DATA);
         copy(node, context, ERROR_CODE);
         copy(node, context, STATUS_INFO);
     }

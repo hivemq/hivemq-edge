@@ -108,23 +108,14 @@ class NorthboundTagConsumerContextTest {
         return new Published(topic.get(), new ObjectMapper().readTree(payload.get()));
     }
 
-    /// A mapping that echoes a caller's correlation token, which is what every test here but
-    /// {@link #correlationData_isWithheldWhenTheMappingSaysNotToWriteIt()} is about.
+    /// A plain northbound mapping, which is the only kind there is.
+    ///
+    /// It takes no parameter because a northbound mapping has no method-call configuration: what a response
+    /// carries is decided by the southbound mapping that sent the request and travels with the request in its
+    /// context, so every test here varies the datapoint's context rather than the mapping.
     private static @NotNull NorthboundMapping mapping() {
-        return mapping(true);
-    }
-
-    private static @NotNull NorthboundMapping mapping(final boolean writeCorrelationData) {
         return new NorthboundMapping(
-                "boiler1",
-                "plant/boiler1/result",
-                1,
-                false,
-                false,
-                false,
-                List.of(),
-                Long.MAX_VALUE,
-                writeCorrelationData);
+                "boiler1", "plant/boiler1/result", 1, false, false, false, List.of(), Long.MAX_VALUE);
     }
 
     /// Builds a datapoint carrying a value and the given context entries.
@@ -182,23 +173,13 @@ class NorthboundTagConsumerContextTest {
     }
 
     @Test
-    void correlationData_isWithheldWhenTheMappingSaysNotToWriteIt() throws Exception {
-        // The northbound flag has to actually govern the published message. It was offered in the mapping form,
-        // persisted, and carried into the runtime mapping while nothing read it -- so a deployment that turned it
-        // off still published the token. A visible setting that does nothing is worse than no setting.
+    void correlationData_isPublishedWheneverTheContextCarriesIt() throws Exception {
+        // The presence of the token in the context is the whole decision. There is deliberately no setting that
+        // withholds it: the request either carried a token or it did not, and whether a given subscriber sees it
+        // is settled further downstream, where a version-5 client gets the MQTT property and a version-3 client
+        // cannot. A setting here could only disagree with that.
         final Published published =
-                publish(mapping(false), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
-
-        assertThat(published.payload().has("correlationData")).isFalse();
-        // Only that one entry is withheld: the rest of the response is unaffected.
-        assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
-        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
-    }
-
-    @Test
-    void correlationData_isPublishedWhenTheMappingSaysToWriteIt() throws Exception {
-        final Published published =
-                publish(mapping(true), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
+                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
 
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
     }

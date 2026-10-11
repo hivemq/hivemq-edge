@@ -121,8 +121,12 @@ class MappingEntityBackwardCompatibilityTest {
     }
 
     @Test
-    void northboundMappingWithoutTheFlags_parsesWithThemOff() throws Exception {
-        final String oldConfig = """
+    void aNorthboundMappingHasNoMethodCallElements() throws Exception {
+        // A northbound mapping gained no configuration when method calls landed, and this is the written form of
+        // that: the elements below are all of it. What a method response carries -- the reply address, the
+        // correlation token -- is decided by the southbound mapping that sent the request and travels with the
+        // request, so there is nothing here for an operator to set or for this entity to parse.
+        final String config = """
                 <northboundMapping>
                   <topic>plant/boiler1/result</topic>
                   <tagName>boiler1</tagName>
@@ -134,30 +138,15 @@ class MappingEntityBackwardCompatibilityTest {
                 </northboundMapping>
                 """;
 
-        final NorthboundMappingEntity entity = unmarshal(NorthboundMappingEntity.class, oldConfig);
+        final NorthboundMappingEntity entity = unmarshal(NorthboundMappingEntity.class, config);
 
         assertThat(entity.getTagName()).isEqualTo("boiler1");
-        assertThat(entity.isWriteCorrelationData()).isFalse();
-    }
-
-    @Test
-    void northboundMappingWithTheFlag_parsesItThrough() throws Exception {
-        final String newConfig = """
-                <northboundMapping>
-                  <topic>plant/boiler1/result</topic>
-                  <tagName>boiler1</tagName>
-                  <maxQoS>1</maxQoS>
-                  <includeTagNames>false</includeTagNames>
-                  <includeTimestamp>true</includeTimestamp>
-                  <includeMetadata>false</includeMetadata>
-                  <mqttUserProperties/>
-                  <writeCorrelationData>true</writeCorrelationData>
-                </northboundMapping>
-                """;
-
-        final NorthboundMappingEntity entity = unmarshal(NorthboundMappingEntity.class, newConfig);
-
-        assertThat(entity.isWriteCorrelationData()).isTrue();
+        assertThat(entity.getTopic()).isEqualTo("plant/boiler1/result");
+        assertThat(marshal(NorthboundMappingEntity.class, entity))
+                .as("no method-call element may appear in a northbound mapping")
+                .doesNotContain("methodCalls")
+                .doesNotContain("correlationData")
+                .doesNotContain("responseTopic");
     }
 
     @Test
@@ -173,25 +162,6 @@ class MappingEntityBackwardCompatibilityTest {
         assertThat(roundTripped.isMethodCalls()).isTrue();
         assertThat(roundTripped.isCorrelationData()).isTrue();
         assertThat(roundTripped.isResponseTopic()).isFalse();
-    }
-
-    @Test
-    void theNorthboundFlagSurvivesARoundTripThroughPersistence() throws Exception {
-        final NorthboundMappingEntity original = new NorthboundMappingEntity(
-                "boiler1",
-                "plant/boiler1/result",
-                1,
-                null,
-                false,
-                true,
-                false,
-                java.util.List.of(),
-                Long.MAX_VALUE,
-                true);
-
-        final var roundTripped = NorthboundMappingEntity.fromPersistence(original.toPersistence());
-
-        assertThat(roundTripped.isWriteCorrelationData()).isTrue();
     }
 
     @Test
@@ -220,16 +190,6 @@ class MappingEntityBackwardCompatibilityTest {
         assertThat(xml).contains("<methodCalls>true</methodCalls>");
         assertThat(xml).doesNotContain("correlationData");
         assertThat(xml).doesNotContain("responseTopic");
-    }
-
-    @Test
-    void anUnsetNorthboundFlagMarshalsToNothing() throws Exception {
-        final NorthboundMappingEntity noFlags = new NorthboundMappingEntity(
-                "boiler1", "plant/boiler1/result", 1, null, false, true, false, java.util.List.of(), Long.MAX_VALUE);
-
-        final String xml = marshal(NorthboundMappingEntity.class, noFlags);
-
-        assertThat(xml).doesNotContain("writeCorrelationData");
     }
 
     @Test

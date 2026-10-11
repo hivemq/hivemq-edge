@@ -37,11 +37,7 @@ public final class NorthboundMappingOwnerConverter
                 entity.getIncludeTimestamp(),
                 entity.getIncludeMetadata(),
                 MqttUserPropertyEntityConverter.INSTANCE.toInternalEntities(entity.getUserProperties()),
-                entity.getMessageExpiryInterval(),
-                // The inbound half matters more than the read-back: without it a mapping arriving through this
-                // path loses the flag on the way in, so a read-then-save does not merely display the wrong
-                // value, it stores one.
-                Boolean.TRUE.equals(entity.getWriteCorrelationData()));
+                entity.getMessageExpiryInterval());
     }
 
     public @NotNull NorthboundMappingOwner toRestEntity(
@@ -49,6 +45,13 @@ public final class NorthboundMappingOwnerConverter
         return toRestEntity(entity).adapterId(adapterId);
     }
 
+    /// Every field a northbound mapping has, carried here and in both directions.
+    ///
+    /// This converter is one of a pair with {@link NorthboundMappingEntityConverter}, which does the same job
+    /// without the owning adapter's id. **A field added to one and forgotten in the other is worse than a
+    /// display bug**: a mapping arriving through this path loses it on the way in, so an operator who opens such
+    /// a mapping and saves it does not merely see a stale value, they store one. That happened once already,
+    /// when method calls added a setting here and only the sibling was updated.
     @Override
     public @NotNull NorthboundMappingOwner toRestEntity(final @NotNull NorthboundMappingEntity entity) {
         return NorthboundMappingOwner.builder()
@@ -59,12 +62,6 @@ public final class NorthboundMappingOwnerConverter
                 .maxQoS(QoSConverter.INSTANCE.toRestEntity(entity.getMaxQoS()))
                 .messageExpiryInterval(entity.getMessageExpiryInterval())
                 .userProperties(MqttUserPropertyEntityConverter.INSTANCE.toRestEntities(entity.getUserProperties()))
-                // Carried in both directions, like every other field here. Omitted when method calls landed,
-                // because the sibling NorthboundMappingEntityConverter was updated and this one was not -- so a
-                // flag that was accepted and is being applied read back as false, and the frontend renders what
-                // the read returns. An operator opening such a mapping and saving it wrote false back and
-                // silently stopped the token.
-                .writeCorrelationData(entity.isWriteCorrelationData())
                 .build();
     }
 }
