@@ -80,7 +80,30 @@ public final class MethodVerifier {
         /// browse reported last. {@link MethodReference} resolves a request's `methodName` against this list
         // and
         /// refuses an unadorned name that several methods carry.
-        record Verified(@NotNull List<MethodSignature> methods) implements Result {}
+        /// `complete` is false when the walk did not finish: the methods listed are real, but a level of the
+        /// type hierarchy could not be read, so more may exist. {@link MethodCache} evicts such a result the
+        /// way it evicts an {@link Unverifiable} one, so the next request climbs again.
+        ///
+        /// **Why a flag rather than a failure.** Returning `Unverifiable` for a failed climb would undo a
+        /// deliberate fallback: a server that refuses to let a client browse types at all is served the
+        /// instance-only list, and that is the correct answer for it, not an error. The flag keeps both --
+        /// the partial list is used, and it is not mistaken for the whole truth for the rest of the session.
+        ///
+        /// Found by Miguel in round 2 of EDG-1087: `43923822f` fixed this one level down, on the object's own
+        /// argument reads, and the type climb kept turning a timeout into "no such method" until the session
+        /// ended. Build one with {@link #of} or {@link #partial}, not the canonical constructor.
+        record Verified(@NotNull List<MethodSignature> methods, boolean complete) implements Result {
+
+            /// The ordinary case: everything the device has to say about this object was read.
+            static @NotNull Verified of(final @NotNull List<MethodSignature> methods) {
+                return new Verified(methods, true);
+            }
+
+            /// What was read before a level of the type hierarchy could not be. Not cached.
+            static @NotNull Verified partial(final @NotNull List<MethodSignature> methods) {
+                return new Verified(methods, false);
+            }
+        }
 
         /// The tag is wrong about the device: the node is absent, or is not an object. No retry will help.
         record Rejected(@NotNull String reason) implements Result {}
@@ -247,7 +270,7 @@ public final class MethodVerifier {
                             methods.add(signature);
                         }
                     }
-                    return (Result) new Result.Verified(List.copyOf(methods));
+                    return (Result) Result.Verified.of(List.copyOf(methods));
                 })
                 // Unverifiable, not Rejected. A read that failed says nothing about the tag -- a timeout, an
                 // access refusal, a Bad_TooManyOperations from a busy server -- so it is not a verdict to keep.
@@ -481,11 +504,16 @@ public final class MethodVerifier {
 
         return typeOf(client, objectNode, tagName)
                 .thenCompose(type -> type == null
-                        ? CompletableFuture.completedFuture(verified.methods())
+                        ? CompletableFuture.completedFuture(new Climb(verified.methods(), true))
                         : collectUpwards(client, type, objectNode, verified.methods(), tagName, 0))
-                .thenApply(methods -> {
-                    warnWhenNoneWereFound(methods, objectNode, tagName);
-                    return (Result) new Result.Verified(methods);
+                .thenApply(climb -> {
+                    warnWhenNoneWereFound(climb.methods(), objectNode, tagName);
+                    // A climb that could not read a level is not cached, so the next request tries again --
+                    // see Result.Verified. The methods it did find are still served.
+                    return (Result)
+                            (climb.complete()
+                                    ? Result.Verified.of(climb.methods())
+                                    : Result.Verified.partial(climb.methods()));
                 })
                 .exceptionally(throwable -> {
                     log.debug(
@@ -493,7 +521,9 @@ public final class MethodVerifier {
                                     + "exposes are known: {}",
                             tagName,
                             Browsing.describeException(throwable));
-                    return fromInstance;
+                    // Partial for the same reason: the type lookup failing is a failure to reach the device,
+                    // not the device saying this object's type has nothing to add.
+                    return Result.Verified.partial(verified.methods());
                 });
     }
 
@@ -557,7 +587,7 @@ public final class MethodVerifier {
     ///
     /// `HasSubtype` points downward -- a supertype *has* subtypes -- so climbing means following it inversely,
     /// the same walk {@code ConditionTypeVerifier} performs for condition types.
-    private static @NotNull CompletableFuture<List<MethodSignature>> collectUpwards(
+    private static @NotNull CompletableFuture<Climb> collectUpwards(
             final @NotNull OpcUaClient client,
             final @NotNull NodeId type,
             final @NotNull NodeId objectNode,
@@ -568,13 +598,17 @@ public final class MethodVerifier {
         if (depth >= MAX_TYPE_WALK_DEPTH) {
             // Bounded for the reason the condition walk is: a server reporting a cycle, or a hierarchy deeper
             // than any real one, must stop rather than browse forever.
+            //
+            // Complete, deliberately: the device answered every level we asked about. Stopping here is our
+            // rule rather than its failure, so re-climbing on the next request would learn the same thing and
+            // pay for it again.
             log.debug(
                     "Tag '{}': gave up climbing the type hierarchy after {} levels, last at {}. A hierarchy this "
                             + "deep is more likely a cycle than a real one.",
                     tagName,
                     depth,
                     type);
-            return CompletableFuture.completedFuture(known);
+            return CompletableFuture.completedFuture(new Climb(known, true));
         }
 
         // Unfiltered for the same reason as the instance browse -- see methodsOf. A server whose node-class
@@ -587,11 +621,36 @@ public final class MethodVerifier {
                     final List<MethodSignature> merged = result instanceof final Result.Verified verified
                             ? keepingNearest(known, verified.methods())
                             : known;
+                    // A level the device could not answer about makes the whole climb incomplete, and that
+                    // travels up through every recursion rather than being decided at the top. Without it a
+                    // single Bad_Timeout mid-climb produced a cacheable "these are all the methods", hiding
+                    // every static method and inherited declaration until the session ended.
+                    final boolean levelRead = !(result instanceof Result.Unverifiable);
                     return supertypeOf(client, type)
                             .thenCompose(supertype -> supertype == null
-                                    ? CompletableFuture.completedFuture(List.copyOf(merged))
-                                    : collectUpwards(client, supertype, objectNode, merged, tagName, depth + 1));
+                                    ? CompletableFuture.completedFuture(new Climb(List.copyOf(merged), levelRead))
+                                    : collectUpwards(client, supertype, objectNode, merged, tagName, depth + 1)
+                                            .thenApply(above -> above.andThisLevel(levelRead)));
                 });
+    }
+
+    /// What a climb up the type hierarchy found, and whether it got to read every level it tried.
+    ///
+    /// Exists because the climb's answer is two things: the methods, and whether the list can be trusted as
+    /// whole. Returning only the list made the second invisible, so the caller cached a partial answer as a
+    /// complete one.
+    /// Package-private rather than private so {@link #andThisLevel} can be tested directly. Combining a flag
+    /// up a recursion is the kind of thing that looks obviously right and is wrong by one level, and the
+    /// alternative test needs a server willing to fail exactly one level of a type hierarchy on demand.
+    record Climb(@NotNull List<MethodSignature> methods, boolean complete) {
+
+        /// The same methods, incomplete if this level could not be read or anything above it already was.
+        @NotNull
+        Climb andThisLevel(final boolean levelRead) {
+            // `this` when the level was read, which keeps an earlier failure because `this` is then already
+            // partial -- the combination is idempotent in that direction rather than needing to test `complete`.
+            return levelRead ? this : new Climb(methods, false);
+        }
     }
 
     /// Adds the further-away methods whose names no nearer **type level** already provides.

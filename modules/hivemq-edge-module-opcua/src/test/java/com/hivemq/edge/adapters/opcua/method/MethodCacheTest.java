@@ -29,7 +29,10 @@ import org.junit.jupiter.api.Test;
 /// must not keep.
 class MethodCacheTest {
 
-    private static final MethodVerifier.Result VERIFIED = new MethodVerifier.Result.Verified(List.of());
+    private static final MethodVerifier.Result VERIFIED = MethodVerifier.Result.Verified.of(List.of());
+
+    /// A climb that could not read a level: real methods, not necessarily all of them. Not kept.
+    private static final MethodVerifier.Result PARTIAL = MethodVerifier.Result.Verified.partial(List.of());
 
     @Test
     void secondCallForOneTag_doesNotReadAgain() {
@@ -126,6 +129,26 @@ class MethodCacheTest {
         });
         cache.get("boiler1", () -> read(reads));
 
+        assertThat(reads).hasValue(2);
+    }
+
+    @Test
+    void anIncompleteVerifiedResult_isNotRemembered() {
+        // A climb up the type hierarchy that could not read a level found real methods but not necessarily all
+        // of them. Keeping it reported an inherited or static method as absent for the rest of the session --
+        // which is what one Bad_Timeout on a slow device used to do (Miguel, round 2 of EDG-1087).
+        final MethodCache cache = new MethodCache();
+        final AtomicInteger reads = new AtomicInteger();
+
+        final MethodVerifier.Result first = cache.get("boiler1", () -> {
+                    reads.incrementAndGet();
+                    return CompletableFuture.completedFuture(PARTIAL);
+                })
+                .join();
+        cache.get("boiler1", () -> read(reads));
+
+        // Served to the caller that asked, and not kept for the next one.
+        assertThat(first).isSameAs(PARTIAL);
         assertThat(reads).hasValue(2);
     }
 

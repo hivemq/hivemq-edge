@@ -71,7 +71,9 @@ import org.jetbrains.annotations.NotNull;
 /// previous write completes and a method tag can have several in flight.
 ///
 /// Neither a thrown browse nor an `Unverifiable` outcome is kept, so an unanswered device does not become a
-/// permanent answer about it. A `Rejected` outcome *is* kept: that one is durable for the session.
+/// permanent answer about it. Nor is a `Verified` whose `complete` flag is false -- a climb up the type
+/// hierarchy that could not read a level found real methods but not necessarily all of them. A `Rejected`
+/// outcome *is* kept: that one is durable for the session.
 public final class MethodCache {
 
     private final @NotNull Map<String, CompletableFuture<MethodVerifier.Result>> perTag = new ConcurrentHashMap<>();
@@ -115,7 +117,12 @@ public final class MethodCache {
                 relay.completeExceptionally(throwable);
                 return;
             }
-            if (result instanceof MethodVerifier.Result.Unverifiable) {
+            if (result instanceof MethodVerifier.Result.Unverifiable
+                    || (result instanceof final MethodVerifier.Result.Verified verified && !verified.complete())) {
+                // Incomplete joins Unverifiable for the same reason: a level of the type hierarchy the device
+                // could not answer about leaves methods undiscovered, and keeping the partial list would
+                // report an inherited or static method as absent for the rest of the session. The methods it
+                // did find are still returned to this caller -- only the remembering is declined.
                 perTag.remove(tagName, relay);
             }
             relay.complete(result);

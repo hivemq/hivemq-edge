@@ -137,7 +137,7 @@ class FailedSignatureReadTest {
         cache.get("boiler", () -> {
                     readAgain[0] = true;
                     return CompletableFuture.completedFuture(
-                            (MethodVerifier.Result) new MethodVerifier.Result.Verified(List.of()));
+                            (MethodVerifier.Result) MethodVerifier.Result.Verified.of(List.of()));
                 })
                 .join();
 
