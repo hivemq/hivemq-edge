@@ -23,16 +23,18 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.datapoint.DataPointWithMetadata;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -64,7 +66,11 @@ class NorthboundTagConsumerContextTest {
         }
     };
 
-    private record Published(@NotNull String topic, @NotNull JsonNode payload) {}
+    /// What one datapoint produced: the topic, the payload, and the MQTT 5 Correlation Data property if set.
+    private record Published(
+            @NotNull String topic,
+            @NotNull JsonNode payload,
+            byte @org.jetbrains.annotations.Nullable [] correlationData) {}
 
     /// Runs one datapoint through a consumer and reports what was published.
     private static @NotNull Published publish(
@@ -72,8 +78,12 @@ class NorthboundTagConsumerContextTest {
 
         final AtomicReference<String> topic = new AtomicReference<>();
         final AtomicReference<byte[]> payload = new AtomicReference<>();
+        final AtomicReference<byte[]> correlationData = new AtomicReference<>();
 
-        final var builder = mock(ProtocolAdapterPublishBuilder.class);
+        // The implementation, not the SDK interface. The consumer holds that type so it can set the MQTT 5
+        // Correlation Data property, which is deliberately not on the interface -- see
+        // ProtocolAdapterPublishBuilderImpl.withCorrelationData.
+        final var builder = mock(ProtocolAdapterPublishBuilderImpl.class);
         when(builder.withTopic(any())).thenAnswer(invocation -> {
             topic.set(invocation.getArgument(0));
             return builder;
@@ -84,6 +94,10 @@ class NorthboundTagConsumerContextTest {
             return builder;
         });
         when(builder.withAdapter(any())).thenReturn(builder);
+        when(builder.withCorrelationData(any())).thenAnswer(invocation -> {
+            correlationData.set(invocation.getArgument(0));
+            return builder;
+        });
         when(builder.send()).thenReturn(CompletableFuture.completedFuture(null));
 
         final var publishService = mock(ProtocolAdapterPublishServiceImpl.class);
@@ -105,7 +119,7 @@ class NorthboundTagConsumerContextTest {
 
         consumer.accept(dataPoint);
 
-        return new Published(topic.get(), new ObjectMapper().readTree(payload.get()));
+        return new Published(topic.get(), new ObjectMapper().readTree(payload.get()), correlationData.get());
     }
 
     /// A plain northbound mapping, which is the only kind there is.
@@ -244,5 +258,61 @@ class NorthboundTagConsumerContextTest {
         final Published published = publish(mapping(), dataPoint("value", "hijacked"));
 
         assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void aRawPrefixedToken_reachesTheMqtt5PropertyAsItsOwnText() throws Exception {
+        // A token a caller put in the payload. It is text already, so the property carries its UTF-8 bytes and
+        // the payload carries it with the prefix it arrived with.
+        final Published published =
+                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:mes-east-00417"));
+
+        assertThat(published.correlationData()).isEqualTo("mes-east-00417".getBytes(StandardCharsets.UTF_8));
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("raw:mes-east-00417");
+    }
+
+    @Test
+    void aBase64PrefixedToken_isDecodedIntoTheMqtt5Property() throws Exception {
+        // The decisive case for the round trip. A caller setting the MQTT 5 property sent bytes; the context
+        // carried them base64 because a user property value is text; the property must get those exact bytes
+        // back. Without the prefix this is indistinguishable from a caller who typed base64 into the payload.
+        final byte[] token = {0x00, 0x01, (byte) 0xFF, 0x7F};
+        final Published published = publish(
+                mapping(),
+                dataPoint(
+                        "methodName",
+                        "Start",
+                        "correlationData",
+                        "base64:" + Base64.getEncoder().encodeToString(token)));
+
+        assertThat(published.correlationData()).isEqualTo(token);
+    }
+
+    @Test
+    void anUnprefixedToken_isTreatedAsRaw() throws Exception {
+        // Not a shape Edge produces -- it would mean a hand-edited datapoint or a future producer. UTF-8 bytes
+        // are the least surprising reading of plain text, and dropping the correlation would be worse.
+        final Published published = publish(mapping(), dataPoint("methodName", "Start", "correlationData", "plain"));
+
+        assertThat(published.correlationData()).isEqualTo("plain".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void noToken_setsNoMqtt5Property() throws Exception {
+        final Published published = publish(mapping(), dataPoint("methodName", "Start"));
+
+        assertThat(published.correlationData()).isNull();
+    }
+
+    @Test
+    void aToken_reachesBothThePayloadAndTheMqtt5Property() throws Exception {
+        // Both slots, always, from the one token in the context. These are different slots reaching different
+        // callers -- a version-3 client can read only the payload copy, a version-5 client can use the property
+        // -- and the published message is one object serialised per subscriber, so writing both is what lets the
+        // encoder give each client what it can actually use.
+        final Published published = publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:abc"));
+
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("raw:abc");
+        assertThat(published.correlationData()).isEqualTo("abc".getBytes(StandardCharsets.UTF_8));
     }
 }

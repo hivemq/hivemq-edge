@@ -62,19 +62,16 @@ public class SouthboundMapping implements InternalWritingContext {
      * inferred from them: a fire-and-forget call sets neither, and inferring would then strip the method name from
      * the simplest request there is.
      */
-    @Override
     public boolean isMethodCalls() {
         return methodCalls;
     }
 
     /** Whether requests carry a correlation token to be read and echoed on the response. */
-    @Override
     public boolean isCorrelationData() {
         return correlationData;
     }
 
     /** Whether requests may name their own response topic. */
-    @Override
     public boolean isResponseTopic() {
         return responseTopic;
     }

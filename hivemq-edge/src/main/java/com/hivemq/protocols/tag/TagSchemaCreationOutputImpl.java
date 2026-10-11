@@ -47,6 +47,9 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      */
     private static final @NotNull String METHOD_NAME = "methodName";
 
+    /** The object a method tag's extra fields sit in, on both sides of the adapter boundary. */
+    private static final @NotNull String CONTEXT = "context";
+
     /**
      * What a response carries beside {@code value}, in the order they are declared.
      * <p>
@@ -140,11 +143,17 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         }
         final ObjectSchema methodFields = methodFields(tagSchemas);
         if (methodFields != null) {
-            // Lifted to the root, not nested under `context`: NorthboundTagConsumer copies these onto the
-            // published message beside `value`, so a nested `context` would describe a shape no message has.
-            liftMethodFields(builder, methodFields, NORTHBOUND_METHOD_FIELDS);
+            // Nested under `context`, matching what the adapter returns and what the southbound document says,
+            // so that one shape describes both directions across the adapter boundary.
+            //
+            // A published response still carries these fields at its root, because NorthboundTagConsumer lifts
+            // them there. Nothing validates a response against this document -- its only reader is the REST
+            // endpoint that serves it to the mapping editor and the data combiner -- so the mismatch costs
+            // nothing today beyond those two offering `context.errorCode` where a message has `errorCode`.
+            // Whether the response should stop being lifted is a separate question about the wire format.
+            nestMethodFields(builder, methodFields, NORTHBOUND_METHOD_FIELDS);
         } else if (tagSchemas.context() != null) {
-            builder.property("context").schema(tagSchemas.context()).readable().writable(false);
+            builder.property(CONTEXT).schema(tagSchemas.context()).readable().writable(false);
         }
 
         return builder.endObject().build();
@@ -181,16 +190,28 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * whose topic filter's schema does not require what the mapping promises, so such a request fails
      * validation and is quarantined before the device is touched.
      */
-    private static void liftMethodFields(
+    private static void nestMethodFields(
             final @NotNull ObjectSchemaBuilder<SchemaBuilder> builder,
             final @NotNull ObjectSchema methodFields,
             final @NotNull List<String> fields) {
+
+        final ObjectSchemaBuilder<?> context = builder.property(CONTEXT).startObject();
         fields.forEach(field -> {
             final Schema fieldSchema = methodFields.properties().get(field);
-            if (fieldSchema != null) {
-                builder.property(field).schema(fieldSchema);
+            if (fieldSchema == null) {
+                return;
+            }
+            // `methodName` is required inside the context, the rest are not. Required is honest here in a way
+            // it was not at the document root: Edge assembles this object and refuses a request it cannot name
+            // a method for, so a context without one does not exist. The others genuinely vary -- a reply
+            // address is request-only, an error code response-only, and a caller may send no token at all.
+            if (METHOD_NAME.equals(field)) {
+                context.property(field).required().schema(fieldSchema);
+            } else {
+                context.property(field).schema(fieldSchema);
             }
         });
+        context.endObject();
     }
 
     /**
@@ -232,10 +253,15 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         builder.property("value").required().schema(writeValue);
         final ObjectSchema methodFields = methodFields(tagSchemas);
         if (methodFields != null) {
-            // The same part the northbound document lifts, restricted to what a request carries. At the root
-            // because that is where a caller puts them: the southbound transform copies them through unmoved,
-            // and the adapter reads them off the payload root.
-            liftMethodFields(builder, methodFields, SOUTHBOUND_METHOD_FIELDS);
+            // Nested under `context`, which is where the adapter reads them. Edge assembles that object before
+            // the message reaches the data policy -- from the MQTT 5 properties, the payload, and the mapping's
+            // own flags -- and the generated transform puts it in the payload beside `value`. So by the point
+            // this schema is applied, after the transform, the message is exactly this shape.
+            //
+            // Where a *caller* puts these fields is a different question, answered by the schema the user
+            // attaches to the topic filter: that document describes the message as it arrives, and Edge copies
+            // the values out of it on the way past.
+            nestMethodFields(builder, methodFields, SOUTHBOUND_METHOD_FIELDS);
         }
         // The wrapper itself is writable, and saying so matters. SchemaBuilder defaults every node to
         // writable = false, which renders readOnly on the document root — on the one document whose entire

@@ -32,14 +32,20 @@ import org.junit.jupiter.params.provider.ValueSource;
 /// chooses the destination, using the mapping's configured topic when the datapoint names none. So **returning
 /// null here is the instruction to use the default**, and that is what these tests pin.
 ///
-/// The rule being fixed: an address that cannot be published to is dropped rather than carried, so a request
-/// naming one and a request naming none land in the same place. Previously an unpublishable address was passed
-/// along, the publish failed inside the consumer with only a logged warning, and the caller waited forever for
-/// an answer nobody could deliver.
+/// The rule: an address that cannot be published to is dropped rather than carried, so a request naming one and
+/// a request naming none land in the same place. Without this an unpublishable address was passed along, the
+/// publish failed inside the consumer with only a logged warning, and the caller waited forever for an answer
+/// nobody could deliver.
+///
+/// **A guard rather than the validation.** Such a request is rejected in Edge now, where the request's `context`
+/// is assembled before the data policy runs, and is quarantined without the device being touched -- so these
+/// inputs cannot arrive through the normal path at all. They are pinned anyway, because the adapter must not
+/// depend on another component for its own routing to be correct.
 class ReplyTopicRoutingTest {
 
     private static @NotNull OpcUaPayload requestAsking(final @Nullable String replyTopic) {
-        return new OpcUaPayload(JsonNodeFactory.instance.objectNode(), "Start", null, replyTopic);
+        return new OpcUaPayload(
+                JsonNodeFactory.instance.objectNode(), new OpcUaPayload.RequestContext("Start", null, replyTopic));
     }
 
     @Test

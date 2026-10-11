@@ -45,31 +45,12 @@ public class InternalWritingContextImpl implements InternalWritingContext {
         if (configured == null) {
             return configured;
         }
-        return MethodRequestInstructions.augment(
-                configured,
-                southboundMapping.isMethodCalls(),
-                southboundMapping.isCorrelationData(),
-                southboundMapping.isResponseTopic());
+        return MethodRequestInstructions.augment(configured, southboundMapping.isMethodCalls());
     }
 
     @Override
     public @NotNull String getSchema() {
         return southboundMapping.getSchema();
-    }
-
-    @Override
-    public boolean isMethodCalls() {
-        return southboundMapping.isMethodCalls();
-    }
-
-    @Override
-    public boolean isCorrelationData() {
-        return southboundMapping.isCorrelationData();
-    }
-
-    @Override
-    public boolean isResponseTopic() {
-        return southboundMapping.isResponseTopic();
     }
 
     @Override

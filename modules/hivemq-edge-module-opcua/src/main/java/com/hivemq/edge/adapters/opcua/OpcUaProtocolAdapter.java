@@ -1082,45 +1082,30 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         final String tagName = opcuaTag.getName();
         final String methodName = payload.methodName();
         if (methodName == null || methodName.isBlank()) {
-            // Reachable despite the schema requiring methodName: a mapping whose stored schema predates that
-            // requirement, or one edited by hand, still arrives here.
+            // Edge refuses a request it cannot name a method for, before the device is touched, so a request
+            // reaching here without one means no `context` arrived at all. That is the version mismatch the
+            // design accepts: method calls need a new Edge and a new bidirectional module together, and the
+            // older of the two does not produce the context this reads. A plain refusal naming the field is
+            // the symptom, which is at least diagnosable.
             refuseWithResponse(
                     client,
                     opcuaTag,
                     "",
                     payload,
                     StatusCodes.Bad_MethodInvalid,
-                    "A request to method tag '" + tagName + "' must name the method to call in 'methodName'",
-                    output);
-            return;
-        }
-
-        // Checked here, beside the method name, because this is the last point at which nothing has happened
-        // yet: the object's methods have not been read and no Call has been sent, so refusing costs the caller
-        // an answer rather than an unrepeatable side effect. A reply address that cannot be published to is
-        // worth refusing before the device acts -- the method would otherwise run and its answer then vanish
-        // in the publish, leaving the caller waiting for something nobody can deliver.
-        // Asked as "it named one, and it is not the one we would use", so the rule lives in exactly one place:
-        // whatever publishableReplyTopic rejects is what gets refused here.
-        final String requestedReplyTopic = payload.responseTopic();
-        if (requestedReplyTopic != null && !requestedReplyTopic.isBlank() && publishableReplyTopic(payload) == null) {
-            refuseWithResponse(
-                    client,
-                    opcuaTag,
-                    methodName,
-                    payload,
-                    StatusCodes.Bad_InvalidArgument,
-                    "Request to tag '"
+                    "A request to method tag '"
                             + tagName
-                            + "' names '"
-                            + requestedReplyTopic
-                            + "' as its 'responseTopic', which cannot be published to: an MQTT topic to publish on "
-                            + "may not contain the wildcards '#' or '+'. This answer went to the mapping's own "
-                            + "topic instead",
+                            + "' carries no 'context.methodName'. Method calls require the bidirectional module "
+                            + "at the same version as Edge",
                     output);
             return;
         }
 
+        // No check on the reply address here, deliberately. "Is this a publishable MQTT topic" is a question
+        // about MQTT, and it is answered where the answer will be published: Edge validates the address while
+        // assembling the request's context, before the message reaches the data policy, and quarantines a
+        // request that names an unpublishable one. The adapter used to ask because it happened to be holding
+        // the string, which put an MQTT question behind an OPC-UA status code.
         @SuppressWarnings("unused")
         final var unused = methodCache
                 .get(tagName, () -> MethodVerifier.verify(client, objectNodeId, tagName))
@@ -1336,15 +1321,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      * the adapter never sees it — a datapoint carrying no reply address falls back to it in
      * {@code NorthboundTagConsumer}, so omitting the field here <em>is</em> the instruction to use the default.
      * <p>
-     * <b>Why a refusal cannot simply echo what the request asked for.</b> Every other refusal honours the caller's
-     * address, which is what makes a refusal indistinguishable from an answer. This one cannot: when the address
-     * itself is the fault, publishing the refusal there would fail in exactly the way being reported, and the
-     * caller would be told nothing. So an unpublishable address is dropped rather than passed on, and a missing
-     * address and a rejected one both land on the mapping's own topic.
+     * <b>A guard, not the validation.</b> An unpublishable address is rejected in Edge, where the request's
+     * {@code context} is assembled before the data policy runs, and such a request is quarantined without the
+     * device being touched. That is the right place for it: "is this a publishable MQTT topic" is a question
+     * about MQTT, answered by the component that will publish, and answering it there means the caller learns of
+     * the fault instead of waiting for an answer nobody could deliver.
      * <p>
-     * Applied on the success path too, not only to refusals. A valid request cannot reach it — an invalid address
-     * is refused in {@link #callMethod} before the device is touched — but a second reader of the payload must not
-     * be able to reintroduce the gap this closes.
+     * This remains because the adapter must not depend on that for its own correctness. A payload reaching here
+     * with an unpublishable address would mean the context was assembled by something other than Edge's writer —
+     * so the address is dropped rather than passed on, and a missing address and a rejected one both land on the
+     * mapping's own topic.
      * <p>
      * Package-private so the routing decision can be tested without a device and a broker: this is the part that
      * decides where an answer goes, and the rest of the path around it is driven by a live connection.

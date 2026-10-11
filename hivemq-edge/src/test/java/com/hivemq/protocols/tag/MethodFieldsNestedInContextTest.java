@@ -32,10 +32,20 @@ import org.junit.jupiter.api.Test;
 /// layer cannot name it, and the mapping settings that decide which fields a request carries are not reachable
 /// where the document is assembled. The adapter knows, and says so in the data it hands over.
 ///
-/// Both documents **lift** those fields to the root rather than nesting them under `context`, because that is
-/// where they sit on the wire: `NorthboundTagConsumer` copies them onto the published message beside `value`, and
-/// a caller publishes a request with them at the top level.
-class MethodFieldsLiftedFromContextTest {
+/// Both documents declare those fields **nested under `context`**, which is the shape that crosses the adapter
+/// boundary in either direction: Edge assembles the object before a request reaches the data policy, the
+/// generated transform puts it in the payload beside `value`, and the adapter returns one of the same shape.
+///
+/// They used to be lifted to the document root instead, because that was where they sat on the wire. The
+/// southbound side no longer works that way -- a caller's own fields are described by the schema attached to
+/// the topic filter, and Edge gathers them into a context on the way past -- so the document now describes
+/// what it is actually applied to, which is the message after the transform.
+///
+/// **A published response is still flat**, because `NorthboundTagConsumer` lifts the fields onto it. Nothing
+/// validates a response against the northbound document, whose only reader is the REST endpoint serving it to
+/// the mapping editor and the data combiner, so that mismatch is a usability question about those two rather
+/// than a correctness one.
+class MethodFieldsNestedInContextTest {
 
     private static @NotNull Schema value() {
         return new SchemaBuilder()
@@ -85,21 +95,24 @@ class MethodFieldsLiftedFromContextTest {
     }
 
     @Test
-    void northbound_liftsTheResponseFieldsToTheRoot() throws Exception {
+    void northbound_nestsTheResponseFieldsUnderContext() throws Exception {
         final JsonNode properties = document(
                         new TagSchemaCreationOutput.DataPointSchema(value(), null, methodFields()),
                         TagSchemaDirection.NORTHBOUND)
                 .get("properties");
 
-        assertThat(properties.has("methodName")).isTrue();
-        assertThat(properties.has("correlationData")).isTrue();
-        assertThat(properties.has("errorCode")).isTrue();
-        assertThat(properties.has("statusInfo")).isTrue();
-        // Lifted, not nested: the publisher copies them beside `value`, so a `context` property would describe a
-        // shape no published message has.
+        // Nested, not at the root: this is the shape the adapter returns, and one shape now describes both
+        // directions across that boundary.
         assertThat(properties.has("context"))
-                .withFailMessage("the response fields were nested under `context`: %s", properties)
-                .isFalse();
+                .withFailMessage("the response fields were not nested under `context`: %s", properties)
+                .isTrue();
+        assertThat(properties.has("methodName")).isFalse();
+
+        final JsonNode context = properties.get("context").get("properties");
+        assertThat(context.has("methodName")).isTrue();
+        assertThat(context.has("correlationData")).isTrue();
+        assertThat(context.has("errorCode")).isTrue();
+        assertThat(context.has("statusInfo")).isTrue();
     }
 
     @Test
@@ -111,20 +124,33 @@ class MethodFieldsLiftedFromContextTest {
                         TagSchemaDirection.NORTHBOUND)
                 .get("properties");
 
-        assertThat(properties.has("responseTopic")).isFalse();
+        // Asserted inside the context, where the other response fields are: at the root it would hold
+        // vacuously now that nothing is lifted there.
+        assertThat(properties.get("context").get("properties").has("responseTopic"))
+                .isFalse();
     }
 
     @Test
-    void southbound_liftsTheRequestFieldsToTheRoot() throws Exception {
-        final JsonNode properties = document(
-                        new TagSchemaCreationOutput.DataPointSchema(value(), null, methodFields()),
-                        TagSchemaDirection.SOUTHBOUND)
-                .get("properties");
+    void southbound_nestsTheRequestFieldsUnderContext() throws Exception {
+        final JsonNode document = document(
+                new TagSchemaCreationOutput.DataPointSchema(value(), null, methodFields()),
+                TagSchemaDirection.SOUTHBOUND);
+        final JsonNode properties = document.get("properties");
 
-        assertThat(properties.has("methodName")).isTrue();
-        assertThat(properties.has("correlationData")).isTrue();
-        assertThat(properties.has("responseTopic")).isTrue();
         assertThat(properties.has("value")).isTrue();
+        assertThat(properties.has("context")).isTrue();
+        assertThat(properties.has("methodName")).isFalse();
+
+        final JsonNode context = properties.get("context");
+        assertThat(context.get("properties").has("methodName")).isTrue();
+        assertThat(context.get("properties").has("correlationData")).isTrue();
+        assertThat(context.get("properties").has("responseTopic")).isTrue();
+
+        // The method name is required inside the context, the others are not: Edge assembles this object and
+        // refuses a request it cannot name a method for, so a context without one does not exist -- while a
+        // reply address is request-only and a caller may send no token at all.
+        assertThat(context.get("required")).isNotNull();
+        assertThat(context.get("required").toString()).isEqualTo("[\"methodName\"]");
     }
 
     @Test
@@ -135,8 +161,11 @@ class MethodFieldsLiftedFromContextTest {
                         TagSchemaDirection.SOUTHBOUND)
                 .get("properties");
 
-        assertThat(properties.has("errorCode")).isFalse();
-        assertThat(properties.has("statusInfo")).isFalse();
+        // Inside the context, for the same reason as the response topic above: an assertion at the root would
+        // hold whatever the context contained.
+        final JsonNode context = properties.get("context").get("properties");
+        assertThat(context.has("errorCode")).isFalse();
+        assertThat(context.has("statusInfo")).isFalse();
     }
 
     @Test

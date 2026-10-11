@@ -26,13 +26,26 @@ import org.junit.jupiter.api.Test;
 /// Which instructions a method mapping's transform is generated from.
 ///
 /// A southbound field mapping is a whitelist: the generated transform starts from an empty object and copies only
-/// what an instruction names, so a field no instruction mentions is dropped before the adapter sees it. These pin
-/// that a method request's own fields get instructions, that nothing else does, and that a mapping which carries
-/// no method calls is left exactly as it was.
+/// what an instruction names, so anything no instruction mentions is dropped before the adapter sees it. A method
+/// request's `context` -- which method to call, the caller's token, the address for the answer -- therefore needs
+/// an instruction naming it, or it never arrives.
+///
+/// **One instruction, not three.** An earlier shape added an identity copy per field (`$.methodName` to
+/// `$.methodName`, and the same for the other two), which made the mapping's flags work *by omission*: switching
+/// a flag off simply added no instruction. That had two consequences this shape does not: a user-configured
+/// instruction naming the field was enough to defeat the switch, and three destinations at the message root
+/// could collide with configured ones. Now the context is assembled before the message reaches the policy, the
+/// flags are read there, and one instruction carries the result.
 class MethodRequestInstructionsTest {
 
     private static @NotNull FieldMapping userMapping() {
         return new FieldMapping(List.of(new Instruction("$.temperature", "$.value.setpoint", null)));
+    }
+
+    private static @NotNull List<String> sources(final @NotNull FieldMapping mapping) {
+        return mapping.getInstructions().stream()
+                .map(Instruction::sourceFieldName)
+                .toList();
     }
 
     private static @NotNull List<String> destinations(final @NotNull FieldMapping mapping) {
@@ -43,156 +56,38 @@ class MethodRequestInstructionsTest {
 
     @Test
     void notAMethodMapping_isLeftExactlyAsItWas() {
-        // Every southbound mapping that exists today. The generated transform for them has to stay identical.
+        // Every southbound mapping that exists today. The generated transform for them has to stay identical,
+        // which is what makes this change invisible to a value write.
         final FieldMapping configured = userMapping();
 
-        final FieldMapping augmented = MethodRequestInstructions.augment(configured, false, false, false);
+        final FieldMapping augmented = MethodRequestInstructions.augment(configured, false);
 
-        assertThat(augmented).isSameAs(configured);
+        assertThat(augmented.getInstructions()).isEqualTo(configured.getInstructions());
     }
 
     @Test
-    void notAMethodMapping_ignoresTheOtherTwoFlags() {
-        // The method-call flag is the precondition. Correlation data on a mapping that is not a method mapping has
-        // nothing to correlate, so it must not quietly turn one on.
-        final FieldMapping configured = userMapping();
+    void aMethodMapping_getsExactlyOneInstructionAdded() {
+        // Sourced from the user property Edge assembles the context into, destined for `context` beside `value`.
+        // The source carries the '@.' marker that tells the generated script to look in the user properties
+        // rather than walk the payload.
+        final FieldMapping augmented = MethodRequestInstructions.augment(userMapping(), true);
 
-        assertThat(MethodRequestInstructions.augment(configured, false, true, true))
-                .isSameAs(configured);
+        assertThat(augmented.getInstructions()).hasSize(2);
+        assertThat(destinations(augmented)).containsExactly("value.setpoint", "context");
+        assertThat(sources(augmented))
+                .containsExactly("$.temperature", "@." + MethodRequestInstructions.CONTEXT_USER_PROPERTY);
     }
 
     @Test
-    void aMethodMapping_alwaysCarriesTheMethodName() {
-        // A fire-and-forget call: method calls on, neither optional field. Without this instruction the request
-        // arrives with no method named and cannot be dispatched at all.
-        final FieldMapping augmented = MethodRequestInstructions.augment(userMapping(), true, false, false);
+    void aConfiguredInstructionAlreadyWritingContext_isLeftAloneRatherThanDuplicated() {
+        // Two instructions writing one destination would make the result depend on their order. Not reachable
+        // from the mapping editor, which declares the field read-only -- but a configuration file written by
+        // hand is not filtered that way.
+        final FieldMapping configured = new FieldMapping(List.of(new Instruction("$.mine", "$.context", null)));
 
-        assertThat(destinations(augmented)).containsExactly("value.setpoint", "methodName");
-    }
+        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true);
 
-    @Test
-    void eachFlagAddsItsOwnField() {
-        final FieldMapping all = MethodRequestInstructions.augment(userMapping(), true, true, true);
-
-        assertThat(destinations(all))
-                .containsExactly("value.setpoint", "methodName", "correlationData", "responseTopic");
-    }
-
-    @Test
-    void theFlagsAreIndependent() {
-        assertThat(destinations(MethodRequestInstructions.augment(userMapping(), true, true, false)))
-                .containsExactly("value.setpoint", "methodName", "correlationData");
-        assertThat(destinations(MethodRequestInstructions.augment(userMapping(), true, false, true)))
-                .containsExactly("value.setpoint", "methodName", "responseTopic");
-    }
-
-    @Test
-    void theAddedInstructionsAreIdentityCopies() {
-        // Their only job is to stop the whitelist deleting the field: the name on the wire is the name in the
-        // request, and no renaming is offered anywhere.
-        final FieldMapping augmented = MethodRequestInstructions.augment(userMapping(), true, true, true);
-
-        augmented.getInstructions().stream()
-                .filter(instruction -> !instruction.toDestinationJsonPath().startsWith("value"))
-                .forEach(instruction -> assertThat(instruction.toSourceJsonPath())
-                        .isEqualTo("$." + instruction.toDestinationJsonPath()));
-    }
-
-    @Test
-    void aUserInstructionWritingTheSameDestinationWins() {
-        // Should be unreachable -- these fields are read-only in the schema the editor offers destinations from --
-        // but a hand-written configuration or a direct API call can still produce one, and two instructions writing
-        // one destination would make the result depend on their order.
-        final FieldMapping configured =
-                new FieldMapping(List.of(new Instruction("$.theirField", "$.methodName", null)));
-
-        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, false);
-
-        assertThat(augmented.getInstructions()).hasSize(1);
-        assertThat(augmented.getInstructions().get(0).toSourceJsonPath()).isEqualTo("$.theirField");
-    }
-
-    @Test
-    void aConfiguredInstructionCannotDefeatASwitchedOffFlag() {
-        // The decisive test. The flags work by omission: a southbound mapping is a whitelist, so switching
-        // `responseTopic` off simply adds no instruction and the field is deleted before the adapter sees it.
-        // A configured instruction naming the field was therefore enough to keep it -- the whitelist mentioned
-        // it either way, the adapter read it, and an administrator who had disabled caller-chosen reply topics
-        // still had requests redirected. The stored flag described nothing.
-        final FieldMapping configured =
-                new FieldMapping(List.of(new Instruction("$.theirField", "$.responseTopic", null)));
-
-        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, false);
-
-        assertThat(destinations(augmented))
-                .as("a switched-off field must not survive in the transform")
-                .containsExactly("methodName");
-    }
-
-    @Test
-    void theSameHoldsForCorrelationData() {
-        final FieldMapping configured =
-                new FieldMapping(List.of(new Instruction("$.theirField", "$.correlationData", null)));
-
-        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, false);
-
-        assertThat(destinations(augmented)).containsExactly("methodName");
-    }
-
-    @Test
-    void aConfiguredInstructionForASwitchedOnFieldIsKept() {
-        // The counterpart. With the flag on, the field belongs in the transform -- and the configured
-        // instruction is the one that writes it, since two instructions naming one destination would make the
-        // result depend on their order. So the source stays the user's, not an identity copy.
-        final FieldMapping configured =
-                new FieldMapping(List.of(new Instruction("$.theirField", "$.responseTopic", null)));
-
-        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, true);
-
-        assertThat(destinations(augmented)).containsExactly("responseTopic", "methodName");
-        assertThat(augmented.getInstructions().get(0).toSourceJsonPath()).isEqualTo("$.theirField");
-    }
-
-    @Test
-    void anInstructionNamingMethodNameIsNeverDiscarded() {
-        // `methodName` is not reserved: it has no flag to contradict, and it is added whenever the mapping
-        // carries method calls -- so an instruction naming it agrees with what Edge would have added anyway.
-        // Discarding it would delete the one field without which no request can be dispatched.
-        final FieldMapping configured =
-                new FieldMapping(List.of(new Instruction("$.theirField", "$.methodName", null)));
-
-        final FieldMapping augmented = MethodRequestInstructions.augment(configured, true, false, false);
-
-        assertThat(destinations(augmented)).containsExactly("methodName");
-        assertThat(augmented.getInstructions().get(0).toSourceJsonPath()).isEqualTo("$.theirField");
-    }
-
-    @Test
-    void anOrdinaryInstructionIsUntouchedWhateverTheFlagsSay() {
-        // The reserved destinations are two names, not a general filter: a user's own mapping of a value field
-        // must survive with every combination of the flags.
-        final FieldMapping augmented = MethodRequestInstructions.augment(userMapping(), true, false, false);
-
-        assertThat(destinations(augmented)).containsExactly("value.setpoint", "methodName");
-    }
-
-    @Test
-    void aMappingThatCarriesNoMethodCalls_keepsEvenAReservedDestination() {
-        // Nothing is reserved when this is not a method mapping. Every southbound mapping that exists today
-        // takes this path, and its transform has to stay byte-identical.
-        final FieldMapping configured =
-                new FieldMapping(List.of(new Instruction("$.theirField", "$.responseTopic", null)));
-
-        final FieldMapping augmented = MethodRequestInstructions.augment(configured, false, false, false);
-
-        assertThat(augmented).isSameAs(configured);
-    }
-
-    @Test
-    void anEmptyUserMapping_stillGetsTheRequestFields() {
-        // A method tag needs no value instruction at all when its methods take no arguments.
-        final FieldMapping augmented = MethodRequestInstructions.augment(new FieldMapping(List.of()), true, true, true);
-
-        assertThat(destinations(augmented)).containsExactly("methodName", "correlationData", "responseTopic");
+        assertThat(augmented.getInstructions()).isEqualTo(configured.getInstructions());
+        assertThat(destinations(augmented)).containsExactly("context");
     }
 }

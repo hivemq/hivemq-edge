@@ -21,18 +21,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.datapoint.DataPointWithMetadata;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,12 +83,18 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
             // Resolved before the payload is sent and after it is built, because the datapoint is the source of
             // both: the payload omits the response address and the topic consumes it.
             final String topic = topicFor(dataPoint);
-            final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService
-                    .createPublish()
+            // The implementation type, not the SDK interface, because the correlation token goes into the
+            // MQTT 5 property and that method is deliberately not on the interface -- see
+            // ProtocolAdapterPublishBuilderImpl.withCorrelationData. Edge already casts the same way in
+            // ModuleServicesPerModuleImpl.
+            final ProtocolAdapterPublishBuilderImpl publishBuilder =
+                    (ProtocolAdapterPublishBuilderImpl) protocolAdapterPublishService.createPublish();
+            publishBuilder
                     .withTopic(topic)
                     .withQoS(northboundMapping.getMqttQos())
                     .withPayload(jsonToSend)
                     .withAdapter(protocolAdapter.getAdapter());
+            correlationTokenOf(dataPoint).ifPresent(publishBuilder::withCorrelationData);
             final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
             publishFuture
                     .thenAccept(publishReturnCode -> {
@@ -172,6 +179,41 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                 .filter(JsonNode::isTextual)
                 .map(JsonNode::textValue)
                 .filter(topic -> !topic.isBlank());
+    }
+
+    /**
+     * The bytes to put in the MQTT 5 {@code Correlation Data} property, when the answer carries a token.
+     * <p>
+     * The token says how it is encoded, because the request said: a value from the MQTT 5 property arrives
+     * {@code base64:}-prefixed, one from a payload field {@code raw:}-prefixed. Reversing exactly that is what
+     * makes the round trip byte-identical for a caller who used the property -- guessing instead would mangle
+     * one of the two cases silently.
+     * <p>
+     * An unprefixed token is treated as raw. That is not a shape Edge produces; it would mean a hand-edited
+     * datapoint or a future producer, and UTF-8 bytes are the least surprising reading of plain text.
+     */
+    private static @NotNull Optional<byte[]> correlationTokenOf(final @NotNull DataPoint dataPoint) {
+        if (!(dataPoint instanceof final DataPointWithMetadata dpMeta)) {
+            return Optional.empty();
+        }
+        return dpMeta.getContext()
+                .map(context -> context.get(CORRELATION_DATA))
+                .filter(JsonNode::isTextual)
+                .map(JsonNode::textValue)
+                .map(token -> {
+                    if (token.startsWith("base64:")) {
+                        final String encoded = token.substring("base64:".length());
+                        try {
+                            return Base64.getDecoder().decode(encoded);
+                        } catch (final IllegalArgumentException e) {
+                            // Not base64 despite saying so. Nothing Edge produces, and the alternative to
+                            // passing the text through is dropping the correlation entirely.
+                            return encoded.getBytes(StandardCharsets.UTF_8);
+                        }
+                    }
+                    final String raw = token.startsWith("raw:") ? token.substring("raw:".length()) : token;
+                    return raw.getBytes(StandardCharsets.UTF_8);
+                });
     }
 
     private byte @NotNull [] convertDataPointToJson(
