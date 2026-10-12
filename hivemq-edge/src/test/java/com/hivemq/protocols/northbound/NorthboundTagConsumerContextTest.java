@@ -261,31 +261,35 @@ class NorthboundTagConsumerContextTest {
     }
 
     @Test
-    void aRawPrefixedToken_reachesTheMqtt5PropertyAsItsOwnText() throws Exception {
-        // A token a caller put in the payload. It is text already, so the property carries its UTF-8 bytes and
-        // the payload carries it with the prefix it arrived with.
+    void aRawPrefixedToken_isEchoedWithoutItsPrefix() throws Exception {
+        // The decisive case for a caller who put a token in the request payload. `raw:` is Edge's own
+        // bookkeeping, marking the value as text the caller typed -- so it must not appear in what they get
+        // back. Echoing `raw:mes-east-00417` would hand back something they never sent, and would break a
+        // consumer matching the token against the one it generated.
         final Published published =
                 publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:mes-east-00417"));
 
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
         assertThat(published.correlationData()).isEqualTo("mes-east-00417".getBytes(StandardCharsets.UTF_8));
-        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("raw:mes-east-00417");
     }
 
     @Test
-    void aBase64PrefixedToken_isDecodedIntoTheMqtt5Property() throws Exception {
-        // The decisive case for the round trip. A caller setting the MQTT 5 property sent bytes; the context
-        // carried them base64 because a user property value is text; the property must get those exact bytes
-        // back. Without the prefix this is indistinguishable from a caller who typed base64 into the payload.
+    void aBase64PrefixedToken_keepsItsPrefixInThePayloadAndIsDecodedIntoTheProperty() throws Exception {
+        // The other direction, and the prefix stays. A caller setting the MQTT 5 property sent arbitrary bytes;
+        // the context carried them base64 because a user property value is text. Three things follow:
+        //
+        //   - the MQTT 5 property gets those exact bytes back;
+        //   - the payload keeps `base64:`, because decoding arbitrary bytes into a JSON string would mangle
+        //     them, and the prefix is what tells a consumer to decode rather than compare;
+        //   - the payload copy cannot be omitted, because nothing guarantees a request from an MQTT 5 client is
+        //     answered to an MQTT 5 subscriber -- an MQTT 3 consumer may be the only one reading.
         final byte[] token = {0x00, 0x01, (byte) 0xFF, 0x7F};
-        final Published published = publish(
-                mapping(),
-                dataPoint(
-                        "methodName",
-                        "Start",
-                        "correlationData",
-                        "base64:" + Base64.getEncoder().encodeToString(token)));
+        final String encoded = Base64.getEncoder().encodeToString(token);
+        final Published published =
+                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "base64:" + encoded));
 
         assertThat(published.correlationData()).isEqualTo(token);
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("base64:" + encoded);
     }
 
     @Test
@@ -312,7 +316,7 @@ class NorthboundTagConsumerContextTest {
         // encoder give each client what it can actually use.
         final Published published = publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:abc"));
 
-        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("raw:abc");
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("abc");
         assertThat(published.correlationData()).isEqualTo("abc".getBytes(StandardCharsets.UTF_8));
     }
 }

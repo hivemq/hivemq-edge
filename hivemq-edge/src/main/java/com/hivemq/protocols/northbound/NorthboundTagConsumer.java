@@ -149,6 +149,18 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
     private static final @NotNull String STATUS_INFO = "statusInfo";
 
     /**
+     * The encoding prefixes a correlation token carries while it travels through Edge.
+     * <p>
+     * Edge's own bookkeeping, not part of what a caller sent: {@code raw:} marks text the caller typed into the
+     * request payload, {@code base64:} marks bytes they set as the MQTT 5 {@code Correlation Data} property,
+     * which is binary and cannot cross as text unencoded. Both are reversed for the MQTT 5 property; only
+     * {@code base64:} survives into the payload. See {@link #copyCorrelationToken}.
+     */
+    private static final @NotNull String RAW_PREFIX = "raw:";
+
+    private static final @NotNull String BASE64_PREFIX = "base64:";
+
+    /**
      * The topic to publish a datapoint on: the address it carries, and the mapping's own topic when it carries
      * none.
      * <p>
@@ -201,8 +213,8 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                 .filter(JsonNode::isTextual)
                 .map(JsonNode::textValue)
                 .map(token -> {
-                    if (token.startsWith("base64:")) {
-                        final String encoded = token.substring("base64:".length());
+                    if (token.startsWith(BASE64_PREFIX)) {
+                        final String encoded = token.substring(BASE64_PREFIX.length());
                         try {
                             return Base64.getDecoder().decode(encoded);
                         } catch (final IllegalArgumentException e) {
@@ -211,7 +223,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                             return encoded.getBytes(StandardCharsets.UTF_8);
                         }
                     }
-                    final String raw = token.startsWith("raw:") ? token.substring("raw:".length()) : token;
+                    final String raw = token.startsWith(RAW_PREFIX) ? token.substring(RAW_PREFIX.length()) : token;
                     return raw.getBytes(StandardCharsets.UTF_8);
                 });
     }
@@ -284,18 +296,50 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
      * <p>
      * <b>{@code correlationData} always goes into the payload, and into the MQTT 5 Correlation Data property.</b>
      * There is no northbound setting for it. Whether a token is read at all is decided southbound; what each
-     * subscriber then receives is decided by the publish encoder, per subscriber: a version-5 client gets the
-     * property, a version-3 client has no field for it. A flag withholding the payload copy would hide the token
-     * from some clients for no statable reason, which is why the one that did was removed.
+     * subscriber then reads is its own affair: a version-5 client can use the property, a version-3 client has no
+     * field for it and reads the payload. Both slots are written because nothing guarantees that a request from a
+     * version-5 client is answered to a version-5 subscriber. A flag withholding the payload copy would hide the
+     * token from version-3 clients alone, for no statable reason, which is why the one that did was removed.
+     * <p>
+     * The payload copy is written by {@link #copyCorrelationToken}, not copied verbatim: the token carries an
+     * encoding prefix inside Edge that a caller must not be shown for a value they typed themselves.
      */
     private void publishResponseFields(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
         if (!context.isObject()) {
             return;
         }
         copy(node, context, METHOD_NAME);
-        copy(node, context, CORRELATION_DATA);
+        copyCorrelationToken(node, context);
         copy(node, context, ERROR_CODE);
         copy(node, context, STATUS_INFO);
+    }
+
+    /**
+     * Writes the token into the payload as the caller should see it, which is not how Edge carried it.
+     * <p>
+     * A token travels through Edge with an encoding prefix saying where it came from -- {@code raw:} for text a
+     * caller typed into the request payload, {@code base64:} for bytes a caller set as the MQTT 5
+     * {@code Correlation Data} property, which is binary and cannot be carried as text unencoded. That prefix is
+     * Edge's bookkeeping, and the two cases must leave differently:
+     * <ul>
+     *   <li><b>{@code raw:} is stripped.</b> The caller typed {@code mes-00417}; echoing
+     *       {@code raw:mes-00417} would hand back something they never sent and break a consumer matching the
+     *       token it generated.</li>
+     *   <li><b>{@code base64:} is kept.</b> The value genuinely is encoded bytes, and decoding it into a JSON
+     *       string could mangle it -- arbitrary bytes are not text. The prefix is what tells a consumer this
+     *       needs decoding rather than comparing, and it is trivial to strip.</li>
+     * </ul>
+     * The payload copy cannot be omitted for the {@code base64:} case: nothing guarantees that a request from an
+     * MQTT 5 client is answered to an MQTT 5 subscriber, so an MQTT 3 consumer may be the only one reading, and
+     * the payload is the only field it can see.
+     */
+    private static void copyCorrelationToken(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
+        final JsonNode carried = context.get(CORRELATION_DATA);
+        if (carried == null || !carried.isTextual() || node.has(CORRELATION_DATA)) {
+            return;
+        }
+        final String token = carried.textValue();
+        node.put(CORRELATION_DATA, token.startsWith(RAW_PREFIX) ? token.substring(RAW_PREFIX.length()) : token);
     }
 
     /**
