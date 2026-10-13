@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
@@ -43,6 +44,11 @@ public final class MethodArguments {
     /// schema generator cannot carry -- it writes bounds through a `Number` the SDK renders with `longValue()` --
     /// so a UInt64 argument's schema states no range and this is the only gate the value passes.
     private static final @NotNull BigInteger UINT64_MAX = BigInteger.TWO.pow(64).subtract(BigInteger.ONE);
+
+    /// No list has been seen yet at a dimension, so its length is still open. Negative because 0 is a length a
+    /// real list can have: `[[], []]` is a rectangular 2x0 value, and its inner dimension is genuinely 0 rather
+    /// than unknown.
+    private static final int UNKNOWN_LENGTH = -1;
 
     /// 2^53, the first magnitude a whole number cannot be trusted at. The largest trustworthy one is 2^53 - 1.
     ///
@@ -201,7 +207,12 @@ public final class MethodArguments {
             if (dimensions == 0) {
                 return Variant.of(toJavaValue(type, supplied));
             }
-            final Object array = toJavaArray(type, supplied, dimensions);
+            // One slot per declared dimension, each `UNKNOWN_LENGTH` until the first list at that level fixes
+            // it. A real length may legitimately be 0 -- `[[], []]` is a rectangular 2x0 value -- so the
+            // sentinel has to be a value no array can have rather than zero.
+            final int[] lengthPerLevel = new int[dimensions];
+            Arrays.fill(lengthPerLevel, UNKNOWN_LENGTH);
+            final Object array = toJavaArray(type, supplied, dimensions, lengthPerLevel, -1);
             // A one-dimensional array goes into a Variant as itself; anything deeper has to be wrapped in a
             // Matrix, which is Milo's representation of a multi-dimensional value and what `Variant.of` demands
             // ("Multi-dimensional arrays must be wrapped in Matrix"). The wrapper carries the dimension lengths,
@@ -312,19 +323,48 @@ public final class MethodArguments {
     ///
     /// The depth comes from the declared value rank rather than from how deeply the JSON happens to nest, so a
     /// flat list supplied for a two-dimensional argument is reported as the wrong shape instead of being encoded
-    /// as something the device did not ask for. Dimension *lengths* are not checked here -- the generated schema
-    /// states them, and the device enforces them; duplicating that would mean two places to keep in agreement.
+    /// as something the device did not ask for. Dimension *lengths* are not checked against the declaration --
+    /// the generated schema states them, and the device enforces them; duplicating that would mean two places to
+    /// keep in agreement.
     ///
-    /// Rectangularity is a different question from length, and is checked. Sibling rows of unequal length do not
-    /// reach the device as sent: `Matrix` takes each dimension's length from the first row and flattens against
-    /// those, so a short row makes it read beyond that row's end and a long row makes it stop early. Its own
-    /// consistency check is a Java `assert`, disabled at runtime, so it reports nothing.
+    /// **Rectangularity is a different question from length, and is checked here.** A value whose rows disagree
+    /// does not reach the device as sent: `Matrix` takes each dimension's length from the first row it finds and
+    /// flattens against those, so a short row makes it read beyond that row's end and a long row makes it stop
+    /// early -- dropping elements. Its own consistency check is a Java `assert`, disabled at runtime, so it
+    /// reports nothing and the device acts on the truncated value.
+    ///
+    /// `lengthPerLevel` carries one length per dimension, each `UNKNOWN_LENGTH` until the first list at that
+    /// depth fixes it. **Every later list at the same depth is measured against that one, whichever branch it
+    /// sits in.** An earlier version compared a row only against its own first sibling, which misses a
+    /// disagreement between branches: in `[[[1]], [[2,3]]]` the rows `[1]` and `[2,3]` have different parents, so
+    /// nothing ever compared them, `Matrix` took the inner length as 1, and the `3` was silently dropped.
+    /// `rowIndex` is this node's position among its siblings, or `-1` for the outermost value, which has none. It
+    /// carries no logic and is only there so a refusal can name the row at fault.
     private static @NotNull Object toJavaArray(
-            final @NotNull OpcUaDataType type, final @NotNull JsonNode node, final int remainingDimensions) {
+            final @NotNull OpcUaDataType type,
+            final @NotNull JsonNode node,
+            final int remainingDimensions,
+            final int @NotNull [] lengthPerLevel,
+            final int rowIndex) {
 
         if (!node.isArray()) {
             throw new IllegalArgumentException(
                     "expected an array of " + remainingDimensions + " more dimension(s), got " + node.getNodeType());
+        }
+
+        // This node's depth, counted from the outside, so the two inner rows of `[[[1]], [[2,3]]]` share a slot.
+        final int level = lengthPerLevel.length - remainingDimensions;
+        if (lengthPerLevel[level] == UNKNOWN_LENGTH) {
+            lengthPerLevel[level] = node.size();
+        } else if (lengthPerLevel[level] != node.size()) {
+            throw new IllegalArgumentException("every list at the same depth must have the same length, and row "
+                    + rowIndex
+                    + " at depth "
+                    + (level + 1)
+                    + " has "
+                    + node.size()
+                    + " element(s) where an earlier list at that depth has "
+                    + lengthPerLevel[level]);
         }
 
         if (remainingDimensions == 1) {
@@ -342,18 +382,7 @@ public final class MethodArguments {
                 .getClass();
         final Object[] rows = (Object[]) Array.newInstance(componentType, node.size());
         for (int i = 0; i < node.size(); i++) {
-            final JsonNode row = node.get(i);
-            // Compared against the first row, which is the one Matrix would take the length from. Checked at every
-            // level rather than only the outermost, because a ragged dimension anywhere has the same effect.
-            if (i > 0 && row.isArray() && row.size() != node.get(0).size()) {
-                throw new IllegalArgumentException("every row of a dimension must have the same length, and row "
-                        + i
-                        + " has "
-                        + row.size()
-                        + " element(s) where row 0 has "
-                        + node.get(0).size());
-            }
-            rows[i] = toJavaArray(type, row, remainingDimensions - 1);
+            rows[i] = toJavaArray(type, node.get(i), remainingDimensions - 1, lengthPerLevel, i);
         }
         return rows;
     }
