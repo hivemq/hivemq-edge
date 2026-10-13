@@ -64,12 +64,11 @@ public final class MethodSchemas {
     /// `comment` and `duration` at its root, they render under `value`, and the adapter reads them back out of
     /// `payload.value()`.
     ///
-    /// A method request's other three fields are **not** inside `value`. They are siblings of it: the whole MQTT
-    /// payload is deserialised into {@code OpcUaPayload}, whose `methodName`, `correlationData` and
-    /// `responseTopic` are top-level record components, and {@link com.hivemq.protocols.MethodRequestInstructions}
-    /// writes them to the payload root for exactly that reason. So they cannot be declared here without landing a
-    /// level too deep -- which is what an earlier version of this method did, producing a schema that required
-    /// `methodName` inside `value` while every writer put it outside, so every request failed validation with
+    /// A method request's other three fields are **not** inside `value`. They are siblings of it: a caller
+    /// publishes `methodName`, `correlationData` and `responseTopic` at the payload root, and the generated
+    /// schemas declare them there. So they cannot be declared here without landing a level too deep -- which is
+    /// what an earlier version of this method did, producing a schema that required `methodName` inside `value`
+    /// while every writer put it outside, so every request failed validation with
     /// `$.value: required property 'methodName' not found`.
     ///
     /// They are not this adapter's to declare either: which of them a request must carry follows the southbound

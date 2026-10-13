@@ -32,20 +32,16 @@ import org.junit.jupiter.api.Test;
 /// layer cannot name it, and the mapping settings that decide which fields a request carries are not reachable
 /// where the document is assembled. The adapter knows, and says so in the data it hands over.
 ///
-/// Both documents declare those fields **nested under `context`**, which is the shape that crosses the adapter
-/// boundary in either direction: Edge assembles the object before a request reaches the data policy, the
-/// generated transform puts it in the payload beside `value`, and the adapter returns one of the same shape.
+/// Both documents declare those fields **at the root, beside `value`** -- because that is where both messages
+/// carry them. A caller publishes `methodName` and the two optional fields as siblings of `value`, and a
+/// published response carries its fields the same way.
 ///
-/// They used to be lifted to the document root instead, because that was where they sat on the wire. The
-/// southbound side no longer works that way -- a caller's own fields are described by the schema attached to
-/// the topic filter, and Edge gathers them into a context on the way past -- so the document now describes
-/// what it is actually applied to, which is the message after the transform.
-///
-/// **A published response is still flat**, because `NorthboundTagConsumer` lifts the fields onto it. Nothing
-/// validates a response against the northbound document, whose only reader is the REST endpoint serving it to
-/// the mapping editor and the data combiner, so that mismatch is a usability question about those two rather
-/// than a correctness one.
-class MethodFieldsNestedInContextTest {
+/// **The `context` object does not appear in either document, and that is the point.** It is how Edge hands a
+/// request to an adapter: merged into the payload after the policy has run, after every schema has had its say.
+/// An earlier version described `context` here instead, which described neither message -- a caller reading the
+/// southbound document would have nested fields that Edge does not read there, and the mapping editor offered
+/// `context.errorCode` where a response has `errorCode`.
+class MethodFieldsInTheSchemasTest {
 
     private static @NotNull Schema value() {
         return new SchemaBuilder()
@@ -95,24 +91,24 @@ class MethodFieldsNestedInContextTest {
     }
 
     @Test
-    void northbound_nestsTheResponseFieldsUnderContext() throws Exception {
+    void northbound_declaresTheResponseFieldsAtTheRoot() throws Exception {
         final JsonNode properties = document(
                         new TagSchemaCreationOutput.DataPointSchema(value(), null, methodFields()),
                         TagSchemaDirection.NORTHBOUND)
                 .get("properties");
 
-        // Nested, not at the root: this is the shape the adapter returns, and one shape now describes both
-        // directions across that boundary.
-        assertThat(properties.has("context"))
-                .withFailMessage("the response fields were not nested under `context`: %s", properties)
+        assertThat(properties.has("methodName"))
+                .withFailMessage(
+                        "the response fields must sit at the root, as the message carries them: %s", properties)
                 .isTrue();
-        assertThat(properties.has("methodName")).isFalse();
+        assertThat(properties.has("correlationData")).isTrue();
+        assertThat(properties.has("errorCode")).isTrue();
+        assertThat(properties.has("statusInfo")).isTrue();
 
-        final JsonNode context = properties.get("context").get("properties");
-        assertThat(context.has("methodName")).isTrue();
-        assertThat(context.has("correlationData")).isTrue();
-        assertThat(context.has("errorCode")).isTrue();
-        assertThat(context.has("statusInfo")).isTrue();
+        // Edge's hand-off to the adapter, not part of any message. A document naming it would describe neither.
+        assertThat(properties.has("context"))
+                .withFailMessage("`context` must not appear in a document describing a message: %s", properties)
+                .isFalse();
     }
 
     @Test
@@ -124,33 +120,25 @@ class MethodFieldsNestedInContextTest {
                         TagSchemaDirection.NORTHBOUND)
                 .get("properties");
 
-        // Asserted inside the context, where the other response fields are: at the root it would hold
-        // vacuously now that nothing is lifted there.
-        assertThat(properties.get("context").get("properties").has("responseTopic"))
-                .isFalse();
+        assertThat(properties.has("responseTopic")).isFalse();
     }
 
     @Test
-    void southbound_nestsTheRequestFieldsUnderContext() throws Exception {
-        final JsonNode document = document(
-                new TagSchemaCreationOutput.DataPointSchema(value(), null, methodFields()),
-                TagSchemaDirection.SOUTHBOUND);
-        final JsonNode properties = document.get("properties");
+    void southbound_declaresTheRequestFieldsAtTheRoot() throws Exception {
+        final JsonNode properties = document(
+                        new TagSchemaCreationOutput.DataPointSchema(value(), null, methodFields()),
+                        TagSchemaDirection.SOUTHBOUND)
+                .get("properties");
 
         assertThat(properties.has("value")).isTrue();
-        assertThat(properties.has("context")).isTrue();
-        assertThat(properties.has("methodName")).isFalse();
+        assertThat(properties.has("methodName")).isTrue();
+        assertThat(properties.has("correlationData")).isTrue();
+        assertThat(properties.has("responseTopic")).isTrue();
 
-        final JsonNode context = properties.get("context");
-        assertThat(context.get("properties").has("methodName")).isTrue();
-        assertThat(context.get("properties").has("correlationData")).isTrue();
-        assertThat(context.get("properties").has("responseTopic")).isTrue();
-
-        // The method name is required inside the context, the others are not: Edge assembles this object and
-        // refuses a request it cannot name a method for, so a context without one does not exist -- while a
-        // reply address is request-only and a caller may send no token at all.
-        assertThat(context.get("required")).isNotNull();
-        assertThat(context.get("required").toString()).isEqualTo("[\"methodName\"]");
+        assertThat(properties.has("context"))
+                .withFailMessage(
+                        "`context` is merged after this schema runs, so it must not be declared: %s", properties)
+                .isFalse();
     }
 
     @Test
@@ -161,17 +149,14 @@ class MethodFieldsNestedInContextTest {
                         TagSchemaDirection.SOUTHBOUND)
                 .get("properties");
 
-        // Inside the context, for the same reason as the response topic above: an assertion at the root would
-        // hold whatever the context contained.
-        final JsonNode context = properties.get("context").get("properties");
-        assertThat(context.has("errorCode")).isFalse();
-        assertThat(context.has("statusInfo")).isFalse();
+        assertThat(properties.has("errorCode")).isFalse();
+        assertThat(properties.has("statusInfo")).isFalse();
     }
 
     @Test
     void southbound_requiresOnlyValue() throws Exception {
-        // Every lifted field is optional. A request omitting one it promised is refused by the adapter, with a
-        // message naming the omission, rather than by schema validation.
+        // Every method field is optional. A request omitting one its mapping promised is refused before the
+        // device is touched -- by Edge, which assembles the context -- rather than by this schema.
         final JsonNode schema = document(
                 new TagSchemaCreationOutput.DataPointSchema(value(), null, methodFields()),
                 TagSchemaDirection.SOUTHBOUND);

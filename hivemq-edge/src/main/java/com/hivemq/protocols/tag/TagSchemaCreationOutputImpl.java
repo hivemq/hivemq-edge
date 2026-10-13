@@ -143,15 +143,11 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         }
         final ObjectSchema methodFields = methodFields(tagSchemas);
         if (methodFields != null) {
-            // Nested under `context`, matching what the adapter returns and what the southbound document says,
-            // so that one shape describes both directions across the adapter boundary.
-            //
-            // A published response still carries these fields at its root, because NorthboundTagConsumer lifts
-            // them there. Nothing validates a response against this document -- its only reader is the REST
-            // endpoint that serves it to the mapping editor and the data combiner -- so the mismatch costs
-            // nothing today beyond those two offering `context.errorCode` where a message has `errorCode`.
-            // Whether the response should stop being lifted is a separate question about the wire format.
-            nestMethodFields(builder, methodFields, NORTHBOUND_METHOD_FIELDS);
+            // At the root, which is where a published response carries them. The adapter returns them inside a
+            // `context` aspect and NorthboundTagConsumer lifts them out, so this document describes the message
+            // rather than the hand-off -- which is what its readers, the mapping editor and the data combiner,
+            // need in order to offer a path that exists.
+            declareMethodFields(builder, methodFields, NORTHBOUND_METHOD_FIELDS);
         } else if (tagSchemas.context() != null) {
             builder.property(CONTEXT).schema(tagSchemas.context()).readable().writable(false);
         }
@@ -176,42 +172,34 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     }
 
     /**
-     * Declares the named fields the given part carries, inside a {@code context} object.
+     * Declares the named fields the given part carries, beside {@code value} at the document root.
      * <p>
-     * Optional throughout except {@code methodName}, deliberately. A request and a response carry different
-     * subsets — a reply address is request-only, an error code response-only — and one part describes both
-     * directions, so requiring either would state something false about the other.
+     * <b>At the root because that is where the messages carry them.</b> A caller publishes {@code methodName}
+     * and the two optional fields as siblings of {@code value}, and a published response carries its fields the
+     * same way. The {@code context} object these once nested in is how Edge hands a request to an adapter, after
+     * the transform has run and after this document has had its say -- so describing it here would have
+     * described neither message, which is the divergence this closes.
      * <p>
-     * <b>What enforces a promised field is therefore not this document.</b> It used to say the adapter refuses a
-     * request that omits one, which the adapter cannot do: the southbound field mapping is a whitelist, so a
-     * switched-off field is deleted before the adapter is called and "the caller omitted it" is by then
-     * indistinguishable from "the mapping does not carry it". The promise is kept one gate earlier instead —
-     * {@code ProtocolAdaptersResourceImpl.refusePromisedFieldTheSchemaDoesNotRequire} refuses a method mapping
-     * whose topic filter's schema does not require what the mapping promises, so such a request fails
-     * validation and is quarantined before the device is touched.
+     * Optional throughout, deliberately. One part describes both directions and the directions carry different
+     * subsets -- a reply address is request-only, an error code response-only -- so requiring any of them would
+     * state something false about the other. {@code methodName} is not required either: the southbound field
+     * mapping is a whitelist, so a switched-off field is deleted before the adapter is called, and by then "the
+     * caller omitted it" is indistinguishable from "the mapping does not carry it". What a mapping promises is
+     * enforced one gate earlier, by
+     * {@code ProtocolAdaptersResourceImpl.refusePromisedFieldTheSchemaDoesNotRequire}.
      */
-    private static void nestMethodFields(
+    private static void declareMethodFields(
             final @NotNull ObjectSchemaBuilder<SchemaBuilder> builder,
             final @NotNull ObjectSchema methodFields,
             final @NotNull List<String> fields) {
 
-        final ObjectSchemaBuilder<?> context = builder.property(CONTEXT).startObject();
         fields.forEach(field -> {
             final Schema fieldSchema = methodFields.properties().get(field);
             if (fieldSchema == null) {
                 return;
             }
-            // `methodName` is required inside the context, the rest are not. Required is honest here in a way
-            // it was not at the document root: Edge assembles this object and refuses a request it cannot name
-            // a method for, so a context without one does not exist. The others genuinely vary -- a reply
-            // address is request-only, an error code response-only, and a caller may send no token at all.
-            if (METHOD_NAME.equals(field)) {
-                context.property(field).required().schema(fieldSchema);
-            } else {
-                context.property(field).schema(fieldSchema);
-            }
+            builder.property(field).schema(fieldSchema);
         });
-        context.endObject();
     }
 
     /**
@@ -253,15 +241,13 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         builder.property("value").required().schema(writeValue);
         final ObjectSchema methodFields = methodFields(tagSchemas);
         if (methodFields != null) {
-            // Nested under `context`, which is where the adapter reads them. Edge assembles that object before
-            // the message reaches the data policy -- from the MQTT 5 properties, the payload, and the mapping's
-            // own flags -- and the generated transform puts it in the payload beside `value`. So by the point
-            // this schema is applied, after the transform, the message is exactly this shape.
+            // At the root, beside `value`, which is where a caller writes them.
             //
-            // Where a *caller* puts these fields is a different question, answered by the schema the user
-            // attaches to the topic filter: that document describes the message as it arrives, and Edge copies
-            // the values out of it on the way past.
-            nestMethodFields(builder, methodFields, SOUTHBOUND_METHOD_FIELDS);
+            // Note what this document is *not*: it is applied after the transform, and the payload the adapter
+            // then receives also carries a `context` object that Edge merges in afterwards. That object is
+            // deliberately absent here -- it is added after every schema has run, so no document needs to
+            // describe it, and both of these can describe the messages a user actually sees.
+            declareMethodFields(builder, methodFields, SOUTHBOUND_METHOD_FIELDS);
         }
         // The wrapper itself is writable, and saying so matters. SchemaBuilder defaults every node to
         // writable = false, which renders readOnly on the document root — on the one document whose entire

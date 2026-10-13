@@ -65,10 +65,10 @@ class MethodSchemasShapeTest {
 
     @Test
     void requestSchema_declaresNoEnvelopeOfItsOwn() {
-        // The three envelope fields are siblings of `value` in the MQTT payload -- the whole payload is read into
-        // OpcUaPayload, whose methodName/correlationData/responseTopic are top-level components, and
-        // MethodRequestInstructions writes them to the payload root. Declared here they would render inside
-        // `value`, demanding them one level below where every writer puts them.
+        // The three envelope fields are siblings of `value` in the MQTT payload: a caller publishes them at the
+        // payload root, and the whole payload is read into OpcUaPayload, whose methodName/correlationData/
+        // responseTopic are top-level components. Declared here they would render inside `value`, demanding them
+        // one level below where every writer puts them.
         final JsonNode properties =
                 json(MethodSchemas.requestSchema(List.of(method()))).get("properties");
 

@@ -1060,27 +1060,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     /**
-     * Refuses a method mapping whose topic filter's schema does not require the fields the mapping promises.
+     * Refuses a method mapping whose topic filter's schema does not require {@code methodName}.
      * <p>
-     * <b>Why this is the only place the promise can be kept.</b> A method request carries {@code methodName}, and
-     * optionally a correlation token and a reply address, beside its {@code value}. Acceptance criterion 7 says a
-     * request omitting one the mapping promised is refused. The adapter cannot keep that promise: the southbound
-     * field mapping is a whitelist that rebuilds the payload from nothing, so a switched-off field is <em>deleted
-     * before the adapter is called</em> — by which point "the caller omitted it" and "the mapping does not carry
-     * it" are indistinguishable. The distinction survives only here, where the flags are still readable.
+     * <b>Only methodName, and only methodName.</b> A method request names the method to call in its payload, and
+     * no other source supplies that name: a request without it is unroutable. The schema on the topic filter is
+     * the gate that can say so before anything runs on the device — a request omitting a required field fails
+     * validation and is quarantined with its payload intact.
      * <p>
-     * So the promise is enforced one gate earlier, by the schema on the topic filter: a request omitting a
-     * required field fails validation and is quarantined with its payload intact, before the device is touched.
-     * For a method call that is strictly better than refusing afterwards — nothing runs on the device.
+     * The correlation token and the reply address are deliberately <em>not</em> demanded here, however their
+     * mapping flags are set. Either may arrive as an MQTT 5 property — {@code Correlation Data} or
+     * {@code Response Topic} — with nothing in the payload at all, and a schema requiring them would refuse
+     * exactly those well-formed requests. A mapping flag says "carry this field to the adapter when it is
+     * there", not "the payload must spell it out".
      * <p>
      * <b>Refused rather than amended.</b> The schema is the operator's document; Edge rewriting it silently would
      * leave them with a schema they did not write and no reason recorded. The message names both sides and the
      * literal entry to add.
-     * <p>
-     * A schema shared by two mappings that promise different fields cannot satisfy both. That is a pre-existing
-     * tension in pairing one schema with one topic filter, not one this check introduces: such a pair already
-     * claims "everything arriving here has this shape", and two mappings disagreeing about the shape were already
-     * incoherent. This refusal makes the disagreement visible at save time instead of at runtime.
      */
     private void refusePromisedFieldTheSchemaDoesNotRequire(
             final @NotNull com.hivemq.edge.api.model.SouthboundMapping model, final @NotNull String schema) {
@@ -1089,37 +1084,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        // methodName is unconditional once this is a method mapping: a request without it names no method to
-        // call, so it is promised whether or not any flag is set.
-        final Map<String, Boolean> promised = new LinkedHashMap<>();
-        promised.put("methodName", true);
-        promised.put("correlationData", Boolean.TRUE.equals(model.getCorrelationData()));
-        promised.put("responseTopic", Boolean.TRUE.equals(model.getResponseTopic()));
-
-        final Set<String> required = requiredFieldsOf(schema);
-        final List<String> missing = promised.entrySet().stream()
-                .filter(Map.Entry::getValue)
-                .map(Map.Entry::getKey)
-                .filter(field -> !required.contains(field))
-                .toList();
-
-        if (missing.isEmpty()) {
+        if (requiredFieldsOf(schema).contains("methodName")) {
             return;
         }
 
-        final String entries = missing.stream().map(field -> '"' + field + '"').collect(Collectors.joining(", "));
         throw new ApiException(
                 "The southbound mapping for tag '"
                         + model.getTagName()
-                        + "' promises that every request carries "
-                        + String.join(", ", missing)
-                        + ", but the schema on topic filter '"
+                        + "' calls methods, so every request must name one, but the schema on topic filter '"
                         + model.getTopicFilter()
-                        + "' does not require "
-                        + (missing.size() == 1 ? "it" : "them")
-                        + ". Add "
-                        + entries
-                        + " to that schema's \"required\" array, or switch the corresponding setting off.",
+                        + "' does not require methodName. Add \"methodName\" to that schema's \"required\" array.",
                 HttpStatus.BAD_REQUEST_400);
     }
 

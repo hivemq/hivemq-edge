@@ -28,24 +28,19 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     }
 
     /**
-     * The field mapping the southbound transform is generated from, with a method request's own fields added.
+     * The field mapping the southbound transform is generated from: the user's own, unaltered.
      * <p>
-     * Added here rather than when the mapping is stored, because this is the last point before the script
-     * generator and the first at which nothing else reads the result: the synthetic instructions therefore exist
-     * only in the generated transform, never in the persisted configuration, the REST model or the mapping editor.
-     * <p>
-     * A mapping that carries no method calls gets its own instructions back unchanged, which is every southbound
-     * mapping that exists today.
+     * A method request's own fields are <b>not</b> added here. Edge merges them into the payload after the data
+     * policy has run, in the southbound writer, so the generated transform carries only what a user configured.
+     * An earlier version synthesised an instruction here to copy them out of an MQTT user property -- which
+     * required a source syntax invented for that one instruction, and a Data Hub bridge that turned out never to
+     * forward user properties at all.
      */
     @Override
     @SuppressWarnings(
             "NullAway") // southboundMapping.getFieldMapping() may return null but the interface declares @NotNull
     public FieldMapping getFieldMapping() {
-        final FieldMapping configured = southboundMapping.getFieldMapping();
-        if (configured == null) {
-            return configured;
-        }
-        return MethodRequestInstructions.augment(configured, southboundMapping.isMethodCalls());
+        return southboundMapping.getFieldMapping();
     }
 
     @Override
