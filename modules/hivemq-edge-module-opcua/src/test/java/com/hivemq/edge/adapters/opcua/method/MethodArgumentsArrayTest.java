@@ -112,6 +112,17 @@ class MethodArgumentsArrayTest {
     }
 
     @Test
+    void oneFloatElementOutsideFloatRange_refusesTheWholeArray() throws Exception {
+        // Element-wise, because every element goes through the same conversion as a scalar argument. Without
+        // the check the surrounding elements would arrive intact and this one as +Infinity, which is the worst
+        // shape for a caller: a value that looks like a successful write of something it never sent.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("readings", NodeIds.Float, 1, null)), json("{\"readings\": [1.0, 1e39]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("infinity");
+    }
+
+    @Test
     void anArraySuppliedForAScalarArgument_isRefused() throws Exception {
         assertThatThrownBy(() -> MethodArguments.forCall(
                         signature(argument("value", NodeIds.Int32, -1, null)), json("{\"value\": [1, 2]}")))

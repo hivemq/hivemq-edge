@@ -23,10 +23,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
@@ -94,6 +98,31 @@ class MethodArgumentsTest {
     }
 
     @Test
+    void aMissingArgument_isAnsweredBadArgumentsMissing_andEveryOtherFaultBadInvalidArgument() throws Exception {
+        // OPC-UA names this fault specifically, so a caller branching on status codes can act on "you left
+        // something out" without parsing the message. The second half matters as much as the first: it is
+        // what stops the default being changed by accident, since every other argument fault shares it.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("setpoint", NodeIds.Int32), argument("ramp", NodeIds.Int32)),
+                        json("{\"setpoint\": 180}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .extracting(e -> ((MethodArguments.InvalidArgumentException) e).statusCode())
+                .isEqualTo(StatusCodes.Bad_ArgumentsMissing);
+
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("setpoint", NodeIds.Int32)), json("{\"setpiont\": 180}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .extracting(e -> ((MethodArguments.InvalidArgumentException) e).statusCode())
+                .isEqualTo(StatusCodes.Bad_InvalidArgument);
+
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("setpoint", NodeIds.Int32)), json("{\"setpoint\": \"hot\"}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .extracting(e -> ((MethodArguments.InvalidArgumentException) e).statusCode())
+                .isEqualTo(StatusCodes.Bad_InvalidArgument);
+    }
+
+    @Test
     void explicitNull_countsAsMissing() throws Exception {
         // A caller sending null for an argument has not supplied it. Passing a null Variant instead would let the
         // device decide, and a device's answer to a missing argument is not something a caller can predict.
@@ -111,6 +140,97 @@ class MethodArgumentsTest {
                         MethodArguments.forCall(signature(argument("level", NodeIds.Byte)), json("{\"level\": 300}")))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class)
                 .hasMessageContaining("[0, 255]");
+    }
+
+    @Test
+    void aLocalizedTextArgument_acceptsABareStringAsEnglish() throws Exception {
+        // The case that motivated all six: AddComment(EventId, Comment) declares its comment a LocalizedText,
+        // and a caller writes "acknowledged" rather than assembling an object. English because that is what
+        // the condition path already does for the same argument of the same method, reached the other way.
+        final var arguments = MethodArguments.forCall(
+                signature(argument("Comment", NodeIds.LocalizedText)), json("{\"Comment\": \"acknowledged\"}"));
+
+        final LocalizedText text = (LocalizedText) arguments[0].value();
+        assertThat(text.getText()).isEqualTo("acknowledged");
+        assertThat(text.getLocale()).isEqualTo("en");
+    }
+
+    @Test
+    void aLocalizedTextArgument_acceptsTheObjectTheReadPathPublishes() throws Exception {
+        // The other half of the same decision: a value read from a device comes back as this object, so it
+        // has to be sendable without being rewritten by hand.
+        final var arguments = MethodArguments.forCall(
+                signature(argument("Comment", NodeIds.LocalizedText)),
+                json("{\"Comment\": {\"locale\": \"de-DE\", \"text\": \"quittiert\"}}"));
+
+        final LocalizedText text = (LocalizedText) arguments[0].value();
+        assertThat(text.getText()).isEqualTo("quittiert");
+        assertThat(text.getLocale()).isEqualTo("de-DE");
+    }
+
+    @Test
+    void aNodeIdArgument_acceptsBothTheTextAndTheObjectForm() throws Exception {
+        final var fromText = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)), json("{\"node\": \"ns=2;s=Boiler\"}"));
+        final var fromObject = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)),
+                json("{\"node\": {\"namespaceIndex\": 2, \"id\": \"Boiler\"}}"));
+
+        assertThat(fromText[0].value()).isEqualTo(fromObject[0].value());
+    }
+
+    @Test
+    void aStatusCodeArgument_acceptsTheNumericCode() throws Exception {
+        // The symbol a response carries is looked up on the way out, not carried, so an input needs the
+        // number alone.
+        final var arguments =
+                MethodArguments.forCall(signature(argument("status", NodeIds.StatusCode)), json("{\"status\": 0}"));
+
+        assertThat(((StatusCode) arguments[0].value()).getValue()).isEqualTo(0L);
+    }
+
+    @Test
+    void aQualifiedNameArgument_takesABareStringAsNamespaceZero() throws Exception {
+        // Matching the read path, which omits namespaceIndex when it is zero.
+        final var arguments = MethodArguments.forCall(
+                signature(argument("name", NodeIds.QualifiedName)), json("{\"name\": \"Start\"}"));
+
+        final QualifiedName qualified = (QualifiedName) arguments[0].value();
+        assertThat(qualified.getName()).isEqualTo("Start");
+        assertThat(qualified.getNamespaceIndex().intValue()).isEqualTo(0);
+    }
+
+    @Test
+    void anXmlElementArgument_takesTheFragmentAsText() throws Exception {
+        final var arguments = MethodArguments.forCall(
+                signature(argument("doc", NodeIds.XmlElement)), json("{\"doc\": \"<a>1</a>\"}"));
+
+        assertThat(((XmlElement) arguments[0].value()).getFragment()).isEqualTo("<a>1</a>");
+    }
+
+    @Test
+    void aFloatOutsideFloatRange_isRefusedRatherThanSentAsInfinity() throws Exception {
+        // The same hazard as the integral cases above, with a different symptom: a double beyond the float
+        // range does not wrap, it saturates, so 1e39 would reach the device as +Infinity -- a value the caller
+        // never asked for and cannot tell apart from a real one.
+        assertThatThrownBy(
+                        () -> MethodArguments.forCall(signature(argument("f", NodeIds.Float)), json("{\"f\": 1e39}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("infinity");
+
+        assertThatThrownBy(
+                        () -> MethodArguments.forCall(signature(argument("f", NodeIds.Float)), json("{\"f\": -1e39}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("infinity");
+    }
+
+    @Test
+    void aFloatAtTheEdgeOfItsRange_isAccepted() throws Exception {
+        // The boundary the refusal above must not overshoot: the largest value a Float can hold is a legal
+        // argument, and 1e38 is an ordinary one.
+        final var arguments = MethodArguments.forCall(signature(argument("f", NodeIds.Float)), json("{\"f\": 1e38}"));
+
+        assertThat((float) arguments[0].value()).isEqualTo(1e38f);
     }
 
     @Test

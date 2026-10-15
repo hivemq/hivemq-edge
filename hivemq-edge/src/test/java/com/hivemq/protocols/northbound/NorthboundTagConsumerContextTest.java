@@ -140,7 +140,7 @@ class NorthboundTagConsumerContextTest {
         final var value = builder.startObjectValue();
         value.put("output1", 42);
         if (parameterPairs.length > 0) {
-            final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS");
+            final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
             for (int i = 0; i < parameterPairs.length; i += 2) {
                 parameters.put(parameterPairs[i], parameterPairs[i + 1]);
             }
@@ -174,7 +174,7 @@ class NorthboundTagConsumerContextTest {
         assertThat(published.payload().has("somethingNew"))
                 .withFailMessage("a parameter Edge does not know was published: %s", published.payload())
                 .isFalse();
-        assertThat(published.payload().path("value").has("INTERNAL_RESPONSE_PARAMETERS"))
+        assertThat(published.payload().path("value").has("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8"))
                 .withFailMessage("the carrier reached the wire: %s", published.payload())
                 .isFalse();
         assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
@@ -188,7 +188,7 @@ class NorthboundTagConsumerContextTest {
         final var builder =
                 (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
         final var value = builder.startObjectValue();
-        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS");
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
         parameters.put("methodName", "Start");
         parameters.put("errorCode", "Bad_NotExecutable");
         parameters.endObject();
@@ -207,21 +207,55 @@ class NorthboundTagConsumerContextTest {
     void aSucceedingCallWithNoOutputsPublishesAnEmptyValue() throws Exception {
         // The boundary of the test above, and the distinction null exists to keep: the method ran and declares
         // no output arguments, so `value` is an empty object rather than null.
+        //
+        // The value holds the parameter object and nothing else, which is exactly what such a success looks
+        // like. An earlier version of this test put an output into the value, so the empty case it names was
+        // never run and the defect it exists to catch went out in a release candidate (Miguel R4-2, Sam R03).
         final var builder =
                 (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
         final var value = builder.startObjectValue();
-        value.put("keepMeAnObject", "x");
-        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS");
-        parameters.put("methodName", "Start");
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
+        parameters.put("methodName", "Stop");
         parameters.endObject();
         value.endObject();
         builder.endDataPoint();
 
         final Published published = publish(mapping(), builder.build("adapter-1"));
 
-        assertThat(published.payload().get("value").isNull())
-                .withFailMessage("a succeeding call must not publish value as null: %s", published.payload())
+        assertThat(published.payload().get("value").isObject())
+                .withFailMessage("a succeeding call with no outputs must publish {}: %s", published.payload())
+                .isTrue();
+        assertThat(published.payload().get("value")).isEmpty();
+        assertThat(published.payload().has("errorCode"))
+                .withFailMessage("a success must carry no errorCode: %s", published.payload())
                 .isFalse();
+    }
+
+    @Test
+    void aFailureCarryingOutputsKeepsThem_ratherThanPublishingNull() throws Exception {
+        // The documented rule says a failure publishes `value` as null. This case is the one it does not
+        // allow for: the device refused the call and still returned something. Deleting what it said to
+        // satisfy the shape would throw away the only explanation the caller gets, so the rule yields.
+        //
+        // Nothing in Edge produces this today -- a failure writes no output arguments -- which is why it is
+        // pinned here rather than left to a reader of the code.
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final var value = builder.startObjectValue();
+        value.put("partialResult", 17);
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
+        parameters.put("methodName", "Start");
+        parameters.put("errorCode", "Bad_NotExecutable");
+        parameters.endObject();
+        value.endObject();
+        builder.endDataPoint();
+
+        final Published published = publish(mapping(), builder.build("adapter-1"));
+
+        assertThat(published.payload().path("value").path("partialResult").intValue())
+                .withFailMessage("a failure's outputs must survive: %s", published.payload())
+                .isEqualTo(17);
+        assertThat(published.payload().get("errorCode").textValue()).isEqualTo("Bad_NotExecutable");
     }
 
     @Test

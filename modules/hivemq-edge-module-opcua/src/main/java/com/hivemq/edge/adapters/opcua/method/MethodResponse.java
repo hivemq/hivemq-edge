@@ -32,16 +32,24 @@ import org.jetbrains.annotations.Nullable;
 /// succeeded and returns nothing gets an empty object, which says it ran and had nothing to report; that is
 /// deliberately distinct from null, which says it did not run.
 ///
-/// Everything else goes in the datapoint's `context` child: `methodName`, the caller's `correlationData`, and on
-/// failure `errorCode` and `statusInfo`. The northbound converter flattens those into the published message
-/// beside `value`, so the wire shape is `{"methodName": ..., "value": ...}` rather than a nested object.
+/// Everything else -- `methodName`, the caller's `correlationData`, and on failure `errorCode` and `statusInfo`
+/// -- goes into one object *inside* `value`, named by
+/// [MethodRequestFieldsOpcUa#INTERNAL_RESPONSE_PARAMETERS]. Edge lifts those out onto the published message
+/// beside `value` and removes the carrier, so the wire shape is `{"methodName": ..., "value": ...}` and no
+/// published message or schema mentions the carrier at all.
 ///
-/// ## Why `context` rather than named aspects
+/// ## Why inside `value` rather than in the datapoint's `context`
 ///
 /// The datapoint's aspect vocabulary -- value, timestamp, metadata, tag name, user properties -- has no slot for
-/// any of these, and `context` is an existing child that nothing publishes today. Using it avoids adding four
-/// terms to the SDK for one adapter, at the cost of a shape the generated schemas cannot name. That trade is
-/// recorded as a workaround in the plan rather than as the design; named aspects are the eventual form.
+/// any of these, so they need a carrier. An earlier version used the datapoint's `context` child, which looked
+/// free because nothing published it. It was not: `context` is the *protocol's* namespace for what describes a
+/// tag or a device, so Edge borrowing it meant picking its own names back out of an object an adapter may also
+/// fill, and both generated schemas then described that inner shape instead of the messages.
+///
+/// A field inside `value` is recognisably Edge's instead, and is safe there because nothing validates the
+/// payload at the moment it crosses the boundary between Edge and an adapter. The field's name ends in 64
+/// random bits, so a device argument or a hand-written payload cannot reach this machinery by chance -- see
+/// [MethodRequestFieldsOpcUa#INTERNAL_RESPONSE_PARAMETERS] for the encoding and the residual limitation.
 public final class MethodResponse {
 
     private MethodResponse() {}
@@ -53,9 +61,9 @@ public final class MethodResponse {
     /// @param correlationData the caller's token, or null when it sent none or the mapping does not read one.
     /// @param responseTopic   the address the request asked for, or null when it named none. Passed on rather
     ///                        than acted on here: whether it is honoured is the northbound mapping's decision,
-    ///                        and {@code NorthboundTagConsumer} makes it. Carried in `context` because that is
-    ///                        where that consumer looks -- it is the one entry it consumes instead of
-    ///                        publishing, so a routing instruction never appears inside the routed message.
+    ///                        and {@code NorthboundTagConsumer} makes it. It travels in the parameter object
+    ///                        with the rest, and is the one entry that consumer takes instead of publishing, so
+    ///                        a routing instruction never appears inside the routed message.
     /// @param result          what the call answered.
     /// @param ctx             the client's encoding context, which the shared converter needs to decode a value
     ///                        of a custom structure type. A method *argument* of such a type is refused as
@@ -100,7 +108,7 @@ public final class MethodResponse {
     /// the method itself returned. Each part appears only when the device supplied it, so `statusInfo` with one
     /// key is normal and the whole object is absent when the device supplied neither.
     private static void writeStatusInfo(
-            final DataPointBuilder.@NotNull ObjectBuilder<?> context,
+            final DataPointBuilder.@NotNull ObjectBuilder<?> parameters,
             final @NotNull MethodCallResult result,
             final @NotNull EncodingContext ctx) {
 
@@ -110,7 +118,7 @@ public final class MethodResponse {
             return;
         }
 
-        final var statusInfo = context.startObject(MethodRequestFieldsOpcUa.STATUS_INFO);
+        final var statusInfo = parameters.startObject(MethodRequestFieldsOpcUa.STATUS_INFO);
         if (hasArguments) {
             final var arguments = statusInfo.startObject("arguments");
             // Keyed by the name the request used, not the position the server reported. The caller never saw the

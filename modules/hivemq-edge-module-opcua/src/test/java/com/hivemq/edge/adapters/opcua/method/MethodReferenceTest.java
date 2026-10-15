@@ -22,6 +22,7 @@ import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,8 +67,17 @@ class MethodReferenceTest {
 
         final List<Argument> inputArguments =
                 List.of(new Argument("input1", NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE));
+        // The browse name takes the node's own namespace, which is what a server does: a method contributed by
+        // namespace 2 has both its node id and its browse name there. That makes the collisions below genuine
+        // cross-namespace ones rather than two methods sharing a fully qualified name.
         return new MethodSignature(
-                name, nodeId, OBJECT, origin, inputArguments, List.of(), MethodSignature.builtinsOf(inputArguments));
+                new QualifiedName(nodeId.getNamespaceIndex().intValue(), name),
+                nodeId,
+                OBJECT,
+                origin,
+                inputArguments,
+                List.of(),
+                MethodSignature.builtinsOf(inputArguments));
     }
 
     /// Two methods both called `Start`, contributed by two namespaces -- the case the whole class exists for.
@@ -261,6 +271,21 @@ class MethodReferenceTest {
         assertThat(resolution).isInstanceOf(MethodReference.Resolution.NoSuchMethod.class);
         assertThat(((MethodReference.Resolution.NoSuchMethod) resolution).reason())
                 .contains("http://unknown.example/X");
+    }
+
+    @Test
+    void aNamespaceIndexTheServerDoesNotPublish_isAnsweredRatherThanThrown() {
+        // The companion to the test above, and the one that used to escape. An index needs no lookup to become
+        // a node id, so resolution correctly found no match -- and then the refusal message asked the namespace
+        // table to render the caller's node id by URI, which threw `namespace index=7 not found`. The throw left
+        // the write path with no answer at all and held that tag's writer until it timed out thirty seconds
+        // later, so later requests for the tag queued behind a message already known to be unanswerable.
+        final var resolution = MethodReference.resolve(collidingStarts(), "ns=7;s=Start", namespaces);
+
+        assertThat(resolution).isInstanceOf(MethodReference.Resolution.NoSuchMethod.class);
+        assertThat(((MethodReference.Resolution.NoSuchMethod) resolution).reason())
+                .withFailMessage("the refusal must quote the address the caller actually sent")
+                .contains("ns=7;s=Start");
     }
 
     @Test

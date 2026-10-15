@@ -305,11 +305,14 @@ public final class MethodVerifier {
             final @NotNull NodeId owner,
             final @NotNull NodeId objectId) {
 
+        // The qualified name travels into the signature, namespace and all: two methods named `Start` in
+        // different namespaces are two different methods, and a vendor's own namespace is exactly where
+        // vendor-specific methods sit beside the standard ones. A BrowseName with no string half cannot
+        // describe a callable method, so it is dropped here rather than carried as a nameless signature.
         final QualifiedName browseName = reference.getBrowseName();
         if (browseName == null || browseName.getName() == null) {
             return CompletableFuture.completedFuture(null);
         }
-        final String name = browseName.getName();
 
         return client.getAddressSpace()
                 .toNodeIdAsync(reference.getNodeId())
@@ -335,7 +338,7 @@ public final class MethodVerifier {
                                 return inputs.thenCombine(
                                         outputs,
                                         (in, out) -> new MethodSignature(
-                                                name,
+                                                browseName,
                                                 nodeId,
                                                 objectId,
                                                 MethodSignature.Origin.OBJECT,
@@ -347,7 +350,7 @@ public final class MethodVerifier {
                                     .thenCompose(declared -> inputs.thenCombine(
                                             outputs,
                                             (in, out) -> new MethodSignature(
-                                                    name,
+                                                    browseName,
                                                     nodeId,
                                                     // A static method is invoked by naming the type; a declaration
                                                     // describes a method of the instance, so a call names the object.
@@ -394,23 +397,28 @@ public final class MethodVerifier {
                 });
     }
 
-    /// The builtin type each argument's DataType reduces to, walked through the server's DataType hierarchy.
+    /// The builtin type each argument's DataType reduces to: from the local table where that suffices, and
+    /// through the server's DataType hierarchy for the rest.
     ///
     /// Covers the outputs as well as the inputs: an output declared `Duration` rendered as `any` in the response
     /// schema for the same reason a `Duration` input could not be encoded at all.
     ///
-    /// **Why a lookup table is not enough.** `OpcUaDataType.fromNodeId` knows the 25 builtin ids and nothing
-    /// else, so it answers null for a **Simple DataType** -- a subtype of a builtin, which OPC 10000-3 section
-    /// 5.8.2 says is "handled on the wire like the Built-in DataType, i.e. they cannot be distinguished on the
-    /// wire from their Built-in supertypes". `Duration` is the specification's own example, and the standard
-    /// type for a timeout argument; `UtcTime`, `LocaleId`, `Counter`, `IntegerId`, `Index` and `NumericRange`
-    /// are others. Every method taking one was refused with "a type this version cannot encode" -- for a type
-    /// that encodes exactly like the Double or UInt32 it is.
+    /// **Why the lookup table alone is not enough.** `OpcUaDataType.fromNodeId` knows the 25 builtin ids and
+    /// nothing else, so it answers null for a **Simple DataType** -- a subtype of a builtin, which OPC 10000-3
+    /// section 5.8.2 says is "handled on the wire like the Built-in DataType, i.e. they cannot be distinguished
+    /// on the wire from their Built-in supertypes". `Duration` is the specification's own example, and the
+    /// standard type for a timeout argument; `UtcTime`, `LocaleId`, `Counter`, `IntegerId`, `Index` and
+    /// `NumericRange` are others. Every method taking one was refused with "a type this version cannot encode"
+    /// -- for a type that encodes exactly like the Double or UInt32 it is.
     ///
-    /// The client's DataType tree does the walk, which is what the ordinary value-write path has always used
+    /// The client's DataType tree does that walk, which is what the ordinary value-write path has always used
     /// ({@code JsonToOpcUAConverter}, {@code JsonSchemaGenerator}). The method path reached for the table
-    /// instead, which is the whole of the defect. Resolved here because this is where a client exists: the
+    /// instead, which was the whole of that defect. Resolved here because this is where a client exists: the
     /// argument converter and the schema generator both work from a {@link MethodSignature} alone.
+    ///
+    /// **Why the table is nevertheless consulted first.** It needs no server, so what it answers cannot be lost
+    /// to a server that does not. Reading the tree first and starting from nothing meant one unreadable
+    /// hierarchy discarded the types of arguments that never needed it.
     ///
     /// A type reducing to no builtin is left out, and is then refused at conversion -- a custom structure,
     /// which stays deliberately unencodable in this release.
@@ -419,17 +427,31 @@ public final class MethodVerifier {
     private static @NotNull Map<NodeId, OpcUaDataType> builtinTypesOf(
             final @NotNull OpcUaClient client, final Argument @NotNull [] inputs, final Argument @NotNull [] outputs) {
 
-        final Map<NodeId, OpcUaDataType> builtins = new LinkedHashMap<>();
-        // A tree this client cannot build leaves every argument unresolved rather than failing the browse: the
-        // method is then refused at conversion, naming the argument, which is exactly what happened before this
-        // existed. Losing the types is better than losing the tag. Milo caches the tree on the client, so this
-        // is a lookup on every browse but the first.
+        // Seeded from the local table first, and the order is what makes a failed read survivable. Every
+        // argument whose DataType *is* one of the 25 builtins is answered here, from a lookup that needs no
+        // server. Only a Simple DataType -- a subtype that encodes like its builtin supertype -- needs the
+        // hierarchy below.
+        //
+        // Resolving in the other order is the defect this closes: the tree was read first and a failure
+        // returned an empty map, so one unreadable hierarchy discarded the answers for arguments that never
+        // needed it. An `Int32` input became unencodable, the signature was nevertheless reported fully
+        // verified, and the cache kept it -- leaving a method taking a plain integer uncallable until the
+        // adapter restarted.
+        final Map<NodeId, OpcUaDataType> builtins =
+                new LinkedHashMap<>(MethodSignature.builtinsOf(List.of(inputs), List.of(outputs)));
+
+        // A tree this client cannot build leaves the Simple DataTypes unresolved rather than failing the
+        // browse: such an argument is then refused at conversion, naming it, which is exactly what happened
+        // before this existed. Losing those types is better than losing the tag. Milo caches the tree on the
+        // client, so this is a lookup on every browse but the first.
         final DataTypeTree tree;
         try {
             tree = client.getDataTypeTree();
         } catch (final UaException | RuntimeException e) {
             log.warn(
-                    "Could not read the DataType hierarchy; method argument types stay unresolved: {}", e.getMessage());
+                    "Could not read the DataType hierarchy; arguments of a Simple DataType stay unresolved, "
+                            + "the builtin ones are unaffected: {}",
+                    e.getMessage());
             return builtins;
         }
         for (final Argument argument : concat(inputs, outputs)) {
@@ -668,6 +690,14 @@ public final class MethodVerifier {
     /// order rather than a stated rule, and left resolution unable to tell that pairing -- the ordinary shape of
     /// a Mandatory declaration and its instance -- from two genuinely rival methods.
     ///
+    /// **Compared on the qualified name, namespace and all.** Specialisation keeps the browse name of the
+    /// declaration it derives from, namespace included, so only an equal qualified name is the same method one
+    /// level down. Comparing the string halves made two unrelated methods one: a subtype's `1:Start` discarded a
+    /// supertype's `2:Start`, and because the node-id lookup searches this same list, the discarded one was
+    /// then unreachable by node id as well -- a method the server exposes, reported as absent. A genuine
+    /// cross-namespace clash now survives to resolution, which reports a bare name matching both as ambiguous
+    /// and names the node ids.
+    ///
     /// Package-private so the rule can be tested without a server: the climb around it needs a live address
     /// space, and this is the part that decides what a caller can reach.
     static @NotNull List<MethodSignature> keepingNearest(
@@ -677,7 +707,7 @@ public final class MethodVerifier {
         for (final MethodSignature candidate : further) {
             final boolean shadowedByANearerTypeLevel = nearer.stream()
                     .anyMatch(method -> method.origin() != MethodSignature.Origin.OBJECT
-                            && method.name().equals(candidate.name()));
+                            && method.browseName().equals(candidate.browseName()));
             if (!shadowedByANearerTypeLevel) {
                 merged.add(candidate);
             }

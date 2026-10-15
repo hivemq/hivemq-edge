@@ -19,7 +19,7 @@ export type SouthboundMapping = {
      */
     topicFilter: string;
     /**
-     * Whether messages on this mapping are method calls. When enabled, each message must name the method to call in 'methodName', and that method is called on the tag's object. Required for a method tag: without it the request fields are left out of the transform, so a message cannot name its method and the call is refused.
+     * Whether messages on this mapping are method calls. When enabled, each message must name the method to call in 'methodName', and that method is called on the tag's object. Required for a method tag: with it switched off Edge treats every message as an ordinary value write, so no method is called whatever the message says.
      */
     methodCalls?: boolean;
     /**

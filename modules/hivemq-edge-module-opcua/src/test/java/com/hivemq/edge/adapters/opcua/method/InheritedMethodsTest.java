@@ -18,9 +18,11 @@ package com.hivemq.edge.adapters.opcua.method;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -73,7 +75,7 @@ class InheritedMethodsTest {
                 .map(input -> new Argument(input, NodeIds.Int32, -1, null, LocalizedText.NULL_VALUE))
                 .toList();
         return new MethodSignature(
-                name,
+                new QualifiedName(0, name),
                 owner.equals(OBJECT)
                         ? NodeId.parse("ns=2;s=Boiler1." + name)
                         : NodeId.parse("ns=2;s=" + owner.getIdentifier() + "." + name),
@@ -82,6 +84,26 @@ class InheritedMethodsTest {
                 inputArguments,
                 List.of(),
                 MethodSignature.builtinsOf(inputArguments));
+    }
+
+    /// The same, with the browse name in a stated namespace -- for the cases where the namespace is the point.
+    ///
+    /// The node id carries the namespace too, so two methods differing only in it are distinct nodes as they
+    /// would be on a real server.
+    private static @NotNull MethodSignature methodIn(
+            final int namespaceIndex,
+            final @NotNull String name,
+            final @NotNull NodeId owner,
+            final MethodSignature.@NotNull Origin origin) {
+
+        return new MethodSignature(
+                new QualifiedName(namespaceIndex, name),
+                NodeId.parse("ns=" + namespaceIndex + ";s=" + owner.getIdentifier() + "." + name),
+                origin == MethodSignature.Origin.TYPE_STATIC ? owner : OBJECT,
+                origin,
+                List.of(),
+                List.of(),
+                Map.of());
     }
 
     /// A Mandatory or Optional declaration on the type: a template for the instance's own method. Called on the
@@ -153,6 +175,40 @@ class InheritedMethodsTest {
 
         assertThat(merged).hasSize(1);
         assertThat(merged.get(0).inputArgumentNames()).containsExactly("setpoint");
+    }
+
+    @Test
+    void twoTypeLevelsSharingAStringInDifferentNamespaces_bothSurvive() {
+        // The defect this closes. A BrowseName is a namespace index plus a string (OPC 10000-3 section 8.3), so
+        // `1:Start` and `2:Start` are two different methods -- the ordinary arrangement when a vendor adds its
+        // own method beside a standard one. Shadowing compared the string halves, so the nearer level discarded
+        // the further one outright, and because resolution by node id searches this same list the discarded
+        // method was unreachable that way too: a method the server exposes, reported as absent.
+        final List<MethodSignature> merged = MethodVerifier.keepingNearest(
+                List.of(methodIn(1, "Start", TYPE, MethodSignature.Origin.TYPE_DECLARATION)),
+                List.of(methodIn(2, "Start", SUPERTYPE, MethodSignature.Origin.TYPE_DECLARATION)));
+
+        assertThat(merged)
+                .withFailMessage("two namespaces contributing one string are two methods: %s", merged)
+                .hasSize(2);
+        assertThat(merged)
+                .extracting(method -> method.browseName().getNamespaceIndex().intValue())
+                .containsExactlyInAnyOrder(1, 2);
+    }
+
+    @Test
+    void aNearerTypeLevelShadowsAFurtherOneInTheSameNamespace() {
+        // The other side of the same boundary, so the namespace comparison is a refinement rather than a
+        // disabling: equal qualified names still shadow, which is what specialisation is. An instance keeps the
+        // browse name of the declaration it derives from, namespace included, so a subtype's override carries
+        // the same qualified name as the declaration above it.
+        final List<MethodSignature> merged = MethodVerifier.keepingNearest(
+                List.of(methodIn(2, "Start", TYPE, MethodSignature.Origin.TYPE_DECLARATION)),
+                List.of(methodIn(2, "Start", SUPERTYPE, MethodSignature.Origin.TYPE_DECLARATION)));
+
+        assertThat(merged)
+                .withFailMessage("one qualified name at two levels is one method specialised: %s", merged)
+                .hasSize(1);
     }
 
     @Test

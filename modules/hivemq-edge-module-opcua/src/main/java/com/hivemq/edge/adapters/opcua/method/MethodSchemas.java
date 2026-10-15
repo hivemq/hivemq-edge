@@ -54,6 +54,22 @@ public final class MethodSchemas {
 
     private MethodSchemas() {}
 
+    /// The builtin types an argument may be written in either of two shapes, and what to send for each.
+    ///
+    /// Each is a structure on the wire that the northbound converter publishes as a JSON object, and each has
+    /// an obvious simple form a caller would write by hand. Accepting only one of the two would refuse a value
+    /// read from this very device, or refuse the form a person would type -- so the schema says `any` and this
+    /// text is the only description a caller gets. Membership and description are one map rather than two, so
+    /// a type cannot be in the set and lack its text.
+    private static final @NotNull Map<OpcUaDataType, String> ACCEPTED_FORMS = Map.of(
+            OpcUaDataType.LocalizedText, "a string, taken as English, or {\"locale\": \"en-US\", \"text\": \"...\"}",
+            OpcUaDataType.NodeId, "a node id as text, ns=2;s=Boiler, or {\"namespaceIndex\": 2, \"id\": \"Boiler\"}",
+            OpcUaDataType.ExpandedNodeId, "a node id as text, nsu=<namespace uri>;s=Boiler",
+            OpcUaDataType.QualifiedName,
+                    "a string, taken as namespace 0, or {\"namespaceIndex\": 1, \"name\": \"Start\"}",
+            OpcUaDataType.StatusCode, "the numeric status code, for example 0 for Good",
+            OpcUaDataType.XmlElement, "the XML fragment as a string");
+
     // @formatter:off -- the property declarations below are instances of one pattern, and the formatter's
     // one-call-per-line rendering hides that. The breaks are chosen to show it: declaration and type on one
     // line, prose on the next.
@@ -282,6 +298,15 @@ public final class MethodSchemas {
             } else if (shape.type() == null) {
                 // Two methods disagreed, or the type is a custom structure. `any` is the honest answer.
                 property.description("type varies by method").any();
+            } else if (ACCEPTED_FORMS.get(shape.type()) instanceof final String acceptedForms) {
+                // A type the adapter accepts in two shapes: the object the read path publishes, and a simple
+                // form a caller can write by hand. The schema model has no alternation -- its node kinds are
+                // any, scalar, object and array, and the interface is sealed -- so `any` is the only way to
+                // describe "either of these". Stating one of the two would refuse the other at the gate.
+                //
+                // The cost is that the gate stops checking this property at all, and the adapter's own
+                // conversion becomes the only check. That is the same trade as the two cases above.
+                property.description(acceptedForms).any();
             } else {
                 JsonSchemaGenerator.describeAs(property, shape.type());
             }

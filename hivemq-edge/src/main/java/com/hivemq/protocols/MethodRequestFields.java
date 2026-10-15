@@ -42,10 +42,26 @@ public final class MethodRequestFields {
     /// Edge writes it immediately before handing the payload to the adapter, which removes it immediately
     /// after, so it appears in no published message and in no schema. Named `INTERNAL_` because nothing
     /// outside those two steps may read it.
-    public static final @NotNull String INTERNAL_REQUEST_PARAMETERS = "INTERNAL_REQUEST_PARAMETERS";
+    ///
+    /// The suffix is 64 random bits, frozen into the source. These two names decide behaviour on their own:
+    /// finding one of them is what makes Edge treat a payload as a method call's parameters, and that is
+    /// deliberate, because a name that decides cannot be confused across adapters the way a flag carried
+    /// beside the data could. The price is that anything able to put a field into a payload -- a device
+    /// answering a read, a caller publishing a message -- could otherwise reach this machinery by choosing
+    /// the same name. The random suffix makes that collision impossible to hit by accident and impractical
+    /// to hit on purpose, while leaving the readable prefix for whoever meets the field in a debug dump.
+    ///
+    /// The suffix encodes 8 random bytes, each as an uppercase letter followed by a digit: the letter is
+    /// `A` plus the byte divided by ten, the digit is the byte modulo ten. Byte 0 reads `A0`, byte 255
+    /// reads `Z5`, and the pairs `Z6` to `Z9` never occur, so the 16 characters decode back to the bytes
+    /// `4f 43 b3 10 b4 d7 94 b2` without ambiguity.
+    public static final @NotNull String INTERNAL_REQUEST_PARAMETERS = "INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8";
 
     /// The object inside `value` that carries a response's parameters back across the adapter border.
-    public static final @NotNull String INTERNAL_RESPONSE_PARAMETERS = "INTERNAL_RESPONSE_PARAMETERS";
+    ///
+    /// Carries the same random suffix as [#INTERNAL_REQUEST_PARAMETERS], because the two are one
+    /// mechanism and a reader should see that at a glance.
+    public static final @NotNull String INTERNAL_RESPONSE_PARAMETERS = "INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8";
 
     /// The method to call, on a request, and the method an answer belongs to, on a response.
     public static final @NotNull String METHOD_NAME = "methodName";

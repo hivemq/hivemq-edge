@@ -23,10 +23,17 @@ import java.util.Arrays;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
@@ -97,10 +104,16 @@ public final class MethodArguments {
     /// indication of which argument was wrong.
     public static final class InvalidArgumentException extends RuntimeException {
         private final @NotNull String reason;
+        private final long statusCode;
 
         InvalidArgumentException(final @NotNull String message) {
+            this(message, StatusCodes.Bad_InvalidArgument);
+        }
+
+        InvalidArgumentException(final @NotNull String message, final long statusCode) {
             super(message);
             this.reason = message;
+            this.statusCode = statusCode;
         }
 
         /// The message, as a non-null value.
@@ -110,6 +123,16 @@ public final class MethodArguments {
         /// call site.
         public @NotNull String reason() {
             return reason;
+        }
+
+        /// The status code the caller is answered with.
+        ///
+        /// Carried on the exception because the fault is known here and not at the catch: every argument
+        /// problem reaches the adapter through one handler, which cannot tell a missing argument from a
+        /// misspelled one without inspecting the message text. `Bad_InvalidArgument` is the default, so a
+        /// throw site that does not say otherwise behaves as before.
+        public long statusCode() {
+            return statusCode;
         }
     }
 
@@ -137,12 +160,18 @@ public final class MethodArguments {
             }
             final JsonNode supplied = value.get(name);
             if (supplied == null || supplied.isNull()) {
-                throw new InvalidArgumentException("method '"
-                        + signature.name()
-                        + "' requires the argument '"
-                        + name
-                        + "', which the request does not carry. It declares: "
-                        + String.join(", ", signature.inputArgumentNames()));
+                // The one argument fault OPC-UA names specifically. Every other one -- a name the method does
+                // not declare, a value its type cannot hold -- is Bad_InvalidArgument, which is also what a
+                // server answers. Reported as its own code because a caller branching on status codes can act
+                // on "you left something out" without parsing the message.
+                throw new InvalidArgumentException(
+                        "method '"
+                                + signature.name()
+                                + "' requires the argument '"
+                                + name
+                                + "', which the request does not carry. It declares: "
+                                + String.join(", ", signature.inputArgumentNames()),
+                        StatusCodes.Bad_ArgumentsMissing);
             }
             arguments[i] = convert(signature.name(), name, argument, signature.builtinTypeOf(argument), supplied);
         }
@@ -400,9 +429,18 @@ public final class MethodArguments {
             // UInt64 is the one type whose range does not fit a signed long, so it is bounded and built as a
             // BigInteger throughout. Bounding it by Long.MAX_VALUE would refuse the upper half of the type.
             case UInt64 -> Unsigned.ulong(requireInRange(node, BigInteger.ZERO, UINT64_MAX));
-            case Float -> (float) requireNumber(node);
+            case Float -> requireFloat(node);
             case Double -> requireNumber(node);
             case String -> requireText(node);
+            // The six structured builtins. Each takes the form the northbound converter publishes *and* a
+            // simple form, so a value read from a device can be sent straight back and a caller writing one by
+            // hand does not have to assemble an object. Their schema says `any` -- see MethodSchemas.
+            case LocalizedText -> requireLocalizedText(node);
+            case NodeId -> requireNodeId(node);
+            case ExpandedNodeId -> ExpandedNodeId.parse(requireText(node));
+            case QualifiedName -> requireQualifiedName(node);
+            case StatusCode -> new StatusCode(requireIntegral(node, 0, 4294967295L));
+            case XmlElement -> new XmlElement(requireText(node));
             case DateTime -> new DateTime(java.time.Instant.parse(requireText(node)));
             case ByteString -> ByteString.of(requireBase64(node));
             case Guid -> java.util.UUID.fromString(requireText(node));
@@ -455,11 +493,112 @@ public final class MethodArguments {
         return value;
     }
 
+    /// A localised text, from either the object the read path publishes or a bare string.
+    ///
+    /// A bare string becomes English, which is what `ConditionUpdateWriter` already does for an alarm comment
+    /// -- the same argument of the same standard method, reached by the other route. Two routes to one method
+    /// answering differently would be worse than either answer.
+    ///
+    /// `LocalizedText.english(text)` rather than a constructor with a null locale: OPC 10000-9 section 5.7.3
+    /// gives a null localised text (both fields empty) its own meaning -- "leave any existing comment alone"
+    /// -- distinct from an empty text with a locale, which resets it. A caller who sends a string means
+    /// neither, so the locale is filled in rather than left for Milo to decide.
+    private static @NotNull LocalizedText requireLocalizedText(final @NotNull JsonNode node) {
+        if (node.isTextual()) {
+            return LocalizedText.english(node.textValue());
+        }
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("expected a string or an object with 'text', got " + node.getNodeType());
+        }
+        final JsonNode text = node.get("text");
+        if (text == null || !text.isTextual()) {
+            throw new IllegalArgumentException("expected an object with a string 'text'");
+        }
+        final JsonNode locale = node.get("locale");
+        return locale != null && locale.isTextual()
+                ? new LocalizedText(locale.textValue(), text.textValue())
+                : LocalizedText.english(text.textValue());
+    }
+
+    /// A node id, from either the text form every tag configuration uses or the object the read path publishes.
+    ///
+    /// The text form is `ns=2;s=Boiler`, which `NodeId.parse` already reads for a tag's own node and for a
+    /// method named by id. The object form carries `namespaceIndex` and `id`, and is what a caller gets back
+    /// from a read -- so a value can make the round trip without being rewritten by hand.
+    private static @NotNull NodeId requireNodeId(final @NotNull JsonNode node) {
+        if (node.isTextual()) {
+            return NodeId.parse(node.textValue());
+        }
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("expected a node id as text or an object, got " + node.getNodeType());
+        }
+        final JsonNode id = node.get("id");
+        if (id == null) {
+            throw new IllegalArgumentException("expected an object with an 'id'");
+        }
+        final int namespace =
+                node.has("namespaceIndex") ? (int) requireIntegral(node.get("namespaceIndex"), 0, 65535) : 0;
+        if (id.isIntegralNumber()) {
+            return new NodeId(Unsigned.ushort(namespace), Unsigned.uint(id.longValue()));
+        }
+        if (!id.isTextual()) {
+            throw new IllegalArgumentException("expected 'id' to be a number or a string, got " + id.getNodeType());
+        }
+        return new NodeId(Unsigned.ushort(namespace), id.textValue());
+    }
+
+    /// A qualified name -- a namespace index and a name -- from either the object or a bare string.
+    ///
+    /// A bare string means namespace 0, which is how the read path renders one: it omits `namespaceIndex`
+    /// when it is zero.
+    private static @NotNull QualifiedName requireQualifiedName(final @NotNull JsonNode node) {
+        if (node.isTextual()) {
+            return new QualifiedName(0, node.textValue());
+        }
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("expected a string or an object with 'name', got " + node.getNodeType());
+        }
+        final JsonNode name = node.get("name");
+        if (name == null || !name.isTextual()) {
+            throw new IllegalArgumentException("expected an object with a string 'name'");
+        }
+        final int namespace =
+                node.has("namespaceIndex") ? (int) requireIntegral(node.get("namespaceIndex"), 0, 65535) : 0;
+        return new QualifiedName(namespace, name.textValue());
+    }
+
     private static double requireNumber(final @NotNull JsonNode node) {
         if (!node.isNumber()) {
             throw new IllegalArgumentException("expected a number, got " + node.getNodeType());
         }
         return node.doubleValue();
+    }
+
+    /// The range check a Float argument passes through, for the same reason the integral ones have theirs:
+    /// the narrowing cast at the call site does not refuse a value it cannot hold.
+    ///
+    /// A `double` beyond the float range casts to an infinity rather than throwing, so `1e39` would reach the
+    /// device as `+Infinity` -- a value the caller never asked for and cannot distinguish from a real one.
+    /// The generated schema states this range too, so a request usually fails the gate first; this is the
+    /// check for when it does not, which the reference promises for every number.
+    ///
+    /// An infinity the caller sent deliberately is refused by the same comparison. That is a limitation of
+    /// the write path rather than of this method -- the southbound transform runs as JavaScript and JSON has
+    /// no infinity to carry one in.
+    private static float requireFloat(final @NotNull JsonNode node) {
+        final double value = requireNumber(node);
+        final float narrowed = (float) value;
+        if (Float.isInfinite(narrowed) && !Double.isInfinite(value)) {
+            throw new IllegalArgumentException("expected a value in ["
+                    + -Float.MAX_VALUE
+                    + ", "
+                    + Float.MAX_VALUE
+                    + "], got "
+                    + value
+                    + ". A Float argument cannot hold it: the narrowing would send the device an infinity"
+                    + " instead of the value requested");
+        }
+        return narrowed;
     }
 
     /// A ByteString arrives as base64 text, which is how the generated schema describes it -- `BINARY` renders

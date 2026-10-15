@@ -157,12 +157,18 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                         outputs.set(p.getKey(), p.getValue());
                     }
                 }
-                // Null when the call failed: the parameters were all the value held. An empty object means
-                // the opposite -- the method ran and declares no outputs -- so the two must not render alike.
-                value = outputs.isEmpty() ? JsonNodeFactory.instance.nullNode() : outputs;
-
                 methodName = textOrNull(responseParameters.get(METHOD_NAME));
                 errorCode = textOrNull(responseParameters.get(ERROR_CODE));
+
+                // Null on failure, the empty object on a success that returns nothing. Deciding this on
+                // `errorCode` rather than on emptiness is what keeps the two apart: a method declaring no
+                // outputs succeeds with nothing in `value`, and reporting that as null would say the call
+                // did not run.
+                //
+                // A failure that nevertheless carried outputs keeps them, which the documented rule does not
+                // allow for. The device said something, and publishing null would delete it to satisfy a
+                // shape -- so the rule yields here rather than the information.
+                value = errorCode != null && outputs.isEmpty() ? JsonNodeFactory.instance.nullNode() : outputs;
                 statusInfo = responseParameters.get(STATUS_INFO);
                 correlationData = textOrNull(responseParameters.get(CORRELATION_DATA));
                 // A blank reply address counts as none, so the mapping's own topic stands.

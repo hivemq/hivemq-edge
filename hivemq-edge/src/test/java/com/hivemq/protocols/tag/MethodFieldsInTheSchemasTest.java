@@ -47,7 +47,8 @@ class MethodFieldsInTheSchemasTest {
     private static @NotNull Schema requestValue() {
         final var value = new SchemaBuilder().startObject();
         value.property("setpoint").scalar(ScalarType.LONG).writable();
-        final var parameters = value.property("INTERNAL_REQUEST_PARAMETERS").startObject();
+        final var parameters =
+                value.property("INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8").startObject();
         parameters.property("methodName").required().scalar(ScalarType.STRING);
         parameters.property("correlationData").scalar(ScalarType.STRING);
         parameters.property("responseTopic").scalar(ScalarType.STRING);
@@ -61,7 +62,8 @@ class MethodFieldsInTheSchemasTest {
     private static @NotNull Schema responseValue() {
         final var value = new SchemaBuilder().startObject();
         value.property("setpoint").scalar(ScalarType.LONG);
-        final var parameters = value.property("INTERNAL_RESPONSE_PARAMETERS").startObject();
+        final var parameters =
+                value.property("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8").startObject();
         parameters.property("methodName").scalar(ScalarType.STRING);
         parameters.property("correlationData").scalar(ScalarType.STRING);
         parameters.property("errorCode").scalar(ScalarType.STRING);
@@ -117,7 +119,7 @@ class MethodFieldsInTheSchemasTest {
 
         // The carrier is Edge's hand-off to the adapter, not part of any message, and `value` keeps only what
         // the device named.
-        assertThat(properties.path("value").path("properties").has("INTERNAL_RESPONSE_PARAMETERS"))
+        assertThat(properties.path("value").path("properties").has("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8"))
                 .withFailMessage("the carrier must not survive into the document: %s", properties)
                 .isFalse();
         assertThat(properties.path("value").path("properties").has("setpoint")).isTrue();
@@ -135,7 +137,7 @@ class MethodFieldsInTheSchemasTest {
         assertThat(properties.has("correlationData")).isTrue();
         assertThat(properties.has("responseTopic")).isTrue();
 
-        assertThat(properties.path("value").path("properties").has("INTERNAL_REQUEST_PARAMETERS"))
+        assertThat(properties.path("value").path("properties").has("INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8"))
                 .withFailMessage("the carrier must not survive into the document: %s", properties)
                 .isFalse();
     }

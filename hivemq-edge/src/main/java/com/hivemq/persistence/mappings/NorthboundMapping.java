@@ -62,10 +62,10 @@ public class NorthboundMapping {
     // There is deliberately NO method-call setting on a northbound mapping at all, and that is the whole shape of
     // the design rather than an omission in one place.
     //
-    // Southbound flags decide what Edge gathers into a request's `context`: whether this mapping carries method
+    // Southbound flags decide what Edge gathers into a request's parameters: whether this mapping carries method
     // calls, whether a correlation token is read, whether a caller may name its own reply address. Northbound then
-    // acts on what the context contains and nothing else -- a method tag is one whose context declares
-    // `methodName`, a response goes to the address the context carries and to getMqttTopic() when it carries none,
+    // acts on what a response's parameters contain and nothing else -- a method answer is one whose parameters
+    // declare `methodName`, a response goes to the address they carry and to getMqttTopic() when they carry none,
     // the token is written into both the payload and the MQTT 5 Correlation Data property, and `errorCode` and
     // `statusInfo` appear when a failure put them there.
     //

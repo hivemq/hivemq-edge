@@ -18,8 +18,10 @@ package com.hivemq.edge.adapters.opcua.method;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,8 +42,19 @@ import org.jetbrains.annotations.Nullable;
 /// needed. Keeping a list also preserves what a map would lose: two arguments may share a name on a
 /// badly-described server, and silently dropping one would make a call succeed with the wrong values.
 public record MethodSignature(
-        /// The method's browse name, as a request names it.
-        @NotNull String name,
+        /// The method's browse name, namespace and all.
+        ///
+        /// **Qualified rather than the bare string, because the namespace is part of the name.** OPC 10000-3
+        /// section 8.3 makes a BrowseName a namespace index plus a string, and two methods called `Start` in
+        /// different namespaces are two different methods -- which is the ordinary arrangement when a vendor
+        /// adds its own methods beside the standard ones. Keeping only the string made them one name: a
+        /// subtype's `1:Start` shadowed a supertype's unrelated `2:Start`, discarding the second from the list
+        /// entirely, so it was unreachable even by node id -- the node-id lookup searches the same list.
+        ///
+        /// {@link #name()} is the string half, for the places that compare what a caller typed: a request names
+        /// a method with a bare string, and resolving that is {@link MethodReference}'s job rather than this
+        /// record's.
+        @NotNull QualifiedName browseName,
         /// The method node itself, passed as the `methodId` of a `Call`.
         @NotNull NodeId nodeId,
         /// What to pass as the `objectId` of a `Call`: the **type** for a static method, and the tag's own
@@ -84,6 +97,15 @@ public record MethodSignature(
         builtinTypes = Map.copyOf(builtinTypes);
     }
 
+    /// The string half of the browse name, which is what a request names a method with.
+    ///
+    /// Derived rather than stored, so it cannot drift from the qualified name it comes from. A BrowseName whose
+    /// string is absent cannot describe a callable method and is dropped during the browse, so this is never
+    /// null in a signature that exists.
+    public @NotNull String name() {
+        return Objects.requireNonNull(browseName.getName());
+    }
+
     /// The builtin type this argument reduces to, or null when it reduces to none.
     ///
     /// Keyed on the DataType node id rather than the argument's name or position, because a name is not unique
@@ -94,6 +116,9 @@ public record MethodSignature(
     }
 
     /// A method the tag's own object declares -- the ordinary case, and the only one a test usually needs.
+    ///
+    /// The name is taken in namespace 0, which is the one case where a bare string is a complete browse name.
+    /// A caller needing another namespace builds the record directly, with the qualified name it means.
     public static @NotNull MethodSignature ofObject(
             final @NotNull String name,
             final @NotNull NodeId nodeId,
@@ -102,7 +127,7 @@ public record MethodSignature(
             final @NotNull List<Argument> outputArguments) {
 
         return new MethodSignature(
-                name,
+                new QualifiedName(0, name),
                 nodeId,
                 objectId,
                 Origin.OBJECT,

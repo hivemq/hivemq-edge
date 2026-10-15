@@ -196,10 +196,22 @@ public final class MethodReference {
     ///
     /// Falls back to the index form when the table has no URI for the namespace, which is the honest answer:
     /// it is what the node id is, and it still parses.
+    ///
+    /// **The table may not know the namespace at all**, and then `expanded` throws rather than answering --
+    /// `IllegalStateException: namespace index=7 not found`. That reaches here from the refusal message for a
+    /// request naming an index the server does not publish: the resolution had already decided correctly that
+    /// no method matches, and only the wording of the refusal failed. The throw escaped into the write path,
+    /// which answered nothing and held the request's writer until it timed out 30 seconds later, so further
+    /// requests for that tag waited behind a message that was already known to be unanswerable. Caught here, at
+    /// the one place that turns a node id into text for a caller.
     private static @NotNull String render(final @NotNull NodeId nodeId, final @NotNull NamespaceTable namespaceTable) {
 
-        final ExpandedNodeId expanded = nodeId.expanded(namespaceTable);
-        return expanded.getNamespaceUri() != null ? expanded.toParseableString() : nodeId.toParseableString();
+        try {
+            final ExpandedNodeId expanded = nodeId.expanded(namespaceTable);
+            return expanded.getNamespaceUri() != null ? expanded.toParseableString() : nodeId.toParseableString();
+        } catch (final RuntimeException e) {
+            return nodeId.toParseableString();
+        }
     }
 
     /// The object's own method when the only other match is a non-static declaration of it, else null.

@@ -1097,6 +1097,20 @@ class ProtocolAdaptersResourceImplTest {
     private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_AND_TOKEN =
             "{\"type\":\"object\",\"required\":[\"value\",\"methodName\",\"correlationData\"]," + "\"properties\":{}}";
 
+    /// The same requirement stated inside an `allOf` branch rather than at the root.
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_THROUGH_ALL_OF =
+            "{\"type\":\"object\",\"allOf\":[{\"required\":[\"methodName\"]},{\"required\":[\"value\"]}]}";
+
+    /// The same requirement reached through a `$ref` to a definition elsewhere in the document.
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_THROUGH_REF =
+            "{\"$defs\":{\"aCall\":{\"required\":[\"methodName\"]}},\"type\":\"object\","
+                    + "\"allOf\":[{\"$ref\":\"#/$defs/aCall\"}]}";
+
+    /// Requires the name, but on a nested object -- so the root does not require it and the gate must say so.
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_ONLY_DEEPER =
+            "{\"type\":\"object\",\"required\":[\"value\"],"
+                    + "\"properties\":{\"value\":{\"type\":\"object\",\"required\":[\"methodName\"]}}}";
+
     private void mockWritableAdapterWithTopicFilter(final @NotNull String schema) {
         final ProtocolAdapterEntity existing = mock();
         when(existing.getAdapterId()).thenReturn("adapter");
@@ -1177,6 +1191,51 @@ class ProtocolAdaptersResourceImplTest {
                 protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(true));
 
         assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void southboundMapping_isAcceptedWhenTheSchemaRequiresMethodNameThroughAnAllOf() {
+        // The defect this closes. The gate used to read the document's root `required` array and look for the
+        // name in it, so a schema stating the same requirement inside an `allOf` branch was read as requiring
+        // nothing -- and a correct configuration could not be saved, with a message telling the operator to add
+        // an entry their schema already enforced. The schema now answers for itself.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_THROUGH_ALL_OF);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void southboundMapping_isAcceptedWhenTheSchemaRequiresMethodNameThroughARef() {
+        // The other composition a real schema uses: the requirement lives in a definition and is pulled in by
+        // reference. Reading one array could not see through that either.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_THROUGH_REF);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void southboundMapping_isRefusedWhenOnlyANestedObjectRequiresMethodName() {
+        // The boundary on the other side, so the check has not become "the name appears somewhere". A request
+        // names the method at its root; a schema demanding it inside `value` does not make that happen, and
+        // taking the deeper requirement for the root one would let an unroutable mapping be saved.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_ONLY_DEEPER);
+
+        final ApiException thrown = catchThrowableOfType(
+                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
+                ApiException.class);
+
+        assertThat(thrown)
+                .as("a requirement on a nested object is not a requirement at the root")
+                .isNotNull();
+        assertThat(thrown.getHttpStatusCode()).isEqualTo(400);
     }
 
     @Test

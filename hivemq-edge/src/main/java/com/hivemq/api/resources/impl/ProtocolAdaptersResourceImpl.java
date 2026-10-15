@@ -28,7 +28,6 @@ import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
@@ -101,6 +100,8 @@ import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import com.hivemq.protocols.tag.TagSchemaDirection;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
@@ -112,7 +113,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1085,7 +1085,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        if (requiredFieldsOf(schema).contains(MethodRequestFields.METHOD_NAME)) {
+        if (requiresAtItsRoot(schema, MethodRequestFields.METHOD_NAME)) {
             return;
         }
 
@@ -1099,31 +1099,34 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     /**
-     * The field names a JSON schema document requires at its root, or an empty set when it requires none.
+     * Whether a JSON schema document requires the named field of the object at its root.
      * <p>
-     * A schema that cannot be read yields an empty set, so a method mapping resting on it is refused by the
-     * caller. That is the right outcome rather than a side effect: a schema nothing can parse requires nothing,
-     * so it cannot keep the promise either, and the mapping is broken whether or not the save says so. Refusing
-     * names it once, at save time, instead of leaving every request to fail unexplained at runtime. A mapping
-     * that promises nothing -- every value write that exists today -- is unaffected, because the caller returns
-     * before reaching here.
+     * <b>Asked by validating the empty object rather than by reading the document.</b> An earlier version read the
+     * root {@code required} array and looked for the name in it, which answered "no" for every schema stating the
+     * same thing another way -- inside an {@code allOf} branch, or through a {@code $ref} to a definition
+     * elsewhere in the document. Those are ordinary, strict schemas, and a correct configuration could not be
+     * saved. Letting the schema answer for itself covers every form it may take, now and in later drafts, because
+     * the machinery deciding it is the same one that validates real messages.
+     * <p>
+     * A missing-field complaint is identified by its keyword and the property it names, not by its text, so
+     * nothing here depends on the library's wording.
+     * <p>
+     * <b>Two deliberately permissive answers.</b> A schema offering alternatives through {@code anyOf}, only one
+     * of which requires the field, reports it missing and is taken as requiring it -- more permissive than the
+     * truth, and the right direction for a gate whose job is to catch the plain omission. A schema that cannot
+     * be parsed at all requires nothing, so the mapping is refused: it could not keep the promise either way, and
+     * saying so once here beats every request failing later with nothing to explain it.
      */
-    private @NotNull Set<String> requiredFieldsOf(final @NotNull String schema) {
+    private boolean requiresAtItsRoot(final @NotNull String schema, final @NotNull String field) {
         try {
-            final JsonNode required = objectMapper.readTree(schema).get("required");
-            if (required == null || !required.isArray()) {
-                return Set.of();
-            }
-            final Set<String> names = new LinkedHashSet<>();
-            required.forEach(entry -> {
-                if (entry.isTextual()) {
-                    names.add(entry.textValue());
-                }
-            });
-            return names;
+            return JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
+                    .getSchema(objectMapper.readTree(schema))
+                    .validate(objectMapper.createObjectNode())
+                    .stream()
+                    .anyMatch(message -> "required".equals(message.getType()) && field.equals(message.getProperty()));
         } catch (final Exception e) {
-            log.debug("Could not read the 'required' list from a topic filter's schema", e);
-            return Set.of();
+            log.debug("Could not validate a topic filter's schema to see whether it requires '{}'", field, e);
+            return false;
         }
     }
 

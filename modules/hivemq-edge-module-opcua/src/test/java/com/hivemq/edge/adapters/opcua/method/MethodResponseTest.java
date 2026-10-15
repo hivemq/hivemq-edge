@@ -124,7 +124,7 @@ class MethodResponseTest {
         // `value` as an empty object here and as null for a failure, which is where the two part company.
         assertThat(json.get("value").isObject()).isTrue();
         assertThat(json.get("value").properties().stream().map(Map.Entry::getKey))
-                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
         assertThat(parameters(json).has("errorCode"))
                 .withFailMessage("a success must set no errorCode: %s", json)
                 .isFalse();
@@ -141,7 +141,7 @@ class MethodResponseTest {
         // NorthboundTagConsumerContextTest; here `value` is still the object the parameters travel in.
         assertThat(json.get("value").isObject()).isTrue();
         assertThat(json.get("value").properties().stream().map(Map.Entry::getKey))
-                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
         assertThat(parameters(json).get("errorCode").textValue()).isEqualTo("Bad_NotExecutable");
     }
 
@@ -172,7 +172,7 @@ class MethodResponseTest {
 
         assertThat(json.get("value").properties().stream().map(Map.Entry::getKey))
                 .withFailMessage("the device's explanation must not be an output argument: %s", json)
-                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
         assertThat(parameters(json)
                         .get("statusInfo")
                         .get("deviceOutput")
@@ -317,7 +317,7 @@ class MethodResponseTest {
         final JsonNode deviceRefusal = write("Cube", "c-1", failure(0x81110000L, Map.of()));
 
         assertThat(edgeRefusal.get("value").properties().stream().map(Map.Entry::getKey))
-                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
         assertThat(parameters(edgeRefusal).get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
         assertThat(parameters(edgeRefusal).get("correlationData").textValue()).isEqualTo("c-1");
 

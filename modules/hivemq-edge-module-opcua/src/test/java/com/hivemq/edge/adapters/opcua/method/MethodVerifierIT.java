@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -27,6 +29,8 @@ import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
@@ -122,6 +126,45 @@ class MethodVerifierIT {
         assertThat(timeout.getDataType()).isEqualTo(NodeIds.Duration);
         assertThat(wait.builtinTypeOf(timeout)).isEqualTo(OpcUaDataType.Double);
         assertThat(wait.builtinTypeOf(wait.outputArguments().get(0))).isEqualTo(OpcUaDataType.Double);
+    }
+
+    @Test
+    void anUnreadableTypeHierarchy_costsOnlyTheTypesThatNeededIt() throws Exception {
+        // The defect this pins: the DataType hierarchy was read before anything was resolved, and a failure
+        // returned an empty map -- so one unreadable hierarchy discarded the types of every argument,
+        // including the ones answerable from the local table of the 25 builtins with no server at all. An
+        // `Int32` input became unencodable, the signature was nevertheless reported fully verified, and the
+        // cache kept it, leaving a method taking a plain integer uncallable until the adapter restarted.
+        //
+        // A spy on the real connected client, so the browse and the argument reads are genuine and only the
+        // hierarchy read fails -- which is the shape of the real fault: a session that answers browses while
+        // the type tree cannot be built.
+        final OpcUaClient treeless = spy(client);
+        doThrow(new UaException(StatusCodes.Bad_SessionClosed)).when(treeless).getDataTypeTree();
+
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(treeless, objectId, "boiler-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        final List<MethodSignature> methods = ((MethodVerifier.Result.Verified) result).methods();
+
+        // `Square` takes an Int32, which is a builtin: its type is known without the server and survives.
+        final MethodSignature square = methods.stream()
+                .filter(method -> method.name().equals("Square"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(square.builtinTypeOf(square.inputArguments().get(0)))
+                .withFailMessage("a builtin argument must not lose its type to an unreadable hierarchy")
+                .isEqualTo(OpcUaDataType.Int32);
+
+        // `Wait` takes a Duration, a subtype only the hierarchy can reduce: unresolved is the honest answer.
+        final MethodSignature wait = methods.stream()
+                .filter(method -> method.name().equals("Wait"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(wait.builtinTypeOf(wait.inputArguments().get(0)))
+                .withFailMessage("a Simple DataType cannot be reduced without the hierarchy")
+                .isNull();
     }
 
     @Test

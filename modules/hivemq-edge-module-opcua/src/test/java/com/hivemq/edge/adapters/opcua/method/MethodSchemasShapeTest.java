@@ -102,7 +102,7 @@ class MethodSchemasShapeTest {
         // is the one it cannot do without -- no MQTT property supplies a method name.
         final JsonNode parameters = json(MethodSchemas.requestSchema(List.of(method())))
                 .get("properties")
-                .get("INTERNAL_REQUEST_PARAMETERS");
+                .get("INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8");
         final JsonNode properties = parameters.get("properties");
 
         assertThat(properties.has("methodName")).isTrue();
@@ -131,7 +131,7 @@ class MethodSchemasShapeTest {
                 .get("anyOf")
                 .get(0)
                 .get("properties")
-                .get("INTERNAL_RESPONSE_PARAMETERS");
+                .get("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
         final JsonNode properties = parameters.get("properties");
 
         assertThat(properties.has("methodName")).isTrue();
@@ -148,6 +148,34 @@ class MethodSchemasShapeTest {
     }
 
     @Test
+    void aUInt64Argument_statesItsLowerBoundAndNoUpperOne() {
+        // The gate used to state neither. Both limits came from Milo's `ULong` constants, which are
+        // BigIntegers, and the builder takes a bound only as a Long or a Double -- so both were dropped and the
+        // argument was described as any integer, negatives included.
+        //
+        // The minimum is stateable and now stated. The maximum is not: 2^64-1 does not fit a signed long, and
+        // forcing it would truncate to -1 and refuse every value. The converter bounds it instead, in
+        // arbitrary precision, before the device sees it.
+        final JsonNode argument = json(MethodSchemas.requestSchema(List.of(MethodSignature.ofObject(
+                        "M",
+                        NODE,
+                        NODE,
+                        List.of(new Argument("count", NodeIds.UInt64, -1, null, LocalizedText.NULL_VALUE)),
+                        List.of()))))
+                .get("properties")
+                .get("count");
+
+        assertThat(argument.get("type").textValue()).isEqualTo("integer");
+        assertThat(argument.get("minimum"))
+                .withFailMessage("a UInt64 is never negative, and the gate can say so: %s", argument)
+                .isNotNull();
+        assertThat(argument.get("minimum").asLong()).isZero();
+        assertThat(argument.has("maximum"))
+                .withFailMessage("any maximum here is a truncated one, which refuses every value: %s", argument)
+                .isFalse();
+    }
+
+    @Test
     void requestSchema_rejectsAnArgumentNameNoMethodDeclares() {
         // The decisive one. Listing properties in JSON Schema is permissive by default, so the union stated every
         // argument's type while silently admitting any other name beside them -- and a misspelled argument then
@@ -156,6 +184,40 @@ class MethodSchemasShapeTest {
 
         assertThat(schema.get("additionalProperties").booleanValue()).isFalse();
         assertThat(schema.get("properties").has("input1")).isTrue();
+    }
+
+    @Test
+    void everyTypeTheSchemaStatesConcretely_isEncodableByTheAdapter() {
+        // The finding this closes: six builtin types were described concretely -- LocalizedText as a string,
+        // StatusCode as an integer -- so a request passed the gate and was then refused by the converter,
+        // which had no case for them. The adapter now encodes all six, and because it accepts two forms for
+        // each, the schema says `any`: the model's node kinds are any, scalar, object and array, with no
+        // alternation, so naming one form would refuse the other.
+        final var twoFormTypes = List.of(
+                NodeIds.LocalizedText,
+                NodeIds.NodeId,
+                NodeIds.ExpandedNodeId,
+                NodeIds.QualifiedName,
+                NodeIds.StatusCode,
+                NodeIds.XmlElement);
+
+        for (final NodeId type : twoFormTypes) {
+            final JsonNode property = json(MethodSchemas.requestSchema(List.of(MethodSignature.ofObject(
+                            "M",
+                            NODE,
+                            NODE,
+                            List.of(new Argument("a", type, -1, null, LocalizedText.NULL_VALUE)),
+                            List.of()))))
+                    .get("properties")
+                    .get("a");
+
+            assertThat(property.has("type"))
+                    .withFailMessage("%s must be described as any, was %s", type, property)
+                    .isFalse();
+            assertThat(property.get("description").textValue())
+                    .withFailMessage("%s must tell a caller what to send, since the schema cannot", type)
+                    .isNotEmpty();
+        }
     }
 
     @Test
@@ -171,7 +233,7 @@ class MethodSchemasShapeTest {
         // is named and skipped instead of being counted as an argument.
         assertThat(schema.get("additionalProperties").booleanValue()).isFalse();
         assertThat(schema.get("properties").properties().stream().map(Map.Entry::getKey))
-                .containsExactly("INTERNAL_REQUEST_PARAMETERS");
+                .containsExactly("INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8");
     }
 
     @Test
