@@ -39,6 +39,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.browse.BrowseException;
 import com.hivemq.edge.adapters.browse.BrowsedNode;
 import com.hivemq.edge.adapters.browse.BulkTagBrowser;
+import com.hivemq.edge.adapters.opcua.browse.Browsing;
 import com.hivemq.edge.adapters.opcua.browse.OpcUaNodeBrowser;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
@@ -881,6 +882,44 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
+        // Half of one misconfiguration: the tag's kind and the mapping's method-call setting disagree. The
+        // payload carrying Edge's request parameters *is* that setting, as this adapter sees it.
+        //
+        // **Nothing but this adapter sees both facts.** The tag's kind is this protocol's own vocabulary and
+        // the setting is Edge's, so Edge could only check the pair by being told what a METHOD tag is -- a
+        // protocol concept the generic side must not learn. Three attempts to hand it one were made during this
+        // feature and all three were reverted.
+        //
+        // The two halves are answered differently, and the asymmetry follows from what each tag is rather than
+        // from convenience. **This half is a value tag that answers nobody**, by design and for every adapter,
+        // so a log line and a failed write are the whole of what is available; inventing a reply channel for it
+        // would be the same leak in the other direction. The other half -- a method tag with no parameters --
+        // has a return path by construction and is answered at the METHOD dispatch below, where the client's
+        // encoding context exists.
+        //
+        // Reported by QA as P19 on EDG-1116.
+        final boolean isMethodTag = opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD;
+        final boolean carriesParameters = opcUAWritePayload.parameters() != null;
+
+        if (!isMethodTag && carriesParameters) {
+            // The mirror: a mapping carries method calls while its tag is not a method tag. The value cannot be
+            // written -- it holds an instruction object the device never declared -- and writing it while
+            // ignoring that object would be worse than refusing.
+            log.error(
+                    "A write to tag '{}' of kind {} carries method call parameters, which only a METHOD tag can "
+                            + "accept. Either the tag's kind or the southbound mapping's 'this mapping carries "
+                            + "method calls' setting is wrong; the message is dropped.",
+                    tagName,
+                    opcuaTag.getDefinition().getKind());
+            output.fail("Tag '"
+                    + tagName
+                    + "' is a "
+                    + opcuaTag.getDefinition().getKind()
+                    + " tag, but the request carries method call parameters. Either make it a METHOD tag or "
+                    + "switch 'this mapping carries method calls' off for the mapping that feeds it");
+            return;
+        }
+
         final OpcUaClientConnection conn = opcUaClientConnection.get();
         if (conn == null) {
             output.fail("Discovery failed: ClientConnection not connected or not initialized");
@@ -929,6 +968,36 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             // A method tag names an object, so there is no Value attribute to assign to: the
                             // request names a method and this calls it.
                             if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD) {
+                                // The other half of the pair checked at the top of `write`, answered here
+                                // because a response needs the client's encoding context and this is the first
+                                // point that has one. Still before the object is browsed and before the device
+                                // is touched.
+                                //
+                                // Previously this fell through into the method path, which found no method name
+                                // and refused with an empty one -- naming no method, carrying no token, and
+                                // saying nothing about the setting to change. The caller could not match the
+                                // answer to its request and the operator was not told what to switch on.
+                                if (!carriesParameters) {
+                                    log.warn(
+                                            "A request to method tag '{}' carries no method parameters, so the "
+                                                    + "southbound mapping that feeds it does not have method calls "
+                                                    + "enabled. Switch 'this mapping carries method calls' on for "
+                                                    + "that mapping.",
+                                            tagName);
+                                    refuseWithResponse(
+                                            client,
+                                            opcuaTag,
+                                            "",
+                                            opcUAWritePayload,
+                                            StatusCodes.Bad_MethodInvalid,
+                                            "the southbound mapping for tag '"
+                                                    + tagName
+                                                    + "' does not have method calls enabled, so the request named "
+                                                    + "no method and none can be called. Switch 'this mapping "
+                                                    + "carries method calls' on for that mapping",
+                                            output);
+                                    return;
+                                }
                                 callMethod(client, nodeId, opcUAWritePayload, opcuaTag, output);
                                 return;
                             }
@@ -1258,16 +1327,27 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         @SuppressWarnings("unused")
         final var unused = client.callAsync(List.of(request)).whenComplete((response, throwable) -> {
             if (throwable != null) {
-                // The call was sent and no answer came back -- a timeout or a transport failure. WARNING: this is
-                // NOT proof the method did not run, so the response says the call failed without claiming the
-                // device did nothing. A caller retrying on it needs the method to be idempotent.
+                // The call was sent and no answer came back -- a timeout, a closed session, a transport
+                // failure. WARNING: this is NOT proof the method did not run, so the response says the call
+                // failed without claiming the device did nothing. A caller retrying on it needs the method to
+                // be idempotent.
+                //
+                // **The device's own status code, when the failure carries one.** This used to report
+                // Bad_InternalError for every failure here, which section 7.1 of the reference defines as
+                // "Edge learned nothing more" -- so a caller could not tell a device that never answered from
+                // a fault in Edge, and the retry guidance in 7.3 became inapplicable precisely where it
+                // matters. The code was not missing: it was in the failure and we discarded it.
+                //
+                // The fallback stays Bad_InternalError, for a failure that genuinely has no status -- a
+                // client-side timeout before the request leaves, say. There the generic code is the honest one.
+                final Long deviceStatus = Browsing.statusCodeOf(throwable);
                 log.error("Exception while calling '{}' on tag '{}'", methodName, tagName, throwable);
                 refuseWithResponse(
                         client,
                         opcuaTag,
                         methodName,
                         payload,
-                        StatusCodes.Bad_InternalError,
+                        deviceStatus != null ? deviceStatus : StatusCodes.Bad_InternalError,
                         "Call to '"
                                 + methodName
                                 + "' on tag '"
@@ -1536,6 +1616,26 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         case MethodVerifier.Result.Verified verified -> {
                             final var methods = verified.methods();
                             log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
+                            // An object the device answered about and that exposes nothing callable. The schema
+                            // that follows is empty and every request against the tag is then refused at
+                            // validation, so without this the operator sees a configured tag, a connected
+                            // adapter, and calls that vanish -- the count above is DEBUG, which nobody has on.
+                            //
+                            // WARN rather than ERROR: the tag and the device are both intelligible, and methods
+                            // may be added to an object later without the tag changing.
+                            if (methods.isEmpty()) {
+                                log.warn(
+                                        "Tag '{}' names object {}, which exposes no callable method{}. Its request "
+                                                + "schema will admit no arguments and every call on this tag will be "
+                                                + "refused. Enable DEBUG for {} to see what the browse returned.",
+                                        tagName,
+                                        objectNode,
+                                        verified.complete()
+                                                ? ""
+                                                : " -- and part of its type hierarchy could not be read, so the "
+                                                        + "device may have more",
+                                        MethodVerifier.class.getPackageName());
+                            }
                             // Each value schema declares its own parameter object -- the request's inside the
                             // southbound part, the response's inside the northbound one -- so the runtime lifts
                             // them to the document root by iterating, with no list of names of its own. The

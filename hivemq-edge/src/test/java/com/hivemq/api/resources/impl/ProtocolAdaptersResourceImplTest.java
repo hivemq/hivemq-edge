@@ -1067,6 +1067,26 @@ class ProtocolAdaptersResourceImplTest {
     }
 
     @Test
+    void getSchema_whenTheTagCannotBeResolved_thenTheTitleDoesNotClaimTheTagIsMissing() {
+        // The third round on one answer, and the part the previous two left behind. The status is right and the
+        // detail is right; the title said "No tag found with the provided id" for a tag the operator had just
+        // created and could see listed, so the first line they read sent them looking for the wrong thing
+        // (QA P17 on EDG-1116, after P10 on EDG-1100 fixed the status and the detail).
+        //
+        // Untested is how it survived: the two tests above assert the status and the message, and nothing
+        // looked at the title.
+        mockAdapterRejectingTagWith("node ns=2;s=Counter of tag 'boiler' is a Variable, not an Object");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertEquals(404, response.getStatus());
+        assertThat(response.getEntity().toString())
+                .as("the tag exists -- the node it names is what could not be resolved")
+                .doesNotContain("No tag found")
+                .contains("could not be resolved on the device");
+    }
+
+    @Test
     void getSchema_whenTheDeviceCouldNotBeAsked_thenItIsStillAServerError() {
         // The boundary, and the reason this is two outcomes rather than one. A tag that is wrong about the
         // device is the operator's to fix; a device that could not be asked may leave the tag perfectly

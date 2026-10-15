@@ -46,6 +46,7 @@ import com.hivemq.api.errors.adapters.AdapterNotFound403Error;
 import com.hivemq.api.errors.adapters.AdapterNotFoundError;
 import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
 import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
+import com.hivemq.api.errors.adapters.DomainTagNodeNotResolvableError;
 import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
 import com.hivemq.api.errors.adapters.DuplicateTagError;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
@@ -793,13 +794,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" + message));
                 case ADAPTER_NOT_STARTED ->
                     errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + message));
-                // The adapter's own sentence, not just the tag name. Every other TAG_NOT_FOUND in this class
-                // answers a lookup that either found a tag or did not, where the name is the whole story. Here
-                // the tag exists and cannot be resolved against the device -- absent node, wrong node class,
-                // malformed id -- and only the adapter can say which. Passing the name discarded that: QA
-                // recorded the detail text as exactly right while the status misled, and keeping the status
-                // honest must not cost the text.
-                case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(message != null ? message : tagName));
+                // A different error from the other TAG_NOT_FOUND answers in this class, and the adapter's own
+                // sentence as its detail. Those answer a lookup that either found a tag or did not, where the
+                // name is the whole story. Here the tag **exists** -- an operator may have created it a moment
+                // ago and can see it listed -- and what cannot be resolved is the node it names: absent from the
+                // address space, of a kind the tag's purpose does not allow, or a malformed id. Only the adapter
+                // can say which.
+                //
+                // Two rounds of QA on one answer. The first found the detail text wrong as well, which was
+                // fixed by passing the adapter's sentence through instead of the tag name; the title was left
+                // saying "No tag found with the provided id" and sent the reader looking for something in front
+                // of them (P17 on EDG-1116). Still 404 -- something genuinely could not be found, so the status
+                // was never the part that misled.
+                case TAG_NOT_FOUND ->
+                    errorResponse(new DomainTagNodeNotResolvableError(
+                            message != null ? message : "the node of tag '" + tagName + "' could not be resolved"));
                 default -> {
                     log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                     if (log.isDebugEnabled()) {

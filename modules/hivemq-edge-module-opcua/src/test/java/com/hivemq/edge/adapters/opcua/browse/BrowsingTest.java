@@ -315,6 +315,43 @@ class BrowsingTest {
         assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
     }
 
+    // ── The status code a failure carries ────────────────────────────────────
+    //
+    // A failed method call used to be answered with Bad_InternalError whatever went wrong, which the reference
+    // defines as "Edge learned nothing more" -- so a caller could not tell a device that stopped answering from
+    // a fault in Edge, and the retry guidance ("do not treat a timeout as proof the method did not run") became
+    // inapplicable exactly where it matters. The code was never missing; it was in the failure and discarded.
+    // QA P20 on EDG-1116.
+
+    @Test
+    void aFailureCarryingAStatus_yieldsThatStatus() {
+        final Throwable thrown = new CompletionException(new UaException(StatusCodes.Bad_Timeout, "no answer"));
+
+        assertThat(Browsing.statusCodeOf(thrown))
+                .withFailMessage("the device said what went wrong; the caller has to be told the same thing")
+                .isEqualTo(StatusCodes.Bad_Timeout);
+    }
+
+    @Test
+    void aSessionThatClosedUnderTheCall_yieldsItsOwnStatusRatherThanATimeout() {
+        // The reason for passing the real code through rather than substituting one timeout code for every
+        // failure: these are different things to a caller deciding whether to retry.
+        final Throwable thrown = new CompletionException(new UaException(StatusCodes.Bad_SessionClosed, "closed"));
+
+        assertThat(Browsing.statusCodeOf(thrown)).isEqualTo(StatusCodes.Bad_SessionClosed);
+    }
+
+    @Test
+    void aFailureCarryingNoStatus_yieldsNull_soTheCallerSubstitutesItsOwn() {
+        // A client-side failure before the request leaves has no status to report, and inventing one would
+        // claim the device said something it never said. Null is how the caller knows to fall back to
+        // Bad_InternalError, which honestly means "Edge learned nothing more".
+        final Throwable thrown = new CompletionException(new IllegalStateException("not connected"));
+
+        assertThat(Browsing.statusCodeOf(thrown)).isNull();
+        assertThat(Browsing.statusCodeOf(null)).isNull();
+    }
+
     @Test
     void andNeitherIsATransportFailureThatCarriesNoStatusAtAll() {
         final OpcUaClient client = mock(OpcUaClient.class);

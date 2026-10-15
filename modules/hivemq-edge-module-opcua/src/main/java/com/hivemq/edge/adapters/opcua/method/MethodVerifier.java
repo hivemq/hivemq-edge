@@ -39,6 +39,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,17 +131,50 @@ public final class MethodVerifier {
         // mistake has no HasComponent methods either, so browsing alone would report it as an object with none
         // -- a usable tag that can never serve a request, and a rejection the operator never sees. Naming the
         // mistake costs one read.
+        // Traced end to end, deliberately and at every narrowing step. The symptom this answers is a device that
+        // yields its method when this code is called directly and no methods when the same code is called from
+        // inside the running adapter -- so the question is never "is the logic right" but "where between those
+        // two contexts does the count become zero". Every count below is therefore a point where two runs of the
+        // same build can be compared line by line, which is what makes one round of measurement enough.
+        //
+        // Deliberately verbose: an extra line costs a second of reading, a missing one costs a lab deploy and a
+        // QA round. Kept in the product rather than removed afterwards, so the next device that behaves oddly
+        // needs no new build. Reported by QA as P12 on EDG-1100 and again on EDG-1116.
+        final long startedAt = System.nanoTime();
+        log.debug("Tag '{}': reading the methods of {}. Session: {}", tagName, objectNode, describeSession(client));
+
         return confirmObject(client, objectNode, tagName)
                 .thenCompose(rejection -> {
                     if (rejection != null) {
+                        log.debug("Tag '{}': {} is not an object, so there is nothing to browse", tagName, objectNode);
                         return CompletableFuture.completedFuture(rejection);
                     }
                     return Browsing.browseAll(client, browse)
-                            .thenCompose(references ->
-                                    readSignatures(client, references, objectNode, false, objectNode, tagName))
-                            .thenCompose(
-                                    fromInstance -> addInheritedMethods(client, objectNode, fromInstance, tagName));
+                            .thenCompose(references -> {
+                                // The decisive count. An empty list here and a non-empty one in a direct run
+                                // localises the fault to the browse rather than to anything downstream of it.
+                                log.debug(
+                                        "Tag '{}': browsing {} for HasComponent returned {} reference(s): {}",
+                                        tagName,
+                                        objectNode,
+                                        references.size(),
+                                        describeReferences(references));
+                                return readSignatures(client, references, objectNode, false, objectNode, tagName);
+                            })
+                            .thenCompose(fromInstance -> {
+                                log.debug(
+                                        "Tag '{}': the object itself yielded {}",
+                                        tagName,
+                                        describeOutcome(fromInstance));
+                                return addInheritedMethods(client, objectNode, fromInstance, tagName);
+                            });
                 })
+                .whenComplete((result, throwable) -> log.debug(
+                        "Tag '{}': reading the methods of {} ended after {} ms as {}",
+                        tagName,
+                        objectNode,
+                        (System.nanoTime() - startedAt) / 1_000_000L,
+                        throwable != null ? "a throw: " + throwable : describeOutcome(result)))
                 .exceptionally(throwable -> {
                     // A node the server does not expose is a rejection here, not the "unverifiable" it is for
                     // a condition. OPC 10000-9 §4.3 lets a server keep condition *instances* hidden and
@@ -160,6 +194,84 @@ public final class MethodVerifier {
                             + Browsing.describeException(throwable));
                 });
     }
+
+    // region Tracing helpers
+    //
+    // Formatting only, and each one answers a question a two-run comparison asks. They swallow their own
+    // failures: a trace that throws while describing a state would replace the problem being investigated with
+    // one of its own.
+
+    /// The session this browse will use, or why it could not be named.
+    ///
+    /// Present because the fault being chased may be a browse issued against a session that is up but not yet
+    /// usable, and that is invisible in a reference count alone. A failure to read it is itself the answer, so
+    /// it is reported rather than thrown -- `getSession` throws when there is no session, which is the state
+    /// most worth seeing in the log.
+    private static @NotNull String describeSession(final @NotNull OpcUaClient client) {
+        try {
+            final var session = client.getSession();
+            return session.getSessionName() + " / " + session.getSessionId();
+        } catch (final Exception e) {
+            return "none: " + e;
+        }
+    }
+
+    /// Every browsed reference with the two fields that decide its fate: its node class and its name.
+    private static @NotNull String describeReferences(final @NotNull List<ReferenceDescription> references) {
+        if (references.isEmpty()) {
+            return "none";
+        }
+        final StringBuilder described = new StringBuilder();
+        for (final ReferenceDescription reference : references) {
+            if (!described.isEmpty()) {
+                described.append(", ");
+            }
+            described
+                    .append(reference.getBrowseName())
+                    .append(" [")
+                    .append(reference.getNodeClass())
+                    .append(" ")
+                    .append(reference.getNodeId())
+                    .append("]");
+        }
+        return described.toString();
+    }
+
+    /// An argument list by name, so a count that is right with names that are wrong is still visible.
+    private static @NotNull String describeArguments(final Argument @NotNull [] arguments) {
+        if (arguments.length == 0) {
+            return "none";
+        }
+        final StringBuilder described = new StringBuilder();
+        for (final Argument argument : arguments) {
+            if (!described.isEmpty()) {
+                described.append(", ");
+            }
+            described.append(argument.getName()).append(": ").append(argument.getDataType());
+        }
+        return described.toString();
+    }
+
+    /// A verification outcome in one line: which kind, how many methods, and their names.
+    private static @NotNull String describeOutcome(final @Nullable Result result) {
+        return switch (result) {
+            case null -> "nothing";
+            case final Result.Verified verified ->
+                "verified, "
+                        + verified.methods().size()
+                        + " method(s) ["
+                        + verified.methods().stream()
+                                .map(method -> method.browseName() + " " + method.origin())
+                                .reduce((a, b) -> a + ", " + b)
+                                .orElse("none")
+                        + "], complete="
+                        + verified.complete();
+            case final Result.Rejected rejected -> "rejected: " + rejected.reason();
+            case final Result.Unverifiable unverifiable -> "unverifiable: " + unverifiable.reason();
+        };
+    }
+
+    // endregion
 
     /// A browse for the methods hanging off a node, asking the server to filter nothing.
     ///
@@ -250,10 +362,29 @@ public final class MethodVerifier {
         for (final ReferenceDescription reference : references) {
             // The node-class filter the server was asked not to apply -- see methodsOf. Applied before the
             // node is resolved, so a Variable sitting beside a method costs nothing rather than a round trip.
-            if (isMethod(reference)) {
+            //
+            // Logged per reference, kept or dropped. This is the one place a method the server did report can
+            // still be discarded, and the S7-1500 is exactly the device that makes the decision non-obvious:
+            // it calls a method node an Object.
+            final boolean kept = isMethod(reference);
+            log.debug(
+                    "Tag '{}': reference {} named '{}' of class {} on {} -- {}",
+                    tagName,
+                    reference.getNodeId(),
+                    reference.getBrowseName(),
+                    reference.getNodeClass(),
+                    owner,
+                    kept ? "resolving it" : "dropped, its class is positively not a method");
+            if (kept) {
                 pending.add(readSignature(client, reference, onAType, owner, objectId));
             }
         }
+        log.debug(
+                "Tag '{}': {} of {} reference(s) on {} will be resolved",
+                tagName,
+                pending.size(),
+                references.size(),
+                owner);
 
         return CompletableFuture.allOf(pending.toArray(new CompletableFuture[0]))
                 .thenApply(ignored -> {
@@ -311,6 +442,7 @@ public final class MethodVerifier {
         // describe a callable method, so it is dropped here rather than carried as a nameless signature.
         final QualifiedName browseName = reference.getBrowseName();
         if (browseName == null || browseName.getName() == null) {
+            log.debug("Reference {} on {} has no usable browse name, so it is dropped", reference.getNodeId(), owner);
             return CompletableFuture.completedFuture(null);
         }
 
@@ -319,8 +451,22 @@ public final class MethodVerifier {
                 .thenCompose(
                         nodeId -> client.getAddressSpace().getNodeAsync(nodeId).thenCompose(node -> {
                             if (!(node instanceof final UaMethodNode methodNode)) {
+                                // The second of the two places a browsed reference is discarded. Together with
+                                // the node-class filter these account for every method the server reported and
+                                // Edge did not keep, which is the accounting a zero-method object needs.
+                                log.debug(
+                                        "Method '{}' on {} resolved to {}, which is not a method node, so it is "
+                                                + "dropped",
+                                        browseName,
+                                        owner,
+                                        node.getNodeClass());
                                 return CompletableFuture.completedFuture((MethodSignature) null);
                             }
+                            log.debug(
+                                    "Method '{}' on {} resolved to node {}; reading its arguments",
+                                    browseName,
+                                    owner,
+                                    nodeId);
                             // An absent arguments property means the method takes none: OPC 10000-3 section
                             // 5.7 makes the property optional and says "a Property that is not provided
                             // indicates that there are no input arguments or output arguments", so that is how
@@ -335,32 +481,50 @@ public final class MethodVerifier {
                             final CompletableFuture<Argument[]> outputs =
                                     emptyWhenAbsent(methodNode.readOutputArgumentsAsync());
                             if (!onAType) {
-                                return inputs.thenCombine(
-                                        outputs,
-                                        (in, out) -> new MethodSignature(
-                                                browseName,
-                                                nodeId,
-                                                objectId,
-                                                MethodSignature.Origin.OBJECT,
-                                                List.of(in),
-                                                List.of(out),
-                                                builtinTypesOf(client, in, out)));
+                                return inputs.thenCombine(outputs, (in, out) -> {
+                                    log.debug(
+                                            "Method '{}' on object {} declares {} input(s) {} and {} output(s) {}",
+                                            browseName,
+                                            owner,
+                                            in.length,
+                                            describeArguments(in),
+                                            out.length,
+                                            describeArguments(out));
+                                    return new MethodSignature(
+                                            browseName,
+                                            nodeId,
+                                            objectId,
+                                            MethodSignature.Origin.OBJECT,
+                                            List.of(in),
+                                            List.of(out),
+                                            builtinTypesOf(client, in, out));
+                                });
                             }
                             return hasModellingRule(client, nodeId)
-                                    .thenCompose(declared -> inputs.thenCombine(
-                                            outputs,
-                                            (in, out) -> new MethodSignature(
-                                                    browseName,
-                                                    nodeId,
-                                                    // A static method is invoked by naming the type; a declaration
-                                                    // describes a method of the instance, so a call names the object.
-                                                    declared ? objectId : owner,
-                                                    declared
-                                                            ? MethodSignature.Origin.TYPE_DECLARATION
-                                                            : MethodSignature.Origin.TYPE_STATIC,
-                                                    List.of(in),
-                                                    List.of(out),
-                                                    builtinTypesOf(client, in, out))));
+                                    .thenCompose(declared -> inputs.thenCombine(outputs, (in, out) -> {
+                                        log.debug(
+                                                "Method '{}' on type {} is {} and declares {} input(s) {} and {} "
+                                                        + "output(s) {}",
+                                                browseName,
+                                                owner,
+                                                declared ? "a declaration, called on the object" : "static",
+                                                in.length,
+                                                describeArguments(in),
+                                                out.length,
+                                                describeArguments(out));
+                                        return new MethodSignature(
+                                                browseName,
+                                                nodeId,
+                                                // A static method is invoked by naming the type; a declaration
+                                                // describes a method of the instance, so a call names the object.
+                                                declared ? objectId : owner,
+                                                declared
+                                                        ? MethodSignature.Origin.TYPE_DECLARATION
+                                                        : MethodSignature.Origin.TYPE_STATIC,
+                                                List.of(in),
+                                                List.of(out),
+                                                builtinTypesOf(client, in, out));
+                                    }));
                         }));
     }
 
@@ -637,8 +801,23 @@ public final class MethodVerifier {
         // filter hides a method on an object hides it on the type too, and a static method lives only there.
         final BrowseDescription methods = methodsOf(type);
 
+        log.debug(
+                "Tag '{}': climbing to type {} at level {}, {} method(s) known so far",
+                tagName,
+                type,
+                depth,
+                known.size());
+
         return Browsing.browseAll(client, methods)
-                .thenCompose(references -> readSignatures(client, references, type, true, objectNode, tagName))
+                .thenCompose(references -> {
+                    log.debug(
+                            "Tag '{}': browsing type {} for HasComponent returned {} reference(s): {}",
+                            tagName,
+                            type,
+                            references.size(),
+                            describeReferences(references));
+                    return readSignatures(client, references, type, true, objectNode, tagName);
+                })
                 .thenCompose(result -> {
                     final List<MethodSignature> merged = result instanceof final Result.Verified verified
                             ? keepingNearest(known, verified.methods())
@@ -648,6 +827,15 @@ public final class MethodVerifier {
                     // single Bad_Timeout mid-climb produced a cacheable "these are all the methods", hiding
                     // every static method and inherited declaration until the session ended.
                     final boolean levelRead = !(result instanceof Result.Unverifiable);
+                    log.debug(
+                            "Tag '{}': type {} at level {} contributed {}; {} method(s) known after merging, level "
+                                    + "{}",
+                            tagName,
+                            type,
+                            depth,
+                            describeOutcome(result),
+                            merged.size(),
+                            levelRead ? "read" : "NOT readable, so the climb is incomplete");
                     return supertypeOf(client, type)
                             .thenCompose(supertype -> supertype == null
                                     ? CompletableFuture.completedFuture(new Climb(List.copyOf(merged), levelRead))

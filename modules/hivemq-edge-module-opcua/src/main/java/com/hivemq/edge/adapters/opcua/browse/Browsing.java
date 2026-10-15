@@ -169,6 +169,34 @@ public final class Browsing {
     }
 
     /**
+     * The OPC UA status code a failure carries, or {@code null} when it carries none.
+     * <p>
+     * <b>Why this exists.</b> A failed call used to be reported to the caller as {@code Bad_InternalError} with
+     * the exception's message as the detail, discarding a status code the device had supplied. The reference
+     * tells callers that a transport or session failure reaches them named — and warns them not to treat a
+     * timeout as proof the method did not run, which they cannot act on when the timeout is not named. So a
+     * caller could not distinguish "the device never answered" from "Edge itself broke". Reported by QA as P20
+     * on EDG-1116.
+     * <p>
+     * Null for a failure that genuinely has no status: a client-side timeout before the request leaves, or any
+     * plain exception. The caller substitutes its own code for those, which is what {@code Bad_InternalError}
+     * honestly means — Edge learned nothing more.
+     */
+    public static @Nullable Long statusCodeOf(final @Nullable Throwable throwable) {
+        if (throwable == null) {
+            return null;
+        }
+        final Throwable root = rootOf(throwable);
+        if (root instanceof final BrowseFailedException failure) {
+            return failure.status() == null ? null : failure.status().value();
+        }
+        if (root instanceof final UaException failure) {
+            return failure.getStatusCode().value();
+        }
+        return null;
+    }
+
+    /**
      * The throwable underneath the async plumbing's wrappers.
      * <p>
      * Bounded rather than a {@code while (true)}: a self-referential cause would otherwise hang the caller,
