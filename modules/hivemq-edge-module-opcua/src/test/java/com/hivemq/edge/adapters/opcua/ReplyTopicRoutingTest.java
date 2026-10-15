@@ -18,6 +18,8 @@ package com.hivemq.edge.adapters.opcua;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.hivemq.edge.adapters.opcua.method.MethodRequestFieldsOpcUa;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,15 +39,22 @@ import org.junit.jupiter.params.provider.ValueSource;
 /// publish failed inside the consumer with only a logged warning, and the caller waited forever for an answer
 /// nobody could deliver.
 ///
-/// **A guard rather than the validation.** Such a request is rejected in Edge now, where the request's `context`
-/// is assembled before the data policy runs, and is quarantined without the device being touched -- so these
+/// **A guard rather than the validation.** Such a request is rejected in Edge now, where the request's
+/// parameters are assembled before the data policy runs, and is refused without the device being touched -- so these
 /// inputs cannot arrive through the normal path at all. They are pinned anyway, because the adapter must not
 /// depend on another component for its own routing to be correct.
 class ReplyTopicRoutingTest {
 
+    /// A request naming `replyTopic`, built the way Edge builds one: the parameters sit inside `value`, in the
+    /// field that carries them across the adapter border.
     private static @NotNull OpcUaPayload requestAsking(final @Nullable String replyTopic) {
-        return new OpcUaPayload(
-                JsonNodeFactory.instance.objectNode(), new OpcUaPayload.RequestContext("Start", null, replyTopic));
+        final ObjectNode value = JsonNodeFactory.instance.objectNode();
+        final ObjectNode parameters = value.putObject(MethodRequestFieldsOpcUa.INTERNAL_REQUEST_PARAMETERS);
+        parameters.put(MethodRequestFieldsOpcUa.METHOD_NAME, "Start");
+        if (replyTopic != null) {
+            parameters.put(MethodRequestFieldsOpcUa.RESPONSE_TOPIC, replyTopic);
+        }
+        return new OpcUaPayload(value);
     }
 
     @Test

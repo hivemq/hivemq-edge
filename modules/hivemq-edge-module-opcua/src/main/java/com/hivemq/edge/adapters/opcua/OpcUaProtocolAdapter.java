@@ -1514,14 +1514,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         case MethodVerifier.Result.Verified verified -> {
                             final var methods = verified.methods();
                             log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
-                            // The context part names the fields a method tag's messages carry beside `value`, and
-                            // is what tells the runtime this is a method tag -- it lifts them to the document
-                            // root rather than nesting them, matching where they sit on the wire. The value and
-                            // southbound parts carry what the device declares: its outputs and its arguments.
+                            // Each value schema declares its own parameter object -- the request's inside the
+                            // southbound part, the response's inside the northbound one -- so the runtime lifts
+                            // them to the document root by iterating, with no list of names of its own. The
+                            // `context` slot stays empty: it is the protocol's namespace, not Edge's.
                             output.finish(new TagSchemaCreationOutput.DataPointSchema(
                                     MethodSchemas.responseSchema(methods),
                                     null,
-                                    MethodSchemas.methodFieldsSchema(),
+                                    null,
                                     MethodSchemas.requestSchema(methods)));
                         }
                         // The tag is wrong about the device: the node is absent, or is not an object. The

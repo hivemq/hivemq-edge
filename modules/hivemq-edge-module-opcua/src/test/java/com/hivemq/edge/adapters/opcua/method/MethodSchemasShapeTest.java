@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import java.util.List;
+import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -95,26 +96,54 @@ class MethodSchemasShapeTest {
     }
 
     @Test
-    void methodFieldsSchema_namesEveryFieldCarriedBesideValue() {
-        // The counterpart: these five do not belong in `value`. This one part serves both directions -- the
-        // runtime reads the names from it and lifts them to the document root -- so it names the union.
-        final JsonNode properties = json(MethodSchemas.methodFieldsSchema()).get("properties");
+    void theRequestParameters_nameWhatARequestCarries_andRequireTheMethodName() {
+        // The counterpart to the test above: these do not belong in `value` on the wire, and each direction
+        // declares its own set exactly rather than a union of both. A request carries three, and `methodName`
+        // is the one it cannot do without -- no MQTT property supplies a method name.
+        final JsonNode parameters = json(MethodSchemas.requestSchema(List.of(method())))
+                .get("properties")
+                .get("INTERNAL_REQUEST_PARAMETERS");
+        final JsonNode properties = parameters.get("properties");
 
         assertThat(properties.has("methodName")).isTrue();
         assertThat(properties.has("correlationData")).isTrue();
         assertThat(properties.has("responseTopic")).isTrue();
-        assertThat(properties.has("errorCode")).isTrue();
-        assertThat(properties.has("statusInfo")).isTrue();
+        assertThat(properties.has("errorCode"))
+                .withFailMessage("a response-only field is declared on a request: %s", parameters)
+                .isFalse();
+        assertThat(properties.has("statusInfo"))
+                .withFailMessage("a response-only field is declared on a request: %s", parameters)
+                .isFalse();
+
+        assertThat(parameters.get("required")).hasSize(1);
+        assertThat(parameters.get("required").get(0).textValue()).isEqualTo("methodName");
     }
 
     @Test
-    void methodFieldsSchema_requiresNothing() {
-        // Every field optional, methodName included. A request and a response carry different subsets of this
-        // one part, so requiring any field would state something false about the other direction.
-        final JsonNode schema = json(MethodSchemas.methodFieldsSchema());
+    void theResponseParameters_nameWhatAResponseCarries_andRequireNothing() {
+        // The mirror, and the asymmetry is deliberate. A response declares four, all optional: the failure
+        // fields appear only on a failure and the token only when the caller sent one. `responseTopic` is
+        // absent although the payload carries it -- Edge consumes it to choose the publish topic, and a
+        // published response must not carry a routing instruction for itself.
+        // The root is nullable -- a failed call publishes `value` as null -- so the properties sit in the
+        // object branch of the rendered `anyOf` rather than at the top.
+        final JsonNode parameters = json(MethodSchemas.responseSchema(List.of(method())))
+                .get("anyOf")
+                .get(0)
+                .get("properties")
+                .get("INTERNAL_RESPONSE_PARAMETERS");
+        final JsonNode properties = parameters.get("properties");
 
-        assertThat(schema.has("required"))
-                .withFailMessage("the method-fields part requires something: %s", schema)
+        assertThat(properties.has("methodName")).isTrue();
+        assertThat(properties.has("correlationData")).isTrue();
+        assertThat(properties.has("errorCode")).isTrue();
+        assertThat(properties.has("statusInfo")).isTrue();
+        assertThat(properties.has("responseTopic"))
+                .withFailMessage("responseTopic must stay out of the response schema: %s", parameters)
+                .isFalse();
+
+        assertThat(parameters.has("required"))
+                .withFailMessage("a response's parameters require something: %s", parameters)
                 .isFalse();
     }
 
@@ -137,10 +166,12 @@ class MethodSchemasShapeTest {
 
         final JsonNode schema = json(MethodSchemas.requestSchema(List.of(noArguments)));
 
-        // `properties` is always rendered, empty here. Empty properties plus additionalProperties false is what
-        // "permits nothing" looks like in JSON Schema -- only `{}` satisfies it.
+        // Closed, plus no argument property -- which together say "only the parameter object is allowed in
+        // here". The parameter object is the single property, and it is Edge's rather than the device's, so it
+        // is named and skipped instead of being counted as an argument.
         assertThat(schema.get("additionalProperties").booleanValue()).isFalse();
-        assertThat(schema.get("properties")).isEmpty();
+        assertThat(schema.get("properties").properties().stream().map(Map.Entry::getKey))
+                .containsExactly("INTERNAL_REQUEST_PARAMETERS");
     }
 
     @Test

@@ -93,6 +93,7 @@ import com.hivemq.http.HttpStatus;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.MethodRequestFields;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
@@ -1084,7 +1085,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        if (requiredFieldsOf(schema).contains("methodName")) {
+        if (requiredFieldsOf(schema).contains(MethodRequestFields.METHOD_NAME)) {
             return;
         }
 
