@@ -1079,14 +1079,14 @@ class ProtocolAdaptersResourceImplTest {
         assertThat(response.getEntity().toString()).contains("timed out");
     }
 
-    // ── EDG-1087 M4: a promised request field the topic filter's schema does not require ──────────
+    // ── EDG-1087 M4: a method mapping whose topic filter's schema does not require methodName ──────────
     //
-    // A method request carries `methodName`, and optionally a correlation token and a reply address, beside its
-    // `value`. AC 7 says a request omitting one the mapping promised is refused. The adapter cannot keep that
-    // promise: the southbound field mapping is a whitelist, so a switched-off field is deleted before the
-    // adapter is called, and by then "the caller omitted it" and "the mapping does not carry it" are the same
-    // thing. The promise is therefore kept one gate earlier, by the schema on the topic filter — and that only
-    // works if the schema and the mapping agree, which is what these pin.
+    // A method request names the method to call in its payload, and nothing else supplies that name, so a
+    // request without it is unroutable. The schema on the topic filter is the gate that can refuse it before
+    // anything runs on the device, which is what these pin.
+    //
+    // The correlation token and the reply address are deliberately not demanded: either may arrive as an MQTT 5
+    // property with nothing in the payload, so a schema requiring them would refuse well-formed requests.
 
     private static final @NotNull String SCHEMA_REQUIRING_VALUE_ONLY =
             "{\"type\":\"object\",\"required\":[\"value\"],\"properties\":{\"value\":{\"type\":\"object\"}}}";
@@ -1136,11 +1136,11 @@ class ProtocolAdaptersResourceImplTest {
     }
 
     @Test
-    void southboundMapping_promisingACorrelationToken_isRefusedWhenTheSchemaDoesNotRequireIt() {
-        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME);
+    void southboundMapping_carryingAMethodCall_isRefusedWhenTheSchemaDoesNotRequireMethodName() {
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_VALUE_ONLY);
 
         final ApiException thrown = catchThrowableOfType(
-                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(true)),
+                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
                 ApiException.class);
 
         assertThat(thrown).isNotNull();
@@ -1149,27 +1149,27 @@ class ProtocolAdaptersResourceImplTest {
                 .isEqualTo(400);
         assertThat(thrown.getMessage())
                 .as("the refusal has to name both sides and the entry to add")
-                .contains("correlationData")
+                .contains("methodName")
                 .contains("plant/boiler1/call")
                 .contains("required");
     }
 
     @Test
-    void southboundMapping_carryingMethodCalls_isRefusedWhenTheSchemaDoesNotRequireMethodName() {
-        // methodName is promised whenever the mapping carries method calls: a request without it names no
-        // method to call, so there is no setting that could make it optional.
-        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_VALUE_ONLY);
+    void southboundMapping_promisingACorrelationToken_isAcceptedWhenTheSchemaOnlyRequiresMethodName() {
+        // The token may arrive as the MQTT 5 Correlation Data property with nothing in the payload, so
+        // demanding it in the schema would refuse exactly those well-formed requests.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 
-        final ApiException thrown = catchThrowableOfType(
-                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
-                ApiException.class);
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(true));
 
-        assertThat(thrown).isNotNull();
-        assertThat(thrown.getMessage()).contains("methodName");
+        assertEquals(200, response.getStatus());
     }
 
     @Test
-    void southboundMapping_isAcceptedWhenTheSchemaRequiresEverythingPromised() {
+    void southboundMapping_isAcceptedWhenTheSchemaRequiresTheTokenAsWell() {
+        // The operator may still require the token -- that is their schema's business, not this check's.
         mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_AND_TOKEN);
         when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 

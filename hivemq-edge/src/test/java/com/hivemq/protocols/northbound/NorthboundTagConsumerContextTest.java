@@ -23,16 +23,18 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.datapoint.DataPointWithMetadata;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -64,7 +66,11 @@ class NorthboundTagConsumerContextTest {
         }
     };
 
-    private record Published(@NotNull String topic, @NotNull JsonNode payload) {}
+    /// What one datapoint produced: the topic, the payload, and the MQTT 5 Correlation Data property if set.
+    private record Published(
+            @NotNull String topic,
+            @NotNull JsonNode payload,
+            byte @org.jetbrains.annotations.Nullable [] correlationData) {}
 
     /// Runs one datapoint through a consumer and reports what was published.
     private static @NotNull Published publish(
@@ -72,8 +78,12 @@ class NorthboundTagConsumerContextTest {
 
         final AtomicReference<String> topic = new AtomicReference<>();
         final AtomicReference<byte[]> payload = new AtomicReference<>();
+        final AtomicReference<byte[]> correlationData = new AtomicReference<>();
 
-        final var builder = mock(ProtocolAdapterPublishBuilder.class);
+        // The implementation, not the SDK interface. The consumer holds that type so it can set the MQTT 5
+        // Correlation Data property, which is deliberately not on the interface -- see
+        // ProtocolAdapterPublishBuilderImpl.withCorrelationData.
+        final var builder = mock(ProtocolAdapterPublishBuilderImpl.class);
         when(builder.withTopic(any())).thenAnswer(invocation -> {
             topic.set(invocation.getArgument(0));
             return builder;
@@ -84,6 +94,10 @@ class NorthboundTagConsumerContextTest {
             return builder;
         });
         when(builder.withAdapter(any())).thenReturn(builder);
+        when(builder.withCorrelationData(any())).thenAnswer(invocation -> {
+            correlationData.set(invocation.getArgument(0));
+            return builder;
+        });
         when(builder.send()).thenReturn(CompletableFuture.completedFuture(null));
 
         final var publishService = mock(ProtocolAdapterPublishServiceImpl.class);
@@ -105,40 +119,34 @@ class NorthboundTagConsumerContextTest {
 
         consumer.accept(dataPoint);
 
-        return new Published(topic.get(), new ObjectMapper().readTree(payload.get()));
+        return new Published(topic.get(), new ObjectMapper().readTree(payload.get()), correlationData.get());
     }
 
-    /// A mapping that echoes a caller's correlation token, which is what every test here but
-    /// {@link #correlationData_isWithheldWhenTheMappingSaysNotToWriteIt()} is about.
+    /// A plain northbound mapping, which is the only kind there is.
+    ///
+    /// It takes no parameter because a northbound mapping has no method-call configuration: what a response
+    /// carries is decided by the southbound mapping that sent the request and travels with the request in its
+    /// context, so every test here varies the datapoint's context rather than the mapping.
     private static @NotNull NorthboundMapping mapping() {
-        return mapping(true);
-    }
-
-    private static @NotNull NorthboundMapping mapping(final boolean writeCorrelationData) {
         return new NorthboundMapping(
-                "boiler1",
-                "plant/boiler1/result",
-                1,
-                false,
-                false,
-                false,
-                List.of(),
-                Long.MAX_VALUE,
-                writeCorrelationData);
+                "boiler1", "plant/boiler1/result", 1, false, false, false, List.of(), Long.MAX_VALUE);
     }
 
-    /// Builds a datapoint carrying a value and the given context entries.
-    private static @NotNull DataPoint dataPoint(final @NotNull String... contextPairs) {
+    /// Builds a datapoint as a method adapter produces one: an object `value` holding one output argument and
+    /// the response's parameters, in the field that carries them across the adapter boundary.
+    private static @NotNull DataPoint dataPoint(final @NotNull String... parameterPairs) {
         final var builder =
                 (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
-        builder.value(42);
-        if (contextPairs.length > 0) {
-            final var context = builder.startObjectContext();
-            for (int i = 0; i < contextPairs.length; i += 2) {
-                context.put(contextPairs[i], contextPairs[i + 1]);
+        final var value = builder.startObjectValue();
+        value.put("output1", 42);
+        if (parameterPairs.length > 0) {
+            final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS");
+            for (int i = 0; i < parameterPairs.length; i += 2) {
+                parameters.put(parameterPairs[i], parameterPairs[i + 1]);
             }
-            context.endObject();
+            parameters.endObject();
         }
+        value.endObject();
         builder.endDataPoint();
         return builder.build("adapter-1");
     }
@@ -152,25 +160,68 @@ class NorthboundTagConsumerContextTest {
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
         // The child is a carrier inside Edge, not a level a consumer should descend.
         assertThat(published.payload().has("context")).isFalse();
-        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
     }
 
     @Test
-    void aContextEntryTheConsumerDoesNotName_isNotPublished() throws Exception {
-        // The consumer publishes four named fields, not whatever `context` holds. `context` is the protocol's
-        // namespace -- Edge does not own it and must not republish it wholesale.
-        //
-        // An earlier version copied every entry, which published `{"key": "value"}` -- a placeholder the polling
-        // datapoint builder has written into `context` since 2026-03, shipped unseen in nine releases because
-        // nothing published `context` -- on every message of all eight polling adapters. SimpleHttpToMqttIT
-        // caught it on a strict comparison; this catches it here instead.
-        final Published published = publish(mapping(), dataPoint("methodName", "Start", "key", "value"));
+    void theKnownParametersArePublished_theCarrierAndAnUnknownParameterAreNot() throws Exception {
+        // Edge publishes a closed set of parameters: methodName, errorCode, statusInfo and correlationData.
+        // A name outside it is ignored, because what a response publishes is Edge's contract with the
+        // subscriber rather than the adapter's. The field that carried them never reaches the wire.
+        final Published published = publish(mapping(), dataPoint("methodName", "Start", "somethingNew", "x"));
 
-        assertThat(published.payload().has("key"))
-                .withFailMessage("an unnamed context entry reached the message: %s", published.payload())
-                .isFalse();
         assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
-        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+        assertThat(published.payload().has("somethingNew"))
+                .withFailMessage("a parameter Edge does not know was published: %s", published.payload())
+                .isFalse();
+        assertThat(published.payload().path("value").has("INTERNAL_RESPONSE_PARAMETERS"))
+                .withFailMessage("the carrier reached the wire: %s", published.payload())
+                .isFalse();
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void aFailedCallPublishesValueAsNull() throws Exception {
+        // A failure writes no output arguments, so the parameter object is all `value` holds -- and once that
+        // is lifted out, `value` is published as null. Null and the empty object must not render alike: the
+        // empty object means the method ran and declares no outputs, which is a different outcome.
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final var value = builder.startObjectValue();
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS");
+        parameters.put("methodName", "Start");
+        parameters.put("errorCode", "Bad_NotExecutable");
+        parameters.endObject();
+        value.endObject();
+        builder.endDataPoint();
+
+        final Published published = publish(mapping(), builder.build("adapter-1"));
+
+        assertThat(published.payload().get("value").isNull())
+                .withFailMessage("a failed call must publish value as null: %s", published.payload())
+                .isTrue();
+        assertThat(published.payload().get("errorCode").textValue()).isEqualTo("Bad_NotExecutable");
+    }
+
+    @Test
+    void aSucceedingCallWithNoOutputsPublishesAnEmptyValue() throws Exception {
+        // The boundary of the test above, and the distinction null exists to keep: the method ran and declares
+        // no output arguments, so `value` is an empty object rather than null.
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final var value = builder.startObjectValue();
+        value.put("keepMeAnObject", "x");
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS");
+        parameters.put("methodName", "Start");
+        parameters.endObject();
+        value.endObject();
+        builder.endDataPoint();
+
+        final Published published = publish(mapping(), builder.build("adapter-1"));
+
+        assertThat(published.payload().get("value").isNull())
+                .withFailMessage("a succeeding call must not publish value as null: %s", published.payload())
+                .isFalse();
     }
 
     @Test
@@ -182,23 +233,13 @@ class NorthboundTagConsumerContextTest {
     }
 
     @Test
-    void correlationData_isWithheldWhenTheMappingSaysNotToWriteIt() throws Exception {
-        // The northbound flag has to actually govern the published message. It was offered in the mapping form,
-        // persisted, and carried into the runtime mapping while nothing read it -- so a deployment that turned it
-        // off still published the token. A visible setting that does nothing is worse than no setting.
+    void correlationData_isPublishedWheneverTheContextCarriesIt() throws Exception {
+        // The presence of the token in the context is the whole decision. There is deliberately no setting that
+        // withholds it: the request either carried a token or it did not, and whether a given subscriber sees it
+        // is settled further downstream, where a version-5 client gets the MQTT property and a version-3 client
+        // cannot. A setting here could only disagree with that.
         final Published published =
-                publish(mapping(false), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
-
-        assertThat(published.payload().has("correlationData")).isFalse();
-        // Only that one entry is withheld: the rest of the response is unaffected.
-        assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
-        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
-    }
-
-    @Test
-    void correlationData_isPublishedWhenTheMappingSaysToWriteIt() throws Exception {
-        final Published published =
-                publish(mapping(true), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
+                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
 
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
     }
@@ -252,7 +293,7 @@ class NorthboundTagConsumerContextTest {
         final Published published = publish(mapping(), dataPoint());
 
         assertThat(published.topic()).isEqualTo("plant/boiler1/result");
-        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
         assertThat(published.payload().has("context")).isFalse();
     }
 
@@ -262,6 +303,66 @@ class NorthboundTagConsumerContextTest {
         // be far harder to diagnose than one that declines to.
         final Published published = publish(mapping(), dataPoint("value", "hijacked"));
 
-        assertThat(published.payload().get("value").intValue()).isEqualTo(42);
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void aRawPrefixedToken_isEchoedWithoutItsPrefix() throws Exception {
+        // The decisive case for a caller who put a token in the request payload. `raw:` is Edge's own
+        // bookkeeping, marking the value as text the caller typed -- so it must not appear in what they get
+        // back. Echoing `raw:mes-east-00417` would hand back something they never sent, and would break a
+        // consumer matching the token against the one it generated.
+        final Published published =
+                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:mes-east-00417"));
+
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
+        assertThat(published.correlationData()).isEqualTo("mes-east-00417".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void aBase64PrefixedToken_keepsItsPrefixInThePayloadAndIsDecodedIntoTheProperty() throws Exception {
+        // The other direction, and the prefix stays. A caller setting the MQTT 5 property sent arbitrary bytes;
+        // the context carried them base64 because a user property value is text. Three things follow:
+        //
+        //   - the MQTT 5 property gets those exact bytes back;
+        //   - the payload keeps `base64:`, because decoding arbitrary bytes into a JSON string would mangle
+        //     them, and the prefix is what tells a consumer to decode rather than compare;
+        //   - the payload copy cannot be omitted, because nothing guarantees a request from an MQTT 5 client is
+        //     answered to an MQTT 5 subscriber -- an MQTT 3 consumer may be the only one reading.
+        final byte[] token = {0x00, 0x01, (byte) 0xFF, 0x7F};
+        final String encoded = Base64.getEncoder().encodeToString(token);
+        final Published published =
+                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "base64:" + encoded));
+
+        assertThat(published.correlationData()).isEqualTo(token);
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("base64:" + encoded);
+    }
+
+    @Test
+    void anUnprefixedToken_isTreatedAsRaw() throws Exception {
+        // Not a shape Edge produces -- it would mean a hand-edited datapoint or a future producer. UTF-8 bytes
+        // are the least surprising reading of plain text, and dropping the correlation would be worse.
+        final Published published = publish(mapping(), dataPoint("methodName", "Start", "correlationData", "plain"));
+
+        assertThat(published.correlationData()).isEqualTo("plain".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void noToken_setsNoMqtt5Property() throws Exception {
+        final Published published = publish(mapping(), dataPoint("methodName", "Start"));
+
+        assertThat(published.correlationData()).isNull();
+    }
+
+    @Test
+    void aToken_reachesBothThePayloadAndTheMqtt5Property() throws Exception {
+        // Both slots, always, from the one token in the context. These are different slots reaching different
+        // callers -- a version-3 client can read only the payload copy, a version-5 client can use the property
+        // -- and the published message is one object serialised per subscriber, so writing both is what lets the
+        // encoder give each client what it can actually use.
+        final Published published = publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:abc"));
+
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("abc");
+        assertThat(published.correlationData()).isEqualTo("abc".getBytes(StandardCharsets.UTF_8));
     }
 }

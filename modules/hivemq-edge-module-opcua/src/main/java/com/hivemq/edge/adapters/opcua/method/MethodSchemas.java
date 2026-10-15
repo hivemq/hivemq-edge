@@ -54,6 +54,10 @@ public final class MethodSchemas {
 
     private MethodSchemas() {}
 
+    // @formatter:off -- the property declarations below are instances of one pattern, and the formatter's
+    // one-call-per-line rendering hides that. The breaks are chosen to show it: declaration and type on one
+    // line, prose on the next.
+
     /// The southbound schema: what a request's arguments may carry.
     ///
     /// ## Why this describes only the arguments
@@ -64,12 +68,11 @@ public final class MethodSchemas {
     /// `comment` and `duration` at its root, they render under `value`, and the adapter reads them back out of
     /// `payload.value()`.
     ///
-    /// A method request's other three fields are **not** inside `value`. They are siblings of it: the whole MQTT
-    /// payload is deserialised into {@code OpcUaPayload}, whose `methodName`, `correlationData` and
-    /// `responseTopic` are top-level record components, and {@link com.hivemq.protocols.MethodRequestInstructions}
-    /// writes them to the payload root for exactly that reason. So they cannot be declared here without landing a
-    /// level too deep -- which is what an earlier version of this method did, producing a schema that required
-    /// `methodName` inside `value` while every writer put it outside, so every request failed validation with
+    /// A method request's other three fields are **not** inside `value`. They are siblings of it: a caller
+    /// publishes `methodName`, `correlationData` and `responseTopic` at the payload root, and the generated
+    /// schemas declare them there. So they cannot be declared here without landing a level too deep -- which is
+    /// what an earlier version of this method did, producing a schema that required `methodName` inside `value`
+    /// while every writer put it outside, so every request failed validation with
     /// `$.value: required property 'methodName' not found`.
     ///
     /// They are not this adapter's to declare either: which of them a request must carry follows the southbound
@@ -92,9 +95,26 @@ public final class MethodSchemas {
     /// not cost the union anything: every name it carries gets a declared property, including one whose type two
     /// methods disagree about, so nothing legitimately named is rejected.
     public static @NotNull Schema requestSchema(final @NotNull Collection<MethodSignature> methods) {
-        final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
-        describeArguments(root, unionOfInputs(methods), true);
-        return root.additionalProperties(false).endObject().writable().build();
+        final ObjectSchemaBuilder<SchemaBuilder> requestSchema = new SchemaBuilder().startObject();
+        describeArguments(requestSchema, unionOfInputs(methods), true);
+
+        // The parameters a request carries, in the field that takes them across the adapter boundary. Edge
+        // lifts them to the document root by iterating this, so the names live here and nowhere else.
+        // `methodName` is required and the other two are not: either may arrive as an MQTT 5 property with
+        // nothing in the payload.
+        final ObjectSchemaBuilder<?> parameters =
+                requestSchema.property(MethodRequestFieldsOpcUa.INTERNAL_REQUEST_PARAMETERS).startObject();
+        parameters.property(MethodRequestFieldsOpcUa.METHOD_NAME).required().scalar(ScalarType.STRING)
+                .description("the method to call. Its name, which must be unique among the object's methods, or "
+                        + "the method node itself as nsu=<namespace uri>;<identifier> when two methods share a "
+                        + "name");
+        parameters.property(MethodRequestFieldsOpcUa.CORRELATION_DATA).scalar(ScalarType.STRING)
+                .description("a token echoed unchanged from the request to its response");
+        parameters.property(MethodRequestFieldsOpcUa.RESPONSE_TOPIC).scalar(ScalarType.STRING)
+                .description("the topic the response is published to, instead of the mapping's own");
+        parameters.endObject();
+
+        return requestSchema.additionalProperties(false).endObject().writable().build();
     }
 
     /// The northbound value schema: the output arguments a response carries.
@@ -106,67 +126,47 @@ public final class MethodSchemas {
     /// The union of every method's outputs, since one tag answers for all of them. On a failure `value` is
     /// published as null -- see {@link MethodResponse} -- which the nullable root states.
     ///
-    /// Everything else a response carries (`methodName`, `correlationData`, `errorCode`, `statusInfo`) is not in
-    /// `value`: {@link MethodResponse} writes it into the datapoint's `context`, which is a separate slot of a
-    /// `DataPointSchema` and is described by {@link #methodFieldsSchema}.
+    /// Everything else a response carries (`methodName`, `correlationData`, `errorCode`, `statusInfo`) is not a
+    /// field of `value` on the wire. It crosses the adapter border inside `value`, in the parameter object
+    /// declared below, which Edge lifts to the message root.
     public static @NotNull Schema responseSchema(final @NotNull Collection<MethodSignature> methods) {
-        final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
+        final ObjectSchemaBuilder<SchemaBuilder> responseSchema = new SchemaBuilder().startObject();
         // Not writable: a response's outputs are what the device produced, and nobody writes them.
-        describeArguments(root, unionOfOutputs(methods), false);
-        return root.endObject().nullable().build();
-    }
+        describeArguments(responseSchema, unionOfOutputs(methods), false);
 
-    /// The fields a method tag's messages carry **beside** `value`, in either direction.
-    ///
-    /// This is the datapoint's `context` part, and it is the only place the field names are stated. The runtime
-    /// reads them from here when it assembles a schema document and lifts them to the document root, which is
-    /// where they sit on the wire -- so a tag whose context part names `methodName` is a method tag, and nothing
-    /// has to tell the runtime so.
-    ///
-    /// On the way out {@link MethodResponse} writes them into the datapoint's `context` child and the northbound
-    /// consumer lifts them onto the published message. On the way in they arrive at the message root already,
-    /// and the southbound transform copies them through unmoved -- an asymmetry worth the trade, because a
-    /// caller should not have to nest Edge's own fields inside a `context` object to make a call.
-    public static @NotNull Schema methodFieldsSchema() {
-        final ObjectSchemaBuilder<SchemaBuilder> root = new SchemaBuilder().startObject();
-
-        // Every field optional, methodName included. This one schema part describes a method tag's extra fields
-        // in both directions -- the runtime reads the names from here rather than being told them -- and a
-        // request and a response do not carry the same subset. `responseTopic` is request-only, `errorCode` and
-        // `statusInfo` response-only, and none of them is worth making mandatory for the sake of the other
-        // direction. The presence of `methodName` is what marks the part as a method tag's.
-        root.property("methodName")
-                .scalar(ScalarType.STRING)
-                .description("the method to call, or the method an answer belongs to. Its name, which must be "
-                        + "unique among the object's methods, or the method node itself as "
-                        + "nsu=<namespace uri>;<identifier> when two methods share a name");
-        root.property("correlationData")
-                .scalar(ScalarType.STRING)
+        // The parameters a response carries, all optional -- the failure fields appear only on a failure and
+        // the token only when the caller sent one.
+        //
+        // `responseTopic` is deliberately absent while the payload carries it anyway: Edge needs it to choose
+        // the publish topic, and a published response must not carry a routing instruction for itself. Sound
+        // because nothing validates the payload while this field is present, and it confines the exception to
+        // the northbound lifting, which publishes what this declares and routes on what it does not.
+        final ObjectSchemaBuilder<?> parameters =
+                responseSchema.property(MethodRequestFieldsOpcUa.INTERNAL_RESPONSE_PARAMETERS).startObject();
+        parameters.property(MethodRequestFieldsOpcUa.METHOD_NAME).scalar(ScalarType.STRING)
+                .description("the method an answer belongs to");
+        parameters.property(MethodRequestFieldsOpcUa.CORRELATION_DATA).scalar(ScalarType.STRING)
                 .description("a token echoed unchanged from the request to its response");
-        root.property("responseTopic")
-                .scalar(ScalarType.STRING)
-                .description("request only: the topic the response is published to, instead of the mapping's own");
-        root.property("errorCode")
-                .scalar(ScalarType.STRING)
-                .description("response only: the OPC UA status code by name when the call failed");
+        parameters.property(MethodRequestFieldsOpcUa.ERROR_CODE).scalar(ScalarType.STRING)
+                .description("the OPC UA status code by name when the call failed");
 
-        // Two optional halves rather than one shape, because OPC UA reports a failure's detail in two unrelated
-        // forms: a status per input argument, and whatever the method itself returned to explain the refusal.
-        // Each appears only when the device supplied it.
-        final ObjectSchemaBuilder<?> statusInfo = root.property("statusInfo").startObject();
-        statusInfo
-                .property("arguments")
+        // Two optional halves, because OPC UA reports a failure's detail in two unrelated forms: a status per
+        // input argument, and whatever the method returned. Each appears only when the device supplied it.
+        final ObjectSchemaBuilder<?> statusInfo = parameters.property(MethodRequestFieldsOpcUa.STATUS_INFO).startObject();
+        statusInfo.property("arguments")
                 .description("per-argument status, keyed by the argument name the request used")
-                .startObject()
-                .endObject();
-        statusInfo
-                .property("deviceOutput")
+                .startObject().endObject();
+        statusInfo.property("deviceOutput")
                 .description("what the method returned to explain the failure")
                 .any();
         statusInfo.endObject();
 
-        return root.endObject().build();
+        parameters.endObject();
+
+        return responseSchema.endObject().nullable().build();
     }
+
+    // @formatter:on
 
     /// What one argument name resolves to across every method that declares it.
     ///
@@ -196,11 +196,10 @@ public final class MethodSchemas {
             return dimensions.toArray(new UInteger[0]);
         }
 
-        /// Whether two declarations of one name describe the same shape. Array-ness and depth count, individual
-        /// dimension lengths do not: a method taking five elements and another taking three still agree that
-        // the
-        /// argument is a one-dimensional array of the same type, and the union states that rather than giving
-        // up.
+        /// Whether two declarations of one name describe the same shape. Array-ness and depth count,
+        /// individual dimension lengths do not: a method taking five elements and another taking three still
+        /// agree that the argument is a one-dimensional array of the same type, and the union states that
+        /// rather than giving up.
         ///
         /// Lengths now count for nothing anywhere -- the generated schema states none, because the keywords it
         /// could reach were inert and said the wrong thing besides (see

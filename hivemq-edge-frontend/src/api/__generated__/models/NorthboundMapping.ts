@@ -22,10 +22,6 @@ export type NorthboundMapping = {
      * Should tag metadata entries be included when sent out.
      */
     includeMetadata?: boolean;
-    /**
-     * Whether a method call's correlation token is written into the response message, so a caller can match the answer to its request.
-     */
-    writeCorrelationData?: boolean;
     maxQoS?: QoS;
     /**
      * The message expiry interval.

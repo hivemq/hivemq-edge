@@ -207,6 +207,47 @@ class MethodArgumentsArrayTest {
     }
 
     @Test
+    void aDisagreementBetweenBranches_isRefused() throws Exception {
+        // Sam Cao's case, 2026-10-12, and the one a sibling-only comparison cannot see. The two inner lists `[1]`
+        // and `[2,3]` have *different parents*, so nothing ever compared them: each was the first row of its own
+        // branch and agreed with itself. Matrix then took the inner length as 1 and flattened against it, so this
+        // reached the device as elements [1, 2] -- the `3` silently dropped.
+        //
+        // The lengths are now kept per depth rather than per parent, so the second list is measured against the
+        // first whichever branch it sits in.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("cube", NodeIds.Int32, 3, new UInteger[] {uint(2), uint(1), uint(1)})),
+                        json("{\"cube\": [[[1]], [[2, 3]]]}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("depth 3");
+    }
+
+    @Test
+    void anAgreementAcrossBranches_isStillAccepted() throws Exception {
+        // The boundary of the test above. Same two branches, same depth, lengths that agree -- so keeping the
+        // lengths per depth must not refuse a value that is simply rectangular.
+        final Variant[] arguments = MethodArguments.forCall(
+                signature(argument("cube", NodeIds.Int32, 3, new UInteger[] {uint(2), uint(1), uint(2)})),
+                json("{\"cube\": [[[1, 2]], [[3, 4]]]}"));
+
+        final Matrix matrix = (Matrix) arguments[0].value();
+        assertThat(matrix.getDimensions()).containsExactly(2, 1, 2);
+    }
+
+    @Test
+    void everyDimensionBeingEmptyInEveryBranch_isAccepted() throws Exception {
+        // Why the "not yet known" marker cannot be 0. An empty list has length 0, which is a real length a later
+        // list must match -- so a slot holding 0 has to mean "0 was seen", not "nothing was seen yet". With 0 as
+        // the marker this rectangular 2x0 value would reset its slot on every branch and never compare anything.
+        final Variant[] arguments = MethodArguments.forCall(
+                signature(argument("grid", NodeIds.Int32, 2, new UInteger[] {uint(2), uint(0)})),
+                json("{\"grid\": [[], []]}"));
+
+        final Matrix matrix = (Matrix) arguments[0].value();
+        assertThat(matrix.getDimensions()).containsExactly(2, 0);
+    }
+
+    @Test
     void rankZero_takesTheDepthFromTheRequest() throws Exception {
         // The decisive test. OPC 10000-3 table 28: rank 0 (OneOrMoreDimensions) declares an array of one
         // dimension or more, and never a scalar -- the server has simply declined to fix the depth. Treating it

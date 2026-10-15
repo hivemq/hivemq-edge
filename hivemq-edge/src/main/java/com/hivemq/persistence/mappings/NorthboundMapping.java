@@ -39,7 +39,6 @@ public class NorthboundMapping {
     private final @NotNull Boolean includeMetadata;
     private final @NotNull List<MqttUserProperty> userProperties;
     private final @Nullable Long messageExpiryInterval;
-    private final boolean writeCorrelationData;
 
     public NorthboundMapping(
             final @NotNull String tagName,
@@ -50,28 +49,6 @@ public class NorthboundMapping {
             final @Nullable Boolean includeMetadata,
             final @Nullable List<MqttUserProperty> userProperties,
             final @Nullable Long messageExpiryInterval) {
-        this(
-                tagName,
-                topic,
-                maxQoS,
-                includeTagNames,
-                includeTimestamp,
-                includeMetadata,
-                userProperties,
-                messageExpiryInterval,
-                false);
-    }
-
-    public NorthboundMapping(
-            final @NotNull String tagName,
-            final @NotNull String topic,
-            final int maxQoS,
-            final @Nullable Boolean includeTagNames,
-            final @Nullable Boolean includeTimestamp,
-            final @Nullable Boolean includeMetadata,
-            final @Nullable List<MqttUserProperty> userProperties,
-            final @Nullable Long messageExpiryInterval,
-            final boolean writeCorrelationData) {
         this.tagName = tagName;
         this.topic = topic;
         this.maxQoS = maxQoS;
@@ -80,18 +57,23 @@ public class NorthboundMapping {
         this.includeMetadata = includeMetadata != null && includeMetadata;
         this.userProperties = userProperties != null ? userProperties : new ArrayList<>();
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY;
-        this.writeCorrelationData = writeCorrelationData;
     }
 
-    /** Whether a method call's correlation token is written into the response message. */
-    public boolean isWriteCorrelationData() {
-        return writeCorrelationData;
-    }
-
-    // There is deliberately no setting for the response address here. A response goes to the address its datapoint
-    // carries and to getMqttTopic() when it carries none, and whether a datapoint carries one at all is decided
-    // southbound: the field mapping is a whitelist, so a mapping not configured to read a response topic drops it
-    // before the adapter sees it. See NorthboundTagConsumer.topicFor.
+    // There is deliberately NO method-call setting on a northbound mapping at all, and that is the whole shape of
+    // the design rather than an omission in one place.
+    //
+    // Southbound flags decide what Edge gathers into a request's `context`: whether this mapping carries method
+    // calls, whether a correlation token is read, whether a caller may name its own reply address. Northbound then
+    // acts on what the context contains and nothing else -- a method tag is one whose context declares
+    // `methodName`, a response goes to the address the context carries and to getMqttTopic() when it carries none,
+    // the token is written into both the payload and the MQTT 5 Correlation Data property, and `errorCode` and
+    // `statusInfo` appear when a failure put them there.
+    //
+    // Two flags lived here and both were removed for the same reason: they offered a choice already made
+    // elsewhere. A response-topic flag could only disagree with the southbound whitelist, which decides whether an
+    // address reaches the adapter in the first place. And a write-correlation-data flag withheld the token from the
+    // payload while the MQTT 5 property carried it anyway -- a distinction the per-subscriber publish encoder
+    // already makes correctly, since a version-5 client gets the property and a version-3 client cannot.
 
     private static @NotNull MqttUserProperty userProp(final @NotNull com.hivemq.edge.api.model.MqttUserProperty u) {
         return new MqttUserProperty(u.getName(), u.getValue());
@@ -111,8 +93,7 @@ public class NorthboundMapping {
                                 .map(NorthboundMapping::userProp)
                                 .toList()
                         : List.of(),
-                model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY,
-                Boolean.TRUE.equals(model.getWriteCorrelationData()));
+                model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY);
     }
 
     public @NotNull String getMqttTopic() {
@@ -152,14 +133,13 @@ public class NorthboundMapping {
     }
 
     /**
-     * Compares every field, the correlation-token flag included.
+     * Compares every field, which has to stay true of this method for a configuration edit to take effect.
      * <p>
-     * <b>That flag was missing, and leaving it out became dangerous the moment {@code FieldMapping} gained
-     * value equality.</b> Until then a configuration edit always restarted an adapter that had a southbound
-     * mapping, because that comparison could never return true -- which masked this gap. With it fixed, a
-     * mapping whose only difference is this flag would have compared equal and the restart would have been
-     * skipped: the flag stored, never taking effect, with the persisted entity comparing it and the running
-     * adapter not. Lands in the same change for that reason (Miguel's M2 on PR 1765).
+     * <b>A field this method forgets is a field a user can change with nothing happening.</b> An edit restarts
+     * an adapter only when the new mapping compares unequal to the running one, so an unconsidered field is
+     * stored, compared by the persisted entity, and never reaches the adapter. That was a live gap until
+     * {@code FieldMapping} gained value equality: before then the southbound comparison could never return
+     * true, every edit restarted the adapter, and the gap was invisible (Miguel's M2 on PR 1765).
      */
     @Override
     public boolean equals(final @Nullable Object o) {
@@ -171,8 +151,7 @@ public class NorthboundMapping {
                     && Objects.equals(includeTimestamp, that.includeTimestamp)
                     && Objects.equals(includeMetadata, that.includeMetadata)
                     && Objects.equals(userProperties, that.userProperties)
-                    && Objects.equals(messageExpiryInterval, that.messageExpiryInterval)
-                    && writeCorrelationData == that.writeCorrelationData;
+                    && Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
         }
         return false;
     }
@@ -192,8 +171,7 @@ public class NorthboundMapping {
                 includeTimestamp,
                 includeMetadata,
                 userProperties,
-                messageExpiryInterval,
-                writeCorrelationData);
+                messageExpiryInterval);
     }
 
     @Override

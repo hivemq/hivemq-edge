@@ -83,6 +83,13 @@ class MethodResponseTest {
         return ((DataPointWithMetadata) builder.build("test-adapter")).getJsonNode();
     }
 
+    /// The response's parameters, which travel inside `value` in the field that crosses the adapter border.
+    /// Edge lifts them to the message root and removes the field, so no published message has this shape --
+    /// these tests are about what the adapter hands over, not about what a subscriber sees.
+    private static @NotNull JsonNode parameters(final @NotNull JsonNode datapoint) {
+        return datapoint.get("value").get(MethodRequestFieldsOpcUa.INTERNAL_RESPONSE_PARAMETERS);
+    }
+
     private static @NotNull MethodCallResult success(final @NotNull Map<String, Variant> outputs) {
         return new MethodCallResult(StatusCode.GOOD, outputs, Map.of());
     }
@@ -102,8 +109,8 @@ class MethodResponseTest {
 
         assertThat(json.get("value").get("started").booleanValue()).isTrue();
         assertThat(json.get("value").get("actualSetpoint").intValue()).isEqualTo(178);
-        assertThat(json.get("context").get("methodName").textValue()).isEqualTo("Start");
-        assertThat(json.get("context").has("errorCode")).isFalse();
+        assertThat(parameters(json).get("methodName").textValue()).isEqualTo("Start");
+        assertThat(parameters(json).has("errorCode")).isFalse();
     }
 
     @Test
@@ -112,20 +119,30 @@ class MethodResponseTest {
         // nothing is the common case, so a consumer meets this constantly.
         final JsonNode json = write("Stop", null, success(Map.of()));
 
+        // Indistinguishable from a failure at this point -- both carry only the parameter object -- and that is
+        // correct: the difference is `errorCode`, which a success does not set. Edge reads that and publishes
+        // `value` as an empty object here and as null for a failure, which is where the two part company.
         assertThat(json.get("value").isObject()).isTrue();
-        assertThat(json.get("value")).isEmpty();
-        assertThat(json.get("value").isNull()).isFalse();
+        assertThat(json.get("value").properties().stream().map(Map.Entry::getKey))
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+        assertThat(parameters(json).has("errorCode"))
+                .withFailMessage("a success must set no errorCode: %s", json)
+                .isFalse();
     }
 
     @Test
     void failure_carriesValueNullAndTheStatusName() {
         final JsonNode json = write("Start", null, failure(StatusCodes.Bad_NotExecutable, Map.of()));
 
-        // Present and null, not absent: a consumer reading `value` never has to ask whether the field exists
-        // before asking what it holds.
-        assertThat(json.has("value")).isTrue();
-        assertThat(json.get("value").isNull()).isTrue();
-        assertThat(json.get("context").get("errorCode").textValue()).isEqualTo("Bad_NotExecutable");
+        // A failure writes no output arguments, so `value` holds the parameters and nothing else. **The null
+        // a subscriber sees is Edge's doing, not the adapter's:** NorthboundTagConsumer lifts the parameters
+        // out and collapses `value` to null once it is empty, which is what keeps "the call failed" distinct
+        // from "the method succeeded and declares no outputs". That distinction is pinned in
+        // NorthboundTagConsumerContextTest; here `value` is still the object the parameters travel in.
+        assertThat(json.get("value").isObject()).isTrue();
+        assertThat(json.get("value").properties().stream().map(Map.Entry::getKey))
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+        assertThat(parameters(json).get("errorCode").textValue()).isEqualTo("Bad_NotExecutable");
     }
 
     @Test
@@ -136,7 +153,7 @@ class MethodResponseTest {
 
         final JsonNode json = write("Start", null, failure(StatusCodes.Bad_InvalidArgument, statuses));
 
-        final JsonNode arguments = json.get("context").get("statusInfo").get("arguments");
+        final JsonNode arguments = parameters(json).get("statusInfo").get("arguments");
         assertThat(arguments.get("setpoint").textValue()).isEqualTo("Bad_OutOfRange");
         // The good one is kept: it says the rest were evaluated, which "setpoint was rejected" alone does not.
         assertThat(arguments.get("ramp").textValue()).isEqualTo("Good");
@@ -153,8 +170,10 @@ class MethodResponseTest {
 
         final JsonNode json = write("Start", null, result);
 
-        assertThat(json.get("value").isNull()).isTrue();
-        assertThat(json.get("context")
+        assertThat(json.get("value").properties().stream().map(Map.Entry::getKey))
+                .withFailMessage("the device's explanation must not be an output argument: %s", json)
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+        assertThat(parameters(json)
                         .get("statusInfo")
                         .get("deviceOutput")
                         .get("errorNumber")
@@ -167,18 +186,17 @@ class MethodResponseTest {
         // statusInfo with one key is normal; statusInfo absent means the device supplied neither kind of detail.
         final JsonNode json = write("Start", null, failure(StatusCodes.Bad_NotExecutable, Map.of()));
 
-        assertThat(json.get("context").has("statusInfo")).isFalse();
+        assertThat(parameters(json).has("statusInfo")).isFalse();
     }
 
     @Test
     void correlationData_isEchoedWhenPresentAndOmittedWhenNot() {
-        assertThat(write("Start", "mes-east-00417", success(Map.of()))
-                        .get("context")
+        assertThat(parameters(write("Start", "mes-east-00417", success(Map.of())))
                         .get("correlationData")
                         .textValue())
                 .isEqualTo("mes-east-00417");
 
-        assertThat(write("Start", null, success(Map.of())).get("context").has("correlationData"))
+        assertThat(parameters(write("Start", null, success(Map.of()))).has("correlationData"))
                 .isFalse();
     }
 
@@ -268,12 +286,11 @@ class MethodResponseTest {
     @Test
     void responseTopic_isCarriedSoThePublisherCanRouteOnIt() {
         // The decisive one. NorthboundTagConsumer chooses the response's topic by reading `responseTopic` from
-        // this context -- it is the one entry that names a destination rather than describing the answer, so the
+        // these parameters -- it is the one entry naming a destination rather than describing the answer, so the
         // consumer consumes it instead of publishing it. Omitting it here left a request's own response topic
         // reaching the adapter correctly and then being silently dropped, so every answer went to the mapping's
         // configured topic however the caller addressed it. Nothing failed; the address was just ignored.
-        assertThat(write("Start", null, "plant/mes-east", success(Map.of()))
-                        .get("context")
+        assertThat(parameters(write("Start", null, "plant/mes-east", success(Map.of())))
                         .get("responseTopic")
                         .textValue())
                 .isEqualTo("plant/mes-east");
@@ -283,9 +300,9 @@ class MethodResponseTest {
     void noResponseTopic_leavesTheEntryOut() {
         // A fire-and-forget call. An absent entry is how the publisher is told to use its configured topic, so
         // writing an empty or null one would make "no address" indistinguishable from a malformed address.
-        assertThat(write("Start", null, null, success(Map.of())).get("context").has("responseTopic"))
+        assertThat(parameters(write("Start", null, null, success(Map.of()))).has("responseTopic"))
                 .isFalse();
-        assertThat(write("Start", null, "   ", success(Map.of())).get("context").has("responseTopic"))
+        assertThat(parameters(write("Start", null, "   ", success(Map.of()))).has("responseTopic"))
                 .isFalse();
     }
 
@@ -294,18 +311,19 @@ class MethodResponseTest {
         // The decisive property of answering pre-dispatch refusals. A caller matching answers to requests must not
         // need to know where in Edge a refusal happened: an unknown method name, refused by Edge before the call is
         // sent, has to arrive in the same shape as a refusal the device reported. Both are built from a
-        // MethodCallResult with no outputs, so both render value null plus an errorCode.
+        // MethodCallResult with no outputs, so both carry the parameters alone and an errorCode -- and Edge
+        // publishes both with `value` as null.
         final JsonNode edgeRefusal = write("Cube", "c-1", failure(0x80750000L, Map.of()));
         final JsonNode deviceRefusal = write("Cube", "c-1", failure(0x81110000L, Map.of()));
 
-        assertThat(edgeRefusal.get("value").isNull()).isTrue();
-        assertThat(edgeRefusal.get("context").get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
-        assertThat(edgeRefusal.get("context").get("correlationData").textValue())
-                .isEqualTo("c-1");
+        assertThat(edgeRefusal.get("value").properties().stream().map(Map.Entry::getKey))
+                .containsExactly("INTERNAL_RESPONSE_PARAMETERS");
+        assertThat(parameters(edgeRefusal).get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
+        assertThat(parameters(edgeRefusal).get("correlationData").textValue()).isEqualTo("c-1");
 
         // Same field set, different status. That sameness is the contract.
-        assertThat(edgeRefusal.get("context").properties().stream().map(java.util.Map.Entry::getKey))
-                .containsExactlyElementsOf(deviceRefusal.get("context").properties().stream()
+        assertThat(parameters(edgeRefusal).properties().stream().map(java.util.Map.Entry::getKey))
+                .containsExactlyElementsOf(parameters(deviceRefusal).properties().stream()
                         .map(java.util.Map.Entry::getKey)
                         .toList());
     }
@@ -316,16 +334,15 @@ class MethodResponseTest {
         // response has the same shape and a consumer never has to ask whether methodName exists.
         final JsonNode json = write("", "c-2", failure(0x80750000L, Map.of()));
 
-        assertThat(json.get("context").get("methodName").textValue()).isEmpty();
-        assertThat(json.get("context").get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
+        assertThat(parameters(json).get("methodName").textValue()).isEmpty();
+        assertThat(parameters(json).get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
     }
 
     @Test
     void responseTopic_isCarriedOnAFailureToo() {
         // A caller that asked for its answer somewhere still wants the refusal there, not on a topic it is not
         // listening to.
-        assertThat(write("Start", "c-1", "plant/mes-east", failure(0x80AB0000L, Map.of()))
-                        .get("context")
+        assertThat(parameters(write("Start", "c-1", "plant/mes-east", failure(0x80AB0000L, Map.of())))
                         .get("responseTopic")
                         .textValue())
                 .isEqualTo("plant/mes-east");

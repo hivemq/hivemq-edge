@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
-import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -69,41 +68,29 @@ public final class MethodResponse {
             final @NotNull MethodCallResult result,
             final @NotNull EncodingContext ctx) {
 
+        // `value` is always an object here, because the parameters ride inside it. A failed call writes no
+        // output arguments, so what Edge receives holds the parameters alone -- and Edge publishes `value` as
+        // null once it has lifted them out. That keeps "the call failed" distinct from "the method succeeded
+        // and declares no outputs", which publishes an empty object.
+        final var value = builder.startObjectValue();
         if (result.succeeded()) {
-            writeOutputArguments(builder, result.outputArguments(), ctx);
-        } else {
-            // Present and null rather than absent. Absence would mean a consumer reading `value` has to ask
-            // whether the field exists before asking what it holds, and the two questions have different
-            // answers for the same failure.
-            builder.valueNull();
+            result.outputArguments().forEach((name, variant) -> putVariant(value, name, variant, ctx));
         }
 
-        final var context = builder.startObjectContext();
-        context.put("methodName", methodName);
+        final var parameters = value.startObject(MethodRequestFieldsOpcUa.INTERNAL_RESPONSE_PARAMETERS);
+        parameters.put(MethodRequestFieldsOpcUa.METHOD_NAME, methodName);
         if (correlationData != null) {
-            context.put("correlationData", correlationData);
+            parameters.put(MethodRequestFieldsOpcUa.CORRELATION_DATA, correlationData);
         }
         if (responseTopic != null && !responseTopic.isBlank()) {
-            context.put("responseTopic", responseTopic);
+            parameters.put(MethodRequestFieldsOpcUa.RESPONSE_TOPIC, responseTopic);
         }
         if (!result.succeeded()) {
-            context.put("errorCode", result.statusName());
-            writeStatusInfo(context, result, ctx);
+            parameters.put(MethodRequestFieldsOpcUa.ERROR_CODE, result.statusName());
+            writeStatusInfo(parameters, result, ctx);
         }
-        context.endObject();
-    }
+        parameters.endObject();
 
-    /// Writes the output arguments as an object keyed by the names the method declares.
-    ///
-    /// An empty object for a method that returns nothing: it ran and had nothing to report, which a consumer
-    /// should be able to distinguish from the null that says it did not run.
-    private static void writeOutputArguments(
-            final @NotNull DataPointBuilder<?> builder,
-            final @NotNull Map<String, Variant> outputs,
-            final @NotNull EncodingContext ctx) {
-
-        final var value = builder.startObjectValue();
-        outputs.forEach((name, variant) -> putVariant(value, name, variant, ctx));
         value.endObject();
     }
 
@@ -123,7 +110,7 @@ public final class MethodResponse {
             return;
         }
 
-        final var statusInfo = context.startObject("statusInfo");
+        final var statusInfo = context.startObject(MethodRequestFieldsOpcUa.STATUS_INFO);
         if (hasArguments) {
             final var arguments = statusInfo.startObject("arguments");
             // Keyed by the name the request used, not the position the server reported. The caller never saw the

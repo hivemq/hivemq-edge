@@ -50,9 +50,8 @@ class MappingEqualityTest {
                 "boiler", "plant/boiler1/call", valueToValue(), "{}", methodCalls, correlationData, responseTopic);
     }
 
-    private static @NotNull NorthboundMapping northbound(final boolean writeCorrelationData) {
-        return new NorthboundMapping(
-                "boiler", "plant/boiler1/result", 1, true, true, false, List.of(), null, writeCorrelationData);
+    private static @NotNull NorthboundMapping northbound(final boolean includeMetadata) {
+        return new NorthboundMapping("boiler", "plant/boiler1/result", 1, true, true, includeMetadata, List.of(), null);
     }
 
     // ── A freshly parsed configuration must compare equal ───────────────────────────────────────
@@ -98,10 +97,9 @@ class MappingEqualityTest {
         assertThat(southbound(true, false, true)).isNotEqualTo(southbound(true, false, false));
     }
 
-    @Test
-    void aNorthboundMappingDifferingOnlyInWriteCorrelationData_isNotEqual() {
-        assertThat(northbound(true)).isNotEqualTo(northbound(false));
-    }
+    // A northbound mapping has no flags of its own to vary here. What a method response carries is decided by
+    // the southbound mapping that sent the request and travels with it, so there is no northbound counterpart to
+    // the three cases above. Its fields are covered by the metadata case at the end of this file.
 
     @Test
     void aDifferentTransform_isNotEqual() {
@@ -133,10 +131,8 @@ class MappingEqualityTest {
     void aNorthboundMappingDifferingInMetadata_hasADifferentHashCode() {
         // `includeMetadata` was compared by equals and left out of hashCode. Legal, but it degrades every
         // hash-based lookup and is the kind of drift that appears when the two are edited separately.
-        final NorthboundMapping withMetadata =
-                new NorthboundMapping("boiler", "plant/boiler1/result", 1, true, true, true, List.of(), null, false);
-        final NorthboundMapping withoutMetadata =
-                new NorthboundMapping("boiler", "plant/boiler1/result", 1, true, true, false, List.of(), null, false);
+        final NorthboundMapping withMetadata = northbound(true);
+        final NorthboundMapping withoutMetadata = northbound(false);
 
         assertThat(withMetadata).isNotEqualTo(withoutMetadata);
         assertThat(withMetadata.hashCode()).isNotEqualTo(withoutMetadata.hashCode());

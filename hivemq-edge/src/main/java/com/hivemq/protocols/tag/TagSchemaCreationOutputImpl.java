@@ -15,17 +15,19 @@
  */
 package com.hivemq.protocols.tag;
 
+import static com.hivemq.protocols.MethodRequestFields.CONTEXT;
+import static com.hivemq.protocols.MethodRequestFields.INTERNAL_REQUEST_PARAMETERS;
+import static com.hivemq.protocols.MethodRequestFields.INTERNAL_RESPONSE_PARAMETERS;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.ObjectSchema;
-import com.hivemq.adapter.sdk.api.schema.ObjectSchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -41,28 +43,6 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     // so the future carries the schema itself rather than a pre-composed JSON node.
     private final @NotNull CompletableFuture<DataPointSchema> future =
             new CompletableFuture<DataPointSchema>().orTimeout(30, TimeUnit.SECONDS);
-
-    /**
-     * The field whose presence in the {@code context} part marks a tag as a method tag.
-     */
-    private static final @NotNull String METHOD_NAME = "methodName";
-
-    /**
-     * What a response carries beside {@code value}, in the order they are declared.
-     * <p>
-     * {@code responseTopic} is absent on purpose: it says where an answer goes rather than anything about the
-     * answer, and {@code NorthboundTagConsumer} consumes it to choose the topic instead of publishing it.
-     */
-    private static final @NotNull List<String> NORTHBOUND_METHOD_FIELDS =
-            List.of(METHOD_NAME, "correlationData", "errorCode", "statusInfo");
-
-    /**
-     * What a request carries beside {@code value}.
-     * <p>
-     * {@code errorCode} and {@code statusInfo} are absent: a caller does not send a failure.
-     */
-    private static final @NotNull List<String> SOUTHBOUND_METHOD_FIELDS =
-            List.of(METHOD_NAME, "correlationData", "responseTopic");
 
     public @Nullable String getMessage() {
         return message;
@@ -112,6 +92,9 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         return SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(schema);
     }
 
+    // @formatter:off -- these property declarations are instances of one pattern, which the formatter's
+    // one-call-per-line rendering hides. The breaks below are chosen to show it.
+
     /**
      * The schema for the <em>northbound</em> (read) direction: the envelope ({@code tagName}, {@code timestamp})
      * wrapping {@code value}, plus optional {@code metadata} / {@code context}. Writability is irrelevant here — a
@@ -122,75 +105,52 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * SDK still see; the equality is pinned by {@code TagSchemaCreationOutputImplSchemaBuilderTest}.
      */
     private static @NotNull Schema northboundSchema(final @NotNull DataPointSchema tagSchemas) {
-        final var builder = new SchemaBuilder().startObject();
+        final var northboundSchema = new SchemaBuilder().startObject();
+        final Schema tagSchema = tagSchemas.valueSchema();
 
-        builder.property("tagName").scalar(ScalarType.STRING).readable().writable(false);
-        builder.property("timestamp").scalar(ScalarType.LONG).readable().writable(false);
-        builder.property("value")
-                .required()
-                .schema(tagSchemas.valueSchema())
-                .readable()
-                .writable();
+        northboundSchema.property("tagName").scalar(ScalarType.STRING).readable().writable(false);
+        northboundSchema.property("timestamp").scalar(ScalarType.LONG).readable().writable(false);
 
-        if (tagSchemas.metadataSchema() != null) {
-            builder.property("metadata")
-                    .schema(tagSchemas.metadataSchema())
-                    .readable()
-                    .writable(false);
-        }
-        final ObjectSchema methodFields = methodFields(tagSchemas);
-        if (methodFields != null) {
-            // Lifted to the root, not nested under `context`: NorthboundTagConsumer copies these onto the
-            // published message beside `value`, so a nested `context` would describe a shape no message has.
-            liftMethodFields(builder, methodFields, NORTHBOUND_METHOD_FIELDS);
-        } else if (tagSchemas.context() != null) {
-            builder.property("context").schema(tagSchemas.context()).readable().writable(false);
-        }
-
-        return builder.endObject().build();
-    }
-
-    /**
-     * The fields a method tag's messages carry beside {@code value}, or null for every other tag.
-     * <p>
-     * An adapter states them in the {@code context} part of what it produces, and a part naming
-     * {@code methodName} is what makes a tag a method tag. Nothing else tells the runtime: the tag's kind lives
-     * in the adapter's own module and the shared layer cannot name it, and the mapping flags that decide which
-     * fields a request carries are not reachable from here. The adapter already knows, and says so in the data.
-     */
-    private static @Nullable ObjectSchema methodFields(final @NotNull DataPointSchema tagSchemas) {
-        if (tagSchemas.context() instanceof final ObjectSchema context
-                && context.properties().containsKey(METHOD_NAME)) {
-            return context;
-        }
-        return null;
-    }
-
-    /**
-     * Declares the named fields the given part carries, at the document root, each optional.
-     * <p>
-     * Optional throughout, deliberately. A request and a response carry different subsets — a reply address is
-     * request-only, an error code response-only — and one part describes both directions, so requiring any of
-     * them would state something false about the other.
-     * <p>
-     * <b>What enforces a promised field is therefore not this document.</b> It used to say the adapter refuses a
-     * request that omits one, which the adapter cannot do: the southbound field mapping is a whitelist, so a
-     * switched-off field is deleted before the adapter is called and "the caller omitted it" is by then
-     * indistinguishable from "the mapping does not carry it". The promise is kept one gate earlier instead —
-     * {@code ProtocolAdaptersResourceImpl.refusePromisedFieldTheSchemaDoesNotRequire} refuses a method mapping
-     * whose topic filter's schema does not require what the mapping promises, so such a request fails
-     * validation and is quarantined before the device is touched.
-     */
-    private static void liftMethodFields(
-            final @NotNull ObjectSchemaBuilder<SchemaBuilder> builder,
-            final @NotNull ObjectSchema methodFields,
-            final @NotNull List<String> fields) {
-        fields.forEach(field -> {
-            final Schema fieldSchema = methodFields.properties().get(field);
-            if (fieldSchema != null) {
-                builder.property(field).schema(fieldSchema);
+        // If the value is an object, then lift parameters from INTERNAL_RESPONSE_PARAMETERS to the root.
+        if (tagSchema instanceof final ObjectSchema valueSchemaWithResponseParameters) {
+            final var valueSchema = northboundSchema.property("value").required()
+                    .readable(valueSchemaWithResponseParameters.readable())
+                    .writable(valueSchemaWithResponseParameters.writable())
+                    .nullable(valueSchemaWithResponseParameters.nullable())
+                    .startObject();
+            valueSchema.additionalProperties(valueSchemaWithResponseParameters.additionalProperties());
+            for (final var p : valueSchemaWithResponseParameters.properties().entrySet()) {
+                if (p.getKey().equals(INTERNAL_RESPONSE_PARAMETERS)) {
+                    final ObjectSchema parameters = (ObjectSchema) p.getValue();
+                    for (final var q : parameters.properties().entrySet()) {
+                        northboundSchema.property(q.getKey())
+                                .required(parameters.required().contains(q.getKey()))
+                                .schema(q.getValue());
+                    }
+                } else {
+                    valueSchema.property(p.getKey())
+                            .required(valueSchemaWithResponseParameters.required().contains(p.getKey()))
+                            .schema(p.getValue());
+                }
             }
-        });
+            valueSchema.endObject();
+        }
+
+        // otherwise just take the tag schema as is
+        else {
+            northboundSchema.property("value").required().schema(tagSchema).readable().writable();
+        }
+
+        // copy the metadata and context aspects
+        if (tagSchemas.metadataSchema() != null) {
+            northboundSchema.property("metadata").schema(tagSchemas.metadataSchema()).readable().writable(false);
+        }
+        if (tagSchemas.context() != null) {
+            northboundSchema.property(CONTEXT).schema(tagSchemas.context()).readable().writable(false);
+        }
+
+        // return the northbound schema
+        return northboundSchema.endObject().build();
     }
 
     /**
@@ -221,34 +181,45 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * destinations at all. See {@code TagSchemaCreationOutputImplSchemaBuilderTest} for both cases.
      */
     private @NotNull Schema southboundSchema(final @NotNull DataPointSchema tagSchemas) {
-        final Schema writeValue =
+        final var southboundSchema = new SchemaBuilder().startObject();
+        final Schema tagSchema =
                 tagSchemas.southboundSchema() != null ? tagSchemas.southboundSchema() : tagSchemas.valueSchema();
 
-        final var builder = new SchemaBuilder().startObject();
-        // No readable/writable annotations here: a property defined via schema() renders the prebuilt schema
-        // as-is (SchemaBuilder ignores annotations chained after schema()), so the value's flags are whatever
-        // the adapter put on its own schema root — identical to the northbound rendering of the same value,
-        // which is what lets a consumer detect "read and write use the same schema" by comparing value shapes.
-        builder.property("value").required().schema(writeValue);
-        final ObjectSchema methodFields = methodFields(tagSchemas);
-        if (methodFields != null) {
-            // The same part the northbound document lifts, restricted to what a request carries. At the root
-            // because that is where a caller puts them: the southbound transform copies them through unmoved,
-            // and the adapter reads them off the payload root.
-            liftMethodFields(builder, methodFields, SOUTHBOUND_METHOD_FIELDS);
+        // If the value is an object, then lift parameters from INTERNAL_REQUEST_PARAMETERS to the root.
+        if (tagSchema instanceof final ObjectSchema valueSchemaWithRequestParameters) {
+            final var valueSchema = southboundSchema.property("value").required()
+                    .readable(valueSchemaWithRequestParameters.readable())
+                    .writable(valueSchemaWithRequestParameters.writable())
+                    .nullable(valueSchemaWithRequestParameters.nullable())
+                    .startObject();
+            valueSchema.additionalProperties(valueSchemaWithRequestParameters.additionalProperties());
+            for (final var p : valueSchemaWithRequestParameters.properties().entrySet()) {
+                if (p.getKey().equals(INTERNAL_REQUEST_PARAMETERS)) {
+                    final ObjectSchema parameters = (ObjectSchema) p.getValue();
+                    for (final var q : parameters.properties().entrySet()) {
+                        southboundSchema.property(q.getKey())
+                                .required(parameters.required().contains(q.getKey()))
+                                .schema(q.getValue());
+                    }
+                } else {
+                    valueSchema.property(p.getKey())
+                            .required(valueSchemaWithRequestParameters.required().contains(p.getKey()))
+                            .schema(p.getValue());
+                }
+            }
+            valueSchema.endObject();
         }
-        // The wrapper itself is writable, and saying so matters. SchemaBuilder defaults every node to
-        // writable = false, which renders readOnly on the document root — on the one document whose entire
-        // purpose is to be written. Harmless while readOnly is only an annotation, but the moment it becomes
-        // an assertion (the readOnly ⇒ ⊥ rule) a read-only root rejects EVERY southbound write for EVERY tag,
-        // arrays or not: networknt's readOnly check fires on the node being present at all, so the root error
-        // lands on every instance. Verified against networknt with readOnly enforcement enabled — with the
-        // default flag a conforming command produces "$: is a readonly field, it cannot be changed".
-        //
-        // The northbound wrapper keeps its readOnly, and correctly so: that document describes what is
-        // published, and it genuinely cannot be written. The asymmetry is the point, not an oversight.
-        return builder.endObject().writable().build();
+
+        // otherwise just take the tag schema as is
+        else {
+            southboundSchema.property("value").required().schema(tagSchema);
+        }
+
+        // return the southbound schema, make sure that it is writeable
+        return southboundSchema.endObject().writable().build();
     }
+
+    // @formatter:on
 
     @Override
     public void finish(@NotNull final DataPointSchema schema) {

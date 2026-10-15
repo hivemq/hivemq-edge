@@ -15,25 +15,33 @@
  */
 package com.hivemq.protocols.northbound;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import static com.hivemq.protocols.MethodRequestFields.CONTEXT;
+import static com.hivemq.protocols.MethodRequestFields.CORRELATION_DATA;
+import static com.hivemq.protocols.MethodRequestFields.ERROR_CODE;
+import static com.hivemq.protocols.MethodRequestFields.INTERNAL_RESPONSE_PARAMETERS;
+import static com.hivemq.protocols.MethodRequestFields.METHOD_NAME;
+import static com.hivemq.protocols.MethodRequestFields.RESPONSE_TOPIC;
+import static com.hivemq.protocols.MethodRequestFields.STATUS_INFO;
+import static com.hivemq.protocols.MethodRequestFields.VALUE;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.datapoint.DataPointWithMetadata;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
@@ -70,24 +78,169 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
 
     @Override
     public void accept(final @NotNull DataPoint dataPoint) {
+
+        // PHASE 1 -- VALIDATE
+        // Consumes the datapoint from phase 0 and the mapping this consumer was built with. Produces
+        // nothing: a message is only worth assembling once the mapping can address it.
         Preconditions.checkNotNull(dataPoint);
         Preconditions.checkNotNull(northboundMapping);
         Preconditions.checkNotNull(northboundMapping.getMqttTopic());
-
         Preconditions.checkArgument(
                 northboundMapping.getMqttQos() <= 2 && northboundMapping.getMqttQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
+
         try {
-            final byte[] jsonToSend = convertDataPointToJson(dataPoint, objectMapper);
-            // Resolved before the payload is sent and after it is built, because the datapoint is the source of
-            // both: the payload omits the response address and the topic consumes it.
-            final String topic = topicFor(dataPoint);
-            final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService
-                    .createPublish()
+
+            // PHASE 2 -- DISASSEMBLE THE DATAPOINT
+            // Consumes the datapoint from phase 0. Produces dpValue, dpTagName, dpTimestamp, dpHasMetadata,
+            // dpMetadata and dpContext. This is the only phase that knows DataPointWithMetadata exists: it
+            // resolves the kind once, so no later phase asks again. A plain datapoint has no time, metadata
+            // or context of its own, so the time becomes now and the other two stay null.
+            //
+            // dpHasMetadata is separate from dpMetadata because the two mean different things: a datapoint
+            // that carries a metadata aspect but no metadata in it publishes `metadata: null`, while a plain
+            // datapoint publishes no such field at all.
+            final JsonNode dpValue;
+            final String dpTagName = dataPoint.getTagName();
+            final long dpTimestamp;
+            final boolean dpHasMetadata;
+            final JsonNode dpMetadata;
+            final JsonNode dpContext;
+            if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
+                dpValue = dpMeta.getTagValue();
+                dpTimestamp = dpMeta.getTimestamp();
+                dpHasMetadata = true;
+                dpMetadata = dpMeta.getMetadata()
+                        .map(metadata -> objectMapper.convertValue(metadata, JsonNode.class))
+                        .orElse(null);
+                dpContext = dpMeta.getContext().orElse(null);
+            } else {
+                if (dataPoint.treatTagValueAsJson()) {
+                    dpValue = objectMapper.readTree((String) dataPoint.getTagValue());
+                    if (dpValue == null) {
+                        throw new RuntimeException("No value entry in JSON message");
+                    }
+                } else {
+                    dpValue = objectMapper.convertValue(dataPoint.getTagValue(), JsonNode.class);
+                }
+                dpTimestamp = System.currentTimeMillis();
+                dpHasMetadata = false;
+                dpMetadata = null;
+                dpContext = null;
+            }
+
+            // PHASE 3 -- DISASSEMBLE THE VALUE
+            // Consumes dpValue alone. Produces value and the five parameters of a method response:
+            // methodName, errorCode, statusInfo, responseTopic and correlationData. The other four aspects
+            // bypass this phase untouched, which is the statement that handling a method response cannot
+            // affect the envelope.
+            //
+            // A scalar or an array is the value itself. An object may carry the response parameters, which
+            // are taken out of it. This phase only separates -- it reads each parameter as the adapter wrote
+            // it, correlationData with its prefix still on, and leaves every translation to the consumer.
+            //
+            // The five are a closed set. A parameter Edge does not know is ignored rather than forwarded:
+            // what a response publishes is Edge's contract with the subscriber, not the adapter's.
+            final JsonNode value;
+            String methodName = null;
+            String errorCode = null;
+            JsonNode statusInfo = null;
+            String responseTopic = null;
+            String correlationData = null;
+            if (dpValue instanceof final ObjectNode valueWithResponseParameters
+                    && valueWithResponseParameters.get(INTERNAL_RESPONSE_PARAMETERS)
+                            instanceof final ObjectNode responseParameters) {
+
+                final ObjectNode outputs = JsonNodeFactory.instance.objectNode();
+                for (final var p : valueWithResponseParameters.properties()) {
+                    if (!p.getKey().equals(INTERNAL_RESPONSE_PARAMETERS)) {
+                        outputs.set(p.getKey(), p.getValue());
+                    }
+                }
+                // Null when the call failed: the parameters were all the value held. An empty object means
+                // the opposite -- the method ran and declares no outputs -- so the two must not render alike.
+                value = outputs.isEmpty() ? JsonNodeFactory.instance.nullNode() : outputs;
+
+                methodName = textOrNull(responseParameters.get(METHOD_NAME));
+                errorCode = textOrNull(responseParameters.get(ERROR_CODE));
+                statusInfo = responseParameters.get(STATUS_INFO);
+                correlationData = textOrNull(responseParameters.get(CORRELATION_DATA));
+                // A blank reply address counts as none, so the mapping's own topic stands.
+                final String address = textOrNull(responseParameters.get(RESPONSE_TOPIC));
+                responseTopic = address != null && !address.isBlank() ? address : null;
+            } else {
+                value = dpValue;
+            }
+
+            // PHASE 4 -- ASSEMBLE THE MESSAGE
+            // Consumes the aspects from phase 2 and value plus four of the five parameters from phase 3 --
+            // responseTopic is not published, because a response must not carry a routing instruction for
+            // itself. Produces jsonToSend and topic.
+            //
+            // The two streams rejoin here, so this is where the collision rule lives: the aspects are
+            // written after the parameters, so an aspect always wins a name clash -- a parameter that
+            // silently replaced `value` would be far harder to diagnose than one dropped.
+            final ObjectNode node = JsonNodeFactory.instance.objectNode();
+            if (methodName != null) {
+                node.put(METHOD_NAME, methodName);
+            }
+            if (errorCode != null) {
+                node.put(ERROR_CODE, errorCode);
+            }
+            if (statusInfo != null) {
+                node.set(STATUS_INFO, statusInfo);
+            }
+            if (correlationData != null) {
+                // `raw:` goes, `base64:` stays. The caller typed the raw value and must get back exactly
+                // that; the base64 one is bytes a JSON string cannot hold, and the prefix tells a subscriber
+                // reading the payload to decode rather than compare.
+                node.put(
+                        CORRELATION_DATA,
+                        correlationData.startsWith(RAW_PREFIX)
+                                ? correlationData.substring(RAW_PREFIX.length())
+                                : correlationData);
+            }
+            node.set(VALUE, value);
+            if (northboundMapping.getIncludeTimestamp()) {
+                node.set("timestamp", JsonNodeFactory.instance.numberNode(dpTimestamp));
+            }
+            if (northboundMapping.getIncludeMetadata() && dpHasMetadata) {
+                node.set("metadata", dpMetadata != null ? dpMetadata : JsonNodeFactory.instance.nullNode());
+            }
+            if (northboundMapping.getIncludeTagNames()) {
+                node.set("tagName", JsonNodeFactory.instance.textNode(dpTagName));
+            }
+            if (!northboundMapping.getUserProperties().isEmpty()) {
+                node.set(
+                        "mqttUserProperties",
+                        objectMapper.convertValue(northboundMapping.getUserProperties(), JsonNode.class));
+            }
+            if (dpContext != null) {
+                node.set(CONTEXT, dpContext);
+            }
+            final byte[] jsonToSend = objectMapper.writeValueAsBytes(node);
+            final String topic = responseTopic != null ? responseTopic : northboundMapping.getMqttTopic();
+
+            // PHASE 5 -- PUBLISH
+            // Consumes jsonToSend and topic from phase 4 and correlationData from phase 3. Produces nothing:
+            // it sends, counts the outcome, and fires an event on the first sample.
+            //
+            // The implementation type, not the SDK interface, because the correlation data goes into the
+            // MQTT 5 property and that method is deliberately not on the interface -- see
+            // ProtocolAdapterPublishBuilderImpl.withCorrelationData. Edge already casts the same way in
+            // ModuleServicesPerModuleImpl.
+            final ProtocolAdapterPublishBuilderImpl publishBuilder =
+                    (ProtocolAdapterPublishBuilderImpl) protocolAdapterPublishService.createPublish();
+            publishBuilder
                     .withTopic(topic)
                     .withQoS(northboundMapping.getMqttQos())
                     .withPayload(jsonToSend)
                     .withAdapter(protocolAdapter.getAdapter());
+            if (correlationData != null) {
+                // The property is binary, so both prefixes come off and `base64:` is decoded. This is what
+                // makes the round trip byte-identical for a caller who set the property on the request.
+                publishBuilder.withCorrelationData(correlationDataAsBytes(correlationData));
+            }
             final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
             publishFuture
                     .thenAccept(publishReturnCode -> {
@@ -114,6 +267,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                         log.warn("Error publishing adapter payload", throwable);
                         return null;
                     });
+
         } catch (final Exception e) {
             log.warn("Exception during polling of data for adapters '{}':", protocolAdapter.getId(), e);
         }
@@ -124,152 +278,40 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
         return northboundMapping.getTagName();
     }
 
-    /**
-     * The {@code context} entry naming where a response should go, read rather than published.
-     */
-    private static final @NotNull String RESPONSE_TOPIC = "responseTopic";
+    /// The encoding prefixes a correlation token carries while it travels through Edge.
+    ///
+    /// Edge's own bookkeeping, not part of what a caller sent: `raw:` marks text the caller typed into
+    /// the request payload, `base64:` marks bytes they set as the MQTT 5 `Correlation Data` property,
+    /// which is binary and cannot cross as text unencoded. Phase 3 of [#accept] reverses both for the
+    /// MQTT 5 property; only `base64:` survives into the payload.
+    private static final @NotNull String RAW_PREFIX = "raw:";
 
-    private static final @NotNull String CORRELATION_DATA = "correlationData";
+    private static final @NotNull String BASE64_PREFIX = "base64:";
 
-    /**
-     * The {@code context} entries a method response carries, each published by name in
-     * {@link #publishResponseFields}. {@code methodName} is on every response; the other two only on a failure.
-     */
-    private static final @NotNull String METHOD_NAME = "methodName";
-
-    private static final @NotNull String ERROR_CODE = "errorCode";
-
-    private static final @NotNull String STATUS_INFO = "statusInfo";
-
-    /**
-     * The topic to publish a datapoint on: the address it carries, and the mapping's own topic when it carries
-     * none.
-     * <p>
-     * There is deliberately no northbound setting gating this, and that is a decision rather than an omission. The
-     * concern a gate would answer — a caller redirecting an adapter's output by sending a field — is already
-     * answered on the southbound side, where the field mapping is a whitelist: with its response-topic flag off,
-     * no instruction names {@code responseTopic}, the generated transform drops it, and the adapter never receives
-     * it. So a datapoint carries a response address only when the southbound mapping asked for one <em>and</em>
-     * the request supplied it. A second switch here would not add protection; it would only add a pair that can be
-     * configured on one side and silently do nothing.
-     */
-    private @NotNull String topicFor(final @NotNull DataPoint dataPoint) {
-        return responseTopicOf(dataPoint).orElseGet(northboundMapping::getMqttTopic);
+    /// The text of a response parameter, or null when the response did not carry it or carried a non-text.
+    private static @Nullable String textOrNull(final @Nullable JsonNode parameter) {
+        return parameter != null && parameter.isTextual() ? parameter.textValue() : null;
     }
 
-    /**
-     * The response address a datapoint carries, if it carries a usable one.
-     * <p>
-     * Blank is treated as absent rather than as an error: a caller that sends an empty string has named no topic,
-     * and publishing to {@code ""} would fail far from the cause.
-     */
-    private static @NotNull Optional<String> responseTopicOf(final @NotNull DataPoint dataPoint) {
-        if (!(dataPoint instanceof final DataPointWithMetadata dpMeta)) {
-            return Optional.empty();
-        }
-        return dpMeta.getContext()
-                .map(context -> context.get(RESPONSE_TOPIC))
-                .filter(JsonNode::isTextual)
-                .map(JsonNode::textValue)
-                .filter(topic -> !topic.isBlank());
-    }
-
-    private byte @NotNull [] convertDataPointToJson(
-            final @NotNull DataPoint dataPoint, final @NotNull ObjectMapper objectMapper)
-            throws JsonProcessingException {
-        final ObjectNode node = JsonNodeFactory.instance.objectNode();
-        if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
-            node.set("value", dpMeta.getTagValue());
-            if (northboundMapping.getIncludeTimestamp()) {
-                node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
-            }
-            if (northboundMapping.getIncludeMetadata()) {
-                dpMeta.getMetadata()
-                        .ifPresentOrElse(
-                                metadata -> node.set("metadata", objectMapper.convertValue(metadata, JsonNode.class)),
-                                () -> node.set("metadata", JsonNodeFactory.instance.nullNode()));
-            }
-        } else {
-            if (northboundMapping.getIncludeTimestamp()) {
-                node.set("timestamp", JsonNodeFactory.instance.numberNode(System.currentTimeMillis()));
-            }
-            if (dataPoint.treatTagValueAsJson()) {
-                final JsonNode jsonValue = objectMapper.readTree((String) dataPoint.getTagValue());
-                if (jsonValue != null) {
-                    node.set("value", jsonValue);
-                } else {
-                    throw new RuntimeException("No value entry in JSON message");
-                }
-            } else {
-                node.set("value", objectMapper.convertValue(dataPoint.getTagValue(), JsonNode.class));
+    /// The correlation data as the bytes the MQTT 5 property takes, with Edge's prefix removed.
+    ///
+    /// `base64:` marks bytes a caller set as the property on the request, which only survive the response
+    /// parameters as text; decoding them is what makes the round trip byte-identical. Text that claims to be
+    /// base64 and is not passes through as it stands -- nothing Edge writes does that, and the alternative
+    /// to passing it through is dropping the correlation entirely.
+    private static byte @NotNull [] correlationDataAsBytes(final @NotNull String correlationData) {
+        if (correlationData.startsWith(BASE64_PREFIX)) {
+            final String encoded = correlationData.substring(BASE64_PREFIX.length());
+            try {
+                return Base64.getDecoder().decode(encoded);
+            } catch (final IllegalArgumentException e) {
+                return encoded.getBytes(StandardCharsets.UTF_8);
             }
         }
-        if (northboundMapping.getIncludeTagNames()) {
-            node.set("tagName", JsonNodeFactory.instance.textNode(dataPoint.getTagName()));
+        if (correlationData.startsWith(RAW_PREFIX)) {
+            return correlationData.substring(RAW_PREFIX.length()).getBytes(StandardCharsets.UTF_8);
         }
-        if (!northboundMapping.getUserProperties().isEmpty()) {
-            node.set(
-                    "mqttUserProperties",
-                    objectMapper.convertValue(northboundMapping.getUserProperties(), JsonNode.class));
-        }
-        if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
-            dpMeta.getContext().ifPresent(context -> publishResponseFields(node, context));
-        }
-        return objectMapper.writeValueAsBytes(node);
-    }
-
-    /**
-     * Publishes the four method-response fields a datapoint carries in its {@code context} child, each beside
-     * {@code value} rather than nested under a {@code context} key — so the message reads
-     * {@code {"methodName": "Start", "value": {...}}}.
-     * <p>
-     * <b>Each field is named here, one statement apiece.</b> This deliberately does not copy whatever
-     * {@code context} happens to hold. {@code context} is the <em>protocol's</em> namespace for what describes a
-     * tag or device and does not change — units, a node id — so Edge does not own it and must not republish it
-     * wholesale. A method response's fields are per-message and belong in {@code metadata} by that model; they
-     * ride here only because carrying them properly needs new datapoint aspects, which is an SDK change this
-     * release does not make. Edge-2 gives them named aspects.
-     * <p>
-     * An earlier version copied every entry. That published {@code {"key": "value"}} — a placeholder the polling
-     * datapoint builder had written into {@code context} since 2026-03 and that nine releases shipped unseen,
-     * because nothing published {@code context} — on every message of all eight polling adapters, and
-     * {@code SimpleHttpToMqttIT} caught it on a strict comparison. Naming the fields is what makes that class of
-     * surprise impossible: a field reaches the wire only if this method says so.
-     * <p>
-     * <b>{@code responseTopic} is read, never published.</b> It says <em>where</em> the answer goes rather than
-     * anything about the answer, and {@link #responseTopicOf} consumes it to choose the topic; publishing it too
-     * would put a routing instruction inside the routed message.
-     * <p>
-     * <b>{@code correlationData} is published only when the mapping asks.</b> The southbound flag decides whether
-     * the token is read at all, this one whether it goes on the wire: a deployment may correlate inside Edge and
-     * still keep the token off its MQTT messages.
-     */
-    private void publishResponseFields(final @NotNull ObjectNode node, final @NotNull JsonNode context) {
-        if (!context.isObject()) {
-            return;
-        }
-        copy(node, context, METHOD_NAME);
-        if (northboundMapping.isWriteCorrelationData()) {
-            copy(node, context, CORRELATION_DATA);
-        }
-        copy(node, context, ERROR_CODE);
-        copy(node, context, STATUS_INFO);
-    }
-
-    /**
-     * Copies one named field, when the datapoint carries it and the message has no such field yet.
-     * <p>
-     * The present-check is what makes a field optional: {@code errorCode} and {@code statusInfo} appear only on a
-     * failure, {@code correlationData} only when the caller sent a token. The not-already-set check keeps a
-     * context entry from overwriting an aspect written above — it cannot happen for these four names today, and a
-     * silent replacement of {@code value} would be far harder to diagnose than one that declines.
-     */
-    private static void copy(
-            final @NotNull ObjectNode node, final @NotNull JsonNode context, final @NotNull String field) {
-        final JsonNode value = context.get(field);
-        if (value != null && !node.has(field)) {
-            node.set(field, value);
-        }
+        return correlationData.getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
