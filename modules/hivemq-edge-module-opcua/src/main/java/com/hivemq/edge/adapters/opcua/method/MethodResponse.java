@@ -17,6 +17,10 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import org.eclipse.milo.opcua.stack.core.UaSerializationException;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -68,7 +72,9 @@ public final class MethodResponse {
     /// @param ctx             the client's encoding context, which the shared converter needs to decode a value
     ///                        of a custom structure type. A method *argument* of such a type is refused as
     ///                        unencodable, but a device may still return one.
-    public static void write(
+    /// @return the outputs that could not be decoded, by name, with the reason -- empty when all converted.
+    ///         The caller logs and counts them; the answer itself names them in `statusInfo`.
+    public static @NotNull Map<String, String> write(
             final @NotNull DataPointBuilder<?> builder,
             final @NotNull String methodName,
             final @Nullable String correlationData,
@@ -76,13 +82,15 @@ public final class MethodResponse {
             final @NotNull MethodCallResult result,
             final @NotNull EncodingContext ctx) {
 
+        final Map<String, String> undecodable = new LinkedHashMap<>();
+
         // `value` is always an object here, because the parameters ride inside it. A failed call writes no
         // output arguments, so what Edge receives holds the parameters alone -- and Edge publishes `value` as
         // null once it has lifted them out. That keeps "the call failed" distinct from "the method succeeded
         // and declares no outputs", which publishes an empty object.
         final var value = builder.startObjectValue();
         if (result.succeeded()) {
-            result.outputArguments().forEach((name, variant) -> putVariant(value, name, variant, ctx));
+            result.outputArguments().forEach((name, variant) -> putVariant(value, name, variant, ctx, undecodable));
         }
 
         final var parameters = value.startObject(MethodRequestFieldsOpcUa.INTERNAL_RESPONSE_PARAMETERS);
@@ -95,26 +103,35 @@ public final class MethodResponse {
         }
         if (!result.succeeded()) {
             parameters.put(MethodRequestFieldsOpcUa.ERROR_CODE, result.statusName());
-            writeStatusInfo(parameters, result, ctx);
         }
+        writeStatusInfo(parameters, result, ctx, undecodable);
         parameters.endObject();
 
         value.endObject();
+        return undecodable;
     }
 
-    /// Writes whatever detail the device gave about a failure, in up to two parts.
+    /// Writes whatever detail there is about this answer, in up to three parts.
+    ///
+    /// **`statusInfo` is detail about the answer, not a sign that the call failed.** `errorCode` alone says
+    /// that, and a consumer deciding otherwise -- on a missing `value`, or on the presence of this object --
+    /// is reading the implementation rather than the contract. Two of the three parts below do only appear on
+    /// a failure, because only a failure produces them; the third appears on a successful call.
     ///
     /// OPC UA reports a failed call's detail in two unrelated forms: a status per input argument, and whatever
-    /// the method itself returned. Each part appears only when the device supplied it, so `statusInfo` with one
-    /// key is normal and the whole object is absent when the device supplied neither.
+    /// the method itself returned. The third part names an output this client could not decode. Each appears
+    /// only when there is something to say, so one key is normal and the whole object is absent when there is
+    /// nothing.
     private static void writeStatusInfo(
             final DataPointBuilder.@NotNull ObjectBuilder<?> parameters,
             final @NotNull MethodCallResult result,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull EncodingContext ctx,
+            final @NotNull Map<String, String> undecodable) {
 
-        final boolean hasArguments = !result.argumentStatuses().isEmpty();
-        final boolean hasDeviceOutput = !result.outputArguments().isEmpty();
-        if (!hasArguments && !hasDeviceOutput) {
+        final boolean failed = !result.succeeded();
+        final boolean hasArguments = failed && !result.argumentStatuses().isEmpty();
+        final boolean hasDeviceOutput = failed && !result.outputArguments().isEmpty();
+        if (!hasArguments && !hasDeviceOutput && undecodable.isEmpty()) {
             return;
         }
 
@@ -131,8 +148,20 @@ public final class MethodResponse {
             // device's explanation rather than the method's result, which is why they are here and not in
             // `value`.
             final var deviceOutput = statusInfo.startObject("deviceOutput");
-            result.outputArguments().forEach((name, variant) -> putVariant(deviceOutput, name, variant, ctx));
+            result.outputArguments()
+                    .forEach((name, variant) -> putVariant(deviceOutput, name, variant, ctx, undecodable));
             deviceOutput.endObject();
+        }
+        if (!undecodable.isEmpty()) {
+            // Written last, because the two branches above convert values too and may add to this map.
+            //
+            // Named rather than silently stringified: the consumer is holding a string where its schema
+            // promised an object, and has no other way to learn why. The condition is a missing type
+            // description rather than a property of the output, so it is usually transient -- the same call a
+            // moment later may answer properly.
+            final var undecodedOutputs = statusInfo.startObject("undecodedOutputs");
+            undecodable.forEach(undecodedOutputs::put);
+            undecodedOutputs.endObject();
         }
         statusInfo.endObject();
     }
@@ -150,13 +179,38 @@ public final class MethodResponse {
     /// way to get that is one converter rather than two that agree by assertion. A multi-dimensional output
     /// needs nothing special here either: the converter unwraps a `Matrix` to its nested array itself, which it
     /// has to do anyway for a variable whose value is one.
+    /// Written as its string form when the converter cannot do better, and the names of those outputs are
+    /// collected so the caller learns which ones and why.
+    ///
+    /// **A method's answer exists once.** The value path answers an undecodable structure by dropping the
+    /// sample, resetting the client's type registry and waiting for the server to resample (EDG-776) -- correct
+    /// there, because the next notification carries the value again. A call has no next notification: dropping
+    /// its answer leaves the caller with silence for a method that ran, and the device cannot be asked to run
+    /// it again to find out what happened.
+    ///
+    /// So the structure is published as its string representation, which is what this converter already does
+    /// for any type it has no explicit handling for. It is a poor rendering of a value that was returned, and
+    /// better than no answer about a method that executed.
+    ///
+    /// Reported by Miguel as R5-3 on EDG-1087.
     private static void putVariant(
             final DataPointBuilder.@NotNull ObjectBuilder<?> target,
             final @NotNull String key,
             final @Nullable Variant variant,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull EncodingContext ctx,
+            final @NotNull Map<String, String> undecodable) {
 
-        OpcUaToJsonConverter.addValueToObject(target, key, variant == null ? null : variant.value(), ctx);
+        final Object value = variant == null ? null : variant.value();
+        try {
+            OpcUaToJsonConverter.addValueToObject(target, key, value, ctx);
+        } catch (final UaSerializationException e) {
+            // Typically "no codec registered": Milo rebuilds its dynamic codec registry on every session
+            // activation, best-effort, and a browse that failed under load leaves it incomplete for a type
+            // that would decode a moment later. So this says nothing durable about the type -- which is why
+            // the answer names it rather than claiming the output is unsupported.
+            undecodable.put(key, Objects.requireNonNullElse(e.getMessage(), "no reason given"));
+            OpcUaToJsonConverter.addValueToObject(target, key, String.valueOf(value), ctx);
+        }
     }
 
     /// A status code's specification name, falling back to its hexadecimal value.

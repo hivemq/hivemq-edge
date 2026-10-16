@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
@@ -26,14 +28,20 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
+import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -284,6 +292,79 @@ class MethodVerifierIT {
         // by naming that type. For everything the object itself exposes it must stay the tag's own node.
         assertThat(verified())
                 .allSatisfy(method -> assertThat(method.objectId()).isEqualTo(objectId));
+    }
+
+    @Test
+    void aTypeReportingNoMethodsWithBadNodeIdUnknown_isReadAsAnEmptyLevelAndStaysCacheable() throws Exception {
+        // The Siemens S7-1500's answer, which cost every call a fresh browse of the whole hierarchy: about
+        // 275 verifications for 270 calls. A level with no methods is the ordinary case for most of a
+        // hierarchy and servers report it with an empty browse result; the S7 reports it with
+        // Bad_NodeIdUnknown, which read as a failure to reach the device -- so the climb was incomplete,
+        // MethodCache refused to remember an incomplete result, and the next call did it all again.
+        //
+        // What makes the lenient reading safe is the order: the supertype of the same node is browsed first,
+        // so a server answering that has demonstrably found the type. A "not found" on its method browse
+        // afterwards cannot be the node being absent, and is read as "this level declares none".
+        //
+        // The spy fails only the method browse of a type node, leaving the object's own browse and every
+        // supertype browse genuine -- the shape of the real fault.
+        final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Boiler9");
+        final OpcUaClient quirky = spy(client);
+        doAnswer(invocation -> {
+                    final BrowseDescription browse = invocation.getArgument(0);
+                    final boolean methodBrowseOfAType = browse.getBrowseDirection() == BrowseDirection.Forward
+                            && !browse.getNodeId().equals(object);
+                    if (methodBrowseOfAType) {
+                        // A BrowseResult carrying a bad status, which is how a server actually answers -- not a
+                        // failed service call. Browsing.browseAll attaches the status only from the result, so a
+                        // failed call would lose it and the lenient reading would never see Bad_NodeIdUnknown.
+                        return CompletableFuture.completedFuture(new BrowseResult(
+                                new StatusCode(StatusCodes.Bad_NodeIdUnknown), null, new ReferenceDescription[0]));
+                    }
+                    return invocation.callRealMethod();
+                })
+                .when(quirky)
+                .browseAsync(any(BrowseDescription.class));
+
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(quirky, object, "boiler9-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        final MethodVerifier.Result.Verified verified = (MethodVerifier.Result.Verified) result;
+
+        // The decisive assertion: cacheable. Without it every call re-browses.
+        assertThat(verified.complete())
+                .withFailMessage(
+                        "a level reporting no methods is not a failure to reach the device, so the climb "
+                                + "must stay cacheable: %s",
+                        verified)
+                .isTrue();
+    }
+
+    @Test
+    void aTypeBrowseThatTrulyFails_stillLeavesTheClimbIncomplete() throws Exception {
+        // The other side, and the reason the fix is not "treat Bad_NodeIdUnknown as harmless everywhere". A
+        // supertype browse that fails means we do not know what is above, so methods may be hidden and the
+        // result must not be remembered.
+        final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Boiler10");
+        final OpcUaClient broken = spy(client);
+        doAnswer(invocation -> {
+                    final BrowseDescription browse = invocation.getArgument(0);
+                    if (browse.getBrowseDirection() == BrowseDirection.Inverse) {
+                        return CompletableFuture.failedFuture(new UaException(StatusCodes.Bad_Timeout));
+                    }
+                    return invocation.callRealMethod();
+                })
+                .when(broken)
+                .browseAsync(any(BrowseDescription.class));
+
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(broken, object, "boiler10-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        assertThat(((MethodVerifier.Result.Verified) result).complete())
+                .withFailMessage("an unreachable supertype leaves the hierarchy unknown, so nothing may be cached")
+                .isFalse();
     }
 
     @Test

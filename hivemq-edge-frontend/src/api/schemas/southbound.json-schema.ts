@@ -90,7 +90,7 @@ export const southboundMappingListSchema: JSONSchema7 = {
           type: 'boolean',
           title: 'This mapping carries method calls',
           description:
-            'Read the method to call from each message and call it on the tag object. Required for a method tag: with this switched off Edge treats every message as an ordinary value write, so no method is called whatever the message says.',
+            'Read the method to call from each message and call it on the tag object. Required for a method tag: with this switched off no method is called whatever the message says, and a request to a method tag is refused.',
           default: false,
         },
         correlationData: {

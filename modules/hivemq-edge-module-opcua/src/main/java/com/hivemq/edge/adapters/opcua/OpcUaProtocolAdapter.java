@@ -1517,10 +1517,26 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final var builder = publisher.addDataPoint(opcuaTag);
             // The client's encoding context, so a method's output is converted by the same code as a variable's
             // value of the same type -- see MethodResponse#putVariant.
-            MethodResponse.write(
+            final var undecodable = MethodResponse.write(
                     builder, methodName, correlationData, responseTopic, result, client.getDynamicEncodingContext());
             builder.endDataPoint();
             publisher.publish();
+
+            // An output published as a string rather than as the object its schema promises. Counted and
+            // logged beside the answer that names it, because the cause is almost always a type description
+            // this client has not fetched rather than anything about the method -- an operator seeing this
+            // repeatedly is looking at a registry that is not being rebuilt, not at a broken method.
+            if (!undecodable.isEmpty()) {
+                protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
+                log.warn(
+                        "Adapter '{}': the answer from '{}' on tag '{}' carries {} output(s) this client could not "
+                                + "decode, published as text instead of as objects: {}",
+                        adapterId,
+                        methodName,
+                        opcuaTag.getName(),
+                        undecodable.size(),
+                        undecodable);
+            }
         } catch (final Exception e) {
             log.error(
                     "Adapter '{}' could not publish the answer from '{}' on tag '{}'",

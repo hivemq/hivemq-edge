@@ -347,4 +347,37 @@ class MethodResponseTest {
                         .textValue())
                 .isEqualTo("plant/mes-east");
     }
+
+    @Test
+    void anOutputThisClientCannotDecode_isPublishedAsTextAndNamedInStatusInfo() {
+        // A method ran and returned a structure whose type description this client does not hold. The
+        // conversion of that one output throws, and it used to take the whole message with it: the device had
+        // executed the method and the caller was told nothing at all, while the write counted as a success.
+        //
+        // A call has no second chance. The value path answers the same failure by dropping the sample and
+        // resetting the type registry, which is right there because the server resamples -- there is no
+        // resample for a call, so the answer goes out with the best rendering available.
+        final var undecodable = org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject.of(
+                org.eclipse.milo.opcua.stack.core.types.builtin.ByteString.of(new byte[] {1, 2, 3}),
+                org.eclipse.milo.opcua.stack.core.types.builtin.NodeId.parse("ns=2;i=5001"));
+
+        final JsonNode json = write("Probe", "c-9", success(Map.of("report", new Variant(undecodable))));
+
+        // The answer exists, and it carries the output as text rather than as the object the schema promises.
+        assertThat(json.get("value").get("report").isTextual())
+                .withFailMessage("the output must be published as text rather than lost: %s", json)
+                .isTrue();
+
+        // And it says which output and why, because the consumer is holding a string where its schema
+        // promised an object and has no other way to learn the reason.
+        final JsonNode undecoded = parameters(json).get("statusInfo").get("undecodedOutputs");
+        assertThat(undecoded.has("report")).isTrue();
+        assertThat(undecoded.get("report").textValue()).contains("codec");
+
+        // `errorCode` alone says whether a call failed. This one did not: statusInfo carries detail about an
+        // answer, on a success as much as on a failure.
+        assertThat(parameters(json).has("errorCode"))
+                .withFailMessage("an undecodable output is not a failed call: %s", parameters(json))
+                .isFalse();
+    }
 }

@@ -855,10 +855,6 @@ public final class MethodVerifier {
             return CompletableFuture.completedFuture(new Climb(known, true));
         }
 
-        // Unfiltered for the same reason as the instance browse -- see methodsOf. A server whose node-class
-        // filter hides a method on an object hides it on the type too, and a static method lives only there.
-        final BrowseDescription methods = methodsOf(type);
-
         log.debug(
                 "Tag '{}': climbing to type {} at level {}, {} method(s) known so far",
                 tagName,
@@ -866,7 +862,50 @@ public final class MethodVerifier {
                 depth,
                 known.size());
 
-        return Browsing.browseAll(client, methods)
+        // The supertype is asked for *first*, and the order is the point.
+        //
+        // A level with no methods is the ordinary case for most of a hierarchy, and a server says it with an
+        // empty browse result. The Siemens S7-1500 says it with Bad_NodeIdUnknown instead -- a status that
+        // reads like a failure -- so the climb was marked incomplete, MethodCache declined to remember an
+        // incomplete result, and every call re-browsed the whole hierarchy: about 275 verifications for 270
+        // calls, 0.7 s of browsing each, throughput down to 2.3 calls/s.
+        //
+        // Answering that by trusting the status code to mean "durable" would be guessing. Asking for the
+        // supertype first turns it into a check: a server that answers *this* browse has demonstrably found
+        // the type and is reachable, so a later "not found" on the method browse of the same node cannot be
+        // the node being absent or the link being down. It can only be this server's way of reporting an
+        // empty level. A supertype browse that itself fails is a real failure, and the climb stays incomplete.
+        //
+        // Costs no extra round trip: both browses happened before, in the other order.
+        //
+        // Reported by Miguel as R5-6 on EDG-1087.
+        return supertypeOf(client, type)
+                .handle((supertype, supertypeFailure) -> new TypeLevel(supertype, supertypeFailure == null))
+                .thenCompose(level -> methodsAt(client, type, objectNode, known, tagName, depth, level));
+    }
+
+    /// One level's methods, read once its supertype has already answered.
+    private static @NotNull CompletableFuture<Climb> methodsAt(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId type,
+            final @NotNull NodeId objectNode,
+            final @NotNull List<MethodSignature> known,
+            final @NotNull String tagName,
+            final int depth,
+            final @NotNull TypeLevel level) {
+
+        if (!level.reachable()) {
+            log.debug(
+                    "Tag '{}': could not read the supertype of {} at level {}, so the climb is incomplete",
+                    tagName,
+                    type,
+                    depth);
+            return CompletableFuture.completedFuture(new Climb(known, false));
+        }
+
+        // Unfiltered for the same reason as the instance browse -- see methodsOf. A server whose node-class
+        // filter hides a method on an object hides it on the type too, and a static method lives only there.
+        return Browsing.browseAll(client, methodsOf(type))
                 .thenCompose(references -> {
                     log.debug(
                             "Tag '{}': browsing type {} for HasComponent returned {} reference(s): {}",
@@ -875,6 +914,26 @@ public final class MethodVerifier {
                             references.size(),
                             describeReferences(references));
                     return readSignatures(client, references, type, true, objectNode, tagName);
+                })
+                .exceptionally(throwable -> {
+                    if (Browsing.nodeNotInAddressSpace(throwable)) {
+                        // The supertype browse above found this very node, so "not found" here is not about
+                        // the node. Read as an empty level, at INFO because it is a server quirk an operator
+                        // may want to see once rather than a fault.
+                        log.info(
+                                "Tag '{}': type {} reports no methods with Bad_NodeIdUnknown rather than an empty "
+                                        + "result, which some servers do. Read as a level declaring no methods, "
+                                        + "since the same node answered the supertype browse.",
+                                tagName,
+                                type);
+                        return Result.Verified.of(List.of());
+                    }
+                    return new Result.Unverifiable("could not read the methods of type "
+                            + type
+                            + " for tag '"
+                            + tagName
+                            + "': "
+                            + Browsing.describeException(throwable));
                 })
                 .thenCompose(result -> {
                     final List<MethodSignature> merged = result instanceof final Result.Verified verified
@@ -894,13 +953,18 @@ public final class MethodVerifier {
                             describeOutcome(result),
                             merged.size(),
                             levelRead ? "read" : "NOT readable, so the climb is incomplete");
-                    return supertypeOf(client, type)
-                            .thenCompose(supertype -> supertype == null
-                                    ? CompletableFuture.completedFuture(new Climb(List.copyOf(merged), levelRead))
-                                    : collectUpwards(client, supertype, objectNode, merged, tagName, depth + 1)
-                                            .thenApply(above -> above.andThisLevel(levelRead)));
+                    return level.supertype() == null
+                            ? CompletableFuture.completedFuture(new Climb(List.copyOf(merged), levelRead))
+                            : collectUpwards(client, level.supertype(), objectNode, merged, tagName, depth + 1)
+                                    .thenApply(above -> above.andThisLevel(levelRead));
                 });
     }
+
+    /// What the supertype browse said about a level: where to climb next, and whether the browse answered.
+    ///
+    /// `reachable` is false only when the browse itself failed. A null `supertype` with `reachable` true is
+    /// the top of the hierarchy, which servers report as an empty result rather than as an error.
+    private record TypeLevel(@Nullable NodeId supertype, boolean reachable) {}
 
     /// What a climb up the type hierarchy found, and whether it got to read every level it tried.
     ///
