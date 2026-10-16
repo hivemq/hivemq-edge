@@ -28,6 +28,7 @@ import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
@@ -35,7 +36,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.error.ApiException;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
@@ -89,7 +89,6 @@ import com.hivemq.edge.api.model.StatusTransitionCommand;
 import com.hivemq.edge.api.model.StatusTransitionResult;
 import com.hivemq.edge.api.model.TagSchema;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
-import com.hivemq.http.HttpStatus;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
@@ -103,6 +102,7 @@ import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import com.hivemq.protocols.tag.TagSchemaDirection;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
+import com.networknt.schema.SpecVersionDetector;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
@@ -1065,29 +1065,34 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         final String schema =
                 new String(Base64.getDecoder().decode(topicFilter.getSchema().getData()), StandardCharsets.UTF_8);
-        refusePromisedFieldTheSchemaDoesNotRequire(model, schema);
+        warnWhenTheSchemaDoesNotRequireAMethodName(model, schema);
         return SouthboundMappingEntity.fromApi(model, schema);
     }
 
     /**
-     * Refuses a method mapping whose topic filter's schema does not require {@code methodName}.
+     * Warns when a method mapping's topic filter schema does not appear to require {@code methodName}.
      * <p>
      * <b>Only methodName, and only methodName.</b> A method request names the method to call in its payload, and
-     * no other source supplies that name: a request without it is unroutable. The schema on the topic filter is
-     * the gate that can say so before anything runs on the device — a request omitting a required field fails
-     * validation and is quarantined with its payload intact.
+     * no other source supplies that name: a request without it is unroutable. A schema requiring it catches that
+     * before anything runs on the device — the request fails validation and is quarantined with its payload
+     * intact.
      * <p>
-     * The correlation token and the reply address are deliberately <em>not</em> demanded here, however their
-     * mapping flags are set. Either may arrive as an MQTT 5 property — {@code Correlation Data} or
-     * {@code Response Topic} — with nothing in the payload at all, and a schema requiring them would refuse
-     * exactly those well-formed requests. A mapping flag says "carry this field to the adapter when it is
-     * there", not "the payload must spell it out".
+     * The correlation token and the reply address are deliberately not mentioned, however their mapping flags are
+     * set. Either may arrive as an MQTT 5 property — {@code Correlation Data} or {@code Response Topic} — with
+     * nothing in the payload at all, and a schema requiring them would refuse exactly those well-formed requests.
+     * A mapping flag says "carry this field to the adapter when it is there", not "the payload must spell it out".
      * <p>
-     * <b>Refused rather than amended.</b> The schema is the operator's document; Edge rewriting it silently would
-     * leave them with a schema they did not write and no reason recorded. The message names both sides and the
-     * literal entry to add.
+     * <b>A warning, not a refusal.</b> This used to refuse the save. The check cannot read every way a schema may
+     * state a requirement — a requirement holding only under a condition, a {@code dependencies} clause — and
+     * those are valid schemas whose mappings a user is entitled to save. Refusing them blocked correct work to
+     * catch an incorrect configuration, which is the wrong trade: **everything valid must be supported, and
+     * failing to block everything invalid costs only a request refused later with a clear reason.** The warning
+     * names the mapping, the topic filter and the entry to add, so the common mistake — a schema that plainly
+     * permits a missing method name — is still surfaced at the moment it is made.
+     * <p>
+     * Reported by Sam as Q07 on EDG-1087, who showed two valid schemas the check refuses.
      */
-    private void refusePromisedFieldTheSchemaDoesNotRequire(
+    private void warnWhenTheSchemaDoesNotRequireAMethodName(
             final @NotNull com.hivemq.edge.api.model.SouthboundMapping model, final @NotNull String schema) {
 
         if (!Boolean.TRUE.equals(model.getMethodCalls())) {
@@ -1098,13 +1103,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        throw new ApiException(
-                "The southbound mapping for tag '"
-                        + model.getTagName()
-                        + "' calls methods, so every request must name one, but the schema on topic filter '"
-                        + model.getTopicFilter()
-                        + "' does not require methodName. Add \"methodName\" to that schema's \"required\" array.",
-                HttpStatus.BAD_REQUEST_400);
+        log.warn(
+                "The southbound mapping for tag '{}' calls methods, so every request must name one, and the schema "
+                        + "on topic filter '{}' does not appear to require methodName. A request omitting it will be "
+                        + "refused by the adapter rather than at the schema gate. If the schema does require it in a "
+                        + "form this check cannot read, nothing is wrong; otherwise add \"methodName\" to that "
+                        + "schema's \"required\" array.",
+                model.getTagName(),
+                model.getTopicFilter());
     }
 
     /**
@@ -1120,16 +1126,26 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
      * A missing-field complaint is identified by its keyword and the property it names, not by its text, so
      * nothing here depends on the library's wording.
      * <p>
-     * <b>Two deliberately permissive answers.</b> A schema offering alternatives through {@code anyOf}, only one
-     * of which requires the field, reports it missing and is taken as requiring it -- more permissive than the
-     * truth, and the right direction for a gate whose job is to catch the plain omission. A schema that cannot
-     * be parsed at all requires nothing, so the mapping is refused: it could not keep the promise either way, and
-     * saying so once here beats every request failing later with nothing to explain it.
+     * <b>The dialect follows the runtime's.</b> A schema declaring {@code $schema} is read in that dialect; one
+     * that does not defaults to draft-07, which is what Data Hub does when it validates real messages. Pinning
+     * 2020-12 unconditionally here made the two disagree: a document with a root {@code $ref} and a sibling
+     * {@code required} satisfies this check, because later drafts apply siblings of a reference, while draft-07
+     * ignores them and accepts a request with no method name. The answer given here now matches the answer the
+     * message will get.
+     * <p>
+     * <b>What this cannot answer, and why that is tolerable.</b> Validating the empty object establishes what a
+     * schema demands of *that* instance, not what it demands of every valid one. A requirement holding only
+     * under a condition, or stated through {@code dependencies}, is reported as absent. Those are valid schemas,
+     * so the caller warns rather than refuses -- see {@link #warnWhenTheSchemaDoesNotRequireAMethodName}. A
+     * schema offering alternatives through {@code anyOf}, only one of which requires the field, reports it
+     * missing and is taken as requiring it; a schema that cannot be parsed answers false. Both lean toward
+     * saying nothing is required, which with a warning rather than a refusal costs at most a log line.
      */
     private boolean requiresAtItsRoot(final @NotNull String schema, final @NotNull String field) {
         try {
-            return JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
-                    .getSchema(objectMapper.readTree(schema))
+            final JsonNode document = objectMapper.readTree(schema);
+            return JsonSchemaFactory.getInstance(dialectOf(document))
+                    .getSchema(document)
                     .validate(objectMapper.createObjectNode())
                     .stream()
                     .anyMatch(message -> "required".equals(message.getType()) && field.equals(message.getProperty()));
@@ -1137,6 +1153,20 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             log.debug("Could not validate a topic filter's schema to see whether it requires '{}'", field, e);
             return false;
         }
+    }
+
+    /// The dialect a schema declares, or draft-07 when it declares none -- the same rule the runtime validator
+    /// applies, so that a schema reads the same way here as it will when a message arrives.
+    private static @NotNull SpecVersion.VersionFlag dialectOf(final @NotNull JsonNode schema) {
+        final JsonNode declared = schema.get("$schema");
+        if (declared != null && declared.isTextual()) {
+            try {
+                return SpecVersionDetector.detect(schema);
+            } catch (final RuntimeException e) {
+                log.debug("Unrecognised $schema '{}', reading the document as draft-07", declared.textValue());
+            }
+        }
+        return SpecVersion.VersionFlag.V7;
     }
 
     private @NotNull TagEntity toTagEntity(final @NotNull DomainTag dmt) {

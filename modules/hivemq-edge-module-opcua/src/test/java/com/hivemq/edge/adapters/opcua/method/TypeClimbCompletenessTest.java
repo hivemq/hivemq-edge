@@ -39,21 +39,26 @@ import org.junit.jupiter.api.Test;
 /// demand. {@link MethodVerifier.Climb} is package-private for this reason.
 class TypeClimbCompletenessTest {
 
+    private static final @NotNull NodeId LEVEL_1 = NodeId.parse("ns=2;s=BoilerType");
+    private static final @NotNull NodeId LEVEL_2 = NodeId.parse("ns=2;s=DeviceType");
+
     private static @NotNull MethodVerifier.Climb complete() {
-        return new MethodVerifier.Climb(List.of(), true);
+        return new MethodVerifier.Climb(List.of(), true, null);
     }
 
     @Test
     void everyLevelRead_staysComplete() {
-        final MethodVerifier.Climb climb =
-                complete().andThisLevel(true).andThisLevel(true).andThisLevel(true);
+        final MethodVerifier.Climb climb = complete()
+                .andThisLevel(true, LEVEL_2)
+                .andThisLevel(true, LEVEL_1)
+                .andThisLevel(true, LEVEL_1);
 
         assertThat(climb.complete()).isTrue();
     }
 
     @Test
     void oneFailedLevel_makesTheWholeClimbIncomplete() {
-        final MethodVerifier.Climb climb = complete().andThisLevel(false);
+        final MethodVerifier.Climb climb = complete().andThisLevel(false, null);
 
         assertThat(climb.complete()).isFalse();
     }
@@ -63,11 +68,11 @@ class TypeClimbCompletenessTest {
         // The decisive case. The failure happens far from the top, and four successful levels follow it on the
         // way back down the recursion. Each of them must leave the answer partial.
         final MethodVerifier.Climb climb = complete()
-                .andThisLevel(false)
-                .andThisLevel(true)
-                .andThisLevel(true)
-                .andThisLevel(true)
-                .andThisLevel(true);
+                .andThisLevel(false, null)
+                .andThisLevel(true, LEVEL_1)
+                .andThisLevel(true, LEVEL_1)
+                .andThisLevel(true, LEVEL_1)
+                .andThisLevel(true, LEVEL_1);
 
         assertThat(climb.complete()).isFalse();
     }
@@ -75,15 +80,15 @@ class TypeClimbCompletenessTest {
     @Test
     void aFailureAnywhereInTheChainIsEnough() {
         assertThat(complete()
-                        .andThisLevel(true)
-                        .andThisLevel(false)
-                        .andThisLevel(true)
+                        .andThisLevel(true, LEVEL_1)
+                        .andThisLevel(false, null)
+                        .andThisLevel(true, LEVEL_1)
                         .complete())
                 .isFalse();
         assertThat(complete()
-                        .andThisLevel(true)
-                        .andThisLevel(true)
-                        .andThisLevel(false)
+                        .andThisLevel(true, LEVEL_1)
+                        .andThisLevel(true, LEVEL_1)
+                        .andThisLevel(false, null)
                         .complete())
                 .isFalse();
     }
@@ -95,9 +100,31 @@ class TypeClimbCompletenessTest {
         final MethodSignature square = MethodSignature.ofObject(
                 "Square", NodeId.parse("ns=2;s=Boiler1.Square"), NodeId.parse("ns=2;s=Boiler1"), List.of(), List.of());
 
-        final MethodVerifier.Climb climb = new MethodVerifier.Climb(List.of(square), true).andThisLevel(false);
+        final MethodVerifier.Climb climb =
+                new MethodVerifier.Climb(List.of(square), true, null).andThisLevel(false, null);
 
         assertThat(climb.complete()).isFalse();
         assertThat(climb.methods()).containsExactly(square);
+    }
+
+    @Test
+    void theFurthestLevelRead_isTheOneFurthestFromTheObject() {
+        // `readTo` says how far the walk got, for the log line an operator reads when a climb came back
+        // incomplete. The climb above already names a level further from the object, so it wins over the
+        // caller's own.
+        final MethodVerifier.Climb climb =
+                new MethodVerifier.Climb(List.of(), false, LEVEL_2).andThisLevel(true, LEVEL_1);
+
+        assertThat(climb.readTo()).isEqualTo(LEVEL_2);
+    }
+
+    @Test
+    void theCallersLevelIsRecorded_whenNothingAboveItWasRead() {
+        // The case the finding was about: a level answered, the browse above it did not. The level that
+        // answered is the furthest the walk reached, and must not be lost.
+        final MethodVerifier.Climb climb = new MethodVerifier.Climb(List.of(), false, null).andThisLevel(true, LEVEL_1);
+
+        assertThat(climb.readTo()).isEqualTo(LEVEL_1);
+        assertThat(climb.complete()).isFalse();
     }
 }

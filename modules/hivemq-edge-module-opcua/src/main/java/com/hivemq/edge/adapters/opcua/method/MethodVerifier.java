@@ -737,7 +737,9 @@ public final class MethodVerifier {
 
         return typeOf(client, objectNode, tagName)
                 .thenCompose(type -> type == null
-                        ? CompletableFuture.completedFuture(new Climb(verified.methods(), true))
+                        // No type at all: nothing above the object to read, so the walk is complete and
+                        // reached no type level.
+                        ? CompletableFuture.completedFuture(new Climb(verified.methods(), true, null))
                         : collectUpwards(client, type, objectNode, verified.methods(), tagName, 0))
                 .thenApply(climb -> {
                     warnWhenNoneWereFound(climb.methods(), objectNode, tagName);
@@ -754,6 +756,18 @@ public final class MethodVerifier {
                                         + "the next request reads the hierarchy again",
                                 tagName);
                     }
+                    if (!climb.complete()) {
+                        // Names where the walk stopped, so an operator reading this knows whether anything
+                        // above the object was seen at all rather than inferring it from the method count.
+                        log.info(
+                                "Tag '{}': the type hierarchy could not be read in full, so the {} method(s) found "
+                                        + "are served but not remembered. {}",
+                                tagName,
+                                climb.methods().size(),
+                                climb.readTo() != null
+                                        ? "The furthest type level read was " + climb.readTo() + "."
+                                        : "No type level above the object could be read.");
+                    }
                     return (Result)
                             (climb.complete() && typesResolved
                                     ? Result.Verified.of(climb.methods())
@@ -767,6 +781,11 @@ public final class MethodVerifier {
                             Browsing.describeException(throwable));
                     // Partial for the same reason: the type lookup failing is a failure to reach the device,
                     // not the device saying this object's type has nothing to add.
+                    //
+                    // Reaching here now means the *first* lookup -- the object's own type -- failed, so the
+                    // object's methods really are all there is. A failure further up is recovered inside the
+                    // recursion, where the merged list is in scope; this handler used to catch those too and
+                    // discarded every type level that had answered. See collectUpwards.
                     return Result.Verified.partial(verified.methods());
                 });
     }
@@ -852,7 +871,8 @@ public final class MethodVerifier {
                     tagName,
                     depth,
                     type);
-            return CompletableFuture.completedFuture(new Climb(known, true));
+            // readTo null: this level was not read, and the caller's own level is filled in by andThisLevel.
+            return CompletableFuture.completedFuture(new Climb(known, true, null));
         }
 
         log.debug(
@@ -900,7 +920,9 @@ public final class MethodVerifier {
                     tagName,
                     type,
                     depth);
-            return CompletableFuture.completedFuture(new Climb(known, false));
+            // The methods already found are kept. readTo null: this level's own methods were never read,
+            // because its supertype browse failed before the method browse ran.
+            return CompletableFuture.completedFuture(new Climb(known, false, null));
         }
 
         // Unfiltered for the same reason as the instance browse -- see methodsOf. A server whose node-class
@@ -953,10 +975,35 @@ public final class MethodVerifier {
                             describeOutcome(result),
                             merged.size(),
                             levelRead ? "read" : "NOT readable, so the climb is incomplete");
-                    return level.supertype() == null
-                            ? CompletableFuture.completedFuture(new Climb(List.copyOf(merged), levelRead))
-                            : collectUpwards(client, level.supertype(), objectNode, merged, tagName, depth + 1)
-                                    .thenApply(above -> above.andThisLevel(levelRead));
+                    final NodeId readTo = levelRead ? type : null;
+                    if (level.supertype() == null) {
+                        return CompletableFuture.completedFuture(new Climb(List.copyOf(merged), levelRead, readTo));
+                    }
+                    // Recovery sits *inside* the recursion, where `merged` is in scope. An outer handler has
+                    // only the instance's result, so recovering there returned the object's own methods and
+                    // discarded every type level that had answered -- a static method read from a readable
+                    // type vanished from the list, and from both generated schemas, because the browse one
+                    // level further up failed. The javadoc on addInheritedMethods promised the opposite.
+                    //
+                    // Reported by Sam as Q05 on EDG-1087.
+                    return collectUpwards(client, level.supertype(), objectNode, merged, tagName, depth + 1)
+                            .exceptionally(throwable -> {
+                                // Defence in depth rather than a path reached today: methodsAt recovers from
+                                // a failed method browse and supertypeOf absorbs a failed supertype browse,
+                                // so nothing currently throws out of the recursion. Recovering here anyway
+                                // keeps the merged list from being discarded if a later change adds a throw,
+                                // which is the defect Sam reported as Q05 -- the outer handler in
+                                // addInheritedMethods has only the instance's list in scope.
+                                log.debug(
+                                        "Tag '{}': the climb above type {} failed, so the {} method(s) already "
+                                                + "found are kept and the result is incomplete: {}",
+                                        tagName,
+                                        type,
+                                        merged.size(),
+                                        Browsing.describeException(throwable));
+                                return new Climb(List.copyOf(merged), false, readTo);
+                            })
+                            .thenApply(above -> above.andThisLevel(levelRead, readTo));
                 });
     }
 
@@ -974,14 +1021,29 @@ public final class MethodVerifier {
     /// Package-private rather than private so {@link #andThisLevel} can be tested directly. Combining a flag
     /// up a recursion is the kind of thing that looks obviously right and is wrong by one level, and the
     /// alternative test needs a server willing to fail exactly one level of a type hierarchy on demand.
-    record Climb(@NotNull List<MethodSignature> methods, boolean complete) {
+    /// @param methods  everything found so far: the object's own, plus every type level that answered.
+    /// @param complete whether every level the walk tried could be read.
+    /// @param readTo    the furthest type level whose methods were read, or null when none was -- either the
+    ///                  object has no type, or its own type could not be read. **Diagnostic only**: it says
+    ///                  how far the walk got, so a log line can name where it stopped instead of leaving an
+    ///                  operator to guess whether anything above the object was seen at all.
+    record Climb(
+            @NotNull List<MethodSignature> methods,
+            boolean complete,
+            @Nullable NodeId readTo) {
 
         /// The same methods, incomplete if this level could not be read or anything above it already was.
+        ///
+        /// `levelRead` is about the level *below* this climb, which the caller has just read; `this` describes
+        /// everything above it. So an unread level makes the combination incomplete, and the `readTo` of the
+        /// climb above wins when it has one -- it is further from the object than the caller's own level.
         @NotNull
-        Climb andThisLevel(final boolean levelRead) {
-            // `this` when the level was read, which keeps an earlier failure because `this` is then already
-            // partial -- the combination is idempotent in that direction rather than needing to test `complete`.
-            return levelRead ? this : new Climb(methods, false);
+        Climb andThisLevel(final boolean levelRead, final @Nullable NodeId levelType) {
+            if (levelRead && readTo != null) {
+                // Nothing to add: the level below was read, and this climb already names a level further up.
+                return this;
+            }
+            return new Climb(methods, complete && levelRead, readTo != null ? readTo : levelType);
         }
     }
 

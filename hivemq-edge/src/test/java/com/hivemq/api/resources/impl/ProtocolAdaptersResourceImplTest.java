@@ -16,7 +16,6 @@
 package com.hivemq.api.resources.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +38,6 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
-import com.hivemq.api.error.ApiException;
 import com.hivemq.api.format.DataUrl;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.DomainTagOwnerConverter;
@@ -1170,22 +1168,21 @@ class ProtocolAdaptersResourceImplTest {
     }
 
     @Test
-    void southboundMapping_carryingAMethodCall_isRefusedWhenTheSchemaDoesNotRequireMethodName() {
+    void southboundMapping_carryingAMethodCall_isSavedWithAWarningWhenTheSchemaDoesNotRequireMethodName() {
+        // This used to be refused with a 400. The check cannot read every way a schema may state a
+        // requirement -- one holding only under a condition, or stated through `dependencies` -- and those are
+        // valid schemas whose mappings a user is entitled to save. Blocking correct work to catch an
+        // incorrect configuration is the wrong trade, so the save succeeds and the fault is logged: a request
+        // omitting the method name is then refused by the adapter, with a message naming the setting.
         mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_VALUE_ONLY);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 
-        final ApiException thrown = catchThrowableOfType(
-                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
-                ApiException.class);
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
 
-        assertThat(thrown).isNotNull();
-        assertThat(thrown.getHttpStatusCode())
-                .as("the operator's configuration is at fault, so this is not a server error")
-                .isEqualTo(400);
-        assertThat(thrown.getMessage())
-                .as("the refusal has to name both sides and the entry to add")
-                .contains("methodName")
-                .contains("plant/boiler1/call")
-                .contains("required");
+        assertThat(response.getStatus())
+                .as("a schema this check cannot read must not block the save")
+                .isEqualTo(200);
     }
 
     @Test
@@ -1242,20 +1239,17 @@ class ProtocolAdaptersResourceImplTest {
     }
 
     @Test
-    void southboundMapping_isRefusedWhenOnlyANestedObjectRequiresMethodName() {
-        // The boundary on the other side, so the check has not become "the name appears somewhere". A request
-        // names the method at its root; a schema demanding it inside `value` does not make that happen, and
-        // taking the deeper requirement for the root one would let an unroutable mapping be saved.
+    void aSchemaRequiringTheMethodNameOnlyDeeper_isStillSaved() {
+        // A request names the method at its root, and a schema demanding it inside `value` does not make that
+        // happen -- so this mapping is the one the warning is for. It saves all the same: the check informs,
+        // it does not block.
         mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_ONLY_DEEPER);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 
-        final ApiException thrown = catchThrowableOfType(
-                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
-                ApiException.class);
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
 
-        assertThat(thrown)
-                .as("a requirement on a nested object is not a requirement at the root")
-                .isNotNull();
-        assertThat(thrown.getHttpStatusCode()).isEqualTo(400);
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     @Test
@@ -1277,19 +1271,18 @@ class ProtocolAdaptersResourceImplTest {
     }
 
     @Test
-    void aMethodMappingOnAnUnreadableSchema_isRefusedRatherThanTrusted() {
-        // A schema that cannot be read requires nothing, so it cannot keep the promise either -- and a method
-        // mapping resting on it is broken whether or not we say so. Refusing names the problem at save time
-        // instead of leaving requests to fail unexplained at runtime. The message still asks for the field
-        // rather than complaining about the syntax, which is the actionable half.
+    void aMethodMappingOnAnUnreadableSchema_isSavedWithAWarning() {
+        // A schema that cannot be parsed answers "requires nothing", so this is the warning's other trigger.
+        // It used to be a 400. Refusing a save because *we* could not read a document is the trade this
+        // change reverses: the data policy will reject the schema on its own terms if it is genuinely
+        // malformed, and nothing is gained by blocking the mapping here as well.
         mockWritableAdapterWithTopicFilter("not a schema at all");
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
 
-        final ApiException thrown = catchThrowableOfType(
-                () -> protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false)),
-                ApiException.class);
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
 
-        assertThat(thrown).isNotNull();
-        assertThat(thrown.getHttpStatusCode()).isEqualTo(400);
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     @Test

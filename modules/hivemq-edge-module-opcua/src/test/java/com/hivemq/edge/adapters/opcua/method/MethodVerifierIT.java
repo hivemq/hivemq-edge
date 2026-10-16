@@ -342,6 +342,61 @@ class MethodVerifierIT {
     }
 
     @Test
+    void aFailureAboveAReadableType_keepsTheMethodsThatTypeDeclared() throws Exception {
+        // A static method lives only on the type, so losing a readable type level loses the method entirely:
+        // it disappears from resolution and from both generated schemas, and naming its full node id cannot
+        // recover it because the node-id lookup searches the same list.
+        //
+        // The recovery used to sit outside the recursion, where only the instance's own result was in scope,
+        // so a browse failing *above* a type that had answered returned the object's methods alone. The
+        // javadoc on addInheritedMethods promised the methods already found would be kept.
+        //
+        // The spy lets the object's type be read and fails the browse one level further up, which is the
+        // shape of the real fault -- a server that restricts part of its type hierarchy.
+        final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Boiler11");
+        // The type this object derives from, read from a healthy run: the node that declares StaticOp.
+        final NodeId objectType = ((MethodVerifier.Result.Verified)
+                        MethodVerifier.verify(client, object, "boiler11-probe").join())
+                .methods().stream()
+                        .filter(method -> method.name().equals("StaticOp"))
+                        .findFirst()
+                        .orElseThrow()
+                        .objectId();
+
+        final OpcUaClient partial = spy(client);
+        doAnswer(invocation -> {
+                    final BrowseDescription browse = invocation.getArgument(0);
+                    // Everything about the object and its own type is real, so StaticOp is genuinely discovered.
+                    // Only the climb *above* that type fails -- selected by node rather than by call order, because
+                    // several of these browses are forward ones and counting them picks the wrong level.
+                    if (!browse.getNodeId().equals(object)
+                            && !browse.getNodeId().equals(objectType)) {
+                        return CompletableFuture.failedFuture(new UaException(StatusCodes.Bad_Timeout));
+                    }
+                    return invocation.callRealMethod();
+                })
+                .when(partial)
+                .browseAsync(any(BrowseDescription.class));
+
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(partial, object, "boiler11-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        final MethodVerifier.Result.Verified verified = (MethodVerifier.Result.Verified) result;
+
+        assertThat(verified.methods())
+                .withFailMessage(
+                        "a method read from a readable type level must survive a failure above it: %s",
+                        verified.methods().stream().map(MethodSignature::name).toList())
+                .anySatisfy(method -> assertThat(method.name()).isEqualTo("StaticOp"));
+
+        // And the result is still not cacheable, because the hierarchy was not read in full.
+        assertThat(verified.complete())
+                .withFailMessage("an unread level above means the list may be short, so nothing may be cached")
+                .isFalse();
+    }
+
+    @Test
     void aTypeBrowseThatTrulyFails_stillLeavesTheClimbIncomplete() throws Exception {
         // The other side, and the reason the fix is not "treat Bad_NodeIdUnknown as harmless everywhere". A
         // supertype browse that fails means we do not know what is above, so methods may be hidden and the
