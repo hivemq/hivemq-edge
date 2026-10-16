@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -32,6 +33,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -169,6 +171,51 @@ class MethodArgumentsTest {
     }
 
     @Test
+    void aLocalizedTextArgumentInObjectForm_keepsAnAbsentLocaleAbsent() throws Exception {
+        // The read path omits locale when it is null, so {"text": "x"} is how a value with no locale comes
+        // back from a device. Defaulting it to English here rewrote that value on its way back.
+        final var arguments = MethodArguments.forCall(
+                signature(argument("Comment", NodeIds.LocalizedText)),
+                json("{\"Comment\": {\"text\": \"acknowledged\"}}"));
+
+        final LocalizedText text = (LocalizedText) arguments[0].value();
+        assertThat(text.getText()).isEqualTo("acknowledged");
+        assertThat(text.getLocale()).isNull();
+    }
+
+    @Test
+    void aLocalizedTextArgumentInObjectForm_keepsTheEmptyCasesTheProtocolDistinguishes() throws Exception {
+        // OPC 10000-9 section 5.7.3, on a condition's Comment: both fields absent means "leave any existing
+        // comment alone", while an empty text WITH a locale resets it. Conflating them turned the first into
+        // the second -- the object form of "do not touch" became a command to clear.
+        final var bothAbsent = MethodArguments.forCall(
+                signature(argument("Comment", NodeIds.LocalizedText)), json("{\"Comment\": {}}"));
+        final var emptyTextWithLocale = MethodArguments.forCall(
+                signature(argument("Comment", NodeIds.LocalizedText)),
+                json("{\"Comment\": {\"locale\": \"en\", \"text\": \"\"}}"));
+
+        assertThat((LocalizedText) bothAbsent[0].value()).isEqualTo(LocalizedText.NULL_VALUE);
+        assertThat((LocalizedText) emptyTextWithLocale[0].value()).isEqualTo(new LocalizedText("en", ""));
+        assertThat(bothAbsent[0].value()).isNotEqualTo(emptyTextWithLocale[0].value());
+    }
+
+    @Test
+    void aLocalizedTextArgumentInObjectForm_refusesAFieldOfTheWrongType() {
+        // Absent is a statement the protocol has; a number is a caller error. Treating the second as the first
+        // would discard what they said.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("Comment", NodeIds.LocalizedText)),
+                        json("{\"Comment\": {\"locale\": 42, \"text\": \"x\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("locale");
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("Comment", NodeIds.LocalizedText)),
+                        json("{\"Comment\": {\"text\": [\"x\"]}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("text");
+    }
+
+    @Test
     void aNodeIdArgument_acceptsBothTheTextAndTheObjectForm() throws Exception {
         final var fromText = MethodArguments.forCall(
                 signature(argument("node", NodeIds.NodeId)), json("{\"node\": \"ns=2;s=Boiler\"}"));
@@ -177,6 +224,97 @@ class MethodArgumentsTest {
                 json("{\"node\": {\"namespaceIndex\": 2, \"id\": \"Boiler\"}}"));
 
         assertThat(fromText[0].value()).isEqualTo(fromObject[0].value());
+    }
+
+    @Test
+    void aNumericNodeIdArgument_takesTheWholeUInt32Range() throws Exception {
+        final var arguments = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)),
+                json("{\"node\": {\"namespaceIndex\": 2, \"id\": 4294967295}}"));
+
+        assertThat(arguments[0].value()).isEqualTo(new NodeId(2, Unsigned.uint(4294967295L)));
+    }
+
+    @Test
+    void aNumericNodeIdArgument_isRefusedOutsideTheUInt32Range() {
+        // The two bounds a boundary test reaches for. Both were already refused before the range check was
+        // added, because they survive the narrowing -- which is what made the gap below look covered.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)), json("{\"node\": {\"id\": 4294967296}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)), json("{\"node\": {\"id\": -1}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+    }
+
+    @Test
+    void aNumericNodeIdArgument_isRefusedRatherThanWrappedWhenItIsWiderThan64Bits() {
+        // The identifier is a UInt32 and the check has to happen on the value as written: longValue() answers
+        // a wide JSON integer modulo 2^64, so 2^64 itself becomes 0 and satisfies every bound -- naming node
+        // i=0 instead of refusing. The second value is 2^64 as a JavaScript transform re-renders it, which is
+        // the realistic route to a number this size, and it wrapped to i=384.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"namespaceIndex\": 2, \"id\": 18446744073709551616}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"id\": 18446744073709552000}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+    }
+
+    @Test
+    void aGuidNodeIdArgument_takesTheHyphenatedFormAndRefusesTheOthers() throws Exception {
+        // UUID.fromString is the whole accepted syntax, because the hyphenated form is what the read path
+        // emits. The brace and URN spellings a vendor tool may show are refused rather than parsed.
+        final var arguments = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)),
+                json("{\"node\": {\"namespaceIndex\": 2, \"idType\": 2, "
+                        + "\"id\": \"72962b91-fa75-4ae6-8d28-b404dc7daf63\"}}"));
+        assertThat(arguments[0].value())
+                .isEqualTo(new NodeId(2, UUID.fromString("72962b91-fa75-4ae6-8d28-b404dc7daf63")));
+
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"idType\": 2, \"id\": \"{72962b91-fa75-4ae6-8d28-b404dc7daf63}\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("8-4-4-4-12");
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"idType\": 2, \"id\": \"urn:uuid:72962b91-fa75-4ae6-8d28-b404dc7daf63\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+    }
+
+    @Test
+    void aNodeIdArgument_refusesAnIdentifierDisagreeingWithItsIdType() {
+        // A kind that does not match the value is a caller error, not something to coerce: the whole reason
+        // idType is honoured is that the JSON type of `id` cannot distinguish Guid and Opaque from String.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"idType\": 0, \"id\": \"not-a-number\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)), json("{\"node\": {\"idType\": 1, \"id\": 9482}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"idType\": 3, \"id\": \"not base64!\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)), json("{\"node\": {\"idType\": 4, \"id\": 1}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+    }
+
+    @Test
+    void aNodeIdArgumentWithoutAnIdType_keepsTheNumberOrStringShorthand() throws Exception {
+        // What a hand-written configuration carries, and all it can express.
+        final var numeric = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)), json("{\"node\": {\"id\": 9482}}"));
+        final var textual = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)), json("{\"node\": {\"id\": \"Boiler\"}}"));
+
+        assertThat(numeric[0].value()).isEqualTo(new NodeId(0, Unsigned.uint(9482)));
+        assertThat(textual[0].value()).isEqualTo(new NodeId(0, "Boiler"));
     }
 
     @Test

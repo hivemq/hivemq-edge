@@ -142,6 +142,99 @@ class MethodFieldsInTheSchemasTest {
                 .isFalse();
     }
 
+    /// Lifting the parameters out keeps the rest of `value` intact, annotations included.
+    ///
+    /// Splitting one object into two means constructing the `value` that remains, and a construction carries
+    /// only what it is told to. Everything structural was copied -- properties, the required set, the
+    /// additional-properties policy, the read/write/nullable flags -- and `title` and `description` were not,
+    /// so a value schema that named and explained itself came out anonymous. The other tests here assert
+    /// structure, which is why this went unseen.
+    @Test
+    void liftingTheParametersKeepsTheValuesOwnTitleAndDescription() throws Exception {
+        final var value = new SchemaBuilder().startObject();
+        value.property("setpoint").scalar(ScalarType.LONG).writable();
+        value.property("INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8")
+                .startObject()
+                .property("methodName")
+                .required()
+                .scalar(ScalarType.STRING)
+                .endObject();
+        final Schema described = value.endObject()
+                .title("Boiler controls")
+                .description("The arguments the Start method takes")
+                .writable()
+                .build();
+
+        final JsonNode southbound = document(
+                        new TagSchemaCreationOutput.DataPointSchema(responseValue(), null, null, described),
+                        TagSchemaDirection.SOUTHBOUND)
+                .get("properties")
+                .get("value");
+
+        assertThat(southbound.path("title").asText()).isEqualTo("Boiler controls");
+        assertThat(southbound.path("description").asText()).isEqualTo("The arguments the Start method takes");
+    }
+
+    /// A closed `value` stays closed, and closes `value` rather than the document around it.
+    ///
+    /// `MethodSchemas.requestSchema` closes the value object -- a name it does not list is not an argument of
+    /// any method on the node, so a request carrying one is wrong however it is spelled, and a misspelled
+    /// argument is refused at the validation gate instead of reaching the device. Reconstructing `value` has to
+    /// carry that over, and has to put it in the right place: the builder's property stage offers a method of
+    /// the same name which is shorthand for ending the property and closing the *enclosing* object, so one
+    /// wrong receiver silently reopens `value` and closes the document root instead.
+    ///
+    /// The other helpers in this class leave the flag at its default of open, which is why nothing here could
+    /// tell the two placements apart.
+    @Test
+    void aClosedValueStaysClosedAndTheDocumentRootStaysOpen() throws Exception {
+        final var requestValue = new SchemaBuilder().startObject();
+        requestValue.property("setpoint").scalar(ScalarType.LONG).writable();
+        requestValue
+                .property("INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8")
+                .startObject()
+                .property("methodName")
+                .required()
+                .scalar(ScalarType.STRING)
+                .endObject();
+        final Schema closedRequest =
+                requestValue.additionalProperties(false).endObject().writable().build();
+
+        final var responseValue = new SchemaBuilder().startObject();
+        responseValue.property("setpoint").scalar(ScalarType.LONG);
+        responseValue
+                .property("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8")
+                .startObject()
+                .property("methodName")
+                .scalar(ScalarType.STRING)
+                .endObject();
+        final Schema closedResponse =
+                responseValue.additionalProperties(false).endObject().build();
+
+        final JsonNode southbound = document(
+                new TagSchemaCreationOutput.DataPointSchema(closedResponse, null, null, closedRequest),
+                TagSchemaDirection.SOUTHBOUND);
+        final JsonNode northbound = document(
+                new TagSchemaCreationOutput.DataPointSchema(closedResponse, null, null, closedRequest),
+                TagSchemaDirection.NORTHBOUND);
+
+        // Only `false` is rendered -- an absent flag means an open object -- so the assertions are asymmetric
+        // on purpose: present and false on `value`, absent at the root.
+        for (final JsonNode document : new JsonNode[] {southbound, northbound}) {
+            assertThat(document.path("properties")
+                            .path("value")
+                            .path("additionalProperties")
+                            .asBoolean(true))
+                    .withFailMessage(
+                            "`value` must stay closed: %s",
+                            document.path("properties").path("value"))
+                    .isFalse();
+            assertThat(document.has("additionalProperties"))
+                    .withFailMessage("the document root must stay open, it gained the flag `value` lost: %s", document)
+                    .isFalse();
+        }
+    }
+
     @Test
     void aRequiredParameterStaysRequiredAfterLifting() throws Exception {
         // `methodName` is required inside the request's parameter object, so it is required at the root of the

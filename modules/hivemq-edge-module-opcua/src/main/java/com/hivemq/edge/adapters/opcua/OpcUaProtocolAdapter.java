@@ -1175,10 +1175,47 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // assembling the request's parameters, before the message reaches the data policy, and quarantines a
         // request that names an unpublishable one. The adapter used to ask because it happened to be holding
         // the string, which put an MQTT question behind an OPC-UA status code.
+        // Which session's node ids the answer below will be about, read before the lookup so the callback can
+        // tell whether it still holds. See the generation check in the callback.
+        final long generation = methodCache.generation();
+
         @SuppressWarnings("unused")
         final var unused = methodCache
                 .get(tagName, () -> MethodVerifier.verify(client, objectNodeId, tagName))
                 .whenComplete((result, throwable) -> {
+                    // The session that answered this lookup has ended. Refused rather than dispatched, and
+                    // never retried here.
+                    //
+                    // Clearing the cache on a session change fixes every *later* lookup and cannot reach this
+                    // one: the future was handed out before the clear and completes as it always would, so
+                    // without this check the call went to the device naming an object and a method that were
+                    // identified in a session that no longer exists. A stale node id usually just fails, which
+                    // is only a poor error message -- but OPC UA servers reuse namespace indices and numeric
+                    // identifiers across sessions, and a reused one makes the call land on a different node
+                    // than the caller named.
+                    //
+                    // Not retried, even though the caller would prefer it: a Call this adapter has already
+                    // sent may have taken effect, and a method is not idempotent. The caller gets a refusal
+                    // they can act on, and their next request resolves against the live session.
+                    if (methodCache.generation() != generation) {
+                        log.info(
+                                "OPC UA adapter '{}': refusing the call to '{}' on tag '{}' -- its methods were "
+                                        + "read in a session that has since been replaced, and node ids do not "
+                                        + "survive that. The next request reads them again.",
+                                adapterId,
+                                methodName,
+                                tagName);
+                        refuseWithResponse(
+                                client,
+                                opcuaTag,
+                                methodName,
+                                payload,
+                                StatusCodes.Bad_SessionClosed,
+                                "The session that read the methods of tag '" + tagName
+                                        + "' has been replaced. The call was not sent; please repeat the request",
+                                output);
+                        return;
+                    }
                     if (throwable != null) {
                         // Reading the object's methods failed outright. Bad_InternalError rather than a
                         // method-specific code: nothing was learned about the method, so nothing can be claimed
@@ -1960,16 +1997,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 methodCache
                         .get(tagName, () -> MethodVerifier.verify(client, objectNode, tagName))
                         .join();
-                // The generation may have changed while that browse was in flight, in which case this entry was
-                // written into a cache that had just been cleared for a new session. Clearing again is the
-                // honest repair: the entry cannot be told apart from a current one, and losing a correct entry
-                // only costs the next request a browse, while keeping a stale one costs a call against the
-                // wrong node.
+                // The generation may have changed while that browse was in flight, in which case this run
+                // belongs to a session that has ended and stops here.
+                //
+                // It must *not* invalidate on the way out, which is what it used to do. The generation is both
+                // the record of which session the cache holds and the signal an obsolete run reads, so bumping
+                // it here spent the signal: onSessionReplaced invalidates and then queues a replacement run
+                // with the new generation, this run resumed first and bumped it again, and the replacement
+                // then saw a number that no longer matched its own and exited without reading a single tag.
+                // One reconnect, cache left cold -- in exactly the case pre-warming exists for.
+                //
+                // Nothing needs cleaning up. That invalidate already cleared the map, and this run's entry
+                // went into a fresh one only if the browse finished before the clear; MethodCache.get stores a
+                // relay the invalidation removes, and the completing callback does not put it back.
                 if (methodCache.generation() != generation) {
-                    methodCache.invalidate();
                     log.debug(
-                            "OPC UA adapter '{}': a new session began while pre-warming tag '{}'; the cache was "
-                                    + "cleared again so nothing from the previous session survives",
+                            "OPC UA adapter '{}': a new session began while pre-warming tag '{}'; this run stops "
+                                    + "and the run queued for the new session fills the cache",
                             adapterId,
                             tagName);
                     return;

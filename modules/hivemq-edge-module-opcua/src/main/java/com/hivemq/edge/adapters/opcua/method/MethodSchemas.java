@@ -67,7 +67,8 @@ public final class MethodSchemas {
             OpcUaDataType.ExpandedNodeId, "a node id as text, nsu=<namespace uri>;s=Boiler",
             OpcUaDataType.QualifiedName,
                     "a string, taken as namespace 0, or {\"namespaceIndex\": 1, \"name\": \"Start\"}",
-            OpcUaDataType.StatusCode, "the numeric status code, for example 0 for Good",
+            OpcUaDataType.StatusCode,
+                    "the numeric status code, for example 0 for Good, or {\"code\": 0} as a read publishes it",
             OpcUaDataType.XmlElement, "the XML fragment as a string");
 
     // @formatter:off -- the property declarations below are instances of one pattern, and the formatter's
@@ -91,10 +92,13 @@ public final class MethodSchemas {
     /// while every writer put it outside, so every request failed validation with
     /// `$.value: required property 'methodName' not found`.
     ///
-    /// They are not this adapter's to declare either: which of them a request must carry follows the southbound
-    /// mapping's flags, not the device, and those flags are offered for every protocol. Edge declares them beside
-    /// this schema when it assembles the southbound document -- see
-    /// {@code TagSchemaCreationOutputImpl.describeRequestFields}.
+    /// So they are declared **inside** `INTERNAL_REQUEST_PARAMETERS` below, the field that carries them across
+    /// the boundary between Edge and this adapter, and Edge lifts them from there to the document root while
+    /// assembling the southbound schema -- see `TagSchemaCreationOutputImpl.southboundSchema`, which iterates
+    /// that object's properties and declares each at the root with its schema unchanged.
+    ///
+    /// Declaring them here rather than in Edge keeps their names in one place: the same constants name them in
+    /// the schema, in the payload the writer assembles, and in the adapter that reads them back.
     ///
     /// ## Why the object is closed
     ///
@@ -118,15 +122,22 @@ public final class MethodSchemas {
         // lifts them to the document root by iterating this, so the names live here and nowhere else.
         // `methodName` is required and the other two are not: either may arrive as an MQTT 5 property with
         // nothing in the payload.
+        //
+        // Each is `writable()` because each is something a caller sends. The builder defaults a property to
+        // not writable, and lifting carries each property's schema through verbatim, so omitting this put
+        // `readOnly: true` on all three in the published southbound document -- on `methodName` beside
+        // `required`, telling a form to demand a field it must not offer. Nothing enforces the annotation
+        // today, which is why no request was rejected and no test noticed; it is read by whoever builds a
+        // form from the schema.
         final ObjectSchemaBuilder<?> parameters =
                 requestSchema.property(MethodRequestFieldsOpcUa.INTERNAL_REQUEST_PARAMETERS).startObject();
-        parameters.property(MethodRequestFieldsOpcUa.METHOD_NAME).required().scalar(ScalarType.STRING)
+        parameters.property(MethodRequestFieldsOpcUa.METHOD_NAME).required().writable().scalar(ScalarType.STRING)
                 .description("the method to call. Its name, which must be unique among the object's methods, or "
                         + "the method node itself as nsu=<namespace uri>;<identifier> when two methods share a "
                         + "name");
-        parameters.property(MethodRequestFieldsOpcUa.CORRELATION_DATA).scalar(ScalarType.STRING)
-                .description("a token echoed unchanged from the request to its response");
-        parameters.property(MethodRequestFieldsOpcUa.RESPONSE_TOPIC).scalar(ScalarType.STRING)
+        parameters.property(MethodRequestFieldsOpcUa.CORRELATION_DATA).writable().scalar(ScalarType.STRING)
+                .description("correlationData, echoed unchanged from the request to its response");
+        parameters.property(MethodRequestFieldsOpcUa.RESPONSE_TOPIC).writable().scalar(ScalarType.STRING)
                 .description("the topic the response is published to, instead of the mapping's own");
         parameters.endObject();
 
@@ -294,7 +305,20 @@ public final class MethodSchemas {
             if (shape.isArray()) {
                 // Element type may still be null -- an array of a custom structure. describeAsArray answers that
                 // with `any` elements, which keeps the array-ness (the part it can state) rather than losing it.
-                JsonSchemaGenerator.describeAsArray(property, shape.type(), shape.dimensionsArray(), writable);
+                //
+                // A structured builtin's elements are deliberately passed as null for the same reason the
+                // scalar case below says `any`: the type is accepted in two shapes and the schema model cannot
+                // say "either of these". Describing the elements concretely stated one shape and refused the
+                // other -- a StatusCode[] declared integer elements while the read path publishes
+                // {"code":0,"symbol":"Good"}, and a QualifiedName[] required a namespaceIndex the read path
+                // omits for namespace 0. Both refused a value read from this very device, at the gate, before
+                // the adapter could accept it. The description carries the forms, as it does for the scalar.
+                final String acceptedForms = shape.type() == null ? null : ACCEPTED_FORMS.get(shape.type());
+                if (acceptedForms != null) {
+                    property.description(acceptedForms + ", per element");
+                }
+                JsonSchemaGenerator.describeAsArray(
+                        property, acceptedForms != null ? null : shape.type(), shape.dimensionsArray(), writable);
             } else if (shape.type() == null) {
                 // Two methods disagreed, or the type is a custom structure. `any` is the honest answer.
                 property.description("type varies by method").any();

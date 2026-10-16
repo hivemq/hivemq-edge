@@ -83,7 +83,8 @@ class InheritedMethodsTest {
                 origin,
                 inputArguments,
                 List.of(),
-                MethodSignature.builtinsOf(inputArguments));
+                MethodSignature.builtinsOf(inputArguments),
+                true);
     }
 
     /// The same, with the browse name in a stated namespace -- for the cases where the namespace is the point.
@@ -103,7 +104,8 @@ class InheritedMethodsTest {
                 origin,
                 List.of(),
                 List.of(),
-                Map.of());
+                Map.of(),
+                true);
     }
 
     /// A Mandatory or Optional declaration on the type: a template for the instance's own method. Called on the

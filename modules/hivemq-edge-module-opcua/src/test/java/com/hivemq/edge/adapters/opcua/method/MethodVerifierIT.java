@@ -165,6 +165,46 @@ class MethodVerifierIT {
         assertThat(wait.builtinTypeOf(wait.inputArguments().get(0)))
                 .withFailMessage("a Simple DataType cannot be reduced without the hierarchy")
                 .isNull();
+
+        // And the result must say the lookup did not answer, so nothing remembers it.
+        //
+        // Four states, and the one here is the fourth: (1) the type is a builtin, answered from the local
+        // table; (2) the hierarchy reduces it to a builtin; (3) the hierarchy says it reduces to none, which
+        // means a structure this release does not encode and is durable; (4) the hierarchy could not be read,
+        // which says nothing about the method. Until it is read we cannot even tell an alias for a Double from
+        // a structure, so refusing the argument permanently is a conclusion state 4 does not support.
+        //
+        // States 3 and 4 both leave the type absent and used to be indistinguishable, so the signature was
+        // reported fully verified either way and the cache kept it -- one failed read made a callable method
+        // uncallable until the adapter restarted.
+        assertThat(wait.typesResolved())
+                .withFailMessage("an unanswered DataType lookup must not be recorded as a resolved one")
+                .isFalse();
+        assertThat(((MethodVerifier.Result.Verified) result).complete())
+                .withFailMessage("a result with an unanswered DataType lookup must be incomplete, so it is not cached")
+                .isFalse();
+    }
+
+    @Test
+    void aHierarchyThatAnswers_leavesTheResultCacheable() {
+        // The counterpart, and the reason the fix is not "treat a missing type as incomplete". With the
+        // hierarchy readable every lookup answers -- including an enumeration's, which answers `Variant` and
+        // is then refused at conversion, and a structure's, which answers nothing at all. Both are durable:
+        // asking again would learn the same thing, so the result stays complete and the cache keeps it.
+        //
+        // Only state 4 is incomplete: the hierarchy could not be read, so we do not know what the type is.
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(client, objectId, "boiler-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        final MethodVerifier.Result.Verified verified = (MethodVerifier.Result.Verified) result;
+
+        assertThat(verified.methods()).allSatisfy(method -> assertThat(method.typesResolved())
+                .withFailMessage("the hierarchy answered for '%s', so its lookups are resolved", method.name())
+                .isTrue());
+        assertThat(verified.complete())
+                .withFailMessage("a result whose lookups all answered must stay cacheable")
+                .isTrue();
     }
 
     @Test

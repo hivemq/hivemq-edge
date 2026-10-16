@@ -77,7 +77,8 @@ class MethodReferenceTest {
                 origin,
                 inputArguments,
                 List.of(),
-                MethodSignature.builtinsOf(inputArguments));
+                MethodSignature.builtinsOf(inputArguments),
+                true);
     }
 
     /// Two methods both called `Start`, contributed by two namespaces -- the case the whole class exists for.

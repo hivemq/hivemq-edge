@@ -89,7 +89,19 @@ public record MethodSignature(
         ///
         /// Empty for a type that reduces to no builtin at all, which is a custom structure -- still refused,
         /// deliberately and as documented.
-        @NotNull Map<NodeId, OpcUaDataType> builtinTypes) {
+        @NotNull Map<NodeId, OpcUaDataType> builtinTypes,
+        /// Whether every DataType lookup this signature needed actually answered.
+        ///
+        /// **A type absent from `builtinTypes` has two causes, and only one of them is durable.** The hierarchy
+        /// may have answered "this reduces to no builtin", which means a genuine structure and stays true for
+        /// the session; or it may have been unreadable, which says nothing about the method at all. Until the
+        /// hierarchy is read we cannot even tell an alias for a Double from a structure, so "cannot encode" is
+        /// a conclusion the second case does not support.
+        ///
+        /// False makes the verified result incomplete, and {@link MethodCache} declines to remember an
+        /// incomplete one -- so the next request reads the hierarchy again instead of inheriting one failed
+        /// read for the rest of the session.
+        boolean typesResolved) {
 
     public MethodSignature {
         inputArguments = List.copyOf(inputArguments);
@@ -133,7 +145,9 @@ public record MethodSignature(
                 Origin.OBJECT,
                 inputArguments,
                 outputArguments,
-                builtinsOf(inputArguments, outputArguments));
+                builtinsOf(inputArguments, outputArguments),
+                // The local table needs no server, so nothing was left unanswered.
+                true);
     }
 
     /// The builtin types of these arguments taken at face value, for a signature built without a server.

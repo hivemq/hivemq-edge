@@ -120,6 +120,52 @@ class MethodSchemasShapeTest {
     }
 
     @Test
+    void theRequestParameters_areWritable_becauseACallerSendsThem() {
+        // The builder defaults a property to not writable, so omitting `writable()` rendered `readOnly: true`
+        // on all three -- and on `methodName` beside `required`, which tells a form to demand a field it must
+        // not offer. Nothing enforces the annotation on this path today, which is why no request was rejected
+        // and the omission went unseen through two reviews; it is read by whoever builds a form from the
+        // schema, and Edge's lifting carries each property's schema into the published document verbatim.
+        //
+        // `readOnly` is rendered only when the property is not writable, so the assertion is its absence.
+        final JsonNode properties = json(MethodSchemas.requestSchema(List.of(method())))
+                .get("properties")
+                .get("INTERNAL_REQUEST_PARAMETERS_H9G7R9B6S0V5O8R8")
+                .get("properties");
+
+        for (final String parameter : List.of("methodName", "correlationData", "responseTopic")) {
+            assertThat(properties.get(parameter).has("readOnly"))
+                    .withFailMessage(
+                            "'%s' is a request field, so it must not be read-only: %s",
+                            parameter, properties.get(parameter))
+                    .isFalse();
+        }
+    }
+
+    @Test
+    void theResponseParameters_stayReadOnly_becauseASubscriberOnlyObservesThem() {
+        // The mirror of the test above, and the reason the fix is not "make everything writable": a response
+        // is something Edge publishes, so its fields are observed rather than sent.
+        //
+        // Via `anyOf` because the response root is nullable -- a failed call publishes `value` as null -- so
+        // the properties sit in the object branch of the rendered union.
+        final JsonNode properties = json(MethodSchemas.responseSchema(List.of(method())))
+                .get("anyOf")
+                .get(0)
+                .get("properties")
+                .get("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8")
+                .get("properties");
+
+        for (final String parameter : List.of("methodName", "correlationData", "errorCode", "statusInfo")) {
+            assertThat(properties.get(parameter).path("readOnly").asBoolean(false))
+                    .withFailMessage(
+                            "'%s' is a response field, so it must stay read-only: %s",
+                            parameter, properties.get(parameter))
+                    .isTrue();
+        }
+    }
+
+    @Test
     void theResponseParameters_nameWhatAResponseCarries_andRequireNothing() {
         // The mirror, and the asymmetry is deliberate. A response declares four, all optional: the failure
         // fields appear only on a failure and the token only when the caller sent one. `responseTopic` is

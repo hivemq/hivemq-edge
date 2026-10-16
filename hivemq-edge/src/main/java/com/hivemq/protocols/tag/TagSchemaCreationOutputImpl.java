@@ -111,14 +111,21 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         northboundSchema.property("tagName").scalar(ScalarType.STRING).readable().writable(false);
         northboundSchema.property("timestamp").scalar(ScalarType.LONG).readable().writable(false);
 
-        // If the value is an object, then lift parameters from INTERNAL_RESPONSE_PARAMETERS to the root.
-        if (tagSchema instanceof final ObjectSchema valueSchemaWithResponseParameters) {
+        // If the value is an object carrying INTERNAL_RESPONSE_PARAMETERS, lift those parameters to the root.
+        if (tagSchema instanceof final ObjectSchema valueSchemaWithResponseParameters
+                && valueSchemaWithResponseParameters.properties().containsKey(INTERNAL_RESPONSE_PARAMETERS)) {
             final var valueSchema = northboundSchema.property("value").required()
                     .readable(valueSchemaWithResponseParameters.readable())
                     .writable(valueSchemaWithResponseParameters.writable())
-                    .nullable(valueSchemaWithResponseParameters.nullable())
-                    .startObject();
-            valueSchema.additionalProperties(valueSchemaWithResponseParameters.additionalProperties());
+                    .nullable(valueSchemaWithResponseParameters.nullable());
+            if (valueSchemaWithResponseParameters.title() != null) {
+                valueSchema.title(valueSchemaWithResponseParameters.title());
+            }
+            if (valueSchemaWithResponseParameters.description() != null) {
+                valueSchema.description(valueSchemaWithResponseParameters.description());
+            }
+            final var valueSchemaObject = valueSchema.startObject();
+            valueSchemaObject.additionalProperties(valueSchemaWithResponseParameters.additionalProperties());
             for (final var p : valueSchemaWithResponseParameters.properties().entrySet()) {
                 if (p.getKey().equals(INTERNAL_RESPONSE_PARAMETERS)) {
                     final ObjectSchema parameters = (ObjectSchema) p.getValue();
@@ -128,12 +135,12 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
                                 .schema(q.getValue());
                     }
                 } else {
-                    valueSchema.property(p.getKey())
+                    valueSchemaObject.property(p.getKey())
                             .required(valueSchemaWithResponseParameters.required().contains(p.getKey()))
                             .schema(p.getValue());
                 }
             }
-            valueSchema.endObject();
+            valueSchemaObject.endObject();
         }
 
         // otherwise just take the tag schema as is
@@ -185,14 +192,21 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         final Schema tagSchema =
                 tagSchemas.southboundSchema() != null ? tagSchemas.southboundSchema() : tagSchemas.valueSchema();
 
-        // If the value is an object, then lift parameters from INTERNAL_REQUEST_PARAMETERS to the root.
-        if (tagSchema instanceof final ObjectSchema valueSchemaWithRequestParameters) {
+        // If the value is an object carrying INTERNAL_REQUEST_PARAMETERS, lift those parameters to the root.
+        if (tagSchema instanceof final ObjectSchema valueSchemaWithRequestParameters
+                && valueSchemaWithRequestParameters.properties().containsKey(INTERNAL_REQUEST_PARAMETERS)) {
             final var valueSchema = southboundSchema.property("value").required()
                     .readable(valueSchemaWithRequestParameters.readable())
                     .writable(valueSchemaWithRequestParameters.writable())
-                    .nullable(valueSchemaWithRequestParameters.nullable())
-                    .startObject();
-            valueSchema.additionalProperties(valueSchemaWithRequestParameters.additionalProperties());
+                    .nullable(valueSchemaWithRequestParameters.nullable());
+            if (valueSchemaWithRequestParameters.title() != null) {
+                valueSchema.title(valueSchemaWithRequestParameters.title());
+            }
+            if (valueSchemaWithRequestParameters.description() != null) {
+                valueSchema.description(valueSchemaWithRequestParameters.description());
+            }
+            final var valueSchemaObject = valueSchema.startObject();
+            valueSchemaObject.additionalProperties(valueSchemaWithRequestParameters.additionalProperties());
             for (final var p : valueSchemaWithRequestParameters.properties().entrySet()) {
                 if (p.getKey().equals(INTERNAL_REQUEST_PARAMETERS)) {
                     final ObjectSchema parameters = (ObjectSchema) p.getValue();
@@ -202,12 +216,12 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
                                 .schema(q.getValue());
                     }
                 } else {
-                    valueSchema.property(p.getKey())
+                    valueSchemaObject.property(p.getKey())
                             .required(valueSchemaWithRequestParameters.required().contains(p.getKey()))
                             .schema(p.getValue());
                 }
             }
-            valueSchema.endObject();
+            valueSchemaObject.endObject();
         }
 
         // otherwise just take the tag schema as is

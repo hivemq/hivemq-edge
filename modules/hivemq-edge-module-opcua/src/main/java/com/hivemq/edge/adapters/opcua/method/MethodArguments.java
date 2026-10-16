@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -34,6 +35,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
@@ -439,7 +441,7 @@ public final class MethodArguments {
             case NodeId -> requireNodeId(node);
             case ExpandedNodeId -> ExpandedNodeId.parse(requireText(node));
             case QualifiedName -> requireQualifiedName(node);
-            case StatusCode -> new StatusCode(requireIntegral(node, 0, 4294967295L));
+            case StatusCode -> requireStatusCode(node);
             case XmlElement -> new XmlElement(requireText(node));
             case DateTime -> new DateTime(java.time.Instant.parse(requireText(node)));
             case ByteString -> ByteString.of(requireBase64(node));
@@ -493,16 +495,50 @@ public final class MethodArguments {
         return value;
     }
 
+    /// A status code, from either the object the read path publishes or the bare number.
+    ///
+    /// `code` carries the value and `symbol` is a label the read path looks up from it -- so the object form
+    /// takes `code` and ignores `symbol`, rather than trying to reconcile the two. A caller who edits the
+    /// symbol and not the code has changed nothing, which is the right reading: the code is the status.
+    ///
+    /// Both forms, for the same reason as the other structured types: a status code read from a device is
+    /// published as this object, so requiring the bare number made a published value unsendable.
+    private static @NotNull StatusCode requireStatusCode(final @NotNull JsonNode node) {
+        if (node.isObject()) {
+            final JsonNode code = node.get("code");
+            if (code == null) {
+                throw new IllegalArgumentException("expected an object with a 'code'");
+            }
+            return new StatusCode(requireIntegral(code, 0, 4294967295L));
+        }
+        return new StatusCode(requireIntegral(node, 0, 4294967295L));
+    }
+
     /// A localised text, from either the object the read path publishes or a bare string.
     ///
-    /// A bare string becomes English, which is what `ConditionUpdateWriter` already does for an alarm comment
-    /// -- the same argument of the same standard method, reached by the other route. Two routes to one method
-    /// answering differently would be worse than either answer.
+    /// ## The two forms say different amounts, so they are read differently
     ///
-    /// `LocalizedText.english(text)` rather than a constructor with a null locale: OPC 10000-9 section 5.7.3
-    /// gives a null localised text (both fields empty) its own meaning -- "leave any existing comment alone"
-    /// -- distinct from an empty text with a locale, which resets it. A caller who sends a string means
-    /// neither, so the locale is filled in rather than left for Milo to decide.
+    /// **A bare string becomes English.** It is a form that cannot express a locale at all, so filling one in
+    /// is the only way to make it work -- and `ConditionUpdateWriter` already does exactly this for an alarm
+    /// comment, the same argument of the same standard method reached by the other route. Two routes to one
+    /// method answering differently would be worse than either answer.
+    ///
+    /// **The object form says exactly what the caller said, absences included.** A missing `locale` stays
+    /// missing rather than becoming English, and a missing `text` stays missing rather than being refused,
+    /// because both are states the protocol defines and the read path publishes: `populateLocalizedText` omits
+    /// each field when it is null, so `{"text": "x"}` *is* how a value with no locale comes back from a device.
+    /// Defaulting here rewrote every such value on its way back, which is the round trip the object form exists
+    /// for.
+    ///
+    /// The distinction is not decorative. OPC 10000-9 section 5.7.3 gives a null localised text -- both fields
+    /// absent -- its own meaning for a comment, "leave any existing comment alone", distinct from an empty text
+    /// *with* a locale, which resets it. Substituting a locale turned the first into the second, so the object
+    /// form of "do not touch the comment" became a command to clear it. The wire format has the absence built
+    /// in: OPC 10000-6 encodes the pair as a bitmask plus whichever strings are present, and Milo spells the
+    /// both-absent case {@link LocalizedText#NULL_VALUE}.
+    ///
+    /// A `locale` or `text` of the wrong JSON type is refused rather than ignored, since a caller who sent a
+    /// number for a locale meant something, and it was not "no locale".
     private static @NotNull LocalizedText requireLocalizedText(final @NotNull JsonNode node) {
         if (node.isTextual()) {
             return LocalizedText.english(node.textValue());
@@ -510,21 +546,47 @@ public final class MethodArguments {
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a string or an object with 'text', got " + node.getNodeType());
         }
-        final JsonNode text = node.get("text");
-        if (text == null || !text.isTextual()) {
-            throw new IllegalArgumentException("expected an object with a string 'text'");
+        return new LocalizedText(optionalText(node, "locale"), optionalText(node, "text"));
+    }
+
+    /// A string field that may legitimately be absent, distinguished from one that is the wrong type.
+    ///
+    /// Absent and JSON `null` both answer `null` -- the same state, spelled two ways. Anything else present is
+    /// refused: silently treating it as absent would discard what the caller said.
+    private static @Nullable String optionalText(final @NotNull JsonNode node, final @NotNull String field) {
+        final JsonNode value = node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
         }
-        final JsonNode locale = node.get("locale");
-        return locale != null && locale.isTextual()
-                ? new LocalizedText(locale.textValue(), text.textValue())
-                : LocalizedText.english(text.textValue());
+        if (!value.isTextual()) {
+            throw new IllegalArgumentException("expected '" + field + "' to be a string, got " + value.getNodeType());
+        }
+        return value.textValue();
     }
 
     /// A node id, from either the text form every tag configuration uses or the object the read path publishes.
     ///
     /// The text form is `ns=2;s=Boiler`, which `NodeId.parse` already reads for a tag's own node and for a
-    /// method named by id. The object form carries `namespaceIndex` and `id`, and is what a caller gets back
-    /// from a read -- so a value can make the round trip without being rewritten by hand.
+    /// method named by id. The object form carries `namespaceIndex`, `id` and `idType`, and is what a caller
+    /// gets back from a read -- so a value can make the round trip without being rewritten by hand.
+    ///
+    /// ## Why `idType` decides, and is not inferred
+    ///
+    /// A node id is its namespace *and* its identifier *and* the identifier's kind: OPC 10000-3 section 8.2.3
+    /// gives Numeric, String, Guid and Opaque, and two ids agreeing on namespace and spelling but differing in
+    /// kind name different nodes. Two of the four kinds reach JSON as text -- a Guid as its hyphenated spelling
+    /// and an Opaque as base64 -- so the JSON type of `id` cannot tell them apart from a String identifier.
+    /// Inferring the kind from it, which is what this method used to do, silently rewrote every Guid and Opaque
+    /// identifier read from the device into a String one, breaking the round trip the object form exists for.
+    ///
+    /// So `idType` is honoured when present and a value disagreeing with it is refused rather than coerced.
+    /// Absent, the shorthand stands: a number is Numeric and text is String, which is what a hand-written
+    /// configuration carries and all it can express.
+    ///
+    /// **A Guid is read by `UUID.fromString`, and that is the whole accepted syntax** -- the hyphenated form,
+    /// which is what `populateNodeId` emits for one. The brace-wrapped and URN spellings a vendor tool may show
+    /// are refused, naming the expected form: the identifiers this has to accept are the ones our own read path
+    /// produces, and widening the syntax would add parsing to admit spellings nothing here writes.
     private static @NotNull NodeId requireNodeId(final @NotNull JsonNode node) {
         if (node.isTextual()) {
             return NodeId.parse(node.textValue());
@@ -536,15 +598,45 @@ public final class MethodArguments {
         if (id == null) {
             throw new IllegalArgumentException("expected an object with an 'id'");
         }
-        final int namespace =
-                node.has("namespaceIndex") ? (int) requireIntegral(node.get("namespaceIndex"), 0, 65535) : 0;
+        final UShort namespace = Unsigned.ushort(
+                node.has("namespaceIndex") ? (int) requireIntegral(node.get("namespaceIndex"), 0, 65535) : 0);
+        final JsonNode idType = node.get("idType");
+        if (idType != null && !idType.isNull()) {
+            return switch ((int) requireIntegral(idType, 0, 3)) {
+                case 0 -> new NodeId(namespace, Unsigned.uint(requireUInt32Identifier(id)));
+                case 1 -> new NodeId(namespace, requireText(id));
+                case 2 -> new NodeId(namespace, requireUuidIdentifier(id));
+                // Opaque. Base64 because that is how the read path renders one, and how the generated schema
+                // describes any ByteString.
+                default -> new NodeId(namespace, ByteString.of(requireBase64(id)));
+            };
+        }
         if (id.isIntegralNumber()) {
-            return new NodeId(Unsigned.ushort(namespace), Unsigned.uint(id.longValue()));
+            return new NodeId(namespace, Unsigned.uint(requireUInt32Identifier(id)));
         }
         if (!id.isTextual()) {
             throw new IllegalArgumentException("expected 'id' to be a number or a string, got " + id.getNodeType());
         }
-        return new NodeId(Unsigned.ushort(namespace), id.textValue());
+        return new NodeId(namespace, id.textValue());
+    }
+
+    /// A numeric identifier, range-checked on the value as written.
+    ///
+    /// Through `requireIntegral`, not `Unsigned.uint(id.longValue())`: the narrowing would happen before Milo's
+    /// own range check, so an identifier wider than 64 bits wraps into the range instead of being refused --
+    /// 2^64 arriving as node `i=0`, a different node than the caller named.
+    private static long requireUInt32Identifier(final @NotNull JsonNode id) {
+        return requireIntegral(id, 0, 4294967295L);
+    }
+
+    private static @NotNull UUID requireUuidIdentifier(final @NotNull JsonNode id) {
+        final String text = requireText(id);
+        try {
+            return UUID.fromString(text);
+        } catch (final IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "expected 'id' to be a Guid as 8-4-4-4-12 hexadecimal digits, got '" + text + "'");
+        }
     }
 
     /// A qualified name -- a namespace index and a name -- from either the object or a bare string.

@@ -20,8 +20,10 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 import com.hivemq.edge.adapters.opcua.browse.Browsing;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaMethodNode;
@@ -490,6 +492,7 @@ public final class MethodVerifier {
                                             describeArguments(in),
                                             out.length,
                                             describeArguments(out));
+                                    final ResolvedTypes types = builtinTypesOf(client, in, out);
                                     return new MethodSignature(
                                             browseName,
                                             nodeId,
@@ -497,7 +500,8 @@ public final class MethodVerifier {
                                             MethodSignature.Origin.OBJECT,
                                             List.of(in),
                                             List.of(out),
-                                            builtinTypesOf(client, in, out));
+                                            types.builtins(),
+                                            types.resolved());
                                 });
                             }
                             return hasModellingRule(client, nodeId)
@@ -512,6 +516,7 @@ public final class MethodVerifier {
                                                 describeArguments(in),
                                                 out.length,
                                                 describeArguments(out));
+                                        final ResolvedTypes types = builtinTypesOf(client, in, out);
                                         return new MethodSignature(
                                                 browseName,
                                                 nodeId,
@@ -523,7 +528,8 @@ public final class MethodVerifier {
                                                         : MethodSignature.Origin.TYPE_STATIC,
                                                 List.of(in),
                                                 List.of(out),
-                                                builtinTypesOf(client, in, out));
+                                                types.builtins(),
+                                                types.resolved());
                                     }));
                         }));
     }
@@ -588,7 +594,7 @@ public final class MethodVerifier {
     /// which stays deliberately unencodable in this release.
     ///
     /// Reported by Miguel as M6 on EDG-1087.
-    private static @NotNull Map<NodeId, OpcUaDataType> builtinTypesOf(
+    private static @NotNull ResolvedTypes builtinTypesOf(
             final @NotNull OpcUaClient client, final Argument @NotNull [] inputs, final Argument @NotNull [] outputs) {
 
         // Seeded from the local table first, and the order is what makes a failed read survivable. Every
@@ -604,10 +610,16 @@ public final class MethodVerifier {
         final Map<NodeId, OpcUaDataType> builtins =
                 new LinkedHashMap<>(MethodSignature.builtinsOf(List.of(inputs), List.of(outputs)));
 
-        // A tree this client cannot build leaves the Simple DataTypes unresolved rather than failing the
-        // browse: such an argument is then refused at conversion, naming it, which is exactly what happened
-        // before this existed. Losing those types is better than losing the tag. Milo caches the tree on the
-        // client, so this is a lookup on every browse but the first.
+        // Every argument already answered by the table needs no server at all, so a hierarchy that cannot be
+        // read costs only the Simple DataTypes -- and `resolved=false` says so, which is what stops that
+        // moment's failure becoming a fact about the method. See ResolvedTypes.
+        if (builtins.size() == countDistinctDataTypes(inputs, outputs)) {
+            // Every DataType was a builtin. The hierarchy can say nothing further, so it is not read: on a
+            // device that serves metadata slowly that is a round trip saved per method, for an answer already
+            // in hand.
+            return new ResolvedTypes(builtins, true);
+        }
+
         final DataTypeTree tree;
         try {
             tree = client.getDataTypeTree();
@@ -616,8 +628,9 @@ public final class MethodVerifier {
                     "Could not read the DataType hierarchy; arguments of a Simple DataType stay unresolved, "
                             + "the builtin ones are unaffected: {}",
                     e.getMessage());
-            return builtins;
+            return new ResolvedTypes(builtins, false);
         }
+        boolean resolved = true;
         for (final Argument argument : concat(inputs, outputs)) {
             final NodeId dataType = argument.getDataType();
             if (dataType == null || builtins.containsKey(dataType)) {
@@ -628,12 +641,46 @@ public final class MethodVerifier {
                 if (builtin != null) {
                     builtins.put(dataType, builtin);
                 }
+                // A null answer is the tree saying this type reduces to no builtin -- a genuine structure,
+                // which this release does not encode. That is durable, so `resolved` stays true and the
+                // signature may be cached: asking again would learn the same thing.
             } catch (final RuntimeException e) {
+                // The tree refusing to answer about one type, as distinct from answering "none". Same state as
+                // a tree that could not be built at all: asked, not answered.
                 log.debug("Could not reduce DataType {} to a builtin type: {}", dataType, e.getMessage());
+                resolved = false;
             }
         }
-        return builtins;
+        return new ResolvedTypes(builtins, resolved);
     }
+
+    /// How many distinct DataTypes the arguments name, so a signature needing no hierarchy can skip reading it.
+    private static int countDistinctDataTypes(final Argument @NotNull [] inputs, final Argument @NotNull [] outputs) {
+        final Set<NodeId> dataTypes = new LinkedHashSet<>();
+        for (final Argument argument : concat(inputs, outputs)) {
+            final NodeId dataType = argument.getDataType();
+            if (dataType != null) {
+                dataTypes.add(dataType);
+            }
+        }
+        return dataTypes.size();
+    }
+
+    /// The builtin type of each argument's DataType, and whether every lookup that was needed actually answered.
+    ///
+    /// **The flag is the whole point of this record.** Without it a type missing from the map has two causes a
+    /// caller cannot tell apart: the hierarchy answered "this reduces to no builtin", which is a genuine
+    /// structure and durable for the session; or the hierarchy could not be read, which is a statement about
+    /// the moment and nothing about the method. Both left the type absent, both produced the same refusal --
+    /// "has a type this version cannot encode" -- and the signature was reported fully verified either way, so
+    /// the cache kept it and one failed read made a perfectly callable method uncallable until the adapter
+    /// restarted. A `Duration` argument is the standard case: an alias for a Double, and until the hierarchy is
+    /// read we do not even know it is an alias rather than a structure, so "cannot encode" is a conclusion we
+    /// are not entitled to.
+    ///
+    /// `resolved=false` therefore makes the signature incomplete, and `MethodCache` declines to remember an
+    /// incomplete one, so the next request reads the hierarchy again.
+    record ResolvedTypes(@NotNull Map<NodeId, OpcUaDataType> builtins, boolean resolved) {}
 
     private static @NotNull List<Argument> concat(final Argument @NotNull [] first, final Argument @NotNull [] second) {
 
@@ -696,8 +743,19 @@ public final class MethodVerifier {
                     warnWhenNoneWereFound(climb.methods(), objectNode, tagName);
                     // A climb that could not read a level is not cached, so the next request tries again --
                     // see Result.Verified. The methods it did find are still served.
+                    //
+                    // A method whose DataType lookups did not all answer counts the same way, and for the same
+                    // reason: its arguments are refused at conversion, and remembering that would turn one
+                    // unreadable hierarchy into a permanent property of a method that is perfectly callable.
+                    final boolean typesResolved = climb.methods().stream().allMatch(MethodSignature::typesResolved);
+                    if (!typesResolved) {
+                        log.debug(
+                                "Tag '{}': a DataType lookup did not answer, so this result is not remembered and "
+                                        + "the next request reads the hierarchy again",
+                                tagName);
+                    }
                     return (Result)
-                            (climb.complete()
+                            (climb.complete() && typesResolved
                                     ? Result.Verified.of(climb.methods())
                                     : Result.Verified.partial(climb.methods()));
                 })
