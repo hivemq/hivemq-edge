@@ -1194,10 +1194,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     // Clearing the cache on a session change fixes every *later* lookup and cannot reach this
                     // one: the future was handed out before the clear and completes as it always would, so
                     // without this check the call went to the device naming an object and a method that were
-                    // identified in a session that no longer exists. A stale node id usually just fails, which
-                    // is only a poor error message -- but OPC UA servers reuse namespace indices and numeric
-                    // identifiers across sessions, and a reused one makes the call land on a different node
-                    // than the caller named.
+                    // identified in a session that no longer exists.
+                    //
+                    // What that costs, honestly: a stale node id almost always just fails, and the caller gets
+                    // a status about a node rather than one about the session. Landing on a *different* node
+                    // takes more than a stale id -- the index would have to be reassigned to another namespace
+                    // that happens to hold the same identifier, OPC 10000-3 section 5.2.2 requiring the
+                    // identifier itself to persist. Worth a check that costs an atomic read, not worth
+                    // describing as the likely outcome: every OPC-UA tag in Edge is configured by a node id
+                    // carrying an index and reused across every reconnect for the adapter's life, so indices
+                    // moving would break far more than this.
                     //
                     // Not retried, even though the caller would prefer it: a Call this adapter has already
                     // sent may have taken effect, and a method is not idempotent. The caller gets a refusal
@@ -1245,7 +1251,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     try {
                         switch (result) {
                             case MethodVerifier.Result.Verified verified ->
-                                invoke(client, verified.methods(), methodName, payload, opcuaTag, output);
+                                invoke(client, verified.methods(), methodName, payload, opcuaTag, generation, output);
                             // The tag names something that is not a callable object, so no method on it can
                             // exist.
                             case MethodVerifier.Result.Rejected rejected ->
@@ -1290,6 +1296,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      * An unknown method name is answered here rather than by the server. The server's answer would be
      * {@code Bad_MethodInvalid} and nothing else; this one names what the object does offer, which is what an
      * operator who mistyped a method actually needs.
+     *
+     * @param generation which session the methods were read in, re-checked immediately before the Call is
+     *                   submitted. See the check at that site.
      */
     private void invoke(
             final @NotNull OpcUaClient client,
@@ -1297,6 +1306,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull String methodName,
             final @NotNull OpcUaPayload payload,
             final @NotNull OpcuaTag opcuaTag,
+            final long generation,
             final @NotNull WritingOutput output) {
 
         final String tagName = opcuaTag.getName();
@@ -1357,6 +1367,42 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // Bad_ArgumentsMissing and everything else is Bad_InvalidArgument, and only the throw site knows
             // which happened.
             refuseWithResponse(client, opcuaTag, methodName, payload, e.statusCode(), e.reason(), output);
+            return;
+        }
+
+        // Last look before anything is sent, because the two steps above take time the session may not survive.
+        // The caller checked the generation when the cached methods arrived; resolving the name and converting
+        // the arguments then ran, and a session replaced during those steps would leave this call carrying node
+        // ids -- a namespace index plus an identifier, in both the object id and the method id -- that were read
+        // under a session that no longer exists.
+        //
+        // **This narrows the window rather than closing it.** A replacement between this check and the request
+        // reaching the wire is still possible, and no check placed before an operation can exclude that; only a
+        // submission path holding the session identity atomically could. What it removes is the part that was
+        // demonstrable: the interval spanning resolution and argument conversion, which is where a reviewer
+        // paused execution to produce a Call carrying old node ids.
+        //
+        // Not retried, for the same reason as the earlier check: a Call this adapter has already sent may have
+        // taken effect, and a method is not idempotent. Refusing before submission is the one safe moment.
+        //
+        // Reported by Sam as V01 in review 05, as the interval his probe opened after the existing guard.
+        if (methodCache.generation() != generation) {
+            log.info(
+                    "OPC UA adapter '{}': refusing the call to '{}' on tag '{}' -- the session that read its "
+                            + "methods was replaced while the request was being prepared, and node ids do not "
+                            + "survive that. The next request reads them again.",
+                    adapterId,
+                    methodName,
+                    tagName);
+            refuseWithResponse(
+                    client,
+                    opcuaTag,
+                    methodName,
+                    payload,
+                    StatusCodes.Bad_SessionClosed,
+                    "The session that read the methods of tag '" + tagName
+                            + "' has been replaced. The call was not sent; please repeat the request",
+                    output);
             return;
         }
 
