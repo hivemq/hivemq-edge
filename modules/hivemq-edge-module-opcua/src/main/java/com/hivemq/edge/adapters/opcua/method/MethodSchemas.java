@@ -170,8 +170,10 @@ public final class MethodSchemas {
         // the northbound lifting, which publishes what this declares and routes on what it does not.
         final ObjectSchemaBuilder<?> parameters =
                 responseSchema.property(MethodRequestFieldsOpcUa.INTERNAL_RESPONSE_PARAMETERS).startObject();
-        parameters.property(MethodRequestFieldsOpcUa.METHOD_NAME).scalar(ScalarType.STRING)
-                .description("the method an answer belongs to");
+        parameters.property(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME).scalar(ScalarType.STRING)
+                .description("the method an answer belongs to -- read as \"response from methodName\". Named "
+                        + "differently from a request's methodName so that a response is not a valid request: "
+                        + "see MethodRequestFieldsOpcUa");
         parameters.property(MethodRequestFieldsOpcUa.CORRELATION_DATA).scalar(ScalarType.STRING)
                 .description("a token echoed unchanged from the request to its response");
         parameters.property(MethodRequestFieldsOpcUa.ERROR_CODE).scalar(ScalarType.STRING)

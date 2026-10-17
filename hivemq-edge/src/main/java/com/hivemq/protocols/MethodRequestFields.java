@@ -63,8 +63,28 @@ public final class MethodRequestFields {
     /// mechanism and a reader should see that at a glance.
     public static final @NotNull String INTERNAL_RESPONSE_PARAMETERS = "INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8";
 
-    /// The method to call, on a request, and the method an answer belongs to, on a response.
+    /// Request only: the method to call.
     public static final @NotNull String METHOD_NAME = "methodName";
+
+    /// Response only: the method an answer belongs to. Read as "response from *methodName*".
+    ///
+    /// **Deliberately not `methodName`, and that is the whole of the mechanism.** Three things together make a
+    /// southbound message a method call: a non-blank `methodName` in the payload, a southbound mapping for that
+    /// tag and topic filter with method calls switched on, and a tag whose kind is `METHOD`. Nothing else is
+    /// consulted -- in particular nothing looks for this field.
+    ///
+    /// So a response is **not** a request, by construction: it carries no `methodName`, so the first condition
+    /// fails and the message is quarantined on `$invalid/` for naming no method. No rule had to be invented to
+    /// get that, and no capability was taken away.
+    ///
+    /// **What it prevents.** A caller may name any publishable topic as its reply address, and a northbound
+    /// mapping's own topic is equally free. Naming a method tag's own command topic -- or another method tag's
+    /// -- is a plausible configuration: a self-loop needs only one careless line. Before the rename the answer
+    /// was a structurally valid request, so the mapping reading that topic dispatched it, and where the first
+    /// method's outputs happened to satisfy the second method's inputs **the device was called**.
+    ///
+    /// Reported by QA as P22 on EDG-1116, and by Miguel as R5-1 from the other side.
+    public static final @NotNull String RESPONSE_METHOD_NAME = "responseMethodName";
 
     /// A token echoed from a request to its response, carrying an encoding prefix while inside Edge.
     public static final @NotNull String CORRELATION_DATA = "correlationData";

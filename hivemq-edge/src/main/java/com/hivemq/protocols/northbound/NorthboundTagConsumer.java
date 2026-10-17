@@ -19,7 +19,7 @@ import static com.hivemq.protocols.MethodRequestFields.CONTEXT;
 import static com.hivemq.protocols.MethodRequestFields.CORRELATION_DATA;
 import static com.hivemq.protocols.MethodRequestFields.ERROR_CODE;
 import static com.hivemq.protocols.MethodRequestFields.INTERNAL_RESPONSE_PARAMETERS;
-import static com.hivemq.protocols.MethodRequestFields.METHOD_NAME;
+import static com.hivemq.protocols.MethodRequestFields.RESPONSE_METHOD_NAME;
 import static com.hivemq.protocols.MethodRequestFields.RESPONSE_TOPIC;
 import static com.hivemq.protocols.MethodRequestFields.STATUS_INFO;
 import static com.hivemq.protocols.MethodRequestFields.VALUE;
@@ -157,7 +157,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                         outputs.set(p.getKey(), p.getValue());
                     }
                 }
-                methodName = textOrNull(responseParameters.get(METHOD_NAME));
+                methodName = textOrNull(responseParameters.get(RESPONSE_METHOD_NAME));
                 errorCode = textOrNull(responseParameters.get(ERROR_CODE));
 
                 // Null on failure, the empty object on a success that returns nothing. Deciding this on
@@ -188,7 +188,10 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
             // silently replaced `value` would be far harder to diagnose than one dropped.
             final ObjectNode node = JsonNodeFactory.instance.objectNode();
             if (methodName != null) {
-                node.put(METHOD_NAME, methodName);
+                // `responseMethodName`, not `methodName`: a published answer must not be a valid request, or a
+                // southbound method mapping reading the answer's topic dispatches it as one. See
+                // MethodRequestFields.RESPONSE_METHOD_NAME.
+                node.put(RESPONSE_METHOD_NAME, methodName);
             }
             if (errorCode != null) {
                 node.put(ERROR_CODE, errorCode);

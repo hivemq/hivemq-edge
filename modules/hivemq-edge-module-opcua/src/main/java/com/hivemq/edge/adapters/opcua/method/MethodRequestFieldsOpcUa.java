@@ -63,8 +63,20 @@ public final class MethodRequestFieldsOpcUa {
     /// mechanism and a reader should see that at a glance.
     public static final @NotNull String INTERNAL_RESPONSE_PARAMETERS = "INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8";
 
-    /// The method to call, on a request, and the method an answer belongs to, on a response.
+    /// Request only: the method to call.
     public static final @NotNull String METHOD_NAME = "methodName";
+
+    /// Response only: the method an answer belongs to. Read as "response from *methodName*".
+    ///
+    /// **Deliberately not `methodName`.** A response that carried that name would be a structurally valid
+    /// request, so a southbound method mapping reading the answer's topic would dispatch it -- and where the
+    /// answered method's outputs satisfied the second method's inputs, the device would be called. Carrying a
+    /// different name means a response fails the first of the three conditions that make a message a method
+    /// call, and is quarantined for naming no method.
+    ///
+    /// Mirrors `MethodRequestFields.RESPONSE_METHOD_NAME` in Edge, which carries the full reasoning. The two
+    /// are duplicated because an adapter module must not depend on Edge.
+    public static final @NotNull String RESPONSE_METHOD_NAME = "responseMethodName";
 
     /// A token echoed from a request to its response, carrying an encoding prefix while inside Edge.
     public static final @NotNull String CORRELATION_DATA = "correlationData";

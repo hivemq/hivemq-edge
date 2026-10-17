@@ -109,7 +109,10 @@ class MethodResponseTest {
 
         assertThat(json.get("value").get("started").booleanValue()).isTrue();
         assertThat(json.get("value").get("actualSetpoint").intValue()).isEqualTo(178);
-        assertThat(parameters(json).get("methodName").textValue()).isEqualTo("Start");
+        assertThat(parameters(json).get("responseMethodName").textValue()).isEqualTo("Start");
+        assertThat(parameters(json).has("methodName"))
+                .withFailMessage("a response must not carry methodName, or it is a valid request: %s", json)
+                .isFalse();
         assertThat(parameters(json).has("errorCode")).isFalse();
     }
 
@@ -330,11 +333,11 @@ class MethodResponseTest {
 
     @Test
     void aRefusalOfARequestThatNamedNoMethod_stillCarriesTheField() {
-        // A request with no methodName has none to echo. The field is written as empty rather than omitted, so every
-        // response has the same shape and a consumer never has to ask whether methodName exists.
+        // A request with no method name has none to echo. The field is written as empty rather than omitted, so
+        // every response has the same shape and a consumer never has to ask whether it exists.
         final JsonNode json = write("", "c-2", failure(0x80750000L, Map.of()));
 
-        assertThat(parameters(json).get("methodName").textValue()).isEmpty();
+        assertThat(parameters(json).get("responseMethodName").textValue()).isEmpty();
         assertThat(parameters(json).get("errorCode").textValue()).isEqualTo("Bad_MethodInvalid");
     }
 

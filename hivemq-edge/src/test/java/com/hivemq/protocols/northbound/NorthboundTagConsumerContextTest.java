@@ -43,10 +43,14 @@ import org.junit.jupiter.api.Test;
 
 /// What a datapoint's `context` child becomes on the wire, and which topic it is published to.
 ///
-/// An adapter uses `context` for fields that belong to the message but are not the value -- a method call's
-/// `methodName`, the caller's `correlationData`, an `errorCode`. These pin that those reach the published message
-/// beside `value` rather than nested, and that the one entry naming a destination is consumed rather than
+/// An adapter uses `context` for fields that belong to the message but are not the value -- a method answer's
+/// `responseMethodName`, the caller's `correlationData`, an `errorCode`. These pin that those reach the published
+/// message beside `value` rather than nested, and that the one entry naming a destination is consumed rather than
 /// published.
+///
+/// **A response says `responseMethodName`, not `methodName`**, and the spelling is the point: a published answer
+/// carrying `methodName` would be a structurally valid request, so a southbound method mapping subscribed to the
+/// answer's topic would dispatch it as one. See `MethodRequestFields.RESPONSE_METHOD_NAME`.
 class NorthboundTagConsumerContextTest {
 
     private static final @NotNull Tag TAG = new Tag() {
@@ -154,9 +158,9 @@ class NorthboundTagConsumerContextTest {
     @Test
     void contextEntries_arePublishedBesideValue_notNested() throws Exception {
         final Published published =
-                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "mes-east-00417"));
 
-        assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
+        assertThat(published.payload().get("responseMethodName").textValue()).isEqualTo("Start");
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
         // The child is a carrier inside Edge, not a level a consumer should descend.
         assertThat(published.payload().has("context")).isFalse();
@@ -168,9 +172,9 @@ class NorthboundTagConsumerContextTest {
         // Edge publishes a closed set of parameters: methodName, errorCode, statusInfo and correlationData.
         // A name outside it is ignored, because what a response publishes is Edge's contract with the
         // subscriber rather than the adapter's. The field that carried them never reaches the wire.
-        final Published published = publish(mapping(), dataPoint("methodName", "Start", "somethingNew", "x"));
+        final Published published = publish(mapping(), dataPoint("responseMethodName", "Start", "somethingNew", "x"));
 
-        assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
+        assertThat(published.payload().get("responseMethodName").textValue()).isEqualTo("Start");
         assertThat(published.payload().has("somethingNew"))
                 .withFailMessage("a parameter Edge does not know was published: %s", published.payload())
                 .isFalse();
@@ -189,7 +193,7 @@ class NorthboundTagConsumerContextTest {
                 (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
         final var value = builder.startObjectValue();
         final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
-        parameters.put("methodName", "Start");
+        parameters.put("responseMethodName", "Start");
         parameters.put("errorCode", "Bad_NotExecutable");
         parameters.endObject();
         value.endObject();
@@ -215,7 +219,7 @@ class NorthboundTagConsumerContextTest {
                 (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
         final var value = builder.startObjectValue();
         final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
-        parameters.put("methodName", "Stop");
+        parameters.put("responseMethodName", "Stop");
         parameters.endObject();
         value.endObject();
         builder.endDataPoint();
@@ -244,7 +248,7 @@ class NorthboundTagConsumerContextTest {
         final var value = builder.startObjectValue();
         value.put("partialResult", 17);
         final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
-        parameters.put("methodName", "Start");
+        parameters.put("responseMethodName", "Start");
         parameters.put("errorCode", "Bad_NotExecutable");
         parameters.endObject();
         value.endObject();
@@ -261,7 +265,8 @@ class NorthboundTagConsumerContextTest {
     @Test
     void statusInfo_isPublishedWhenTheResponseCarriesIt() throws Exception {
         // The fourth named field, and the only one this class did not already cover.
-        final Published published = publish(mapping(), dataPoint("methodName", "Start", "statusInfo", "detail"));
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "statusInfo", "detail"));
 
         assertThat(published.payload().get("statusInfo").textValue()).isEqualTo("detail");
     }
@@ -273,7 +278,7 @@ class NorthboundTagConsumerContextTest {
         // is settled further downstream, where a version-5 client gets the MQTT property and a version-3 client
         // cannot. A setting here could only disagree with that.
         final Published published =
-                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "mes-east-00417"));
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "mes-east-00417"));
 
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
     }
@@ -283,11 +288,11 @@ class NorthboundTagConsumerContextTest {
         // The one entry that says where the answer goes rather than anything about it. Publishing it as well would
         // put a routing instruction into the routed message.
         final Published published =
-                publish(mapping(), dataPoint("methodName", "Start", "responseTopic", "plant/mes-east"));
+                publish(mapping(), dataPoint("responseMethodName", "Start", "responseTopic", "plant/mes-east"));
 
         assertThat(published.topic()).isEqualTo("plant/mes-east");
         assertThat(published.payload().has("responseTopic")).isFalse();
-        assertThat(published.payload().get("methodName").textValue()).isEqualTo("Start");
+        assertThat(published.payload().get("responseMethodName").textValue()).isEqualTo("Start");
     }
 
     @Test
@@ -316,7 +321,7 @@ class NorthboundTagConsumerContextTest {
     @Test
     void noResponseTopic_withTheFlagOn_fallsBackToTheConfiguredTopic() throws Exception {
         // A fire-and-forget call on a mapping that would honour an address: there is none to honour.
-        final Published published = publish(mapping(), dataPoint("methodName", "Stop"));
+        final Published published = publish(mapping(), dataPoint("responseMethodName", "Stop"));
 
         assertThat(published.topic()).isEqualTo("plant/boiler1/result");
     }
@@ -347,7 +352,7 @@ class NorthboundTagConsumerContextTest {
         // back. Echoing `raw:mes-east-00417` would hand back something they never sent, and would break a
         // consumer matching the token against the one it generated.
         final Published published =
-                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:mes-east-00417"));
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "raw:mes-east-00417"));
 
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
         assertThat(published.correlationData()).isEqualTo("mes-east-00417".getBytes(StandardCharsets.UTF_8));
@@ -366,7 +371,7 @@ class NorthboundTagConsumerContextTest {
         final byte[] token = {0x00, 0x01, (byte) 0xFF, 0x7F};
         final String encoded = Base64.getEncoder().encodeToString(token);
         final Published published =
-                publish(mapping(), dataPoint("methodName", "Start", "correlationData", "base64:" + encoded));
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "base64:" + encoded));
 
         assertThat(published.correlationData()).isEqualTo(token);
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("base64:" + encoded);
@@ -376,14 +381,15 @@ class NorthboundTagConsumerContextTest {
     void anUnprefixedToken_isTreatedAsRaw() throws Exception {
         // Not a shape Edge produces -- it would mean a hand-edited datapoint or a future producer. UTF-8 bytes
         // are the least surprising reading of plain text, and dropping the correlation would be worse.
-        final Published published = publish(mapping(), dataPoint("methodName", "Start", "correlationData", "plain"));
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "plain"));
 
         assertThat(published.correlationData()).isEqualTo("plain".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
     void noToken_setsNoMqtt5Property() throws Exception {
-        final Published published = publish(mapping(), dataPoint("methodName", "Start"));
+        final Published published = publish(mapping(), dataPoint("responseMethodName", "Start"));
 
         assertThat(published.correlationData()).isNull();
     }
@@ -394,7 +400,8 @@ class NorthboundTagConsumerContextTest {
         // callers -- a version-3 client can read only the payload copy, a version-5 client can use the property
         // -- and the published message is one object serialised per subscriber, so writing both is what lets the
         // encoder give each client what it can actually use.
-        final Published published = publish(mapping(), dataPoint("methodName", "Start", "correlationData", "raw:abc"));
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "raw:abc"));
 
         assertThat(published.payload().get("correlationData").textValue()).isEqualTo("abc");
         assertThat(published.correlationData()).isEqualTo("abc".getBytes(StandardCharsets.UTF_8));

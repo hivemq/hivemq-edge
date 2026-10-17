@@ -99,7 +99,7 @@ public final class MethodResponse {
         }
 
         final var parameters = value.startObject(MethodRequestFieldsOpcUa.INTERNAL_RESPONSE_PARAMETERS);
-        parameters.put(MethodRequestFieldsOpcUa.METHOD_NAME, methodName);
+        parameters.put(MethodRequestFieldsOpcUa.RESPONSE_METHOD_NAME, methodName);
         if (correlationData != null) {
             parameters.put(MethodRequestFieldsOpcUa.CORRELATION_DATA, correlationData);
         }

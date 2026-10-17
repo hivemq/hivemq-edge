@@ -157,7 +157,7 @@ class MethodSchemasShapeTest {
                 .get("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8")
                 .get("properties");
 
-        for (final String parameter : List.of("methodName", "correlationData", "errorCode", "statusInfo")) {
+        for (final String parameter : List.of("responseMethodName", "correlationData", "errorCode", "statusInfo")) {
             assertThat(properties.get(parameter).path("readOnly").asBoolean(false))
                     .withFailMessage(
                             "'%s' is a response field, so it must stay read-only: %s",
@@ -234,7 +234,10 @@ class MethodSchemasShapeTest {
                 .get("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
         final JsonNode properties = parameters.get("properties");
 
-        assertThat(properties.has("methodName")).isTrue();
+        // `responseMethodName`, not `methodName`: a response must not be a structurally valid request, or a
+        // southbound method mapping subscribed to the answer's topic dispatches it as one.
+        assertThat(properties.has("responseMethodName")).isTrue();
+        assertThat(properties.has("methodName")).isFalse();
         assertThat(properties.has("correlationData")).isTrue();
         assertThat(properties.has("errorCode")).isTrue();
         assertThat(properties.has("statusInfo")).isTrue();
