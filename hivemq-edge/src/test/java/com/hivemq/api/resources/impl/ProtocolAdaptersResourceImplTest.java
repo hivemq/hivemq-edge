@@ -1081,7 +1081,29 @@ class ProtocolAdaptersResourceImplTest {
         assertThat(response.getEntity().toString())
                 .as("the tag exists -- the node it names is what could not be resolved")
                 .doesNotContain("No tag found")
-                .contains("could not be resolved on the device");
+                .contains("could not be resolved");
+    }
+
+    @Test
+    void getSchema_whenTheTagDoesNotExist_thenTheTitleDoesNotSendTheOperatorToTheDevice() {
+        // The fourth round, and the mirror image of the test above. Fixing the title for an existing tag left it
+        // asserting "could not be resolved on the device", which is wrong the other way round: for a tag that was
+        // never created, the device has nothing to do with it and the operator is sent to inspect an address
+        // space for something that only ever existed in a typo (Sam's V11 in review 05).
+        //
+        // Both situations arrive through one adapter callback carrying free text, so the title cannot name either
+        // one. It is now neutral and the adapter's sentence carries the difference -- asserted here, because a
+        // neutral title is only acceptable while the detail stays specific.
+        mockAdapterRejectingTagWith("Tag 'ghost' not found.");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "ghost", null);
+
+        assertEquals(404, response.getStatus());
+        assertThat(response.getEntity().toString())
+                .as("nothing about the device, because the tag does not exist")
+                .doesNotContain("on the device")
+                .as("the adapter's own sentence is what distinguishes this from an unresolvable node")
+                .contains("Tag 'ghost' not found.");
     }
 
     @Test

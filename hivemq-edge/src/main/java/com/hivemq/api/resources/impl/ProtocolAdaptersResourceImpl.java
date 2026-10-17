@@ -796,19 +796,24 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + message));
                 // A different error from the other TAG_NOT_FOUND answers in this class, and the adapter's own
                 // sentence as its detail. Those answer a lookup that either found a tag or did not, where the
-                // name is the whole story. Here the tag **exists** -- an operator may have created it a moment
-                // ago and can see it listed -- and what cannot be resolved is the node it names: absent from the
-                // address space, of a kind the tag's purpose does not allow, or a malformed id. Only the adapter
-                // can say which.
+                // name is the whole story. Here two situations arrive together: the tag exists and the node it
+                // names cannot be resolved -- absent from the address space, of a kind the tag's purpose does not
+                // allow, or a malformed id -- or the tag does not exist at all. The adapter reports both through
+                // one callback carrying free text, so only its sentence says which, and the title names neither.
                 //
-                // Two rounds of QA on one answer. The first found the detail text wrong as well, which was
-                // fixed by passing the adapter's sentence through instead of the tag name; the title was left
-                // saying "No tag found with the provided id" and sent the reader looking for something in front
-                // of them (P17 on EDG-1116). Still 404 -- something genuinely could not be found, so the status
-                // was never the part that misled.
+                // Three rounds of review on one answer. The first found the detail text wrong, fixed by passing
+                // the adapter's sentence through instead of the tag name. The second found the title claiming
+                // "No tag found with the provided id" for an existing tag, which sent the reader looking for
+                // something in front of them (P17 on EDG-1116). The third found its replacement claiming the
+                // node could not be resolved *on the device* for a tag that was never created, which sends the
+                // reader to the device instead (Sam's V11). The title is now neutral between the two, which is
+                // as far as it can go without a second callback -- SDK surface, and not this change's to add.
+                //
+                // Still 404 throughout -- something genuinely could not be found, so the status was never the
+                // part that misled.
                 case TAG_NOT_FOUND ->
                     errorResponse(new DomainTagNodeNotResolvableError(
-                            message != null ? message : "the node of tag '" + tagName + "' could not be resolved"));
+                            message != null ? message : "the schema of tag '" + tagName + "' could not be resolved"));
                 default -> {
                     log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                     if (log.isDebugEnabled()) {
