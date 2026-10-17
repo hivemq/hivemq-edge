@@ -472,6 +472,61 @@ class MethodVerifierIT {
     }
 
     @Test
+    void aTypeWhoseSupertypeBrowseFails_isStillBrowsedForItsOwnMethods() throws Exception {
+        // A level's own methods do not depend on its parent. The browse reorder that fixed the accumulated-list
+        // recovery introduced a level-skip: a type whose *supertype* browse failed returned before its method
+        // browse ran, so a static method declared on that very type disappeared -- from resolution and from both
+        // generated schemas, and naming its node id could not recover it because the node-id lookup searches the
+        // same list.
+        //
+        // The shape here is the one that exposes it: the object's own browses are genuine, and only the inverse
+        // (supertype) browse of its type fails, with a timeout rather than Bad_NodeIdUnknown so it carries no
+        // verdict. StaticOp is declared on that type and must still be found.
+        //
+        // Distinct from the three neighbouring tests, which is why it is its own:
+        //   - aSupertypeRefusedAsUnknown_isAVerdictAndStaysCacheable  -- same browse, but a verdict status, and
+        //     its subject is cacheability;
+        //   - aFailureAboveAReadableType_keepsTheMethodsThatTypeDeclared -- failure one level *higher*, after
+        //     the type had answered;
+        //   - aTypeBrowseThatTrulyFails_stillLeavesTheClimbIncomplete -- same fault, but it asserts only that
+        //     nothing is cached and never looks at what was found.
+        //
+        // Reported by Sam as V08 in review 05, against a head where the early return was still present.
+        final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Boiler13");
+        final OpcUaClient failingAbove = spy(client);
+        doAnswer(invocation -> {
+                    final BrowseDescription browse = invocation.getArgument(0);
+                    final boolean supertypeBrowseOfTheType = browse.getBrowseDirection() == BrowseDirection.Inverse
+                            && !browse.getNodeId().equals(object);
+                    if (supertypeBrowseOfTheType) {
+                        return CompletableFuture.failedFuture(new UaException(StatusCodes.Bad_Timeout));
+                    }
+                    return invocation.callRealMethod();
+                })
+                .when(failingAbove)
+                .browseAsync(any(BrowseDescription.class));
+
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(failingAbove, object, "boiler13-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        final MethodVerifier.Result.Verified verified = (MethodVerifier.Result.Verified) result;
+
+        // The decisive assertion: the type was browsed for methods even though its parent could not be read.
+        assertThat(verified.methods())
+                .withFailMessage(
+                        "a parent relationship is not a prerequisite for reading a node's own methods, so the "
+                                + "type's StaticOp must be found: %s",
+                        verified.methods().stream().map(MethodSignature::name).toList())
+                .anySatisfy(method -> assertThat(method.name()).isEqualTo("StaticOp"));
+
+        // And still not cacheable: a timeout says nothing about what sits above, so methods may be missing.
+        assertThat(verified.complete())
+                .withFailMessage("a supertype that timed out leaves the hierarchy unknown, so nothing is cached")
+                .isFalse();
+    }
+
+    @Test
     void aStaticTypeMethodIsCalledOnTheType_aDeclarationOnTheObject() {
         // EDG-1087 M7, against a live address space. The type carries two method nodes that a browse cannot
         // tell apart without reading their modelling rule: StaticOp has none, so it exists only on the type and

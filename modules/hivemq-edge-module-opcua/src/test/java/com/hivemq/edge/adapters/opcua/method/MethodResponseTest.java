@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -28,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
@@ -424,6 +427,62 @@ class MethodResponseTest {
         assertThat(entry.get("reason").textValue()).contains("encoding context");
         assertThat(entry.get("encoding").textValue()).isEqualTo("base64");
         assertThat(parameters(json).has("errorCode")).isFalse();
+    }
+
+    @Test
+    void aDecoderThrowingIllegalArgument_stillAnswers() {
+        // The second of the two failures the widened catch exists for, and the one the context-supplier test
+        // above could not reach: the context is fetched successfully and the *decode* throws. Milo's
+        // DynamicEnumType does exactly this when a structure's enumeration field holds a value outside its
+        // definition -- IllegalArgumentException, from inside a codec, carrying no OPC-UA status.
+        //
+        // Reproduced through the decoding context rather than by registering a real codec: what the catch has
+        // to survive is any RuntimeException out of the conversion, and building a dynamic enum definition to
+        // raise the identical exception would test Milo rather than this class.
+        //
+        // Reported by Sam as V03 in review 05, whose probe drove the real enum constructor and found the
+        // answer suppressed. Pairs with aFailingEncodingContext_stillAnswers above -- same catch, two causes.
+        final var structure = org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject.of(
+                org.eclipse.milo.opcua.stack.core.types.builtin.ByteString.of(new byte[] {99}),
+                org.eclipse.milo.opcua.stack.core.types.builtin.NodeId.parse("ns=2;i=5004"));
+
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        MethodResponse.write(
+                builder,
+                "Probe",
+                "c-12",
+                null,
+                success(Map.of("report", new Variant(structure))),
+                () -> decoderRaising(
+                        new IllegalArgumentException("99 is not a declared value of enumeration DynamicEnumType")));
+        builder.endDataPoint();
+        final JsonNode json = ((DataPointWithMetadata) builder.build("test-adapter")).getJsonNode();
+
+        // The answer exists, which is the whole of the fix: the device ran the method, so silence is the one
+        // outcome worse than a diagnostic.
+        assertThat(json.get("value").get("report").isNull())
+                .withFailMessage("the answer must be published with the output null, not lost: %s", json)
+                .isTrue();
+        final JsonNode entry =
+                parameters(json).get("statusInfo").get("undecodedOutputs").get("report");
+        assertThat(entry.get("reason").textValue()).contains("not a declared value");
+        assertThat(entry.get("encoding").textValue()).isEqualTo("base64");
+
+        // A call that ran and whose output could not be read is still a successful call.
+        assertThat(parameters(json).has("errorCode"))
+                .withFailMessage("an undecodable output is not a failed call: %s", parameters(json))
+                .isFalse();
+    }
+
+    /// The real encoding context, with its data-type lookup throwing: a codec that raises on a value outside
+    /// its definition surfaces the same way, as a RuntimeException escaping the conversion with no OPC-UA
+    /// status attached. A spy rather than a hand-written implementation, so this does not have to track
+    /// Milo's interface.
+    private static @NotNull EncodingContext decoderRaising(final @NotNull RuntimeException failure) {
+        final EncodingContext context = spy(DefaultEncodingContext.INSTANCE);
+        doThrow(failure).when(context).getDataTypeManager();
+        return context;
     }
 
     @Test
