@@ -17,6 +17,7 @@ package util;
 
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 import static util.EmbeddedOpcUaServerExtension.NS_URI;
 
@@ -57,6 +58,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -803,6 +805,230 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             parent.addReference(new Reference(
                     parentNodeId, NodeIds.HasComponent, method.getNodeId().expanded(), true));
         }
+    }
+
+    /**
+     * Adds an object whose methods <em>declare</em> their arguments, for testing how Edge reads a signature.
+     * <p>
+     * The condition methods above deliberately declare none: their signatures are fixed by OPC 10000-9, so the
+     * handler finds arguments by type and the tests never needed the metadata. Reading a signature is exactly
+     * reading the {@code InputArguments} and {@code OutputArguments} properties, so none of them can exercise
+     * it — which is why {@code MethodVerifier} had no test against a server.
+     * <p>
+     * {@code setInputArguments} creates a real property node reachable by browse ({@code UaNode.setProperty}),
+     * which is what the client-side read looks for.
+     *
+     * @param objectName the browse name of the object a METHOD tag would point at.
+     * @return the object's node id, for the tag definition.
+     */
+    public @NotNull NodeId addMethodObject(final @NotNull String objectName) {
+        final NodeId objectId = addBareObject(objectName);
+
+        // Two inputs and one output, every one named and typed: the ordinary case, and what a generated schema
+        // is built from.
+        addDeclaredMethod(
+                objectId,
+                "Square",
+                new Argument[] {argument("input1", NodeIds.Int32)},
+                new Argument[] {argument("output1", NodeIds.Int32)},
+                (context, request) -> {
+                    final Integer value = (Integer) request.getInputArguments()[0].getValue();
+                    return new CallMethodResult(
+                            StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {
+                                Variant.of(value * value)
+                            });
+                });
+
+        // No arguments at all, and the properties are left off rather than set empty: OPC 10000-3 section 5.7
+        // makes them optional and says an absent property means the method has none, so this is how an
+        // argument-less method is normally modelled -- and the case that must not be read as a failure.
+        addDeclaredMethod(
+                objectId,
+                "Stop",
+                null,
+                null,
+                (context, request) -> new CallMethodResult(
+                        StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]));
+
+        // An array argument with a declared dimension, so the nesting depth of a generated schema can be
+        // checked against what the device says.
+        final Argument values = new Argument(
+                "values", NodeIds.Int32, 1, new UInteger[] {uint(3)}, LocalizedText.english("three Int32s"));
+        addDeclaredMethod(
+                objectId,
+                "SumArray",
+                new Argument[] {values},
+                new Argument[] {argument("total", NodeIds.Int32)},
+                (context, request) -> {
+                    final Integer[] supplied = (Integer[]) request.getInputArguments()[0].getValue();
+                    int total = 0;
+                    for (final Integer element : supplied) {
+                        total += element;
+                    }
+                    return new CallMethodResult(
+                            StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {Variant.of(total)
+                            });
+                });
+
+        // An argument typed as a Simple DataType: `Duration` is a subtype of Double, and OPC 10000-3 section
+        // 5.8.2 says such a type is "handled on the wire like the Built-in DataType, i.e. they cannot be
+        // distinguished on the wire from their Built-in supertypes". Reducing it to Double needs the server's
+        // DataType hierarchy -- the table of the 25 builtin ids does not contain it. Reaching for that table was
+        // EDG-1087 M6: every method taking a timeout was refused as "a type this version cannot encode".
+        addDeclaredMethod(
+                objectId,
+                "Wait",
+                new Argument[] {argument("timeout", NodeIds.Duration)},
+                new Argument[] {argument("waited", NodeIds.Duration)},
+                (context, request) -> {
+                    final Double value = (Double) request.getInputArguments()[0].getValue();
+                    return new CallMethodResult(
+                            StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {Variant.of(value)
+                            });
+                });
+
+        // An enumeration argument, which marks the other side of the same boundary: the reduction answers
+        // Variant for it rather than the Int32 it is carried as, so it renders as `any` and the call is
+        // refused. Encoding one is not part of this release, and this pins that so a change to it is
+        // deliberate.
+        addDeclaredMethod(
+                objectId,
+                "SetState",
+                new Argument[] {argument("state", NodeIds.ServerState)},
+                new Argument[0],
+                (context, request) -> new CallMethodResult(
+                        StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]));
+
+        return objectId;
+    }
+
+    /**
+     * An object whose <em>type</em> carries two methods: one static, one declared Optional and absent from the
+     * instance.
+     * <p>
+     * Reproduces EDG-1087 M4..M7's address space in-process. OPC 10000-3 section 6.4.4.4.4 is explicit for
+     * methods: an Optional declaration is a template, and an instance "does not implement the Method". So the
+     * two nodes look alike to a browse and mean opposite things -- {@code StaticOp} exists only on the type and
+     * is invoked by naming the type; {@code OptionalOp} describes a method this instance simply does not have.
+     * <p>
+     * The distinction is the {@code HasModellingRule} reference, which only the declaration carries. Nothing
+     * else in the address space tells them apart, which is why a browse that ignores it offers a method the
+     * object does not have and calls it on the class.
+     *
+     * @param objectName the browse name of the object a METHOD tag would point at.
+     * @return the object's node id, for the tag definition.
+     */
+    public @NotNull NodeId addObjectWithTypeDeclaredMethods(final @NotNull String objectName) {
+        final NodeId typeId = newNodeId(objectName + "Type");
+        final UaObjectTypeNode type = UaObjectTypeNode.build(getNodeContext(), builder -> builder.setNodeId(typeId)
+                .setBrowseName(newQualifiedName(objectName + "Type"))
+                .setDisplayName(LocalizedText.english(objectName + "Type"))
+                .setIsAbstract(false)
+                .build());
+        getNodeManager().addNode(type);
+        type.addReference(new Reference(typeId, NodeIds.HasSubtype, NodeIds.BaseObjectType.expanded(), false));
+
+        // No HasModellingRule: it lives on the type alone, and a call names the type as its object.
+        addDeclaredMethod(
+                typeId,
+                "StaticOp",
+                new Argument[] {argument("input1", NodeIds.Int32)},
+                null,
+                (context, request) -> new CallMethodResult(
+                        StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]));
+
+        // Optional, and this instance does not implement it. Edge must not offer it as callable on the type.
+        addDeclaredMethod(
+                typeId,
+                "OptionalOp",
+                new Argument[] {argument("y", NodeIds.Int32)},
+                null,
+                (context, request) -> new CallMethodResult(
+                        StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]));
+        final UaNode optional = getNodeManager().get(newNodeId(typeId.getIdentifier() + ".OptionalOp"));
+        if (optional != null) {
+            optional.addReference(new Reference(
+                    optional.getNodeId(), NodeIds.HasModellingRule, NodeIds.ModellingRule_Optional.expanded(), true));
+        }
+
+        final NodeId objectId = newNodeId(objectName);
+        final UaObjectNode object = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(objectId)
+                .setBrowseName(newQualifiedName(objectName))
+                .setDisplayName(LocalizedText.english(objectName))
+                .setTypeDefinition(typeId)
+                .build();
+        getNodeManager().addNode(object);
+        requireNonNull(testFolder).addOrganizes(object);
+
+        // The instance's own method, so the ordinary case is present alongside the two type-level ones.
+        addDeclaredMethod(
+                objectId,
+                "Square",
+                new Argument[] {argument("input1", NodeIds.Int32)},
+                new Argument[] {argument("output1", NodeIds.Int32)},
+                (context, request) -> new CallMethodResult(
+                        StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[] {Variant.of(4)}));
+
+        return objectId;
+    }
+
+    /**
+     * An object of {@code BaseObjectType} with nothing hanging off it.
+     * <p>
+     * A method tag may legitimately point at one: an object exposes whatever methods it exposes, and they may be
+     * added later without the tag changing. What matters is that Edge <em>says so</em> rather than installing a
+     * writer that quarantines every request in silence.
+     *
+     * @param objectName the browse name of the object a METHOD tag would point at.
+     * @return the object's node id, for the tag definition.
+     */
+    public @NotNull NodeId addBareObject(final @NotNull String objectName) {
+        final NodeId objectId = newNodeId(objectName);
+        final UaObjectNode object = new UaObjectNode.UaObjectNodeBuilder(getNodeContext())
+                .setNodeId(objectId)
+                .setBrowseName(newQualifiedName(objectName))
+                .setDisplayName(LocalizedText.english(objectName))
+                .setTypeDefinition(NodeIds.BaseObjectType)
+                .build();
+        getNodeManager().addNode(object);
+        requireNonNull(testFolder).addOrganizes(object);
+        return objectId;
+    }
+
+    /** One method node that declares its arguments, hung off {@code parentNodeId} by {@code HasComponent}. */
+    private void addDeclaredMethod(
+            final @NotNull NodeId parentNodeId,
+            final @NotNull String methodName,
+            final Argument @Nullable [] inputs,
+            final Argument @Nullable [] outputs,
+            final @NotNull MethodInvocationHandler handler) {
+
+        final UaMethodNode method = UaMethodNode.builder(getNodeContext())
+                .setNodeId(newNodeId(parentNodeId.getIdentifier() + "." + methodName))
+                .setBrowseName(newQualifiedName(methodName))
+                .setDisplayName(LocalizedText.english(methodName))
+                .setExecutable(true)
+                .setUserExecutable(true)
+                .build();
+        if (inputs != null) {
+            method.setInputArguments(inputs);
+        }
+        if (outputs != null) {
+            method.setOutputArguments(outputs);
+        }
+        method.setInvocationHandler(handler);
+        getNodeManager().addNode(method);
+
+        final UaNode parent = getNodeManager().get(parentNodeId);
+        if (parent != null) {
+            parent.addReference(new Reference(
+                    parentNodeId, NodeIds.HasComponent, method.getNodeId().expanded(), true));
+        }
+    }
+
+    private static @NotNull Argument argument(final @NotNull String name, final @NotNull NodeId dataType) {
+        return new Argument(name, dataType, -1, null, LocalizedText.english(name));
     }
 
     /**

@@ -15,8 +15,13 @@
  */
 package com.hivemq.protocols.tag;
 
+import static com.hivemq.protocols.MethodRequestFields.CONTEXT;
+import static com.hivemq.protocols.MethodRequestFields.INTERNAL_REQUEST_PARAMETERS;
+import static com.hivemq.protocols.MethodRequestFields.INTERNAL_RESPONSE_PARAMETERS;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.hivemq.adapter.sdk.api.schema.ObjectSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
@@ -87,6 +92,9 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
         return SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(schema);
     }
 
+    // @formatter:off -- these property declarations are instances of one pattern, which the formatter's
+    // one-call-per-line rendering hides. The breaks below are chosen to show it.
+
     /**
      * The schema for the <em>northbound</em> (read) direction: the envelope ({@code tagName}, {@code timestamp})
      * wrapping {@code value}, plus optional {@code metadata} / {@code context}. Writability is irrelevant here — a
@@ -97,27 +105,59 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * SDK still see; the equality is pinned by {@code TagSchemaCreationOutputImplSchemaBuilderTest}.
      */
     private static @NotNull Schema northboundSchema(final @NotNull DataPointSchema tagSchemas) {
-        final var builder = new SchemaBuilder().startObject();
+        final var northboundSchema = new SchemaBuilder().startObject();
+        final Schema tagSchema = tagSchemas.valueSchema();
 
-        builder.property("tagName").scalar(ScalarType.STRING).readable().writable(false);
-        builder.property("timestamp").scalar(ScalarType.LONG).readable().writable(false);
-        builder.property("value")
-                .required()
-                .schema(tagSchemas.valueSchema())
-                .readable()
-                .writable();
+        northboundSchema.property("tagName").scalar(ScalarType.STRING).readable().writable(false);
+        northboundSchema.property("timestamp").scalar(ScalarType.LONG).readable().writable(false);
 
+        // If the value is an object carrying INTERNAL_RESPONSE_PARAMETERS, lift those parameters to the root.
+        if (tagSchema instanceof final ObjectSchema valueSchemaWithResponseParameters
+                && valueSchemaWithResponseParameters.properties().containsKey(INTERNAL_RESPONSE_PARAMETERS)) {
+            final var valueSchema = northboundSchema.property("value").required()
+                    .readable(valueSchemaWithResponseParameters.readable())
+                    .writable(valueSchemaWithResponseParameters.writable())
+                    .nullable(valueSchemaWithResponseParameters.nullable());
+            if (valueSchemaWithResponseParameters.title() != null) {
+                valueSchema.title(valueSchemaWithResponseParameters.title());
+            }
+            if (valueSchemaWithResponseParameters.description() != null) {
+                valueSchema.description(valueSchemaWithResponseParameters.description());
+            }
+            final var valueSchemaObject = valueSchema.startObject();
+            valueSchemaObject.additionalProperties(valueSchemaWithResponseParameters.additionalProperties());
+            for (final var p : valueSchemaWithResponseParameters.properties().entrySet()) {
+                if (p.getKey().equals(INTERNAL_RESPONSE_PARAMETERS)) {
+                    final ObjectSchema parameters = (ObjectSchema) p.getValue();
+                    for (final var q : parameters.properties().entrySet()) {
+                        northboundSchema.property(q.getKey())
+                                .required(parameters.required().contains(q.getKey()))
+                                .schema(q.getValue());
+                    }
+                } else {
+                    valueSchemaObject.property(p.getKey())
+                            .required(valueSchemaWithResponseParameters.required().contains(p.getKey()))
+                            .schema(p.getValue());
+                }
+            }
+            valueSchemaObject.endObject();
+        }
+
+        // otherwise just take the tag schema as is
+        else {
+            northboundSchema.property("value").required().schema(tagSchema).readable().writable();
+        }
+
+        // copy the metadata and context aspects
         if (tagSchemas.metadataSchema() != null) {
-            builder.property("metadata")
-                    .schema(tagSchemas.metadataSchema())
-                    .readable()
-                    .writable(false);
+            northboundSchema.property("metadata").schema(tagSchemas.metadataSchema()).readable().writable(false);
         }
         if (tagSchemas.context() != null) {
-            builder.property("context").schema(tagSchemas.context()).readable().writable(false);
+            northboundSchema.property(CONTEXT).schema(tagSchemas.context()).readable().writable(false);
         }
 
-        return builder.endObject().build();
+        // return the northbound schema
+        return northboundSchema.endObject().build();
     }
 
     /**
@@ -147,28 +187,53 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
      * on the root and on each writable member — otherwise the whole shape renders {@code readOnly} and offers no
      * destinations at all. See {@code TagSchemaCreationOutputImplSchemaBuilderTest} for both cases.
      */
-    private static @NotNull Schema southboundSchema(final @NotNull DataPointSchema tagSchemas) {
-        final Schema writeValue =
+    private @NotNull Schema southboundSchema(final @NotNull DataPointSchema tagSchemas) {
+        final var southboundSchema = new SchemaBuilder().startObject();
+        final Schema tagSchema =
                 tagSchemas.southboundSchema() != null ? tagSchemas.southboundSchema() : tagSchemas.valueSchema();
 
-        final var builder = new SchemaBuilder().startObject();
-        // No readable/writable annotations here: a property defined via schema() renders the prebuilt schema
-        // as-is (SchemaBuilder ignores annotations chained after schema()), so the value's flags are whatever
-        // the adapter put on its own schema root — identical to the northbound rendering of the same value,
-        // which is what lets a consumer detect "read and write use the same schema" by comparing value shapes.
-        builder.property("value").required().schema(writeValue);
-        // The wrapper itself is writable, and saying so matters. SchemaBuilder defaults every node to
-        // writable = false, which renders readOnly on the document root — on the one document whose entire
-        // purpose is to be written. Harmless while readOnly is only an annotation, but the moment it becomes
-        // an assertion (the readOnly ⇒ ⊥ rule) a read-only root rejects EVERY southbound write for EVERY tag,
-        // arrays or not: networknt's readOnly check fires on the node being present at all, so the root error
-        // lands on every instance. Verified against networknt with readOnly enforcement enabled — with the
-        // default flag a conforming command produces "$: is a readonly field, it cannot be changed".
-        //
-        // The northbound wrapper keeps its readOnly, and correctly so: that document describes what is
-        // published, and it genuinely cannot be written. The asymmetry is the point, not an oversight.
-        return builder.endObject().writable().build();
+        // If the value is an object carrying INTERNAL_REQUEST_PARAMETERS, lift those parameters to the root.
+        if (tagSchema instanceof final ObjectSchema valueSchemaWithRequestParameters
+                && valueSchemaWithRequestParameters.properties().containsKey(INTERNAL_REQUEST_PARAMETERS)) {
+            final var valueSchema = southboundSchema.property("value").required()
+                    .readable(valueSchemaWithRequestParameters.readable())
+                    .writable(valueSchemaWithRequestParameters.writable())
+                    .nullable(valueSchemaWithRequestParameters.nullable());
+            if (valueSchemaWithRequestParameters.title() != null) {
+                valueSchema.title(valueSchemaWithRequestParameters.title());
+            }
+            if (valueSchemaWithRequestParameters.description() != null) {
+                valueSchema.description(valueSchemaWithRequestParameters.description());
+            }
+            final var valueSchemaObject = valueSchema.startObject();
+            valueSchemaObject.additionalProperties(valueSchemaWithRequestParameters.additionalProperties());
+            for (final var p : valueSchemaWithRequestParameters.properties().entrySet()) {
+                if (p.getKey().equals(INTERNAL_REQUEST_PARAMETERS)) {
+                    final ObjectSchema parameters = (ObjectSchema) p.getValue();
+                    for (final var q : parameters.properties().entrySet()) {
+                        southboundSchema.property(q.getKey())
+                                .required(parameters.required().contains(q.getKey()))
+                                .schema(q.getValue());
+                    }
+                } else {
+                    valueSchemaObject.property(p.getKey())
+                            .required(valueSchemaWithRequestParameters.required().contains(p.getKey()))
+                            .schema(p.getValue());
+                }
+            }
+            valueSchemaObject.endObject();
+        }
+
+        // otherwise just take the tag schema as is
+        else {
+            southboundSchema.property("value").required().schema(tagSchema);
+        }
+
+        // return the southbound schema, make sure that it is writeable
+        return southboundSchema.endObject().writable().build();
     }
+
+    // @formatter:on
 
     @Override
     public void finish(@NotNull final DataPointSchema schema) {

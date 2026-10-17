@@ -45,6 +45,13 @@ public final class NorthboundMappingOwnerConverter
         return toRestEntity(entity).adapterId(adapterId);
     }
 
+    /// Every field a northbound mapping has, carried here and in both directions.
+    ///
+    /// This converter is one of a pair with {@link NorthboundMappingEntityConverter}, which does the same job
+    /// without the owning adapter's id. **A field added to one and forgotten in the other is worse than a
+    /// display bug**: a mapping arriving through this path loses it on the way in, so an operator who opens such
+    /// a mapping and saves it does not merely see a stale value, they store one. That happened once already,
+    /// when method calls added a setting here and only the sibling was updated.
     @Override
     public @NotNull NorthboundMappingOwner toRestEntity(final @NotNull NorthboundMappingEntity entity) {
         return NorthboundMappingOwner.builder()

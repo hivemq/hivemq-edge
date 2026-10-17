@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.condition;
+package com.hivemq.edge.adapters.opcua.browse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +23,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -50,8 +51,13 @@ import org.jetbrains.annotations.Nullable;
  * have almost nothing in common, and a helper trying to cover them all would need a direction, a reference
  * type, a subtype flag, a class mask and a predicate before it did anything. So this returns the complete
  * reference list and leaves the searching to the caller.
+ * <p>
+ * It lives in {@code browse} rather than {@code condition}, where it was written, because nothing about it is
+ * condition-specific — it imports only Milo and the JDK. Method tags need the same paging for the same reason:
+ * a truncated browse of an object turns a present method into an absent one, and a method that cannot be
+ * found cannot be called at all.
  */
-final class Browsing {
+public final class Browsing {
 
     /**
      * How many pages to read before giving up.
@@ -76,7 +82,7 @@ final class Browsing {
      * act on the first. Treating the second as the first is how a transient network error became "this
      * condition has no Acknowledge method" and then a fallback to a different call.
      */
-    static final class BrowseFailedException extends RuntimeException {
+    public static final class BrowseFailedException extends RuntimeException {
 
         @java.io.Serial
         private static final long serialVersionUID = 1L;
@@ -86,7 +92,7 @@ final class Browsing {
          * <p>
          * Null for a transport failure, a timeout, or an incomplete continuation — cases where no server
          * verdict about the node exists to record. Carried rather than only rendered into the message
-         * because one of these statuses is load-bearing: see {@link #nodeNotInAddressSpace}.
+         * because one of these statuses is decisive: see {@link #nodeNotInAddressSpace}.
          */
         private final transient @Nullable StatusCode status;
 
@@ -111,7 +117,7 @@ final class Browsing {
     }
 
     /**
-     * Whether a browse failure is the server stating that the node is not in its AddressSpace at all.
+     * Whether a failure is the server stating that the node is not in its AddressSpace at all.
      * <p>
      * This is the one distinction that must survive the trip out of {@link #browseAll}, because OPC 10000-9
      * builds a whole server model on it: §5.7.3, §5.5.6 and §5.8.17.2 each note that "some Servers do not
@@ -126,12 +132,68 @@ final class Browsing {
      * reading it as "hidden instance" would take a typo as licence to call a method with it. Everything else
      * — authorization, transport, timeouts, a truncated continuation — keeps propagating, since none of them
      * is evidence about whether the node exists.
+     * <p>
+     * <b>A read says it as plainly as a browse.</b> Both forms are recognised because a caller may reach the
+     * same server verdict either way: {@link #browseAll} wraps it in a {@link BrowseFailedException}, while a
+     * read of the node — {@code AddressSpace.getNodeAsync}, which {@code MethodVerifier} performs first to
+     * check the node class — fails with a bare {@link UaException} carrying the identical status. Recognising
+     * only the browse's form made an absent node depend on which call happened to touch it first, and the read
+     * being first meant the one case this method exists for was the case it missed.
      */
-    static boolean nodeNotInAddressSpace(final @Nullable Throwable throwable) {
+    public static boolean nodeNotInAddressSpace(final @Nullable Throwable throwable) {
+        if (throwable == null) {
+            return false;
+        }
+        final Throwable root = rootOf(throwable);
+        if (root instanceof final BrowseFailedException failure) {
+            return failure.status() != null && failure.status().value() == StatusCodes.Bad_NodeIdUnknown;
+        }
+        return root instanceof final UaException failure
+                && failure.getStatusCode().value() == StatusCodes.Bad_NodeIdUnknown;
+    }
+
+    /**
+     * Whether a failed read says the server does not expose that node, rather than that the read went wrong.
+     * <p>
+     * Milo answers {@code Bad_NotFound} when its browse for an optional property finds none
+     * ({@code UaNode.getPropertyNodeAsync}). That is the one failure which is an answer about the node: OPC
+     * 10000-3 §5.7 makes a method's {@code InputArguments} and {@code OutputArguments} optional and states that
+     * "a Property that is not provided indicates that there are no input arguments or output arguments", so an
+     * argument-less method is normally modelled with no property at all. Everything else — a timeout, an
+     * authorization refusal, a transport failure — says nothing and keeps propagating.
+     */
+    public static boolean notFound(final @Nullable Throwable throwable) {
         return throwable != null
-                && rootOf(throwable) instanceof final BrowseFailedException failure
-                && failure.status() != null
-                && failure.status().value() == StatusCodes.Bad_NodeIdUnknown;
+                && rootOf(throwable) instanceof final UaException failure
+                && failure.getStatusCode().value() == StatusCodes.Bad_NotFound;
+    }
+
+    /**
+     * The OPC UA status code a failure carries, or {@code null} when it carries none.
+     * <p>
+     * <b>Why this exists.</b> A failed call used to be reported to the caller as {@code Bad_InternalError} with
+     * the exception's message as the detail, discarding a status code the device had supplied. The reference
+     * tells callers that a transport or session failure reaches them named — and warns them not to treat a
+     * timeout as proof the method did not run, which they cannot act on when the timeout is not named. So a
+     * caller could not distinguish "the device never answered" from "Edge itself broke". Reported by QA as P20
+     * on EDG-1116.
+     * <p>
+     * Null for a failure that genuinely has no status: a client-side timeout before the request leaves, or any
+     * plain exception. The caller substitutes its own code for those, which is what {@code Bad_InternalError}
+     * honestly means — Edge learned nothing more.
+     */
+    public static @Nullable Long statusCodeOf(final @Nullable Throwable throwable) {
+        if (throwable == null) {
+            return null;
+        }
+        final Throwable root = rootOf(throwable);
+        if (root instanceof final BrowseFailedException failure) {
+            return failure.status() == null ? null : failure.status().value();
+        }
+        if (root instanceof final UaException failure) {
+            return failure.getStatusCode().value();
+        }
+        return null;
     }
 
     /**
@@ -174,7 +236,7 @@ final class Browsing {
      * @param browse what to browse; the caller owns the direction, reference type and node class mask.
      * @return the references, in server order. Empty when the node genuinely has none.
      */
-    static @NotNull CompletableFuture<List<ReferenceDescription>> browseAll(
+    public static @NotNull CompletableFuture<List<ReferenceDescription>> browseAll(
             final @NotNull OpcUaClient client, final @NotNull BrowseDescription browse) {
 
         return client.browseAsync(browse)
@@ -209,7 +271,7 @@ final class Browsing {
      * the async plumbing wraps everything in. Falls back to the class name where there is no message, since
      * several of the exceptions reachable here carry none and "failed: null" describes nothing.
      */
-    static @NotNull String describeException(final @NotNull Throwable throwable) {
+    public static @NotNull String describeException(final @NotNull Throwable throwable) {
         final Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
                 ? throwable.getCause()
                 : throwable;
@@ -313,7 +375,7 @@ final class Browsing {
      * Namespace 0 is the one index safe to hardcode. Part 5 warns that a server may renumber its namespace
      * table between sessions, but 0 is reserved and fixed.
      */
-    static boolean isStandardName(final @Nullable QualifiedName browseName, final @NotNull String expected) {
+    public static boolean isStandardName(final @Nullable QualifiedName browseName, final @NotNull String expected) {
         return browseName != null
                 && browseName.getNamespaceIndex() != null
                 && browseName.getNamespaceIndex().intValue() == 0

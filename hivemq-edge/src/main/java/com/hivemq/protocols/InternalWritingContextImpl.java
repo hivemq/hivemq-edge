@@ -27,6 +27,15 @@ public class InternalWritingContextImpl implements InternalWritingContext {
         this.southboundMapping = southboundMapping;
     }
 
+    /**
+     * The field mapping the southbound transform is generated from: the user's own, unaltered.
+     * <p>
+     * A method request's own fields are <b>not</b> added here. Edge merges them into the payload after the data
+     * policy has run, in the southbound writer, so the generated transform carries only what a user configured.
+     * An earlier version synthesised an instruction here to copy them out of an MQTT user property -- which
+     * required a source syntax invented for that one instruction, and a Data Hub bridge that turned out never to
+     * forward user properties at all.
+     */
     @Override
     @SuppressWarnings(
             "NullAway") // southboundMapping.getFieldMapping() may return null but the interface declares @NotNull

@@ -30,6 +30,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DiagnosticInfo;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -142,6 +143,8 @@ public class OpcUaToJsonConverter {
             }
         } else if (value instanceof final ExpandedNodeId enid) {
             builder.value(enid.toParseableString());
+        } else if (value instanceof final Matrix matrix) {
+            addValue(builder, matrix.nestedArrayValue(), ctx);
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             final var arr = builder.startArrayValue();
@@ -213,9 +216,11 @@ public class OpcUaToJsonConverter {
 
     /**
      * Adds one OPC-UA value under {@code key}, mapping any builtin, array or structure to the builder. Shared
-     * with the event path, which maps each selected event field the same way.
+     * with the event path, which maps each selected event field the same way, and with the method-response path
+     * in {@code MethodResponse}: a method's output of a given OPC-UA type must look exactly like a variable's
+     * value of that type, and one converter is how that holds rather than two that are asserted to agree.
      */
-    static void addValueToObject(
+    public static void addValueToObject(
             final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
             final @NotNull String key,
             final @Nullable Object value,
@@ -261,6 +266,8 @@ public class OpcUaToJsonConverter {
             } else {
                 obj.putNull(key);
             }
+        } else if (value instanceof final Matrix matrix) {
+            addValueToObject(obj, key, matrix.nestedArrayValue(), ctx);
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             final var arr = obj.startArray(key);
@@ -428,11 +435,18 @@ public class OpcUaToJsonConverter {
             populateTimeZone(arr.startObject(), timeZone).endObject();
         } else if (value instanceof final EUInformation engineeringUnits) {
             populateEuInformation(arr.startObject(), engineeringUnits).endObject();
+        } else if (value instanceof final Matrix matrix) {
+            addValueToArray(arr, matrix.nestedArrayValue(), ctx);
         } else if (value.getClass().isArray()) {
+            // Nested, not appended into the array being written. Appending flattened a row into its parent, so
+            // a 2x2 matrix came out as [1,2,3,4] -- a shape no schema describes and no consumer can read back
+            // as rows. Unreachable until a Matrix was unwrapped above, which is why it went unnoticed.
             final Object[] values = (Object[]) value;
+            final var nested = arr.startArray();
             for (final Object elem : values) {
-                addValueToArray(arr, elem, ctx);
+                addValueToArray(nested, elem, ctx);
             }
+            nested.endArray();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",

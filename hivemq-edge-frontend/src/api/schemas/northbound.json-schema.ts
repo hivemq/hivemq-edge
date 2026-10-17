@@ -57,6 +57,11 @@ export const northboundMappingListSchema: JSONSchema7 = {
         userProperties: {
           $ref: '#/definitions/MqttUserProperty',
         },
+        // There are deliberately no method-call settings here, and none belong here. What a method response
+        // carries is decided by the southbound mapping that sent the request and travels with it: a response
+        // goes to the address the request named whenever one arrived, and to this mapping's topic otherwise,
+        // and the correlation token is echoed whenever the request carried one. Whether either arrives at all
+        // is a southbound decision. A switch here would add no control, only a pair that can disagree.
       },
       required: ['topic', 'tagName', 'maxQoS'],
     },

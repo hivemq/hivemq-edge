@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.condition;
+package com.hivemq.edge.adapters.opcua.browse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,9 +31,11 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -313,6 +315,43 @@ class BrowsingTest {
         assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
     }
 
+    // ── The status code a failure carries ────────────────────────────────────
+    //
+    // A failed method call used to be answered with Bad_InternalError whatever went wrong, which the reference
+    // defines as "Edge learned nothing more" -- so a caller could not tell a device that stopped answering from
+    // a fault in Edge, and the retry guidance ("do not treat a timeout as proof the method did not run") became
+    // inapplicable exactly where it matters. The code was never missing; it was in the failure and discarded.
+    // QA P20 on EDG-1116.
+
+    @Test
+    void aFailureCarryingAStatus_yieldsThatStatus() {
+        final Throwable thrown = new CompletionException(new UaException(StatusCodes.Bad_Timeout, "no answer"));
+
+        assertThat(Browsing.statusCodeOf(thrown))
+                .withFailMessage("the device said what went wrong; the caller has to be told the same thing")
+                .isEqualTo(StatusCodes.Bad_Timeout);
+    }
+
+    @Test
+    void aSessionThatClosedUnderTheCall_yieldsItsOwnStatusRatherThanATimeout() {
+        // The reason for passing the real code through rather than substituting one timeout code for every
+        // failure: these are different things to a caller deciding whether to retry.
+        final Throwable thrown = new CompletionException(new UaException(StatusCodes.Bad_SessionClosed, "closed"));
+
+        assertThat(Browsing.statusCodeOf(thrown)).isEqualTo(StatusCodes.Bad_SessionClosed);
+    }
+
+    @Test
+    void aFailureCarryingNoStatus_yieldsNull_soTheCallerSubstitutesItsOwn() {
+        // A client-side failure before the request leaves has no status to report, and inventing one would
+        // claim the device said something it never said. Null is how the caller knows to fall back to
+        // Bad_InternalError, which honestly means "Edge learned nothing more".
+        final Throwable thrown = new CompletionException(new IllegalStateException("not connected"));
+
+        assertThat(Browsing.statusCodeOf(thrown)).isNull();
+        assertThat(Browsing.statusCodeOf(null)).isNull();
+    }
+
     @Test
     void andNeitherIsATransportFailureThatCarriesNoStatusAtAll() {
         final OpcUaClient client = mock(OpcUaClient.class);
@@ -324,6 +363,30 @@ class BrowsingTest {
 
         assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
         assertThat(Browsing.nodeNotInAddressSpace(null)).isFalse();
+    }
+
+    @Test
+    void aReadSayingTheNodeIsUnknown_isRecognisedAsPlainlyAsABrowse() {
+        // Not every caller reaches this verdict by browsing. MethodVerifier reads the node first, to check its
+        // node class, and a read of an absent node fails with a bare UaException rather than the
+        // BrowseFailedException browseAll wraps. Recognising only the browse's form made an absent node depend
+        // on which call happened to touch it first -- and since the read is first, the one case this predicate
+        // exists for was the case it missed: a method tag naming a node the server does not have was reported
+        // as "the device could not be asked" instead of "the tag is wrong".
+        final Throwable thrown = new CompletionException(
+                new UaException(StatusCodes.Bad_NodeIdUnknown, "the node id refers to a node that does not exist"));
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isTrue();
+    }
+
+    @Test
+    void aReadRefusedForAnotherReason_isStillNotAnAbsentNode() {
+        // The same boundary as for a browse, on the read's form: a refusal says nothing about whether the node
+        // exists, and the widening must not have blurred that.
+        final Throwable thrown =
+                new CompletionException(new UaException(StatusCodes.Bad_UserAccessDenied, "access denied"));
+
+        assertThat(Browsing.nodeNotInAddressSpace(thrown)).isFalse();
     }
 
     @Test
@@ -353,5 +416,39 @@ class BrowsingTest {
                 .thenReturn(CompletableFuture.completedFuture(page(ByteString.NULL_VALUE)));
 
         assertThat(Browsing.browseAll(client, BROWSE).join()).isEmpty();
+    }
+
+    @Test
+    void notFound_distinguishesAnAbsentOptionalPropertyFromAFailedRead() {
+        // The one failure that is an answer about a node rather than about the read. Milo answers
+        // Bad_NotFound when its browse for an optional property finds none, and OPC 10000-3 section 5.7 makes
+        // a method's InputArguments optional, stating that "a Property that is not provided indicates that
+        // there are no input arguments" -- so an argument-less method is normally modelled with no property.
+        //
+        // The method path used to treat *every* read failure as "no arguments", so a timeout or an access
+        // refusal described a method as taking none: the schema said so and admitted no properties, and every
+        // correct request was refused for the session.
+        assertThat(Browsing.notFound(new UaException(StatusCodes.Bad_NotFound))).isTrue();
+
+        assertThat(Browsing.notFound(new UaException(StatusCodes.Bad_Timeout)))
+                .as("a timeout says nothing about the node")
+                .isFalse();
+        assertThat(Browsing.notFound(new UaException(StatusCodes.Bad_UserAccessDenied)))
+                .as("a refusal to answer says nothing about the node")
+                .isFalse();
+        // Something that carries no status at all cannot be the absent case, and guessing that it is would
+        // reinstate the defect for exactly the failures hardest to explain.
+        assertThat(Browsing.notFound(new IllegalStateException("not connected")))
+                .isFalse();
+        assertThat(Browsing.notFound(null)).isFalse();
+    }
+
+    @Test
+    void notFound_seesThroughTheWrappersAFailedFutureAdds() {
+        // Called on what a join() or an exceptionally() hands over, which is a CompletionException around the
+        // real cause -- so the unwrapping is part of the contract rather than an implementation detail.
+        assertThat(Browsing.notFound(
+                        new java.util.concurrent.CompletionException(new UaException(StatusCodes.Bad_NotFound))))
+                .isTrue();
     }
 }

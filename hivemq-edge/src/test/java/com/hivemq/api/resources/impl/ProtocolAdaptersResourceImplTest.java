@@ -31,12 +31,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
+import com.hivemq.api.format.DataUrl;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.DomainTagOwnerConverter;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
@@ -59,12 +61,14 @@ import com.hivemq.edge.api.model.DomainTagOwnerList;
 import com.hivemq.edge.api.model.FieldMapping;
 import com.hivemq.edge.api.model.NorthboundMappingOwner;
 import com.hivemq.edge.api.model.NorthboundMappingOwnerList;
+import com.hivemq.edge.api.model.SouthboundMappingList;
 import com.hivemq.edge.api.model.SouthboundMappingOwner;
 import com.hivemq.edge.api.model.SouthboundMappingOwnerList;
 import com.hivemq.http.error.ProblemDetails;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
+import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
@@ -1022,6 +1026,296 @@ class ProtocolAdaptersResourceImplTest {
 
         assertEquals(200, okWithout.getStatus());
         assertThat((JsonNode) okWithout.getEntity()).isEqualTo((JsonNode) okNorthbound.getEntity());
+    }
+
+    /**
+     * EDG-1100 P10: a tag the device cannot resolve is the operator's mistake, so it must not answer 500.
+     * <p>
+     * QA met this on an OPC UA method tag pointing at a node the server does not expose, and on one pointing at a
+     * Variable rather than an Object. Both answered {@code 500 InternalServerError}. The report was explicit that
+     * the detail text was exactly right and only the status misled: a 500 sends an operator to look at Edge, or
+     * at us, for a fault that is in their own tag definition.
+     * <p>
+     * The adapter now reports such a tag through {@code tagNotFound} rather than {@code fail}, which this layer
+     * already maps to 404. What {@code fail} still means is unchanged — see the 500 tests above, where a
+     * connection that is not established must stay a 500 because the tag may be perfectly correct.
+     */
+    @Test
+    void getSchema_whenTheTagCannotBeResolvedAgainstTheDevice_thenItIsNotAServerError() {
+        mockAdapterRejectingTagWith("node ns=2;s=NoSuchObject of tag 'boiler' is a Variable, not an Object");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    void getSchema_whenTheTagCannotBeResolved_thenTheAdaptersOwnSentenceSurvives() {
+        // The status was the finding; this is the part that must not be lost in fixing it. Every other
+        // TAG_NOT_FOUND in this resource answers a lookup that either found a tag or did not, where the name is
+        // the whole story -- so that branch passed the name and discarded the message. Here the tag exists and
+        // cannot be resolved against the device, and only the adapter can say why.
+        mockAdapterRejectingTagWith("node ns=2;s=NoSuchObject of tag 'boiler' is a Variable, not an Object");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertThat(response.getEntity().toString())
+                .as("the operator has to be told what is wrong with the tag, not merely that it was not found")
+                .contains("is a Variable, not an Object");
+    }
+
+    @Test
+    void getSchema_whenTheTagCannotBeResolved_thenTheTitleDoesNotClaimTheTagIsMissing() {
+        // The third round on one answer, and the part the previous two left behind. The status is right and the
+        // detail is right; the title said "No tag found with the provided id" for a tag the operator had just
+        // created and could see listed, so the first line they read sent them looking for the wrong thing
+        // (QA P17 on EDG-1116, after P10 on EDG-1100 fixed the status and the detail).
+        //
+        // Untested is how it survived: the two tests above assert the status and the message, and nothing
+        // looked at the title.
+        mockAdapterRejectingTagWith("node ns=2;s=Counter of tag 'boiler' is a Variable, not an Object");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertEquals(404, response.getStatus());
+        assertThat(response.getEntity().toString())
+                .as("the tag exists -- the node it names is what could not be resolved")
+                .doesNotContain("No tag found")
+                .contains("could not be resolved on the device");
+    }
+
+    @Test
+    void getSchema_whenTheDeviceCouldNotBeAsked_thenItIsStillAServerError() {
+        // The boundary, and the reason this is two outcomes rather than one. A tag that is wrong about the
+        // device is the operator's to fix; a device that could not be asked may leave the tag perfectly
+        // correct, and reporting that as a configuration error sends them to fix something that is not broken.
+        mockAdapterFailingSchemaWith("could not read the methods of 'boiler' from the device: timed out");
+
+        final Response response = protocolAdaptersResource.getSchema("adapter", "boiler", null);
+
+        assertEquals(500, response.getStatus());
+        assertThat(response.getEntity().toString()).contains("timed out");
+    }
+
+    // ── EDG-1087 M4: a method mapping whose topic filter's schema does not require methodName ──────────
+    //
+    // A method request names the method to call in its payload, and nothing else supplies that name, so a
+    // request without it is unroutable. The schema on the topic filter is the gate that can refuse it before
+    // anything runs on the device, which is what these pin.
+    //
+    // The correlation token and the reply address are deliberately not demanded: either may arrive as an MQTT 5
+    // property with nothing in the payload, so a schema requiring them would refuse well-formed requests.
+
+    private static final @NotNull String SCHEMA_REQUIRING_VALUE_ONLY =
+            "{\"type\":\"object\",\"required\":[\"value\"],\"properties\":{\"value\":{\"type\":\"object\"}}}";
+
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME =
+            "{\"type\":\"object\",\"required\":[\"value\",\"methodName\"]," + "\"properties\":{\"value\":{}}}";
+
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_AND_TOKEN =
+            "{\"type\":\"object\",\"required\":[\"value\",\"methodName\",\"correlationData\"]," + "\"properties\":{}}";
+
+    /// The same requirement stated inside an `allOf` branch rather than at the root.
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_THROUGH_ALL_OF =
+            "{\"type\":\"object\",\"allOf\":[{\"required\":[\"methodName\"]},{\"required\":[\"value\"]}]}";
+
+    /// The same requirement reached through a `$ref` to a definition elsewhere in the document.
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_THROUGH_REF =
+            "{\"$defs\":{\"aCall\":{\"required\":[\"methodName\"]}},\"type\":\"object\","
+                    + "\"allOf\":[{\"$ref\":\"#/$defs/aCall\"}]}";
+
+    /// Requires the name, but on a nested object -- so the root does not require it and the gate must say so.
+    private static final @NotNull String SCHEMA_REQUIRING_METHOD_NAME_ONLY_DEEPER =
+            "{\"type\":\"object\",\"required\":[\"value\"],"
+                    + "\"properties\":{\"value\":{\"type\":\"object\",\"required\":[\"methodName\"]}}}";
+
+    private void mockWritableAdapterWithTopicFilter(final @NotNull String schema) {
+        final ProtocolAdapterEntity existing = mock();
+        when(existing.getAdapterId()).thenReturn("adapter");
+        when(existing.getProtocolId()).thenReturn("opcua");
+        when(existing.getTags())
+                .thenReturn(List.of(new TagEntity("boiler", "the boiler", Map.of("node", "ns=2;s=Boiler"))));
+        when(protocolAdapterExtractor.getAdapterByAdapterId("adapter")).thenReturn(Optional.of(existing));
+
+        final ProtocolAdapterInformation info = mock();
+        when(info.getCapabilities()).thenReturn(java.util.EnumSet.of(ProtocolAdapterCapability.WRITE));
+        when(protocolAdapterManager.getAdapterTypeById("opcua")).thenReturn(Optional.of(info));
+
+        // createBase64JsonDataUrl labels the encoding; it does not encode. The resource base64-decodes what it
+        // finds, so the fixture has to hold encoded bytes.
+        final String encoded =
+                java.util.Base64.getEncoder().encodeToString(schema.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        when(topicFilterPersistence.getTopicFilter("plant/boiler1/call"))
+                .thenReturn(new TopicFilterPojo(
+                        "plant/boiler1/call", "the command topic", DataUrl.createBase64JsonDataUrl(encoded)));
+    }
+
+    private static @NotNull com.hivemq.edge.api.model.FieldMapping valueToValue() {
+        return new com.hivemq.edge.api.model.FieldMapping()
+                .instructions(List.of(new com.hivemq.edge.api.model.Instruction()
+                        .source("value")
+                        .destination("value")));
+    }
+
+    private @NotNull SouthboundMappingList methodMapping(final boolean correlationData) {
+        final com.hivemq.edge.api.model.SouthboundMapping mapping = new com.hivemq.edge.api.model.SouthboundMapping()
+                .tagName("boiler")
+                .topicFilter("plant/boiler1/call")
+                .fieldMapping(valueToValue())
+                .methodCalls(true)
+                .correlationData(correlationData);
+        return new SouthboundMappingList().items(List.of(mapping));
+    }
+
+    @Test
+    void southboundMapping_carryingAMethodCall_isSavedWithAWarningWhenTheSchemaDoesNotRequireMethodName() {
+        // This used to be refused with a 400. The check cannot read every way a schema may state a
+        // requirement -- one holding only under a condition, or stated through `dependencies` -- and those are
+        // valid schemas whose mappings a user is entitled to save. Blocking correct work to catch an
+        // incorrect configuration is the wrong trade, so the save succeeds and the fault is logged: a request
+        // omitting the method name is then refused by the adapter, with a message naming the setting.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_VALUE_ONLY);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
+
+        assertThat(response.getStatus())
+                .as("a schema this check cannot read must not block the save")
+                .isEqualTo(200);
+    }
+
+    @Test
+    void southboundMapping_promisingACorrelationToken_isAcceptedWhenTheSchemaOnlyRequiresMethodName() {
+        // The token may arrive as the MQTT 5 Correlation Data property with nothing in the payload, so
+        // demanding it in the schema would refuse exactly those well-formed requests.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(true));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void southboundMapping_isAcceptedWhenTheSchemaRequiresTheTokenAsWell() {
+        // The operator may still require the token -- that is their schema's business, not this check's.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_AND_TOKEN);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(true));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void southboundMapping_isAcceptedWhenTheSchemaRequiresMethodNameThroughAnAllOf() {
+        // The defect this closes. The gate used to read the document's root `required` array and look for the
+        // name in it, so a schema stating the same requirement inside an `allOf` branch was read as requiring
+        // nothing -- and a correct configuration could not be saved, with a message telling the operator to add
+        // an entry their schema already enforced. The schema now answers for itself.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_THROUGH_ALL_OF);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void southboundMapping_isAcceptedWhenTheSchemaRequiresMethodNameThroughARef() {
+        // The other composition a real schema uses: the requirement lives in a definition and is pulled in by
+        // reference. Reading one array could not see through that either.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_THROUGH_REF);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void aSchemaRequiringTheMethodNameOnlyDeeper_isStillSaved() {
+        // A request names the method at its root, and a schema demanding it inside `value` does not make that
+        // happen -- so this mapping is the one the warning is for. It saves all the same: the check informs,
+        // it does not block.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_METHOD_NAME_ONLY_DEEPER);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void southboundMapping_withoutMethodCalls_isNotCheckedAtAll() {
+        // Every southbound mapping that exists today. The check must not refuse one for lacking fields that
+        // only a method request carries.
+        mockWritableAdapterWithTopicFilter(SCHEMA_REQUIRING_VALUE_ONLY);
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final com.hivemq.edge.api.model.SouthboundMapping valueWrite = new com.hivemq.edge.api.model.SouthboundMapping()
+                .tagName("boiler")
+                .topicFilter("plant/boiler1/call")
+                .fieldMapping(valueToValue());
+
+        final Response response = protocolAdaptersResource.updateAdapterSouthboundMappings(
+                "adapter", new SouthboundMappingList().items(List.of(valueWrite)));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void aMethodMappingOnAnUnreadableSchema_isSavedWithAWarning() {
+        // A schema that cannot be parsed answers "requires nothing", so this is the warning's other trigger.
+        // It used to be a 400. Refusing a save because *we* could not read a document is the trade this
+        // change reverses: the data policy will reject the schema on its own terms if it is genuinely
+        // malformed, and nothing is gained by blocking the mapping here as well.
+        mockWritableAdapterWithTopicFilter("not a schema at all");
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final Response response =
+                protocolAdaptersResource.updateAdapterSouthboundMappings("adapter", methodMapping(false));
+
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void aValueMappingOnAnUnreadableSchema_isStillAccepted() {
+        // The boundary: only a method mapping promises these fields, so a plain value write must not be
+        // refused for a schema this check cannot read.
+        mockWritableAdapterWithTopicFilter("not a schema at all");
+        when(protocolAdapterExtractor.updateAdapter(any())).thenReturn(true);
+
+        final com.hivemq.edge.api.model.SouthboundMapping valueWrite = new com.hivemq.edge.api.model.SouthboundMapping()
+                .tagName("boiler")
+                .topicFilter("plant/boiler1/call")
+                .fieldMapping(valueToValue());
+
+        final Response response = protocolAdaptersResource.updateAdapterSouthboundMappings(
+                "adapter", new SouthboundMappingList().items(List.of(valueWrite)));
+
+        assertEquals(200, response.getStatus());
+    }
+
+    private void mockAdapterRejectingTagWith(final @NotNull String reason) {
+        final ProtocolAdapterWrapper wrapper = mock();
+        final ProtocolAdapter adapter = mock();
+        when(wrapper.getAdapter()).thenReturn(adapter);
+        doAnswer(invocation -> {
+                    final TagSchemaCreationOutput output = invocation.getArgument(1);
+                    output.tagNotFound(reason);
+                    return null;
+                })
+                .when(adapter)
+                .createTagSchema(any(), any());
+        when(protocolAdapterManager.getProtocolAdapterWrapperByAdapterId("adapter"))
+                .thenReturn(Optional.of(wrapper));
     }
 
     private void mockAdapterFailingSchemaWith(final @NotNull String reason) {
