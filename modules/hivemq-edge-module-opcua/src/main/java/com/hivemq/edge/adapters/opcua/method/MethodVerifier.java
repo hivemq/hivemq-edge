@@ -882,7 +882,7 @@ public final class MethodVerifier {
                 depth,
                 known.size());
 
-        // The supertype is asked for *first*, and the order is the point.
+        // **Both browses are always attempted, and only one kind of outcome stops a result being remembered.**
         //
         // A level with no methods is the ordinary case for most of a hierarchy, and a server says it with an
         // empty browse result. The Siemens S7-1500 says it with Bad_NodeIdUnknown instead -- a status that
@@ -890,21 +890,43 @@ public final class MethodVerifier {
         // incomplete result, and every call re-browsed the whole hierarchy: about 275 verifications for 270
         // calls, 0.7 s of browsing each, throughput down to 2.3 calls/s.
         //
-        // Answering that by trusting the status code to mean "durable" would be guessing. Asking for the
-        // supertype first turns it into a check: a server that answers *this* browse has demonstrably found
-        // the type and is reachable, so a later "not found" on the method browse of the same node cannot be
-        // the node being absent or the link being down. It can only be this server's way of reporting an
-        // empty level. A supertype browse that itself fails is a real failure, and the climb stays incomplete.
+        // The rule that settles it, for either browse: **Bad_NodeIdUnknown is the server answering** -- it
+        // looked in its own address space and the node is not there, which is not something a server says
+        // transiently -- while every other bad status is the server failing to answer. So:
         //
-        // Costs no extra round trip: both browses happened before, in the other order.
+        //   - climb to the next level only when the supertype browse returned an actual node;
+        //   - remember the result unless one of the two browses came back bad with anything *other* than
+        //     Bad_NodeIdUnknown.
         //
-        // Reported by Miguel as R5-6 on EDG-1087.
+        // That covers all sixteen combinations with no special cases, and the S7's three -- a refused
+        // supertype browse alongside methods, an empty method list, or a refused method browse -- all become
+        // cacheable, while a timeout or an authorization refusal in either browse still retries.
+        //
+        // An earlier version asked for the supertype first *as a check*: a server that answered it had
+        // demonstrably found the node, so a later Bad_NodeIdUnknown on the method browse could not be absence.
+        // The S7 refuses both browses of the same node, so that proof is unavailable there -- and it is not
+        // needed, because a node that genuinely is not in the address space has no methods either, which is
+        // the same conclusion. The ordering is kept only because the supertype decides whether to recurse.
+        //
+        // Costs no extra round trip: both browses happen either way.
+        //
+        // **This is a heuristic, and it is outside the specification.** OPC-UA does not say that a browse of
+        // an existing node may answer Bad_NodeIdUnknown, and it does not say whether that status is durable --
+        // so "the server looked and the node is not there, and that will not change" is our reading of a
+        // device's behaviour, not a rule anyone wrote down. It is here because the alternative measured worse
+        // on the one device we can test against. A second device that answers differently would need a
+        // different reading, and this is the wrong place to accumulate those: the honest fix is a cache whose
+        // invalidation does not depend on classifying a status code at all.
+        //
+        // Reported by Miguel as R5-6 and again as Q06 in round 6 on EDG-1087, the second time with the
+        // measurement that the first fix does not take on the S7.
         return supertypeOf(client, type)
-                .handle((supertype, supertypeFailure) -> new TypeLevel(supertype, supertypeFailure == null))
+                .handle((supertype, failure) ->
+                        new TypeLevel(supertype, failure == null || Browsing.nodeNotInAddressSpace(failure)))
                 .thenCompose(level -> methodsAt(client, type, objectNode, known, tagName, depth, level));
     }
 
-    /// One level's methods, read once its supertype has already answered.
+    /// One level's methods, browsed whatever the supertype browse said.
     private static @NotNull CompletableFuture<Climb> methodsAt(
             final @NotNull OpcUaClient client,
             final @NotNull NodeId type,
@@ -914,15 +936,15 @@ public final class MethodVerifier {
             final int depth,
             final @NotNull TypeLevel level) {
 
-        if (!level.reachable()) {
+        if (!level.answered()) {
+            // A browse that carried no verdict -- a timeout, an authorization refusal, a transport failure.
+            // This level's methods are still browsed below; what this records is that the result must not be
+            // remembered, since the next request may well get an answer.
             log.debug(
-                    "Tag '{}': could not read the supertype of {} at level {}, so the climb is incomplete",
+                    "Tag '{}': could not read the supertype of {} at level {}, so the result is not remembered",
                     tagName,
                     type,
                     depth);
-            // The methods already found are kept. readTo null: this level's own methods were never read,
-            // because its supertype browse failed before the method browse ran.
-            return CompletableFuture.completedFuture(new Climb(known, false, null));
         }
 
         // Unfiltered for the same reason as the instance browse -- see methodsOf. A server whose node-class
@@ -939,13 +961,13 @@ public final class MethodVerifier {
                 })
                 .exceptionally(throwable -> {
                     if (Browsing.nodeNotInAddressSpace(throwable)) {
-                        // The supertype browse above found this very node, so "not found" here is not about
-                        // the node. Read as an empty level, at INFO because it is a server quirk an operator
-                        // may want to see once rather than a fault.
+                        // The server's verdict about its own address space, so it is an answer: whether this
+                        // is a level declaring no methods or a node that is genuinely absent, the methods to
+                        // take from it are none either way, and neither changes on a retry. At INFO because it
+                        // is a server quirk an operator may want to see once rather than a fault.
                         log.info(
                                 "Tag '{}': type {} reports no methods with Bad_NodeIdUnknown rather than an empty "
-                                        + "result, which some servers do. Read as a level declaring no methods, "
-                                        + "since the same node answered the supertype browse.",
+                                        + "result, which some servers do. Read as a level declaring no methods.",
                                 tagName,
                                 type);
                         return Result.Verified.of(List.of());
@@ -965,7 +987,13 @@ public final class MethodVerifier {
                     // travels up through every recursion rather than being decided at the top. Without it a
                     // single Bad_Timeout mid-climb produced a cacheable "these are all the methods", hiding
                     // every static method and inherited declaration until the session ended.
-                    final boolean levelRead = !(result instanceof Result.Unverifiable);
+                    //
+                    // **Both browses count.** A level is read when the method browse answered *and* the
+                    // supertype browse did -- either with a node, with an empty result, or with the
+                    // Bad_NodeIdUnknown verdict. A supertype browse that timed out leaves this level's
+                    // methods usable but the hierarchy above it unknown, so the result is served and not
+                    // remembered.
+                    final boolean levelRead = !(result instanceof Result.Unverifiable) && level.answered();
                     log.debug(
                             "Tag '{}': type {} at level {} contributed {}; {} method(s) known after merging, level "
                                     + "{}",
@@ -975,7 +1003,10 @@ public final class MethodVerifier {
                             describeOutcome(result),
                             merged.size(),
                             levelRead ? "read" : "NOT readable, so the climb is incomplete");
-                    final NodeId readTo = levelRead ? type : null;
+                    // Follows the *method* browse alone, since that is what it reports: the furthest level
+                    // whose methods were read. A supertype browse that timed out makes the climb incomplete
+                    // without making this level's methods unread.
+                    final NodeId readTo = result instanceof Result.Unverifiable ? null : type;
                     if (level.supertype() == null) {
                         return CompletableFuture.completedFuture(new Climb(List.copyOf(merged), levelRead, readTo));
                     }
@@ -1007,11 +1038,21 @@ public final class MethodVerifier {
                 });
     }
 
-    /// What the supertype browse said about a level: where to climb next, and whether the browse answered.
+    /// What the supertype browse said about a level: where to climb next, and whether it said anything at all.
     ///
-    /// `reachable` is false only when the browse itself failed. A null `supertype` with `reachable` true is
-    /// the top of the hierarchy, which servers report as an empty result rather than as an error.
-    private record TypeLevel(@Nullable NodeId supertype, boolean reachable) {}
+    /// Three outcomes, and the middle one is why this is not a boolean:
+    ///
+    /// | `supertype` | `answered` | The server said |
+    /// |---|---|---|
+    /// | a node | true | climb there next |
+    /// | null | true | nothing above this -- either an empty result, or `Bad_NodeIdUnknown` |
+    /// | null | false | it could not answer: a timeout, a refusal, a transport failure |
+    ///
+    /// **`Bad_NodeIdUnknown` is an answer, not a failure**, which is the distinction `answered` exists to
+    /// carry. That status is the server's verdict about its own address space -- it looked, and the node is not
+    /// there -- and a server does not say that transiently. Everything else carries no verdict and may well
+    /// succeed on the next request, so only those keep a result from being remembered.
+    private record TypeLevel(@Nullable NodeId supertype, boolean answered) {}
 
     /// What a climb up the type hierarchy found, and whether it got to read every level it tried.
     ///

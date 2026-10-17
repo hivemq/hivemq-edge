@@ -350,4 +350,15 @@ class MethodReferenceTest {
         assertThat(resolution).isInstanceOf(MethodReference.Resolution.Malformed.class);
         assertThat(((MethodReference.Resolution.Malformed) resolution).reason()).contains("nsu=");
     }
+
+    @Test
+    void aMethodNamedByAShortGuid_isReportedAsMalformedRatherThanResolvingElsewhere() {
+        // Milo's parse pads a short Guid, so this would name a different method node -- and a method does
+        // exist at the padded id as often as not, which is what makes the silence dangerous.
+        final var resolution =
+                MethodReference.resolve(collidingStarts(), "ns=2;g=72962b91-fa75-4ae6-8d28-b404dc7daf6", namespaces);
+
+        assertThat(resolution).isInstanceOf(MethodReference.Resolution.Malformed.class);
+        assertThat(((MethodReference.Resolution.Malformed) resolution).reason()).contains("8-4-4-4-12");
+    }
 }

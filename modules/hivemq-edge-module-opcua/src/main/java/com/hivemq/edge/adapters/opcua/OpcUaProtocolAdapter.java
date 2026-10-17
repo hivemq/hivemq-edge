@@ -89,6 +89,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -929,7 +930,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         conn.client()
                 .ifPresentOrElse(
                         client -> {
-                            final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(client);
                             if (log.isDebugEnabled()) {
                                 log.debug(
                                         "Write invoked with payload '{}' for tag '{}'",
@@ -1002,7 +1002,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 return;
                             }
 
-                            final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
+                            // Built here, past the branch on tag kind, because only a value write uses it. It
+                            // reads nothing on construction, so this is placement rather than protection --
+                            // but it keeps the two paths the same shape: neither reaches for the DataType
+                            // hierarchy until a value's own type says it must.
+                            final Object opcuaObject = new JsonToOpcUAConverter(client)
+                                    .convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
                             @SuppressWarnings("unused")
                             final var unused = client.writeValuesAsync(
@@ -1517,8 +1522,20 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final var builder = publisher.addDataPoint(opcuaTag);
             // The client's encoding context, so a method's output is converted by the same code as a variable's
             // value of the same type -- see MethodResponse#putVariant.
-            final var undecodable = MethodResponse.write(
-                    builder, methodName, correlationData, responseTopic, result, client.getDynamicEncodingContext());
+            // The encoding context is supplied as a supplier, not a value: fetching it can itself fail, and
+            // evaluated here as an argument it took the whole answer down with it -- including a refusal,
+            // which carries no output and so never needs a context at all. Same rule as the DataType
+            // hierarchy: do not reach for a thing until a value's own type says it is needed.
+            final var undecodable =
+                    MethodResponse.write(builder, methodName, correlationData, responseTopic, result, () -> {
+                        try {
+                            return client.getDynamicEncodingContext();
+                        } catch (final UaException e) {
+                            // Reaches putVariant's own handler, which reports the output as undecodable and
+                            // publishes the answer. Thrown as unchecked only to cross the supplier.
+                            throw new RuntimeException(e);
+                        }
+                    });
             builder.endDataPoint();
             publisher.publish();
 
@@ -1530,12 +1547,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                 log.warn(
                         "Adapter '{}': the answer from '{}' on tag '{}' carries {} output(s) this client could not "
-                                + "decode, published as text instead of as objects: {}",
+                                + "decode, published as null with the device's own body in "
+                                + "statusInfo.undecodedOutputs: {}",
                         adapterId,
                         methodName,
                         opcuaTag.getName(),
                         undecodable.size(),
-                        undecodable);
+                        undecodable.keySet());
             }
         } catch (final Exception e) {
             log.error(

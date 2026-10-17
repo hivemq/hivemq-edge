@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
@@ -163,6 +164,59 @@ class MethodSchemasShapeTest {
                             parameter, properties.get(parameter))
                     .isTrue();
         }
+    }
+
+    @Test
+    void everyOutputIsNullable_andNoInputIs() {
+        // An output is published as null when this client cannot decode it -- the body the device sent moves
+        // to statusInfo.undecodedOutputs instead. That can happen whatever the output's declared type, so
+        // stating it only for the structured ones would understate it.
+        //
+        // An input is the opposite: a caller sending null has not supplied the argument, and the adapter
+        // refuses that rather than inventing a value.
+        final JsonNode outputs = json(MethodSchemas.responseSchema(List.of(method())))
+                .get("anyOf")
+                .get(0)
+                .get("properties");
+        // A nullable scalar states a two-element `type` -- `["integer", "null"]` -- rather than an `anyOf`,
+        // which is how the nullable *root* of the response document renders.
+        assertThat(outputs.get("output1"))
+                .withFailMessage("the fixture must declare the output: %s", outputs)
+                .isNotNull();
+        assertThat(typesOf(outputs.get("output1")))
+                .withFailMessage("an output must admit null: %s", outputs.get("output1"))
+                .contains("null");
+
+        final JsonNode inputs =
+                json(MethodSchemas.requestSchema(List.of(method()))).get("properties");
+        assertThat(typesOf(inputs.get("input1")))
+                .withFailMessage("an input must not admit null: %s", inputs.get("input1"))
+                .doesNotContain("null");
+    }
+
+    /// The types a rendered property admits, however its kind spells nullability.
+    ///
+    /// The renderer differs by schema kind: a nullable **scalar** states a two-entry `type`
+    /// (`["integer", "null"]`), while a nullable **object** or **array** renders an `anyOf` whose second
+    /// branch is `{"type": "null"}`. Reading only one spelling made a test pass for a property of the other
+    /// kind without checking anything.
+    private static @NotNull List<String> typesOf(final @NotNull JsonNode property) {
+        final List<String> types = new ArrayList<>();
+        final JsonNode anyOf = property.get("anyOf");
+        if (anyOf != null) {
+            anyOf.forEach(branch -> types.addAll(typesOf(branch)));
+            return types;
+        }
+        final JsonNode type = property.get("type");
+        if (type == null) {
+            return types;
+        }
+        if (type.isArray()) {
+            type.forEach(entry -> types.add(entry.textValue()));
+        } else {
+            types.add(type.textValue());
+        }
+        return types;
     }
 
     @Test

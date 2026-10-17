@@ -186,6 +186,17 @@ public final class MethodSchemas {
         statusInfo.property("deviceOutput")
                 .description("what the method returned to explain the failure")
                 .any();
+        // Declared `any` deliberately. Its entries are keyed by output argument name, so no fixed set of
+        // properties describes it, and each carries the body as the device sent it -- base64 bytes, XML or
+        // JSON text -- which is a union this schema model cannot state. The reason this is `any` here rather
+        // than a shape beside the output itself: an output's own field keeps the type its signature declares
+        // and merely goes null when it cannot be read, so a consumer's contract for a successful answer is
+        // unaffected by a failure mode. See MethodResponse#undecodedBody.
+        statusInfo.property("undecodedOutputs")
+                .description("outputs this client could not decode, each with the reason, the type the server "
+                        + "named, the body's encoding, and the body as the device sent it. The output's own "
+                        + "field is null in that case")
+                .any();
         statusInfo.endObject();
 
         parameters.endObject();
@@ -293,6 +304,14 @@ public final class MethodSchemas {
     ///                 writes. The builder defaults every node to not-writable, which renders `readOnly: true`, so
     ///                 a request's arguments had to say otherwise explicitly -- without it every argument of every
     ///                 method was marked read-only, which is the opposite of what a request's own fields are.
+    ///                 <p>
+    ///                 **It also decides nullability, inverted.** An *output* may be published as null whatever
+    ///                 its declared type: when this client cannot decode it, the field is nulled and the body
+    ///                 the device sent moves to `statusInfo.undecodedOutputs` (see
+    ///                 {@link MethodResponse#undecodedBody}). So every output is nullable, and stating it only
+    ///                 for the structured ones would understate it -- a decode can fail for a reason the type
+    ///                 does not predict. An *input* is not nullable: a caller sending null for an argument has
+    ///                 not supplied it, and the adapter refuses that rather than inventing a value.
     private static void describeArguments(
             final @NotNull ObjectSchemaBuilder<?> value,
             final @NotNull Map<String, ArgumentShape> arguments,
@@ -301,7 +320,7 @@ public final class MethodSchemas {
         arguments.forEach((name, shape) -> {
             // Set before the structure, because the describe helpers consume the property builder and return void.
             // Annotations and structure are independent in the builder, so the order does not otherwise matter.
-            final var property = value.property(name).writable(writable);
+            final var property = value.property(name).writable(writable).nullable(!writable);
             if (shape.isArray()) {
                 // Element type may still be null -- an array of a custom structure. describeAsArray answers that
                 // with `any` elements, which keeps the array-ness (the part it can state) rather than losing it.

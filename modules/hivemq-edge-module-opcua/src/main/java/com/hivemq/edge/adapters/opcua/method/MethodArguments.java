@@ -20,6 +20,7 @@ import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
@@ -439,13 +440,13 @@ public final class MethodArguments {
             // hand does not have to assemble an object. Their schema says `any` -- see MethodSchemas.
             case LocalizedText -> requireLocalizedText(node);
             case NodeId -> requireNodeId(node);
-            case ExpandedNodeId -> ExpandedNodeId.parse(requireText(node));
+            case ExpandedNodeId -> ExpandedNodeId.parse(requireCanonicalGuidIn(requireText(node)));
             case QualifiedName -> requireQualifiedName(node);
             case StatusCode -> requireStatusCode(node);
             case XmlElement -> new XmlElement(requireText(node));
             case DateTime -> new DateTime(java.time.Instant.parse(requireText(node)));
             case ByteString -> ByteString.of(requireBase64(node));
-            case Guid -> java.util.UUID.fromString(requireText(node));
+            case Guid -> Guids.parse(requireText(node));
             default -> throw new IllegalArgumentException(type.name() + " is not supported as a method argument");
         };
     }
@@ -500,11 +501,13 @@ public final class MethodArguments {
     /// `code` carries the value and `symbol` is a label the read path looks up from it -- so the object form
     /// takes `code` and ignores `symbol`, rather than trying to reconcile the two. A caller who edits the
     /// symbol and not the code has changed nothing, which is the right reading: the code is the status.
+    /// `symbol` is still a field of the form, so it is accepted and unread; a name that is neither is refused.
     ///
     /// Both forms, for the same reason as the other structured types: a status code read from a device is
     /// published as this object, so requiring the bare number made a published value unsendable.
     private static @NotNull StatusCode requireStatusCode(final @NotNull JsonNode node) {
         if (node.isObject()) {
+            refuseUnknownFields(node, "a status code", "code", "symbol");
             final JsonNode code = node.get("code");
             if (code == null) {
                 throw new IllegalArgumentException("expected an object with a 'code'");
@@ -546,7 +549,38 @@ public final class MethodArguments {
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a string or an object with 'text', got " + node.getNodeType());
         }
+        refuseUnknownFields(node, "a localised text", "locale", "text");
         return new LocalizedText(optionalText(node, "locale"), optionalText(node, "text"));
+    }
+
+    /// Refuses an object form carrying a field the form does not have.
+    ///
+    /// **A field nobody reads is a field the caller believes they sent.** Every object form here has fields that
+    /// may legitimately be absent, so a misspelled one is indistinguishable from an omitted one unless the name
+    /// itself is checked: `{"Text": "operator note"}` has no `text`, and without this check it converts to the
+    /// null localised text -- which OPC 10000-9 defines as "leave any existing comment alone". The device
+    /// accepts it, the call succeeds, and the note is gone. The same silence sends `{"namespace": 2, ...}` to
+    /// namespace 0, since `namespace` is not `namespaceIndex`.
+    ///
+    /// Which fields are optional, and what each means, is a separate question this does not touch. This asks
+    /// only whether the caller named a field of this form at all.
+    ///
+    /// The permitted set is exactly what the read path publishes for that type, which is why these object forms
+    /// exist: a value read from a device must be sendable back unchanged. Nothing upstream catches a misspelling
+    /// -- the generated schema types a structured argument as `any`, having no way to state its shape.
+    ///
+    /// Reported by Miguel as R6-2 on EDG-1087, who found the localised-text case on the lab hardware.
+    private static void refuseUnknownFields(
+            final @NotNull JsonNode node, final @NotNull String form, final @NotNull String... permitted) {
+
+        final Iterator<String> names = node.fieldNames();
+        while (names.hasNext()) {
+            final String name = names.next();
+            if (!Arrays.asList(permitted).contains(name)) {
+                throw new IllegalArgumentException(
+                        "'" + name + "' is not a field of " + form + ", which takes " + String.join(", ", permitted));
+            }
+        }
     }
 
     /// A string field that may legitimately be absent, distinguished from one that is the wrong type.
@@ -583,17 +617,18 @@ public final class MethodArguments {
     /// Absent, the shorthand stands: a number is Numeric and text is String, which is what a hand-written
     /// configuration carries and all it can express.
     ///
-    /// **A Guid is read by `UUID.fromString`, and that is the whole accepted syntax** -- the hyphenated form,
-    /// which is what `populateNodeId` emits for one. The brace-wrapped and URN spellings a vendor tool may show
-    /// are refused, naming the expected form: the identifiers this has to accept are the ones our own read path
-    /// produces, and widening the syntax would add parsing to admit spellings nothing here writes.
+    /// **A Guid is read by {@link Guids}, which refuses a spelling `UUID.fromString` would pad into a
+    /// different Guid** and accepts the wrapped, URN, struct and OID spellings a vendor tool may show
+    /// alongside the hyphenated form `populateNodeId` emits. The refusal is what matters here; the extra
+    /// spellings only save a transcription step.
     private static @NotNull NodeId requireNodeId(final @NotNull JsonNode node) {
         if (node.isTextual()) {
-            return NodeId.parse(node.textValue());
+            return NodeId.parse(requireCanonicalGuidIn(node.textValue()));
         }
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a node id as text or an object, got " + node.getNodeType());
         }
+        refuseUnknownFields(node, "a node id", "namespaceIndex", "idType", "id");
         final JsonNode id = node.get("id");
         if (id == null) {
             throw new IllegalArgumentException("expected an object with an 'id'");
@@ -630,13 +665,22 @@ public final class MethodArguments {
     }
 
     private static @NotNull UUID requireUuidIdentifier(final @NotNull JsonNode id) {
-        final String text = requireText(id);
-        try {
-            return UUID.fromString(text);
-        } catch (final IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "expected 'id' to be a Guid as 8-4-4-4-12 hexadecimal digits, got '" + text + "'");
+        return Guids.parse(requireText(id));
+    }
+
+    /// The text form of a node id, with any Guid identifier in it checked before Milo parses it.
+    ///
+    /// `NodeId.parse` and `ExpandedNodeId.parse` read a `g=` identifier with `UUID.fromString`, which pads a
+    /// short group into a different valid Guid -- see {@link Guids}. The identifier is everything after the
+    /// first `;`, since only that one separates the namespace from the identifier.
+    private static @NotNull String requireCanonicalGuidIn(final @NotNull String text) {
+        final int separator = text.indexOf(';');
+        final int marker = text.indexOf("g=", separator + 1);
+        if (separator < 0 || marker != separator + 1) {
+            return text;
         }
+        Guids.requireCanonical(text.substring(marker + 2));
+        return text;
     }
 
     /// A qualified name -- a namespace index and a name -- from either the object or a bare string.
@@ -650,6 +694,7 @@ public final class MethodArguments {
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a string or an object with 'name', got " + node.getNodeType());
         }
+        refuseUnknownFields(node, "a qualified name", "namespaceIndex", "name");
         final JsonNode name = node.get("name");
         if (name == null || !name.isTextual()) {
             throw new IllegalArgumentException("expected an object with a string 'name'");

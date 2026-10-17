@@ -17,13 +17,18 @@ package com.hivemq.edge.adapters.opcua.method;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.eclipse.milo.opcua.stack.core.UaSerializationException;
+import java.util.function.Supplier;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,15 +79,15 @@ public final class MethodResponse {
     ///                        unencodable, but a device may still return one.
     /// @return the outputs that could not be decoded, by name, with the reason -- empty when all converted.
     ///         The caller logs and counts them; the answer itself names them in `statusInfo`.
-    public static @NotNull Map<String, String> write(
+    public static @NotNull Map<String, UndecodedOutput> write(
             final @NotNull DataPointBuilder<?> builder,
             final @NotNull String methodName,
             final @Nullable String correlationData,
             final @Nullable String responseTopic,
             final @NotNull MethodCallResult result,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
 
-        final Map<String, String> undecodable = new LinkedHashMap<>();
+        final Map<String, UndecodedOutput> undecodable = new LinkedHashMap<>();
 
         // `value` is always an object here, because the parameters ride inside it. A failed call writes no
         // output arguments, so what Edge receives holds the parameters alone -- and Edge publishes `value` as
@@ -125,8 +130,8 @@ public final class MethodResponse {
     private static void writeStatusInfo(
             final DataPointBuilder.@NotNull ObjectBuilder<?> parameters,
             final @NotNull MethodCallResult result,
-            final @NotNull EncodingContext ctx,
-            final @NotNull Map<String, String> undecodable) {
+            final @NotNull Supplier<EncodingContext> ctx,
+            final @NotNull Map<String, UndecodedOutput> undecodable) {
 
         final boolean failed = !result.succeeded();
         final boolean hasArguments = failed && !result.argumentStatuses().isEmpty();
@@ -160,7 +165,18 @@ public final class MethodResponse {
             // description rather than a property of the output, so it is usually transient -- the same call a
             // moment later may answer properly.
             final var undecodedOutputs = statusInfo.startObject("undecodedOutputs");
-            undecodable.forEach(undecodedOutputs::put);
+            undecodable.forEach((name, output) -> {
+                final var entry = undecodedOutputs.startObject(name);
+                entry.put("reason", output.reason());
+                if (output.typeId() != null) {
+                    entry.put("typeId", output.typeId());
+                }
+                if (output.encoding() != null) {
+                    entry.put("encoding", output.encoding());
+                }
+                entry.put("body", output.body());
+                entry.endObject();
+            });
             undecodedOutputs.endObject();
         }
         statusInfo.endObject();
@@ -197,21 +213,89 @@ public final class MethodResponse {
             final DataPointBuilder.@NotNull ObjectBuilder<?> target,
             final @NotNull String key,
             final @Nullable Variant variant,
-            final @NotNull EncodingContext ctx,
-            final @NotNull Map<String, String> undecodable) {
+            final @NotNull Supplier<EncodingContext> ctx,
+            final @NotNull Map<String, UndecodedOutput> undecodable) {
 
         final Object value = variant == null ? null : variant.value();
         try {
-            OpcUaToJsonConverter.addValueToObject(target, key, value, ctx);
-        } catch (final UaSerializationException e) {
-            // Typically "no codec registered": Milo rebuilds its dynamic codec registry on every session
-            // activation, best-effort, and a browse that failed under load leaves it incomplete for a type
-            // that would decode a moment later. So this says nothing durable about the type -- which is why
-            // the answer names it rather than claiming the output is unsupported.
-            undecodable.put(key, Objects.requireNonNullElse(e.getMessage(), "no reason given"));
-            OpcUaToJsonConverter.addValueToObject(target, key, String.valueOf(value), ctx);
+            OpcUaToJsonConverter.addValueToObject(target, key, value, ctx.get());
+        } catch (final RuntimeException e) {
+            // **Caught by outcome, not by cause.** The common one is `UaSerializationException`, "no codec
+            // registered": Milo rebuilds its dynamic codec registry on every session activation, best-effort,
+            // and a browse that failed under load leaves it incomplete for a type that would decode a moment
+            // later. But a structure whose enumeration field holds a value outside its definition raises
+            // `IllegalArgumentException` instead, and naming one exception type let that one escape to the
+            // caller's handler, which logs and publishes nothing -- so a method that ran on the device was
+            // never answered and the write still counted as a success. Whatever the cause, the outcome here
+            // is the same and so is the right response: say what came back, as well as it can be said.
+            //
+            // **The output itself becomes null, and what came back moves to `statusInfo`.** That keeps the
+            // generated response schema honest: an output argument's own field stays the type its signature
+            // declares, merely nullable, rather than being widened to admit a substitute shape it will carry
+            // only when something went wrong. `statusInfo` is already unconstrained, so the recovered body
+            // belongs there. An earlier draft of this fix published the body in place of the value, which
+            // made every structured output's schema describe a failure mode.
+            //
+            // Reported by Miguel as Q03 on EDG-1087, who found the two cases that reached the caller's
+            // handler.
+            target.putNull(key);
+            undecodable.put(
+                    key,
+                    undecodedBody(
+                            value,
+                            Objects.requireNonNullElse(
+                                    e.getMessage(), e.getClass().getSimpleName())));
         }
     }
+
+    /// What came back for an output that could not be decoded: why, and the body the device actually sent.
+    ///
+    /// **An undecoded `ExtensionObject` still carries its body**, because decoding is what failed -- the
+    /// container is in hand with its raw encoded body and the type id the server labelled it with. OPC 10000-6
+    /// gives three body encodings and each is reported as what it is: binary as base64, XML and JSON as their
+    /// own text. So a caller holds the value the device returned and can decode it with a type description
+    /// this client lacked, instead of a Java rendering like
+    /// `ExtensionObject.Binary[body=ByteString[bytes=0102...]]` -- a debugging aid in which the bytes are
+    /// present but not recoverable.
+    ///
+    /// `encoding` is named rather than implied, for the reason the correlation token carries its own
+    /// `base64:` prefix: a bare base64 string cannot be told from a device value that genuinely is base64
+    /// text, so nothing would tell a consumer to decode it.
+    ///
+    /// Anything that is not an `ExtensionObject` reports its string form and no body. That case does not
+    /// arise from a missing type description -- there is no encoded body to hand back -- and inventing fields
+    /// for it would promise more than is known.
+    private static @NotNull UndecodedOutput undecodedBody(final @Nullable Object value, final @NotNull String reason) {
+        if (!(value instanceof final ExtensionObject extensionObject)) {
+            return new UndecodedOutput(reason, null, null, String.valueOf(value));
+        }
+        final NodeId typeId = extensionObject.getEncodingOrTypeId();
+        final String typeName = typeId == null ? null : typeId.toParseableString();
+        final Object body = extensionObject.getBody();
+        if (body instanceof final ByteString bytes) {
+            return new UndecodedOutput(
+                    reason, typeName, "base64", Base64.getEncoder().encodeToString(bytes.bytesOrEmpty()));
+        }
+        if (body instanceof final XmlElement xml) {
+            return new UndecodedOutput(reason, typeName, "xml", Objects.requireNonNullElse(xml.getFragment(), ""));
+        }
+        // The JSON body encoding, whose body is the text itself. Reached by elimination rather than by a cast:
+        // the three subclasses are fixed by the specification, and a fourth would report its string form here
+        // rather than cost the answer.
+        return new UndecodedOutput(reason, typeName, "json", String.valueOf(body));
+    }
+
+    /// One output that could not be decoded, as `statusInfo.undecodedOutputs` reports it.
+    ///
+    /// @param reason   what the converter said -- a message, or an exception's name when it carried none
+    /// @param typeId   the type the server labelled the value with, absent when it is not a structure
+    /// @param encoding `base64`, `xml` or `json`, naming how to read `body`; absent with no body
+    /// @param body     the value as the device sent it, or its string form when nothing encoded is available
+    record UndecodedOutput(
+            @NotNull String reason,
+            @Nullable String typeId,
+            @Nullable String encoding,
+            @NotNull String body) {}
 
     /// A status code's specification name, falling back to its hexadecimal value.
     private static @NotNull String nameOf(final @NotNull StatusCode status) {

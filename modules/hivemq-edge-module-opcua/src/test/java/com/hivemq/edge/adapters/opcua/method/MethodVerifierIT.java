@@ -302,9 +302,9 @@ class MethodVerifierIT {
         // Bad_NodeIdUnknown, which read as a failure to reach the device -- so the climb was incomplete,
         // MethodCache refused to remember an incomplete result, and the next call did it all again.
         //
-        // What makes the lenient reading safe is the order: the supertype of the same node is browsed first,
-        // so a server answering that has demonstrably found the type. A "not found" on its method browse
-        // afterwards cannot be the node being absent, and is read as "this level declares none".
+        // What makes the lenient reading safe is what the status means: Bad_NodeIdUnknown is the server's
+        // verdict about its own address space, which it does not give transiently, and the methods to take
+        // from such a level are none whether it declares none or is genuinely absent.
         //
         // The spy fails only the method browse of a type node, leaving the object's own browse and every
         // supertype browse genuine -- the shape of the real fault.
@@ -339,6 +339,55 @@ class MethodVerifierIT {
                                 + "must stay cacheable: %s",
                         verified)
                 .isTrue();
+    }
+
+    @Test
+    void aSupertypeRefusedAsUnknown_isAVerdictAndStaysCacheable() throws Exception {
+        // What the S7-1500 actually does, and what the first fix missed: it refuses the *supertype* browse of
+        // a type node too, not only the method browse. The first fix read a refused supertype browse as a
+        // failure to reach the device, so the climb was incomplete, nothing was cached, and the S7 still paid
+        // for a full hierarchy browse on every call -- 180 calls, 360 verifications.
+        //
+        // Bad_NodeIdUnknown is the server answering about its own address space, whichever browse carries it,
+        // and a server does not say it transiently. So: no supertype to climb to, this level's methods are
+        // taken as found, and the result is remembered.
+        //
+        // Reported by Miguel as Q06 in round 6 on EDG-1087.
+        final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Boiler12");
+        final OpcUaClient refusing = spy(client);
+        doAnswer(invocation -> {
+                    final BrowseDescription browse = invocation.getArgument(0);
+                    if (browse.getBrowseDirection() == BrowseDirection.Inverse) {
+                        // A BrowseResult with a bad status, as a server answers -- not a failed service call,
+                        // which would lose the status before anything could read it.
+                        return CompletableFuture.completedFuture(new BrowseResult(
+                                new StatusCode(StatusCodes.Bad_NodeIdUnknown), null, new ReferenceDescription[0]));
+                    }
+                    return invocation.callRealMethod();
+                })
+                .when(refusing)
+                .browseAsync(any(BrowseDescription.class));
+
+        final MethodVerifier.Result result =
+                MethodVerifier.verify(refusing, object, "boiler12-methods").join();
+
+        assertThat(result).isInstanceOf(MethodVerifier.Result.Verified.class);
+        final MethodVerifier.Result.Verified verified = (MethodVerifier.Result.Verified) result;
+
+        assertThat(verified.complete())
+                .withFailMessage(
+                        "a supertype refused with Bad_NodeIdUnknown is the server's verdict, not an outage, so "
+                                + "the result must be cacheable: %s",
+                        verified)
+                .isTrue();
+
+        // The methods of the level whose supertype was refused are still used: the browse was attempted
+        // rather than skipped, which is the second half of the fix.
+        assertThat(verified.methods())
+                .withFailMessage(
+                        "the methods of a level are read whatever its supertype browse said: %s",
+                        verified.methods().stream().map(MethodSignature::name).toList())
+                .isNotEmpty();
     }
 
     @Test
@@ -398,9 +447,9 @@ class MethodVerifierIT {
 
     @Test
     void aTypeBrowseThatTrulyFails_stillLeavesTheClimbIncomplete() throws Exception {
-        // The other side, and the reason the fix is not "treat Bad_NodeIdUnknown as harmless everywhere". A
-        // supertype browse that fails means we do not know what is above, so methods may be hidden and the
-        // result must not be remembered.
+        // The other side, and the reason the rule is about the *status* rather than about which browse failed.
+        // A timeout carries no verdict: we do not know what is above, so methods may be hidden and the result
+        // must not be remembered. Contrast aSupertypeRefusedAsUnknown_isAVerdictAndStaysCacheable.
         final NodeId object = namespace().addObjectWithTypeDeclaredMethods("Boiler10");
         final OpcUaClient broken = spy(client);
         doAnswer(invocation -> {

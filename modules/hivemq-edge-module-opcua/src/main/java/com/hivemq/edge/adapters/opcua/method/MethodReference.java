@@ -152,6 +152,12 @@ public final class MethodReference {
 
         final ExpandedNodeId parsed;
         try {
+            // The Guid check runs before Milo's parse, which pads a short one into a different valid Guid and
+            // would resolve this to a method node the caller did not name. See Guids.
+            final int separator = methodName.indexOf(';');
+            if (separator >= 0 && methodName.startsWith("g=", separator + 1)) {
+                Guids.requireCanonical(methodName.substring(separator + 3));
+            }
             parsed = ExpandedNodeId.parse(methodName);
         } catch (final RuntimeException e) {
             return new Resolution.Malformed("'"

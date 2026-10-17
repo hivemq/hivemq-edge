@@ -210,8 +210,13 @@ class MethodSchemasArrayTest {
         // The response root is nullable, so the properties sit in the object branch of the anyOf.
         final JsonNode prop = schema.get("anyOf").get(0).get("properties").get("out");
 
-        assertThat(prop.get("type").textValue()).isEqualTo("array");
-        assertThat(prop.get("items").get("type").textValue()).isEqualTo("integer");
+        // An output is nullable -- it is published as null when this client cannot decode it -- and a nullable
+        // array renders as an `anyOf` of the array and `null`, so the array itself is the first branch. A
+        // nullable *scalar* instead states a two-entry `type`; the renderer differs by kind.
+        final JsonNode array = prop.get("anyOf").get(0);
+        assertThat(prop.get("anyOf").get(1).get("type").textValue()).isEqualTo("null");
+        assertThat(array.get("type").textValue()).isEqualTo("array");
+        assertThat(array.get("items").get("type").textValue()).isEqualTo("integer");
     }
 
     @Test

@@ -216,6 +216,104 @@ class MethodArgumentsTest {
     }
 
     @Test
+    void anObjectFormArgument_refusesAFieldTheFormDoesNotHave() {
+        // The case that makes every optional field dangerous without this check: a misspelled name is
+        // indistinguishable from an omitted one, so `Text` yields the null localised text -- which OPC 10000-9
+        // defines as "leave any existing comment alone". The call would succeed and the note would be gone.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("Comment", NodeIds.LocalizedText)),
+                        json("{\"Comment\": {\"Text\": \"operator note\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("Text");
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("Comment", NodeIds.LocalizedText)),
+                        json("{\"Comment\": {\"locale\": \"en\", \"value\": \"operator note\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("value");
+
+        // A node id, where the silence sends the request to namespace 0 -- the Objects folder rather than the
+        // caller's own namespace.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"namespace\": 2, \"idType\": 0, \"id\": 85}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("namespace");
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("name", NodeIds.QualifiedName)),
+                        json("{\"name\": {\"ns\": 2, \"name\": \"Boiler\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("ns");
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("status", NodeIds.StatusCode)),
+                        json("{\"status\": {\"code\": 0, \"name\": \"Good\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("name");
+    }
+
+    @Test
+    void aShortGuid_isRefusedWhereverItCanEnter() {
+        // Every route a caller's Guid takes. Padding it would name a different node or a different method,
+        // and nothing downstream could tell that from a value they meant.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("g", NodeIds.Guid)),
+                        json("{\"g\": \"72962b91-fa75-4ae6-8d28-b404dc7daf6\"}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": {\"namespaceIndex\": 2, \"idType\": 2, "
+                                + "\"id\": \"72962b91-fa75-4ae6-8d28-b404dc7daf6\"}}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": \"ns=2;g=72962b91-fa75-4ae6-8d28-b404dc7daf6\"}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.ExpandedNodeId)), json("{\"node\": \"ns=2;g=1-1-1-1-1\"}")))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+    }
+
+    @Test
+    void aGuidTheReadPathPublished_isStillSentBack() throws Exception {
+        // The round trip: populateNodeId writes UUID.toString(), so that spelling must keep working on
+        // every one of those routes.
+        final String guid = "72962b91-fa75-4ae6-8d28-0b404dc7daf6";
+        final var bare =
+                MethodArguments.forCall(signature(argument("g", NodeIds.Guid)), json("{\"g\": \"" + guid + "\"}"));
+        final var objectForm = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)),
+                json("{\"node\": {\"namespaceIndex\": 2, \"idType\": 2, \"id\": \"" + guid + "\"}}"));
+        final var textForm = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)), json("{\"node\": \"ns=2;g=" + guid + "\"}"));
+
+        assertThat((java.util.UUID) bare[0].value()).isEqualTo(java.util.UUID.fromString(guid));
+        assertThat((NodeId) objectForm[0].value()).isEqualTo(new NodeId(2, java.util.UUID.fromString(guid)));
+        assertThat((NodeId) textForm[0].value()).isEqualTo(new NodeId(2, java.util.UUID.fromString(guid)));
+    }
+
+    @Test
+    void anObjectFormArgument_stillAcceptsEveryFieldTheReadPathPublishes() throws Exception {
+        // The permitted set is what a read produces, because a value read from a device must be sendable back.
+        // `symbol` is unread and still a field of the form, so it passes rather than being refused.
+        final var withSymbol = MethodArguments.forCall(
+                signature(argument("status", NodeIds.StatusCode)),
+                json("{\"status\": {\"code\": 2155085824, \"symbol\": \"Bad_NotExecutable\"}}"));
+        final var localeAndText = MethodArguments.forCall(
+                signature(argument("Comment", NodeIds.LocalizedText)),
+                json("{\"Comment\": {\"locale\": \"de\", \"text\": \"Notiz\"}}"));
+        final var nodeId = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)),
+                json("{\"node\": {\"namespaceIndex\": 2, \"idType\": 1, \"id\": \"Boiler\"}}"));
+        final var qualifiedName = MethodArguments.forCall(
+                signature(argument("name", NodeIds.QualifiedName)),
+                json("{\"name\": {\"namespaceIndex\": 2, \"name\": \"Boiler\"}}"));
+
+        assertThat(((StatusCode) withSymbol[0].value()).getValue()).isEqualTo(2155085824L);
+        assertThat((LocalizedText) localeAndText[0].value()).isEqualTo(new LocalizedText("de", "Notiz"));
+        assertThat((NodeId) nodeId[0].value()).isEqualTo(new NodeId(2, "Boiler"));
+        assertThat((QualifiedName) qualifiedName[0].value()).isEqualTo(new QualifiedName(2, "Boiler"));
+    }
+
+    @Test
     void aNodeIdArgument_acceptsBothTheTextAndTheObjectForm() throws Exception {
         final var fromText = MethodArguments.forCall(
                 signature(argument("node", NodeIds.NodeId)), json("{\"node\": \"ns=2;s=Boiler\"}"));
@@ -264,25 +362,22 @@ class MethodArgumentsTest {
     }
 
     @Test
-    void aGuidNodeIdArgument_takesTheHyphenatedFormAndRefusesTheOthers() throws Exception {
-        // UUID.fromString is the whole accepted syntax, because the hyphenated form is what the read path
-        // emits. The brace and URN spellings a vendor tool may show are refused rather than parsed.
-        final var arguments = MethodArguments.forCall(
-                signature(argument("node", NodeIds.NodeId)),
-                json("{\"node\": {\"namespaceIndex\": 2, \"idType\": 2, "
-                        + "\"id\": \"72962b91-fa75-4ae6-8d28-b404dc7daf63\"}}"));
-        assertThat(arguments[0].value())
-                .isEqualTo(new NodeId(2, UUID.fromString("72962b91-fa75-4ae6-8d28-b404dc7daf63")));
+    void aGuidNodeIdArgument_takesEveryUnambiguousSpelling() throws Exception {
+        // This test used to assert the brace and URN spellings were REFUSED, on the reasoning that the only
+        // identifiers to accept are the ones our read path emits. That narrowness was dropped with Guids: the
+        // forms below are told apart by their shape, so accepting them cannot produce a wrong value, and it
+        // saves transcribing what a vendor tool shows. What must still be refused is a spelling that would be
+        // padded into a DIFFERENT Guid -- covered by aShortGuid_isRefusedWhereverItCanEnter.
+        final String guid = "72962b91-fa75-4ae6-8d28-b404dc7daf63";
+        final NodeId expected = new NodeId(2, UUID.fromString(guid));
 
-        assertThatThrownBy(() -> MethodArguments.forCall(
-                        signature(argument("node", NodeIds.NodeId)),
-                        json("{\"node\": {\"idType\": 2, \"id\": \"{72962b91-fa75-4ae6-8d28-b404dc7daf63}\"}}")))
-                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
-                .hasMessageContaining("8-4-4-4-12");
-        assertThatThrownBy(() -> MethodArguments.forCall(
-                        signature(argument("node", NodeIds.NodeId)),
-                        json("{\"node\": {\"idType\": 2, \"id\": \"urn:uuid:72962b91-fa75-4ae6-8d28-b404dc7daf63\"}}")))
-                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        for (final String spelling :
+                new String[] {guid, "{" + guid + "}", "(" + guid + ")", "urn:uuid:" + guid, guid.replace("-", "")}) {
+            final var arguments = MethodArguments.forCall(
+                    signature(argument("node", NodeIds.NodeId)),
+                    json("{\"node\": {\"namespaceIndex\": 2, \"idType\": 2, \"id\": \"" + spelling + "\"}}"));
+            assertThat(arguments[0].value()).describedAs(spelling).isEqualTo(expected);
+        }
     }
 
     @Test

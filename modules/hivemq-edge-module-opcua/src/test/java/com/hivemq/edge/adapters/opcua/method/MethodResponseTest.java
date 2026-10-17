@@ -78,7 +78,7 @@ class MethodResponseTest {
         // The builtin types are all these tests use. A custom structure would need the client's own context,
         // which is what production passes.
         MethodResponse.write(
-                builder, methodName, correlationData, responseTopic, result, DefaultEncodingContext.INSTANCE);
+                builder, methodName, correlationData, responseTopic, result, () -> DefaultEncodingContext.INSTANCE);
         builder.endDataPoint();
         return ((DataPointWithMetadata) builder.build("test-adapter")).getJsonNode();
     }
@@ -349,35 +349,94 @@ class MethodResponseTest {
     }
 
     @Test
-    void anOutputThisClientCannotDecode_isPublishedAsTextAndNamedInStatusInfo() {
+    void anOutputThisClientCannotDecode_isNullWithItsBodyInStatusInfo() {
         // A method ran and returned a structure whose type description this client does not hold. The
         // conversion of that one output throws, and it used to take the whole message with it: the device had
         // executed the method and the caller was told nothing at all, while the write counted as a success.
         //
         // A call has no second chance. The value path answers the same failure by dropping the sample and
         // resetting the type registry, which is right there because the server resamples -- there is no
-        // resample for a call, so the answer goes out with the best rendering available.
+        // resample for a call, so the answer goes out with whatever can be said about it.
+        //
+        // The output's own field is **null** and the recovered body goes to statusInfo. That keeps the
+        // generated schema honest: the field stays the type its signature declares, merely nullable, instead
+        // of being widened to admit a substitute shape it carries only when something went wrong.
         final var undecodable = org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject.of(
                 org.eclipse.milo.opcua.stack.core.types.builtin.ByteString.of(new byte[] {1, 2, 3}),
                 org.eclipse.milo.opcua.stack.core.types.builtin.NodeId.parse("ns=2;i=5001"));
 
         final JsonNode json = write("Probe", "c-9", success(Map.of("report", new Variant(undecodable))));
 
-        // The answer exists, and it carries the output as text rather than as the object the schema promises.
-        assertThat(json.get("value").get("report").isTextual())
-                .withFailMessage("the output must be published as text rather than lost: %s", json)
+        // The answer exists, and the output that could not be read is null rather than a substitute shape.
+        assertThat(json.get("value").has("report")).isTrue();
+        assertThat(json.get("value").get("report").isNull())
+                .withFailMessage("an output that could not be decoded is null, not a stand-in: %s", json)
                 .isTrue();
 
-        // And it says which output and why, because the consumer is holding a string where its schema
-        // promised an object and has no other way to learn the reason.
-        final JsonNode undecoded = parameters(json).get("statusInfo").get("undecodedOutputs");
-        assertThat(undecoded.has("report")).isTrue();
-        assertThat(undecoded.get("report").textValue()).contains("codec");
+        // What came back is recoverable: the device's own bytes, base64, with the type the server named.
+        final JsonNode entry =
+                parameters(json).get("statusInfo").get("undecodedOutputs").get("report");
+        assertThat(entry).isNotNull();
+        assertThat(entry.get("reason").textValue()).contains("codec");
+        assertThat(entry.get("typeId").textValue()).isEqualTo("ns=2;i=5001");
+        assertThat(entry.get("encoding").textValue()).isEqualTo("base64");
+        assertThat(entry.get("body").textValue())
+                .withFailMessage("the body must be the bytes the device sent, recoverable by the caller: %s", entry)
+                .isEqualTo(java.util.Base64.getEncoder().encodeToString(new byte[] {1, 2, 3}));
 
         // `errorCode` alone says whether a call failed. This one did not: statusInfo carries detail about an
         // answer, on a success as much as on a failure.
         assertThat(parameters(json).has("errorCode"))
                 .withFailMessage("an undecodable output is not a failed call: %s", parameters(json))
                 .isFalse();
+    }
+
+    @Test
+    void anOutputFailingForAnyOtherReason_isAnsweredRatherThanLost() {
+        // The second case that reached the caller's handler and published nothing. The conversion can fail
+        // without raising a serialisation error -- the encoding context it needs is itself fetched from the
+        // client and that fetch can fail, and a structure whose enumeration field holds a value outside its
+        // definition raises IllegalArgumentException. Catching one named exception type let both escape, so a
+        // method that ran on the device was never answered while the write counted as a success.
+        //
+        // Driven here through the context supplier, which is the one of the two reachable without a server.
+        final var structure = org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject.of(
+                org.eclipse.milo.opcua.stack.core.types.builtin.ByteString.of(new byte[] {9}),
+                org.eclipse.milo.opcua.stack.core.types.builtin.NodeId.parse("ns=2;i=5002"));
+
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        MethodResponse.write(builder, "Probe", "c-10", null, success(Map.of("report", new Variant(structure))), () -> {
+            throw new IllegalStateException("the encoding context could not be fetched");
+        });
+        builder.endDataPoint();
+        final JsonNode json = ((DataPointWithMetadata) builder.build("test-adapter")).getJsonNode();
+
+        // The answer exists at all, which is the whole of the fix.
+        assertThat(json.get("value").get("report").isNull())
+                .withFailMessage("the answer must be published with the output null, not lost: %s", json)
+                .isTrue();
+        final JsonNode entry =
+                parameters(json).get("statusInfo").get("undecodedOutputs").get("report");
+        assertThat(entry.get("reason").textValue()).contains("encoding context");
+        assertThat(entry.get("encoding").textValue()).isEqualTo("base64");
+        assertThat(parameters(json).has("errorCode")).isFalse();
+    }
+
+    @Test
+    void anXmlBodiedStructure_reportsItsFragment() {
+        // The second of the three body encodings OPC 10000-6 defines, so the text passes through as itself
+        // rather than as base64 of its bytes.
+        final var xmlBodied = org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject.of(
+                new org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement("<Report state=\"7\"/>"),
+                org.eclipse.milo.opcua.stack.core.types.builtin.NodeId.parse("ns=2;i=5003"));
+
+        final JsonNode json = write("Probe", "c-11", success(Map.of("report", new Variant(xmlBodied))));
+
+        assertThat(json.get("value").get("report").isNull()).isTrue();
+        final JsonNode entry =
+                parameters(json).get("statusInfo").get("undecodedOutputs").get("report");
+        assertThat(entry.get("encoding").textValue()).isEqualTo("xml");
+        assertThat(entry.get("body").textValue()).isEqualTo("<Report state=\"7\"/>");
     }
 }
