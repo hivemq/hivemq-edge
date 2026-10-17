@@ -41,11 +41,14 @@ import org.jetbrains.annotations.Nullable;
 /// succeeded and returns nothing gets an empty object, which says it ran and had nothing to report; that is
 /// deliberately distinct from null, which says it did not run.
 ///
-/// Everything else -- `methodName`, the caller's `correlationData`, and on failure `errorCode` and `statusInfo`
-/// -- goes into one object *inside* `value`, named by
+/// Everything else -- `responseMethodName`, the caller's `correlationData`, and on failure `errorCode` and
+/// `statusInfo` -- goes into one object *inside* `value`, named by
 /// [MethodRequestFieldsOpcUa#INTERNAL_RESPONSE_PARAMETERS]. Edge lifts those out onto the published message
-/// beside `value` and removes the carrier, so the wire shape is `{"methodName": ..., "value": ...}` and no
-/// published message or schema mentions the carrier at all.
+/// beside `value` and removes the carrier, so the wire shape is `{"responseMethodName": ..., "value": ...}`
+/// and no published message or schema mentions the carrier at all.
+///
+/// **`responseMethodName`, not `methodName`**, so that a response is not itself a valid method request -- see
+/// [MethodRequestFieldsOpcUa#RESPONSE_METHOD_NAME].
 ///
 /// ## Why inside `value` rather than in the datapoint's `context`
 ///
