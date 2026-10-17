@@ -719,9 +719,13 @@ public final class MethodArguments {
     /// The generated schema states this range too, so a request usually fails the gate first; this is the
     /// check for when it does not, which the reference promises for every number.
     ///
-    /// An infinity the caller sent deliberately is refused by the same comparison. That is a limitation of
-    /// the write path rather than of this method -- the southbound transform runs as JavaScript and JSON has
-    /// no infinity to carry one in.
+    /// An infinity the caller sent deliberately **passes**, which the second half of the condition is there to
+    /// allow: what this refuses is a finite value the narrowing would turn into an infinity, not an infinity
+    /// that was already one. The distinction costs nothing to make and keeps the message honest -- "a Float
+    /// cannot hold it" is true of `1e39` and false of an infinity.
+    ///
+    /// Reaching it is another matter: the southbound transform runs as JavaScript and JSON has no infinity to
+    /// carry one in, so a deliberate infinity does not arrive through the documented path.
     private static float requireFloat(final @NotNull JsonNode node) {
         final double value = requireNumber(node);
         final float narrowed = (float) value;
