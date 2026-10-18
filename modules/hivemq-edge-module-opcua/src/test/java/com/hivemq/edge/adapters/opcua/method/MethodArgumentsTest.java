@@ -395,9 +395,15 @@ class MethodArgumentsTest {
                         signature(argument("node", NodeIds.NodeId)),
                         json("{\"node\": {\"idType\": 3, \"id\": \"not base64!\"}}")))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+        // An idType the specification does not define, refused by name rather than by a range check. The
+        // switch is the only thing that knows which four exist, so the message says which they are -- an
+        // earlier version bounded the value at 0..3 and let `default` carry Opaque, which would have read a
+        // fifth value as Opaque rather than refusing it.
         assertThatThrownBy(() -> MethodArguments.forCall(
                         signature(argument("node", NodeIds.NodeId)), json("{\"node\": {\"idType\": 4, \"id\": 1}}")))
-                .isInstanceOf(MethodArguments.InvalidArgumentException.class);
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("0 (numeric), 1 (string), 2 (guid) or 3 (opaque)")
+                .hasMessageContaining("got 4");
     }
 
     @Test

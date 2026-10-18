@@ -15,6 +15,16 @@
  */
 package com.hivemq.edge.adapters.opcua.method;
 
+import static com.hivemq.edge.adapters.opcua.Constants.LOCALIZED_TEXT_LOCALE;
+import static com.hivemq.edge.adapters.opcua.Constants.LOCALIZED_TEXT_TEXT;
+import static com.hivemq.edge.adapters.opcua.Constants.NODE_ID_IDENTIFIER;
+import static com.hivemq.edge.adapters.opcua.Constants.NODE_ID_NAMESPACE_INDEX;
+import static com.hivemq.edge.adapters.opcua.Constants.NODE_ID_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.QUALIFIED_NAME_NAME;
+import static com.hivemq.edge.adapters.opcua.Constants.QUALIFIED_NAME_NAMESPACE_INDEX;
+import static com.hivemq.edge.adapters.opcua.Constants.STATUS_CODE_CODE;
+import static com.hivemq.edge.adapters.opcua.Constants.STATUS_CODE_SYMBOL;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
@@ -54,6 +64,17 @@ public final class MethodArguments {
     /// schema generator cannot carry -- it writes bounds through a `Number` the SDK renders with `longValue()` --
     /// so a UInt64 argument's schema states no range and this is the only gate the value passes.
     private static final @NotNull BigInteger UINT64_MAX = BigInteger.TWO.pow(64).subtract(BigInteger.ONE);
+
+    /// 2^32 - 1, the largest UInt32. Also the ceiling on a numeric node identifier, which OPC 10000-6 section
+    /// 5.2.2.2 defines as a UInt32.
+    private static final long UINT32_MAX = 4294967295L;
+
+    /// 2^16 - 1, the largest UInt16. Also the ceiling on a namespace index, which OPC 10000-3 section 8.2.1
+    /// defines as a UInt16.
+    private static final long UINT16_MAX = 65535L;
+
+    /// 2^8 - 1, the largest Byte. OPC-UA's `Byte` is unsigned, unlike Java's.
+    private static final long UINT8_MAX = 255L;
 
     /// No list has been seen yet at a dimension, so its length is still open. Negative because 0 is a length a
     /// real list can have: `[[], []]` is a rectangular 2x0 value, and its inner dimension is genuinely 0 rather
@@ -423,11 +444,11 @@ public final class MethodArguments {
         return switch (type) {
             case Boolean -> requireBoolean(node);
             case SByte -> (byte) requireIntegral(node, Byte.MIN_VALUE, Byte.MAX_VALUE);
-            case Byte -> Unsigned.ubyte(requireIntegral(node, 0, 255));
+            case Byte -> Unsigned.ubyte(requireIntegral(node, 0, UINT8_MAX));
             case Int16 -> (short) requireIntegral(node, Short.MIN_VALUE, Short.MAX_VALUE);
-            case UInt16 -> Unsigned.ushort((int) requireIntegral(node, 0, 65535));
+            case UInt16 -> Unsigned.ushort((int) requireIntegral(node, 0, UINT16_MAX));
             case Int32 -> (int) requireIntegral(node, Integer.MIN_VALUE, Integer.MAX_VALUE);
-            case UInt32 -> Unsigned.uint(requireIntegral(node, 0, 4294967295L));
+            case UInt32 -> Unsigned.uint(requireIntegral(node, 0, UINT32_MAX));
             case Int64 -> requireIntegral(node, Long.MIN_VALUE, Long.MAX_VALUE);
             // UInt64 is the one type whose range does not fit a signed long, so it is bounded and built as a
             // BigInteger throughout. Bounding it by Long.MAX_VALUE would refuse the upper half of the type.
@@ -507,14 +528,14 @@ public final class MethodArguments {
     /// published as this object, so requiring the bare number made a published value unsendable.
     private static @NotNull StatusCode requireStatusCode(final @NotNull JsonNode node) {
         if (node.isObject()) {
-            refuseUnknownFields(node, "a status code", "code", "symbol");
-            final JsonNode code = node.get("code");
+            refuseUnknownFields(node, "a status code", STATUS_CODE_CODE, STATUS_CODE_SYMBOL);
+            final JsonNode code = node.get(STATUS_CODE_CODE);
             if (code == null) {
                 throw new IllegalArgumentException("expected an object with a 'code'");
             }
-            return new StatusCode(requireIntegral(code, 0, 4294967295L));
+            return new StatusCode(requireIntegral(code, 0, UINT32_MAX));
         }
-        return new StatusCode(requireIntegral(node, 0, 4294967295L));
+        return new StatusCode(requireIntegral(node, 0, UINT32_MAX));
     }
 
     /// A localised text, from either the object the read path publishes or a bare string.
@@ -549,8 +570,8 @@ public final class MethodArguments {
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a string or an object with 'text', got " + node.getNodeType());
         }
-        refuseUnknownFields(node, "a localised text", "locale", "text");
-        return new LocalizedText(optionalText(node, "locale"), optionalText(node, "text"));
+        refuseUnknownFields(node, "a localised text", LOCALIZED_TEXT_LOCALE, LOCALIZED_TEXT_TEXT);
+        return new LocalizedText(optionalText(node, LOCALIZED_TEXT_LOCALE), optionalText(node, LOCALIZED_TEXT_TEXT));
     }
 
     /// Refuses an object form carrying a field the form does not have.
@@ -628,22 +649,35 @@ public final class MethodArguments {
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a node id as text or an object, got " + node.getNodeType());
         }
-        refuseUnknownFields(node, "a node id", "namespaceIndex", "idType", "id");
-        final JsonNode id = node.get("id");
+        refuseUnknownFields(node, "a node id", NODE_ID_NAMESPACE_INDEX, NODE_ID_TYPE, NODE_ID_IDENTIFIER);
+        final JsonNode id = node.get(NODE_ID_IDENTIFIER);
         if (id == null) {
-            throw new IllegalArgumentException("expected an object with an 'id'");
+            throw new IllegalArgumentException("expected an object with an '" + NODE_ID_IDENTIFIER + "'");
         }
         final UShort namespace = Unsigned.ushort(
-                node.has("namespaceIndex") ? (int) requireIntegral(node.get("namespaceIndex"), 0, 65535) : 0);
-        final JsonNode idType = node.get("idType");
+                node.has(NODE_ID_NAMESPACE_INDEX)
+                        ? (int) requireIntegral(node.get(NODE_ID_NAMESPACE_INDEX), 0, UINT16_MAX)
+                        : 0);
+        final JsonNode idType = node.get(NODE_ID_TYPE);
         if (idType != null && !idType.isNull()) {
-            return switch ((int) requireIntegral(idType, 0, 3)) {
+            // The four `idType` values OPC 10000-6 section 5.2.2.2 defines, named rather than bounded. An
+            // earlier version range-checked `0..3` and let `default` carry Opaque, which encoded the same fact
+            // twice: the bound said which values exist and the switch said what each means, so a fifth value
+            // appearing in a later revision of the specification would have been silently read as Opaque
+            // instead of refused. Here the switch is the only place that knows, and anything it does not name
+            // is refused with the value in the message.
+            final long declaredType = requireIntegral(idType, 0, UINT32_MAX);
+            return switch ((int) declaredType) {
                 case 0 -> new NodeId(namespace, Unsigned.uint(requireUInt32Identifier(id)));
                 case 1 -> new NodeId(namespace, requireText(id));
                 case 2 -> new NodeId(namespace, requireUuidIdentifier(id));
                 // Opaque. Base64 because that is how the read path renders one, and how the generated schema
                 // describes any ByteString.
-                default -> new NodeId(namespace, ByteString.of(requireBase64(id)));
+                case 3 -> new NodeId(namespace, ByteString.of(requireBase64(id)));
+                default ->
+                    throw new IllegalArgumentException("expected 'idType' to be 0 (numeric), 1 (string), "
+                            + "2 (guid) or 3 (opaque), got "
+                            + declaredType);
             };
         }
         if (id.isIntegralNumber()) {
@@ -661,7 +695,7 @@ public final class MethodArguments {
     /// own range check, so an identifier wider than 64 bits wraps into the range instead of being refused --
     /// 2^64 arriving as node `i=0`, a different node than the caller named.
     private static long requireUInt32Identifier(final @NotNull JsonNode id) {
-        return requireIntegral(id, 0, 4294967295L);
+        return requireIntegral(id, 0, UINT32_MAX);
     }
 
     private static @NotNull UUID requireUuidIdentifier(final @NotNull JsonNode id) {
@@ -694,13 +728,14 @@ public final class MethodArguments {
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a string or an object with 'name', got " + node.getNodeType());
         }
-        refuseUnknownFields(node, "a qualified name", "namespaceIndex", "name");
-        final JsonNode name = node.get("name");
+        refuseUnknownFields(node, "a qualified name", QUALIFIED_NAME_NAMESPACE_INDEX, QUALIFIED_NAME_NAME);
+        final JsonNode name = node.get(QUALIFIED_NAME_NAME);
         if (name == null || !name.isTextual()) {
-            throw new IllegalArgumentException("expected an object with a string 'name'");
+            throw new IllegalArgumentException("expected an object with a string '" + QUALIFIED_NAME_NAME + "'");
         }
-        final int namespace =
-                node.has("namespaceIndex") ? (int) requireIntegral(node.get("namespaceIndex"), 0, 65535) : 0;
+        final int namespace = node.has(QUALIFIED_NAME_NAMESPACE_INDEX)
+                ? (int) requireIntegral(node.get(QUALIFIED_NAME_NAMESPACE_INDEX), 0, UINT16_MAX)
+                : 0;
         return new QualifiedName(namespace, name.textValue());
     }
 
