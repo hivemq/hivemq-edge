@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.northbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.datapoint.DataPointWithMetadata;
@@ -232,12 +233,34 @@ class OpcUaEventToJsonConverterUnavailableFieldsTest {
         throw new AssertionError("no field selected at path " + path);
     }
 
+    @Test
+    void anEventOfBuiltinFields_isPublishedWithoutTheEncodingContext() {
+        // The encoding context is the server's type descriptions, read over the network, and only a structure
+        // nested in a field needs them. Fetching them for every event made a metadata read that failed under
+        // load drop the whole batch -- including events whose fields are all builtin, as these are. The
+        // supplier here throws, so the test fails if anything asks for it.
+        final var builder = (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(
+                new OpcuaTag("test-tag", "", new OpcuaTagDefinition("ns=2;i=1001")), b -> null);
+
+        OpcUaEventToJsonConverter.convertPayload(
+                () -> {
+                    throw new IllegalStateException("the DataType hierarchy could not be read");
+                },
+                ALARM,
+                withField("Severity", new Variant(ushort(500))),
+                builder);
+
+        assertThat(builder.build("test-adapter").getTagValue().get("Severity").asInt())
+                .as("a builtin event field must publish without the server's type descriptions")
+                .isEqualTo(500);
+    }
+
     /** Runs one event's field values through the converter and returns the data point's emitted value. */
     private static @NotNull JsonNode convert(final @NotNull Variant[] values) {
         final var builder = (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(
                 new OpcuaTag("test-tag", "", new OpcuaTagDefinition("ns=2;i=1001")), b -> null);
 
-        OpcUaEventToJsonConverter.convertPayload(DefaultEncodingContext.INSTANCE, ALARM, values, builder);
+        OpcUaEventToJsonConverter.convertPayload(() -> DefaultEncodingContext.INSTANCE, ALARM, values, builder);
 
         return builder.build("test-adapter").getTagValue();
     }

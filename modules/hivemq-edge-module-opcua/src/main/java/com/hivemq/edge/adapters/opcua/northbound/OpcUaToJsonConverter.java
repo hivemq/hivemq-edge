@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicEnumType;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -48,6 +49,20 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/// Converts an OPC-UA value into the JSON shape Edge publishes.
+///
+/// **The encoding context is taken as a supplier, and asked for only by the branch that needs it.** The
+/// context is the server's type descriptions, read over the network. Exactly one thing here needs it:
+/// decoding an [ExtensionObject], a structure that arrives still encoded. Every other value -- a number, a
+/// string, a timestamp, a node id, an already-decoded [DynamicStructType] -- is rendered from what is in hand.
+/// Fetching it up front therefore made a value that needs no type description depend on one anyway: a failed
+/// read turned an `Int32` of 9 into `null` on the method path, and dropped a whole notification batch on the
+/// value and event paths.
+///
+/// Same rule as the value-write path (`JsonToOpcUAConverter`, Miguel's R6-3) and the method-signature
+/// verifier: do not reach for the hierarchy until a value's own type says it is needed. Stated here rather
+/// than at each caller because this is the only code that knows which values need it.
+///
 // see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
 public class OpcUaToJsonConverter {
 
@@ -61,7 +76,7 @@ public class OpcUaToJsonConverter {
     public static final String METADATA_SERVER_PICOSECONDS = "serverPicoseconds";
 
     public static void convertPayload(
-            final @NotNull EncodingContext serializationContext,
+            final @NotNull Supplier<EncodingContext> serializationContext,
             final @NotNull DataValue dataValue,
             final @NotNull DataPointBuilder<?> builder) {
         final Object value = dataValue.getValue().getValue();
@@ -99,7 +114,7 @@ public class OpcUaToJsonConverter {
     private static void addValue(
             final @NotNull DataPointBuilder<?> builder,
             final @Nullable Object value,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
 
         // SIMPLE TYPES — use builder.value(...) directly
         if (value == null) {
@@ -186,7 +201,9 @@ public class OpcUaToJsonConverter {
             }
             obj.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValue(builder, eo.decode(ctx), ctx);
+            // The only reach for the server's type descriptions in this converter, here and in the two
+            // sibling dispatches. See the note on the class.
+            addValue(builder, eo.decode(ctx.get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -224,7 +241,7 @@ public class OpcUaToJsonConverter {
             final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
             final @NotNull String key,
             final @Nullable Object value,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
 
         // SIMPLE TYPES
         if (value == null) {
@@ -309,7 +326,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValueToObject(obj, key, eo.decode(ctx), ctx);
+            addValueToObject(obj, key, eo.decode(ctx.get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -338,7 +355,7 @@ public class OpcUaToJsonConverter {
     private static void addValueToArray(
             final @NotNull DataPointBuilder.ArrayBuilder<?> arr,
             final @Nullable Object value,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
         if (value == null) {
             arr.addNull();
         } else if (value instanceof final DataValue dv) {
@@ -409,7 +426,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValueToArray(arr, eo.decode(ctx), ctx);
+            addValueToArray(arr, eo.decode(ctx.get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {

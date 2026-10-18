@@ -355,6 +355,33 @@ class MethodResponseTest {
     }
 
     @Test
+    void aBuiltinOutput_isAnsweredWhenTheTypeDescriptionsCannotBeRead() {
+        // D5 on EDG-1119. The encoding context is the server's type descriptions, read over the network, and
+        // only a structure that arrives still encoded needs them. It used to be fetched for every output
+        // before anything looked at the output's type, so a metadata read that failed under load answered
+        // `Square(3)` with `output1: null` and filed "9" under undecodedOutputs -- a number that needed no
+        // type description at all, reported as undecodable.
+        //
+        // The supplier here throws. A builtin output must still be answered with its value.
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final Map<String, MethodResponse.UndecodedOutput> undecodable =
+                MethodResponse.write(builder, "Square", "c-3", null, success(Map.of("output1", new Variant(9))), () -> {
+                    throw new IllegalStateException("the DataType hierarchy could not be read");
+                });
+        builder.endDataPoint();
+        final JsonNode json = ((DataPointWithMetadata) builder.build("test-adapter")).getJsonNode();
+
+        assertThat(json.get("value").get("output1").asInt())
+                .withFailMessage("a builtin output must publish its value without the type descriptions: %s", json)
+                .isEqualTo(9);
+        assertThat(undecodable)
+                .withFailMessage("a builtin output is not undecodable: %s", undecodable)
+                .isEmpty();
+        assertThat(parameters(json).has("errorCode")).isFalse();
+    }
+
+    @Test
     void anOutputThisClientCannotDecode_isNullWithItsBodyInStatusInfo() {
         // A method ran and returned a structure whose type description this client does not hold. The
         // conversion of that one output throws, and it used to take the whole message with it: the device had

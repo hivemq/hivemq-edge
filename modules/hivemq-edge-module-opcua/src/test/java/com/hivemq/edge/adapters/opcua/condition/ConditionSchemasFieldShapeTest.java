@@ -643,7 +643,7 @@ class ConditionSchemasFieldShapeTest {
 
         final var builder = (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(
                 new OpcuaTag("test-tag", "", new OpcuaTagDefinition("ns=2;i=1001")), b -> null);
-        OpcUaEventToJsonConverter.convertPayload(DefaultEncodingContext.INSTANCE, type, values, builder);
+        OpcUaEventToJsonConverter.convertPayload(() -> DefaultEncodingContext.INSTANCE, type, values, builder);
 
         final JsonNode emitted = builder.build("test-adapter").getTagValue().get(field);
         assertThat(emitted)

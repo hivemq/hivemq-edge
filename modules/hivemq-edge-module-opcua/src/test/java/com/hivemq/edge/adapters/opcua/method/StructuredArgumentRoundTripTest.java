@@ -117,7 +117,7 @@ class StructuredArgumentRoundTripTest {
         final var builder = (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(
                 new OpcuaTag("test-tag", "", new OpcuaTagDefinition("ns=2;i=1001")), b -> null);
 
-        OpcUaToJsonConverter.convertPayload(DefaultEncodingContext.INSTANCE, dataValue, builder);
+        OpcUaToJsonConverter.convertPayload(() -> DefaultEncodingContext.INSTANCE, dataValue, builder);
 
         return builder.build("test-adapter").getTagValue();
     }

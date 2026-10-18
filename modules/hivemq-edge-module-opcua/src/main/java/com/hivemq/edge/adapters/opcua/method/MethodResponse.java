@@ -221,7 +221,7 @@ public final class MethodResponse {
 
         final Object value = variant == null ? null : variant.value();
         try {
-            OpcUaToJsonConverter.addValueToObject(target, key, value, ctx.get());
+            OpcUaToJsonConverter.addValueToObject(target, key, value, ctx);
         } catch (final RuntimeException e) {
             // **Caught by outcome, not by cause.** The common one is `UaSerializationException`, "no codec
             // registered": Milo rebuilds its dynamic codec registry on every session activation, best-effort,

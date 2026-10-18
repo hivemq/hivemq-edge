@@ -584,7 +584,6 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     void onDataReceived_whenValueDecodes_publishes() throws Exception {
         final OpcUaSubscriptionLifecycleHandler handler = createHandlerWithRealEventService();
 
-        when(opcUaClient.getDynamicEncodingContext()).thenReturn(DefaultEncodingContext.INSTANCE);
         final DataPointListBuilder dataPointsPublisher = mock(DataPointListBuilder.class);
         when(tagStreamingService.dataPointsPublisher()).thenReturn(dataPointsPublisher);
         when(dataPointsPublisher.addDataPoint(any()))
@@ -596,6 +595,11 @@ class OpcUaSubscriptionLifecycleHandlerTest {
 
         verify(dataPointsPublisher).publish();
         verify(opcUaClient, never()).resetDataTypeTree();
+        // A String is a builtin: publishing it needs no type description from the server, so the handler must
+        // not read one. The stub this test used to carry became unnecessary when the fetch moved behind the
+        // branch that needs it, which is the point -- a read that fails under load can no longer drop a batch
+        // of values that would have published fine (D5 on EDG-1119).
+        verify(opcUaClient, never()).getDynamicEncodingContext();
     }
 
     private static @NotNull OpcUaMonitoredItem createMonitoredItem() {

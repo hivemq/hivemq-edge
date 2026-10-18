@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemServiceOperationResult;
@@ -65,6 +66,7 @@ import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaSerializationException;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -403,9 +405,29 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private static void extractPayload(
             final @NotNull OpcUaClient client,
             final @NotNull DataValue value,
-            final @NotNull DataPointBuilder<?> builder)
-            throws UaException {
-        OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value, builder);
+            final @NotNull DataPointBuilder<?> builder) {
+        OpcUaToJsonConverter.convertPayload(encodingContextSupplier(client), value, builder);
+    }
+
+    /// The server's type descriptions, fetched when a value's own type calls for them and not before.
+    ///
+    /// Only a structure that arrives still encoded needs them; a number, a string or a timestamp is published
+    /// from what is in hand. Reading them is a network round trip, so asking for them up front made every
+    /// notification depend on a read that most notifications do not need -- and a read that failed dropped the
+    /// whole batch, including values that would have published fine. The converter decides, because it is the
+    /// only code that knows which values need what.
+    ///
+    /// The checked [UaException] is wrapped because a supplier cannot throw it. It lands in the caller's
+    /// handlers unchanged in kind: a value that genuinely cannot be decoded still drops its batch and resets
+    /// the type registry, which is the right answer for that case.
+    private static @NotNull Supplier<EncodingContext> encodingContextSupplier(final @NotNull OpcUaClient client) {
+        return () -> {
+            try {
+                return client.getDynamicEncodingContext();
+            } catch (final UaException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     /**
@@ -1261,7 +1283,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // was built from the former. Event fields arrive positionally against the select clause, so
                 // decoding against any other list would attach values to the wrong names.
                 OpcUaEventToJsonConverter.convertPayload(
-                        client.getDynamicEncodingContext(),
+                        encodingContextSupplier(client),
                         tag.getDefinition().getPublishedFields(),
                         eventFields,
                         dataPointBuilder);
