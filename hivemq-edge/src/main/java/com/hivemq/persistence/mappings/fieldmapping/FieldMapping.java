@@ -22,7 +22,13 @@ import org.jetbrains.annotations.Nullable;
 
 public class FieldMapping {
 
-    public static @NotNull FieldMapping DEFAULT_FIELD_MAPPING =
+    /// What a southbound mapping does when it states no instruction of its own: carry the message's `value`
+    /// to the tag's `value`. Both the REST and UI path and the config.xml path substitute this, so the two
+    /// ways of configuring Edge agree.
+    ///
+    /// `final` because two callers now share the instance. Its instruction list is immutable, so sharing the
+    /// object is safe; what was not safe was a mutable field holding it.
+    public static final @NotNull FieldMapping DEFAULT_FIELD_MAPPING =
             new FieldMapping(List.of(new Instruction("value", "value", null)));
 
     private final @NotNull List<Instruction> instructions;

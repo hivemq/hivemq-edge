@@ -134,11 +134,25 @@ public class SouthboundMappingEntity implements EntityValidatable {
         fieldMapping.validate(validationEvents);
     }
 
+    /// A mapping with no instructions gets the default one, which is what the REST and UI path has always
+    /// done -- see `SouthboundMapping.fromModel`. Without this, the two ways of configuring Edge disagreed:
+    /// a `<southboundMapping>` written in config.xml with no `<fieldMapping>` produced a mapping whose
+    /// generated transform rebuilt the payload from nothing, so the value never reached the device and every
+    /// request was quarantined for a missing `value`. Silently, and identically for every adapter and every
+    /// tag kind.
+    ///
+    /// An empty `<instructions/>` is therefore no longer distinguishable from an absent `<fieldMapping>`.
+    /// Nothing is lost by that: no configuration wants a mapping that discards every message, and the file
+    /// could not record such an intent in any case -- an instruction carries only `source`, `destination`
+    /// and `origin`, and a surrounding XML comment does not survive the next save, because the file is
+    /// regenerated from the object tree rather than edited.
     public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {
         return new SouthboundMapping(
                 this.getTagName(),
                 this.getTopicFilter(),
-                this.fieldMapping.to(mapper),
+                this.fieldMapping.getInstructions().isEmpty()
+                        ? com.hivemq.persistence.mappings.fieldmapping.FieldMapping.DEFAULT_FIELD_MAPPING
+                        : this.fieldMapping.to(mapper),
                 this.fromNorthSchema,
                 isMethodCalls(),
                 isCorrelationData(),

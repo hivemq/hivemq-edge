@@ -165,6 +165,85 @@ class MappingEntityBackwardCompatibilityTest {
     }
 
     @Test
+    void aConfigFileMappingWithNoFieldMapping_getsTheDefaultInstruction() throws Exception {
+        // EDG-1124. The REST and UI path has always substituted the default instruction for a mapping that
+        // states none; the config.xml path passed on an empty list. The generated transform then rebuilt the
+        // payload from nothing, so the value never reached the device and every request was quarantined for a
+        // missing `value` -- silently, for every adapter and every tag kind.
+        final String configWithoutFieldMapping = """
+                <southboundMapping>
+                  <topicFilter>plant/boiler1/call</topicFilter>
+                  <tagName>boiler1</tagName>
+                  <fromNorthSchema>{}</fromNorthSchema>
+                </southboundMapping>
+                """;
+
+        final SouthboundMappingEntity entity = unmarshal(SouthboundMappingEntity.class, configWithoutFieldMapping);
+        final var mapping = entity.toPersistence(new com.fasterxml.jackson.databind.ObjectMapper());
+
+        assertThat(mapping.getFieldMapping().getInstructions())
+                .as("a mapping that states no instruction writes the message's value, as the REST path does")
+                .isEqualTo(
+                        com.hivemq.persistence.mappings.fieldmapping.FieldMapping.DEFAULT_FIELD_MAPPING
+                                .getInstructions());
+    }
+
+    @Test
+    void anEmptyFieldMappingElement_getsTheDefaultInstructionToo() throws Exception {
+        // `<fieldMapping/>` and an absent element are deliberately the same thing. No configuration wants a
+        // mapping that discards every message, and the file could not record such an intent anyway: an
+        // instruction carries only source, destination and origin, and an XML comment does not survive the
+        // next save, because Edge regenerates the file from its object tree.
+        final String configWithEmptyFieldMapping = """
+                <southboundMapping>
+                  <topicFilter>plant/boiler1/call</topicFilter>
+                  <tagName>boiler1</tagName>
+                  <fieldMapping/>
+                  <fromNorthSchema>{}</fromNorthSchema>
+                </southboundMapping>
+                """;
+
+        final SouthboundMappingEntity entity = unmarshal(SouthboundMappingEntity.class, configWithEmptyFieldMapping);
+        final var mapping = entity.toPersistence(new com.fasterxml.jackson.databind.ObjectMapper());
+
+        assertThat(mapping.getFieldMapping().getInstructions())
+                .as("an empty fieldMapping is not distinguishable from an absent one")
+                .isEqualTo(
+                        com.hivemq.persistence.mappings.fieldmapping.FieldMapping.DEFAULT_FIELD_MAPPING
+                                .getInstructions());
+    }
+
+    @Test
+    void aConfigFileMappingWithItsOwnInstructions_keepsExactlyThose() throws Exception {
+        // The other half of the rule, and the one that would make the fix a defect if it broke: a mapping that
+        // states instructions gets those and nothing added.
+        final String configWithFieldMapping = """
+                <southboundMapping>
+                  <topicFilter>plant/boiler1/call</topicFilter>
+                  <tagName>boiler1</tagName>
+                  <fieldMapping>
+                    <instructions>
+                      <instruction>
+                        <source>$.setpoint</source>
+                        <destination>$.value</destination>
+                      </instruction>
+                    </instructions>
+                  </fieldMapping>
+                  <fromNorthSchema>{}</fromNorthSchema>
+                </southboundMapping>
+                """;
+
+        final SouthboundMappingEntity entity = unmarshal(SouthboundMappingEntity.class, configWithFieldMapping);
+        final var mapping = entity.toPersistence(new com.fasterxml.jackson.databind.ObjectMapper());
+
+        assertThat(mapping.getFieldMapping().getInstructions()).hasSize(1);
+        assertThat(mapping.getFieldMapping().getInstructions().get(0).sourceFieldName())
+                .isEqualTo("$.setpoint");
+        assertThat(mapping.getFieldMapping().getInstructions().get(0).destinationFieldName())
+                .isEqualTo("$.value");
+    }
+
+    @Test
     void anUnsetFlagMarshalsToNothing() throws Exception {
         // The property that keeps an upgrade from editing config files. Edge rewrites its own configuration, so
         // a flag that marshalled unconditionally would add elements to every existing mapping on the first write
