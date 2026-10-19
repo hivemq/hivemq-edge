@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.edge.adapters.opcua.client.EdgeOpcUaClient;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
@@ -387,7 +388,7 @@ public class OpcUaClientConnection {
         final var endpointFilter = new OpcUaEndpointFilter(
                 adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), preferredMode, config);
         try {
-            client = OpcUaClient.create(
+            client = EdgeOpcUaClient.create(
                     config.getUri(),
                     endpointFilter,
                     ignore -> {},
