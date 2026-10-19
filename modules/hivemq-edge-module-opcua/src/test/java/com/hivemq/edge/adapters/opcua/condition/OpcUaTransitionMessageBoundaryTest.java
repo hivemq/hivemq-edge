@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -43,6 +42,7 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterTagStreamingServiceImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
@@ -98,7 +98,10 @@ class OpcUaTransitionMessageBoundaryTest {
         when(protocolAdapter.getAdapter()).thenReturn(mock(ProtocolAdapter.class));
 
         final ProtocolAdapterPublishServiceImpl publishService = mock(ProtocolAdapterPublishServiceImpl.class);
-        final ProtocolAdapterPublishBuilder publishBuilder = mock(ProtocolAdapterPublishBuilder.class);
+        // The implementation, not the SDK interface: NorthboundTagConsumer holds that type so it can set the
+        // MQTT 5 Correlation Data property, which is deliberately not on the interface. Mocking the interface
+        // makes this test fail with "zero interactions", because the consumer's cast never reaches the mock.
+        final ProtocolAdapterPublishBuilderImpl publishBuilder = mock(ProtocolAdapterPublishBuilderImpl.class);
         when(publishService.createPublish()).thenReturn(publishBuilder);
         when(publishBuilder.withTopic(anyString())).thenReturn(publishBuilder);
         when(publishBuilder.withQoS(anyInt())).thenReturn(publishBuilder);

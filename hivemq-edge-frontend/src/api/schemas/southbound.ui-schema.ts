@@ -19,7 +19,10 @@ export const southboundMappingListUISchema: UiSchema = {
     'ui:description': 'The list of all the mappings delivering messages from Edge to the device',
     'ui:field': 'mqtt:transform',
     items: {
-      'ui:order': ['topicFilter', 'tagName', '*'],
+      // The three method-call settings go last and in dependency order: whether this mapping carries method
+      // calls at all, then the two that refine it. A flat alphabetical order would put 'correlationData' first,
+      // where it reads as a choice a user can make before deciding the mapping is a method mapping at all.
+      'ui:order': ['topicFilter', 'tagName', '*', 'methodCalls', 'correlationData', 'responseTopic'],
       'ui:collapsable': {
         titleKey: 'topicFilter',
       },

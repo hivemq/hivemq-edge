@@ -491,7 +491,7 @@ public class OpcUaConditionUpdateIT {
 
         final WritingInput writingInput = mock(WritingInput.class);
         when(writingInput.getWritingContext()).thenReturn(writingContext);
-        when(writingInput.getWritingPayload()).thenReturn(new OpcUaPayload(value));
+        when(writingInput.getWritingPayload()).thenReturn(OpcUaPayload.ofValue(value));
 
         final WritingOutput output = mock(WritingOutput.class);
         requireAdapter().write(writingInput, output);

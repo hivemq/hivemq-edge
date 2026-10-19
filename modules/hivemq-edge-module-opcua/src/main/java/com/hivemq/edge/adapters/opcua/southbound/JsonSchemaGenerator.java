@@ -30,7 +30,6 @@ import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -45,7 +44,6 @@ import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
 import org.eclipse.milo.opcua.stack.core.types.structured.StructureDefinition;
@@ -335,6 +333,59 @@ public class JsonSchemaGenerator {
         applyMinMax(schema, opcUaType);
     }
 
+    /// Describes a property as the given OPC UA type, whatever that type is.
+    ///
+    /// The one entry point a caller outside this class should use, because it owns the whole decision: a type
+    /// with no JSON scalar form becomes `any`, `QualifiedName` becomes its two-field object, and everything else
+    /// becomes a scalar with its width's range constraints. Calling {@link #applyScalarType} directly requires
+    /// knowing that it throws for the four non-scalar types, and that is exactly the pairing a second caller
+    /// would get wrong.
+    public static void describeAs(
+            final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
+        if (!isScalarMappable(opcUaType)) {
+            prop.any();
+            return;
+        }
+        applyScalarType(prop, opcUaType);
+    }
+
+    /// Describes a property as an array of the given OPC UA type, with one nesting level per dimension.
+    ///
+    /// The array counterpart of {@link #describeAs}, for a caller that has an OPC UA value rank rather than a
+    /// node's `FieldInformation` -- a method's {@code Argument} is the case this exists for. Delegates to the
+    /// same {@link #applyArrayType} the value-tag path uses, so a method's array argument and a value tag's
+    /// array node are described identically, nesting and element constraints included.
+    ///
+    /// **No length is stated.** `dimensions` supplies the nesting depth and nothing else -- see
+    /// {@link #applyArrayType} for why a declared length is neither emitted nor emittable here.
+    ///
+    /// @param prop       the property to describe.
+    /// @param opcUaType  the element type, or null when it is not one Edge can state -- then the elements are
+    ///                   `any`, which is the same answer {@link #describeAs} gives for an unmappable scalar.
+    /// @param dimensions one entry per dimension; its length is the nesting depth, and its entries are unused.
+    public static void describeAsArray(
+            final @NotNull PropertySchemaBuilder<?> prop,
+            final @Nullable OpcUaDataType opcUaType,
+            final @NotNull UInteger @NotNull [] dimensions) {
+
+        describeAsArray(prop, opcUaType, dimensions, true);
+    }
+
+    /// As above, with the elements' access flags stated.
+    ///
+    /// An array is written by supplying its elements, so elements claiming to be read-only describe a shape nothing
+    /// can be written to -- which is why the writable case has to say so at every depth. A response's outputs are
+    /// the opposite: the device produced them and nobody writes them.
+    public static void describeAsArray(
+            final @NotNull PropertySchemaBuilder<?> prop,
+            final @Nullable OpcUaDataType opcUaType,
+            final @NotNull UInteger @NotNull [] dimensions,
+            final boolean writable) {
+
+        final OpcUaDataType elementType = opcUaType != null && isScalarMappable(opcUaType) ? opcUaType : null;
+        applyArrayType(prop.startArray(), elementType, dimensions, 0, true, writable);
+    }
+
     private static void applyScalarType(
             final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
         if (opcUaType == OpcUaDataType.QualifiedName) {
@@ -446,10 +497,35 @@ public class JsonSchemaGenerator {
             applyArrayType(items.startArray(), opcUaType, dimensions, depth + 1, readable, writable);
         }
         items.readable(readable).writable(writable);
-        final long maxSize = dimensions[depth].longValue();
-        if (maxSize > 0) {
-            items.minContains((int) maxSize).maxContains((int) maxSize);
-        }
+        // No length constraint is stated, and `dimensions` is consulted only for the nesting depth.
+        //
+        // This used to emit minContains and maxContains, both set to the declared length. Three things were
+        // wrong with that, and they compound:
+        //
+        //   - The keywords do nothing. They count how many elements match a `contains` keyword, and no
+        //     `contains` is ever emitted -- so a schema saying minContains 3 accepted [], [1] and [1,2,3,4].
+        //     Measured against the validator Edge uses.
+        //   - Equal minimum and maximum misstates the declaration. OPC 10000-3 section 5.6.2: ArrayDimensions
+        //     "specifies the maximum supported length of each dimension. If the maximum is unknown the value
+        //     shall be 0". A maximum of 5 does not mean exactly five elements.
+        //   - A union over several methods had no length to agree on, so whichever method the browse reported
+        //     first supplied the number; reversing the browse order changed the schema.
+        //
+        // The honest statement would be maxItems, which this builder cannot emit: the shared SDK's array
+        // builder offers only minContains and maxContains, and the SDK is unchanged in this release. It could
+        // be added to the rendered JSON afterwards -- `SchemaJsonRepresentation.toJsonSchemaDocument` returns a
+        // mutable ObjectNode to code in this repository -- so the SDK is not what stops it.
+        //
+        // What stops it is that there is nothing to gain. The length rests with the device, which refuses an
+        // array longer than it declared and whose refusal reaches the caller as a response. A *shorter* array
+        // is a legal request -- OPC 10000-3 Table 28 defines an argument's ArrayDimensions as "the maximum
+        // supported length", and gives a device no way to say "exactly five" -- so maxItems would duplicate a
+        // refusal the device already makes, and minItems would refuse requests the specification permits.
+        //
+        // Measured on an S7-1500 (EDG-1087 M1): seven elements for a declared five were refused
+        // Bad_InvalidArgument; three were accepted and the method computed on whatever remained in the unsent
+        // slots. Nothing is wrong in that, and it is the caller's to get right -- the reference document says
+        // so, because no gate anywhere will catch it.
         items.endArray();
     }
 
@@ -564,7 +640,9 @@ public class JsonSchemaGenerator {
             case Int32, StatusCode -> (long) Integer.MIN_VALUE;
             case UInt32 -> UInteger.MIN_VALUE;
             case Int64 -> Long.MIN_VALUE;
-            case UInt64 -> ULong.MIN_VALUE;
+            // As a long, not `ULong.MIN_VALUE`: that constant is a BigInteger, which the builder takes for
+            // neither bound, so the lower limit of a UInt64 was silently dropped along with its maximum.
+            case UInt64 -> 0L;
             case Float -> (double) -java.lang.Float.MAX_VALUE;
             case Double -> -java.lang.Double.MAX_VALUE;
             default -> null;
@@ -580,8 +658,10 @@ public class JsonSchemaGenerator {
             case Int32, StatusCode -> (long) Integer.MAX_VALUE;
             case UInt32 -> UInteger.MAX_VALUE;
             case Int64 -> Long.MAX_VALUE;
-            case UInt64 ->
-                BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.TWO).add(BigInteger.ONE);
+            // No maximum for UInt64, deliberately. You would want 2^64-1 here, but it does not fit a signed
+            // long and the builder takes only Long or Double -- so it would be dropped, or truncated to -1 and
+            // refuse every value. The converter bounds it before the device sees it.
+            case UInt64 -> null;
             case Float -> (double) java.lang.Float.MAX_VALUE;
             case Double -> java.lang.Double.MAX_VALUE;
             default -> null;

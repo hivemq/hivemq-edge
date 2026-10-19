@@ -91,13 +91,19 @@ class OpcUaToJsonConverterNodeIdTest {
         assertThat(value.get("id").textValue()).isEqualTo("AQID");
     }
 
+    /**
+     * The round trip -- sending a published node id back as a method argument -- is in
+     * {@link com.hivemq.edge.adapters.opcua.method.StructuredArgumentRoundTripTest}, with the other structured
+     * types, because the property and the defects it catches are the same for all of them.
+     */
+
     /** Runs a single NodeId value through the converter and returns the emitted {@code value} node. */
     private static JsonNode convert(final NodeId nodeId) {
         final DataValue dataValue = new DataValue(new Variant(nodeId), StatusCode.GOOD, null);
         final var builder = (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(
                 new OpcuaTag("test-tag", "", new OpcuaTagDefinition("ns=2;i=1001")), b -> null);
 
-        OpcUaToJsonConverter.convertPayload(DefaultEncodingContext.INSTANCE, dataValue, builder);
+        OpcUaToJsonConverter.convertPayload(() -> DefaultEncodingContext.INSTANCE, dataValue, builder);
 
         return builder.build("test-adapter").getTagValue();
     }

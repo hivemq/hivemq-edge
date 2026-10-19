@@ -59,6 +59,22 @@ public class NorthboundMapping {
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY;
     }
 
+    // There is deliberately NO method-call setting on a northbound mapping at all, and that is the whole shape of
+    // the design rather than an omission in one place.
+    //
+    // Southbound flags decide what Edge gathers into a request's parameters: whether this mapping carries method
+    // calls, whether a correlation token is read, whether a caller may name its own reply address. Northbound then
+    // acts on what a response's parameters contain and nothing else -- a method answer is one whose parameters
+    // declare `methodName`, a response goes to the address they carry and to getMqttTopic() when they carry none,
+    // the token is written into both the payload and the MQTT 5 Correlation Data property, and `errorCode` and
+    // `statusInfo` appear when a failure put them there.
+    //
+    // Two flags lived here and both were removed for the same reason: they offered a choice already made
+    // elsewhere. A response-topic flag could only disagree with the southbound whitelist, which decides whether an
+    // address reaches the adapter in the first place. And a write-correlation-data flag withheld the token from the
+    // payload while the MQTT 5 property carried it anyway -- a distinction the per-subscriber publish encoder
+    // already makes correctly, since a version-5 client gets the property and a version-3 client cannot.
+
     private static @NotNull MqttUserProperty userProp(final @NotNull com.hivemq.edge.api.model.MqttUserProperty u) {
         return new MqttUserProperty(u.getName(), u.getValue());
     }
@@ -116,6 +132,15 @@ public class NorthboundMapping {
         return messageExpiryInterval;
     }
 
+    /**
+     * Compares every field, which has to stay true of this method for a configuration edit to take effect.
+     * <p>
+     * <b>A field this method forgets is a field a user can change with nothing happening.</b> An edit restarts
+     * an adapter only when the new mapping compares unequal to the running one, so an unconsidered field is
+     * stored, compared by the persisted entity, and never reaches the adapter. That was a live gap until
+     * {@code FieldMapping} gained value equality: before then the southbound comparison could never return
+     * true, every edit restarted the adapter, and the gap was invisible (Miguel's M2 on PR 1765).
+     */
     @Override
     public boolean equals(final @Nullable Object o) {
         if (o instanceof final NorthboundMapping that) {
@@ -131,10 +156,22 @@ public class NorthboundMapping {
         return false;
     }
 
+    /**
+     * Every field {@link #equals} compares, which previously was not true: {@code includeMetadata} was compared
+     * and not hashed. Two mappings differing only in it were unequal with equal hash codes -- legal, but it
+     * degrades any hash-based lookup and is the kind of drift that appears when the two are edited separately.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(
-                tagName, topic, maxQoS, includeTagNames, includeTimestamp, userProperties, messageExpiryInterval);
+                tagName,
+                topic,
+                maxQoS,
+                includeTagNames,
+                includeTimestamp,
+                includeMetadata,
+                userProperties,
+                messageExpiryInterval);
     }
 
     @Override

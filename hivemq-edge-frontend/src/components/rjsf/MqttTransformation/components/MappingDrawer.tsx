@@ -22,7 +22,7 @@ interface MappingDrawerProps {
   adapterType: string
   item: SouthboundMapping
   onSubmit: (newItem: SouthboundMapping) => void
-  onChange: (id: keyof SouthboundMapping, v: JsonNode | string | string[] | null) => void
+  onChange: (id: keyof SouthboundMapping, v: JsonNode | string | string[] | boolean | null) => void
   onClose: () => void
 }
 

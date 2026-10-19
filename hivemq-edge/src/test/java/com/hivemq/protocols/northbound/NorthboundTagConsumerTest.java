@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -38,6 +37,7 @@ import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.datapoint.DataPointWithMetadata;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
@@ -69,8 +69,14 @@ class NorthboundTagConsumerTest {
     @Mock
     private EventService eventService;
 
+    /// The implementation, not the SDK interface.
+    ///
+    /// The consumer holds this type so it can set the MQTT 5 Correlation Data property, which is deliberately
+    /// not on the interface -- see {@code ProtocolAdapterPublishBuilderImpl.withCorrelationData}. Mocking the
+    /// interface here instead makes every test in this class fail with "zero interactions", because the cast in
+    /// the consumer never reaches the mock.
     @Mock
-    private ProtocolAdapterPublishBuilder publishBuilder;
+    private ProtocolAdapterPublishBuilderImpl publishBuilder;
 
     @Mock
     private ProtocolAdapter adapter;

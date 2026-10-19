@@ -39,6 +39,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.browse.BrowseException;
 import com.hivemq.edge.adapters.browse.BrowsedNode;
 import com.hivemq.edge.adapters.browse.BulkTagBrowser;
+import com.hivemq.edge.adapters.opcua.browse.Browsing;
 import com.hivemq.edge.adapters.opcua.browse.OpcUaNodeBrowser;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
@@ -53,14 +54,25 @@ import com.hivemq.edge.adapters.opcua.config.tag.EventFieldSet;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
+import com.hivemq.edge.adapters.opcua.method.MethodArguments;
+import com.hivemq.edge.adapters.opcua.method.MethodCache;
+import com.hivemq.edge.adapters.opcua.method.MethodCallResult;
+import com.hivemq.edge.adapters.opcua.method.MethodReference;
+import com.hivemq.edge.adapters.opcua.method.MethodResponse;
+import com.hivemq.edge.adapters.opcua.method.MethodSchemas;
+import com.hivemq.edge.adapters.opcua.method.MethodSignature;
+import com.hivemq.edge.adapters.opcua.method.MethodVerifier;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import com.hivemq.util.Topics;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -76,10 +88,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -98,6 +113,26 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     private final @NotNull Map<String, OpcuaTag> tagNameToTag;
     private final @NotNull List<OpcuaTag> tagList;
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
+
+    /**
+     * A method tag's methods, read once per tag and kept for the session. Cleared whenever a session starts,
+     * because a new session is what can renumber the NodeIds it holds.
+     * <p>
+     * Filled by {@link #prewarmMethodTags} once the adapter is connected, and by the request path for anything
+     * that pre-warm did not reach.
+     */
+    private final @NotNull MethodCache methodCache = new MethodCache();
+
+    /**
+     * The single thread that pre-warms method tags, and the handle on the run in progress.
+     * <p>
+     * Its own thread rather than the retry or health-check scheduler, because a pre-warm may run for minutes on
+     * a device that serves metadata slowly, and both of those have work that must not wait that long — the
+     * health check in particular is what notices a dead connection.
+     */
+    private volatile @Nullable ExecutorService methodPrewarmExecutor = null;
+
+    private final @NotNull AtomicReference<Future<?>> methodPrewarmRun = new AtomicReference<>();
 
     /** Serializes connection-generation changes with every generation-owned status publication. */
     private final @NotNull ReentrantLock connectionOwnershipLock = new ReentrantLock();
@@ -323,7 +358,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 opcUaServiceFaultListener,
                 this::publishStatusFrom,
                 this::warmUpBrowseMetadata,
-                this::publishReadyFrom);
+                this::publishReadyFrom,
+                this::onSessionReplaced);
         if (claimConnection(conn)) {
             // The lifecycle is claimed here, with the slot owned and the configuration already validated, so
             // a start refused for a bad configuration leaves nothing behind to block a corrected retry.
@@ -480,7 +516,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     opcUaServiceFaultListener,
                     this::publishStatusFrom,
                     this::warmUpBrowseMetadata,
-                    this::publishReadyFrom);
+                    this::publishReadyFrom,
+                    this::onSessionReplaced);
 
             // Set as current connection and attempt connection with retry logic
             if (claimConnection(newConn)) {
@@ -636,6 +673,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 Thread.currentThread().interrupt();
             }
         }
+
+        // The method pre-warm. Interrupted but not waited for: a run may be blocked in a browse against a
+        // device that is answering slowly, which is the whole reason it has its own thread, and nothing depends
+        // on it finishing. shutdownNow interrupts it, and the run checks that flag before each tag and abandons
+        // the rest. Waiting here would make a slow device able to delay every stop by the wait.
+        final var prewarmExecutor = this.methodPrewarmExecutor;
+        this.methodPrewarmExecutor = null;
+        if (prewarmExecutor != null && !prewarmExecutor.isShutdown()) {
+            prewarmExecutor.shutdownNow();
+        }
     }
 
     /**
@@ -657,6 +704,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
         retryScheduler = Executors.newSingleThreadScheduledExecutor();
         healthCheckScheduler = Executors.newSingleThreadScheduledExecutor();
+        // One thread, which is what keeps the pre-warm sequential: a run submitted while another is still
+        // going waits rather than adding concurrent browses to a device that is already answering slowly.
+        methodPrewarmExecutor = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -833,6 +883,44 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return;
         }
 
+        // Half of one misconfiguration: the tag's kind and the mapping's method-call setting disagree. The
+        // payload carrying Edge's request parameters *is* that setting, as this adapter sees it.
+        //
+        // **Nothing but this adapter sees both facts.** The tag's kind is this protocol's own vocabulary and
+        // the setting is Edge's, so Edge could only check the pair by being told what a METHOD tag is -- a
+        // protocol concept the generic side must not learn. Three attempts to hand it one were made during this
+        // feature and all three were reverted.
+        //
+        // The two halves are answered differently, and the asymmetry follows from what each tag is rather than
+        // from convenience. **This half is a value tag that answers nobody**, by design and for every adapter,
+        // so a log line and a failed write are the whole of what is available; inventing a reply channel for it
+        // would be the same leak in the other direction. The other half -- a method tag with no parameters --
+        // has a return path by construction and is answered at the METHOD dispatch below, where the client's
+        // encoding context exists.
+        //
+        // Reported by QA as P19 on EDG-1116.
+        final boolean isMethodTag = opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD;
+        final boolean carriesParameters = opcUAWritePayload.parameters() != null;
+
+        if (!isMethodTag && carriesParameters) {
+            // The mirror: a mapping carries method calls while its tag is not a method tag. The value cannot be
+            // written -- it holds an instruction object the device never declared -- and writing it while
+            // ignoring that object would be worse than refusing.
+            log.error(
+                    "A write to tag '{}' of kind {} carries method call parameters, which only a METHOD tag can "
+                            + "accept. Either the tag's kind or the southbound mapping's 'this mapping carries "
+                            + "method calls' setting is wrong; the message is dropped.",
+                    tagName,
+                    opcuaTag.getDefinition().getKind());
+            output.fail("Tag '"
+                    + tagName
+                    + "' is a "
+                    + opcuaTag.getDefinition().getKind()
+                    + " tag, but the request carries method call parameters. Either make it a METHOD tag or "
+                    + "switch 'this mapping carries method calls' off for the mapping that feeds it");
+            return;
+        }
+
         final OpcUaClientConnection conn = opcUaClientConnection.get();
         if (conn == null) {
             output.fail("Discovery failed: ClientConnection not connected or not initialized");
@@ -842,7 +930,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         conn.client()
                 .ifPresentOrElse(
                         client -> {
-                            final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(client);
                             if (log.isDebugEnabled()) {
                                 log.debug(
                                         "Write invoked with payload '{}' for tag '{}'",
@@ -878,7 +965,49 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 return;
                             }
 
-                            final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
+                            // A method tag names an object, so there is no Value attribute to assign to: the
+                            // request names a method and this calls it.
+                            if (opcuaTag.getDefinition().getKind() == OpcuaTagKind.METHOD) {
+                                // The other half of the pair checked at the top of `write`, answered here
+                                // because a response needs the client's encoding context and this is the first
+                                // point that has one. Still before the object is browsed and before the device
+                                // is touched.
+                                //
+                                // Previously this fell through into the method path, which found no method name
+                                // and refused with an empty one -- naming no method, carrying no token, and
+                                // saying nothing about the setting to change. The caller could not match the
+                                // answer to its request and the operator was not told what to switch on.
+                                if (!carriesParameters) {
+                                    log.warn(
+                                            "A request to method tag '{}' carries no method parameters, so the "
+                                                    + "southbound mapping that feeds it does not have method calls "
+                                                    + "enabled. Switch 'this mapping carries method calls' on for "
+                                                    + "that mapping.",
+                                            tagName);
+                                    refuseWithResponse(
+                                            client,
+                                            opcuaTag,
+                                            "",
+                                            opcUAWritePayload,
+                                            StatusCodes.Bad_MethodInvalid,
+                                            "the southbound mapping for tag '"
+                                                    + tagName
+                                                    + "' does not have method calls enabled, so the request named "
+                                                    + "no method and none can be called. Switch 'this mapping "
+                                                    + "carries method calls' on for that mapping",
+                                            output);
+                                    return;
+                                }
+                                callMethod(client, nodeId, opcUAWritePayload, opcuaTag, output);
+                                return;
+                            }
+
+                            // Built here, past the branch on tag kind, because only a value write uses it. It
+                            // reads nothing on construction, so this is placement rather than protection --
+                            // but it keeps the two paths the same shape: neither reaches for the DataType
+                            // hierarchy until a value's own type says it must.
+                            final Object opcuaObject = new JsonToOpcUAConverter(client)
+                                    .convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
                             @SuppressWarnings("unused")
                             final var unused = client.writeValuesAsync(
@@ -1009,6 +1138,479 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 });
     }
 
+    /**
+     * Calls the method a request names, on the object a method tag names.
+     * <p>
+     * The object's methods are read once per tag and kept for the session (see {@link MethodCache}). Normally
+     * {@link #prewarmMethodTags} has already read them, so this is a cache hit; a tag the pre-warm did not
+     * reach -- because it failed, or because the run was abandoned when a new session began -- is read here
+     * instead, and the failure is then reported to the request that provoked it.
+     */
+    private void callMethod(
+            final @NotNull OpcUaClient client,
+            final @NotNull NodeId objectNodeId,
+            final @NotNull OpcUaPayload payload,
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull WritingOutput output) {
+
+        final String tagName = opcuaTag.getName();
+        final String methodName = payload.methodName();
+        if (methodName == null || methodName.isBlank()) {
+            // Edge refuses a request it cannot name a method for, before the device is touched, so a request
+            // reaching here without one means the parameter object never arrived. That is the version mismatch
+            // the design accepts: method calls need a new Edge and a new bidirectional module together, and the
+            // older of the two does not write the object this reads. A plain refusal naming the field is the
+            // symptom, which is at least diagnosable.
+            refuseWithResponse(
+                    client,
+                    opcuaTag,
+                    "",
+                    payload,
+                    StatusCodes.Bad_MethodInvalid,
+                    "A request to method tag '"
+                            + tagName
+                            + "' carries no method name. Method calls require the bidirectional module at the "
+                            + "same version as Edge",
+                    output);
+            return;
+        }
+
+        // No check on the reply address here, deliberately. "Is this a publishable MQTT topic" is a question
+        // about MQTT, and it is answered where the answer will be published: Edge validates the address while
+        // assembling the request's parameters, before the message reaches the data policy, and quarantines a
+        // request that names an unpublishable one. The adapter used to ask because it happened to be holding
+        // the string, which put an MQTT question behind an OPC-UA status code.
+        // Which session's node ids the answer below will be about, read before the lookup so the callback can
+        // tell whether it still holds. See the generation check in the callback.
+        final long generation = methodCache.generation();
+
+        @SuppressWarnings("unused")
+        final var unused = methodCache
+                .get(tagName, () -> MethodVerifier.verify(client, objectNodeId, tagName))
+                .whenComplete((result, throwable) -> {
+                    // The session that answered this lookup has ended. Refused rather than dispatched, and
+                    // never retried here.
+                    //
+                    // Clearing the cache on a session change fixes every *later* lookup and cannot reach this
+                    // one: the future was handed out before the clear and completes as it always would, so
+                    // without this check the call went to the device naming an object and a method that were
+                    // identified in a session that no longer exists.
+                    //
+                    // What that costs, honestly: a stale node id almost always just fails, and the caller gets
+                    // a status about a node rather than one about the session. Landing on a *different* node
+                    // takes more than a stale id -- the index would have to be reassigned to another namespace
+                    // that happens to hold the same identifier, OPC 10000-3 section 5.2.2 requiring the
+                    // identifier itself to persist. Worth a check that costs an atomic read, not worth
+                    // describing as the likely outcome: every OPC-UA tag in Edge is configured by a node id
+                    // carrying an index and reused across every reconnect for the adapter's life, so indices
+                    // moving would break far more than this.
+                    //
+                    // Not retried, even though the caller would prefer it: a Call this adapter has already
+                    // sent may have taken effect, and a method is not idempotent. The caller gets a refusal
+                    // they can act on, and their next request resolves against the live session.
+                    if (methodCache.generation() != generation) {
+                        log.info(
+                                "OPC UA adapter '{}': refusing the call to '{}' on tag '{}' -- its methods were "
+                                        + "read in a session that has since been replaced, and node ids do not "
+                                        + "survive that. The next request reads them again.",
+                                adapterId,
+                                methodName,
+                                tagName);
+                        refuseWithResponse(
+                                client,
+                                opcuaTag,
+                                methodName,
+                                payload,
+                                StatusCodes.Bad_SessionClosed,
+                                "The session that read the methods of tag '" + tagName
+                                        + "' has been replaced. The call was not sent; please repeat the request",
+                                output);
+                        return;
+                    }
+                    if (throwable != null) {
+                        // Reading the object's methods failed outright. Bad_InternalError rather than a
+                        // method-specific code: nothing was learned about the method, so nothing can be claimed
+                        // about it.
+                        log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
+                        refuseWithResponse(
+                                client,
+                                opcuaTag,
+                                methodName,
+                                payload,
+                                StatusCodes.Bad_InternalError,
+                                "Could not read the methods of tag '" + tagName + "': "
+                                        + Objects.requireNonNullElse(throwable.getMessage(), "unknown error"),
+                                output);
+                        return;
+                    }
+                    // Guarded, because this runs on a callback whose exceptions reach nobody. A throw from here
+                    // used to leave the request with no answer at all and hold its writer until the thirty-second
+                    // timeout, queueing every later request for the tag behind it -- silence being the one
+                    // outcome worse than a wrong status code. Each known cause is answered properly above and
+                    // below; this is so an unforeseen one costs a refusal rather than a stall.
+                    try {
+                        switch (result) {
+                            case MethodVerifier.Result.Verified verified ->
+                                invoke(client, verified.methods(), methodName, payload, opcuaTag, generation, output);
+                            // The tag names something that is not a callable object, so no method on it can
+                            // exist.
+                            case MethodVerifier.Result.Rejected rejected ->
+                                refuseWithResponse(
+                                        client,
+                                        opcuaTag,
+                                        methodName,
+                                        payload,
+                                        StatusCodes.Bad_NodeIdUnknown,
+                                        rejected.reason(),
+                                        output);
+                            // The object may well be fine; Edge could not find out. Distinct from Rejected on
+                            // purpose -- a caller retrying later may succeed, which is not true of a rejection.
+                            case MethodVerifier.Result.Unverifiable unverifiable ->
+                                refuseWithResponse(
+                                        client,
+                                        opcuaTag,
+                                        methodName,
+                                        payload,
+                                        StatusCodes.Bad_InternalError,
+                                        unverifiable.reason(),
+                                        output);
+                        }
+                    } catch (final RuntimeException e) {
+                        log.error("Unexpected failure answering a method request on tag '{}'", tagName, e);
+                        refuseWithResponse(
+                                client,
+                                opcuaTag,
+                                methodName,
+                                payload,
+                                StatusCodes.Bad_InternalError,
+                                "Could not answer the request on tag '" + tagName + "': "
+                                        + Objects.requireNonNullElse(e.getMessage(), "unknown error"),
+                                output);
+                    }
+                });
+    }
+
+    /**
+     * Sends the Call, once the method is known.
+     * <p>
+     * An unknown method name is answered here rather than by the server. The server's answer would be
+     * {@code Bad_MethodInvalid} and nothing else; this one names what the object does offer, which is what an
+     * operator who mistyped a method actually needs.
+     *
+     * @param generation which session the methods were read in, re-checked immediately before the Call is
+     *                   submitted. See the check at that site.
+     */
+    private void invoke(
+            final @NotNull OpcUaClient client,
+            final @NotNull List<MethodSignature> methods,
+            final @NotNull String methodName,
+            final @NotNull OpcUaPayload payload,
+            final @NotNull OpcuaTag opcuaTag,
+            final long generation,
+            final @NotNull WritingOutput output) {
+
+        final String tagName = opcuaTag.getName();
+        final MethodSignature signature;
+        // `methodName` is either an unadorned browse name, which must be unique among the object's methods, or
+        // a node id naming the method itself. Resolution is separate because a browse name is not unique on an
+        // object, and picking by browse order called whichever method the server reported second.
+        switch (MethodReference.resolve(methods, methodName, client.getNamespaceTable())) {
+            case MethodReference.Resolution.Matched matched -> signature = matched.method();
+            // The same status the server would have returned, with a message it could not have produced: naming
+            // what the object does offer is what an operator who mistyped a method actually needs.
+            case MethodReference.Resolution.NoSuchMethod noSuch -> {
+                refuseWithResponse(
+                        client,
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        StatusCodes.Bad_MethodInvalid,
+                        "Object of tag '" + tagName + "' " + noSuch.reason(),
+                        output);
+                return;
+            }
+            // Bad_MethodInvalid as well: the request did not identify a method, which is the same fault as
+            // naming one that does not exist. The message carries the node ids that would identify them.
+            case MethodReference.Resolution.Ambiguous ambiguous -> {
+                refuseWithResponse(
+                        client,
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        StatusCodes.Bad_MethodInvalid,
+                        "Object of tag '" + tagName + "' " + ambiguous.reason(),
+                        output);
+                return;
+            }
+            // The request is malformed rather than wrong about the device, which is why this one differs.
+            case MethodReference.Resolution.Malformed malformed -> {
+                refuseWithResponse(
+                        client,
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        StatusCodes.Bad_InvalidArgument,
+                        "Request to tag '" + tagName + "': " + malformed.reason(),
+                        output);
+                return;
+            }
+        }
+
+        final Variant[] arguments;
+        try {
+            arguments = MethodArguments.forCall(signature, payload.value());
+        } catch (final MethodArguments.InvalidArgumentException e) {
+            // The request is wrong about the method, which is a client error and not a device one. Sending it
+            // anyway would get Bad_InvalidArgument back with no indication of which argument was at fault.
+            //
+            // The code comes from the exception rather than being fixed here: an omitted argument is
+            // Bad_ArgumentsMissing and everything else is Bad_InvalidArgument, and only the throw site knows
+            // which happened.
+            refuseWithResponse(client, opcuaTag, methodName, payload, e.statusCode(), e.reason(), output);
+            return;
+        }
+
+        // Last look before anything is sent, because the two steps above take time the session may not survive.
+        // The caller checked the generation when the cached methods arrived; resolving the name and converting
+        // the arguments then ran, and a session replaced during those steps would leave this call carrying node
+        // ids -- a namespace index plus an identifier, in both the object id and the method id -- that were read
+        // under a session that no longer exists.
+        //
+        // **This narrows the window rather than closing it.** A replacement between this check and the request
+        // reaching the wire is still possible, and no check placed before an operation can exclude that; only a
+        // submission path holding the session identity atomically could. What it removes is the part that was
+        // demonstrable: the interval spanning resolution and argument conversion, which is where a reviewer
+        // paused execution to produce a Call carrying old node ids.
+        //
+        // Not retried, for the same reason as the earlier check: a Call this adapter has already sent may have
+        // taken effect, and a method is not idempotent. Refusing before submission is the one safe moment.
+        //
+        // Reported by Sam as V01 in review 05, as the interval his probe opened after the existing guard.
+        if (methodCache.generation() != generation) {
+            log.info(
+                    "OPC UA adapter '{}': refusing the call to '{}' on tag '{}' -- the session that read its "
+                            + "methods was replaced while the request was being prepared, and node ids do not "
+                            + "survive that. The next request reads them again.",
+                    adapterId,
+                    methodName,
+                    tagName);
+            refuseWithResponse(
+                    client,
+                    opcuaTag,
+                    methodName,
+                    payload,
+                    StatusCodes.Bad_SessionClosed,
+                    "The session that read the methods of tag '" + tagName
+                            + "' has been replaced. The call was not sent; please repeat the request",
+                    output);
+            return;
+        }
+
+        // The object id comes from the signature, not from the tag. A method found only on the object's type --
+        // one carrying no modelling rule, so mirrored onto no instance -- is invoked by naming the type, which
+        // OPC 10000-4's Call service permits and requires. For every method the object itself exposes this is
+        // the tag's own node, so the common case is unchanged.
+        final CallMethodRequest request = new CallMethodRequest(signature.objectId(), signature.nodeId(), arguments);
+
+        @SuppressWarnings("unused")
+        final var unused = client.callAsync(List.of(request)).whenComplete((response, throwable) -> {
+            if (throwable != null) {
+                // The call was sent and no answer came back -- a timeout, a closed session, a transport
+                // failure. WARNING: this is NOT proof the method did not run, so the response says the call
+                // failed without claiming the device did nothing. A caller retrying on it needs the method to
+                // be idempotent.
+                //
+                // **The device's own status code, when the failure carries one.** This used to report
+                // Bad_InternalError for every failure here, which section 7.1 of the reference defines as
+                // "Edge learned nothing more" -- so a caller could not tell a device that never answered from
+                // a fault in Edge, and the retry guidance in 7.3 became inapplicable precisely where it
+                // matters. The code was not missing: it was in the failure and we discarded it.
+                //
+                // The fallback stays Bad_InternalError, for a failure that genuinely has no status -- a
+                // client-side timeout before the request leaves, say. There the generic code is the honest one.
+                final Long deviceStatus = Browsing.statusCodeOf(throwable);
+                log.error("Exception while calling '{}' on tag '{}'", methodName, tagName, throwable);
+                refuseWithResponse(
+                        client,
+                        opcuaTag,
+                        methodName,
+                        payload,
+                        deviceStatus != null ? deviceStatus : StatusCodes.Bad_InternalError,
+                        "Call to '"
+                                + methodName
+                                + "' on tag '"
+                                + tagName
+                                + "' did not complete: "
+                                + Objects.requireNonNullElse(throwable.getMessage(), "unknown error"),
+                        output);
+                return;
+            }
+            final MethodCallResult result = MethodCallResult.of(response, signature);
+
+            // The response goes out before the write completes. A caller waiting on the answer is waiting for
+            // the message, not for the write, and publishing after completing the write would let a fast caller
+            // see its request acknowledged while the answer is still in flight.
+            publishMethodResponse(
+                    client, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), result);
+
+            if (result.succeeded()) {
+                log.debug("Called '{}' on tag '{}'", methodName, tagName);
+                output.finish();
+            } else {
+                // Failed as a write too, not only as a response. The response carries the detail; failing the
+                // write is what makes the failure visible in the adapter's own metrics and log rather than only
+                // in a message the operator has to be subscribed to.
+                log.error("Call to '{}' on tag '{}' failed: {}", methodName, tagName, result.statusName());
+                output.fail("Call to '" + methodName + "' on tag '" + tagName + "' failed: " + result.statusName());
+            }
+        });
+    }
+
+    /**
+     * Fails a request and publishes the failure as a response, for every outcome the device did not report itself.
+     * <p>
+     * The decisive property is that <strong>a caller sees the same shape whatever refused it</strong>. A failure
+     * the device reports and one Edge spots before dispatch both arrive as a response with {@code value} null, an
+     * {@code errorCode} naming the status, and the correlation token the request carried — so a caller matching
+     * answers to requests needs to know nothing about where in Edge the refusal happened, and never waits for an
+     * answer that is not coming. Without this, a pre-dispatch refusal was visible only in the adapter's log, which
+     * a caller cannot read.
+     * <p>
+     * The write is failed as well, which is what puts the refusal in the adapter's own log and metrics rather than
+     * only in a message an operator has to be subscribed to. {@code methodName} may be empty — a request that named
+     * no method has none to echo — and the response then carries the field as an empty string rather than omitting
+     * it, keeping every response the same shape.
+     *
+     * @param statusCode the OPC UA status this refusal reports, chosen to match what a server would have said for
+     *                   the same fault. Edge answers these itself because its message can name what the object
+     *                   actually offers, which the server's bare status code cannot.
+     */
+    private void refuseWithResponse(
+            final @NotNull OpcUaClient client,
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull String methodName,
+            final @NotNull OpcUaPayload payload,
+            final long statusCode,
+            final @NotNull String reason,
+            final @NotNull WritingOutput output) {
+
+        log.error("Refused a method call on tag '{}': {}", opcuaTag.getName(), reason);
+
+        final MethodCallResult refusal = new MethodCallResult(new StatusCode(statusCode), Map.of(), Map.of());
+        publishMethodResponse(
+                client, opcuaTag, methodName, payload.correlationData(), publishableReplyTopic(payload), refusal);
+
+        output.fail(reason);
+    }
+
+    /**
+     * The reply address a response may be sent to: the one the request named, or null when that cannot be published
+     * to.
+     * <p>
+     * Null is how a response reaches the northbound mapping's own topic. The mapping holds the configured topic and
+     * the adapter never sees it — a datapoint carrying no reply address falls back to it in
+     * {@code NorthboundTagConsumer}, so omitting the field here <em>is</em> the instruction to use the default.
+     * <p>
+     * <b>A guard, not the validation.</b> An unpublishable address is rejected in Edge, where the request's
+     * parameters are assembled before the data policy runs, and such a request is quarantined without the
+     * device being touched. That is the right place for it: "is this a publishable MQTT topic" is a question
+     * about MQTT, answered by the component that will publish, and answering it there means the caller learns of
+     * the fault instead of waiting for an answer nobody could deliver.
+     * <p>
+     * This remains because the adapter must not depend on that for its own correctness. A payload reaching here
+     * with an unpublishable address would mean the parameters were assembled by something other than Edge's
+     * writer — so the address is dropped rather than passed on, and a missing address and a rejected one both
+     * land on the mapping's own topic.
+     * <p>
+     * Package-private so the routing decision can be tested without a device and a broker: this is the part that
+     * decides where an answer goes, and the rest of the path around it is driven by a live connection.
+     */
+    static @Nullable String publishableReplyTopic(final @NotNull OpcUaPayload payload) {
+        final String requested = payload.responseTopic();
+        if (requested == null || requested.isBlank() || !Topics.isValidTopicToPublish(requested)) {
+            return null;
+        }
+        return requested;
+    }
+
+    /**
+     * Publishes a call's outcome as a datapoint on the tag that received the request.
+     * <p>
+     * The tag is the routing key: a northbound mapping is configured per tag, so the response reaches the topic
+     * that mapping names without anything here knowing what it is.
+     * <p>
+     * A failure to publish does not fail the call. The method already ran on the device — reporting the write as
+     * failed because the answer could not be published would invite a retry of something that already happened,
+     * and a method call is not generally safe to repeat.
+     */
+    private void publishMethodResponse(
+            final @NotNull OpcUaClient client,
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull String methodName,
+            final @Nullable String correlationData,
+            final @Nullable String responseTopic,
+            final @NotNull MethodCallResult result) {
+
+        final ModuleServices services = moduleServices;
+        if (services == null) {
+            // Stopped between the call being sent and its answer arriving. The device acted; there is nothing
+            // left to publish through.
+            log.warn(
+                    "Adapter '{}' has no module services, so the answer from '{}' on tag '{}' is not published",
+                    adapterId,
+                    methodName,
+                    opcuaTag.getName());
+            return;
+        }
+
+        try {
+            final var publisher = services.protocolAdapterTagStreamingService().dataPointsPublisher();
+            final var builder = publisher.addDataPoint(opcuaTag);
+            // The client's encoding context, so a method's output is converted by the same code as a variable's
+            // value of the same type -- see MethodResponse#putVariant.
+            // The encoding context is supplied as a supplier, not a value: fetching it can itself fail, and
+            // evaluated here as an argument it took the whole answer down with it -- including a refusal,
+            // which carries no output and so never needs a context at all. Same rule as the DataType
+            // hierarchy: do not reach for a thing until a value's own type says it is needed.
+            final var undecodable =
+                    MethodResponse.write(builder, methodName, correlationData, responseTopic, result, () -> {
+                        try {
+                            return client.getDynamicEncodingContext();
+                        } catch (final UaException e) {
+                            // Reaches putVariant's own handler, which reports the output as undecodable and
+                            // publishes the answer. Thrown as unchecked only to cross the supplier.
+                            throw new RuntimeException(e);
+                        }
+                    });
+            builder.endDataPoint();
+            publisher.publish();
+
+            // An output published as a string rather than as the object its schema promises. Counted and
+            // logged beside the answer that names it, because the cause is almost always a type description
+            // this client has not fetched rather than anything about the method -- an operator seeing this
+            // repeatedly is looking at a registry that is not being rebuilt, not at a broken method.
+            if (!undecodable.isEmpty()) {
+                protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
+                log.warn(
+                        "Adapter '{}': the answer from '{}' on tag '{}' carries {} output(s) this client could not "
+                                + "decode, published as null with the device's own body in "
+                                + "statusInfo.undecodedOutputs: {}",
+                        adapterId,
+                        methodName,
+                        opcuaTag.getName(),
+                        undecodable.size(),
+                        undecodable.keySet());
+            }
+        } catch (final Exception e) {
+            log.error(
+                    "Adapter '{}' could not publish the answer from '{}' on tag '{}'",
+                    adapterId,
+                    methodName,
+                    opcuaTag.getName(),
+                    e);
+        }
+    }
+
     @Override
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
@@ -1030,7 +1632,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         // differ — a transition report northbound, and southbound either a command to move the state machine
         // or nothing at all.
         final OpcuaTagKind tagKind = tag.getDefinition().getKind();
-        if (tagKind != OpcuaTagKind.VALUE) {
+        // METHOD joins VALUE on the device-derived path rather than this one. Its shape comes from the object's
+        // methods and their declared Argument lists, which only a browse can supply -- the declared `type` says
+        // nothing about it. Everything else here derives its shape from that declared type instead.
+        if (tagKind != OpcuaTagKind.VALUE && tagKind != OpcuaTagKind.METHOD) {
             // getPublishedFields(), the same accessor the select clause and the decoder use, so the schema
             // cannot promise a field the server was never asked for. They differ only for a REFRESH tag.
             final EventFieldSet publishedFields = tag.getDefinition().getPublishedFields();
@@ -1046,7 +1651,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     switch (tagKind) {
                         case CONDITION -> ConditionSchemas.writeSchema();
                         case REFRESH -> ConditionSchemas.refreshCommandSchema();
-                        case EVENT_SUBSCRIPTION, VALUE -> ConditionSchemas.unwritableSchema();
+                        // VALUE and METHOD never reach here -- both are answered from the device below.
+                        case EVENT_SUBSCRIPTION, VALUE, METHOD -> ConditionSchemas.unwritableSchema();
                     };
             output.finish(new TagSchemaCreationOutput.DataPointSchema(
                     ConditionSchemas.readSchema(publishedFields), null, null, writeSchema));
@@ -1061,6 +1667,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         conn.client()
                 .ifPresentOrElse(
                         client -> {
+                            // A method tag's shape comes from the object's methods, not from a value's type, so
+                            // it browses rather than reading a DataType. Both schemas come from one browse: the
+                            // request's arguments and the response's results are the same methods seen from
+                            // opposite ends.
+                            if (tagKind == OpcuaTagKind.METHOD) {
+                                createMethodTagSchema(client, tag, tagName, output);
+                                return;
+                            }
+
                             final var generator = new JsonSchemaGenerator(client);
                             @SuppressWarnings("unused")
                             final var unused = generator.collectTypeInfo(tag).whenComplete((fieldInfo, throwable) -> {
@@ -1077,6 +1692,95 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             log.error("Discovery failed: Client not connected or not initialized");
                             output.fail("Discovery failed: Client not connected or not initialized");
                         });
+    }
+
+    /**
+     * Both schemas of a method tag, from one browse of its object.
+     * <p>
+     * The three verification outcomes answer differently on purpose. A rejection is a mistake in the tag and
+     * says so. An unverifiable device is <em>not</em> answered with a schema describing no methods: that would
+     * look exactly like an object that genuinely has none, and the operator would go looking at their
+     * configuration for a problem that is in the connection.
+     */
+    private void createMethodTagSchema(
+            final @NotNull OpcUaClient client,
+            final @NotNull OpcuaTag tag,
+            final @NotNull String tagName,
+            final @NotNull TagSchemaCreationOutput output) {
+
+        final NodeId objectNode;
+        try {
+            objectNode = NodeId.parse(tag.getDefinition().getNode());
+        } catch (final Exception e) {
+            // tagNotFound rather than fail: the tag cannot be resolved against the device, which is the
+            // operator's configuration being wrong rather than Edge or the device misbehaving. The runtime maps
+            // fail() to 500, and a 500 tells an operator to look at Edge for a mistake that is in their tag.
+            output.tagNotFound("Tag '" + tagName + "' has a malformed node id: "
+                    + tag.getDefinition().getNode());
+            return;
+        }
+
+        @SuppressWarnings("unused")
+        final var unused = methodCache
+                .get(tagName, () -> MethodVerifier.verify(client, objectNode, tagName))
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Exception while reading the methods of tag '{}'", tagName, throwable);
+                        output.fail(throwable, null);
+                        return;
+                    }
+                    switch (result) {
+                        case MethodVerifier.Result.Verified verified -> {
+                            final var methods = verified.methods();
+                            log.debug("Schema for METHOD tag='{}' derived from {} method(s)", tagName, methods.size());
+                            // An object the device answered about and that exposes nothing callable. The schema
+                            // that follows is empty and every request against the tag is then refused at
+                            // validation, so without this the operator sees a configured tag, a connected
+                            // adapter, and calls that vanish -- the count above is DEBUG, which nobody has on.
+                            //
+                            // WARN rather than ERROR: the tag and the device are both intelligible, and methods
+                            // may be added to an object later without the tag changing.
+                            if (methods.isEmpty()) {
+                                log.warn(
+                                        "Tag '{}' names object {}, which exposes no callable method{}. Its request "
+                                                + "schema will admit no arguments and every call on this tag will be "
+                                                + "refused. Enable DEBUG for {} to see what the browse returned.",
+                                        tagName,
+                                        objectNode,
+                                        verified.complete()
+                                                ? ""
+                                                : " -- and part of its type hierarchy could not be read, so the "
+                                                        + "device may have more",
+                                        MethodVerifier.class.getPackageName());
+                            }
+                            // Each value schema declares its own parameter object -- the request's inside the
+                            // southbound part, the response's inside the northbound one -- so the runtime lifts
+                            // them to the document root by iterating, with no list of names of its own. The
+                            // `context` slot stays empty: it is the protocol's namespace, not Edge's.
+                            output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                                    MethodSchemas.responseSchema(methods),
+                                    null,
+                                    null,
+                                    MethodSchemas.requestSchema(methods)));
+                        }
+                        // The tag is wrong about the device: the node is absent, or is not an object. The
+                        // operator's configuration is at fault, so this is reported as a tag that cannot be
+                        // resolved (4xx) rather than as a failure (500). The distinction is the whole point of
+                        // Rejected existing beside Unverifiable -- a 500 sends an operator to look at Edge, or
+                        // at us, for a mistake that is in their own tag definition.
+                        case MethodVerifier.Result.Rejected rejected -> {
+                            log.error("Cannot describe method tag '{}': {}", tagName, rejected.reason());
+                            output.tagNotFound(rejected.reason());
+                        }
+                        // Left as a failure, deliberately. The tag may be perfectly correct and Edge could not
+                        // find out -- a timeout, a refusal, a server that went away. Reporting that as a
+                        // configuration error would send the operator to fix something that is not broken.
+                        case MethodVerifier.Result.Unverifiable unverifiable -> {
+                            log.error("Cannot describe method tag '{}': {}", tagName, unverifiable.reason());
+                            output.fail(unverifiable.reason());
+                        }
+                    }
+                });
     }
 
     @Override
@@ -1104,7 +1808,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     boolean claimConnection(final @NotNull OpcUaClientConnection connection) {
         connectionOwnershipLock.lock();
         try {
-            return opcUaClientConnection.compareAndSet(null, connection);
+            final boolean claimed = opcUaClientConnection.compareAndSet(null, connection);
+            if (claimed) {
+                // A method NodeId is the server's to assign and stable for a session, so the cache is keyed to
+                // the session rather than given an expiry. One of the two seams that start a session: this one
+                // covers a first connect and every reconnect the adapter drives by building a replacement
+                // connection. The other is the session-active hook, for a reconnect Milo performs inside the
+                // existing client -- see OpcUaClientConnection#onSessionReplaced. Both are needed; this one
+                // alone kept entries across precisely the event that may renumber them.
+                methodCache.invalidate();
+            }
+            return claimed;
         } finally {
             connectionOwnershipLock.unlock();
         }
@@ -1205,6 +1919,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     + "the preceding warning for the cause.",
                             adapterId);
                 }
+                prewarmMethodTags(source);
             } else {
                 log.debug(
                         "OPC UA adapter '{}': not publishing readiness from a connection the adapter no longer owns",
@@ -1212,6 +1927,196 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             }
         } finally {
             connectionOwnershipLock.unlock();
+        }
+    }
+
+    /**
+     * What a new session means for the per-tag method cache: forget it, then read it again.
+     *
+     * <p><b>Why both halves, and why here.</b> A method NodeId is the server's to assign and stable only for the
+     * session that reported it, so a new session must discard the cache. The two seams that start one are not
+     * alike: claiming a connection covers a first connect and every reconnect the adapter drives by building a
+     * replacement, and reaches {@link #prewarmMethodTags} through {@link #publishReadyFrom}; a session Milo
+     * activates <em>inside</em> the existing client swaps no connection and reaches only this hook. Wiring this
+     * hook to invalidation alone therefore cleared the cache and left nothing to refill it, so for the rest of
+     * that session a slow device's first request paid for the browse again — the very case the pre-warm exists
+     * for. Found by Miguel in round 2 of EDG-1087.
+     *
+     * <p>Invalidate first, so a request admitted during the pre-warm cannot be served from what the previous
+     * session reported. A run already in flight notices the generation change and abandons itself; the
+     * single-thread executor then serialises the replacement behind it.
+     */
+    @VisibleForTesting
+    void onSessionReplaced() {
+        methodCache.invalidate();
+        final OpcUaClientConnection current = opcUaClientConnection.get();
+        if (current != null && !stopped) {
+            prewarmMethodTags(current);
+        }
+    }
+
+    /**
+     * Reads every method tag's methods now, so that a caller's first request does not have to.
+     * <p>
+     * <b>Why this exists.</b> A method tag's methods used to be read on the first request against that tag. On a
+     * device that serves metadata slowly that browse can take minutes, so the first request paid for it and
+     * could time out while a later one succeeded — and waiting after connect did not help, because nothing was
+     * reading anything until a request arrived. Reported by Miguel as part of M11 on EDG-1087: the symptom
+     * reproduced on two unrelated devices, and patience was no remedy for this half of it.
+     * <p>
+     * Called from {@link #publishReadyFrom} for a new connection and from {@link #onSessionReplaced} for a
+     * session Milo activates inside an existing one.
+     * <p>
+     * <b>Why not in the connect-time metadata warm-up.</b> That warm-up — which builds the server's DataType
+     * hierarchy — runs inside a task the connect sequence waits on, bounded by the smaller of the connection
+     * timeout and 30 seconds. Exceeding the bound abandons the work and carries on. A browse that is allowed to
+     * take minutes placed there would hold the adapter back from reporting itself connected and then throw away
+     * what it had done. So this runs from the readiness hook instead: after {@code CONNECTED} is published, on
+     * its own thread, unbounded, blocking nothing.
+     * <p>
+     * <b>One tag at a time.</b> A device gets no more concurrent metadata load from the pre-warm than a single
+     * caller would produce. The cost is wall-clock time, which nothing is waiting on, rather than pressure on a
+     * device that is already answering slowly.
+     * <p>
+     * <b>Why a failure is only logged.</b> The cache keeps a {@code Rejected} verdict — "this node is not an
+     * object", "this node is not there" — because that is durable for the session, and evicts everything else: a
+     * browse that threw and an {@code Unverifiable} outcome both leave no entry. So a pre-warm that fails leaves
+     * the cache exactly as it found it and the first request browses again, reporting the failure to the caller
+     * that provoked it as it always did. There is nothing for this to escalate: the adapter is connected,
+     * streaming, and no worse off than before the pre-warm existed.
+     * <p>
+     * <b>The generation check is what makes this safe.</b> A run may still be in flight when its session ends,
+     * and the cache is cleared on every new session because a remembered NodeId may name a different node in the
+     * next one. Checking ownership once at the start is not enough — the check is repeated before each tag, so a
+     * run whose connection has been replaced stops instead of writing entries belonging to a dead session into
+     * the cache of the live one.
+     */
+    private void prewarmMethodTags(final @NotNull OpcUaClientConnection source) {
+        final List<OpcuaTag> methodTags = tagList.stream()
+                .filter(tag -> tag.getDefinition().getKind() == OpcuaTagKind.METHOD)
+                .toList();
+        if (methodTags.isEmpty()) {
+            return;
+        }
+        final ExecutorService executor = methodPrewarmExecutor;
+        if (executor == null || executor.isShutdown()) {
+            return;
+        }
+        log.info(
+                "OPC UA adapter '{}': reading the methods of {} method tag(s) now, one at a time. A device that "
+                        + "serves metadata slowly may take several minutes; nothing waits on this, and a request "
+                        + "arriving meanwhile is served as before.",
+                adapterId,
+                methodTags.size());
+        final long generation = methodCache.generation();
+        methodPrewarmRun.set(executor.submit(() -> runMethodPrewarm(source, methodTags, generation)));
+    }
+
+    /**
+     * The pre-warm run started by the most recent readiness publication, for a test that needs to wait for it.
+     * <p>
+     * Nothing in production waits on this: the point of the run is that nothing does.
+     */
+    @VisibleForTesting
+    @Nullable
+    Future<?> methodPrewarmRun() {
+        return methodPrewarmRun.get();
+    }
+
+    /** Whether a tag's methods are already known, for a test checking what the pre-warm achieved. */
+    @VisibleForTesting
+    boolean methodsKnownFor(final @NotNull String tagName) {
+        return methodCache.isKnown(tagName);
+    }
+
+    /** One pre-warm run: each tag in turn, abandoned as soon as the session it belongs to has ended. */
+    private void runMethodPrewarm(
+            final @NotNull OpcUaClientConnection source,
+            final @NotNull List<OpcuaTag> methodTags,
+            final long generation) {
+
+        int read = 0;
+        for (final OpcuaTag tag : methodTags) {
+            // Three ways this run becomes obsolete, and all three are checked before every tag rather than once
+            // at the start: the thread was interrupted by a stop, the adapter was stopped, or the cache was
+            // invalidated because a new session began. The last is the one object identity cannot see -- Milo
+            // activates a fresh session inside the existing client on a reconnect, so `source` is unchanged
+            // across exactly the event that may renumber the node ids this run is storing.
+            if (Thread.currentThread().isInterrupted()
+                    || stopped
+                    || opcUaClientConnection.get() != source
+                    || methodCache.generation() != generation) {
+                log.debug(
+                        "OPC UA adapter '{}': abandoning the method pre-warm after {} of {} tag(s); the session "
+                                + "it belongs to has ended",
+                        adapterId,
+                        read,
+                        methodTags.size());
+                return;
+            }
+            final OpcUaClient client = source.client().orElse(null);
+            if (client == null) {
+                return;
+            }
+            final String tagName = tag.getName();
+            final NodeId objectNode;
+            try {
+                objectNode = NodeId.parse(tag.getDefinition().getNode());
+            } catch (final Exception e) {
+                // The request path reports this to the caller as a malformed tag. Nothing to add here: a
+                // pre-warm cannot refuse a request that has not arrived.
+                log.debug(
+                        "OPC UA adapter '{}': not pre-warming tag '{}', whose node id is malformed",
+                        adapterId,
+                        tagName);
+                continue;
+            }
+            try {
+                // Blocking deliberately, which is what makes the run sequential. One tag's browse completes
+                // before the next begins, so the device sees one outstanding request at a time.
+                methodCache
+                        .get(tagName, () -> MethodVerifier.verify(client, objectNode, tagName))
+                        .join();
+                // The generation may have changed while that browse was in flight, in which case this run
+                // belongs to a session that has ended and stops here.
+                //
+                // It must *not* invalidate on the way out, which is what it used to do. The generation is both
+                // the record of which session the cache holds and the signal an obsolete run reads, so bumping
+                // it here spent the signal: onSessionReplaced invalidates and then queues a replacement run
+                // with the new generation, this run resumed first and bumped it again, and the replacement
+                // then saw a number that no longer matched its own and exited without reading a single tag.
+                // One reconnect, cache left cold -- in exactly the case pre-warming exists for.
+                //
+                // Nothing needs cleaning up. That invalidate already cleared the map, and this run's entry
+                // went into a fresh one only if the browse finished before the clear; MethodCache.get stores a
+                // relay the invalidation removes, and the completing callback does not put it back.
+                if (methodCache.generation() != generation) {
+                    log.debug(
+                            "OPC UA adapter '{}': a new session began while pre-warming tag '{}'; this run stops "
+                                    + "and the run queued for the new session fills the cache",
+                            adapterId,
+                            tagName);
+                    return;
+                }
+                read++;
+            } catch (final RuntimeException e) {
+                // Logged, not escalated: the cache evicted the failure, so the first request against this tag
+                // browses again and tells its caller what went wrong.
+                log.debug(
+                        "OPC UA adapter '{}': could not pre-warm the methods of tag '{}'; the first request "
+                                + "against it will read them again",
+                        adapterId,
+                        tagName,
+                        e);
+            }
+        }
+        if (opcUaClientConnection.get() == source && !stopped) {
+            log.info(
+                    "OPC UA adapter '{}': pre-warmed {} of {} method tag(s); a request against one of them no "
+                            + "longer waits for a browse",
+                    adapterId,
+                    read,
+                    methodTags.size());
         }
     }
 
@@ -1418,7 +2323,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 opcUaServiceFaultListener,
                                 this::publishStatusFrom,
                                 this::warmUpBrowseMetadata,
-                                this::publishReadyFrom);
+                                this::publishReadyFrom,
+                                this::onSessionReplaced);
 
                         // Set as current connection and attempt
                         if (claimConnection(newConn)) {

@@ -44,15 +44,19 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
         this.adapterId = adapterId;
     }
 
+    /**
+     * A polling adapter's datapoints, enriched with nothing.
+     * <p>
+     * The enricher is deliberately empty. {@code context} is the <em>protocol's</em> namespace, for what
+     * describes a tag or a device, and no polling adapter has anything to say there yet -- so the aspect stays
+     * absent rather than carrying a placeholder onto every message.
+     */
     @Override
     public @NotNull DataPointListBuilder dataPointListPublisher() {
-        return new DataPointListBuilderImpl(
-                adapterId,
-                toEnrich -> toEnrich.startObjectContext().put("key", "value").endObject(),
-                dataPoints -> {
-                    dataPoints.forEach(dataSample::addDataPoint);
-                    finish();
-                });
+        return new DataPointListBuilderImpl(adapterId, toEnrich -> {}, dataPoints -> {
+            dataPoints.forEach(dataSample::addDataPoint);
+            finish();
+        });
     }
 
     @Override

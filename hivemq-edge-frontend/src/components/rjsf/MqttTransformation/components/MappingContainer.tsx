@@ -2,9 +2,23 @@ import type { FC } from 'react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaRightFromBracket } from 'react-icons/fa6'
-import { Card, CardBody, HStack, Icon, Stack, VStack } from '@chakra-ui/react'
+import type { JSONSchema7, JSONSchema7Definition } from 'json-schema'
+import {
+  Card,
+  CardBody,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  HStack,
+  Heading,
+  Icon,
+  Stack,
+  Switch,
+  VStack,
+} from '@chakra-ui/react'
 
 import type { SouthboundMapping, JsonNode } from '@/api/__generated__'
+import { southboundMappingListSchema } from '@/api/schemas/southbound.json-schema.ts'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
 import {
@@ -21,12 +35,51 @@ interface SubscriptionContainerProps {
   adapterId: string
   onClose: () => void
   onSubmit: (newItem: SouthboundMapping) => void
-  onChange: (id: keyof SouthboundMapping, v: JsonNode | string | string[] | null) => void
+  onChange: (id: keyof SouthboundMapping, v: JsonNode | string | string[] | boolean | null) => void
+}
+
+/** The settings this container renders itself, because the custom field replaces RJSF's generic rendering. */
+type MethodCallSetting = 'methodCalls' | 'correlationData' | 'responseTopic'
+
+/**
+ * The label and helper text come from the JSON schema rather than the translation bundle: the schema is where
+ * these three settings are declared, and a copy in the bundle would be a second place for the wording to drift.
+ */
+const methodCallSettingSchema = (id: MethodCallSetting): JSONSchema7 => {
+  const mapping = southboundMappingListSchema.definitions?.SouthboundMapping as JSONSchema7 | undefined
+  const property: JSONSchema7Definition | undefined = mapping?.properties?.[id]
+  return typeof property === 'object' ? property : {}
 }
 
 const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterType, item, onChange }) => {
   const { t } = useTranslation('components')
   const [strategy] = useState<MappingStrategy>(MappingStrategy.TYPED)
+
+  const renderMethodCallSetting = (id: MethodCallSetting, isDisabled: boolean) => {
+    const { title, description } = methodCallSettingSchema(id)
+    const controlId = `mapping-${id}`
+
+    return (
+      <FormControl isDisabled={isDisabled}>
+        <HStack alignItems="center" gap={3}>
+          <Switch
+            id={controlId}
+            isChecked={Boolean(item[id])}
+            isDisabled={isDisabled}
+            onChange={(event) => onChange(id, event.target.checked)}
+          />
+          <FormLabel htmlFor={controlId} mb={0}>
+            {title}
+          </FormLabel>
+        </HStack>
+        <FormHelperText>{description}</FormHelperText>
+      </FormControl>
+    )
+  }
+
+  // The two refinements only describe fields of a method request, so they are meaningless -- and must not be
+  // independently settable -- while this mapping does not carry method calls at all.
+  const areRefinementsDisabled = !item.methodCalls
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onSchemaReadyHandler = useCallback((_properties: FlatJSONSchema7[]) => {
@@ -94,6 +147,22 @@ const MappingContainer: FC<SubscriptionContainerProps> = ({ adapterId, adapterTy
           )}
         </VStack>
       </Stack>
+
+      <Card size="sm" data-testid="mapping-method-calls">
+        <CardBody>
+          <VStack alignItems="stretch" gap={4}>
+            <Heading as="h5" size="sm">
+              {t('rjsf.MqttTransformationField.methodCalls.header')}
+            </Heading>
+            {renderMethodCallSetting('methodCalls', false)}
+            {/* Indented so the two refinements read as subordinate to the setting that enables them. */}
+            <VStack alignItems="stretch" gap={4} pl={8} borderLeftWidth={2} borderLeftStyle="solid">
+              {renderMethodCallSetting('correlationData', areRefinementsDisabled)}
+              {renderMethodCallSetting('responseTopic', areRefinementsDisabled)}
+            </VStack>
+          </VStack>
+        </CardBody>
+      </Card>
     </VStack>
   )
 }

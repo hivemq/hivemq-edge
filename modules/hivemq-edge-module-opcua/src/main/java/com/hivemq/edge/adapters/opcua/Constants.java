@@ -70,4 +70,53 @@ public class Constants {
     public static final @NotNull String MAXIMUM_KEY_WORD = "maximum";
 
     public static final @NotNull SecPolicy DEFAULT_SECURITY_POLICY = SecPolicy.NONE;
+
+    // region Structured builtin field names
+    //
+    // Four OPC-UA builtin types have no single JSON form, so Edge publishes each as an object and accepts the
+    // same object back. These are that object's field names, and they are a **published contract**: they
+    // appear in every generated schema a user reads and in every message a user writes, so renaming one is a
+    // breaking change rather than a refactor.
+    //
+    // Named here because the contract is spelled in six places -- OpcUaToJsonConverter and
+    // OpcUaEventToJsonConverter write them, JsonSchemaGenerator and ConditionSchemas declare them,
+    // JsonToOpcUAConverterUtil reads them on the value-write path, and MethodArguments validates them for a
+    // method's arguments. Six independent spellings of one contract, where a typo in any single one fails
+    // nothing: the published shape and the accepted shape simply stop agreeing, for one type, silently.
+    //
+    // Reported by Sam while reviewing EDG-1087, as `code` alongside the magic numbers.
+
+    /// A NodeId's namespace index. Separate from the QualifiedName field of the same spelling: the two types
+    /// are independent contracts that happen to agree today, and one constant for both would make a change to
+    /// either silently change the other.
+    public static final @NotNull String NODE_ID_NAMESPACE_INDEX = "namespaceIndex";
+
+    /// Which of the four identifier kinds a NodeId carries -- 0 numeric, 1 string, 2 guid, 3 opaque, per
+    /// OPC 10000-6 section 5.2.2.2. Spelled `idType`; named without the doubled word.
+    public static final @NotNull String NODE_ID_TYPE = "idType";
+
+    /// A NodeId's identifier itself, spelled `id`. "Identifier" is the OPC-UA term.
+    public static final @NotNull String NODE_ID_IDENTIFIER = "id";
+
+    /// A QualifiedName's namespace index. See the note on {@link #NODE_ID_NAMESPACE_INDEX} for why this is
+    /// its own constant.
+    public static final @NotNull String QUALIFIED_NAME_NAMESPACE_INDEX = "namespaceIndex";
+
+    /// A QualifiedName's string half.
+    public static final @NotNull String QUALIFIED_NAME_NAME = "name";
+
+    /// A StatusCode's numeric value, a UInt32.
+    public static final @NotNull String STATUS_CODE_CODE = "code";
+
+    /// A StatusCode's symbolic name, such as `Bad_NotExecutable`. Published for a reader's benefit and
+    /// accepted but not authoritative on the way in -- the number decides.
+    public static final @NotNull String STATUS_CODE_SYMBOL = "symbol";
+
+    /// A LocalizedText's locale. Absent or null means the server stated none, which is different from the
+    /// empty string.
+    public static final @NotNull String LOCALIZED_TEXT_LOCALE = "locale";
+
+    /// A LocalizedText's text.
+    public static final @NotNull String LOCALIZED_TEXT_TEXT = "text";
+    // endregion
 }

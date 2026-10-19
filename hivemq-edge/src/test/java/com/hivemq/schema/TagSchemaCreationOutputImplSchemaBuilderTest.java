@@ -79,6 +79,44 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
                 .isEqualTo("temperature");
     }
 
+    /// An object-valued tag keeps the name and explanation it gave itself, in both directions.
+    ///
+    /// The method-call feature added a step that splits a `value` object in two, lifting a carrier field's
+    /// members to the document root. Splitting means constructing the remaining `value` object rather than
+    /// passing the original through, and the construction copied everything structural -- properties, the
+    /// required set, the additional-properties policy, the read/write/nullable flags -- but not `title` or
+    /// `description`. It also ran for *every* object-valued tag, carrier or no carrier, so every adapter with
+    /// an object-valued tag lost those two annotations.
+    ///
+    /// The titles asserted elsewhere in this class are on scalars and on members, both of which take the
+    /// pass-through branch. Nothing asserted the annotations of the object itself, which is the only thing the
+    /// reconstruction touched.
+    @Test
+    void test_objectValuedTagWithoutMethodParameters_keepsItsOwnTitleAndDescription()
+            throws ExecutionException, InterruptedException {
+        final var output = new TagSchemaCreationOutputImpl();
+        final var machineSettings = new SchemaBuilder()
+                .startObject()
+                .property("setpoint")
+                .scalar(ScalarType.DOUBLE)
+                .endObject()
+                .title("Machine settings")
+                .description("What the operator may change")
+                .writable()
+                .build();
+
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(machineSettings, null, null));
+
+        for (final TagSchemaDirection direction :
+                new TagSchemaDirection[] {TagSchemaDirection.NORTHBOUND, TagSchemaDirection.SOUTHBOUND}) {
+            final JsonNode value = output.getSchema(direction).get("properties").get("value");
+            assertThat(value.get("title").asText()).as("title, %s", direction).isEqualTo("Machine settings");
+            assertThat(value.get("description").asText())
+                    .as("description, %s", direction)
+                    .isEqualTo("What the operator may change");
+        }
+    }
+
     @Test
     void test_southboundSchema_dropsTheNonWritableEnvelope() throws ExecutionException, InterruptedException {
         final var output = new TagSchemaCreationOutputImpl();

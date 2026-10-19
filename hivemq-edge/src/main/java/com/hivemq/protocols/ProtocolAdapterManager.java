@@ -103,7 +103,28 @@ public class ProtocolAdapterManager {
     private static final int ADAPTER_LIFECYCLE_CORE_POOL_SIZE = 4;
     private static final int ADAPTER_LIFECYCLE_MAX_POOL_SIZE = 10;
     private static final int ADAPTER_LIFECYCLE_QUEUE_CAPACITY = 20;
-    private static final int SHUTDOWN_STOP_TIMEOUT_SECONDS = 5;
+    /// How long each adapter gets to stop before the shutdown gives up on it and logs an error.
+    ///
+    /// **Longer than the time a disconnect needs when the device is unreachable, which is what sets the
+    /// floor.** An adapter's stop closes its client, and for OPC-UA that ends in Milo's `disconnect()` --
+    /// `disconnectAsync().get()`, with no timeout of its own, so the wait is bounded by the client's
+    /// configured request timeout rather than by anything here. A device whose link has gone silent answers
+    /// nothing, so the disconnect costs roughly that request timeout before it gives up.
+    ///
+    /// At five seconds this raced an OPC-UA adapter configured with a five-second request timeout: two timers
+    /// of the same length started moments apart, so whether the shutdown logged "Exception happened while
+    /// shutting down adapter" was a coin flip. `OpcUaNodeBrowserNetworkIT` sets exactly that timeout, on
+    /// purpose, and failed on five of eight builds that produced a report -- each time passing on Gradle's
+    /// retry, which is why the aggregate flaky reports called it stable.
+    ///
+    /// Ten gives that disconnect twice the time it needs. It does **not** cover the 30-second default request
+    /// timeout: a deployment on the default that shuts down while a device is unreachable still logs the
+    /// error. Bounding the disconnect itself, rather than inheriting whatever the device timeout happens to
+    /// be, is the real answer and is adapter-lifecycle work.
+    ///
+    /// Cost of the increase: the pathological shutdown is longer, since this bounds three waits in sequence --
+    /// the per-adapter stop and two executor terminations.
+    private static final int SHUTDOWN_STOP_TIMEOUT_SECONDS = 10;
     // ConcurrentHashMap provides thread-safe access without explicit locking
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapterMap = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;

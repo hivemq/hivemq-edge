@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemServiceOperationResult;
@@ -65,6 +66,7 @@ import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaSerializationException;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -403,9 +405,29 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private static void extractPayload(
             final @NotNull OpcUaClient client,
             final @NotNull DataValue value,
-            final @NotNull DataPointBuilder<?> builder)
-            throws UaException {
-        OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value, builder);
+            final @NotNull DataPointBuilder<?> builder) {
+        OpcUaToJsonConverter.convertPayload(encodingContextSupplier(client), value, builder);
+    }
+
+    /// The server's type descriptions, fetched when a value's own type calls for them and not before.
+    ///
+    /// Only a structure that arrives still encoded needs them; a number, a string or a timestamp is published
+    /// from what is in hand. Reading them is a network round trip, so asking for them up front made every
+    /// notification depend on a read that most notifications do not need -- and a read that failed dropped the
+    /// whole batch, including values that would have published fine. The converter decides, because it is the
+    /// only code that knows which values need what.
+    ///
+    /// The checked [UaException] is wrapped because a supplier cannot throw it. It lands in the caller's
+    /// handlers unchanged in kind: a value that genuinely cannot be decoded still drops its batch and resets
+    /// the type registry, which is the right answer for that case.
+    private static @NotNull Supplier<EncodingContext> encodingContextSupplier(final @NotNull OpcUaClient client) {
+        return () -> {
+            try {
+                return client.getDynamicEncodingContext();
+            } catch (final UaException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     /**
@@ -418,10 +440,57 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @return an Optional containing the created or transferred subscription, or empty if failed
      */
     public @NotNull Optional<OpcUaSubscription> subscribe(final @NotNull OpcUaClient client) {
+        reportMethodTagsWithAnUnusableNode();
         return newSubscription(client)
                 .publishingInterval(config.getOpcuaToMqttConfig().publishingInterval())
                 .create()
                 .flatMap(this::establishInitial);
+    }
+
+    /**
+     * Reports a METHOD tag whose configured node is not a node id at all.
+     * <p>
+     * A method tag is excluded from {@code observableTags} before {@link #verify} runs, correctly — it names an
+     * object, which has no Value attribute to sample and emits no events, so there is no monitored item it
+     * could yield. The side effect was that nothing looked at such a tag during startup at all, not even to
+     * parse its node: the {@code case METHOD} arm in {@code verify} is unreachable. An operator who mistyped
+     * the node therefore learned of it from the first request, which may be hours later and is reported to
+     * whoever sent that request rather than to whoever wrote the configuration.
+     * <p>
+     * Only the parse is checked here, which is the part that needs no server: whether the node exists, and
+     * whether it is an object with methods, stays where it is — read on the first call against the tag. That
+     * laziness is deliberate (see {@code OpcUaProtocolAdapter#callMethod}): the browse-metadata warm-up is
+     * allowed to fail without failing the connection, so a browse done here would leave an adapter that is
+     * connected and not browse-ready reporting every method that exists as absent.
+     * <p>
+     * Run from {@link #subscribe} rather than from the monitored-item sync, so it happens once per connection
+     * rather than once per subscription rebuild.
+     * <p>
+     * <b>It therefore repeats on every reconnect, and that is accepted rather than overlooked.</b> This comment
+     * used to claim the opposite -- that the placement avoided repetition, since a configured string cannot
+     * change between connects. The first half is true and the second does not follow: {@code subscribe} runs on
+     * every connect, a reconnect included, so the report recurs for as long as the tag stays broken. Reported by
+     * Miguel as M9b on PR 1765, observed live after a health-check reconnect.
+     * <p>
+     * Left as it is deliberately. A correct configuration produces nothing here at all, so the repetition can
+     * only follow a real misconfiguration, and each report is accurate every time it fires -- the tag still
+     * cannot serve a request. Reporting once would mean a restart silently clears the only standing evidence of
+     * a fault that has not been fixed, which is the "have you tried rebooting" failure mode: the operator sees
+     * the complaint stop and concludes the problem went away.
+     */
+    private void reportMethodTagsWithAnUnusableNode() {
+        for (final OpcuaTag tag : tags) {
+            if (tag.getDefinition().getKind() != OpcuaTagKind.METHOD) {
+                continue;
+            }
+            try {
+                parseField(tag.getDefinition().getNode(), "node");
+            } catch (final MalformedNodeIdException e) {
+                // Not "unsubscribable": a method tag is never subscribed, so saying so would describe every
+                // method tag and tell the operator nothing. This one cannot serve a request either.
+                reportUnusableTag(tag.getName(), describe(e));
+            }
+        }
     }
 
     /**
@@ -478,7 +547,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // rather than reusing the broken one. Keying by tag removes the trap either way.
         //
         // The dispatch path stopped keying by node id in 6b83694c5; these two maps were the last of it.
-        final Set<OpcuaTag> wanted = new LinkedHashSet<>(tags);
+        // A METHOD tag is not observed at all: it names an object whose methods are called southbound, and an
+        // object has no Value attribute to sample and emits no events of its own. It is excluded here rather
+        // than handled in the item-creation switch below, because there is no item it could yield -- and
+        // excluding it from `wanted` also keeps it out of the remove set, which is what stops the sync
+        // deleting items it never created.
+        final List<OpcuaTag> observableTags = tags.stream()
+                .filter(tag -> tag.getDefinition().getKind() != OpcuaTagKind.METHOD)
+                .toList();
+
+        final Set<OpcuaTag> wanted = new LinkedHashSet<>(observableTags);
         final Set<OpcuaTag> subscribed = subscription.getMonitoredItems().stream()
                 .map(this::tagOf)
                 .filter(Objects::nonNull)
@@ -493,7 +571,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 })
                 .toList();
         final var monitoredItemsToAdd =
-                tags.stream().filter(tag -> !subscribed.contains(tag)).toList();
+                observableTags.stream().filter(tag -> !subscribed.contains(tag)).toList();
 
         // clear deleted monitored items
         if (!monitoredItemsToRemove.isEmpty()) {
@@ -564,6 +642,12 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // event filter; an ordinary value is observed directly through its Value attribute.
                 final var monitoredItem =
                         switch (opcuaTag.getDefinition().getKind()) {
+                            // Unreachable: a METHOD tag is filtered out of the candidate list above, because an
+                            // object has nothing to monitor. Stated rather than folded into the value branch so
+                            // that a future kind cannot reach the value path by forgetting to decide.
+                            case METHOD ->
+                                throw new IllegalStateException(
+                                        "A METHOD tag has no monitored item: " + opcuaTag.getName());
                             case CONDITION, EVENT_SUBSCRIPTION, REFRESH -> {
                                 // All three are event items, but they name different nodes. A condition tag
                                 // names the condition and its events arrive from a notifier above it, found
@@ -1199,7 +1283,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // was built from the former. Event fields arrive positionally against the select clause, so
                 // decoding against any other list would attach values to the wrong names.
                 OpcUaEventToJsonConverter.convertPayload(
-                        client.getDynamicEncodingContext(),
+                        encodingContextSupplier(client),
                         tag.getDefinition().getPublishedFields(),
                         eventFields,
                         dataPointBuilder);
@@ -1304,8 +1388,18 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // conditions too, so a query-only adapter needs the refresh just as much. The call itself names no
         // node of ours -- both the object and the method are fixed by the specification -- so there is no
         // entry point to find, only a reason to bother asking.
-        final boolean hasEventItems =
-                tags.stream().anyMatch(tag -> tag.getDefinition().getKind() != OpcuaTagKind.VALUE);
+        //
+        // The kinds that mean alarms are named, rather than excluding the one that does not. "Not a VALUE tag"
+        // was equivalent while four kinds existed, and METHOD made it wrong: a method tag monitors nothing, so
+        // a method-only adapter asked a server -- possibly one with no Alarms and Conditions support at all --
+        // to re-report alarms it was not listening for. A switch so a sixth kind cannot inherit the same way:
+        // it will not compile without stating its own answer, which is the shape `verify` uses for the same
+        // reason.
+        final boolean hasEventItems = tags.stream()
+                .anyMatch(tag -> switch (tag.getDefinition().getKind()) {
+                    case CONDITION, REFRESH, EVENT_SUBSCRIPTION -> true;
+                    case VALUE, METHOD -> false;
+                });
         if (!hasEventItems) {
             return;
         }
@@ -1357,8 +1451,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             // The Server object is a notifier by convention and the root of the notifier hierarchy, so an
             // item there sees the refresh bracket the server broadcasts to every notifier item.
             case REFRESH -> NodeIds.Server;
-            // A query names its notifier directly; a value item never reaches here.
-            case EVENT_SUBSCRIPTION, VALUE -> Objects.requireNonNull(nodeId);
+            // A query names its notifier directly. A value item never reaches here, and nor does a method tag:
+            // it has no monitored item of any sort.
+            case EVENT_SUBSCRIPTION, VALUE, METHOD -> Objects.requireNonNull(nodeId);
         };
     }
 
@@ -1376,7 +1471,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                         definition.getFilterType(),
                         definition.getPublishedFields());
             case REFRESH -> ConditionEventFilters.forRefresh();
-            case CONDITION, VALUE ->
+            // VALUE and METHOD never reach here -- neither has an event item to filter.
+            case CONDITION, VALUE, METHOD ->
                 ConditionEventFilters.forCondition(
                         Objects.requireNonNull(verified.node()), definition.getPublishedFields());
         };
@@ -2091,6 +2187,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 case VALUE, REFRESH -> Optional.of(new VerifiedTag(opcuaTag, node, null, null, null));
                 case EVENT_SUBSCRIPTION -> verifyEventSubscription(opcuaTag, node, tagName);
                 case CONDITION -> verifyCondition(opcuaTag, Objects.requireNonNull(node), tagName);
+                // Unreachable: a METHOD tag is filtered out of the candidate list before this runs, because
+                // what this verifies is a monitored item and a method tag has none. Its own checks live
+                // elsewhere -- the node is parsed by reportMethodTagsWithAnUnusableNode at subscribe, and the
+                // object's methods are browsed on the first call against the tag. The arm exists because the
+                // switch is exhaustive over the kinds, which is what stops a sixth kind silently inheriting
+                // another's requirements.
+                case METHOD -> Optional.empty();
             };
         } catch (final MalformedNodeIdException e) {
             reportUnsubscribableTag(tagName, describe(e));
@@ -2401,6 +2504,23 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                 .withSeverity(Event.SEVERITY.WARN)
                 .withMessage(String.format("Adapter '%s' did not subscribe tag '%s': %s", adapterId, tagName, reason))
+                .fire();
+    }
+
+    /**
+     * Tells the operator a tag cannot serve a request, for a tag that was never going to be subscribed.
+     * <p>
+     * Distinct from {@link #reportUnsubscribableTag} because a METHOD tag has no monitored item by design:
+     * "did not subscribe tag" is true of every method tag and would say nothing about this one. What it says
+     * instead is that the tag is unusable, which is the part the operator can act on.
+     */
+    private void reportUnusableTag(final @NotNull String tagName, final @NotNull String reason) {
+        log.warn("Adapter '{}': tag '{}' cannot serve a request — {}", adapterId, tagName, reason);
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withSeverity(Event.SEVERITY.WARN)
+                .withMessage(
+                        String.format("Adapter '%s': tag '%s' cannot serve a request: %s", adapterId, tagName, reason))
                 .fire();
     }
 

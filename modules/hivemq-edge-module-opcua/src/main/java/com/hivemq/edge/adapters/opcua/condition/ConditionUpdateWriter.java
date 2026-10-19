@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.hivemq.edge.adapters.opcua.browse.Browsing;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

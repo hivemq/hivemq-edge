@@ -286,6 +286,9 @@
           "aria-label": "Auto-mapping"
         }
       },
+      "methodCalls": {
+        "header": "Method calls"
+      },
       "destination": {
         "prompt": "Select a device tag as a destination for your mappings",
         "selector": {
