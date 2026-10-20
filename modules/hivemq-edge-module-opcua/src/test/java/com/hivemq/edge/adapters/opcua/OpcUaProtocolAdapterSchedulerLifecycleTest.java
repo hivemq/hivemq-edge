@@ -282,7 +282,8 @@ class OpcUaProtocolAdapterSchedulerLifecycleTest {
     }
 
     private static @NotNull ModuleServices moduleServices() {
-        final EventService eventService = mock(EventService.class);
+        // A fake rather than a mock: the adapter fires lifecycle events, and a mock's builder would be null.
+        final EventService eventService = new FakeEventService();
         final ProtocolAdapterTagStreamingService streaming = mock(ProtocolAdapterTagStreamingService.class);
         final ModuleServices services = mock(ModuleServices.class);
         when(services.eventService()).thenReturn(eventService);

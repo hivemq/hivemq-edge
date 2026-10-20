@@ -15,11 +15,15 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -66,6 +70,10 @@ import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import com.hivemq.util.Topics;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -199,6 +207,53 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      */
     private final @NotNull AtomicBoolean started = new AtomicBoolean();
 
+    // region Lifecycle lines (EDG-1130)
+
+    /**
+     * The prefix of every lifecycle line, so that one grep finds exactly these lines and nothing else.
+     * <p>
+     * A lifecycle line is written as a log line and fired as an event with the same text, and it has four parts:
+     * the prefix, the identity, what just happened, and the state now. The state is the condition of value
+     * reads, value writes and method requests, worked out from what the adapter knows at that moment, so the
+     * last lifecycle line of an adapter always says what works now.
+     */
+    static final @NotNull String LIFECYCLE_PREFIX = "Lifecycle '";
+
+    private static final @NotNull DateTimeFormatter LIFECYCLE_START_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
+
+    /**
+     * Held from construction rather than read through {@link #moduleServices}, which {@link #stop} clears
+     * before the last lifecycle line is written.
+     */
+    private final @NotNull EventService eventService;
+
+    /**
+     * When this adapter object began its start. Edge builds a new adapter object on every restart, so this
+     * identifies the restart; a counter held here would start from zero again on exactly that event.
+     */
+    private volatile @Nullable String lifecycleStart;
+
+    /** Client connections claimed within this start. */
+    private final @NotNull AtomicInteger lifecycleConnection = new AtomicInteger();
+
+    /** Sessions within the current connection: the first, then one more for every session Milo resumes. */
+    private final @NotNull AtomicInteger lifecycleSession = new AtomicInteger();
+
+    /**
+     * Whether the current connection has published CONNECTED once. A session Milo activates before that is
+     * part of the initial connect, not a resumed session.
+     */
+    private volatile boolean lifecycleConnectionReady;
+
+    /** Whether the adapter holds a live connection and session, the condition for value reads and writes. */
+    private volatile boolean lifecycleConnected;
+
+    /** Whether the method read has finished for the current connection or session. */
+    private volatile boolean lifecycleMethodsRead;
+
+    // endregion
+
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
@@ -210,6 +265,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
         this.opcUaClientConnection = new AtomicReference<>();
+        this.eventService = input.moduleServices().eventService();
         this.opcUaServiceFaultListener = new OpcUaServiceFaultListener(
                 protocolAdapterMetricsService,
                 input.moduleServices().eventService(),
@@ -290,6 +346,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         // Reset stopped flag
         stopped = false;
+        beginLifecycle();
 
         // Every synchronous check the configuration can fail happens before any runtime resource exists.
         // The schedulers used to start first, and neither failure path below shut them down again -- so a
@@ -324,6 +381,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     + "' has " + refreshTagNames.size() + ": " + String.join(", ", refreshTagNames)
                     + ". They would each publish the same refresh events.";
             log.error(message);
+            reportInvalidConfiguration(message);
             output.failStart(new IllegalStateException(message), message);
             return;
         }
@@ -332,6 +390,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         final var result = ParsedConfig.fromConfig(config);
         if (result instanceof Failure<ParsedConfig, String>(final String failure)) {
             log.error("Failed to parse configuration for OPC UA client: {}", failure);
+            reportInvalidConfiguration(failure);
             output.failStart(new IllegalStateException(failure), "Failed to parse configuration for OPC UA client");
             return;
         } else if (result instanceof Success<ParsedConfig, String>(final ParsedConfig successfullyParsedConfig)) {
@@ -339,6 +398,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // Store for reconnection
             this.parsedConfig = successfullyParsedConfig;
             this.moduleServices = input.moduleServices();
+            reportLifecycle(Event.SEVERITY.INFO, false, "starting");
         } else {
             output.failStart(
                     new IllegalStateException(
@@ -403,6 +463,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
 
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
+
+        lifecycleConnected = false;
+        reportLifecycle(Event.SEVERITY.INFO, false, "stopping");
 
         // Set stopped flag to prevent new scheduling
         stopped = true;
@@ -489,6 +552,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 log.error("Cannot reconnect OPC UA adapter '{}' - adapter has not been started yet", adapterId);
                 return;
             }
+
+            lifecycleConnected = false;
+            reportLifecycle(Event.SEVERITY.WARN, true, "PROBLEM: connection lost. Replacing it by itself");
 
             // Reset retry counter for fresh reconnection attempt with exponential backoff
             consecutiveRetryAttempts.set(0);
@@ -578,6 +644,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                             "Health check failed for adapter '{}' - automatic reconnection is disabled",
                                             adapterId);
                                     publishStatusFrom(conn, ProtocolAdapterState.ConnectionStatus.ERROR);
+                                    // Once, on the transition: this check repeats every interval while the
+                                    // connection stays unhealthy.
+                                    if (lifecycleConnected) {
+                                        lifecycleConnected = false;
+                                        reportLifecycle(
+                                                Event.SEVERITY.WARN,
+                                                true,
+                                                "PROBLEM: connection lost. Automatic reconnection is switched "
+                                                        + "off, so a restart is needed");
+                                    }
                                 }
                             } else {
                                 log.debug("Health check passed for adapter '{}'", adapterId);
@@ -623,6 +699,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             try {
                 if (opcUaClientConnection.get() == conn && !stopped) {
                     browseReadiness.set(ReadinessStatus.BROWSE_READY);
+                    reportLifecycle(Event.SEVERITY.INFO, true, "browse is ready");
                 } else {
                     log.debug(
                             "OPC UA adapter '{}': not reopening browse from a connection the adapter no longer owns",
@@ -1803,6 +1880,81 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         return consecutiveRetryAttempts.get();
     }
 
+    // region Lifecycle lines (EDG-1130)
+
+    /** Begins the lifecycle of one start: a new start time, and nothing connected or read yet. */
+    @VisibleForTesting
+    void beginLifecycle() {
+        lifecycleStart = LIFECYCLE_START_FORMAT.format(Instant.now());
+        lifecycleConnection.set(0);
+        lifecycleSession.set(0);
+        lifecycleConnectionReady = false;
+        lifecycleConnected = false;
+        lifecycleMethodsRead = false;
+    }
+
+    private void reportInvalidConfiguration(final @NotNull String reason) {
+        reportLifecycle(
+                Event.SEVERITY.WARN,
+                false,
+                "PROBLEM: the configuration is invalid: " + reason
+                        + ". Fix the configuration, a restart alone does not help");
+    }
+
+    /**
+     * Writes one lifecycle line as a log line and fires it as an event with the same text. Nothing is written
+     * before the first start, because there is no lifecycle to identify.
+     */
+    private void reportLifecycle(
+            final @NotNull Event.SEVERITY severity, final boolean withConnection, final @NotNull String happened) {
+        final String start = lifecycleStart;
+        if (start == null) {
+            return;
+        }
+        final StringBuilder identity = new StringBuilder("start ").append(start);
+        final int connection = lifecycleConnection.get();
+        if (withConnection && connection > 0) {
+            identity.append(", connection ").append(connection);
+            final int session = lifecycleSession.get();
+            if (session > 1) {
+                identity.append(", session ").append(session);
+            }
+        }
+        final String line =
+                LIFECYCLE_PREFIX + adapterId + "'; " + identity + "; " + happened + "; state now - " + lifecycleState();
+        if (severity == Event.SEVERITY.INFO) {
+            log.info(line);
+        } else {
+            log.warn(line);
+        }
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                .withSeverity(severity)
+                .withMessage(line)
+                .fire();
+    }
+
+    /** The condition of value reads, value writes and method requests, from what the adapter knows now. */
+    private @NotNull String lifecycleState() {
+        final boolean connected = lifecycleConnected && !stopped;
+        final String values = connected ? "working" : "not working";
+        final boolean hasMethodTags =
+                tagList.stream().anyMatch(tag -> tag.getDefinition().getKind() == OpcuaTagKind.METHOD);
+        final String methods;
+        if (!hasMethodTags) {
+            methods = "none";
+        } else if (!connected) {
+            methods = "not working";
+        } else if (lifecycleMethodsRead) {
+            methods = "working";
+        } else {
+            methods = "starting (working with delays)";
+        }
+        return "value reads: " + values + ", value writes: " + values + ", method requests: " + methods;
+    }
+
+    // endregion
+
     /** Claims the empty connection slot as one operation serialized with generation-owned status writes. */
     @VisibleForTesting
     boolean claimConnection(final @NotNull OpcUaClientConnection connection) {
@@ -1817,6 +1969,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 // existing client -- see OpcUaClientConnection#onSessionReplaced. Both are needed; this one
                 // alone kept entries across precisely the event that may renumber them.
                 methodCache.invalidate();
+                lifecycleConnection.incrementAndGet();
+                lifecycleSession.set(1);
+                lifecycleConnectionReady = false;
+                lifecycleConnected = false;
+                lifecycleMethodsRead = false;
             }
             return claimed;
         } finally {
@@ -1860,6 +2017,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         try {
             if (opcUaClientConnection.get() == source) {
                 protocolAdapterState.setConnectionStatus(status);
+                // The current connection reports DISCONNECTED only when its session is lost: a reconnect and a
+                // stop release the connection before closing it, so their DISCONNECTED arrives here as stale.
+                if (status == ProtocolAdapterState.ConnectionStatus.DISCONNECTED && lifecycleConnected) {
+                    lifecycleConnected = false;
+                    reportLifecycle(
+                            Event.SEVERITY.WARN, true, "PROBLEM: session to the device lost. Waiting for it to resume");
+                }
             } else {
                 log.debug(
                         "OPC UA adapter '{}': not reporting {} from a connection the adapter has already replaced",
@@ -1919,6 +2083,18 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     + "the preceding warning for the cause.",
                             adapterId);
                 }
+                lifecycleConnectionReady = true;
+                lifecycleConnected = true;
+                lifecycleMethodsRead = false;
+                if (browseReady) {
+                    reportLifecycle(Event.SEVERITY.INFO, true, "connected, browse is ready");
+                } else {
+                    reportLifecycle(
+                            Event.SEVERITY.WARN,
+                            true,
+                            "PROBLEM: connected, but browse is not ready. The data-type tree could not be built. "
+                                    + "Retrying by itself");
+                }
                 prewarmMethodTags(source);
             } else {
                 log.debug(
@@ -1951,6 +2127,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         methodCache.invalidate();
         final OpcUaClientConnection current = opcUaClientConnection.get();
         if (current != null && !stopped) {
+            // Only a session after the connection's first CONNECTED is a resumed one. Milo can report an
+            // activation while the initial connect is still running, and that connect writes its own line.
+            if (lifecycleConnectionReady) {
+                lifecycleSession.incrementAndGet();
+                lifecycleConnected = true;
+                lifecycleMethodsRead = false;
+                reportLifecycle(Event.SEVERITY.INFO, true, "session resumed");
+            }
             prewarmMethodTags(current);
         }
     }
@@ -2036,6 +2220,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final long generation) {
 
         int read = 0;
+        final List<String> notRead = new ArrayList<>();
         for (final OpcuaTag tag : methodTags) {
             // Three ways this run becomes obsolete, and all three are checked before every tag rather than once
             // at the start: the thread was interrupted by a stop, the adapter was stopped, or the cache was
@@ -2069,6 +2254,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         "OPC UA adapter '{}': not pre-warming tag '{}', whose node id is malformed",
                         adapterId,
                         tagName);
+                notRead.add(tagName);
                 continue;
             }
             try {
@@ -2108,6 +2294,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         adapterId,
                         tagName,
                         e);
+                notRead.add(tagName);
             }
         }
         if (opcUaClientConnection.get() == source && !stopped) {
@@ -2117,6 +2304,24 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     adapterId,
                     read,
                     methodTags.size());
+            // Not for a session that ended during the last tag: the line for its loss has said what is current,
+            // and the run queued for the next session writes this line for that one.
+            if (methodCache.generation() == generation) {
+                lifecycleMethodsRead = true;
+                if (notRead.isEmpty()) {
+                    reportLifecycle(
+                            Event.SEVERITY.INFO,
+                            true,
+                            "read the methods of " + read + " of " + methodTags.size() + " method tags");
+                } else {
+                    reportLifecycle(
+                            Event.SEVERITY.WARN,
+                            true,
+                            "PROBLEM: read the methods of " + read + " of " + methodTags.size()
+                                    + " method tags, not read: '" + String.join("', '", notRead)
+                                    + "'. Method requests to these tags read the methods first");
+                }
+            }
         }
     }
 
@@ -2285,6 +2490,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     e);
             backoffDelayMs = calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS, attemptCount);
         }
+
+        lifecycleConnected = false;
+        reportLifecycle(
+                Event.SEVERITY.WARN,
+                true,
+                "PROBLEM: could not connect (attempt " + attemptCount + "), see the preceding event. Retrying in "
+                        + backoffDelayMs + " ms by itself. A restart does not help");
 
         log.info(
                 "Scheduling retry attempt #{} for OPC UA adapter '{}' with backoff delay of {} ms",
