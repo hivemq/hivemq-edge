@@ -205,7 +205,12 @@ class ConditionUpdateWriterMethodResolutionTest {
         return ConditionUpdateWriter.requestTransition(
                         client,
                         CONDITION,
-                        new ConditionUpdate(ConditionUpdate.Method.SUPPRESS, null, comment, null, null))
+                        new ConditionUpdate(
+                                ConditionUpdate.Method.SUPPRESS,
+                                null,
+                                comment == null ? null : LocalizedText.english(comment),
+                                null,
+                                null))
                 .join();
     }
 

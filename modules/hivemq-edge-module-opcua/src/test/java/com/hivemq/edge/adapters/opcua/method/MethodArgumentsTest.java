@@ -637,9 +637,9 @@ class MethodArgumentsTest {
     }
 
     @Test
-    void customStructureArgument_isRefusedRatherThanGuessedAt() throws Exception {
-        // The generated schema already says `any` for such an argument, so a caller has no contract to write
-        // against. Encoding one needs the DataTypeTree machinery the value-write path uses.
+    void customStructureArgument_withoutTheServersTypeHierarchy_isRefusedRatherThanGuessedAt() throws Exception {
+        // Encoding a structure needs its definition, which only the server's type hierarchy has. Without one --
+        // the builtin-only converter -- the argument is refused rather than guessed at.
         assertThatThrownBy(() -> MethodArguments.forCall(
                         signature(argument("recipe", new NodeId(3, 4001))), json("{\"recipe\": {\"steps\": 3}}")))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class)

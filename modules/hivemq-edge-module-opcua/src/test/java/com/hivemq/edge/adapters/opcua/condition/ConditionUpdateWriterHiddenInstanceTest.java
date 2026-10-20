@@ -369,7 +369,14 @@ class ConditionUpdateWriterHiddenInstanceTest {
             final String comment,
             final Double duration) {
         return ConditionUpdateWriter.requestTransition(
-                        client, CONDITION, new ConditionUpdate(method, eventId, comment, duration, null))
+                        client,
+                        CONDITION,
+                        new ConditionUpdate(
+                                method,
+                                eventId,
+                                comment == null ? null : LocalizedText.english(comment),
+                                duration,
+                                null))
                 .join();
     }
 

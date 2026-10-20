@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -150,7 +151,7 @@ class CommandSurfaceContractTest {
         final ConditionUpdate acknowledge =
                 ConditionUpdate.fromJson(json(WORKED_EXAMPLES.get(ConditionUpdate.Method.Arguments.EVENT_AND_COMMENT)));
         assertThat(acknowledge.eventId()).isNotNull();
-        assertThat(acknowledge.comment()).isEqualTo("Checked");
+        assertThat(acknowledge.comment()).isEqualTo(LocalizedText.english("Checked"));
 
         assertThat(ConditionUpdate.fromJson(json(WORKED_EXAMPLES.get(ConditionUpdate.Method.Arguments.DURATION)))
                         .duration())

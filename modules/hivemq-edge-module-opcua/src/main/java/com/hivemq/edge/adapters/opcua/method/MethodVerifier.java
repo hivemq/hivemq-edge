@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.method;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import com.hivemq.edge.adapters.opcua.browse.Browsing;
+import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -28,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaObjectNode;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
@@ -40,6 +42,7 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.StructureDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -501,6 +504,7 @@ public final class MethodVerifier {
                                             List.of(in),
                                             List.of(out),
                                             types.builtins(),
+                                            types.structures(),
                                             types.resolved());
                                 });
                             }
@@ -529,6 +533,7 @@ public final class MethodVerifier {
                                                 List.of(in),
                                                 List.of(out),
                                                 types.builtins(),
+                                                types.structures(),
                                                 types.resolved());
                                     }));
                         }));
@@ -582,7 +587,7 @@ public final class MethodVerifier {
     /// -- for a type that encodes exactly like the Double or UInt32 it is.
     ///
     /// The client's DataType tree does that walk, which is what the ordinary value-write path has always used
-    /// ({@code JsonToOpcUAConverter}, {@code JsonSchemaGenerator}). The method path reached for the table
+    /// ({@code JsonToOpcUaValueConverter}, {@code JsonSchemaGenerator}). The method path reached for the table
     /// instead, which was the whole of that defect. Resolved here because this is where a client exists: the
     /// argument converter and the schema generator both work from a {@link MethodSignature} alone.
     ///
@@ -590,8 +595,12 @@ public final class MethodVerifier {
     /// to a server that does not. Reading the tree first and starting from nothing meant one unreadable
     /// hierarchy discarded the types of arguments that never needed it.
     ///
-    /// A type reducing to no builtin is left out, and is then refused at conversion -- a custom structure,
-    /// which stays deliberately unencodable in this release.
+    /// **A structure argument's fields are read here too.** A structure reduces to `ExtensionObject`, which says
+    /// nothing about its shape; its StructureDefinition does, and describing it is what lets the request schema
+    /// state the structure's fields rather than `any`. It is read through `JsonSchemaGenerator`, the same
+    /// description a value tag of that structure gets. A structure that cannot be described is left out and
+    /// renders as `any`, which costs the schema detail and nothing else: the converter reads the definition
+    /// again when a value is sent.
     ///
     /// Reported by Miguel as M6 on EDG-1087.
     private static @NotNull ResolvedTypes builtinTypesOf(
@@ -617,7 +626,7 @@ public final class MethodVerifier {
             // Every DataType was a builtin. The hierarchy can say nothing further, so it is not read: on a
             // device that serves metadata slowly that is a round trip saved per method, for an answer already
             // in hand.
-            return new ResolvedTypes(builtins, true);
+            return new ResolvedTypes(builtins, Map.of(), true);
         }
 
         final DataTypeTree tree;
@@ -628,30 +637,56 @@ public final class MethodVerifier {
                     "Could not read the DataType hierarchy; arguments of a Simple DataType stay unresolved, "
                             + "the builtin ones are unaffected: {}",
                     e.getMessage());
-            return new ResolvedTypes(builtins, false);
+            return new ResolvedTypes(builtins, Map.of(), false);
         }
         boolean resolved = true;
+        final Map<NodeId, JsonSchemaGenerator.FieldInformation> structures = new LinkedHashMap<>();
         for (final Argument argument : concat(inputs, outputs)) {
             final NodeId dataType = argument.getDataType();
             if (dataType == null || builtins.containsKey(dataType)) {
                 continue;
             }
             try {
+                // Never null: the tree answers Variant for a type it does not know, and ExtensionObject for a
+                // structure. Both are durable answers, so `resolved` stays true and the signature may be cached.
                 final OpcUaDataType builtin = tree.getBuiltinType(dataType);
-                if (builtin != null) {
-                    builtins.put(dataType, builtin);
+                builtins.put(dataType, builtin);
+                if (builtin == OpcUaDataType.ExtensionObject) {
+                    describeStructure(client, tree, dataType, structures);
                 }
-                // A null answer is the tree saying this type reduces to no builtin -- a genuine structure,
-                // which this release does not encode. That is durable, so `resolved` stays true and the
-                // signature may be cached: asking again would learn the same thing.
             } catch (final RuntimeException e) {
-                // The tree refusing to answer about one type, as distinct from answering "none". Same state as
-                // a tree that could not be built at all: asked, not answered.
+                // The tree refusing to answer about one type. Same state as a tree that could not be built at
+                // all: asked, not answered.
                 log.debug("Could not reduce DataType {} to a builtin type: {}", dataType, e.getMessage());
                 resolved = false;
             }
         }
-        return new ResolvedTypes(builtins, resolved);
+        return new ResolvedTypes(builtins, structures, resolved);
+    }
+
+    /// Reads the fields of a structure argument's DataType into `structures`, or leaves it out when it cannot be
+    /// described: an abstract structure, one the server gives no definition for, or one whose definition cannot
+    /// be read. Left out, the argument renders as `any`, which is what it rendered as before structures were
+    /// described at all.
+    private static void describeStructure(
+            final @NotNull OpcUaClient client,
+            final @NotNull DataTypeTree tree,
+            final @NotNull NodeId dataTypeId,
+            final @NotNull Map<NodeId, JsonSchemaGenerator.FieldInformation> structures) {
+        final DataType dataType = tree.getDataType(dataTypeId);
+        if (dataType == null
+                || Boolean.TRUE.equals(dataType.isAbstract())
+                || !(dataType.getDataTypeDefinition() instanceof StructureDefinition)) {
+            return;
+        }
+        try {
+            structures.put(
+                    dataTypeId,
+                    new JsonSchemaGenerator(client).processExtensionObject(dataType, true, true, true, null));
+        } catch (final RuntimeException e) {
+            log.debug(
+                    "Could not describe the structure {}; its argument renders as any: {}", dataTypeId, e.getMessage());
+        }
     }
 
     /// How many distinct DataTypes the arguments name, so a signature needing no hierarchy can skip reading it.
@@ -680,7 +715,10 @@ public final class MethodVerifier {
     ///
     /// `resolved=false` therefore makes the signature incomplete, and `MethodCache` declines to remember an
     /// incomplete one, so the next request reads the hierarchy again.
-    record ResolvedTypes(@NotNull Map<NodeId, OpcUaDataType> builtins, boolean resolved) {}
+    record ResolvedTypes(
+            @NotNull Map<NodeId, OpcUaDataType> builtins,
+            @NotNull Map<NodeId, JsonSchemaGenerator.FieldInformation> structures,
+            boolean resolved) {}
 
     private static @NotNull List<Argument> concat(final Argument @NotNull [] first, final Argument @NotNull [] second) {
 

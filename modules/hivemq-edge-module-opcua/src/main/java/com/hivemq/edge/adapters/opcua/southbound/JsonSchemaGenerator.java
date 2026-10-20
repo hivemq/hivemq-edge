@@ -170,8 +170,22 @@ public class JsonSchemaGenerator {
                                                 writable,
                                                 List.of());
                                     }
-                                    return processExtensionObject(
+                                    // The field's own value rank, carried onto the nested description: a field
+                                    // declared as an array of a structure is an array, and describing it as a
+                                    // single object refused every value of it.
+                                    final FieldInformation nested = processExtensionObject(
                                             extractedDataType, isRequired, readable, writable, fieldName);
+                                    return new FieldInformation(
+                                            nested.name(),
+                                            nested.namespaceUri(),
+                                            nested.dataType(),
+                                            nested.customDataType(),
+                                            nested.isEnum(),
+                                            arrayDimensionsOf(field),
+                                            nested.required(),
+                                            nested.readable(),
+                                            nested.writable(),
+                                            nested.nestedFields());
                                 }
 
                                 // Scalar-mappable builtin -> carry the OpcUaDataType. Enumerations,
@@ -383,7 +397,7 @@ public class JsonSchemaGenerator {
             final boolean writable) {
 
         final OpcUaDataType elementType = opcUaType != null && isScalarMappable(opcUaType) ? opcUaType : null;
-        applyArrayType(prop.startArray(), elementType, dimensions, 0, true, writable);
+        applyArrayType(prop.startArray(), elementType, null, dimensions, 0, true, writable);
     }
 
     private static void applyScalarType(
@@ -441,7 +455,13 @@ public class JsonSchemaGenerator {
         schema.readable(info.readable()).writable(info.writable());
         if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
             applyArrayType(
-                    schema.startArray(), info.dataType(), info.arrayDimensions(), 0, info.readable(), info.writable());
+                    schema.startArray(),
+                    info.dataType(),
+                    info.nestedFields().isEmpty() ? null : info,
+                    info.arrayDimensions(),
+                    0,
+                    info.readable(),
+                    info.writable());
         } else if (!info.nestedFields().isEmpty()) {
             applyObjectProperties(schema.startObject(), info);
         } else if (info.dataType() != null) {
@@ -451,23 +471,78 @@ public class JsonSchemaGenerator {
         }
     }
 
+    /// A field of a structure.
+    ///
+    /// **A builtin accepted in two shapes is `any` here**, for the reason {@link #acceptsTwoShapes} gives: the
+    /// read path publishes it as an object, a caller may write the shorthand, and stating either refuses the
+    /// other. As a field of a structure that refusal is the worse one, because it rejects a structure read from
+    /// the device and sent back unchanged.
     private static <P> void applyFieldInfoToProperty(
             final @NotNull PropertySchemaBuilder<P> prop, final @NotNull FieldInformation info) {
+        final OpcUaDataType stated =
+                info.dataType() != null && acceptsTwoShapes(info.dataType()) ? null : info.dataType();
         if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
             applyArrayType(
                     prop.startArray().readable(info.readable()).writable(info.writable()),
-                    info.dataType(),
+                    stated,
+                    info.nestedFields().isEmpty() ? null : info,
                     info.arrayDimensions(),
                     0,
                     info.readable(),
                     info.writable());
         } else if (!info.nestedFields().isEmpty()) {
             applyObjectProperties(prop.startObject(), info);
-        } else if (info.dataType() != null) {
-            applyScalarType(prop, info.dataType());
+        } else if (stated != null) {
+            applyScalarType(prop, stated);
         } else {
             prop.any();
         }
+    }
+
+    /// Whether the converter accepts a value of this builtin in two JSON shapes: the object the read path
+    /// publishes, and a shorthand a caller writes by hand. The schema model has no alternation, so such a value
+    /// can only be described as `any`.
+    public static boolean acceptsTwoShapes(final @NotNull OpcUaDataType type) {
+        return switch (type) {
+            case LocalizedText, NodeId, QualifiedName, StatusCode -> true;
+            default -> false;
+        };
+    }
+
+    /// Describes a property as a structure -- or an array of one, when `dimensions` is not empty -- from the
+    /// structure's description.
+    ///
+    /// For a method argument, whose structure was described during the browse and whose access is the
+    /// argument's rather than the description's: a request's arguments are written, a response's are not.
+    public static void describeStructure(
+            final @NotNull PropertySchemaBuilder<?> prop,
+            final @NotNull FieldInformation structure,
+            final @NotNull UInteger @NotNull [] dimensions,
+            final boolean writable) {
+        final FieldInformation access = withAccess(structure, true, writable);
+        if (dimensions.length > 0) {
+            applyArrayType(prop.startArray(), null, access, dimensions, 0, true, writable);
+        } else {
+            applyObjectProperties(prop.startObject(), access);
+        }
+    }
+
+    /// The description with every field's access flags replaced, all the way down.
+    private static @NotNull FieldInformation withAccess(
+            final @NotNull FieldInformation info, final boolean readable, final boolean writable) {
+        return new FieldInformation(
+                info.name(),
+                info.namespaceUri(),
+                info.dataType(),
+                info.customDataType(),
+                info.isEnum(),
+                info.arrayDimensions(),
+                info.required(),
+                readable,
+                writable,
+                info.nestedFields().stream()
+                        .map(field -> withAccess(field, readable, writable))
+                        .toList());
     }
 
     /**
@@ -479,22 +554,28 @@ public class JsonSchemaGenerator {
      * {@link com.hivemq.adapter.sdk.api.schema.SchemaBuilder}'s {@code writable = false} default and every
      * writable array node advertised read-only elements. Applies at every nesting depth, so a
      * multi-dimensional array is writable all the way down.
+     * <p>
+     * {@code structure}, when given, describes the elements as that structure's object, and {@code opcUaType}
+     * is then unused. Without either the elements are {@code any}.
      */
     private static <P> void applyArrayType(
             final @NotNull ItemSchemaBuilder<P> items,
             final @Nullable OpcUaDataType opcUaType,
+            final @Nullable FieldInformation structure,
             final @NotNull UInteger @NotNull [] dimensions,
             final int depth,
             final boolean readable,
             final boolean writable) {
         if (depth == dimensions.length - 1) {
-            if (opcUaType != null) {
+            if (structure != null) {
+                applyObjectProperties(items.startObject(), structure);
+            } else if (opcUaType != null) {
                 applyScalarType(items, opcUaType);
             } else {
                 items.any();
             }
         } else {
-            applyArrayType(items.startArray(), opcUaType, dimensions, depth + 1, readable, writable);
+            applyArrayType(items.startArray(), opcUaType, structure, dimensions, depth + 1, readable, writable);
         }
         items.readable(readable).writable(writable);
         // No length constraint is stated, and `dimensions` is consulted only for the nesting depth.

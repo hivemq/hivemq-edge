@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua.method;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.edge.adapters.opcua.northbound.Decoding;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -78,8 +79,7 @@ public final class MethodResponse {
     ///                        a routing instruction never appears inside the routed message.
     /// @param result          what the call answered.
     /// @param ctx             the client's encoding context, which the shared converter needs to decode a value
-    ///                        of a custom structure type. A method *argument* of such a type is refused as
-    ///                        unencodable, but a device may still return one.
+    ///                        of a custom structure type.
     /// @return the outputs that could not be decoded, by name, with the reason -- empty when all converted.
     ///         The caller logs and counts them; the answer itself names them in `statusInfo`.
     public static @NotNull Map<String, UndecodedOutput> write(
@@ -89,6 +89,18 @@ public final class MethodResponse {
             final @Nullable String responseTopic,
             final @NotNull MethodCallResult result,
             final @NotNull Supplier<EncodingContext> ctx) {
+        return write(builder, methodName, correlationData, responseTopic, result, Decoding.withoutTypes(ctx));
+    }
+
+    /// As above, with the client's DataType hierarchy too, so an output of a standard structure is rendered field
+    /// by field rather than as its string form. See {@link Decoding}.
+    public static @NotNull Map<String, UndecodedOutput> write(
+            final @NotNull DataPointBuilder<?> builder,
+            final @NotNull String methodName,
+            final @Nullable String correlationData,
+            final @Nullable String responseTopic,
+            final @NotNull MethodCallResult result,
+            final @NotNull Decoding ctx) {
 
         final Map<String, UndecodedOutput> undecodable = new LinkedHashMap<>();
 
@@ -133,7 +145,7 @@ public final class MethodResponse {
     private static void writeStatusInfo(
             final DataPointBuilder.@NotNull ObjectBuilder<?> parameters,
             final @NotNull MethodCallResult result,
-            final @NotNull Supplier<EncodingContext> ctx,
+            final @NotNull Decoding ctx,
             final @NotNull Map<String, UndecodedOutput> undecodable) {
 
         final boolean failed = !result.succeeded();
@@ -216,7 +228,7 @@ public final class MethodResponse {
             final DataPointBuilder.@NotNull ObjectBuilder<?> target,
             final @NotNull String key,
             final @Nullable Variant variant,
-            final @NotNull Supplier<EncodingContext> ctx,
+            final @NotNull Decoding ctx,
             final @NotNull Map<String, UndecodedOutput> undecodable) {
 
         final Object value = variant == null ? null : variant.value();
