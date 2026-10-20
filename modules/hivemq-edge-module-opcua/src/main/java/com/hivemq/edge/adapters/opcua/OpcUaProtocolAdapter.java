@@ -856,6 +856,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return nodeId;
         }
         try {
+            // A node id that names its namespace by URI is already stable: it is kept as written, and the row's
+            // namespace column does not override it.
+            if (NodeIdText.expanded(nodeId).getNamespaceUri() != null) {
+                return nodeId;
+            }
             // The file's index is from the exporting session; the row's URI says which namespace it meant.
             return NodeIdText.resolve(nodeId, client.getNamespaceTable())
                     .reindex(client.getNamespaceTable(), namespaceUri)

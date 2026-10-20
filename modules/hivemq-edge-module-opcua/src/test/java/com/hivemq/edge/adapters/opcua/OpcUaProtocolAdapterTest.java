@@ -380,6 +380,30 @@ public class OpcUaProtocolAdapterTest {
                 .isNotEmpty();
     }
 
+    /**
+     * EDG-414. An import row's node id is re-pointed through the row's namespace column only when it names its
+     * namespace by index: that index came from the exporting session. A node id that names its namespace by URI
+     * is already stable and is kept as written, whatever the column says.
+     */
+    @Test
+    @Timeout(120)
+    void whenAnImportRowNamesItsNamespaceByUri_thenItIsKeptAsWritten() {
+        final OpcUaProtocolAdapter startedAdapter = startAdapterAgainstEmbeddedServer();
+        final String uri = EmbeddedOpcUaServerExtension.NS_URI;
+        final int index =
+                opcUaServerExtension.getTestNamespace().getNamespaceIndex().intValue();
+
+        assertThat(startedAdapter.resolveNodeId("nsu=" + uri + ";i=10", uri))
+                .as("a URI-form row stays in URI form")
+                .isEqualTo("nsu=" + uri + ";i=10");
+        assertThat(startedAdapter.resolveNodeId("nsu=" + uri + ";i=10", "urn:some:other:namespace"))
+                .as("the namespace column does not override the row's own URI")
+                .isEqualTo("nsu=" + uri + ";i=10");
+        assertThat(startedAdapter.resolveNodeId("ns=" + (index + 7) + ";i=10", uri))
+                .as("an index-form row is still re-pointed to the column's namespace in this session")
+                .isEqualTo("ns=" + index + ";i=10");
+    }
+
     @Test
     @Timeout(180)
     void whenSubscriptionsFail_thenReconnectionIsScheduled() throws Exception {
