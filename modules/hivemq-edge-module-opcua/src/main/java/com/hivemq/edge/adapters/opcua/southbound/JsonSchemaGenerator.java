@@ -718,8 +718,10 @@ public class JsonSchemaGenerator {
             case Byte -> (long) UByte.MIN_VALUE;
             case Int16 -> (long) Short.MIN_VALUE;
             case UInt16 -> (long) UShort.MIN.intValue();
-            case Int32, StatusCode -> (long) Integer.MIN_VALUE;
-            case UInt32 -> UInteger.MIN_VALUE;
+            case Int32 -> (long) Integer.MIN_VALUE;
+            // A StatusCode is unsigned: every Bad code has the top bit set, and the read side publishes Bad as
+            // 2147483648, which Int32 bounds would refuse.
+            case UInt32, StatusCode -> UInteger.MIN_VALUE;
             case Int64 -> Long.MIN_VALUE;
             // As a long, not `ULong.MIN_VALUE`: that constant is a BigInteger, which the builder takes for
             // neither bound, so the lower limit of a UInt64 was silently dropped along with its maximum.
@@ -736,8 +738,8 @@ public class JsonSchemaGenerator {
             case Byte -> (long) UByte.MAX_VALUE;
             case Int16 -> (long) Short.MAX_VALUE;
             case UInt16 -> (long) UShort.MAX.intValue();
-            case Int32, StatusCode -> (long) Integer.MAX_VALUE;
-            case UInt32 -> UInteger.MAX_VALUE;
+            case Int32 -> (long) Integer.MAX_VALUE;
+            case UInt32, StatusCode -> UInteger.MAX_VALUE;
             case Int64 -> Long.MAX_VALUE;
             // No maximum for UInt64, deliberately. You would want 2^64-1 here, but it does not fit a signed
             // long and the builder takes only Long or Double -- so it would be dropped, or truncated to -1 and
