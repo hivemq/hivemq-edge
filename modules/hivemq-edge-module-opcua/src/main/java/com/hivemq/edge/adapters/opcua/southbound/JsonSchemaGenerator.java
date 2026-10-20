@@ -31,6 +31,7 @@ import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -135,6 +136,25 @@ public class JsonSchemaGenerator {
             final boolean readable,
             final boolean writable,
             final @Nullable String name) {
+        return processExtensionObject(dataType, required, readable, writable, name, Set.of());
+    }
+
+    /// The walk, with the structure DataTypes enclosing the one being described.
+    ///
+    /// **A field whose structure type encloses it is described as `any`.** A structure type may contain itself,
+    /// directly or through other types -- a list, or a recipe step with sub-steps -- and the walk would then
+    /// never end. Its values are still finite trees, of any depth, which the converter checks field by field;
+    /// only the schema stops describing them at the field where the type repeats. A type that does not
+    /// recurse never meets the check, so its description is unchanged.
+    private @NotNull FieldInformation processExtensionObject(
+            final @NotNull DataType dataType,
+            final boolean required,
+            final boolean readable,
+            final boolean writable,
+            final @Nullable String name,
+            final @NotNull Set<NodeId> enclosing) {
+        final Set<NodeId> path = new HashSet<>(enclosing);
+        path.add(dataType.getNodeId());
         try {
             final var dataTypeDefinition = dataType.getDataTypeDefinition();
             if (dataTypeDefinition instanceof final StructureDefinition structureDefinition) {
@@ -156,8 +176,9 @@ public class JsonSchemaGenerator {
                                 if (builtinType == OpcUaDataType.ExtensionObject) {
                                     // Genuine nested structure -> recurse.
                                     final DataType extractedDataType = tree.getDataType(field.getDataType());
-                                    if (extractedDataType == null) {
-                                        // Unresolvable nested struct type: degrade to "any" rather than fail.
+                                    if (extractedDataType == null || path.contains(field.getDataType())) {
+                                        // Unresolvable nested struct type, or one that encloses this field:
+                                        // degrade to "any" rather than fail or recurse without end.
                                         return new FieldInformation(
                                                 fieldName,
                                                 namespaceUri,
@@ -173,8 +194,10 @@ public class JsonSchemaGenerator {
                                     // The field's own value rank, carried onto the nested description: a field
                                     // declared as an array of a structure is an array, and describing it as a
                                     // single object refused every value of it.
+                                    final Set<NodeId> nestedPath = new HashSet<>(path);
+                                    nestedPath.add(field.getDataType());
                                     final FieldInformation nested = processExtensionObject(
-                                            extractedDataType, isRequired, readable, writable, fieldName);
+                                            extractedDataType, isRequired, readable, writable, fieldName, nestedPath);
                                     return new FieldInformation(
                                             nested.name(),
                                             nested.namespaceUri(),
