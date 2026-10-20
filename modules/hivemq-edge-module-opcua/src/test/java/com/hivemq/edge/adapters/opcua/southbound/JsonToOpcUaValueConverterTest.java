@@ -26,6 +26,9 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter.ConversionException;
 import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicEnumType;
@@ -85,6 +88,10 @@ class JsonToOpcUaValueConverterTest {
     private static final @NotNull NodeId RECIPE_ENCODING = new NodeId(2, 3111);
     private static final @NotNull NodeId SETPOINT_UNION = new NodeId(2, 3012);
     private static final @NotNull NodeId ABSTRACT_RECORD = new NodeId(2, 3013);
+    private static final @NotNull NodeId OPTIONALS_TYPE = new NodeId(2, 3014);
+    private static final @NotNull NodeId OPTIONALS_ENCODING = new NodeId(2, 3114);
+    private static final @NotNull NodeId GAP_TYPE = new NodeId(2, 3015);
+    private static final @NotNull NodeId GAP_ENCODING = new NodeId(2, 3115);
 
     /// `MachineMode`: Off = 0, Running = 2, Maintenance = 5. The gaps are deliberate: an undefined value in
     /// between must be refused.
@@ -112,6 +119,23 @@ class JsonToOpcUaValueConverterTest {
                 field("tags", NodeIds.String, ValueRanks.OneDimension, true)
             });
 
+    /// `OptionalsType`: a required `x`, then an optional `a`, then an optional `b`, all Int32 -- the smallest
+    /// structure in which a left-out optional field can precede a given one.
+    private static final @NotNull StructureDefinition OPTIONALS_DEFINITION = new StructureDefinition(
+            OPTIONALS_ENCODING, NodeIds.Structure, StructureType.StructureWithOptionalFields, new StructureField[] {
+                field("x", NodeIds.Int32, ValueRanks.Scalar, false),
+                field("a", NodeIds.Int32, ValueRanks.Scalar, true),
+                field("b", NodeIds.Int32, ValueRanks.Scalar, true)
+            });
+
+    /// `GapType`: a required `x`, an optional `a`, a required `y`.
+    private static final @NotNull StructureDefinition GAP_DEFINITION = new StructureDefinition(
+            GAP_ENCODING, NodeIds.Structure, StructureType.StructureWithOptionalFields, new StructureField[] {
+                field("x", NodeIds.Int32, ValueRanks.Scalar, false),
+                field("a", NodeIds.Int32, ValueRanks.Scalar, true),
+                field("y", NodeIds.Int32, ValueRanks.Scalar, false)
+            });
+
     private static final @NotNull StructureDefinition UNION_DEFINITION =
             new StructureDefinition(NodeId.NULL_VALUE, NodeIds.Structure, StructureType.Union, new StructureField[] {
                 field("celsius", NodeIds.Double, ValueRanks.Scalar, false),
@@ -134,6 +158,10 @@ class JsonToOpcUaValueConverterTest {
             new TestDataType("StepType", STEP_TYPE, STEP_ENCODING, STEP_DEFINITION, false);
     private static final @NotNull TestDataType RECIPE =
             new TestDataType("RecipeType", RECIPE_TYPE, RECIPE_ENCODING, RECIPE_DEFINITION, false);
+    private static final @NotNull TestDataType OPTIONALS =
+            new TestDataType("OptionalsType", OPTIONALS_TYPE, OPTIONALS_ENCODING, OPTIONALS_DEFINITION, false);
+    private static final @NotNull TestDataType GAP =
+            new TestDataType("GapType", GAP_TYPE, GAP_ENCODING, GAP_DEFINITION, false);
 
     private static final @NotNull DataTypeTree TREE = buildTree();
 
@@ -144,6 +172,8 @@ class JsonToOpcUaValueConverterTest {
                 root.addChild(new TestDataType("Structure", NodeIds.Structure, null, null, true));
         structure.addChild(STEP);
         structure.addChild(RECIPE);
+        structure.addChild(OPTIONALS);
+        structure.addChild(GAP);
         structure.addChild(new TestDataType("SetpointUnion", SETPOINT_UNION, null, UNION_DEFINITION, false));
         structure.addChild(new TestDataType("AbstractRecord", ABSTRACT_RECORD, null, null, true));
         final Tree<DataType> enumeration =
@@ -169,6 +199,8 @@ class JsonToOpcUaValueConverterTest {
         final DataTypeManager types = DefaultDataTypeManager.createAndInitialize(namespaces);
         types.registerType(STEP_TYPE, new DynamicStructCodec(STEP, TREE), STEP_ENCODING, null, null);
         types.registerType(RECIPE_TYPE, new DynamicStructCodec(RECIPE, TREE), RECIPE_ENCODING, null, null);
+        types.registerType(OPTIONALS_TYPE, new DynamicStructCodec(OPTIONALS, TREE), OPTIONALS_ENCODING, null, null);
+        types.registerType(GAP_TYPE, new DynamicStructCodec(GAP, TREE), GAP_ENCODING, null, null);
         return new EncodingContext() {
             @Override
             public @NotNull DataTypeManager getDataTypeManager() {
@@ -247,6 +279,49 @@ class JsonToOpcUaValueConverterTest {
 
         final DynamicStructType recipe = decode((ExtensionObject) variant.getValue());
         assertThat(recipe.getMembers()).containsOnlyKeys("id", "mode", "steps");
+    }
+
+    @Test
+    void optionalFieldsLeftOutAtTheEnd_arriveAsSent() {
+        for (final Map<String, Object> sent :
+                List.<Map<String, Object>>of(Map.of("x", 1, "a", 2, "b", 3), Map.of("x", 1, "a", 2), Map.of("x", 1))) {
+            final DynamicStructType decoded = decode((ExtensionObject) CONVERTER
+                    .toVariant(MAPPER.valueToTree(sent), OPTIONALS_TYPE, ValueRanks.Scalar)
+                    .getValue());
+
+            assertThat(decoded.getMembers()).isEqualTo(sent);
+        }
+    }
+
+    @Test
+    void anOptionalFieldLeftOutBeforeAGivenOne_isRefused() {
+        assertThatThrownBy(() -> CONVERTER.toVariant(json("{\"x\": 1, \"b\": 42}"), OPTIONALS_TYPE, ValueRanks.Scalar))
+                .isInstanceOfSatisfying(ConversionException.class, e -> assertThat(e.reason())
+                        .isEqualTo("field 'a': is left out, but the later field 'b' is given; a structure may leave"
+                                + " out optional fields only at its end"));
+    }
+
+    /// A required field after a left-out optional one breaks the prefix as well, whatever the codec would make
+    /// of it.
+    @Test
+    void aRequiredFieldAfterALeftOutOptionalOne_isRefused() {
+        assertThatThrownBy(() -> CONVERTER.toVariant(json("{\"x\": 1, \"y\": 2}"), GAP_TYPE, ValueRanks.Scalar))
+                .isInstanceOfSatisfying(ConversionException.class, e -> assertThat(e.reason())
+                        .startsWith("field 'a': is left out, but the later field 'y' is given"));
+    }
+
+    /// What the restriction protects against, pinned on Milo's codec itself: a gap moves `b` onto `a`'s bit. When
+    /// this starts failing, Edge uses a Milo with the corrected numbering, and the restriction can go.
+    @Test
+    void aGap_isCorruptedByTheCodec_whichIsWhyItIsRefused() {
+        final LinkedHashMap<String, Object> members = new LinkedHashMap<>();
+        members.put("x", 1);
+        members.put("b", 42);
+
+        final DynamicStructType decoded =
+                decode(ExtensionObject.encode(CONTEXT, new DynamicStructType(OPTIONALS, members)));
+
+        assertThat(decoded.getMembers()).isEqualTo(Map.of("x", 1, "a", 0));
     }
 
     @Test

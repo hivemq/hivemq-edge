@@ -668,6 +668,15 @@ public final class JsonToOpcUaValueConverter {
     /// in the encoding mask. A required field that is absent is refused rather than defaulted: there is no value
     /// Edge could pick that the device would not act on.
     ///
+    /// **Optional fields may be left out only at the end.** The encoding mask has one bit per optional field, in
+    /// declaration order. Milo's `DynamicStructCodec` (1.1.x) numbers those bits by the optional fields *present*,
+    /// so an absent optional field before a present one shifts the later field onto the absent one's bit:
+    /// `{x, a?, b?}` sent as `{"x": 1, "b": 42}` arrives at the device as `{x=1, a=0}`. Leaving out only a tail
+    // keeps every present field on its own bit, so a value that leaves out a
+    /// field and gives a later one is refused. Milo fixed the numbering after 1.1.8 (commit 00f996ded, "Preserve
+    /// mask positions of absent optional fields"); once Edge uses a release with the fix, any optional field may
+    /// be left out.
+    ///
     /// ## Which fields may be present
     ///
     /// Only the definition's. A field nobody reads is a field the caller believes they sent: `{"temprature": 80}`
@@ -696,14 +705,24 @@ public final class JsonToOpcUaValueConverter {
         refuseUnknownFields(node, "a " + nameOf(kind.dataType()), declared.toArray(String[]::new));
 
         final LinkedHashMap<String, Object> members = new LinkedHashMap<>();
+        @Nullable String leftOut = null;
         for (final StructureField field : fields) {
             final String name = field.getName();
             final JsonNode supplied = node.get(name);
             if (supplied == null || supplied.isNull()) {
                 if (optionalFieldsAllowed && Boolean.TRUE.equals(field.getIsOptional())) {
+                    if (leftOut == null) {
+                        leftOut = name;
+                    }
                     continue;
                 }
                 throw new AtPath(name, "is required, and the value supplied does not carry it");
+            }
+            if (leftOut != null) {
+                throw new AtPath(
+                        leftOut,
+                        "is left out, but the later field '" + name
+                                + "' is given; a structure may leave out optional fields only at its end");
             }
             try {
                 members.put(name, fieldValue(field, supplied));
