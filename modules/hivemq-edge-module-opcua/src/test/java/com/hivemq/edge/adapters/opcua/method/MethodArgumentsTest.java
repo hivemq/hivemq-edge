@@ -473,6 +473,16 @@ class MethodArgumentsTest {
     }
 
     @Test
+    void aWholeNumberAFloatCannotHoldExactly_isRoundedLikeADecimal() throws Exception {
+        // 16777217 is the first whole number a Float cannot hold. Inside the range a Float rounds, whole number
+        // or not: the old value-write converter refused this one, and that check is deliberately gone.
+        final var arguments =
+                MethodArguments.forCall(signature(argument("f", NodeIds.Float)), json("{\"f\": 16777217}"));
+
+        assertThat((float) arguments[0].value()).isEqualTo(16777216f);
+    }
+
+    @Test
     void valueWiderThanSixtyFourBits_isRefusedRatherThanWrappedIntoRange() throws Exception {
         // The decisive one, and the reason the check reads the value as a BigInteger. Jackson's longValue()
         // answers a JSON integer wider than 64 bits modulo 2^64 instead of refusing, so a range check performed

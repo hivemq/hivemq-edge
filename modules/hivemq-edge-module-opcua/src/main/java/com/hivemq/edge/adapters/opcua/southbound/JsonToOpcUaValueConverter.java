@@ -1178,6 +1178,12 @@ public final class JsonToOpcUaValueConverter {
     /// allow: what this refuses is a finite value the narrowing would turn into an infinity, not an infinity
     /// that was already one. Reaching it is another matter: the southbound transform runs as JavaScript and JSON
     /// has no infinity to carry one in, so a deliberate infinity does not arrive through the documented path.
+    ///
+    ///
+    /// **The range is the only check.** Any finite value inside it is rounded to the nearest Float, whole or
+    /// not: writing to a Float means accepting a Float's precision, and 16777217 becoming 16777216 is the same
+    /// loss as 0.1 becoming 0.100000001. Whether a number reaches here as a whole number or as a decimal is
+    /// decided by the JavaScript transform's printing, not by the caller, so it cannot carry a caller's intent.
     private static float requireFloat(final @NotNull JsonNode node) {
         final double value = requireNumber(node);
         final float narrowed = (float) value;
