@@ -24,14 +24,17 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -124,6 +127,70 @@ class ProtocolAdapterConfigConverterTest {
         final ProtocolAdapterConfig converted = converter.fromEntity(entity);
 
         assertThat(converted.getAdapterId()).isEqualTo(entity.getAdapterId());
+    }
+
+    @Test
+    void emptyOptionalTagFields_areLeftOutOfTheJsonTheFrontendReceives() {
+        // The frontend validates a tag against its schema, where an optional field is typed as string,
+        // integer or enum. An explicit null fails that check ("must be string") and blocks saving the
+        // tag, so an unset field must reach the frontend as an absent key. OPC UA, HTTP and CIP tags all
+        // carry such fields, which is why this is pinned on the shared conversion, not on one adapter.
+        final ProtocolAdapterConfigConverter converter =
+                new ProtocolAdapterConfigConverter(mock(ProtocolAdapterFactoryManager.class), new ObjectMapper());
+
+        final JsonNode json = converter.convertTagDefinitionToJsonNode(
+                new ExampleTagDefinition("ns=1;i=1004", null, null, null, Map.of("unit", "rpm")));
+
+        assertThat(json.has("node")).isTrue();
+        assertThat(json.has("notifierNode")).as("unset string").isFalse();
+        assertThat(json.has("filterType")).as("unset enum").isFalse();
+        assertThat(json.has("bitIndex")).as("unset integer").isFalse();
+        assertThat(json.get("labels").get("unit").asText()).isEqualTo("rpm");
+    }
+
+    @Test
+    void aTagDefinitionWithoutItsEmptyFields_readsBackToTheSameDefinition() {
+        // Leaving a key out must mean exactly what the null meant, or a tag would change on a
+        // read/write cycle through the UI.
+        final ProtocolAdapterConfigConverter converter =
+                new ProtocolAdapterConfigConverter(mock(ProtocolAdapterFactoryManager.class), new ObjectMapper());
+        final ExampleTagDefinition original = new ExampleTagDefinition("ns=1;i=1004", null, null, 3, Map.of());
+
+        final ExampleTagDefinition readBack = new ObjectMapper()
+                .convertValue(converter.convertTagDefinitionToJsonNode(original), ExampleTagDefinition.class);
+
+        assertThat(readBack).usingRecursiveComparison().isEqualTo(original);
+    }
+
+    enum ExampleFilterType {
+        ALARM,
+        EVENT
+    }
+
+    static class ExampleTagDefinition implements TagDefinition {
+        public @NotNull String node;
+        public @Nullable String notifierNode;
+        public @Nullable ExampleFilterType filterType;
+        public @Nullable Integer bitIndex;
+        public @Nullable Map<String, String> labels;
+
+        @SuppressWarnings("unused") // Jackson
+        ExampleTagDefinition() {
+            this.node = "";
+        }
+
+        ExampleTagDefinition(
+                final @NotNull String node,
+                final @Nullable String notifierNode,
+                final @Nullable ExampleFilterType filterType,
+                final @Nullable Integer bitIndex,
+                final @Nullable Map<String, String> labels) {
+            this.node = node;
+            this.notifierNode = notifierNode;
+            this.filterType = filterType;
+            this.bitIndex = bitIndex;
+            this.labels = labels;
+        }
     }
 
     static class ExampleAdapterConfig implements ProtocolSpecificAdapterConfig {
