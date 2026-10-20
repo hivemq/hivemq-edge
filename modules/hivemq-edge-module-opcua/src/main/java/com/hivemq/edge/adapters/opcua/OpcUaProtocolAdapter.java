@@ -65,6 +65,7 @@ import com.hivemq.edge.adapters.opcua.method.MethodVerifier;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import com.hivemq.util.Topics;
 import java.util.List;
 import java.util.Map;
@@ -828,28 +829,37 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     @Override
+    public @NotNull String nodeIdMatchKey(final @NotNull String nodeId) {
+        final OpcUaClient client = clientForNodeIdResolution();
+        return client == null ? nodeId : NodeIdText.matchKey(nodeId, client.getNamespaceTable());
+    }
+
+    /** The primary connection's client, else the browse client snapshot, else null. */
+    private @Nullable OpcUaClient clientForNodeIdResolution() {
+        final OpcUaClientConnection conn = opcUaClientConnection.get();
+        if (conn != null) {
+            final OpcUaClient client = conn.client().orElse(null);
+            if (client != null) {
+                return client;
+            }
+        }
+        return browseClient.get();
+    }
+
+    @Override
     public @NotNull String resolveNodeId(final @NotNull String nodeId, final @Nullable String namespaceUri) {
         if (namespaceUri == null || namespaceUri.isEmpty()) {
             return nodeId;
         }
-        // Try primary connection, fall back to browse client snapshot
-        OpcUaClient client = null;
-        final OpcUaClientConnection conn = opcUaClientConnection.get();
-        if (conn != null) {
-            client = conn.client().orElse(null);
-        }
+        final OpcUaClient client = clientForNodeIdResolution();
         if (client == null) {
-            client = browseClient.get();
-        }
-        if (client == null) {
-            return nodeId;
-        }
-        final NodeId parsed = NodeId.parseOrNull(nodeId);
-        if (parsed == null) {
             return nodeId;
         }
         try {
-            return parsed.reindex(client.getNamespaceTable(), namespaceUri).toParseableString();
+            // The file's index is from the exporting session; the row's URI says which namespace it meant.
+            return NodeIdText.resolve(nodeId, client.getNamespaceTable())
+                    .reindex(client.getNamespaceTable(), namespaceUri)
+                    .toParseableString();
         } catch (final Exception e) {
             log.debug("Could not resolve namespace URI '{}' for nodeId '{}': {}", namespaceUri, nodeId, e.getMessage());
             return nodeId;
@@ -953,7 +963,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 return;
                             }
 
-                            final NodeId nodeId = parseNodeOrFail(opcuaTag, tagName, output);
+                            final NodeId nodeId = parseNodeOrFail(client, opcuaTag, tagName, output);
                             if (nodeId == null) {
                                 return;
                             }
@@ -1035,21 +1045,24 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     /**
      * Parses the node a write is aimed at, answering the write rather than throwing when it cannot.
      * <p>
-     * {@code NodeId.parse} throws an unchecked exception, and this runs inside the consumer of an
+     * Parsing throws an unchecked exception, and this runs inside the consumer of an
      * {@code ifPresentOrElse} — so a throw leaves the {@link WritingOutput} uncompleted rather than failed,
      * which is the difference between a write that reports an error and one that never answers.
      *
      * @return the parsed node, or {@code null} when the write has already been failed.
      */
     private @Nullable NodeId parseNodeOrFail(
-            final @NotNull OpcuaTag opcuaTag, final @NotNull String tagName, final @NotNull WritingOutput output) {
+            final @NotNull OpcUaClient client,
+            final @NotNull OpcuaTag opcuaTag,
+            final @NotNull String tagName,
+            final @NotNull WritingOutput output) {
 
         final String node = opcuaTag.getDefinition().getNode();
         try {
-            return NodeId.parse(node);
+            return NodeIdText.resolve(node, client.getNamespaceTable());
         } catch (final Exception e) {
-            log.error("Cannot write to tag '{}': '{}' is not a node id", tagName, node, e);
-            output.fail("Cannot write to tag '" + tagName + "': '" + node + "' is not a node id");
+            log.error("Cannot write to tag '{}': {}", tagName, e.getMessage(), e);
+            output.fail("Cannot write to tag '" + tagName + "': " + e.getMessage());
             return null;
         }
     }
@@ -1358,7 +1371,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         final Variant[] arguments;
         try {
-            arguments = MethodArguments.forCall(signature, payload.value());
+            arguments = MethodArguments.forCall(signature, payload.value(), client.getNamespaceTable());
         } catch (final MethodArguments.InvalidArgumentException e) {
             // The request is wrong about the method, which is a client error and not a device one. Sending it
             // anyway would get Bad_InvalidArgument back with no indication of which argument was at fault.
@@ -1710,13 +1723,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         final NodeId objectNode;
         try {
-            objectNode = NodeId.parse(tag.getDefinition().getNode());
+            objectNode = NodeIdText.resolve(tag.getDefinition().getNode(), client.getNamespaceTable());
         } catch (final Exception e) {
             // tagNotFound rather than fail: the tag cannot be resolved against the device, which is the
             // operator's configuration being wrong rather than Edge or the device misbehaving. The runtime maps
             // fail() to 500, and a 500 tells an operator to look at Edge for a mistake that is in their tag.
-            output.tagNotFound("Tag '" + tagName + "' has a malformed node id: "
-                    + tag.getDefinition().getNode());
+            output.tagNotFound("Tag '" + tagName + "': " + e.getMessage());
             return;
         }
 
@@ -2061,14 +2073,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final String tagName = tag.getName();
             final NodeId objectNode;
             try {
-                objectNode = NodeId.parse(tag.getDefinition().getNode());
+                objectNode = NodeIdText.resolve(tag.getDefinition().getNode(), client.getNamespaceTable());
             } catch (final Exception e) {
-                // The request path reports this to the caller as a malformed tag. Nothing to add here: a
+                // The request path reports this to the caller as an unusable tag. Nothing to add here: a
                 // pre-warm cannot refuse a request that has not arrived.
-                log.debug(
-                        "OPC UA adapter '{}': not pre-warming tag '{}', whose node id is malformed",
-                        adapterId,
-                        tagName);
+                log.debug("OPC UA adapter '{}': not pre-warming tag '{}': {}", adapterId, tagName, e.getMessage());
                 continue;
             }
             try {

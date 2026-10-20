@@ -36,6 +36,7 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -2451,8 +2452,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     }
 
     /**
-     * A configured node id that is not one. Carries a message naming the field and the value, because those
-     * are the two things an operator needs and neither is in {@code NodeId.parse}'s own complaint.
+     * A configured node id that does not name a node on this server: not a node id at all, or a namespace URI
+     * the server does not publish. Carries a message naming the field and the value, because those are the two
+     * things an operator needs.
      */
     private static final class MalformedNodeIdException extends RuntimeException {
 
@@ -2470,17 +2472,16 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      * @param value the configured string, or null when the field was not set.
      * @param field the field's name in the tag definition, for the message.
      * @return the parsed node id, or null when the field was not set.
-     * @throws MalformedNodeIdException when the value is set but is not a node id.
+     * @throws MalformedNodeIdException when the value is set but names no node on this server.
      */
-    private static @Nullable NodeId parseField(final @Nullable String value, final @NotNull String field) {
+    private @Nullable NodeId parseField(final @Nullable String value, final @NotNull String field) {
         if (value == null) {
             return null;
         }
         try {
-            return NodeId.parse(value);
+            return NodeIdText.resolve(value, client.getNamespaceTable());
         } catch (final Exception e) {
-            throw new MalformedNodeIdException("its '" + field + "' is '" + value
-                    + "', which is not a valid OPC UA node id. Expected something like 'ns=2;s=Boiler1.HighTemp'");
+            throw new MalformedNodeIdException("its '" + field + "' " + e.getMessage());
         }
     }
 
