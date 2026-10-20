@@ -237,6 +237,36 @@ class EdgeOpcUaClientIT {
         }
     }
 
+    @Nested
+    class ServerEndingWithAnEmptyContinuationPoint {
+
+        @RegisterExtension
+        final @NotNull EmbeddedOpcUaServerExtension server = new EmbeddedOpcUaServerExtension();
+
+        /// OPC UA does not tell an empty continuation point from a null one: both say the result is complete. A server
+        /// may end with an empty one on the Browse itself; no BrowseNext may follow it.
+        @Test
+        void buildsTheSameTree_whenTheBrowseEndsWithAnEmptyContinuationPoint() throws Exception {
+            final Set<NodeId> reference = buildTree(new RecordingClient(server));
+            server.advertiseOperationLimits(uint(0), uint(0));
+            final AtomicInteger browseNextsOfEmpty = endWithAnEmptyContinuationPoint(server, false);
+
+            assertThat(buildTree(new RecordingClient(server))).isEqualTo(reference);
+            assertThat(browseNextsOfEmpty).hasValue(0);
+        }
+
+        /// As above, on the last BrowseNext page of a paged result.
+        @Test
+        void buildsTheSameTree_whenTheLastPageEndsWithAnEmptyContinuationPoint() throws Exception {
+            final Set<NodeId> reference = buildTree(new RecordingClient(server));
+            server.advertiseOperationLimits(uint(0), uint(0));
+            final AtomicInteger browseNextsOfEmpty = endWithAnEmptyContinuationPoint(server, true);
+
+            assertThat(buildTree(new RecordingClient(server))).isEqualTo(reference);
+            assertThat(browseNextsOfEmpty).hasValue(0);
+        }
+    }
+
     /// Records only the tree build: the connect-time reads and the limits read happen before recording starts.
     private static @NotNull Set<NodeId> buildTree(final @NotNull RecordingClient client) throws Exception {
         client.connect();
@@ -418,6 +448,64 @@ class EdgeOpcUaClientIT {
                 return new BrowseResponse(response.getResponseHeader(), results, response.getDiagnosticInfos());
             }
         });
+    }
+
+    /// Makes the server end every complete Browse result with an empty continuation point instead of a null one: on
+    /// the Browse itself, or with `paged`, on the last BrowseNext page of results paged one reference at a time.
+    /// Counts the BrowseNext requests that carry an empty continuation point.
+    private static @NotNull AtomicInteger endWithAnEmptyContinuationPoint(
+            final @NotNull EmbeddedOpcUaServerExtension server, final boolean paged) {
+        final AtomicInteger browseNextsOfEmpty = new AtomicInteger();
+        final OpcUaServer opcUaServer = Objects.requireNonNull(server.getOpcUaServer());
+        opcUaServer.addServiceSet("/opcua/test", new DefaultViewServiceSet(opcUaServer) {
+            @Override
+            public @NotNull BrowseResponse onBrowse(
+                    final @NotNull ServiceRequestContext context, final @NotNull BrowseRequest request)
+                    throws UaException {
+                final BrowseResponse response = super.onBrowse(
+                        context,
+                        paged
+                                ? new BrowseRequest(
+                                        request.getRequestHeader(),
+                                        request.getView(),
+                                        uint(1),
+                                        request.getNodesToBrowse())
+                                : request);
+                if (!paged) {
+                    emptyTheEndMarkers(Objects.requireNonNull(response.getResults()));
+                }
+                return response;
+            }
+
+            @Override
+            public @NotNull BrowseNextResponse onBrowseNext(
+                    final @NotNull ServiceRequestContext context, final @NotNull BrowseNextRequest request)
+                    throws UaException {
+                for (final ByteString continuationPoint : Objects.requireNonNull(request.getContinuationPoints())) {
+                    if (continuationPoint.isNullOrEmpty()) {
+                        browseNextsOfEmpty.incrementAndGet();
+                    }
+                }
+                final BrowseNextResponse response = super.onBrowseNext(context, request);
+                if (paged && response.getResults() != null) {
+                    emptyTheEndMarkers(response.getResults());
+                }
+                return response;
+            }
+        });
+        return browseNextsOfEmpty;
+    }
+
+    private static void emptyTheEndMarkers(final @NotNull BrowseResult @NotNull [] results) {
+        for (int i = 0; i < results.length; i++) {
+            final BrowseResult result = results[i];
+            if (result.getStatusCode().isGood()
+                    && (result.getContinuationPoint() == null
+                            || result.getContinuationPoint().isNull())) {
+                results[i] =
+                        new BrowseResult(result.getStatusCode(), ByteString.of(new byte[0]), result.getReferences());
+            }
+        }
     }
 
     private static @NotNull OpcUaServerConfigLimits oneContinuationPoint() {

@@ -160,14 +160,25 @@ public class EdgeOpcUaClient extends OpcUaClient {
         return status == StatusCodes.Bad_NoContinuationPoints || status == StatusCodes.Bad_TooManyOperations;
     }
 
+    private static boolean pending(final @Nullable ByteString continuationPoint) {
+        // An empty continuation point ends the result as a null one does; a BrowseNext with it is refused.
+        return continuationPoint != null && !continuationPoint.isNullOrEmpty();
+    }
+
     private @NotNull BrowseResult drained(final @NotNull BrowseResult result) throws UaException {
         ByteString continuationPoint = result.getContinuationPoint();
-        if (!result.getStatusCode().isGood() || continuationPoint == null || continuationPoint.isNull()) {
+        if (!result.getStatusCode().isGood()) {
             return result;
+        }
+        if (!pending(continuationPoint)) {
+            // Milo pages on any non-null continuation point, an empty one included.
+            return continuationPoint == null || continuationPoint.isNull()
+                    ? result
+                    : new BrowseResult(result.getStatusCode(), ByteString.NULL_VALUE, result.getReferences());
         }
         final List<ReferenceDescription> references = new ArrayList<>(references(result));
         int calls = 0;
-        while (continuationPoint != null && continuationPoint.isNotNull()) {
+        while (pending(continuationPoint)) {
             if (++calls > MAX_BROWSE_NEXT_CALLS) {
                 release(List.of(continuationPoint));
                 throw new UaException(
@@ -205,7 +216,7 @@ public class EdgeOpcUaClient extends OpcUaClient {
         final List<ByteString> continuationPoints = new ArrayList<>();
         for (final BrowseResult result : results) {
             final ByteString continuationPoint = result.getContinuationPoint();
-            if (continuationPoint != null && continuationPoint.isNotNull()) {
+            if (pending(continuationPoint)) {
                 continuationPoints.add(continuationPoint);
             }
         }
