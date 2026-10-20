@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.client;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.hivemq.edge.adapters.opcua.browse.ServiceFaults;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,10 +35,15 @@ import org.eclipse.milo.opcua.sdk.client.OperationLimits;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadResponse;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransport;
 import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransportConfig;
@@ -51,14 +57,17 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Milo 1.1.7 sends one operation per request in that case, so building the data-type tree takes one round trip per
  * type and step: on the CAS-QS-3110-F gateway, over a 95 ms link, 103 s instead of 14 s, past the connect-time
- * ceiling (EDG-1125). 100 is what Edge's own browser uses for the same case. A server that cannot take 100 refuses
- * the batch with {@code Bad_TooManyOperations}, and Milo replays it one operation at a time.
+ * ceiling (EDG-1125). 100 is the Browse batch Edge's own browser uses for the same case. A server that cannot take
+ * 100 refuses the batch with {@code Bad_TooManyOperations}, and Milo replays it one operation at a time; a server
+ * that refuses it for its message size instead gets the same replay (see {@link #browse(List)} and
+ * {@link #read(double, TimestampsToReturn, List)}).
  * <p>
- * A batch can also run out of continuation points, or be refused node by node: see {@link #browse(List)}.
+ * A batch can also run out of continuation points, or be refused node by node: see {@link #browse(List)} and
+ * {@link #read(double, TimestampsToReturn, List)}.
  * <p>
  * When Edge moves to Milo 1.2, which can override the limits in its client configuration, remove
- * {@link #getOperationLimits()}; {@link #browse(List)} stays as long as Milo reads a refused node as one without
- * references.
+ * {@link #getOperationLimits()}; {@link #browse(List)} and {@link #read(double, TimestampsToReturn, List)} stay as
+ * long as Milo reads a refused operation as an answer about the node.
  */
 public class EdgeOpcUaClient extends OpcUaClient {
 
@@ -114,50 +123,174 @@ public class EdgeOpcUaClient extends OpcUaClient {
     /**
      * Milo's batched Browse, except that no node comes back refused because of the batch.
      * <p>
-     * A server pages a large result behind a continuation point, and holds only a few of them per session. In a
-     * batch, the nodes past that pool answer {@code Bad_NoContinuationPoints}; some servers also answer a batch they
-     * will not serve with {@code Bad_TooManyOperations} on every result instead of refusing the request. Milo's
-     * type-tree builds read either as a node without references, so the cached data-type tree silently misses types.
-     * Here every continuation point of the batch is drained first, which frees the pool, and each refused node is
-     * then browsed again on its own. A node refused even then fails the call, so the build fails instead of caching a
-     * partial tree.
+     * A server pages a large result behind a continuation point, and holds only a few of them per session. In a batch,
+     * the nodes past that pool answer {@code Bad_NoContinuationPoints}, and a server may free a point it handed out to
+     * serve a later request, which then answers {@code Bad_ContinuationPointInvalid}. A server may also answer a batch
+     * it will not serve with a service result on every result instead of refusing the request: too many operations, a
+     * response too large, no resources, a busy server, a timeout (see {@link #refused(StatusCode)}). Milo's type-tree
+     * builds read any of them as a node without references, so the cached data-type tree silently misses types. Here
+     * every continuation point of the batch is drained first, which frees the pool, and each refused node is then
+     * browsed again on its own. A node refused even then for a reason about the request, not the node (see {@link
+     * #refusedForTheBatch(StatusCode)}), or whose continuation is refused, fails the call, so the build fails instead
+     * of caching a partial tree; any other refusal of the node on its own goes back to Milo as the node's answer, as
+     * Milo's own client gets it. A batch refused as a whole for its size is refused as too many operations, which Milo
+     * replays one operation at a time.
      * <p>
-     * The results come back complete, without continuation points. A call abandoned while a request is in flight
+     * The results come back drained, without continuation points. A call abandoned while a request is in flight
      * (interrupted at a deadline) still gives back the continuation points its late answer brings.
      */
     @Override
     public @NotNull List<BrowseResult> browse(final @NotNull List<BrowseDescription> nodesToBrowse) throws UaException {
-        final List<BrowseResult> results = new ArrayList<>(awaitBrowse(nodesToBrowse));
+        final List<BrowseResult> results;
+        try {
+            results = new ArrayList<>(awaitBrowse(nodesToBrowse));
+        } catch (final UaException e) {
+            throw tooManyOperationsIfTooLarge(nodesToBrowse.size(), e);
+        }
         if (results.size() != nodesToBrowse.size()) {
             releaseAll(results); // Milo rejects the mismatch itself; the points that did arrive would stay allocated
             return results;
         }
         for (int i = 0; i < results.size(); i++) {
             try {
-                results.set(i, drained(results.get(i)));
+                results.set(i, drained(results.get(i), false));
             } catch (final UaException e) {
                 releaseAll(results.subList(i + 1, results.size()));
                 throw e;
             }
         }
         for (int i = 0; i < results.size(); i++) {
-            if (refused(results.get(i))) {
-                final BrowseResult alone =
-                        awaitBrowse(List.of(nodesToBrowse.get(i))).get(0);
-                if (refused(alone)) {
+            if (refused(results.get(i).getStatusCode())) {
+                final BrowseResult alone = drained(browseAlone(nodesToBrowse.get(i)), true);
+                if (refusedForTheBatch(alone.getStatusCode())) {
                     throw new UaException(
                             alone.getStatusCode(),
                             "Browse of " + nodesToBrowse.get(i).getNodeId() + " was refused even on its own");
                 }
-                results.set(i, drained(alone));
+                results.set(i, alone);
             }
         }
         return results;
     }
 
-    private static boolean refused(final @NotNull BrowseResult result) {
-        final long status = result.getStatusCode().value();
-        return status == StatusCodes.Bad_NoContinuationPoints || status == StatusCodes.Bad_TooManyOperations;
+    /**
+     * Milo's Read, with the same treatment as {@link #browse(List)}: an operation refused because of the batch is read
+     * again on its own, one refused even then for a reason about the request fails the call, and a batch refused as a
+     * whole for its size is refused as too many operations. Milo's type-tree builds, the only callers of this method
+     * (Edge reads with {@code readAsync}), read a refused {@code IsAbstract} as concrete and a refused {@code
+     * DataTypeDefinition} as none, and cache the type that way.
+     */
+    @Override
+    public @NotNull ReadResponse read(
+            final double maxAge,
+            final @NotNull TimestampsToReturn timestampsToReturn,
+            final @NotNull List<ReadValueId> readValueIds)
+            throws UaException {
+        final ReadResponse response;
+        try {
+            response = super.read(maxAge, timestampsToReturn, readValueIds);
+        } catch (final UaException e) {
+            throw tooManyOperationsIfTooLarge(readValueIds.size(), e);
+        }
+        final DataValue[] values = response.getResults();
+        if (values == null || values.length != readValueIds.size()) {
+            return response; // Milo rejects the mismatch itself
+        }
+        DataValue[] completed = null;
+        for (int i = 0; i < values.length; i++) {
+            if (!refused(values[i].getStatusCode())) {
+                continue;
+            }
+            final DataValue alone =
+                    readValueIds.size() == 1 ? values[i] : readAlone(maxAge, timestampsToReturn, readValueIds.get(i));
+            if (refusedForTheBatch(alone.getStatusCode())) {
+                throw new UaException(
+                        requireNonNullElse(alone.getStatusCode(), StatusCode.BAD),
+                        "Read of " + readValueIds.get(i).getNodeId() + " was refused even on its own");
+            }
+            if (completed == null) {
+                completed = values.clone();
+            }
+            completed[i] = alone;
+        }
+        return completed == null
+                ? response
+                : new ReadResponse(response.getResponseHeader(), completed, response.getDiagnosticInfos());
+    }
+
+    /**
+     * A status that may say the server did not serve the operation in this request, rather than answer about the
+     * node: the common service results may also be returned per operation (OPC UA Part 4, 7.38.2). Such an operation
+     * is sent again on its own.
+     */
+    private static boolean refused(final @Nullable StatusCode status) {
+        if (status == null) {
+            return false;
+        }
+        final long value = status.value();
+        return refusedForTheBatch(status)
+                || value == StatusCodes.Bad_ResponseTooLarge
+                || value == StatusCodes.Bad_EncodingLimitsExceeded
+                || value == StatusCodes.Bad_ResourceUnavailable
+                || value == StatusCodes.Bad_OutOfMemory
+                || value == StatusCodes.Bad_Timeout
+                || value == StatusCodes.Bad_ServerTooBusy;
+    }
+
+    /**
+     * A refusal that says nothing about the node, only about the request it came in: one sent on its own cannot get
+     * it, so getting it then fails the call. The other refusals, on their own, may be the node's answer (a definition
+     * too large to encode, a backend that is down) and go back to Milo as they came, as Milo's own client would get
+     * them; failing the call instead would fail every build of the tree on that server.
+     */
+    private static boolean refusedForTheBatch(final @Nullable StatusCode status) {
+        if (status == null) {
+            return false;
+        }
+        final long value = status.value();
+        return value == StatusCodes.Bad_NoContinuationPoints
+                || value == StatusCodes.Bad_ContinuationPointInvalid
+                || value == StatusCodes.Bad_TooManyOperations;
+    }
+
+    /**
+     * Milo replays a batch one operation at a time only when the server refuses it with {@code Bad_TooManyOperations};
+     * a server may refuse it for the size of the request or response instead, which Edge's own browser answers the
+     * same way.
+     */
+    private static @NotNull UaException tooManyOperationsIfTooLarge(
+            final int operations, final @NotNull UaException e) {
+        if (operations > 1
+                && e.getStatusCode().value() != StatusCodes.Bad_TooManyOperations
+                && ServiceFaults.isTooManyOperations(e)) {
+            return new UaException(
+                    StatusCodes.Bad_TooManyOperations,
+                    "A request of " + operations + " operations was refused for its size: " + e.getStatusCode(),
+                    e);
+        }
+        return e;
+    }
+
+    private @NotNull DataValue readAlone(
+            final double maxAge,
+            final @NotNull TimestampsToReturn timestampsToReturn,
+            final @NotNull ReadValueId readValueId)
+            throws UaException {
+        final DataValue[] values = requireNonNullElse(
+                super.read(maxAge, timestampsToReturn, List.of(readValueId)).getResults(), new DataValue[0]);
+        if (values.length != 1) {
+            throw new UaException(StatusCodes.Bad_UnexpectedError, "Read returned no single result");
+        }
+        return values[0];
+    }
+
+    private @NotNull BrowseResult browseAlone(final @NotNull BrowseDescription node) throws UaException {
+        final List<BrowseResult> results = awaitBrowse(List.of(node));
+        if (results.size() != 1) {
+            releaseAll(results);
+            throw new UaException(StatusCodes.Bad_UnexpectedError, "Browse returned no single result");
+        }
+        return results.get(0);
     }
 
     private static boolean pending(final @Nullable ByteString continuationPoint) {
@@ -165,7 +298,13 @@ public class EdgeOpcUaClient extends OpcUaClient {
         return continuationPoint != null && !continuationPoint.isNullOrEmpty();
     }
 
-    private @NotNull BrowseResult drained(final @NotNull BrowseResult result) throws UaException {
+    /**
+     * {@code result} with every page of its references, or, when the server refuses a page, a result carrying that
+     * refusal for the caller to browse the node again on its own; the node was already browsed on its own when
+     * {@code alone} is set, and the refusal then fails the call: it is about the continuation, not the node, whose own
+     * answer was a page of references.
+     */
+    private @NotNull BrowseResult drained(final @NotNull BrowseResult result, final boolean alone) throws UaException {
         ByteString continuationPoint = result.getContinuationPoint();
         if (!result.getStatusCode().isGood()) {
             return result;
@@ -197,9 +336,18 @@ public class EdgeOpcUaClient extends OpcUaClient {
                 release(List.of(continuationPoint));
                 throw new UaException(StatusCodes.Bad_UnexpectedError, "BrowseNext returned no single result");
             }
-            if (!next.get(0).getStatusCode().isGood()) {
+            final StatusCode status = next.get(0).getStatusCode();
+            if (!status.isGood()) {
                 release(List.of(continuationPoint));
-                throw new UaException(next.get(0).getStatusCode(), "BrowseNext failed");
+                if (refused(status) && !alone) {
+                    // A point the server freed for another request, or a page it would not serve now: the caller
+                    // browses the node again on its own.
+                    return new BrowseResult(status, ByteString.NULL_VALUE, null);
+                }
+                if (refused(status)) {
+                    throw new UaException(status, "BrowseNext was refused even on its own");
+                }
+                throw new UaException(status, "BrowseNext failed");
             }
             references.addAll(references(next.get(0)));
             continuationPoint = next.get(0).getContinuationPoint();
@@ -229,8 +377,9 @@ public class EdgeOpcUaClient extends OpcUaClient {
      * Best effort, and not waited for: the call is failing already, and a wait may be what just failed. A
      * continuation point that is never released stays allocated until the session closes.
      * <p>
-     * One request per continuation point: a server may refuse a BrowseNext carrying more of them than its pool holds,
-     * and a batch can be handed one more than that.
+     * One request per continuation point: a BrowseNext may carry no more of them than the server's
+     * {@code MaxNodesPerBrowse} (OPC UA Part 5, 6.3.11), and Milo's own server refuses more than its pool holds, while
+     * a batch can be handed one more than that.
      */
     private void release(final @NotNull List<ByteString> continuationPoints) {
         for (final ByteString continuationPoint : continuationPoints) {
