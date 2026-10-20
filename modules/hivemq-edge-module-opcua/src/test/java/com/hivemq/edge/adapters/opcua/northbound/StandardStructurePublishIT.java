@@ -23,15 +23,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
+import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
+import org.eclipse.milo.opcua.stack.core.types.structured.TimeZoneDataType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -99,6 +108,31 @@ class StandardStructurePublishIT {
 
         assertThat(published.isTextual()).isTrue();
         assertThat(published.asText()).contains("1.5").contains("9.0");
+    }
+
+    @Test
+    void theTwoStructuresRenderedByHand_areSentBackUnchanged() {
+        // EUInformation and TimeZoneDataType are rendered by their own code, because every alarm event carries
+        // LocalTime and the hand-written shape needs no type hierarchy. Their field names are the definition's
+        // own, so the southbound converter -- which checks a structure against that definition -- accepts what
+        // was published.
+        final EUInformation celsius = new EUInformation(
+                "http://www.opcfoundation.org/UA/units/un/cefact",
+                4408652,
+                LocalizedText.english("°C"),
+                LocalizedText.english("degree Celsius"));
+        final TimeZoneDataType cologne = new TimeZoneDataType((short) 120, true);
+
+        assertThat(sentBack(celsius, NodeIds.EUInformation)).isEqualTo(celsius);
+        assertThat(sentBack(cologne, NodeIds.TimeZoneDataType)).isEqualTo(cologne);
+    }
+
+    /// Publishes the value, converts what was published back as the given DataType, and decodes the result.
+    private @NotNull Object sentBack(final @NotNull Object value, final @NotNull NodeId dataType) {
+        final JsonNode published = publish(Decoding.of(client), new DataValue(new Variant(value)));
+        final Variant converted =
+                JsonToOpcUaValueConverter.of(client).toVariant(published, dataType, ValueRanks.Scalar);
+        return ((ExtensionObject) Objects.requireNonNull(converted.getValue())).decode(DefaultEncodingContext.INSTANCE);
     }
 
     private static @NotNull JsonNode enumValue(final @NotNull String name, final int value) {

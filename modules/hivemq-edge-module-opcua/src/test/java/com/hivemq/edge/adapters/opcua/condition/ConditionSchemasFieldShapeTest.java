@@ -331,11 +331,12 @@ class ConditionSchemasFieldShapeTest {
 
         final JsonNode emitted = emit(rateOfChange, "EngineeringUnits", ConditionSchemas.Shape.ENGINEERING_UNITS);
 
-        assertThat(emitted.get("namespaceUri").textValue())
+        // The structure definition's own field names, capitalised as OPC 10000-8 gives them.
+        assertThat(emitted.get("NamespaceUri").textValue())
                 .isEqualTo("http://www.opcfoundation.org/UA/units/un/cefact");
-        assertThat(emitted.get("unitId").intValue()).isEqualTo(4408652);
-        assertThat(emitted.get("displayName").get("text").textValue()).isEqualTo("°C");
-        assertThat(emitted.get("description").get("text").textValue()).isEqualTo("degree Celsius");
+        assertThat(emitted.get("UnitId").intValue()).isEqualTo(4408652);
+        assertThat(emitted.get("DisplayName").get("text").textValue()).isEqualTo("°C");
+        assertThat(emitted.get("Description").get("text").textValue()).isEqualTo("degree Celsius");
     }
 
     @Test
@@ -376,10 +377,10 @@ class ConditionSchemasFieldShapeTest {
                         assertThat(emitted.isObject())
                                 .as("%s is an object", where)
                                 .isTrue();
-                        assertThat(emitted.has("offset"))
+                        assertThat(emitted.has("Offset"))
                                 .as("%s carries an offset", where)
                                 .isTrue();
-                        assertThat(schemaShape.path("properties").has("offset")).isTrue();
+                        assertThat(schemaShape.path("properties").has("Offset")).isTrue();
                         yield true;
                     }
                     case STATE_MACHINE, TWO_STATE -> {
@@ -449,10 +450,10 @@ class ConditionSchemasFieldShapeTest {
                         assertThat(emitted.isObject())
                                 .as("%s is an object", where)
                                 .isTrue();
-                        assertThat(emitted.has("unitId"))
+                        assertThat(emitted.has("UnitId"))
                                 .as("%s carries a unit id", where)
                                 .isTrue();
-                        assertThat(schemaShape.path("properties").has("unitId")).isTrue();
+                        assertThat(schemaShape.path("properties").has("UnitId")).isTrue();
                         yield true;
                     }
                     case STATUS_CODE -> {

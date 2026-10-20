@@ -564,59 +564,60 @@ public class OpcUaToJsonConverter {
     }
 
     /**
-     * Writes a {@code TimeZoneDataType} as {@code {offset, daylightSavingInOffset}}.
+     * Writes a {@code TimeZoneDataType} as {@code {Offset, DaylightSavingInOffset}}.
      * <p>
      * OPC 10000-5: the offset is "the time difference (in minutes) between the Time Property and the time at
      * the location in which the event was issued", and the flag says whether that offset already includes
      * the daylight-saving correction — so a consumer reconstructing local time adds the offset, and a
      * consumer reasoning about DST needs the flag to know what it has been told.
      * <p>
-     * Named explicitly rather than left to the generic structure path: Milo decodes this one into its own
-     * generated class rather than a {@code DynamicStructType}, so without this it would fall through to the
-     * {@code toString()} branch and publish a Java object rendering.
+     * **The field names are the structure definition's own**, capitalised as OPC 10000-5 gives them. That is
+     * what every other structure is published with, rendered from its definition (see {@link Decoding}), and
+     * what the southbound converter checks a written structure against -- so a value read can be sent back.
+     * <p>
+     * Rendered here rather than through {@link Decoding}: every alarm event carries {@code LocalTime}, and this
+     * needs no type hierarchy, so a server refusing the type browse still gets the field rather than its
+     * string form.
      */
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateTimeZone(
             final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull TimeZoneDataType timeZone) {
 
         final Short offset = timeZone.getOffset();
         if (offset != null) {
-            obj.put("offset", offset.intValue());
+            obj.put("Offset", offset.intValue());
         }
         final Boolean daylightSaving = timeZone.getDaylightSavingInOffset();
         if (daylightSaving != null) {
-            obj.put("daylightSavingInOffset", daylightSaving);
+            obj.put("DaylightSavingInOffset", daylightSaving);
         }
         return obj;
     }
 
     /**
-     * Writes an {@code EUInformation} as {@code {namespaceUri, unitId, displayName, description}}.
+     * Writes an {@code EUInformation} as {@code {NamespaceUri, UnitId, DisplayName, Description}}.
      * <p>
-     * OPC 10000-8 §5.6.3: {@code namespaceUri} identifies the authority that defines the unit — by default
-     * the UNECE Recommendation 20 code list — and {@code unitId} identifies the unit within it, so the pair
-     * is what makes an engineering unit machine-readable. {@code displayName} is the symbol ({@code "°C"})
-     * and {@code description} the full name ({@code "degree Celsius"}), both localised texts.
+     * OPC 10000-8 §5.6.3: {@code NamespaceUri} identifies the authority that defines the unit — by default
+     * the UNECE Recommendation 20 code list — and {@code UnitId} identifies the unit within it, so the pair
+     * is what makes an engineering unit machine-readable. {@code DisplayName} is the symbol ({@code "°C"})
+     * and {@code Description} the full name ({@code "degree Celsius"}), both localised texts.
      * <p>
-     * Named explicitly for the same reason as {@link #populateTimeZone}: Milo decodes this one into its own
-     * generated class rather than a {@code DynamicStructType}, so without this branch it fell through to
-     * {@code toString()}. That published a Java object rendering — a format defined by Milo's implementation
-     * rather than by any contract — and collapsed the four members into one opaque string, so a consumer
-     * could neither compare two units nor resolve either against the code list. It reaches every
-     * rate-of-change alarm, whose {@code EngineeringUnits} member is what says what the rate is measured in.
+     * The field names are the structure definition's own, for the reason given on {@link #populateTimeZone},
+     * and it is rendered here for the same reason: it reaches every limit and rate-of-change alarm, whose
+     * {@code EngineeringUnits} member is what says what the value is measured in.
      */
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateEuInformation(
             final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull EUInformation engineeringUnits) {
 
         final String namespaceUri = engineeringUnits.getNamespaceUri();
         if (namespaceUri != null) {
-            obj.put("namespaceUri", namespaceUri);
+            obj.put("NamespaceUri", namespaceUri);
         }
         final Integer unitId = engineeringUnits.getUnitId();
         if (unitId != null) {
-            obj.put("unitId", unitId);
+            obj.put("UnitId", unitId);
         }
-        putLocalizedText(obj, "displayName", engineeringUnits.getDisplayName());
-        putLocalizedText(obj, "description", engineeringUnits.getDescription());
+        putLocalizedText(obj, "DisplayName", engineeringUnits.getDisplayName());
+        putLocalizedText(obj, "Description", engineeringUnits.getDescription());
         return obj;
     }
 
