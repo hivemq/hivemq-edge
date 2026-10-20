@@ -138,10 +138,13 @@ public final class NodeIdText {
     }
 
     /// Refuses a `g=` identifier that is not 8-4-4-4-12 hexadecimal digits. The identifier follows the
-    /// `svr=`, `nsu=` and `ns=` prefixes, each ended by the first `;` after it.
+    /// `svr=`, `svu=`, `nsu=` and `ns=` prefixes, each ended by the first `;` after it.
     private static void requireCanonicalGuid(final @NotNull String text) {
         int start = 0;
-        while (text.startsWith("svr=", start) || text.startsWith("nsu=", start) || text.startsWith("ns=", start)) {
+        while (text.startsWith("svr=", start)
+                || text.startsWith("svu=", start)
+                || text.startsWith("nsu=", start)
+                || text.startsWith("ns=", start)) {
             final int separator = text.indexOf(';', start);
             if (separator < 0) {
                 return;

@@ -92,8 +92,9 @@ class NodeIdTextTest {
     void shortGuid_refusedInEverySpellingRatherThanPadded() {
         // Milo would read each as 0b404dc7-...-padded, a different valid Guid.
         final String shortGuid = "72962b91-fa75-4ae6-8d28-b404dc7daf6";
-        for (final String text :
-                new String[] {"g=" + shortGuid, "ns=1;g=" + shortGuid, "nsu=" + BOILER + ";g=" + shortGuid}) {
+        for (final String text : new String[] {
+            "g=" + shortGuid, "ns=1;g=" + shortGuid, "nsu=" + BOILER + ";g=" + shortGuid, "svu=urn:x;g=" + shortGuid
+        }) {
             assertThatThrownBy(() -> NodeIdText.expanded(text))
                     .as(text)
                     .isInstanceOf(IllegalArgumentException.class)
