@@ -153,8 +153,8 @@ public final class NotifierResolver {
                 return CompletableFuture.completedFuture(new Result.Found(
                         NodeIdText.resolve(declaredNotifier, client.getNamespaceTable()), "declared on the tag"));
             } catch (final Exception e) {
-                return CompletableFuture.completedFuture(
-                        new Result.NotFound("tag '" + tagName + "' declares notifier " + e.getMessage()));
+                return CompletableFuture.completedFuture(new Result.NotFound("tag '" + tagName + "' declares notifier '"
+                        + declaredNotifier + "', which cannot be used: " + e.getMessage()));
             }
         }
 
