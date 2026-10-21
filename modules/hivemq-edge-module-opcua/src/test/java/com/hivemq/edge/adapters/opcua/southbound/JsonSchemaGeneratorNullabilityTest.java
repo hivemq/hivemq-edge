@@ -81,38 +81,28 @@ class JsonSchemaGeneratorNullabilityTest {
     }
 
     @Test
-    void anArrayOfStrings_isNullable_andSoAreItsElements() {
+    void anArrayOfStrings_isNotNullable_butItsElementsAre() {
+        // An array refuses null whatever its element type: OPC UA makes the null array and [] the same value.
         final JsonNode schema = render(OpcUaDataType.String, new UInteger[] {UInteger.valueOf(0)});
 
-        final JsonNode array = theNonNullBranch(schema);
-        assertThat(types(array)).containsExactly("array");
-        assertThat(types(array.get("items"))).contains("string", "null");
+        assertThat(schema.has("anyOf")).isFalse();
+        assertThat(types(schema)).containsExactly("array");
+        assertThat(types(schema.get("items"))).contains("string", "null");
     }
 
     @Test
-    void anArrayOfIntegers_isNullable_butItsElementsAreNot() {
-        // The null array is a value of every array, whatever its element type.
+    void anArrayOfIntegers_andItsElements_areNotNullable() {
         final JsonNode schema = render(OpcUaDataType.Int32, new UInteger[] {UInteger.valueOf(0)});
 
-        final JsonNode array = theNonNullBranch(schema);
-        assertThat(types(array.get("items"))).doesNotContain("null");
+        assertThat(types(schema)).containsExactly("array");
+        assertThat(types(schema.get("items"))).doesNotContain("null");
     }
 
     @Test
     void theRowsOfATwoDimensionalArray_areNotNullable() {
-        // A row is not a value of its own, and the converter refuses a null row.
         final JsonNode schema = render(OpcUaDataType.Int32, new UInteger[] {UInteger.valueOf(0), UInteger.valueOf(0)});
 
-        final JsonNode rows = theNonNullBranch(schema).get("items");
-        assertThat(types(rows)).containsExactly("array");
-    }
-
-    /// The schema of a nullable array or object, `anyOf [schema, {"type": "null"}]`, without its null branch.
-    private static @NotNull JsonNode theNonNullBranch(final @NotNull JsonNode schema) {
-        final JsonNode anyOf = schema.get("anyOf");
-        assertThat(anyOf).as("a nullable array renders as anyOf [array, null]").isNotNull();
-        assertThat(anyOf.size()).isEqualTo(2);
-        assertThat(types(anyOf.get(1))).containsExactly("null");
-        return anyOf.get(0);
+        assertThat(types(schema)).containsExactly("array");
+        assertThat(types(schema.get("items"))).containsExactly("array");
     }
 }

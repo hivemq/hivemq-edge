@@ -132,6 +132,10 @@ public final class JsonToOpcUaValueConverter {
     /// than unknown.
     private static final int UNKNOWN_LENGTH = -1;
 
+    /// Why a `null` in place of an array is refused, and what to send instead. See [#hasNullValue].
+    private static final @NotNull String NULL_ARRAY_REFUSAL =
+            "an array does not accept null. Send [] for an array with no elements";
+
     /// 2^53, the first magnitude a whole number cannot be trusted at. The largest trustworthy one is 2^53 - 1.
     ///
     /// **Why the limit excludes 2^53 itself rather than including it.** `JSON.parse` rounds to nearest-even, so
@@ -493,8 +497,12 @@ public final class JsonToOpcUaValueConverter {
     ///
     /// Not exhaustive on purpose. `Guid` and `DateTime` are left out because their "null" is a sentinel inside
     /// the value range -- the all-zero Guid, the minimum DateTime -- which a caller can write as itself. Numbers,
-    /// `Boolean`, `StatusCode`, enumerations and structures have no null value at all. An array has one, the
-    /// null array, whatever its element type; that is decided by the value rank, not here.
+    /// `Boolean`, `StatusCode`, enumerations and structures have no null value at all.
+    ///
+    /// **An array refuses `null`**, whatever its element type, although OPC UA gives every array a null value.
+    /// OPC 10000-6 section 5.1.11 makes the null array and the empty array the same value, so `[]` says what
+    /// `null` would, and refusing `null` keeps one spelling for it. A value write passes the open rank `Any`
+    /// for every variable, so the converter could not tell an array variable from a scalar one anyway.
     public static boolean hasNullValue(final @NotNull OpcUaDataType type) {
         return switch (type) {
             case String, ByteString, XmlElement, NodeId, ExpandedNodeId, QualifiedName, LocalizedText -> true;
@@ -517,16 +525,18 @@ public final class JsonToOpcUaValueConverter {
         };
     }
 
-    /// A top-level JSON `null`: the null array where the value is declared as an array, otherwise the type's
-    /// null value. Milo cannot carry a typed null `String` or a typed null array in a `Variant`, so those travel
-    /// as the null Variant, which is how OPC UA encodes a value that carries nothing.
+    /// A top-level JSON `null`: refused where the value is declared as an array (see [#hasNullValue]), otherwise
+    /// the type's null value. Milo cannot carry a typed null `String` in a `Variant`, so it travels as the null
+    /// Variant, which is how OPC UA encodes a value that carries nothing.
     ///
     /// A rank that leaves the shape open (`-2`, `-3`) does not make `null` an array, because a value write passes
-    /// `-2` for every variable: a null write to an `Int32` variable would otherwise reach the device as a null
-    /// array. There the element type decides.
+    /// `-2` for every variable. There the element type decides.
     private static @NotNull Variant nullVariant(final @NotNull Kind kind, final @Nullable Integer valueRank) {
         if (valueRank != null && valueRank >= ValueRanks.OneOrMoreDimensions) {
-            return Variant.NULL_VALUE;
+            throw new ConversionException(
+                    ConversionException.Fault.VALUE,
+                    describeExpected(kind, Math.max(valueRank, 1)),
+                    "the value supplied is null, and " + NULL_ARRAY_REFUSAL);
         }
         if (kind instanceof final Kind.Builtin builtin && hasNullValue(builtin.type())) {
             final Object nullValue = nullValueOf(builtin.type());
@@ -848,9 +858,8 @@ public final class JsonToOpcUaValueConverter {
         if (rank < 1) {
             throw new IllegalArgumentException("has the value rank " + rank + ", which a structure field cannot have");
         }
-        // An array field has the null array as its null value, whatever its element type.
         if (supplied.isNull()) {
-            return null;
+            throw new IllegalArgumentException("is null, and " + NULL_ARRAY_REFUSAL);
         }
         final int[] lengthPerLevel = new int[rank];
         Arrays.fill(lengthPerLevel, UNKNOWN_LENGTH);

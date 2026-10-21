@@ -312,13 +312,22 @@ class JsonToOpcUaValueConverterTest {
     }
 
     @Test
-    void aNullRequiredArrayField_carriesTheNullArray() throws Exception {
+    void aNullArrayField_isRefused_becauseAnEmptyArraySaysTheSame() {
+        // OPC 10000-6 section 5.1.11 makes the null array and the empty array the same value; [] is its spelling.
+        assertThatThrownBy(() -> CONVERTER.toVariant(
+                        json("{\"id\": 1, \"mode\": 0, \"steps\": null}"), RECIPE_TYPE, ValueRanks.Scalar))
+                .isInstanceOf(JsonToOpcUaValueConverter.ConversionException.class)
+                .hasMessageContaining("steps")
+                .hasMessageContaining("Send []");
+    }
+
+    @Test
+    void anEmptyArrayField_isAccepted() throws Exception {
         final Variant variant =
-                CONVERTER.toVariant(json("{\"id\": 1, \"mode\": 0, \"steps\": null}"), RECIPE_TYPE, ValueRanks.Scalar);
+                CONVERTER.toVariant(json("{\"id\": 1, \"mode\": 0, \"steps\": []}"), RECIPE_TYPE, ValueRanks.Scalar);
 
         final DynamicStructType recipe = decode((ExtensionObject) variant.getValue());
-        assertThat(recipe.getMembers()).containsKey("steps");
-        assertThat(recipe.getMembers().get("steps")).isNull();
+        assertThat((Object[]) recipe.getMembers().get("steps")).isEmpty();
     }
 
     @Test
@@ -351,10 +360,16 @@ class JsonToOpcUaValueConverterTest {
     }
 
     @Test
-    void aTopLevelNull_isTheNullArray_forADeclaredArray() {
-        // Every array has the null array as a value, whatever its element type.
-        assertThat(CONVERTER.toVariant(NullNode.getInstance(), NodeIds.Int32, ValueRanks.OneDimension))
-                .isEqualTo(Variant.NULL_VALUE);
+    void aTopLevelNull_isRefused_forADeclaredArray_whateverItsElementType() {
+        // An array refuses null even where its element type has a null value: [] is how to send no elements.
+        for (final NodeId elementType : List.of(NodeIds.Int32, NodeIds.String)) {
+            for (final int rank : List.of(ValueRanks.OneOrMoreDimensions, ValueRanks.OneDimension, 2)) {
+                assertThatThrownBy(() -> CONVERTER.toVariant(NullNode.getInstance(), elementType, rank))
+                        .as("%s with value rank %s", elementType, rank)
+                        .isInstanceOf(JsonToOpcUaValueConverter.ConversionException.class)
+                        .hasMessageContaining("Send []");
+            }
+        }
     }
 
     @Test
