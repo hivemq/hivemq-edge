@@ -242,6 +242,23 @@ class MethodPrewarmIT {
                 .endsWith("state now - value reads: working, value writes: working, method requests: working");
     }
 
+    @Test
+    void aTagNamingANamespaceTheServerDoesNotPublish_isReportedAsRefusedNotAsSlow() throws Exception {
+        // Found by Miguel on #1772, together with #1771: a node id that cannot be used is never read, and a request
+        // to it is refused rather than reading the methods first. The line must not promise the second.
+        final String object = namespace().addMethodObject("Boiler").toParseableString();
+        final OpcUaProtocolAdapter adapter = started(
+                methodTag("lost", "nsu=urn:not:published:by:this:server;s=Boiler"), methodTag("boiler", object));
+
+        awaitPrewarm(adapter);
+
+        assertThat(adapter.methodsKnownFor("boiler")).isTrue();
+        assertThat(lastLifecycleLine())
+                .contains("connection 1; PROBLEM: read the methods of 1 of 2 method tags. Node id cannot be used, "
+                        + "method requests to them are refused: 'lost'; state now - ")
+                .doesNotContain("read the methods first");
+    }
+
     private @NotNull String lastLifecycleLine() {
         final List<String> lines = eventService.readEvents(null, null).stream()
                 .map(event -> event.getMessage())

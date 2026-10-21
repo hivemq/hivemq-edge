@@ -2275,7 +2275,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final long generation) {
 
         int read = 0;
+        // Two lists, because a request answers them differently: a tag whose read failed is read again by its first
+        // request, while a tag whose node id cannot be used here is refused without reaching the device.
         final List<String> notRead = new ArrayList<>();
+        final List<String> unusable = new ArrayList<>();
         for (final OpcuaTag tag : methodTags) {
             // Three ways this run becomes obsolete, and all three are checked before every tag rather than once
             // at the start: the thread was interrupted by a stop, the adapter was stopped, or the cache was
@@ -2306,7 +2309,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 // The request path reports this to the caller as an unusable tag. Nothing to add here: a
                 // pre-warm cannot refuse a request that has not arrived.
                 log.debug("OPC UA adapter '{}': not pre-warming tag '{}': {}", adapterId, tagName, e.getMessage());
-                notRead.add(tagName);
+                unusable.add(tagName);
                 continue;
             }
             try {
@@ -2363,18 +2366,23 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             try {
                 if (methodCache.generation() == generation && opcUaClientConnection.get() == source && !stopped) {
                     lifecycleMethodsRead = true;
-                    if (notRead.isEmpty()) {
-                        reportLifecycle(
-                                Event.SEVERITY.INFO,
-                                true,
-                                "read the methods of " + read + " of " + methodTags.size() + " method tags");
+                    final String readCount =
+                            "read the methods of " + read + " of " + methodTags.size() + " method tags";
+                    if (notRead.isEmpty() && unusable.isEmpty()) {
+                        reportLifecycle(Event.SEVERITY.INFO, true, readCount);
                     } else {
-                        reportLifecycle(
-                                Event.SEVERITY.WARN,
-                                true,
-                                "PROBLEM: read the methods of " + read + " of " + methodTags.size()
-                                        + " method tags, not read: '" + String.join("', '", notRead)
-                                        + "'. Method requests to these tags read the methods first");
+                        final StringBuilder problem = new StringBuilder("PROBLEM: ").append(readCount);
+                        if (!notRead.isEmpty()) {
+                            problem.append(". Not read, method requests to them read the methods first: '")
+                                    .append(String.join("', '", notRead))
+                                    .append('\'');
+                        }
+                        if (!unusable.isEmpty()) {
+                            problem.append(". Node id cannot be used, method requests to them are refused: '")
+                                    .append(String.join("', '", unusable))
+                                    .append('\'');
+                        }
+                        reportLifecycle(Event.SEVERITY.WARN, true, problem.toString());
                     }
                 }
             } finally {
