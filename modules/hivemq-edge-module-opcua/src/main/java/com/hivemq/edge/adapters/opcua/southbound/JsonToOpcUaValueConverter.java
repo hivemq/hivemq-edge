@@ -29,6 +29,7 @@ import static com.hivemq.edge.adapters.opcua.Constants.STATUS_CODE_SYMBOL;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.edge.adapters.opcua.method.Guids;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -44,12 +45,12 @@ import org.eclipse.milo.opcua.sdk.core.types.DynamicEnumType;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
@@ -174,21 +175,38 @@ public final class JsonToOpcUaValueConverter {
 
     private final @NotNull Supplier<DataTypeTree> tree;
     private final @NotNull Supplier<EncodingContext> context;
+    private final @NotNull NamespaceTable namespaces;
 
-    /// @param tree    the server's DataType hierarchy. Called only for a value whose DataType is not a builtin; it
-    ///                may throw, and the value is then refused as one whose type cannot be resolved.
-    /// @param context the encoding context a structure is encoded in. Called only for a structure.
+    /// @param tree       the server's DataType hierarchy. Called only for a value whose DataType is not a builtin;
+    ///                   it may throw, and the value is then refused as one whose type cannot be resolved.
+    /// @param context    the encoding context a structure is encoded in. Called only for a structure.
+    /// @param namespaces the server's namespace table, against which a NodeId value written by namespace URI is
+    ///                   resolved. See [NodeIdText#resolve].
     public JsonToOpcUaValueConverter(
-            final @NotNull Supplier<DataTypeTree> tree, final @NotNull Supplier<EncodingContext> context) {
+            final @NotNull Supplier<DataTypeTree> tree,
+            final @NotNull Supplier<EncodingContext> context,
+            final @NotNull NamespaceTable namespaces) {
         this.tree = tree;
         this.context = context;
+        this.namespaces = namespaces;
     }
 
-    /// The converter for a connected client: its DataType hierarchy and its dynamic encoding context.
+    /// A converter against a table that holds only namespace 0, the OPC UA namespace every server publishes.
+    public JsonToOpcUaValueConverter(
+            final @NotNull Supplier<DataTypeTree> tree, final @NotNull Supplier<EncodingContext> context) {
+        this(tree, context, new NamespaceTable());
+    }
+
+    /// The converter for a connected client: its DataType hierarchy, its dynamic encoding context and its
+    /// namespace table.
     ///
     /// The dynamic context is the one the read path decodes structures with, and it creates a codec for any
     /// DataType the hierarchy describes on first use, so nothing has to be registered before a structure is
     /// encoded.
+    ///
+    /// The namespace table is taken from the client itself, not from the encoding context: the two are one
+    /// object, but reaching it through the context would load the server's type system to write a NodeId. Milo
+    /// keeps that one object for the client's life and refills it on every new session, so it is current.
     public static @NotNull JsonToOpcUaValueConverter of(final @NotNull OpcUaClient client) {
         return new JsonToOpcUaValueConverter(
                 () -> {
@@ -204,21 +222,28 @@ public final class JsonToOpcUaValueConverter {
                     } catch (final UaException e) {
                         throw new IllegalStateException(e.getMessage(), e);
                     }
-                });
+                },
+                client.getNamespaceTable());
     }
 
-    /// A converter for values of builtin types only.
+    /// A converter for values of builtin types only, against a table that holds only namespace 0.
     ///
     /// For a caller with no server at hand: anything that needs the hierarchy is refused as unresolvable rather
     /// than guessed at.
     public static @NotNull JsonToOpcUaValueConverter builtinOnly() {
+        return builtinOnly(new NamespaceTable());
+    }
+
+    /// A converter for values of builtin types only, against the given namespace table.
+    public static @NotNull JsonToOpcUaValueConverter builtinOnly(final @NotNull NamespaceTable namespaces) {
         return new JsonToOpcUaValueConverter(
                 () -> {
                     throw new IllegalStateException("the server's DataType hierarchy is not available");
                 },
                 () -> {
                     throw new IllegalStateException("no encoding context is available");
-                });
+                },
+                namespaces);
     }
 
     // region The public contract
@@ -627,7 +652,7 @@ public final class JsonToOpcUaValueConverter {
     /// `DynamicStructType`, and encodes them itself as part of the enclosing structure. `member` chooses.
     private @NotNull Object scalar(final @NotNull Kind kind, final @NotNull JsonNode node, final boolean member) {
         return switch (kind) {
-            case Kind.Builtin builtin -> builtin(builtin.type(), node);
+            case Kind.Builtin builtin -> builtin(builtin.type(), node, namespaces);
             case Kind.Enumeration enumeration -> {
                 final int value = enumValue(enumeration, node);
                 yield member ? new DynamicEnumType(enumeration.dataType(), value) : (Object) value;
@@ -869,7 +894,12 @@ public final class JsonToOpcUaValueConverter {
     /// The six structured builtins each take the form the northbound converter publishes *and* a simple form, so a
     /// value read from a device can be sent straight back and a caller writing one by hand does not have to
     /// assemble an object.
-    private static @NotNull Object builtin(final @NotNull OpcUaDataType type, final @NotNull JsonNode node) {
+    ///
+    /// A node id written as text goes through [NodeIdText], like every node id in the adapter: a NodeId is
+    /// resolved against `namespaces`, so `nsu=<uri>;...` reaches the server with this session's index, and an
+    /// ExpandedNodeId keeps its URI. Both refuse a short Guid that Milo would pad into a different one.
+    private static @NotNull Object builtin(
+            final @NotNull OpcUaDataType type, final @NotNull JsonNode node, final @NotNull NamespaceTable namespaces) {
         return switch (type) {
             case Boolean -> requireBoolean(node);
             case SByte -> (byte) requireIntegral(node, Byte.MIN_VALUE, Byte.MAX_VALUE);
@@ -886,8 +916,8 @@ public final class JsonToOpcUaValueConverter {
             case Double -> requireNumber(node);
             case String -> requireText(node);
             case LocalizedText -> requireLocalizedText(node);
-            case NodeId -> requireNodeId(node);
-            case ExpandedNodeId -> ExpandedNodeId.parse(requireCanonicalGuidIn(requireText(node)));
+            case NodeId -> requireNodeId(node, namespaces);
+            case ExpandedNodeId -> NodeIdText.expanded(requireText(node));
             case QualifiedName -> requireQualifiedName(node);
             case StatusCode -> requireStatusCode(node);
             case XmlElement -> new XmlElement(requireText(node));
@@ -1044,11 +1074,12 @@ public final class JsonToOpcUaValueConverter {
         return value.textValue();
     }
 
-    /// A node id, from either the text form every tag configuration uses or the object the read path publishes.
+    /// A node id, from either the text form or the object the read path publishes.
     ///
-    /// The text form is `ns=2;s=Boiler`, which `NodeId.parse` already reads for a tag's own node and for a
-    /// method named by id. The object form carries `namespaceIndex`, `id` and `idType`, and is what a caller
-    /// gets back from a read -- so a value can make the round trip without being rewritten by hand.
+    /// The text form is `nsu=<namespace uri>;s=Boiler` or `ns=2;s=Boiler`, resolved by [NodeIdText] against the
+    /// session's table like every node id in the adapter. The object form carries `namespaceIndex`, `id` and
+    /// `idType`, and is what a caller gets back from a read -- so a value can make the round trip without being
+    /// rewritten by hand.
     ///
     /// ## Why `idType` decides, and is not inferred
     ///
@@ -1067,9 +1098,10 @@ public final class JsonToOpcUaValueConverter {
     /// different Guid** and accepts the wrapped, URN, struct and OID spellings a vendor tool may show
     /// alongside the hyphenated form `populateNodeId` emits. The refusal is what matters here; the extra
     /// spellings only save a transcription step.
-    private static @NotNull NodeId requireNodeId(final @NotNull JsonNode node) {
+    private static @NotNull NodeId requireNodeId(
+            final @NotNull JsonNode node, final @NotNull NamespaceTable namespaces) {
         if (node.isTextual()) {
-            return NodeId.parse(requireCanonicalGuidIn(node.textValue()));
+            return NodeIdText.resolve(node.textValue(), namespaces);
         }
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a node id as text or an object, got " + node.getNodeType());
@@ -1122,21 +1154,6 @@ public final class JsonToOpcUaValueConverter {
 
     private static @NotNull UUID requireUuidIdentifier(final @NotNull JsonNode id) {
         return Guids.parse(requireText(id));
-    }
-
-    /// The text form of a node id, with any Guid identifier in it checked before Milo parses it.
-    ///
-    /// `NodeId.parse` and `ExpandedNodeId.parse` read a `g=` identifier with `UUID.fromString`, which pads a
-    /// short group into a different valid Guid -- see {@link Guids}. The identifier is everything after the
-    /// first `;`, since only that one separates the namespace from the identifier.
-    private static @NotNull String requireCanonicalGuidIn(final @NotNull String text) {
-        final int separator = text.indexOf(';');
-        final int marker = text.indexOf("g=", separator + 1);
-        if (separator < 0 || marker != separator + 1) {
-            return text;
-        }
-        Guids.requireCanonical(text.substring(marker + 2));
-        return text;
     }
 
     /// A qualified name -- a namespace index and a name -- from either the object or a bare string.

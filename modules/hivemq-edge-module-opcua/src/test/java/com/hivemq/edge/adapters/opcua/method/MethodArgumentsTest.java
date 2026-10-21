@@ -20,9 +20,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -322,6 +324,29 @@ class MethodArgumentsTest {
                 json("{\"node\": {\"namespaceIndex\": 2, \"id\": \"Boiler\"}}"));
 
         assertThat(fromText[0].value()).isEqualTo(fromObject[0].value());
+    }
+
+    @Test
+    void aNodeIdArgument_byNamespaceUri_isSentWithThisSessionsIndex() throws Exception {
+        final NamespaceTable table = new NamespaceTable();
+        table.add("urn:test:boiler"); // index 1
+
+        final var arguments = MethodArguments.forCall(
+                signature(argument("node", NodeIds.NodeId)),
+                json("{\"node\": \"nsu=urn:test:boiler;s=Boiler\"}"),
+                JsonToOpcUaValueConverter.builtinOnly(table));
+
+        assertThat(arguments[0].value()).isEqualTo(new NodeId(1, "Boiler"));
+    }
+
+    @Test
+    void aNodeIdArgument_byAnUnpublishedNamespaceUri_isRefusedNamingTheUri() {
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        signature(argument("node", NodeIds.NodeId)),
+                        json("{\"node\": \"nsu=urn:not:published;s=Boiler\"}"),
+                        JsonToOpcUaValueConverter.builtinOnly(new NamespaceTable())))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("'urn:not:published', which the server does not publish");
     }
 
     @Test

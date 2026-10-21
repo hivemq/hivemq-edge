@@ -47,6 +47,7 @@ import org.eclipse.milo.opcua.stack.core.types.DataTypeManager;
 import org.eclipse.milo.opcua.stack.core.types.DefaultDataTypeManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -535,6 +536,69 @@ class JsonToOpcUaValueConverterTest {
                         .toVariant(json("\"checked\""), NodeIds.LocalizedText, ValueRanks.Scalar)
                         .getValue())
                 .isEqualTo(LocalizedText.english("checked"));
+    }
+
+    // endregion
+
+    // region Node ids, by namespace index or by namespace URI
+
+    /// The session's table for these tests: `urn:test:boiler` at index 1.
+    private static @NotNull JsonToOpcUaValueConverter againstBoilerTable() {
+        final NamespaceTable table = new NamespaceTable();
+        table.add("urn:test:boiler");
+        return JsonToOpcUaValueConverter.builtinOnly(table);
+    }
+
+    @Test
+    void aNodeIdValue_byIndexOrByUri_isTheSameNode() {
+        final JsonToOpcUaValueConverter converter = againstBoilerTable();
+
+        assertThat(converter
+                        .toVariant(json("\"ns=1;s=A\""), NodeIds.NodeId, ValueRanks.Scalar)
+                        .getValue())
+                .isEqualTo(new NodeId(1, "A"));
+        assertThat(converter
+                        .toVariant(json("\"nsu=urn:test:boiler;s=A\""), NodeIds.NodeId, ValueRanks.Scalar)
+                        .getValue())
+                .isEqualTo(new NodeId(1, "A"));
+    }
+
+    @Test
+    void aNodeIdValue_byAnUnpublishedUri_isRefusedNamingTheUri() {
+        assertThatThrownBy(() -> againstBoilerTable()
+                        .toVariant(json("\"nsu=urn:not:published;s=A\""), NodeIds.NodeId, ValueRanks.Scalar))
+                .isInstanceOfSatisfying(ConversionException.class, e -> assertThat(e.reason())
+                        .contains("'urn:not:published', which the server does not publish"));
+    }
+
+    /// An ExpandedNodeId value carries its URI to the server unchanged, so it is not resolved against the table.
+    @Test
+    void anExpandedNodeIdValue_keepsItsUri() {
+        final Object value = JsonToOpcUaValueConverter.builtinOnly()
+                .toVariant(json("\"nsu=urn:not:in:the:table;s=A\""), NodeIds.ExpandedNodeId, ValueRanks.Scalar)
+                .getValue();
+
+        assertThat(((ExpandedNodeId) value).getNamespaceUri()).isEqualTo("urn:not:in:the:table");
+    }
+
+    /// Milo would read each short Guid as a different, valid one. Miguel's example from the review of EDG-1127,
+    /// `svu=urn:x;g=1-1-1-1-1`, is the spelling the converter's own check used to miss.
+    @Test
+    void aShortGuid_isRefusedBehindEveryPrefix() {
+        final JsonToOpcUaValueConverter converter = againstBoilerTable();
+        for (final String text : new String[] {"g=1-1-1-1-1", "ns=1;g=1-1-1-1-1", "nsu=urn:test:boiler;g=1-1-1-1-1"}) {
+            assertThatThrownBy(() -> converter.toVariant(json("\"" + text + "\""), NodeIds.NodeId, ValueRanks.Scalar))
+                    .as(text)
+                    .isInstanceOfSatisfying(ConversionException.class, e -> assertThat(e.reason())
+                            .contains("8-4-4-4-12"));
+        }
+        for (final String text : new String[] {"svr=1;g=1-1-1-1-1", "svu=urn:x;g=1-1-1-1-1"}) {
+            assertThatThrownBy(() ->
+                            converter.toVariant(json("\"" + text + "\""), NodeIds.ExpandedNodeId, ValueRanks.Scalar))
+                    .as(text)
+                    .isInstanceOfSatisfying(ConversionException.class, e -> assertThat(e.reason())
+                            .contains("8-4-4-4-12"));
+        }
     }
 
     // endregion
