@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.method;
 
+import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,9 +88,16 @@ public record MethodSignature(
         /// generator has one. So the walk happens during the browse that produced this signature, where the
         /// client is in hand, and the answer travels with it.
         ///
-        /// Empty for a type that reduces to no builtin at all, which is a custom structure -- still refused,
-        /// deliberately and as documented.
+        /// A structure reduces to `ExtensionObject` and an enumeration to `Variant`. Neither is usable on its
+        /// own; the converter resolves both from the DataType itself.
         @NotNull Map<NodeId, OpcUaDataType> builtinTypes,
+        /// The fields of each structure an argument is declared as, by the structure's DataType node id.
+        ///
+        /// Read during the browse for the same reason as `builtinTypes`: describing a structure needs its
+        /// definition from the server's type hierarchy, and the schema generator works from this record alone.
+        /// A structure missing here is described as `any` -- the hierarchy could not be read, or the server
+        /// does not describe the structure.
+        @NotNull Map<NodeId, JsonSchemaGenerator.FieldInformation> structures,
         /// Whether every DataType lookup this signature needed actually answered.
         ///
         /// **A type absent from `builtinTypes` has two causes, and only one of them is durable.** The hierarchy
@@ -107,6 +115,35 @@ public record MethodSignature(
         inputArguments = List.copyOf(inputArguments);
         outputArguments = List.copyOf(outputArguments);
         builtinTypes = Map.copyOf(builtinTypes);
+        structures = Map.copyOf(structures);
+    }
+
+    /// A signature whose arguments include no structure Edge can describe.
+    public MethodSignature(
+            final @NotNull QualifiedName browseName,
+            final @NotNull NodeId nodeId,
+            final @NotNull NodeId objectId,
+            final @NotNull Origin origin,
+            final @NotNull List<Argument> inputArguments,
+            final @NotNull List<Argument> outputArguments,
+            final @NotNull Map<NodeId, OpcUaDataType> builtinTypes,
+            final boolean typesResolved) {
+        this(
+                browseName,
+                nodeId,
+                objectId,
+                origin,
+                inputArguments,
+                outputArguments,
+                builtinTypes,
+                Map.of(),
+                typesResolved);
+    }
+
+    /// The fields of the structure this argument is declared as, or null when it is not one Edge can describe.
+    public @Nullable JsonSchemaGenerator.FieldInformation structureOf(final @NotNull Argument argument) {
+        final NodeId dataType = argument.getDataType();
+        return dataType == null ? null : structures.get(dataType);
     }
 
     /// The string half of the browse name, which is what a request names a method with.
@@ -146,6 +183,7 @@ public record MethodSignature(
                 inputArguments,
                 outputArguments,
                 builtinsOf(inputArguments, outputArguments),
+                Map.of(),
                 // The local table needs no server, so nothing was left unanswered.
                 true);
     }

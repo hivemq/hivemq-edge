@@ -888,9 +888,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                 });
 
         // An enumeration argument, which marks the other side of the same boundary: the reduction answers
-        // Variant for it rather than the Int32 it is carried as, so it renders as `any` and the call is
-        // refused. Encoding one is not part of this release, and this pins that so a change to it is
-        // deliberate.
+        // Variant for it rather than the Int32 it is carried as, so only the server's type hierarchy says it is
+        // an enumeration and can be encoded.
         addDeclaredMethod(
                 objectId,
                 "SetState",
@@ -993,6 +992,39 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
                 .build();
         getNodeManager().addNode(object);
         requireNonNull(testFolder).addOrganizes(object);
+        return objectId;
+    }
+
+    private final @NotNull List<Variant[]> structureCallArguments = new CopyOnWriteArrayList<>();
+
+    /// The input arguments of every call to a method of {@link #addStructureMethodObject}, as the server received
+    /// them, in order.
+    public @NotNull List<Variant[]> structureCallArguments() {
+        return List.copyOf(structureCallArguments);
+    }
+
+    /// An object whose methods take a structure: `SetRange(range: Range)` and `SetRanges(ranges: Range[])`.
+    ///
+    /// `Range` is the standard `{low, high}` pair of Doubles, so the server describes it without any custom type
+    /// being registered, and Milo's server decodes it into its generated `Range` class. That makes it the
+    /// structure a client most easily gets wrong: the client's type manager also knows it as a generated class,
+    /// not as the dynamic structure a converter builds from its definition.
+    public @NotNull NodeId addStructureMethodObject(final @NotNull String objectName) {
+        final NodeId objectId = addBareObject(objectName);
+        final MethodInvocationHandler recording = (context, request) -> {
+            structureCallArguments.add(request.getInputArguments());
+            return new CallMethodResult(StatusCode.GOOD, new StatusCode[0], new DiagnosticInfo[0], new Variant[0]);
+        };
+        addDeclaredMethod(
+                objectId, "SetRange", new Argument[] {argument("range", NodeIds.Range)}, new Argument[0], recording);
+        addDeclaredMethod(
+                objectId,
+                "SetRanges",
+                new Argument[] {
+                    new Argument("ranges", NodeIds.Range, 1, new UInteger[] {uint(0)}, LocalizedText.english("ranges"))
+                },
+                new Argument[0],
+                recording);
         return objectId;
     }
 

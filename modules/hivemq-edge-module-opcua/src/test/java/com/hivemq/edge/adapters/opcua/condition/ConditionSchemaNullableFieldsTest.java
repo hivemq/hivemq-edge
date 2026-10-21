@@ -31,6 +31,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import java.util.List;
 import java.util.Set;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -113,7 +114,7 @@ class ConditionSchemaNullableFieldsTest {
                 .isNull();
         assertThat(ConditionUpdate.fromJson(json("{\"method\": \"ENABLE\", \"comment\": \"\"}"))
                         .comment())
-                .isEmpty();
+                .isEqualTo(LocalizedText.english(""));
     }
 
     // ── the decision: the argument fields do not ─────────────────────────────────────────────────────

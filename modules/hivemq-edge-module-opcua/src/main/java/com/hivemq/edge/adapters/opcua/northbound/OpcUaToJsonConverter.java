@@ -15,6 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import static com.hivemq.edge.adapters.opcua.Constants.ENUM_NAME;
+import static com.hivemq.edge.adapters.opcua.Constants.ENUM_VALUE;
+
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -24,6 +27,7 @@ import org.eclipse.milo.opcua.sdk.core.types.DynamicEnumType;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
+import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -59,7 +63,7 @@ import org.slf4j.LoggerFactory;
 /// read turned an `Int32` of 9 into `null` on the method path, and dropped a whole notification batch on the
 /// value and event paths.
 ///
-/// Same rule as the value-write path (`JsonToOpcUAConverter`, Miguel's R6-3) and the method-signature
+/// Same rule as the southbound converter (`JsonToOpcUaValueConverter`, Miguel's R6-3) and the method-signature
 /// verifier: do not reach for the hierarchy until a value's own type says it is needed. Stated here rather
 /// than at each caller because this is the only code that knows which values need it.
 ///
@@ -75,8 +79,17 @@ public class OpcUaToJsonConverter {
     public static final String METADATA_SERVER_TIMESTAMP = "serverTimestamp";
     public static final String METADATA_SERVER_PICOSECONDS = "serverPicoseconds";
 
+    /// Converts a value with an encoding context and no DataType hierarchy: a standard structure Milo decoded
+    /// into its generated class is published as its string form. See [Decoding#asDynamic].
     public static void convertPayload(
             final @NotNull Supplier<EncodingContext> serializationContext,
+            final @NotNull DataValue dataValue,
+            final @NotNull DataPointBuilder<?> builder) {
+        convertPayload(Decoding.withoutTypes(serializationContext), dataValue, builder);
+    }
+
+    public static void convertPayload(
+            final @NotNull Decoding serializationContext,
             final @NotNull DataValue dataValue,
             final @NotNull DataPointBuilder<?> builder) {
         final Object value = dataValue.getValue().getValue();
@@ -112,9 +125,7 @@ public class OpcUaToJsonConverter {
     }
 
     private static void addValue(
-            final @NotNull DataPointBuilder<?> builder,
-            final @Nullable Object value,
-            final @NotNull Supplier<EncodingContext> ctx) {
+            final @NotNull DataPointBuilder<?> builder, final @Nullable Object value, final @NotNull Decoding ctx) {
 
         // SIMPLE TYPES — use builder.value(...) directly
         if (value == null) {
@@ -203,7 +214,7 @@ public class OpcUaToJsonConverter {
         } else if (value instanceof final ExtensionObject eo) {
             // The only reach for the server's type descriptions in this converter, here and in the two
             // sibling dispatches. See the note on the class.
-            addValue(builder, eo.decode(ctx.get()), ctx);
+            addValue(builder, eo.decode(ctx.context().get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -219,16 +230,32 @@ public class OpcUaToJsonConverter {
             final var obj = builder.startObjectValue();
             struct.getMembers().forEach((k, v) -> addValueToObject(obj, k, v, ctx));
             obj.endObject();
+        } else if (value instanceof final DynamicEnumType enumValue) {
+            populateEnum(builder.startObjectValue(), enumValue).endObject();
         } else if (value instanceof final TimeZoneDataType timeZone) {
             populateTimeZone(builder.startObjectValue(), timeZone).endObject();
         } else if (value instanceof final EUInformation engineeringUnits) {
             populateEuInformation(builder.startObjectValue(), engineeringUnits).endObject();
+        } else if (value instanceof final UaStructuredType standard
+                && ctx.asDynamic(standard).orElse(null) instanceof final DynamicStructType struct) {
+            // A standard structure Milo decoded into its generated class, rendered as a vendor structure is.
+            addValue(builder, struct, ctx);
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
                     value.getClass().getSimpleName());
             builder.value(value.toString());
         }
+    }
+
+    /// Adds one value with an encoding context and no DataType hierarchy: a standard structure Milo decoded into
+    /// its generated class is published as its string form. See [Decoding#asDynamic].
+    public static void addValueToObject(
+            final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
+            final @NotNull String key,
+            final @Nullable Object value,
+            final @NotNull Supplier<EncodingContext> ctx) {
+        addValueToObject(obj, key, value, Decoding.withoutTypes(ctx));
     }
 
     /**
@@ -241,7 +268,7 @@ public class OpcUaToJsonConverter {
             final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
             final @NotNull String key,
             final @Nullable Object value,
-            final @NotNull Supplier<EncodingContext> ctx) {
+            final @NotNull Decoding ctx) {
 
         // SIMPLE TYPES
         if (value == null) {
@@ -326,7 +353,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValueToObject(obj, key, eo.decode(ctx.get()), ctx);
+            addValueToObject(obj, key, eo.decode(ctx.context().get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -340,10 +367,20 @@ public class OpcUaToJsonConverter {
             final var nested = obj.startObject(key);
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
             nested.endObject();
+        } else if (value instanceof final DynamicEnumType enumValue) {
+            // A structure's enumeration field, decoded by Milo's codec. Without this branch it fell through to
+            // the string fallback and was published as `DynamicEnumType[dataType=..., name=..., value=...]`,
+            // which no consumer can parse and no writer accepts back -- while the same enumeration in an array
+            // field was published as this object.
+            populateEnum(obj.startObject(key), enumValue).endObject();
         } else if (value instanceof final TimeZoneDataType timeZone) {
             populateTimeZone(obj.startObject(key), timeZone).endObject();
         } else if (value instanceof final EUInformation engineeringUnits) {
             populateEuInformation(obj.startObject(key), engineeringUnits).endObject();
+        } else if (value instanceof final UaStructuredType standard
+                && ctx.asDynamic(standard).orElse(null) instanceof final DynamicStructType struct) {
+            // A standard structure Milo decoded into its generated class, rendered as a vendor structure is.
+            addValueToObject(obj, key, struct, ctx);
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
@@ -355,7 +392,7 @@ public class OpcUaToJsonConverter {
     private static void addValueToArray(
             final @NotNull DataPointBuilder.ArrayBuilder<?> arr,
             final @Nullable Object value,
-            final @NotNull Supplier<EncodingContext> ctx) {
+            final @NotNull Decoding ctx) {
         if (value == null) {
             arr.addNull();
         } else if (value instanceof final DataValue dv) {
@@ -426,7 +463,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValueToArray(arr, eo.decode(ctx.get()), ctx);
+            addValueToArray(arr, eo.decode(ctx.context().get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -437,13 +474,7 @@ public class OpcUaToJsonConverter {
         } else if (value instanceof final DiagnosticInfo info) {
             populateDiagnosticInfo(arr.startObject(), info).endObject();
         } else if (value instanceof final DynamicEnumType enumValue) {
-            final var nested = arr.startObject();
-            final String name = enumValue.getName();
-            if (name != null) {
-                nested.put("name", name);
-            }
-            nested.put("value", enumValue.getValue());
-            nested.endObject();
+            populateEnum(arr.startObject(), enumValue).endObject();
         } else if (value instanceof final DynamicStructType struct) {
             final var nested = arr.startObject();
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
@@ -464,12 +495,30 @@ public class OpcUaToJsonConverter {
                 addValueToArray(nested, elem, ctx);
             }
             nested.endArray();
+        } else if (value instanceof final UaStructuredType standard
+                && ctx.asDynamic(standard).orElse(null) instanceof final DynamicStructType struct) {
+            // A standard structure Milo decoded into its generated class, rendered as a vendor structure is.
+            addValueToArray(arr, struct, ctx);
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
                     value.getClass().getSimpleName());
             arr.add(value.toString());
         }
+    }
+
+    /// An enumeration value as `{"name": ..., "value": ...}`, the form the southbound converter accepts back.
+    ///
+    /// The name is omitted when the server describes the enumeration without one, as `populateLocalizedText` omits
+    /// an absent field; the number is always present, because it is what the wire carries.
+    private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateEnum(
+            final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull DynamicEnumType enumValue) {
+        final String name = enumValue.getName();
+        if (name != null) {
+            obj.put(ENUM_NAME, name);
+        }
+        obj.put(ENUM_VALUE, enumValue.getValue());
+        return obj;
     }
 
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateNodeId(
@@ -515,59 +564,60 @@ public class OpcUaToJsonConverter {
     }
 
     /**
-     * Writes a {@code TimeZoneDataType} as {@code {offset, daylightSavingInOffset}}.
+     * Writes a {@code TimeZoneDataType} as {@code {Offset, DaylightSavingInOffset}}.
      * <p>
      * OPC 10000-5: the offset is "the time difference (in minutes) between the Time Property and the time at
      * the location in which the event was issued", and the flag says whether that offset already includes
      * the daylight-saving correction — so a consumer reconstructing local time adds the offset, and a
      * consumer reasoning about DST needs the flag to know what it has been told.
      * <p>
-     * Named explicitly rather than left to the generic structure path: Milo decodes this one into its own
-     * generated class rather than a {@code DynamicStructType}, so without this it would fall through to the
-     * {@code toString()} branch and publish a Java object rendering.
+     * **The field names are the structure definition's own**, capitalised as OPC 10000-5 gives them. That is
+     * what every other structure is published with, rendered from its definition (see {@link Decoding}), and
+     * what the southbound converter checks a written structure against -- so a value read can be sent back.
+     * <p>
+     * Rendered here rather than through {@link Decoding}: every alarm event carries {@code LocalTime}, and this
+     * needs no type hierarchy, so a server refusing the type browse still gets the field rather than its
+     * string form.
      */
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateTimeZone(
             final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull TimeZoneDataType timeZone) {
 
         final Short offset = timeZone.getOffset();
         if (offset != null) {
-            obj.put("offset", offset.intValue());
+            obj.put("Offset", offset.intValue());
         }
         final Boolean daylightSaving = timeZone.getDaylightSavingInOffset();
         if (daylightSaving != null) {
-            obj.put("daylightSavingInOffset", daylightSaving);
+            obj.put("DaylightSavingInOffset", daylightSaving);
         }
         return obj;
     }
 
     /**
-     * Writes an {@code EUInformation} as {@code {namespaceUri, unitId, displayName, description}}.
+     * Writes an {@code EUInformation} as {@code {NamespaceUri, UnitId, DisplayName, Description}}.
      * <p>
-     * OPC 10000-8 §5.6.3: {@code namespaceUri} identifies the authority that defines the unit — by default
-     * the UNECE Recommendation 20 code list — and {@code unitId} identifies the unit within it, so the pair
-     * is what makes an engineering unit machine-readable. {@code displayName} is the symbol ({@code "°C"})
-     * and {@code description} the full name ({@code "degree Celsius"}), both localised texts.
+     * OPC 10000-8 §5.6.3: {@code NamespaceUri} identifies the authority that defines the unit — by default
+     * the UNECE Recommendation 20 code list — and {@code UnitId} identifies the unit within it, so the pair
+     * is what makes an engineering unit machine-readable. {@code DisplayName} is the symbol ({@code "°C"})
+     * and {@code Description} the full name ({@code "degree Celsius"}), both localised texts.
      * <p>
-     * Named explicitly for the same reason as {@link #populateTimeZone}: Milo decodes this one into its own
-     * generated class rather than a {@code DynamicStructType}, so without this branch it fell through to
-     * {@code toString()}. That published a Java object rendering — a format defined by Milo's implementation
-     * rather than by any contract — and collapsed the four members into one opaque string, so a consumer
-     * could neither compare two units nor resolve either against the code list. It reaches every
-     * rate-of-change alarm, whose {@code EngineeringUnits} member is what says what the rate is measured in.
+     * The field names are the structure definition's own, for the reason given on {@link #populateTimeZone},
+     * and it is rendered here for the same reason: it reaches every limit and rate-of-change alarm, whose
+     * {@code EngineeringUnits} member is what says what the value is measured in.
      */
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateEuInformation(
             final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull EUInformation engineeringUnits) {
 
         final String namespaceUri = engineeringUnits.getNamespaceUri();
         if (namespaceUri != null) {
-            obj.put("namespaceUri", namespaceUri);
+            obj.put("NamespaceUri", namespaceUri);
         }
         final Integer unitId = engineeringUnits.getUnitId();
         if (unitId != null) {
-            obj.put("unitId", unitId);
+            obj.put("UnitId", unitId);
         }
-        putLocalizedText(obj, "displayName", engineeringUnits.getDisplayName());
-        putLocalizedText(obj, "description", engineeringUnits.getDescription());
+        putLocalizedText(obj, "DisplayName", engineeringUnits.getDisplayName());
+        putLocalizedText(obj, "Description", engineeringUnits.getDescription());
         return obj;
     }
 
