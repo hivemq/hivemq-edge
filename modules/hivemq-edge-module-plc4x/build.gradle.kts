@@ -65,6 +65,8 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj)
+    testImplementation(libs.awaitility)
+    testImplementation(libs.logback.classic)
 }
 
 tasks.test {
