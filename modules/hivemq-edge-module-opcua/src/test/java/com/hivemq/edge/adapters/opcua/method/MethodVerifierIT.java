@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -108,17 +109,73 @@ class MethodVerifierIT {
     }
 
     @Test
-    void anEnumerationArgument_isRefusedRatherThanEncodedAsItsInteger() {
-        // The limit of the reduction, stated because the reference document states it. An enumeration's
-        // DataType reduces to Variant rather than to the Int32 it is carried as, so the argument renders as
-        // `any` and the call is refused. Encoding one is not part of this release; this records the behaviour
-        // so a later change to it is deliberate.
+    void anEnumerationArgument_isEncodedAsTheInt32ItIsCarriedAs() {
+        // An enumeration's DataType reduces to Variant rather than to the Int32 it is carried as, which is why
+        // the reduction alone cannot encode it. The converter recognises the enumeration from the server's type
+        // hierarchy instead, and accepts the number, the name, and the object a structure publishes.
+        // `ServerState` is the standard one: Running = 0, Failed = 1.
         final MethodSignature setState = verified("SetState");
+        final JsonToOpcUaValueConverter converter = JsonToOpcUaValueConverter.of(client);
 
         assertThat(setState.builtinTypeOf(setState.inputArguments().get(0))).isEqualTo(OpcUaDataType.Variant);
+        assertThat(
+                        MethodArguments.forCall(setState, state(JsonNodeFactory.instance.numberNode(1)), converter)[0]
+                                .value())
+                .isEqualTo(1);
+        assertThat(
+                        MethodArguments.forCall(
+                                setState, state(JsonNodeFactory.instance.textNode("Failed")), converter)[0]
+                                .value())
+                .isEqualTo(1);
+        assertThat(MethodArguments.forCall(
+                        setState,
+                        state(JsonNodeFactory.instance
+                                .objectNode()
+                                .put("name", "Failed")
+                                .put("value", 1)),
+                        converter)[0]
+                        .value())
+                .isEqualTo(1);
+    }
+
+    @Test
+    void anEnumerationArgument_refusesAValueTheEnumerationDoesNotDefine() {
+        final MethodSignature setState = verified("SetState");
+        final JsonToOpcUaValueConverter converter = JsonToOpcUaValueConverter.of(client);
+
+        assertThatThrownBy(() ->
+                        MethodArguments.forCall(setState, state(JsonNodeFactory.instance.numberNode(99)), converter))
+                .isInstanceOf(MethodArguments.InvalidArgumentException.class)
+                .hasMessageContaining("expects ServerState")
+                .hasMessageContaining("defines no value 99");
         assertThatThrownBy(() -> MethodArguments.forCall(
-                        setState, JsonNodeFactory.instance.objectNode().put("state", 1)))
-                .hasMessageContaining("Variant is not supported as a method argument");
+                        setState, state(JsonNodeFactory.instance.textNode("Exploded")), converter))
+                .hasMessageContaining("has no value named 'Exploded'");
+        // Both fields, disagreeing: refused rather than resolved in favour of either.
+        assertThatThrownBy(() -> MethodArguments.forCall(
+                        setState,
+                        state(JsonNodeFactory.instance
+                                .objectNode()
+                                .put("name", "Running")
+                                .put("value", 1)),
+                        converter))
+                .hasMessageContaining("gives to different values");
+    }
+
+    @Test
+    void anEnumerationArgument_withoutTheServersTypeHierarchy_isRefused() {
+        // The builtin-only converter has no hierarchy to recognise an enumeration in, so it refuses rather than
+        // guessing that a Variant-reducing type is carried as an Int32.
+        final MethodSignature setState = verified("SetState");
+
+        assertThatThrownBy(() -> MethodArguments.forCall(setState, state(JsonNodeFactory.instance.numberNode(1))))
+                .hasMessageContaining("cannot encode");
+    }
+
+    private static @NotNull ObjectNode state(final @NotNull JsonNode value) {
+        final ObjectNode request = JsonNodeFactory.instance.objectNode();
+        request.set("state", value);
+        return request;
     }
 
     @Test

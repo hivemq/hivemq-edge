@@ -160,6 +160,72 @@ class JsonSchemaGeneratorProcessExtensionObjectTest {
         assertThat(fieldNamed(nested, "inner").dataType()).isEqualTo(OpcUaDataType.Boolean);
     }
 
+    /// A structure type that contains itself -- `Step { name, subSteps: Step[] }` -- is described down to the field
+    /// where it repeats, and that field is `any`. The walk used to recurse until the stack overflowed, which made
+    /// every method on the tag unverifiable.
+    @Test
+    void processExtensionObject_selfReferencingStructure_describesTheRepeatAsAny() throws Exception {
+        final NodeId stepType = new NodeId(1, "Step");
+        final DataType step =
+                structDataType("Step", scalarField("name", NodeIds.String), arrayField("subSteps", stepType, 0));
+        when(step.getNodeId()).thenReturn(stepType);
+        when(tree.getBuiltinType(NodeIds.String)).thenReturn(OpcUaDataType.String);
+        when(tree.getBuiltinType(stepType)).thenReturn(OpcUaDataType.ExtensionObject);
+        when(tree.getDataType(stepType)).thenReturn(step);
+
+        final FieldInformation info = newGenerator().processExtensionObject(step, true, true, true, "root");
+
+        assertThat(fieldNamed(info, "name").dataType()).isEqualTo(OpcUaDataType.String);
+        final FieldInformation subSteps = fieldNamed(info, "subSteps");
+        assertThat(subSteps.dataType()).isNull();
+        assertThat(subSteps.nestedFields()).isEmpty();
+    }
+
+    /// Two structure types that contain each other: the walk describes `A`, then `B` inside it, and stops at
+    /// `B`'s field of type `A`.
+    @Test
+    void processExtensionObject_mutuallyReferencingStructures_describeTheRepeatAsAny() throws Exception {
+        final NodeId aType = new NodeId(1, "A");
+        final NodeId bType = new NodeId(1, "B");
+        final DataType b = structDataType("B", scalarField("toA", aType));
+        final DataType a = structDataType("A", scalarField("toB", bType));
+        when(a.getNodeId()).thenReturn(aType);
+        when(b.getNodeId()).thenReturn(bType);
+        when(tree.getBuiltinType(aType)).thenReturn(OpcUaDataType.ExtensionObject);
+        when(tree.getBuiltinType(bType)).thenReturn(OpcUaDataType.ExtensionObject);
+        when(tree.getDataType(aType)).thenReturn(a);
+        when(tree.getDataType(bType)).thenReturn(b);
+
+        final FieldInformation info = newGenerator().processExtensionObject(a, true, true, true, "root");
+
+        final FieldInformation toB = fieldNamed(info, "toB");
+        assertThat(toB.nestedFields()).hasSize(1);
+        final FieldInformation toA = fieldNamed(toB, "toA");
+        assertThat(toA.dataType()).isNull();
+        assertThat(toA.nestedFields()).isEmpty();
+    }
+
+    /// Two fields of the same structure type are not a recursion: `Segment { from: Point, to: Point }` describes
+    /// both points in full. Only a type enclosing the field counts, not one met earlier on a sibling branch.
+    @Test
+    void processExtensionObject_siblingFieldsOfTheSameStructure_areBothDescribed() throws Exception {
+        final NodeId pointType = new NodeId(1, "Point");
+        final DataType point = structDataType("Point", scalarField("x", NodeIds.Double));
+        final DataType segment =
+                structDataType("Segment", scalarField("from", pointType), scalarField("to", pointType));
+        when(point.getNodeId()).thenReturn(pointType);
+        when(segment.getNodeId()).thenReturn(new NodeId(1, "Segment"));
+        when(tree.getBuiltinType(NodeIds.Double)).thenReturn(OpcUaDataType.Double);
+        when(tree.getBuiltinType(pointType)).thenReturn(OpcUaDataType.ExtensionObject);
+        when(tree.getDataType(pointType)).thenReturn(point);
+
+        final FieldInformation info = newGenerator().processExtensionObject(segment, true, true, true, "root");
+
+        for (final String name : new String[] {"from", "to"}) {
+            assertThat(fieldNamed(fieldNamed(info, name), "x").dataType()).isEqualTo(OpcUaDataType.Double);
+        }
+    }
+
     @Test
     void processExtensionObject_arrayField_isModelledAsArray() throws Exception {
         // A struct field that is itself an array (e.g. Int16[10], ValueRank 1) must keep its array

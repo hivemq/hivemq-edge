@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -333,7 +334,7 @@ class MethodArgumentsTest {
         final var arguments = MethodArguments.forCall(
                 signature(argument("node", NodeIds.NodeId)),
                 json("{\"node\": \"nsu=urn:test:boiler;s=Boiler\"}"),
-                table);
+                JsonToOpcUaValueConverter.builtinOnly(table));
 
         assertThat(arguments[0].value()).isEqualTo(new NodeId(1, "Boiler"));
     }
@@ -343,7 +344,7 @@ class MethodArgumentsTest {
         assertThatThrownBy(() -> MethodArguments.forCall(
                         signature(argument("node", NodeIds.NodeId)),
                         json("{\"node\": \"nsu=urn:not:published;s=Boiler\"}"),
-                        new NamespaceTable()))
+                        JsonToOpcUaValueConverter.builtinOnly(new NamespaceTable())))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class)
                 .hasMessageContaining("'urn:not:published', which the server does not publish");
     }
@@ -494,6 +495,16 @@ class MethodArgumentsTest {
         final var arguments = MethodArguments.forCall(signature(argument("f", NodeIds.Float)), json("{\"f\": 1e38}"));
 
         assertThat((float) arguments[0].value()).isEqualTo(1e38f);
+    }
+
+    @Test
+    void aWholeNumberAFloatCannotHoldExactly_isRoundedLikeADecimal() throws Exception {
+        // 16777217 is the first whole number a Float cannot hold. Inside the range a Float rounds, whole number
+        // or not: the old value-write converter refused this one, and that check is deliberately gone.
+        final var arguments =
+                MethodArguments.forCall(signature(argument("f", NodeIds.Float)), json("{\"f\": 16777217}"));
+
+        assertThat((float) arguments[0].value()).isEqualTo(16777216f);
     }
 
     @Test
@@ -661,9 +672,9 @@ class MethodArgumentsTest {
     }
 
     @Test
-    void customStructureArgument_isRefusedRatherThanGuessedAt() throws Exception {
-        // The generated schema already says `any` for such an argument, so a caller has no contract to write
-        // against. Encoding one needs the DataTypeTree machinery the value-write path uses.
+    void customStructureArgument_withoutTheServersTypeHierarchy_isRefusedRatherThanGuessedAt() throws Exception {
+        // Encoding a structure needs its definition, which only the server's type hierarchy has. Without one --
+        // the builtin-only converter -- the argument is refused rather than guessed at.
         assertThatThrownBy(() -> MethodArguments.forCall(
                         signature(argument("recipe", new NodeId(3, 4001))), json("{\"recipe\": {\"steps\": 3}}")))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class)

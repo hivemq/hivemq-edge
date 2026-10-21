@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** How the browser reads what the server said: service faults, result statuses, continuation points. */
-final class ServiceFaults {
+public final class ServiceFaults {
 
     private ServiceFaults() {}
 
@@ -36,7 +36,7 @@ final class ServiceFaults {
      * operations, or a request/response the negotiated message size cannot carry. All of them are answered by
      * sending less per request.
      */
-    static boolean isTooManyOperations(final @Nullable Throwable cause) {
+    public static boolean isTooManyOperations(final @Nullable Throwable cause) {
         // A dependent stage (a callback on Milo's future) sees the fault wrapped in a CompletionException.
         final Throwable unwrapped =
                 cause instanceof CompletionException && cause.getCause() != null ? cause.getCause() : cause;

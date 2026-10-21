@@ -66,9 +66,11 @@ import com.hivemq.edge.adapters.opcua.method.MethodResponse;
 import com.hivemq.edge.adapters.opcua.method.MethodSchemas;
 import com.hivemq.edge.adapters.opcua.method.MethodSignature;
 import com.hivemq.edge.adapters.opcua.method.MethodVerifier;
+import com.hivemq.edge.adapters.opcua.northbound.Decoding;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
-import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import com.hivemq.edge.adapters.opcua.southbound.VariableWrites;
 import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import com.hivemq.util.Topics;
 import java.time.Instant;
@@ -1118,17 +1120,37 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                 return;
                             }
 
-                            // Built here, past the branch on tag kind, because only a value write uses it. It
-                            // reads nothing on construction, so this is placement rather than protection --
-                            // but it keeps the two paths the same shape: neither reaches for the DataType
-                            // hierarchy until a value's own type says it must.
-                            final Object opcuaObject = new JsonToOpcUAConverter(client)
-                                    .convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
+                            // Converted by the converter every southbound route uses, so a variable accepts
+                            // exactly what a method argument of the same DataType does. A refusal fails the write
+                            // here: thrown out of this consumer it would leave the WritingOutput uncompleted, and
+                            // the caller would learn nothing until the write timed out.
+                            final Variant value;
+                            try {
+                                value = VariableWrites.valueFor(client, nodeId, opcUAWritePayload.value());
+                            } catch (final JsonToOpcUaValueConverter.ConversionException e) {
+                                final String reason =
+                                        switch (e.fault()) {
+                                            case UNSUPPORTED ->
+                                                "its type cannot be encoded: " + e.expected() + ", because "
+                                                        + e.reason();
+                                            case SHAPE -> "it " + e.reason();
+                                            case VALUE ->
+                                                "it expects " + e.expected() + ", and the value supplied is not one: "
+                                                        + e.reason();
+                                        };
+                                log.warn("Refused write to tag '{}': {}", tagName, reason);
+                                output.fail("Refused write to tag '" + tagName + "': " + reason);
+                                return;
+                            } catch (final UaException | RuntimeException e) {
+                                log.error("Cannot write to tag '{}': its DataType could not be read", tagName, e);
+                                output.fail("Cannot write to tag '" + tagName + "': its DataType could not be read: "
+                                        + e.getMessage());
+                                return;
+                            }
 
                             @SuppressWarnings("unused")
                             final var unused = client.writeValuesAsync(
-                                            List.of(nodeId),
-                                            List.of(new DataValue(Variant.of(opcuaObject), StatusCode.GOOD, null)))
+                                            List.of(nodeId), List.of(new DataValue(value, StatusCode.GOOD, null)))
                                     .whenComplete((statusCodes, throwable) -> {
                                         final var badStatus = statusCodes.stream()
                                                 .filter(StatusCode::isBad)
@@ -1477,7 +1499,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         final Variant[] arguments;
         try {
-            arguments = MethodArguments.forCall(signature, payload.value(), client.getNamespaceTable());
+            arguments = MethodArguments.forCall(signature, payload.value(), JsonToOpcUaValueConverter.of(client));
         } catch (final MethodArguments.InvalidArgumentException e) {
             // The request is wrong about the method, which is a client error and not a device one. Sending it
             // anyway would get Bad_InvalidArgument back with no indication of which argument was at fault.
@@ -1691,16 +1713,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // evaluated here as an argument it took the whole answer down with it -- including a refusal,
             // which carries no output and so never needs a context at all. Same rule as the DataType
             // hierarchy: do not reach for a thing until a value's own type says it is needed.
-            final var undecodable =
-                    MethodResponse.write(builder, methodName, correlationData, responseTopic, result, () -> {
-                        try {
-                            return client.getDynamicEncodingContext();
-                        } catch (final UaException e) {
-                            // Reaches putVariant's own handler, which reports the output as undecodable and
-                            // publishes the answer. Thrown as unchecked only to cross the supplier.
-                            throw new RuntimeException(e);
-                        }
-                    });
+            // A failure to fetch either reaches putVariant's own handler, which reports the output as undecodable
+            // and publishes the answer -- or, for the hierarchy, the converter's fallback to the string form.
+            final var undecodable = MethodResponse.write(
+                    builder, methodName, correlationData, responseTopic, result, Decoding.of(client));
             builder.endDataPoint();
             publisher.publish();
 

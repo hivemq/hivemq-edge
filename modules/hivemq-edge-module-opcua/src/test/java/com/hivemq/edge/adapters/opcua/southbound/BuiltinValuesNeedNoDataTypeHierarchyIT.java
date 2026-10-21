@@ -79,8 +79,9 @@ class BuiltinValuesNeedNoDataTypeHierarchyIT {
                 .when(treeless)
                 .getDataTypeTree();
 
-        final Object converted = new JsonToOpcUAConverter(treeless)
-                .convertToOpcUAValue(new ObjectMapper().readTree("180"), NodeId.parse(nodeId));
+        final Object converted = VariableWrites.valueFor(
+                        treeless, NodeId.parse(nodeId), new ObjectMapper().readTree("180"))
+                .getValue();
 
         assertThat(converted)
                 .withFailMessage("an Int32 is identified by its node id alone, so an unreadable hierarchy "
@@ -95,7 +96,7 @@ class BuiltinValuesNeedNoDataTypeHierarchyIT {
         final String nodeId = namespace().addNode("Flow", NodeIds.Double, () -> 0.0, 9202L);
         final OpcUaClient watched = spy(client);
 
-        new JsonToOpcUAConverter(watched).convertToOpcUAValue(new ObjectMapper().readTree("1.5"), NodeId.parse(nodeId));
+        VariableWrites.valueFor(watched, NodeId.parse(nodeId), new ObjectMapper().readTree("1.5"));
 
         verify(watched, never()).getDataTypeTree();
     }
@@ -106,9 +107,10 @@ class BuiltinValuesNeedNoDataTypeHierarchyIT {
         // been looked at -- which is what took the method path down with it.
         final OpcUaClient watched = spy(client);
 
-        new JsonToOpcUAConverter(watched);
+        JsonToOpcUaValueConverter.of(watched);
 
         verify(watched, never()).getDataTypeTree();
+        verify(watched, never()).getDynamicEncodingContext();
         verify(watched, never()).getAddressSpace();
     }
 
@@ -117,8 +119,9 @@ class BuiltinValuesNeedNoDataTypeHierarchyIT {
         final String nodeId = namespace().addArrayNode("Profile", NodeIds.Int32, () -> new int[] {0, 0, 0}, 9203L, 3);
         final OpcUaClient watched = spy(client);
 
-        final Object converted = new JsonToOpcUAConverter(watched)
-                .convertToOpcUAValue(new ObjectMapper().readTree("[1, 2, 3]"), NodeId.parse(nodeId));
+        final Object converted = VariableWrites.valueFor(
+                        watched, NodeId.parse(nodeId), new ObjectMapper().readTree("[1, 2, 3]"))
+                .getValue();
 
         assertThat(converted).isEqualTo(new Integer[] {1, 2, 3});
         verify(watched, never()).getDataTypeTree();
@@ -136,8 +139,8 @@ class BuiltinValuesNeedNoDataTypeHierarchyIT {
 
         // Int32 passes without the hierarchy, proving the spy is wired and the failure is reachable only past
         // the builtin table.
-        assertThat(new JsonToOpcUAConverter(treeless)
-                        .convertToOpcUAValue(new ObjectMapper().readTree("1"), NodeId.parse(nodeId)))
+        assertThat(VariableWrites.valueFor(treeless, NodeId.parse(nodeId), new ObjectMapper().readTree("1"))
+                        .getValue())
                 .isEqualTo(1);
         verify(treeless, never()).getDataTypeTree();
 
@@ -151,7 +154,7 @@ class BuiltinValuesNeedNoDataTypeHierarchyIT {
 
     private @NotNull Throwable catchThrowableOf(final @NotNull OpcUaClient client, final @NotNull NodeId node) {
         try {
-            new JsonToOpcUAConverter(client).convertToOpcUAValue(new ObjectMapper().readTree("{}"), node);
+            VariableWrites.valueFor(client, node, new ObjectMapper().readTree("{}"));
             return null;
         } catch (final Exception e) {
             return e;

@@ -47,11 +47,14 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.eclipse.milo.opcua.sdk.server.EndpointConfig;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
+import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfigLimits;
 import org.eclipse.milo.opcua.sdk.server.identity.AnonymousIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.CompositeValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.IdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.X509IdentityValidator;
+import org.eclipse.milo.opcua.sdk.server.model.objects.OperationLimitsTypeNode;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
 import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
@@ -106,11 +109,22 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    private final @NotNull OpcUaServerConfigLimits limits;
+
     private int bindPort;
     private @Nullable OpcUaServer opcUaServer;
     private @Nullable TestNamespace testNamespace;
     private @Nullable MemoryTrustListManager trustManager;
     private @Nullable X509Certificate serverCertificate;
+
+    public EmbeddedOpcUaServerExtension() {
+        this(new OpcUaServerConfigLimits() {});
+    }
+
+    /** A server that enforces {@code limits} on every service call, and advertises them until told otherwise. */
+    public EmbeddedOpcUaServerExtension(final @NotNull OpcUaServerConfigLimits limits) {
+        this.limits = limits;
+    }
 
     private static @NotNull X509Certificate generateServerCertificate(final KeyPair keyPair) throws Exception {
         final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
@@ -164,6 +178,7 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         final OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
                 .setEndpoints(createEndpointConfigs(certificate))
                 .setIdentityValidator(IDENTITY_VALIDATOR)
+                .setLimits(limits)
                 .setApplicationName(LocalizedText.english("HiveMQ OPC UA Test Server"))
                 .setProductUri(NS_URI)
                 .setBuildInfo(new BuildInfo(
@@ -232,6 +247,26 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
 
     public @Nullable OpcUaServer getOpcUaServer() {
         return opcUaServer;
+    }
+
+    /**
+     * Changes the {@code MaxNodesPerRead} and {@code MaxNodesPerBrowse} this server advertises, leaving what it
+     * enforces as configured.
+     * <p>
+     * Milo's server advertises exactly what it enforces, and refuses every request when a limit is 0. Real servers
+     * do not have to agree with themselves: advertising 0 ("no limit") while accepting large requests is common.
+     */
+    public void advertiseOperationLimits(
+            final @NotNull UInteger maxNodesPerRead, final @NotNull UInteger maxNodesPerBrowse) {
+        if (opcUaServer == null) {
+            throw new IllegalStateException("Server has not been started; there is no limit to advertise");
+        }
+        final OperationLimitsTypeNode node = (OperationLimitsTypeNode) opcUaServer
+                .getAddressSpaceManager()
+                .getManagedNode(NodeIds.Server_ServerCapabilities_OperationLimits)
+                .orElseThrow();
+        node.setMaxNodesPerRead(maxNodesPerRead);
+        node.setMaxNodesPerBrowse(maxNodesPerBrowse);
     }
 
     /**
