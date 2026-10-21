@@ -20,14 +20,19 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
@@ -50,14 +55,39 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     protected final @NotNull PlcDriverManager plcDriverManager;
     protected final @NotNull T config;
     protected final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider;
+    static final @NotNull Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(2);
+    private static final @NotNull AtomicInteger CONNECT_THREADS = new AtomicInteger();
+    private static final @NotNull ExecutorService CONNECT_EXECUTOR = Executors.newCachedThreadPool(runnable -> {
+        final Thread thread = new Thread(runnable, "plc4x-connect-" + CONNECT_THREADS.incrementAndGet());
+        thread.setDaemon(true);
+        thread.setContextClassLoader(Plc4xConnection.class.getClassLoader());
+        return thread;
+    });
+
     private final Object lock = new Object();
+    private final @NotNull Duration connectTimeout;
     protected volatile @Nullable PlcConnection plcConnection;
+    // Guarded by lock: the connection being connected, its connect, and whether disconnect() has run.
+    private @Nullable PlcConnection pendingConnection;
+    private @Nullable Future<?> pendingConnect;
+    private boolean closed;
+    private volatile @NotNull CompletableFuture<Void> connectTerminated = CompletableFuture.completedFuture(null);
 
     public Plc4xConnection(
             final @NotNull PlcDriverManager plcDriverManager,
             final @NotNull T config,
             final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider)
             throws Plc4xException {
+        this(plcDriverManager, config, connectionQueryStringProvider, DEFAULT_CONNECT_TIMEOUT);
+    }
+
+    protected Plc4xConnection(
+            final @NotNull PlcDriverManager plcDriverManager,
+            final @NotNull T config,
+            final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider,
+            final @NotNull Duration connectTimeout)
+            throws Plc4xException {
+        this.connectTimeout = connectTimeout;
         this.plcDriverManager = plcDriverManager;
         this.config = config;
         this.connectionQueryStringProvider = connectionQueryStringProvider;
@@ -81,105 +111,176 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         }
     }
 
+    /**
+     * Connects to the device, giving up after the connect timeout.
+     * <p>
+     * The driver's connection object is created first, without I/O, so this class owns it before any connection is
+     * attempted. The connect itself runs on a thread of {@link #connectExecutor()}, never on the caller's: a caller
+     * waiting on a common-pool task can end up running that task itself, and then no timeout applies. On timeout,
+     * failure or {@link #disconnect()}, the connection object is closed and the connect is interrupted, which stops
+     * the driver's internal retry loop and ends the blocked connect (S7 and ADS map the interrupt to a
+     * {@link PlcConnectionException}). No lock is held while waiting, so {@code disconnect()} never waits for a
+     * connect.
+     */
     void startConnection(
-            final @NotNull EventService eventService, final @NotNull String adpaterId, final @NotNull String protocolId)
+            final @NotNull EventService eventService, final @NotNull String adapterId, final @NotNull String protocolId)
             throws Plc4xException {
-        if (plcConnection == null) {
-            synchronized (lock) {
-                if (plcConnection == null) {
-                    final String connectionString = createConnectionString(config);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Connecting via PLC4X to {}.", connectionString);
-                    }
-                    final CompletableFuture<Optional<PlcConnection>> pending = CompletableFuture.supplyAsync(() -> {
-                        try {
-                            // This call may block well past our timeout. It must never be abandoned: by the time
-                            // it returns, the driver has already started its own retry loop on a private thread,
-                            // and closing the connection is the only way to cancel that loop.
-                            return Optional.of(
-                                    plcDriverManager.getConnectionManager().getConnection(connectionString));
-                        } catch (final PlcConnectionException e) {
-                            // Expected while the device is unreachable: carried to the caller, which reports it.
-                            throw new CompletionException(e);
-                        }
-                    });
+        final PlcConnection candidate;
+        final Future<?> connectTask;
+        synchronized (lock) {
+            if (closed) {
+                throw new Plc4xException("The connection was closed before it was started");
+            }
+            if (plcConnection != null) {
+                return;
+            }
+            if (pendingConnection != null) {
+                throw new Plc4xException("A connection attempt is already in flight");
+            }
+            final String connectionString = createConnectionString(config);
+            if (log.isTraceEnabled()) {
+                log.trace("Connecting via PLC4X to {}.", connectionString);
+            }
+            try {
+                candidate = withModuleClassLoader(
+                        () -> plcDriverManager.getDriverForUrl(connectionString).getConnection(connectionString));
+            } catch (final PlcConnectionException e) {
+                throw new Plc4xException("Error encountered connecting to external device: " + e.getMessage(), e);
+            }
+            final CompletableFuture<Void> terminated = new CompletableFuture<>();
+            try {
+                connectTask = connectExecutor().submit(() -> {
                     try {
-                        plcConnection = pending.get(2_000, TimeUnit.MILLISECONDS)
-                                .orElseThrow(
-                                        () -> new Plc4xException("Error encountered connecting to external device"));
-                    } catch (final ExecutionException e) {
-                        final Throwable cause = e.getCause() != null ? e.getCause() : e;
-                        throw new Plc4xException(
-                                "Error encountered connecting to external device: " + cause.getMessage(), cause);
-                    } catch (final TimeoutException te) {
-                        // The driver is still mid-connect and has already scheduled its own 1 Hz retry loop.
-                        // Close whatever it eventually produces, otherwise that loop becomes unreachable and
-                        // leaks a Netty channel plus event loop group every second until the JVM exits.
-                        closeWhenComplete(pending);
-
-                        eventService
-                                .createAdapterEvent(adpaterId, protocolId)
-                                .withSeverity(Event.SEVERITY.ERROR)
-                                .withMessage("Timed out connecting to the device; the connection attempt was "
-                                        + "abandoned and will be retried.")
-                                .fire();
-
-                        log.error("Timed out connecting to external device, abandoning this attempt", te);
-                        throw new Plc4xException("Error encountered connecting to external device");
-                    } catch (final Throwable e) {
-                        log.error("Error encountered connecting to external device", e);
-                        throw new Plc4xException("Error encountered connecting to external device");
+                        candidate.connect();
+                        return null;
+                    } finally {
+                        terminated.complete(null);
                     }
-                }
+                });
+            } catch (final RejectedExecutionException e) {
+                closeQuietly(candidate);
+                throw new Plc4xException("No thread is available to connect to external device", e);
+            }
+            connectTerminated = terminated;
+            pendingConnection = candidate;
+            pendingConnect = connectTask;
+        }
+        try {
+            connectTask.get(connectTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (final TimeoutException e) {
+            abandon(candidate, connectTask);
+            eventService
+                    .createAdapterEvent(adapterId, protocolId)
+                    .withSeverity(Event.SEVERITY.WARN)
+                    .withMessage("Timed out connecting to the device after " + connectTimeout.toMillis()
+                            + " ms; the connection attempt was closed and will be retried.")
+                    .fire();
+            throw new Plc4xException(
+                    "Timed out connecting to external device after " + connectTimeout.toMillis() + " ms");
+        } catch (final ExecutionException e) {
+            abandon(candidate, connectTask);
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new Plc4xException("Error encountered connecting to external device: " + cause.getMessage(), cause);
+        } catch (final CancellationException e) {
+            throw new Plc4xException("The connection was closed while connecting");
+        } catch (final InterruptedException e) {
+            abandon(candidate, connectTask);
+            Thread.currentThread().interrupt();
+            throw new Plc4xException("Interrupted while connecting to external device", e);
+        }
+        synchronized (lock) {
+            if (closed || pendingConnection != candidate) {
+                // disconnect() ran while the connect was completing; it no longer owns this connection.
+                closeQuietly(candidate);
+                throw new Plc4xException("The connection was closed while connecting");
+            }
+            pendingConnection = null;
+            pendingConnect = null;
+            plcConnection = candidate;
+        }
+    }
+
+    /** Completes once the connect started by this object has ended; already complete when none was started. */
+    @NotNull
+    CompletableFuture<Void> connectTerminated() {
+        return connectTerminated;
+    }
+
+    private void abandon(final @NotNull PlcConnection candidate, final @NotNull Future<?> connectTask) {
+        synchronized (lock) {
+            if (pendingConnection == candidate) {
+                pendingConnection = null;
+                pendingConnect = null;
             }
         }
+        connectTask.cancel(true);
+        closeQuietly(candidate);
+    }
+
+    private static void closeQuietly(final @NotNull PlcConnection connection) {
+        try {
+            connection.close();
+        } catch (final Exception e) {
+            // Closing a connection that never connected can fail inside the driver; nothing is left to release.
+            log.debug("Closing an unused PLC4X connection failed: {}", e.getMessage());
+        }
+    }
+
+    private static <R> R withModuleClassLoader(final @NotNull DriverCall<R> call) throws PlcConnectionException {
+        // As DefaultPlcDriverManager does: drivers load their transports through the context class loader.
+        final Thread thread = Thread.currentThread();
+        final ClassLoader original = thread.getContextClassLoader();
+        thread.setContextClassLoader(Plc4xConnection.class.getClassLoader());
+        try {
+            return call.call();
+        } finally {
+            thread.setContextClassLoader(original);
+        }
+    }
+
+    @FunctionalInterface
+    private interface DriverCall<R> {
+        R call() throws PlcConnectionException;
     }
 
     /**
-     * Closes the connection produced by an abandoned connection attempt, whenever it eventually arrives.
-     * <p>
-     * The PLC4X driver schedules its own retry loop as soon as the underlying channel is established, and that loop
-     * can only be cancelled through the connection object. Dropping the object therefore leaks it, and everything
-     * the loop retains, for the lifetime of the JVM.
+     * Daemon threads for connection attempts and their connects, with the module's class loader as context class
+     * loader. Not the common pool: see {@link #startConnection}.
      */
-    private static void closeWhenComplete(final @NotNull CompletableFuture<Optional<PlcConnection>> pending) {
-        @SuppressWarnings("unused")
-        final var unused = pending.thenAccept(maybeConnection -> maybeConnection.ifPresent(connection -> {
-            try {
-                connection.close();
-                log.info("Closed connection from an abandoned connection attempt.");
-            } catch (final Exception e) {
-                log.warn("Error closing connection from an abandoned connection attempt.", e);
-            }
-        }));
+    static @NotNull ExecutorService connectExecutor() {
+        return CONNECT_EXECUTOR;
     }
 
+    /** Fails when the connection is not established; reconnecting is the adapter's job, under its timeout. */
     protected void lazyConnectionCheck() {
-        final PlcConnection connection = Objects.requireNonNull(plcConnection, "PLC connection not initialized");
-        if (!connection.isConnected()) {
-            synchronized (lock) {
-                if (!connection.isConnected()) {
-                    try {
-                        plcConnection.connect();
-                    } catch (PlcConnectionException e) {
-                        log.warn("Error attempting to connect to PLC device.", e);
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
+        final PlcConnection connection = plcConnection;
+        if (connection == null || !connection.isConnected()) {
+            throw new IllegalStateException("The PLC connection is not established");
         }
     }
 
+    /** Closes the connection, and any connect in flight, which is interrupted. Never waits for a connect. */
     public void disconnect() throws Exception {
+        final PlcConnection established;
+        final PlcConnection pending;
+        final Future<?> pendingTask;
         synchronized (lock) {
-            try {
-                final var plcConnection = this.plcConnection;
-                if (plcConnection != null) {
-                    plcConnection.close();
-                }
-            } finally {
-                plcConnection = null;
-            }
+            closed = true;
+            established = plcConnection;
+            pending = pendingConnection;
+            pendingTask = pendingConnect;
+            plcConnection = null;
+            pendingConnection = null;
+            pendingConnect = null;
+        }
+        if (pendingTask != null) {
+            pendingTask.cancel(true);
+        }
+        if (pending != null) {
+            closeQuietly(pending);
+        }
+        if (established != null) {
+            established.close();
         }
     }
 

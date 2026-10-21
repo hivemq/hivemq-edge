@@ -247,6 +247,51 @@ class AbstractPlc4xAdapterReconnectTest {
     }
 
     @Test
+    void test_poll_thatSawALostConnection_doesNotReconnectAfterStop() throws Exception {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.SUCCEED);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitAttemptsFinished(1);
+        final FakeConnection<?> lost = adapter.lastConnection.get();
+        lost.connected = false;
+
+        // The poll sees the lost connection and stalls; stop() runs to completion; then the poll resumes.
+        final CountDownLatch pollChecked = new CountDownLatch(1);
+        final CountDownLatch releasePoll = new CountDownLatch(1);
+        lost.stallFirstCheck(pollChecked, releasePoll);
+        final CompletableFuture<CapturingPollingOutput> poll = CompletableFuture.supplyAsync(adapter::poll);
+        assertThat(pollChecked.await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)).isTrue();
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        releasePoll.countDown();
+        final CapturingPollingOutput output = poll.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+
+        await().atMost(TIMEOUT).until(() -> output.failMessage != null);
+        assertThat(adapter.connectionsCreated.get())
+                .as("a stopped adapter must not start a connection attempt")
+                .isEqualTo(1);
+        assertThat(adapter.connection).isNull();
+    }
+
+    @Test
+    void test_poll_whileThePreviousConnectIsStillEnding_startsNoNewAttempt() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.TIME_OUT_STILL_ENDING);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitAttemptsFinished(1);
+        final FakeConnection<?> timedOut = adapter.lastConnection.get();
+
+        adapter.behaviour.set(Behaviour.SUCCEED);
+        final CapturingPollingOutput whileEnding = adapter.poll();
+
+        assertThat(whileEnding.failMessage).contains("still ending");
+        assertThat(adapter.connectionsCreated.get()).isEqualTo(1);
+
+        timedOut.terminated.complete(null);
+        final CapturingPollingOutput afterwards = adapter.poll();
+
+        await().atMost(TIMEOUT).until(() -> afterwards.published);
+        assertThat(adapter.connectionsCreated.get()).isEqualTo(2);
+    }
+
+    @Test
     void test_stop_beforeAnAttemptConnects_closesTheConnectionTheAttemptEstablishes() {
         final TestableAdapter adapter = new TestableAdapter(Behaviour.SUCCEED_WHEN_RELEASED);
         adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
@@ -427,6 +472,8 @@ class AbstractPlc4xAdapterReconnectTest {
     private enum Behaviour {
         /** startConnection() fails at once, as against a port that refuses. */
         REFUSE,
+        /** startConnection() times out, and its interrupted connect has not ended yet. */
+        TIME_OUT_STILL_ENDING,
         /** startConnection() never returns until released, holding the adapter in the "connecting" state. */
         HANG,
         /** startConnection() succeeds. */
@@ -559,6 +606,7 @@ class AbstractPlc4xAdapterReconnectTest {
         private final @NotNull CountDownLatch disconnectLatch = new CountDownLatch(1);
         final @NotNull AtomicInteger checked = new AtomicInteger();
         final @NotNull AtomicInteger reads = new AtomicInteger();
+        volatile @NotNull CompletableFuture<Void> terminated = CompletableFuture.completedFuture(null);
         volatile boolean connected;
         volatile boolean disconnected;
 
@@ -592,6 +640,10 @@ class AbstractPlc4xAdapterReconnectTest {
                         connected = true;
                     }
                     case THROW_UNCHECKED -> throw new IllegalStateException("unexpected failure in test");
+                    case TIME_OUT_STILL_ENDING -> {
+                        terminated = new CompletableFuture<>();
+                        throw new Plc4xException("Timed out connecting to external device after 2000 ms");
+                    }
                     case FAIL_WHEN_DISCONNECTED -> {
                         try {
                             disconnectLatch.await();
@@ -646,6 +698,12 @@ class AbstractPlc4xAdapterReconnectTest {
             if (behaviour == Behaviour.SUCCEED_THEN_CHECK_FAILS) {
                 throw new IllegalStateException("check failed in test");
             }
+        }
+
+        @Override
+        @NotNull
+        CompletableFuture<Void> connectTerminated() {
+            return terminated;
         }
 
         @Override

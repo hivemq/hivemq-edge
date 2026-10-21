@@ -83,6 +83,10 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private final @NotNull PublishChangedDataOnlyHandler lastSamples;
 
     private final @NotNull AtomicReference<CompletableFuture<Void>> attempt = new AtomicReference<>();
+    // Guarded by lock: set by stop(), cleared by start(); a stopped adapter starts no connection attempt.
+    private boolean stopped;
+    // Guarded by lock: the connection of the latest attempt, whose connect may still be ending after a timeout.
+    private @Nullable Plc4xConnection<T> latestAttempt;
 
     protected volatile @Nullable Plc4xConnection<T> connection;
     private volatile @Nullable EventService eventService;
@@ -124,7 +128,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         if (tempConnection != null && release(tempConnection)) {
             log.warn("The connection of adapter '{}' was lost, reconnecting.", adapterId);
             disconnectQuietly(tempConnection);
-            protocolAdapterState.setConnectionStatus(ERROR);
         }
         // With the connection released, or already replaced by another poll's attempt, connect() either starts an
         // attempt, joins the one in flight, or hands back the connection that is now in place.
@@ -148,6 +151,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                 return false;
             }
             connection = null;
+            // Set under the lock, before another attempt can start, so it never overwrites that attempt's status.
+            protocolAdapterState.setConnectionStatus(ERROR);
             return true;
         }
     }
@@ -211,6 +216,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public void start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         this.eventService = input.moduleServices().eventService();
+        synchronized (lock) {
+            stopped = false;
+        }
         try {
             @SuppressWarnings("unused")
             final var unused = connect();
@@ -232,15 +240,25 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     private @NotNull CompletableFuture<Void> connect() throws Plc4xException {
         final EventService currentEventService = eventService;
         if (currentEventService == null) {
-            return CompletableFuture.failedFuture(new Plc4xException("The adapter has not been started."));
+            return CompletableFuture.failedFuture(new Plc4xException("The adapter has not been started"));
         }
         synchronized (lock) {
+            if (stopped) {
+                return CompletableFuture.failedFuture(new Plc4xException("The adapter is stopped"));
+            }
             final CompletableFuture<Void> inFlight = attempt.get();
             if (inFlight != null) {
                 return inFlight;
             }
             if (connection != null) {
                 return CompletableFuture.completedFuture(null);
+            }
+            final Plc4xConnection<T> previous = latestAttempt;
+            if (previous != null && !previous.connectTerminated().isDone()) {
+                // A timed-out connect is interrupted and closed, but must end before another starts, so that a
+                // driver that ignores the interrupt holds at most one connect per adapter.
+                return CompletableFuture.failedFuture(
+                        new Plc4xException("The previous connection attempt is still ending"));
             }
             // we do not subscribe anymore as no current adapter type supports it anyway
             if (log.isTraceEnabled()) {
@@ -249,31 +267,39 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             final Plc4xConnection<T> tempConnection = createConnection();
             final CompletableFuture<Void> started = new CompletableFuture<>();
             attempt.set(started);
+            latestAttempt = tempConnection;
             this.connection = tempConnection;
             try {
                 @SuppressWarnings("unused")
-                final var unused = CompletableFuture.runAsync(() -> {
-                            try {
-                                tempConnection.startConnection(
-                                        currentEventService,
-                                        adapterId,
-                                        getProtocolAdapterInformation().getProtocolId());
-                                if (connection != tempConnection) {
-                                    // stop() cleared the connection while this attempt was connecting; whether its
-                                    // disconnect ran before or after the connect, this connection is no longer
-                                    // owned, so close it here rather than leave the driver's retry loop running.
-                                    disconnectQuietly(tempConnection);
-                                    finish(started, new Plc4xException("The adapter stopped while connecting."));
-                                    return;
-                                }
-                                protocolAdapterState.setConnectionStatus(CONNECTED);
-                                finish(started, null);
-                            } catch (final Plc4xException e) {
-                                // Expected while the device is unreachable; the cause is in the message.
-                                log.warn("Connection attempt for adapter '{}' failed: {}", adapterId, e.getMessage());
-                                abandon(started, tempConnection, e);
-                            }
-                        })
+                final var unused = CompletableFuture.runAsync(
+                                () -> {
+                                    try {
+                                        tempConnection.startConnection(
+                                                currentEventService,
+                                                adapterId,
+                                                getProtocolAdapterInformation().getProtocolId());
+                                        if (connection != tempConnection) {
+                                            // stop() cleared the connection while this attempt was connecting; whether
+                                            // its
+                                            // disconnect ran before or after the connect, this connection is no longer
+                                            // owned, so close it here rather than leave the driver's retry loop
+                                            // running.
+                                            disconnectQuietly(tempConnection);
+                                            finish(started, new Plc4xException("The adapter stopped while connecting"));
+                                            return;
+                                        }
+                                        protocolAdapterState.setConnectionStatus(CONNECTED);
+                                        finish(started, null);
+                                    } catch (final Plc4xException e) {
+                                        // Expected while the device is unreachable; the cause is in the message.
+                                        log.warn(
+                                                "Connection attempt for adapter '{}' failed: {}",
+                                                adapterId,
+                                                e.getMessage());
+                                        abandon(started, tempConnection, e);
+                                    }
+                                },
+                                Plc4xConnection.connectExecutor())
                         .whenComplete((ignored, t) -> {
                             if (t != null) {
                                 log.error("Error starting PLC4X connection", t);
@@ -324,16 +350,22 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
     @Override
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
-        final Plc4xConnection<T> tempConnection = connection;
-        connection = null;
+        final Plc4xConnection<T> tempConnection;
+        synchronized (lock) {
+            // From here no attempt starts, and one in flight closes its connection when it completes.
+            stopped = true;
+            tempConnection = connection;
+            connection = null;
+        }
         if (tempConnection != null) {
             try {
-                // -- Disconnect client
+                // -- Disconnect client; a connect still in flight is closed and interrupted, not waited for
                 tempConnection.disconnect();
                 protocolAdapterState.setConnectionStatus(DISCONNECTED);
             } catch (final Exception e) {
                 protocolAdapterState.setErrorConnectionStatus(e, null);
                 output.failStop(e, "Error disconnecting from PLC4X client");
+                return;
             }
         }
         output.stoppedSuccessfully();
