@@ -26,6 +26,7 @@ import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt64;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.Base64;
@@ -34,8 +35,8 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
-import org.eclipse.milo.opcua.stack.core.UaRuntimeException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
@@ -98,8 +99,8 @@ final class JsonToOpcUAConverterUtil {
     static @NotNull ExpandedNodeId extractExpandedNodeId(final @NotNull JsonNode jsonNode) {
         if (jsonNode.isTextual()) {
             try {
-                return ExpandedNodeId.parse(jsonNode.asText());
-            } catch (final UaRuntimeException e) {
+                return NodeIdText.expanded(jsonNode.asText());
+            } catch (final IllegalArgumentException e) {
                 throw new RuntimeException(
                         "ExpandedNodeId could not be parsed from '" + jsonNode.asText() + "': " + e.getMessage());
             }
@@ -107,11 +108,12 @@ final class JsonToOpcUAConverterUtil {
         throw createException(jsonNode, OpcUaDataType.ExpandedNodeId.name());
     }
 
-    static @NotNull NodeId extractNodeId(final @NotNull JsonNode jsonNode) {
+    static @NotNull NodeId extractNodeId(
+            final @NotNull JsonNode jsonNode, final @NotNull NamespaceTable namespaceTable) {
         if (jsonNode.isTextual()) {
             try {
-                return NodeId.parse(jsonNode.asText());
-            } catch (final UaRuntimeException e) {
+                return NodeIdText.resolve(jsonNode.asText(), namespaceTable);
+            } catch (final IllegalArgumentException e) {
                 throw new RuntimeException(
                         "NodeId could not be parsed from '" + jsonNode.asText() + "': " + e.getMessage());
             }
@@ -359,8 +361,11 @@ final class JsonToOpcUAConverterUtil {
         }
     }
 
+    /// @param namespaceTable the session's table, for a NodeId value that names its namespace by URI.
     static @NotNull Object parsetoOpcUAObject(
-            final @NotNull OpcUaDataType builtinDataType, final @NotNull JsonNode jsonNode) {
+            final @NotNull OpcUaDataType builtinDataType,
+            final @NotNull JsonNode jsonNode,
+            final @NotNull NamespaceTable namespaceTable) {
 
         return switch (builtinDataType) {
             case Boolean -> extractBoolean(jsonNode);
@@ -379,7 +384,7 @@ final class JsonToOpcUAConverterUtil {
             case Guid -> extractGuid(jsonNode);
             case ByteString -> extractByteString(jsonNode);
             case XmlElement -> extractXmlElement(jsonNode);
-            case NodeId -> extractNodeId(jsonNode);
+            case NodeId -> extractNodeId(jsonNode, namespaceTable);
             case ExpandedNodeId -> extractExpandedNodeId(jsonNode);
             case StatusCode -> extractStatusCode(jsonNode);
             case QualifiedName -> extractQualifiedName(jsonNode);
@@ -395,14 +400,16 @@ final class JsonToOpcUAConverterUtil {
     }
 
     static @NotNull Object @NotNull [] generateArrayFromArrayNode(
-            final @NotNull ArrayNode arrayNode, final @NotNull OpcUaDataType type) {
+            final @NotNull ArrayNode arrayNode,
+            final @NotNull OpcUaDataType type,
+            final @NotNull NamespaceTable namespaceTable) {
         final Object[] ret = (Object[]) Array.newInstance(type.getBackingClass(), arrayNode.size());
         for (int i = 0; i < arrayNode.size(); i++) {
             final JsonNode arrayEntry = arrayNode.get(i);
             if (arrayEntry.isArray()) {
-                ret[i] = generateArrayFromArrayNode((ArrayNode) arrayEntry, type);
+                ret[i] = generateArrayFromArrayNode((ArrayNode) arrayEntry, type, namespaceTable);
             } else {
-                ret[i] = parsetoOpcUAObject(type, arrayEntry);
+                ret[i] = parsetoOpcUAObject(type, arrayEntry, namespaceTable);
             }
         }
         return ret;

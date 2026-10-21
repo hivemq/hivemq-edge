@@ -30,6 +30,8 @@ import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.edge.adapters.browse.BrowsedNode;
+import com.hivemq.edge.adapters.browse.BulkTagBrowser;
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
@@ -48,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -999,6 +1002,78 @@ class DeviceTagImporterTest {
         assertThat(result.tagsUpdated()).isEqualTo(1);
         assertThat(result.tagsCreated()).isEqualTo(0);
         assertThat(result.tagsDeleted()).isEqualTo(0);
+    }
+
+    // --- Two spellings of one node: namespace by URI or by index (EDG-414) ---
+
+    /// A browser on a server whose namespace 2 is `urn:test`, so `nsu=urn:test;i=1` and `ns=2;i=1` are one node.
+    private static final BulkTagBrowser URN_TEST_IS_NAMESPACE_2 = new BulkTagBrowser() {
+        @Override
+        public Stream<BrowsedNode> browse(final String rootId, final int maxDepth) {
+            return Stream.empty();
+        }
+
+        @Override
+        public String nodeIdMatchKey(final String nodeId) {
+            return nodeId.replace("nsu=urn:test;", "ns=2;");
+        }
+    };
+
+    @Test
+    void create_existingTagByIndex_fileRowByUri_matchedAsSameNode() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("existing", null, Map.of("node", "ns=2;i=1"))), List.of(), List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(tagRow("existing", "nsu=urn:test;i=1"));
+
+        // Matched by string, the row is a new tag and the existing one would be deleted, which CREATE refuses.
+        final ImportResult result = importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID, URN_TEST_IS_NAMESPACE_2);
+
+        assertThat(result.tagsCreated()).isEqualTo(0);
+        assertThat(result.tagsUpdated()).isEqualTo(0);
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+    }
+
+    @Test
+    void overwrite_existingTagByUri_fileRowByIndex_keptAsWritten() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("existing", null, Map.of("node", "nsu=urn:test;i=1"))), List.of(), List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(tagRow("existing", "ns=2;i=1"));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID, URN_TEST_IS_NAMESPACE_2);
+
+        assertThat(result.tagsCreated()).isEqualTo(0);
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getTags()).singleElement().satisfies(tag -> assertThat(
+                        tag.getDefinition().get("node"))
+                .as("the key is only for matching; the stored node keeps the URI form it was written in")
+                .isEqualTo("nsu=urn:test;i=1"));
+    }
+
+    @Test
+    void existingTagsNamingOneNodeInTwoSpellings_refused() {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("by-index", null, Map.of("node", "ns=2;i=1")),
+                        new TagEntity("by-uri", null, Map.of("node", "nsu=urn:test;i=1"))),
+                List.of(),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(tagRow("other", "ns=2;i=2"));
+
+        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.MERGE_SAFE, ADAPTER_ID, URN_TEST_IS_NAMESPACE_2))
+                .isInstanceOfSatisfying(DeviceTagImporterException.class, e -> assertThat(e.getErrors())
+                        .anySatisfy(error -> {
+                            assertThat(error.code()).isEqualTo(ValidationError.Code.DUPLICATE_NODE);
+                            assertThat(error.message()).contains("by-index").contains("by-uri");
+                        }));
+        verify(adapterExtractor, never()).updateAdapter(any());
     }
 
     // --- Wildcard resolution ---

@@ -17,10 +17,15 @@ package com.hivemq.edge.adapters.opcua.southbound;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
@@ -144,5 +149,28 @@ class JsonToOpcUAConverterTest {
     void extractUnsignedLong_fromLongNode() {
         final var value = JsonToOpcUAConverterUtil.extractUnsignedLong(LongNode.valueOf(5_000_000_000L));
         assertEquals(5_000_000_000L, value.longValue());
+    }
+
+    @Test
+    void nodeIdValue_byIndexOrByUri_isTheSameNode() {
+        final NamespaceTable table = new NamespaceTable();
+        table.add("urn:test:boiler"); // index 1
+
+        final Object byIndex =
+                JsonToOpcUAConverterUtil.parsetoOpcUAObject(OpcUaDataType.NodeId, TextNode.valueOf("ns=1;s=A"), table);
+        final Object byUri = JsonToOpcUAConverterUtil.parsetoOpcUAObject(
+                OpcUaDataType.NodeId, TextNode.valueOf("nsu=urn:test:boiler;s=A"), table);
+
+        assertEquals(new NodeId(1, "A"), byIndex);
+        assertEquals(new NodeId(1, "A"), byUri);
+    }
+
+    @Test
+    void nodeIdValue_byUnpublishedUri_isRefused() {
+        final RuntimeException refused = assertThrows(
+                RuntimeException.class,
+                () -> JsonToOpcUAConverterUtil.parsetoOpcUAObject(
+                        OpcUaDataType.NodeId, TextNode.valueOf("nsu=urn:not:published;s=A"), new NamespaceTable()));
+        assertTrue(refused.getMessage().contains("'urn:not:published', which the server does not publish"));
     }
 }
