@@ -19,6 +19,7 @@ import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,12 +47,11 @@ public class OpcUaNodeDiscovery {
         if (rootNode == null || rootNode.isBlank()) {
             browseRoot = NodeIds.ObjectsFolder;
         } else {
-            final Optional<NodeId> parsedNodeId = NodeId.parseSafe(rootNode);
-            if (parsedNodeId.isEmpty()) {
-                return CompletableFuture.failedFuture(
-                        new IllegalArgumentException("OPC UA NodeId '" + rootNode + "' is not supported"));
+            try {
+                browseRoot = NodeIdText.resolve(rootNode, client.getNamespaceTable());
+            } catch (final IllegalArgumentException e) {
+                return CompletableFuture.failedFuture(e);
             }
-            browseRoot = parsedNodeId.get();
         }
 
         final var collectedNodes = new ArrayList<CollectedNode>();

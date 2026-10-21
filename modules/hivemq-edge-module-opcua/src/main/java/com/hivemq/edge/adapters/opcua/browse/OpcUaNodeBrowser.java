@@ -17,9 +17,9 @@ package com.hivemq.edge.adapters.opcua.browse;
 
 import com.hivemq.edge.adapters.browse.BrowseException;
 import com.hivemq.edge.adapters.browse.BrowsedNode;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -121,11 +121,11 @@ public class OpcUaNodeBrowser {
         if (rootId == null || rootId.isBlank()) {
             browseRoot = NodeIds.ObjectsFolder;
         } else {
-            final Optional<NodeId> parsed = NodeId.parseSafe(rootId);
-            if (parsed.isEmpty()) {
-                throw new BrowseException("Invalid OPC-UA node ID: '" + rootId + "'");
+            try {
+                browseRoot = NodeIdText.resolve(rootId, client.getNamespaceTable());
+            } catch (final IllegalArgumentException e) {
+                throw new BrowseException("Invalid OPC-UA node ID: " + e.getMessage(), e);
             }
-            browseRoot = parsed.get();
         }
 
         try {

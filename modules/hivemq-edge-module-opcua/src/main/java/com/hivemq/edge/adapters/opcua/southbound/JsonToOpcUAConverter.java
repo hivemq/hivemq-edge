@@ -113,8 +113,8 @@ public class JsonToOpcUAConverter {
                             rootNode);
                 }
                 return rootNode.isArray()
-                        ? generateArrayFromArrayNode((ArrayNode) rootNode, tabulated)
-                        : parsetoOpcUAObject(tabulated, rootNode);
+                        ? generateArrayFromArrayNode((ArrayNode) rootNode, tabulated, client.getNamespaceTable())
+                        : parsetoOpcUAObject(tabulated, rootNode, client.getNamespaceTable());
             }
 
             // Past the table: a Simple DataType to reduce, or a structure to encode. Both are what the
@@ -147,9 +147,9 @@ public class JsonToOpcUAConverter {
 
             if (builtinType != OpcUaDataType.ExtensionObject) {
                 if (rootNode.isArray()) {
-                    return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType);
+                    return generateArrayFromArrayNode((ArrayNode) rootNode, builtinType, client.getNamespaceTable());
                 } else {
-                    return parsetoOpcUAObject(builtinType, rootNode);
+                    return parsetoOpcUAObject(builtinType, rootNode, client.getNamespaceTable());
                 }
             }
 
@@ -233,7 +233,7 @@ public class JsonToOpcUAConverter {
             return extractExtensionObject(jsonNode, fieldType);
         }
 
-        return parsetoOpcUAObject(Objects.requireNonNull(builtinDataType), jsonNode);
+        return parsetoOpcUAObject(Objects.requireNonNull(builtinDataType), jsonNode, client.getNamespaceTable());
     }
 
     private @NotNull DynamicStructType extractExtensionObject(

@@ -139,7 +139,8 @@ public class DeviceTagImporter {
                 getTagsWithMappingsByNodeIdFromFile(rows, browser, errors);
 
         final ProtocolAdapterEntity adapter = getProtocolAdapterEntity(adapterId);
-        final Map<String, TagWithMappings<TagEntity>> twmsEdge = getTagsWithMappingsByNodeIdFromEdge(adapter, errors);
+        final Map<String, TagWithMappings<TagEntity>> twmsEdge =
+                getTagsWithMappingsByNodeIdFromEdge(adapter, browser, errors);
 
         // compute the final list of tags and mappings, depending on the mode
         final List<TagWithMappings<TagEntity>> twmsFinal =
@@ -205,8 +206,10 @@ public class DeviceTagImporter {
     // so we instead use the term "node" and "nodeId", which helps to distinguish this entity from the tag entity.
     //
     // The code below implements these concepts for the OPC-UA adapter.
-    // There is minor problem in the current implementation the nodeId should actually contain the namespaceUri
-    // and not the namespaceIndex, since the former is stable while the latter might change
+    //
+    // The maps are keyed by a match key rather than by the nodeId string itself, because one OPC UA node has two
+    // spellings: namespace by URI (nsu=...) or by index (ns=...). The adapter computes the key (see
+    // BulkTagBrowser.nodeIdMatchKey); the tags themselves keep the nodeId as written.
     //
     // Eventually these concepts and abstractions belong in the Protocol Adapter SDK,
     // and the concrete implementation in the adapter code.
@@ -239,6 +242,10 @@ public class DeviceTagImporter {
 
     private static @NotNull String nodeId(final @NotNull TagEntity tag) {
         return id(node(tag));
+    }
+
+    private static @NotNull String matchKey(final @Nullable BulkTagBrowser browser, final @NotNull String nodeId) {
+        return browser != null ? browser.nodeIdMatchKey(nodeId) : nodeId;
     }
 
     // endregion
@@ -310,7 +317,8 @@ public class DeviceTagImporter {
             if (tag == null) {
                 continue;
             }
-            final var twm = tagWithMappingsByNodeIdFromFile.computeIfAbsent(nodeId, z -> new TagWithMappings<>(tag));
+            final var twm = tagWithMappingsByNodeIdFromFile.computeIfAbsent(
+                    matchKey(browser, nodeId), z -> new TagWithMappings<>(tag));
             // check that we don't create two tags for one node;
             // it is a deliberate decision to forbid multiple tags for one node,
             // i.e. require a 1:1 correspondence between nodes and tag;
@@ -687,15 +695,32 @@ public class DeviceTagImporter {
         return adapter;
     }
 
-    @SuppressWarnings("unused") // errors reserved for future use (dangling-reference detection)
     private static @NonNull Map<String, TagWithMappings<TagEntity>> getTagsWithMappingsByNodeIdFromEdge(
-            final @NotNull ProtocolAdapterEntity adapter, final @NotNull List<ValidationError> errors) {
+            final @NotNull ProtocolAdapterEntity adapter,
+            final @Nullable BulkTagBrowser browser,
+            final @NotNull List<ValidationError> errors) {
         final Map<String, TagWithMappings<TagEntity>> tagWithMappingsByNodeIdFromEdge = new HashMap<>();
         final Map<String, String> nodeIdByTagNameFromEdge = new HashMap<>();
 
         for (final TagEntity tag : adapter.getTags()) {
-            tagWithMappingsByNodeIdFromEdge.put(nodeId(tag), new TagWithMappings<>(tag));
-            nodeIdByTagNameFromEdge.put(tag.getName(), nodeId(tag));
+            final String key = matchKey(browser, nodeId(tag));
+            final var previous = tagWithMappingsByNodeIdFromEdge.put(key, new TagWithMappings<>(tag));
+            if (previous != null) {
+                // Two existing tags on one node, e.g. one written nsu=... and one ns=.... Refused rather than
+                // planned: the map keeps only one of them, so the other would vanish from the adapter with no
+                // action reported for it.
+                errors.add(new ValidationError(
+                        null,
+                        "node_id",
+                        nodeId(tag),
+                        DUPLICATE_NODE,
+                        "The adapter's existing tags '" + previous.tag.getName()
+                                + "' (node: " + nodeId(previous.tag)
+                                + ") and '" + tag.getName()
+                                + "' (node: " + nodeId(tag)
+                                + ") name the same node. Remove one of them before importing."));
+            }
+            nodeIdByTagNameFromEdge.put(tag.getName(), key);
         }
 
         for (final NorthboundMappingEntity northboundMappingEntity : adapter.getNorthboundMappings()) {
