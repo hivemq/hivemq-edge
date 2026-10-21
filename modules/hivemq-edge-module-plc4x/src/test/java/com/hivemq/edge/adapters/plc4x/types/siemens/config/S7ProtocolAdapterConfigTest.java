@@ -163,6 +163,31 @@ class S7ProtocolAdapterConfigTest {
                 .isNull(); // mappings are supposed to be ignored when rendered to XML
     }
 
+    @Test
+    public void equals_sameValues_equal() {
+        final S7SpecificAdapterConfig config = s7Config("my.host.com");
+        final S7SpecificAdapterConfig same = s7Config("my.host.com");
+
+        assertThat(config).isEqualTo(same);
+        assertThat(config.hashCode()).isEqualTo(same.hashCode());
+    }
+
+    // The adapter manager skips restarting an adapter whose new configuration equals the running one,
+    // so an edit of the host alone is only applied if the host takes part in the comparison (EDG-1123).
+    @Test
+    public void equals_differentHost_notEqual() {
+        final S7SpecificAdapterConfig config = s7Config("my.host.com");
+        final S7SpecificAdapterConfig otherHost = s7Config("other.host.com");
+
+        assertThat(config).isNotEqualTo(otherHost);
+        assertThat(new ProtocolAdapterConfig("my-s7", "s7", 1, config, List.of(), List.of(), List.of()))
+                .isNotEqualTo(new ProtocolAdapterConfig("my-s7", "s7", 1, otherHost, List.of(), List.of(), List.of()));
+    }
+
+    private static @NotNull S7SpecificAdapterConfig s7Config(final @NotNull String host) {
+        return new S7SpecificAdapterConfig(14, host, S7_1500, 1, 2, 3, 4, 5, false, new S7ToMqttConfig(12, 13, true));
+    }
+
     private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource)
             throws URISyntaxException {
         final File path = Path.of(resource.toURI()).toFile();
