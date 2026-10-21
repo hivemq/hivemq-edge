@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.opcua;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -41,9 +42,15 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.eclipse.milo.opcua.sdk.client.AddressSpace;
+import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -291,10 +298,92 @@ class OpcUaLifecycleLinesTest {
                 .matches(ID + ", connection 1; PROBLEM: connection lost\\. Automatic reconnection is switched off, so "
                         + "a restart is needed; state now - value reads: not working, .*");
         assertThat(lines.get(2))
-                .matches(ID + ", connection 1; connection recovered by itself\\. The adapter status still shows ERROR "
-                        + "until the adapter is restarted; state now - value reads: working, value writes: working, "
-                        + "method requests: none");
-        assertThat(protocolAdapterState.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
+                .matches(ID + ", connection 1; connection recovered by itself; state now - value reads: working, "
+                        + "value writes: working, method requests: none");
+    }
+
+    @Test
+    void withAutomaticReconnectionOff_aRecoveryIsCheckedAgainBeforeItIsReported() {
+        // Reported by Miguel in round 2 on #1772: the recovery line was written from the sample the health check
+        // took first, so a session lost since then was reported as working. The second sample here is that loss.
+        connectionOptions = withoutAutoReconnect();
+        final OpcUaProtocolAdapter adapter = startedAdapter();
+        final OpcUaClientConnection connection = connection(true);
+        assertThat(adapter.claimConnection(connection)).isTrue();
+        adapter.publishReadyFrom(connection);
+        when(connection.isHealthy()).thenReturn(false);
+        adapter.runHealthCheck();
+
+        when(connection.isHealthy()).thenReturn(true, false);
+        adapter.runHealthCheck();
+
+        assertThat(lifecycleLines().getLast()).contains("PROBLEM: connection lost. Automatic reconnection is switched");
+    }
+
+    @Test
+    void withAutomaticReconnectionOff_aResumedSessionIsNotReportedAsRecoveredAgain() {
+        connectionOptions = withoutAutoReconnect();
+        final OpcUaProtocolAdapter adapter = startedAdapter();
+        final OpcUaClientConnection connection = connection(true);
+        assertThat(adapter.claimConnection(connection)).isTrue();
+        adapter.publishReadyFrom(connection);
+        when(connection.isHealthy()).thenReturn(false);
+        adapter.runHealthCheck();
+
+        adapter.onSessionReplaced();
+        when(connection.isHealthy()).thenReturn(true);
+        adapter.runHealthCheck();
+
+        final List<String> lines = lifecycleLines();
+        assertThat(lines).hasSize(3);
+        assertThat(lines.getLast()).matches(ID + ", connection 1, session 2; session resumed; state now - .*");
+    }
+
+    @Test
+    @Timeout(30)
+    void aMethodReadThatCouldNotReachTheDevice_isNotCountedAsRead() throws Exception {
+        // Reported by Miguel in round 2 on #1772: the method verifier answers a device it cannot reach with a result
+        // rather than an exception, and that result used to be counted as read. Nothing was cached, so a request
+        // to the tag still reads its methods itself: the line must say so, and must not say "working".
+        final OpcUaProtocolAdapter adapter = startedAdapter(methodTag("valve"));
+        adapter.startSchedulers();
+        final OpcUaClientConnection connection = connection(true);
+        // The verifier's first call to the device times out. It answers that with a result, not an exception --
+        // the path this test exists for, and the one a client returning nulls would never reach.
+        final AddressSpace addressSpace = mock(AddressSpace.class);
+        when(addressSpace.getNodeAsync(any()))
+                .thenReturn(CompletableFuture.failedFuture(new UaException(StatusCodes.Bad_Timeout, "no answer")));
+        final OpcUaClient unreachable = mock(OpcUaClient.class);
+        when(unreachable.getAddressSpace()).thenReturn(addressSpace);
+        when(connection.client()).thenReturn(Optional.of(unreachable));
+        assertThat(adapter.claimConnection(connection)).isTrue();
+
+        adapter.publishReadyFrom(connection);
+        Objects.requireNonNull(adapter.methodPrewarmRun()).get(20, TimeUnit.SECONDS);
+
+        assertThat(lifecycleLines().getLast())
+                .matches(ID + ", connection 1; PROBLEM: read the methods of 0 of 1 method tags\\. Not read, method "
+                        + "requests to them read the methods first: 'valve'; state now - value reads: working, value "
+                        + "writes: working, method requests: starting \\(working with delays\\)");
+    }
+
+    @Test
+    void aStopDuringAReconnect_isTheLastLine() {
+        // Reported by Miguel in round 2 on #1772: a reconnect that had passed its own "not stopped" check wrote
+        // "Replacing it by itself" after the stop's line. Paused right after the stop's line is stored.
+        final OpcUaProtocolAdapter adapter = startedAdapter();
+        final OpcUaClientConnection connection = connection(true);
+        assertThat(adapter.claimConnection(connection)).isTrue();
+        adapter.publishReadyFrom(connection);
+
+        adapter.stop(
+                ProtocolAdapterConnectionDirection.Northbound,
+                mock(ProtocolAdapterStopInput.class),
+                mock(ProtocolAdapterStopOutput.class));
+        // The reconnect's own step, reached after the stop by a reconnect that checked "not stopped" before it.
+        adapter.releaseConnectionForReconnect();
+
+        assertThat(lifecycleLines().getLast()).matches(ID + "; stopping; state now - .*");
     }
 
     private static @NotNull ConnectionOptions withoutAutoReconnect() {

@@ -236,9 +236,11 @@ class MethodPrewarmIT {
 
         assertThat(adapter.methodsKnownFor("boiler")).isTrue();
         // A node the server does not have is a verdict the cache keeps, so a request against 'ghost' is refused at
-        // once rather than delayed: the read finished, and method requests are working.
+        // once rather than delayed. Reported as refused, not as read (Miguel, round 2 on #1772), and method
+        // requests are working, because no request has to read methods itself.
         assertThat(lastLifecycleLine())
-                .contains("connection 1; read the methods of 2 of 2 method tags")
+                .contains("connection 1; PROBLEM: read the methods of 1 of 2 method tags. Unusable, method requests "
+                        + "to them are refused: 'ghost'; ")
                 .endsWith("state now - value reads: working, value writes: working, method requests: working");
     }
 
@@ -254,8 +256,8 @@ class MethodPrewarmIT {
 
         assertThat(adapter.methodsKnownFor("boiler")).isTrue();
         assertThat(lastLifecycleLine())
-                .contains("connection 1; PROBLEM: read the methods of 1 of 2 method tags. Node id cannot be used, "
-                        + "method requests to them are refused: 'lost'; state now - ")
+                .contains("connection 1; PROBLEM: read the methods of 1 of 2 method tags. Unusable, method requests "
+                        + "to them are refused: 'lost'; state now - ")
                 .doesNotContain("read the methods first");
     }
 

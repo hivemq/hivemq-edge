@@ -574,17 +574,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             cancelRetry();
             cancelHealthCheck();
 
-            // Stop and clean up current connection. Released together with the lifecycle line, so a callback of the
-            // old connection either writes its line before this one or no longer owns the adapter.
-            final OpcUaClientConnection oldConn;
-            connectionOwnershipLock.lock();
-            try {
-                oldConn = opcUaClientConnection.getAndSet(null);
-                lifecycleConnected = false;
-                reportLifecycle(Event.SEVERITY.WARN, true, "PROBLEM: connection lost. Replacing it by itself");
-            } finally {
-                connectionOwnershipLock.unlock();
-            }
+            // Stop and clean up current connection
+            final OpcUaClientConnection oldConn = releaseConnectionForReconnect();
             if (oldConn != null) {
                 oldConn.stop();
                 log.debug("Stopped old connection for OPC UA adapter '{}'", adapterId);
@@ -677,28 +668,38 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 log.warn("Health check failed for adapter '{}' - automatic reconnection is disabled", adapterId);
                 publishStatusFrom(conn, ProtocolAdapterState.ConnectionStatus.ERROR);
                 // Once, on the transition: this check repeats every interval while the connection stays unhealthy.
-                if (lifecycleConnected) {
-                    lifecycleConnected = false;
-                    lifecycleLostWithoutReconnect = true;
-                    reportLifecycle(
-                            Event.SEVERITY.WARN,
-                            true,
-                            "PROBLEM: connection lost. Automatic reconnection is switched off, so a restart is needed");
+                connectionOwnershipLock.lock();
+                try {
+                    if (lifecycleConnected && opcUaClientConnection.get() == conn && !stopped) {
+                        lifecycleConnected = false;
+                        lifecycleLostWithoutReconnect = true;
+                        reportLifecycle(
+                                Event.SEVERITY.WARN,
+                                true,
+                                "PROBLEM: connection lost. Automatic reconnection is switched off, so a restart is "
+                                        + "needed");
+                    }
+                } finally {
+                    connectionOwnershipLock.unlock();
                 }
             }
         } else {
             log.debug("Health check passed for adapter '{}'", adapterId);
             // The line above said a restart is needed. A connection that came back by itself must not leave that as
-            // the last line. Only the line changes: the adapter status stays ERROR, as it always has, until the
-            // adapter is restarted.
-            if (lifecycleLostWithoutReconnect) {
-                lifecycleLostWithoutReconnect = false;
-                lifecycleConnected = true;
-                reportLifecycle(
-                        Event.SEVERITY.INFO,
-                        true,
-                        "connection recovered by itself. The adapter status still shows ERROR until the adapter "
-                                + "is restarted");
+            // the last line. Only the line changes, not the adapter status. Checked again under the ownership lock,
+            // because the sample above may be stale by now: a session lost since then must not be called working.
+            connectionOwnershipLock.lock();
+            try {
+                if (lifecycleLostWithoutReconnect
+                        && opcUaClientConnection.get() == conn
+                        && !stopped
+                        && conn.isHealthy()) {
+                    lifecycleLostWithoutReconnect = false;
+                    lifecycleConnected = true;
+                    reportLifecycle(Event.SEVERITY.INFO, true, "connection recovered by itself");
+                }
+            } finally {
+                connectionOwnershipLock.unlock();
             }
             // A healthy connection that never got its browse metadata is the one case that cannot fix itself: the
             // browse endpoint is refused before it runs, so the operator's natural retry never reaches the code that
@@ -798,7 +799,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
      * lifecycle call can collect what it cannot name. Closing them here costs nothing when the fields are
      * null, which is every ordinary call.
      */
-    private synchronized void startSchedulers() {
+    @VisibleForTesting
+    synchronized void startSchedulers() {
         if (retryScheduler != null || healthCheckScheduler != null) {
             log.warn(
                     "Adapter '{}': schedulers already existed when starting; shutting them down rather than "
@@ -2044,6 +2046,27 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         }
     }
 
+    /**
+     * Releases the current connection for a reconnect, together with its lifecycle line, so a callback of the old
+     * connection either writes its line before this one or no longer owns the adapter.
+     */
+    @VisibleForTesting
+    @Nullable
+    OpcUaClientConnection releaseConnectionForReconnect() {
+        connectionOwnershipLock.lock();
+        try {
+            final OpcUaClientConnection released = opcUaClientConnection.getAndSet(null);
+            lifecycleConnected = false;
+            // A stop that began after the reconnect's own check has written the last line already.
+            if (!stopped) {
+                reportLifecycle(Event.SEVERITY.WARN, true, "PROBLEM: connection lost. Replacing it by itself");
+            }
+            return released;
+        } finally {
+            connectionOwnershipLock.unlock();
+        }
+    }
+
     /** Releases whichever generation is current without letting one of its status writes pass concurrently. */
     @VisibleForTesting
     @Nullable
@@ -2200,6 +2223,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                 lifecycleSession.incrementAndGet();
                 lifecycleConnected = true;
                 lifecycleMethodsRead = false;
+                // A resumed session is the recovery; the health check must not report it a second time.
+                lifecycleLostWithoutReconnect = false;
                 reportLifecycle(Event.SEVERITY.INFO, true, "session resumed");
             }
         } finally {
@@ -2292,7 +2317,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
         int read = 0;
         // Two lists, because a request answers them differently: a tag whose read failed is read again by its first
-        // request, while a tag whose node id cannot be used here is refused without reaching the device.
+        // request, while a tag whose node id cannot be used here, or whose node the server rejected, is refused.
         final List<String> notRead = new ArrayList<>();
         final List<String> unusable = new ArrayList<>();
         for (final OpcuaTag tag : methodTags) {
@@ -2331,7 +2356,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             try {
                 // Blocking deliberately, which is what makes the run sequential. One tag's browse completes
                 // before the next begins, so the device sees one outstanding request at a time.
-                methodCache
+                final MethodVerifier.Result result = methodCache
                         .get(tagName, () -> MethodVerifier.verify(client, objectNode, tagName))
                         .join();
                 // The generation may have changed while that browse was in flight, in which case this run
@@ -2355,7 +2380,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                             tagName);
                     return;
                 }
-                read++;
+                // Counted by what the read found, not by its having returned: the verifier answers a timeout or
+                // an incomplete climb with a result rather than an exception, and the cache keeps neither, so a
+                // request to that tag still reads its methods itself. A rejection is kept, and refuses requests.
+                if (result instanceof final MethodVerifier.Result.Verified verified && verified.complete()) {
+                    read++;
+                } else if (result instanceof MethodVerifier.Result.Rejected) {
+                    unusable.add(tagName);
+                } else {
+                    notRead.add(tagName);
+                }
             } catch (final RuntimeException e) {
                 // Logged, not escalated: the cache evicted the failure, so the first request against this tag
                 // browses again and tells its caller what went wrong.
@@ -2381,7 +2415,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             connectionOwnershipLock.lock();
             try {
                 if (methodCache.generation() == generation && opcUaClientConnection.get() == source && !stopped) {
-                    lifecycleMethodsRead = true;
+                    // Working only when no request has to read methods itself any more. A refused tag does not
+                    // count against that: its requests are answered at once, if with a refusal.
+                    lifecycleMethodsRead = notRead.isEmpty();
                     final String readCount =
                             "read the methods of " + read + " of " + methodTags.size() + " method tags";
                     if (notRead.isEmpty() && unusable.isEmpty()) {
@@ -2394,7 +2430,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                                     .append('\'');
                         }
                         if (!unusable.isEmpty()) {
-                            problem.append(". Node id cannot be used, method requests to them are refused: '")
+                            problem.append(". Unusable, method requests to them are refused: '")
                                     .append(String.join("', '", unusable))
                                     .append('\'');
                         }
