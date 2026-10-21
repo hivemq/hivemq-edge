@@ -16,10 +16,12 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTING;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -393,6 +395,37 @@ class AbstractPlc4xAdapterReconnectTest {
 
         verify(adapter.state).setConnectionStatus(ERROR);
         verify(adapter.state, never()).setConnectionStatus(CONNECTED);
+    }
+
+    @Test
+    void test_start_whileTheFirstAttemptIsStillConnecting_reportsConnectingBeforeItReturns() {
+        // The adapter wrapper reports CONNECTED for a start that returns with the status still DISCONNECTED; against an
+        // endpoint that accepts TCP and never completes the session, that showed CONNECTED for the whole attempt.
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.HANG);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+
+        verify(adapter.state).setConnectionStatus(CONNECTING);
+        verify(adapter.state, never()).setConnectionStatus(CONNECTED);
+
+        adapter.hangLatch.countDown();
+        adapter.awaitAttemptsFinished(1);
+        verify(adapter.state).setConnectionStatus(ERROR);
+    }
+
+    @Test
+    void test_start_whileThePreviousConnectIsStillEnding_reportsErrorBeforeItReturns() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.TIME_OUT_STILL_ENDING);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitAttemptsFinished(1);
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        clearInvocations(adapter.state);
+
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+
+        verify(adapter.state).setConnectionStatus(ERROR);
+        verify(adapter.state, never()).setConnectionStatus(CONNECTING);
+        verify(adapter.state, never()).setConnectionStatus(CONNECTED);
+        assertThat(adapter.connectionsCreated.get()).isEqualTo(1);
     }
 
     @Test

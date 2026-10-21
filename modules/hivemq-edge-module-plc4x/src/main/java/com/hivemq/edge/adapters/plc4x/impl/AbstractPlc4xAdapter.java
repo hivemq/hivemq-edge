@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTING;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 
@@ -256,7 +257,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             final Plc4xConnection<T> previous = latestAttempt;
             if (previous != null && !previous.connectTerminated().isDone()) {
                 // A timed-out connect is interrupted and closed, but must end before another starts, so that a
-                // driver that ignores the interrupt holds at most one connect per adapter.
+                // driver that ignores the interrupt holds at most one connect per adapter. The status says so before
+                // start() returns: the adapter wrapper reports a start that left DISCONNECTED as CONNECTED.
+                protocolAdapterState.setConnectionStatus(ERROR);
                 return CompletableFuture.failedFuture(
                         new Plc4xException("The previous connection attempt is still ending"));
             }
@@ -269,6 +272,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             attempt.set(started);
             latestAttempt = tempConnection;
             this.connection = tempConnection;
+            // Published before the attempt runs and before start() returns, so the attempt's own outcome always comes
+            // after it, and the adapter wrapper does not report a start that left DISCONNECTED as CONNECTED.
+            protocolAdapterState.setConnectionStatus(CONNECTING);
             try {
                 @SuppressWarnings("unused")
                 final var unused = CompletableFuture.runAsync(
