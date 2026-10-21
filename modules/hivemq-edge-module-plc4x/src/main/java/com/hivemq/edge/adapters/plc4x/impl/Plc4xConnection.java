@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -96,15 +98,19 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                             // and closing the connection is the only way to cancel that loop.
                             return Optional.of(
                                     plcDriverManager.getConnectionManager().getConnection(connectionString));
-                        } catch (final Throwable e) {
-                            log.info("Error encountered connecting to external device", e);
+                        } catch (final PlcConnectionException e) {
+                            // Expected while the device is unreachable: carried to the caller, which reports it.
+                            throw new CompletionException(e);
                         }
-                        return Optional.<PlcConnection>empty();
                     });
                     try {
                         plcConnection = pending.get(2_000, TimeUnit.MILLISECONDS)
                                 .orElseThrow(
                                         () -> new Plc4xException("Error encountered connecting to external device"));
+                    } catch (final ExecutionException e) {
+                        final Throwable cause = e.getCause() != null ? e.getCause() : e;
+                        throw new Plc4xException(
+                                "Error encountered connecting to external device: " + cause.getMessage(), cause);
                     } catch (final TimeoutException te) {
                         // The driver is still mid-connect and has already scheduled its own 1 Hz retry loop.
                         // Close whatever it eventually produces, otherwise that loop becomes unreachable and
