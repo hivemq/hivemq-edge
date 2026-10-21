@@ -37,14 +37,19 @@ import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.ServerState;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
 import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
+import org.eclipse.milo.opcua.stack.core.types.structured.ServerStatusDataType;
 import org.eclipse.milo.opcua.stack.core.types.structured.TimeZoneDataType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -143,6 +148,36 @@ class StandardStructurePublishIT {
 
         assertThat(published.get("Low").asDouble()).isEqualTo(1.5);
         assertThat(published.get("High").asDouble()).isEqualTo(9.0);
+    }
+
+    @Test
+    void aServerThatDescribesNeitherTheStructureNorItsEnumeration_stillGetsAnObject() throws Exception {
+        // EDG-1138: the S7-1500 and the WAGO describe neither OPC UA's own structures nor its enumerations, so the
+        // `State` field of a ServerStatusDataType needs Milo's definition of ServerState as well.
+        final DataTypeTree real = client.getDataTypeTree();
+        final DataTypeTree withoutDefinitions = spy(real);
+        for (final NodeId undescribed : new NodeId[] {NodeIds.ServerStatusDataType, NodeIds.ServerState}) {
+            final DataType type = mock(DataType.class);
+            when(type.getNodeId()).thenReturn(undescribed);
+            when(type.getBrowseName()).thenReturn(real.getDataType(undescribed).getBrowseName());
+            when(type.getDataTypeDefinition()).thenReturn(null);
+            doReturn(type).when(withoutDefinitions).getDataType(undescribed);
+        }
+        final ServerStatusDataType status = new ServerStatusDataType(
+                DateTime.now(),
+                DateTime.now(),
+                ServerState.Running,
+                new BuildInfo("urn:test", "HiveMQ", "Edge", "1.0", "42", DateTime.now()),
+                UInteger.valueOf(0),
+                LocalizedText.NULL_VALUE);
+
+        final JsonNode published = publish(decodingWith(withoutDefinitions), new DataValue(new Variant(status)));
+
+        assertThat(published.isObject())
+                .as("published as an object, not as text: %s", published)
+                .isTrue();
+        assertThat(published.get("State")).isEqualTo(enumValue("Running", 0));
+        assertThat(published.get("BuildInfo").get("ProductName").asText()).isEqualTo("Edge");
     }
 
     private @NotNull Decoding decodingWith(final @NotNull DataTypeTree tree) {

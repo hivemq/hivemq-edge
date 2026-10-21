@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.northbound;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -34,13 +36,16 @@ import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingManager;
 import org.eclipse.milo.opcua.stack.core.types.DataTypeDictionary;
 import org.eclipse.milo.opcua.stack.core.types.DataTypeManager;
+import org.eclipse.milo.opcua.stack.core.types.UaEnumeratedType;
 import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.StructureType;
 import org.eclipse.milo.opcua.stack.core.types.structured.DataTypeDefinition;
+import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
 import org.eclipse.milo.opcua.stack.core.types.structured.StructureDefinition;
+import org.eclipse.milo.opcua.stack.core.types.structured.StructureField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -137,8 +142,11 @@ public record Decoding(
             // generated class. Every generated class is one of OPC UA's own namespace-0 types, which the static
             // context knows without a server.
             final ExtensionObject encoded = ExtensionObject.encode(DefaultEncodingContext.INSTANCE, value);
-            final UaStructuredType decoded = encoded.decode(
-                    new DynamicFirst(encoding, encoded.getEncodingOrTypeId(), new DynamicStructCodec(dataType, tree)));
+            final UaStructuredType decoded = encoded.decode(new DynamicFirst(
+                    encoding,
+                    encoded.getEncodingOrTypeId(),
+                    new DynamicStructCodec(
+                            dataType, withGeneratedEnums(tree, definition, value, encoding.getNamespaceTable()))));
             return decoded instanceof final DynamicStructType dynamic ? Optional.of(dynamic) : Optional.empty();
         } catch (final RuntimeException e) {
             log.debug(
@@ -194,12 +202,126 @@ public record Decoding(
                 generated);
     }
 
-    /// A namespace-0 structure's DataType, described by Milo's generated class rather than by the server.
+    /// The server's hierarchy, with Milo's own definition for every namespace-0 enumeration that a field of
+    /// `definition` holds and the server does not describe (EDG-1138).
+    ///
+    /// **Why the structure's definition is not enough.** The codec decodes an enumeration field into a
+    /// `DynamicEnumType`, which reads the enumeration's names from its DataType's `EnumDefinition`. A server that
+    /// publishes no definitions for OPC UA's own structures publishes none for its enumerations either (the
+    /// S7-1500 and the WAGO in the lab), so a `ServerStatusDataType` failed on its `State` field and was published
+    /// as its `toString` text. The generated class holds the enumeration as a generated enum, and Milo generates
+    /// each with a static `definition()` built from the specification -- the same source as the structure's.
+    ///
+    /// The server's hierarchy is returned as it is when no field needs a definition. An enumeration missing from
+    /// the hierarchy altogether is left alone: the codec cannot tell it is one, and the caller falls back to
+    /// `toString` as before.
+    private static @NotNull DataTypeTree withGeneratedEnums(
+            final @NotNull DataTypeTree tree,
+            final @NotNull StructureDefinition definition,
+            final @NotNull UaStructuredType value,
+            final @NotNull NamespaceTable namespaces) {
+        final StructureField[] fields = definition.getFields();
+        if (fields == null) {
+            return tree;
+        }
+        Map<NodeId, DataType> generated = null;
+        for (final StructureField field : fields) {
+            final NodeId typeId = field.getDataType();
+            if (typeId == null || typeId.getNamespaceIndex().intValue() != 0 || !tree.isEnumType(typeId)) {
+                continue;
+            }
+            final DataType described = tree.getDataType(typeId);
+            if (described != null && described.getDataTypeDefinition() instanceof EnumDefinition) {
+                continue;
+            }
+            final Class<?> enumeration = generatedEnumeration(value.getClass(), typeId, namespaces);
+            if (enumeration == null) {
+                continue;
+            }
+            final EnumDefinition enumDefinition = enumDefinitionOf(enumeration);
+            if (enumDefinition == null) {
+                continue;
+            }
+            if (generated == null) {
+                generated = new HashMap<>();
+            }
+            generated.put(
+                    typeId,
+                    new GeneratedDataType(
+                            described != null
+                                    ? described.getBrowseName()
+                                    : new QualifiedName(0, enumeration.getSimpleName()),
+                            typeId,
+                            NodeId.NULL_VALUE,
+                            enumDefinition));
+        }
+        return generated == null ? tree : new WithGeneratedTypes(tree, generated);
+    }
+
+    /// The generated enum a getter of the generated structure returns, alone or as an array, whose type is
+    /// `typeId`; null when there is none.
+    private static @Nullable Class<?> generatedEnumeration(
+            final @NotNull Class<?> structure, final @NotNull NodeId typeId, final @NotNull NamespaceTable namespaces) {
+        for (final Method getter : structure.getMethods()) {
+            if (getter.getParameterCount() != 0 || Modifier.isStatic(getter.getModifiers())) {
+                continue;
+            }
+            final Class<?> returned = getter.getReturnType();
+            final Class<?> element = returned.isArray() ? returned.getComponentType() : returned;
+            if (!element.isEnum() || !UaEnumeratedType.class.isAssignableFrom(element)) {
+                continue;
+            }
+            final Object[] constants = element.getEnumConstants();
+            if (constants.length > 0
+                    && typeId.equals(((UaEnumeratedType) constants[0])
+                            .getTypeId()
+                            .toNodeId(namespaces)
+                            .orElse(null))) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable EnumDefinition enumDefinitionOf(final @NotNull Class<?> enumeration) {
+        try {
+            final Method definition = enumeration.getMethod("definition");
+            return Modifier.isStatic(definition.getModifiers())
+                            && definition.invoke(null) instanceof final EnumDefinition found
+                    ? found
+                    : null;
+        } catch (final ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    /// The server's hierarchy, answering a generated DataType where [#withGeneratedEnums] supplied one. The
+    /// hierarchy itself -- which type is a subtype of which -- is the server's.
+    private static final class WithGeneratedTypes extends DataTypeTree {
+
+        private final @NotNull DataTypeTree server;
+        private final @NotNull Map<NodeId, DataType> generated;
+
+        WithGeneratedTypes(final @NotNull DataTypeTree server, final @NotNull Map<NodeId, DataType> generated) {
+            super(server.getRoot());
+            this.server = server;
+            this.generated = generated;
+        }
+
+        @Override
+        public @Nullable DataType getDataType(final @NotNull NodeId dataTypeId) {
+            final DataType supplied = generated.get(dataTypeId);
+            return supplied != null ? supplied : server.getDataType(dataTypeId);
+        }
+    }
+
+    /// A namespace-0 structure's or enumeration's DataType, described by Milo's generated class rather than by
+    /// the server.
     private record GeneratedDataType(
             @NotNull QualifiedName browseName,
             @NotNull NodeId nodeId,
             @NotNull NodeId binaryEncodingId,
-            @NotNull StructureDefinition definition)
+            @NotNull DataTypeDefinition definition)
             implements DataType {
 
         @Override
