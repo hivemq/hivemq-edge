@@ -80,6 +80,7 @@ class MethodTagSchemaOutcomeIT {
 
     @BeforeEach
     void setUp() {
+        when(moduleServices.eventService()).thenReturn(new FakeEventService());
         when(moduleServices.protocolAdapterTagStreamingService())
                 .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
     }

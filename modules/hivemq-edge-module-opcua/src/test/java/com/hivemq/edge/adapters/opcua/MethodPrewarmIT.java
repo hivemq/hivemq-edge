@@ -73,9 +73,11 @@ class MethodPrewarmIT {
 
     private final @NotNull ProtocolAdapterStateImpl protocolAdapterState = mock(ProtocolAdapterStateImpl.class);
     private final @NotNull ModuleServices moduleServices = mock(ModuleServices.class);
+    private final @NotNull FakeEventService eventService = new FakeEventService();
 
     @BeforeEach
     void setUp() {
+        when(moduleServices.eventService()).thenReturn(eventService);
         when(moduleServices.protocolAdapterTagStreamingService())
                 .thenReturn(mock(ProtocolAdapterTagStreamingService.class));
     }
@@ -174,6 +176,10 @@ class MethodPrewarmIT {
 
         assertThat(adapter.methodsKnownFor("boilerA")).isTrue();
         assertThat(adapter.methodsKnownFor("boilerB")).isTrue();
+        // The line a user waits for before sending method requests.
+        assertThat(lastLifecycleLine())
+                .endsWith("connection 1; read the methods of 2 of 2 method tags; state now - value reads: working, "
+                        + "value writes: working, method requests: working");
     }
 
     @Test
@@ -229,5 +235,38 @@ class MethodPrewarmIT {
         awaitPrewarm(adapter);
 
         assertThat(adapter.methodsKnownFor("boiler")).isTrue();
+        // A node the server does not have is a verdict the cache keeps, so a request against 'ghost' is refused at
+        // once rather than delayed. Reported as refused, not as read (Miguel, round 2 on #1772), and method
+        // requests are working, because no request has to read methods itself.
+        assertThat(lastLifecycleLine())
+                .contains("connection 1; PROBLEM: read the methods of 1 of 2 method tags. Unusable, method requests "
+                        + "to them are refused: 'ghost'; ")
+                .endsWith("state now - value reads: working, value writes: working, method requests: working");
+    }
+
+    @Test
+    void aTagNamingANamespaceTheServerDoesNotPublish_isReportedAsRefusedNotAsSlow() throws Exception {
+        // Found by Miguel on #1772, together with #1771: a node id that cannot be used is never read, and a request
+        // to it is refused rather than reading the methods first. The line must not promise the second.
+        final String object = namespace().addMethodObject("Boiler").toParseableString();
+        final OpcUaProtocolAdapter adapter = started(
+                methodTag("lost", "nsu=urn:not:published:by:this:server;s=Boiler"), methodTag("boiler", object));
+
+        awaitPrewarm(adapter);
+
+        assertThat(adapter.methodsKnownFor("boiler")).isTrue();
+        assertThat(lastLifecycleLine())
+                .contains("connection 1; PROBLEM: read the methods of 1 of 2 method tags. Unusable, method requests "
+                        + "to them are refused: 'lost'; state now - ")
+                .doesNotContain("read the methods first");
+    }
+
+    private @NotNull String lastLifecycleLine() {
+        final List<String> lines = eventService.readEvents(null, null).stream()
+                .map(event -> event.getMessage())
+                .filter(message -> message.startsWith(OpcUaProtocolAdapter.LIFECYCLE_PREFIX))
+                .toList();
+        assertThat(lines).as("lifecycle lines").isNotEmpty();
+        return lines.getLast();
     }
 }
