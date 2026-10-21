@@ -16,8 +16,11 @@
 package com.hivemq.edge.adapters.opcua.northbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.datapoint.DataPointWithMetadata;
@@ -27,6 +30,8 @@ import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
 import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
@@ -108,6 +113,48 @@ class StandardStructurePublishIT {
 
         assertThat(published.isTextual()).isTrue();
         assertThat(published.asText()).contains("1.5").contains("9.0");
+    }
+
+    @Test
+    void aServerThatPublishesNoDefinition_stillGetsTheRangeAsAnObject() throws Exception {
+        // EDG-1138, EDG-1119 D38: the S7-1500 and the WAGO publish no definitions for OPC UA's own structures.
+        // Milo's generated class carries the definition the specification fixes, so Edge uses that instead.
+        final DataTypeTree real = client.getDataTypeTree();
+        final DataTypeTree withoutDefinition = spy(real);
+        final DataType undescribed = mock(DataType.class);
+        when(undescribed.getNodeId()).thenReturn(NodeIds.Range);
+        when(undescribed.getDataTypeDefinition()).thenReturn(null);
+        doReturn(undescribed).when(withoutDefinition).getDataType(NodeIds.Range);
+
+        final JsonNode published =
+                publish(decodingWith(withoutDefinition), new DataValue(new Variant(new Range(1.5, 9.0))));
+
+        assertThat(published.get("Low").asDouble()).isEqualTo(1.5);
+        assertThat(published.get("High").asDouble()).isEqualTo(9.0);
+    }
+
+    @Test
+    void aServerWhoseHierarchyLacksTheType_stillGetsTheRangeAsAnObject() throws Exception {
+        final DataTypeTree real = client.getDataTypeTree();
+        final DataTypeTree withoutType = spy(real);
+        doReturn(null).when(withoutType).getDataType(NodeIds.Range);
+
+        final JsonNode published = publish(decodingWith(withoutType), new DataValue(new Variant(new Range(1.5, 9.0))));
+
+        assertThat(published.get("Low").asDouble()).isEqualTo(1.5);
+        assertThat(published.get("High").asDouble()).isEqualTo(9.0);
+    }
+
+    private @NotNull Decoding decodingWith(final @NotNull DataTypeTree tree) {
+        return new Decoding(
+                () -> {
+                    try {
+                        return client.getDynamicEncodingContext();
+                    } catch (final UaException e) {
+                        throw new IllegalStateException(e);
+                    }
+                },
+                () -> tree);
     }
 
     @Test
