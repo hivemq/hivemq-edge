@@ -215,6 +215,29 @@ class OpcUaLifecycleLinesTest {
     }
 
     @Test
+    void aRestartOfTheSameAdapterObject_countsItsFailedAttemptsFromOneAgain() {
+        // Reported by Miguel in round 2 on #1772: a restart through the REST API stops and starts the same adapter
+        // object, and the retry count carried over, so the first failure after the restart said "attempt 4" and
+        // waited the longer backoff the old start had reached.
+        final OpcUaProtocolAdapter adapter = startedAdapter();
+        for (int attempt = 0; attempt < 3; attempt++) {
+            final OpcUaClientConnection failed = connection(true);
+            assertThat(adapter.claimConnection(failed)).isTrue();
+            assertThat(adapter.completeFailedAttempt(failed, startInput(), null))
+                    .isTrue();
+        }
+
+        adapter.beginLifecycle();
+        final OpcUaClientConnection afterRestart = connection(true);
+        assertThat(adapter.claimConnection(afterRestart)).isTrue();
+        assertThat(adapter.completeFailedAttempt(afterRestart, startInput(), null))
+                .isTrue();
+
+        assertThat(lifecycleLines().getLast()).contains("PROBLEM: could not connect (attempt 1)");
+        assertThat(adapter.consecutiveRetryAttempts()).isOne();
+    }
+
+    @Test
     void aSecondConnection_isNumberedInTheIdentity() {
         final OpcUaProtocolAdapter adapter = startedAdapter();
         final OpcUaClientConnection first = connection(true);

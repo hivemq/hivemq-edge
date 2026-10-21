@@ -1941,9 +1941,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
 
     // region Lifecycle lines (EDG-1130)
 
-    /** Begins the lifecycle of one start: a new start time, and nothing connected or read yet. */
+    /**
+     * Begins the lifecycle of one start: a new start time, nothing connected or read yet, and no failed attempts.
+     * <p>
+     * The retry count belongs to the start, not to the adapter object. A restart through the REST API stops and
+     * starts the same object, and the count used to carry over: the first failure after the restart was reported
+     * as attempt N+1 and waited the longer backoff the old start had reached. A restart is when an operator has
+     * just acted, which is when retrying quickly is wanted.
+     */
     @VisibleForTesting
     void beginLifecycle() {
+        consecutiveRetryAttempts.set(0);
         lifecycleStart = LIFECYCLE_START_FORMAT.format(Instant.now());
         lifecycleConnection.set(0);
         lifecycleSession.set(0);
