@@ -15,15 +15,20 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
@@ -38,7 +43,11 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
+import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapter;
+import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterInformation;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapter;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterInformation;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
@@ -62,9 +71,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.plc4x.java.api.PlcDriverManager;
+import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 /**
  * Covers the reconnect behaviour of the polling path: a poll that finds no usable connection must tear down whatever
@@ -112,7 +123,7 @@ class AbstractPlc4xAdapterReconnectTest {
 
         await().atMost(TIMEOUT).until(() -> output.published);
         assertThat(output.failMessage).isNull();
-        final FakeConnection established = adapter.lastConnection.get();
+        final FakeConnection<?> established = adapter.lastConnection.get();
         assertThat(adapter.connection).isSameAs(established);
         assertThat(established.checked.get())
                 .as("the poll that reconnects must use the connection, not wait for the next poll")
@@ -124,7 +135,7 @@ class AbstractPlc4xAdapterReconnectTest {
         final TestableAdapter adapter = new TestableAdapter(Behaviour.SUCCEED);
         adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
         adapter.awaitAttemptsFinished(1);
-        final FakeConnection lost = adapter.lastConnection.get();
+        final FakeConnection<?> lost = adapter.lastConnection.get();
 
         // The PLC went away: the connection exists but is no longer connected.
         lost.connected = false;
@@ -209,7 +220,7 @@ class AbstractPlc4xAdapterReconnectTest {
         final TestableAdapter adapter = new TestableAdapter(Behaviour.SUCCEED);
         adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
         adapter.awaitAttemptsFinished(1);
-        final FakeConnection lost = adapter.lastConnection.get();
+        final FakeConnection<?> lost = adapter.lastConnection.get();
         lost.connected = false;
 
         // Poll A sees the lost connection and stalls before tearing it down; poll B tears it down and reconnects.
@@ -221,7 +232,7 @@ class AbstractPlc4xAdapterReconnectTest {
                 .isTrue();
         final CapturingPollingOutput pollB = adapter.poll();
         await().atMost(TIMEOUT).until(() -> pollB.published);
-        final FakeConnection reconnected = adapter.lastConnection.get();
+        final FakeConnection<?> reconnected = adapter.lastConnection.get();
         assertThat(adapter.connection).isSameAs(reconnected);
 
         releasePollA.countDown();
@@ -240,7 +251,7 @@ class AbstractPlc4xAdapterReconnectTest {
         final TestableAdapter adapter = new TestableAdapter(Behaviour.SUCCEED_WHEN_RELEASED);
         adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
         await().atMost(TIMEOUT).until(() -> adapter.connectionsCreated.get() == 1);
-        final FakeConnection attempted = adapter.lastConnection.get();
+        final FakeConnection<?> attempted = adapter.lastConnection.get();
 
         // Stop runs while the attempt has not connected yet; the attempt then connects.
         adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
@@ -288,6 +299,123 @@ class AbstractPlc4xAdapterReconnectTest {
         }
     }
 
+    @Test
+    void test_poll_whenPlcReturns_readsTheTagsInTheSamePoll() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.REFUSE, List.of(mock(Plc4xTag.class)));
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitAttemptsFinished(1);
+
+        adapter.behaviour.set(Behaviour.SUCCEED);
+        adapter.poll();
+
+        await().atMost(TIMEOUT).until(() -> adapter.lastConnection.get().reads.get() == 1);
+        assertThat(adapter.connectionsCreated.get()).isEqualTo(2);
+    }
+
+    @Test
+    void test_poll_whileAnAttemptThatSucceedsIsInFlight_completesEveryWaitingPollWithARead() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.SUCCEED_WHEN_RELEASED);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(() -> adapter.connectionsCreated.get() == 1);
+
+        final CapturingPollingOutput first = adapter.poll();
+        final CapturingPollingOutput second = adapter.poll();
+        adapter.hangLatch.countDown();
+
+        await().atMost(TIMEOUT).until(() -> first.published && second.published);
+        assertThat(first.failMessage).isNull();
+        assertThat(second.failMessage).isNull();
+        assertThat(adapter.connectionsCreated.get()).isEqualTo(1);
+    }
+
+    @Test
+    void test_connectionStatus_isConnectedOnlyOnceTheAttemptSucceeds() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.SUCCEED_WHEN_RELEASED);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(() -> adapter.connectionsCreated.get() == 1);
+        verify(adapter.state, never()).setConnectionStatus(CONNECTED);
+
+        adapter.hangLatch.countDown();
+
+        await().atMost(TIMEOUT).untilAsserted(() -> verify(adapter.state).setConnectionStatus(CONNECTED));
+    }
+
+    @Test
+    void test_start_whenTheFirstAttemptFails_setsConnectionStatusToError() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.REFUSE);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        adapter.awaitAttemptsFinished(1);
+
+        verify(adapter.state).setConnectionStatus(ERROR);
+        verify(adapter.state, never()).setConnectionStatus(CONNECTED);
+    }
+
+    @Test
+    void test_logs_distinguishAFailedAttemptFromALostConnection() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.REFUSE);
+        final List<String> messages = captureLogs(() -> {
+            adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+            adapter.awaitAttemptsFinished(1);
+            adapter.behaviour.set(Behaviour.SUCCEED);
+            final CapturingPollingOutput reconnected = adapter.poll();
+            await().atMost(TIMEOUT).until(() -> reconnected.published);
+            adapter.lastConnection.get().connected = false;
+            adapter.poll();
+            adapter.awaitAttemptsFinished(3);
+        });
+
+        assertThat(messages)
+                .anyMatch(message -> message.contains("Connection attempt for adapter 'testS7' failed")
+                        && message.contains("connection refused by test"))
+                .anyMatch(message -> message.contains("The connection of adapter 'testS7' was lost"));
+    }
+
+    @Test
+    void test_stop_whileAnAttemptIsConnecting_closesItAndLeavesNoAttemptPending() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.FAIL_WHEN_DISCONNECTED);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(() -> adapter.connectionsCreated.get() == 1);
+        final FakeConnection<?> connecting = adapter.lastConnection.get();
+
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+
+        adapter.awaitAttemptsFinished(1);
+        assertThat(connecting.disconnected).isTrue();
+        assertThat(adapter.connection).isNull();
+    }
+
+    @Test
+    void test_poll_onAnAdsAdapter_closesALostConnectionAndReconnects() {
+        final TestableAdsAdapter adapter = new TestableAdsAdapter();
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(() -> adapter.attemptsFinished.get() == 1 && !adapter.isConnecting());
+        final FakeConnection<?> lost = adapter.lastConnection.get();
+        lost.connected = false;
+
+        final CapturingPollingOutput output = new CapturingPollingOutput();
+        adapter.poll(mock(BatchPollingInput.class), output);
+
+        await().atMost(TIMEOUT).until(() -> output.published);
+        assertThat(lost.disconnected).isTrue();
+        assertThat(adapter.connectionsCreated.get()).isEqualTo(2);
+    }
+
+    private static @NotNull List<String> captureLogs(final @NotNull Runnable body) {
+        final Logger logger = (Logger) LoggerFactory.getLogger(TestableAdapter.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            body.run();
+            return appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .toList();
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+    }
+
     private static @NotNull ProtocolAdapterStartInput startInput() {
         final ProtocolAdapterStartInput input = mock(ProtocolAdapterStartInput.class);
         final ModuleServices moduleServices = mock(ModuleServices.class);
@@ -309,6 +437,8 @@ class AbstractPlc4xAdapterReconnectTest {
         SUCCEED_WHEN_RELEASED,
         /** startConnection() throws an unchecked exception. */
         THROW_UNCHECKED,
+        /** startConnection() waits until the connection is disconnected, then fails. */
+        FAIL_WHEN_DISCONNECTED,
         /** createConnection() itself throws, so no attempt can be started. */
         CANNOT_CREATE
     }
@@ -321,25 +451,33 @@ class AbstractPlc4xAdapterReconnectTest {
         final @NotNull AtomicReference<Behaviour> behaviour;
         final @NotNull AtomicInteger connectionsCreated = new AtomicInteger();
         final @NotNull AtomicInteger attemptsFinished = new AtomicInteger();
-        final @NotNull AtomicReference<FakeConnection> lastConnection = new AtomicReference<>();
+        final @NotNull AtomicReference<FakeConnection<S7SpecificAdapterConfig>> lastConnection =
+                new AtomicReference<>();
         final @NotNull CountDownLatch hangLatch = new CountDownLatch(1);
         final @NotNull ProtocolAdapterState state;
 
         TestableAdapter(final @NotNull Behaviour behaviour) {
-            this(behaviour, mock(ProtocolAdapterState.class));
+            this(behaviour, List.of());
         }
 
-        private TestableAdapter(final @NotNull Behaviour behaviour, final @NotNull ProtocolAdapterState state) {
-            super(S7ProtocolAdapterInformation.INSTANCE, newInput(state));
+        TestableAdapter(final @NotNull Behaviour behaviour, final @NotNull List<Plc4xTag> tags) {
+            this(behaviour, tags, mock(ProtocolAdapterState.class));
+        }
+
+        private TestableAdapter(
+                final @NotNull Behaviour behaviour,
+                final @NotNull List<Plc4xTag> tags,
+                final @NotNull ProtocolAdapterState state) {
+            super(S7ProtocolAdapterInformation.INSTANCE, newInput(tags, state));
             this.behaviour = new AtomicReference<>(behaviour);
             this.state = state;
         }
 
         @SuppressWarnings("unchecked")
         private static @NotNull ProtocolAdapterInput<S7SpecificAdapterConfig> newInput(
-                final @NotNull ProtocolAdapterState state) {
+                final @NotNull List<Plc4xTag> tags, final @NotNull ProtocolAdapterState state) {
             final ProtocolAdapterInput<S7SpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
-            when(input.getTags()).thenReturn((List) List.<Plc4xTag>of());
+            when(input.getTags()).thenReturn((List) tags);
             when(input.getAdapterId()).thenReturn("testS7");
             when(input.getProtocolAdapterState()).thenReturn(state);
             when(input.moduleServices()).thenReturn(mock(ModuleServices.class));
@@ -353,7 +491,8 @@ class AbstractPlc4xAdapterReconnectTest {
                 throw new Plc4xException("invalid connection configuration");
             }
             connectionsCreated.incrementAndGet();
-            final FakeConnection created = new FakeConnection(current, hangLatch, attemptsFinished);
+            final FakeConnection<S7SpecificAdapterConfig> created =
+                    new FakeConnection<>(testConfig(), current, hangLatch, attemptsFinished);
             lastConnection.set(created);
             return created;
         }
@@ -373,23 +512,63 @@ class AbstractPlc4xAdapterReconnectTest {
     }
 
     /**
+     * An ADS adapter whose connections always connect, to show the shared base reconnects ADS as it does S7.
+     */
+    private static final class TestableAdsAdapter extends ADSProtocolAdapter {
+
+        final @NotNull AtomicInteger connectionsCreated = new AtomicInteger();
+        final @NotNull AtomicInteger attemptsFinished = new AtomicInteger();
+        final @NotNull AtomicReference<FakeConnection<ADSSpecificAdapterConfig>> lastConnection =
+                new AtomicReference<>();
+
+        TestableAdsAdapter() {
+            super(ADSProtocolAdapterInformation.INSTANCE, newInput());
+        }
+
+        @SuppressWarnings("unchecked")
+        private static @NotNull ProtocolAdapterInput<ADSSpecificAdapterConfig> newInput() {
+            final ProtocolAdapterInput<ADSSpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
+            when(input.getTags()).thenReturn((List) List.<Plc4xTag>of());
+            when(input.getAdapterId()).thenReturn("testAds");
+            when(input.getProtocolAdapterState()).thenReturn(mock(ProtocolAdapterState.class));
+            return input;
+        }
+
+        @Override
+        protected @NotNull Plc4xConnection<ADSSpecificAdapterConfig> createConnection() throws Plc4xException {
+            connectionsCreated.incrementAndGet();
+            final FakeConnection<ADSSpecificAdapterConfig> created = new FakeConnection<>(
+                    new ADSSpecificAdapterConfig(
+                            48898, "localhost", 851, 48898, "1.2.3.4.5.6", "6.5.4.3.2.1", null, null),
+                    Behaviour.SUCCEED,
+                    new CountDownLatch(0),
+                    attemptsFinished);
+            lastConnection.set(created);
+            return created;
+        }
+    }
+
+    /**
      * A connection whose start refuses, hangs or succeeds, recording whether it was checked and closed.
      */
-    private static final class FakeConnection extends Plc4xConnection<S7SpecificAdapterConfig> {
+    private static final class FakeConnection<C extends Plc4XSpecificAdapterConfig<?>> extends Plc4xConnection<C> {
 
         private final @NotNull Behaviour behaviour;
         private final @NotNull CountDownLatch hangLatch;
         private final @NotNull AtomicInteger attemptsFinished;
+        private final @NotNull CountDownLatch disconnectLatch = new CountDownLatch(1);
         final @NotNull AtomicInteger checked = new AtomicInteger();
+        final @NotNull AtomicInteger reads = new AtomicInteger();
         volatile boolean connected;
         volatile boolean disconnected;
 
         FakeConnection(
+                final @NotNull C config,
                 final @NotNull Behaviour behaviour,
                 final @NotNull CountDownLatch hangLatch,
                 final @NotNull AtomicInteger attemptsFinished)
                 throws Plc4xException {
-            super(PlcDriverManager.getDefault(), testConfig(), config -> "");
+            super(PlcDriverManager.getDefault(), config, ignored -> "");
             this.behaviour = behaviour;
             this.hangLatch = hangLatch;
             this.attemptsFinished = attemptsFinished;
@@ -413,6 +592,14 @@ class AbstractPlc4xAdapterReconnectTest {
                         connected = true;
                     }
                     case THROW_UNCHECKED -> throw new IllegalStateException("unexpected failure in test");
+                    case FAIL_WHEN_DISCONNECTED -> {
+                        try {
+                            disconnectLatch.await();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        throw new Plc4xException("disconnected while connecting");
+                    }
                     case HANG -> {
                         try {
                             hangLatch.await();
@@ -462,9 +649,16 @@ class AbstractPlc4xAdapterReconnectTest {
         }
 
         @Override
+        public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull List<Plc4xTag> tags) {
+            reads.incrementAndGet();
+            return CompletableFuture.completedFuture(mock(PlcReadResponse.class));
+        }
+
+        @Override
         public void disconnect() {
             connected = false;
             disconnected = true;
+            disconnectLatch.countDown();
         }
 
         @Override
