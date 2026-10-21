@@ -34,6 +34,7 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaConditionType;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagKind;
+import com.hivemq.edge.adapters.opcua.northbound.Decoding;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaEventToJsonConverter;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import com.hivemq.edge.adapters.opcua.util.NodeIdText;
@@ -407,7 +408,15 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull OpcUaClient client,
             final @NotNull DataValue value,
             final @NotNull DataPointBuilder<?> builder) {
-        OpcUaToJsonConverter.convertPayload(encodingContextSupplier(client), value, builder);
+        OpcUaToJsonConverter.convertPayload(decoding(client), value, builder);
+    }
+
+    /// The encoding context, as [#encodingContextSupplier] supplies it, together with the client's cached DataType
+    /// hierarchy, which the read converter asks for only to render a standard structure field by field. The
+    /// hierarchy is read once per connection by the warm-up; when it cannot be had, such a structure is published
+    /// as its string form and nothing else is affected.
+    private static @NotNull Decoding decoding(final @NotNull OpcUaClient client) {
+        return new Decoding(encodingContextSupplier(client), Decoding.of(client).types());
     }
 
     /// The server's type descriptions, fetched when a value's own type calls for them and not before.
@@ -1284,10 +1293,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
                 // was built from the former. Event fields arrive positionally against the select clause, so
                 // decoding against any other list would attach values to the wrong names.
                 OpcUaEventToJsonConverter.convertPayload(
-                        encodingContextSupplier(client),
-                        tag.getDefinition().getPublishedFields(),
-                        eventFields,
-                        dataPointBuilder);
+                        decoding(client), tag.getDefinition().getPublishedFields(), eventFields, dataPointBuilder);
             } catch (final @NotNull UaSerializationException e) {
                 // Same failure mode as the value path: a structure nested in an event field cannot be
                 // decoded because the dynamic codec registry is incomplete. Drop this batch and reset.

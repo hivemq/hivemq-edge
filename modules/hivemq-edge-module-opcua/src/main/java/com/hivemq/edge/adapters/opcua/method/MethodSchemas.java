@@ -25,8 +25,10 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.jetbrains.annotations.NotNull;
@@ -220,8 +222,17 @@ public final class MethodSchemas {
     /// both is the same `any`. Keeping the rank alongside the type is what lets that comparison happen at all --
     /// an earlier version kept only the type, so an array argument was described as a scalar of its element type
     /// and every correct array request was rejected by Edge before it could reach the device.
+    ///
+    /// `structure` is the description of the structure the argument is declared as, read during the browse, or
+    /// null when it is not a structure or could not be described.
     record ArgumentShape(
-            @Nullable OpcUaDataType type, @NotNull List<UInteger> dimensions) {
+            @Nullable OpcUaDataType type,
+            @NotNull List<UInteger> dimensions,
+            JsonSchemaGenerator.@Nullable FieldInformation structure) {
+
+        ArgumentShape(final @Nullable OpcUaDataType type, final @NotNull List<UInteger> dimensions) {
+            this(type, dimensions, null);
+        }
 
         /// Null type and no dimensions: nothing true can be said about this name.
         static final @NotNull ArgumentShape UNSTATEABLE = new ArgumentShape(null, List.of());
@@ -246,7 +257,18 @@ public final class MethodSchemas {
         /// {@code JsonSchemaGenerator.applyArrayType}). So this comparison no longer hides a disagreement the
         /// schema would have had to resolve; it simply agrees with what the schema says.
         boolean agreesWith(final @NotNull ArgumentShape other) {
-            return type == other.type && dimensions.size() == other.dimensions.size();
+            return type == other.type
+                    && dimensions.size() == other.dimensions.size()
+                    && Objects.equals(structureType(), other.structureType());
+        }
+
+        /// The structure's DataType, which is what two declarations of a structure argument must agree on. Two
+        /// different structures both reduce to `ExtensionObject`, so the builtin type alone cannot tell them
+        /// apart.
+        private @Nullable NodeId structureType() {
+            return structure == null || structure.customDataType() == null
+                    ? null
+                    : structure.customDataType().getNodeId();
         }
 
         /// The shape of an argument as the device declared it.
@@ -258,6 +280,13 @@ public final class MethodSchemas {
         /// walk. Looking the id up in the table of the 25 builtins answered null for every one of them, and the
         /// argument rendered as `any`.
         static @NotNull ArgumentShape of(final @NotNull Argument argument, final @Nullable OpcUaDataType type) {
+            return of(argument, type, null);
+        }
+
+        static @NotNull ArgumentShape of(
+                final @NotNull Argument argument,
+                final @Nullable OpcUaDataType type,
+                final JsonSchemaGenerator.@Nullable FieldInformation structure) {
 
             // The rank decides the shape, and OPC 10000-3 table 28 gives it six values -- the same table as for
             // a Variable, because a method argument is described by the same attribute:
@@ -279,7 +308,7 @@ public final class MethodSchemas {
             // which is the only party that knows the real signature.
             final Integer rank = argument.getValueRank();
             if (rank == null || rank == ValueRanks.Scalar) {
-                return new ArgumentShape(type, List.of());
+                return new ArgumentShape(type, List.of(), structure);
             }
             if (rank < 1) {
                 return ArgumentShape.UNSTATEABLE;
@@ -295,7 +324,7 @@ public final class MethodSchemas {
                                 ? declared[i]
                                 : UInteger.valueOf(0));
             }
-            return new ArgumentShape(type, List.copyOf(dimensions));
+            return new ArgumentShape(type, List.copyOf(dimensions), structure);
         }
     }
 
@@ -323,7 +352,12 @@ public final class MethodSchemas {
             // Set before the structure, because the describe helpers consume the property builder and return void.
             // Annotations and structure are independent in the builder, so the order does not otherwise matter.
             final var property = value.property(name).writable(writable).nullable(!writable);
-            if (shape.isArray()) {
+            if (shape.structure() != null) {
+                // A structure has one shape, an object of its fields, so it can be described exactly -- the
+                // description a value tag of the same structure gets. Its enumeration fields and its fields of a
+                // builtin accepted in two shapes stay `any` inside it, for the reasons given below.
+                JsonSchemaGenerator.describeStructure(property, shape.structure(), shape.dimensionsArray(), writable);
+            } else if (shape.isArray()) {
                 // Element type may still be null -- an array of a custom structure. describeAsArray answers that
                 // with `any` elements, which keeps the array-ness (the part it can state) rather than losing it.
                 //
@@ -385,7 +419,8 @@ public final class MethodSchemas {
                     // in the schema either. It is still callable positionally -- the signature keeps it.
                     continue;
                 }
-                final ArgumentShape shape = ArgumentShape.of(argument, method.builtinTypeOf(argument));
+                final ArgumentShape shape =
+                        ArgumentShape.of(argument, method.builtinTypeOf(argument), method.structureOf(argument));
                 final ArgumentShape seen = shapes.get(name);
                 if (seen == null) {
                     shapes.put(name, shape);

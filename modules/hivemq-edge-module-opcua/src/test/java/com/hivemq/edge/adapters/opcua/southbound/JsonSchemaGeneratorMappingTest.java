@@ -17,7 +17,10 @@ package com.hivemq.edge.adapters.opcua.southbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
+import java.util.List;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,5 +51,28 @@ class JsonSchemaGeneratorMappingTest {
             names = {"QualifiedName", "ExtensionObject", "DataValue", "Variant", "DiagnosticInfo"})
     void test_allScalarTypesMapToAScalarType(final OpcUaDataType opcUaType) {
         assertThat(JsonSchemaGenerator.mapOpcUaToScalarType(opcUaType)).isNotNull();
+    }
+
+    /// A StatusCode is unsigned. Every Bad code has the top bit set, so the read side publishes Bad as
+    /// 2147483648 and the converter takes 0..4294967295. Int32 bounds refused every Bad code at the schema
+    /// while the converter would have accepted it, so no Bad code could be written by any form.
+    @Test
+    void aStatusCodeVariable_isBoundedAsAnUnsigned32BitNumber() {
+        final JsonNode value = SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(
+                JsonSchemaGenerator.buildSchema(new JsonSchemaGenerator.FieldInformation(
+                                "value",
+                                null,
+                                OpcUaDataType.StatusCode,
+                                null,
+                                false,
+                                null,
+                                false,
+                                true,
+                                true,
+                                List.of()))
+                        .valueSchema());
+
+        assertThat(value.get("minimum").asLong()).isZero();
+        assertThat(value.get("maximum").asLong()).isEqualTo(4294967295L);
     }
 }

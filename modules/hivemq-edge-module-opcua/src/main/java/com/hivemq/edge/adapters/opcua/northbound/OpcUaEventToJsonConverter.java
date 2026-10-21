@@ -71,6 +71,18 @@ public final class OpcUaEventToJsonConverter {
             final @NotNull EventFieldSet publishedFields,
             final @NotNull Variant[] values,
             final @NotNull DataPointBuilder<?> builder) {
+        convertPayload(Decoding.withoutTypes(ctx), publishedFields, values, builder);
+    }
+
+    /**
+     * As above, with the server's DataType hierarchy for a standard structure inside a field. See
+     * {@link Decoding#asDynamic}.
+     */
+    public static void convertPayload(
+            final @NotNull Decoding ctx,
+            final @NotNull EventFieldSet publishedFields,
+            final @NotNull Variant[] values,
+            final @NotNull DataPointBuilder<?> builder) {
 
         // The same list that built the select clause, so position i here is the field selected at i.
         final List<OpcuaConditionType.SelectedField> fields = publishedFields.selectedFields();
@@ -244,7 +256,7 @@ public final class OpcUaEventToJsonConverter {
             final @NotNull String key,
             final @Nullable Object state,
             final @Nullable Object id,
-            final @NotNull Supplier<EncodingContext> ctx) {
+            final @NotNull Decoding ctx) {
 
         if (state == null && id == null) {
             object.putNull(key);

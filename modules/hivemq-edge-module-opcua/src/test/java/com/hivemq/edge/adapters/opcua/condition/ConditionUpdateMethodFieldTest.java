@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -77,8 +78,8 @@ class ConditionUpdateMethodFieldTest {
     // ── the comment field, whose three intents are distinguished by shape ────────────────────────────
 
     @Test
-    void anObjectCommentIsRejectedRatherThanCoercedToAnErase() {
-        // Review finding 12, and the dangerous one. `asText()` returns the *empty string* for an object or an
+    void anEmptyObjectCommentLeavesTheExistingOneAloneRatherThanErasingIt() {
+        // Review finding 12, and the dangerous one. `asText()` returned the *empty string* for an object or an
         // array -- and an empty comment is not "no comment", it is the specification's deliberate erase form
         // (OPC 10000-9 §5.7.3: "To reset the comment, an empty text with a locale shall be provided"). So
         // {"comment": {}}, which nobody means, silently wiped the condition's existing comment.
@@ -86,11 +87,35 @@ class ConditionUpdateMethodFieldTest {
         // Not a local mistake either: §5.5.2 fires a fresh event on any comment change, so the erase is
         // broadcast to every other client watching that alarm, and the previous operator's note is gone from
         // the audit trail with no way to recover it.
+        //
+        // The comment is now read as the LocalizedText the methods declare, which accepts the object a read
+        // publishes. `{}` is that object with both fields absent: the null localised text, which §5.7.3 defines
+        // as "leave it alone" -- the opposite of the erase, and carried exactly like an absent comment.
+        final ConditionUpdate update = ConditionUpdate.fromJson(
+                json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", " + "\"comment\": {}}"));
+
+        assertThat(update.comment()).isNull();
+    }
+
+    @Test
+    void anObjectCommentKeepsItsLocale() {
+        // The form a read publishes, so a comment read from a device can be sent back without its locale
+        // being rewritten to English.
+        final ConditionUpdate update = ConditionUpdate.fromJson(
+                json(
+                        "{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", \"comment\": {\"locale\": \"de-DE\", \"text\": \"quittiert\"}}"));
+
+        assertThat(update.comment()).isEqualTo(new LocalizedText("de-DE", "quittiert"));
+    }
+
+    @Test
+    void anObjectCommentWithAMisspelledFieldIsRejected() {
+        // `Text` is not `text`. Ignoring it would read the comment as absent and drop the operator's note.
         assertThatThrownBy(() -> ConditionUpdate.fromJson(
-                        json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", " + "\"comment\": {}}")))
+                        json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", \"comment\": {\"Text\": \"x\"}}")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("comment")
-                .hasMessageContaining("must be a string");
+                .hasMessageContaining("'Text' is not a field of a localised text");
     }
 
     @Test
@@ -142,7 +167,7 @@ class ConditionUpdateMethodFieldTest {
         final ConditionUpdate update = ConditionUpdate.fromJson(
                 json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", \"comment\": \"\"}"));
 
-        assertThat(update.comment()).isEmpty();
+        assertThat(update.comment()).isEqualTo(LocalizedText.english(""));
     }
 
     @Test
@@ -150,7 +175,7 @@ class ConditionUpdateMethodFieldTest {
         final ConditionUpdate update = ConditionUpdate.fromJson(
                 json("{\"method\": \"ACKNOWLEDGE\", \"eventId\": \"aGk=\", \"comment\": \"Erwin has seen this\"}"));
 
-        assertThat(update.comment()).isEqualTo("Erwin has seen this");
+        assertThat(update.comment()).isEqualTo(LocalizedText.english("Erwin has seen this"));
     }
 
     private static @NotNull JsonNode json(final @NotNull String text) {

@@ -460,11 +460,11 @@ public final class ConditionUpdateWriter {
      * {@code LocalizedText.NULL_VALUE} rather than {@code english(null)}: Milo's single-argument constructor
      * hardcodes the locale to {@code "en"}, and its {@code isNull()} requires <em>both</em> fields to be
      * null. So an English-locale text of null is not the specification's NULL — it is the reset form with a
-     * different spelling.
+     * different spelling. A present comment is sent as the caller gave it, locale included.
      */
     private static @NotNull LocalizedText commentOf(final @NotNull ConditionUpdate update) {
-        final String comment = update.comment();
-        return comment == null ? LocalizedText.NULL_VALUE : LocalizedText.english(comment);
+        final LocalizedText comment = update.comment();
+        return comment == null ? LocalizedText.NULL_VALUE : comment;
     }
 
     /**

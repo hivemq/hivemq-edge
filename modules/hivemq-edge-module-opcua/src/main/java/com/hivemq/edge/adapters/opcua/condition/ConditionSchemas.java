@@ -555,16 +555,16 @@ public final class ConditionSchemas {
                 final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
-                    .property("offset")
+                    .property("Offset")
                     .scalar(ScalarType.LONG)
                     .description("Minutes between the event's 'Time' (UTC) and the local time where the "
                             + "event was issued.")
                     .readable()
                     .writable(false)
                     .endProperty()
-                    .property("daylightSavingInOffset")
+                    .property("DaylightSavingInOffset")
                     .scalar(ScalarType.BOOLEAN)
-                    .description("True when 'offset' already includes the daylight-saving correction. False "
+                    .description("True when 'Offset' already includes the daylight-saving correction. False "
                             + "means it does not, and DST may or may not have been in effect.")
                     .readable()
                     .writable(false)
@@ -772,14 +772,15 @@ public final class ConditionSchemas {
 
         /**
          * An {@code EUInformation}: the authority defining the unit, the unit's id within it, and the symbol and
-         * full name as localised texts. The pair {@code namespaceUri}/{@code unitId} is what makes an engineering
-         * unit machine-readable, which stringifying the structure destroyed.
+         * full name as localised texts. The pair {@code NamespaceUri}/{@code UnitId} is what makes an engineering
+         * unit machine-readable, which stringifying the structure destroyed. The field names are the structure
+         * definition's own, as every structure is published.
          */
         private static void appendEngineeringUnits(
                 final @NotNull ObjectSchemaBuilder<SchemaBuilder> object, final @NotNull String field) {
             object.property(field)
                     .startObject()
-                    .property("namespaceUri")
+                    .property("NamespaceUri")
                     .scalar(ScalarType.STRING)
                     .description("The URI of the authority defining the unit — by default the UNECE "
                             + "Recommendation 20 code list.")
@@ -787,14 +788,14 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty()
-                    .property("unitId")
+                    .property("UnitId")
                     .scalar(ScalarType.LONG)
                     .description("The unit's identifier within that authority's list.")
                     .nullable()
                     .readable()
                     .writable(false)
                     .endProperty()
-                    .property("displayName")
+                    .property("DisplayName")
                     .startObject()
                     .property("locale")
                     .scalar(ScalarType.STRING)
@@ -812,7 +813,7 @@ public final class ConditionSchemas {
                     .readable()
                     .writable(false)
                     .endProperty()
-                    .property("description")
+                    .property("Description")
                     .startObject()
                     .property("locale")
                     .scalar(ScalarType.STRING)

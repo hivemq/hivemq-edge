@@ -78,11 +78,11 @@ public class Constants {
     // appear in every generated schema a user reads and in every message a user writes, so renaming one is a
     // breaking change rather than a refactor.
     //
-    // Named here because the contract is spelled in six places -- OpcUaToJsonConverter and
-    // OpcUaEventToJsonConverter write them, JsonSchemaGenerator and ConditionSchemas declare them,
-    // JsonToOpcUAConverterUtil reads them on the value-write path, and MethodArguments validates them for a
-    // method's arguments. Six independent spellings of one contract, where a typo in any single one fails
-    // nothing: the published shape and the accepted shape simply stop agreeing, for one type, silently.
+    // Named here because the contract is spelled in several places -- OpcUaToJsonConverter and
+    // OpcUaEventToJsonConverter write them, JsonSchemaGenerator and ConditionSchemas declare them, and
+    // JsonToOpcUaValueConverter reads them on every southbound route. Independent spellings of one contract,
+    // where a typo in any single one fails nothing: the published shape and the accepted shape simply stop
+    // agreeing, for one type, silently.
     //
     // Reported by Sam while reviewing EDG-1087, as `code` alongside the magic numbers.
 
@@ -118,5 +118,11 @@ public class Constants {
 
     /// A LocalizedText's text.
     public static final @NotNull String LOCALIZED_TEXT_TEXT = "text";
+
+    /// An enumeration value's symbolic name, such as `Running`. Published for an enumeration inside a structure.
+    public static final @NotNull String ENUM_NAME = "name";
+
+    /// An enumeration value's number, the Int32 the wire carries.
+    public static final @NotNull String ENUM_VALUE = "value";
     // endregion
 }

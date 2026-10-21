@@ -65,10 +65,11 @@ class ConditionSchemasTest {
                     .isNotNull();
 
             final JsonNode shape = shapeOf(localTime);
-            assertThat(shape.path("properties").has("offset"))
+            // The structure definition's own field names, capitalised as OPC 10000-5 gives them.
+            assertThat(shape.path("properties").has("Offset"))
                     .as("%s must type LocalTime with its minute offset", type.browseName())
                     .isTrue();
-            assertThat(shape.path("properties").has("daylightSavingInOffset"))
+            assertThat(shape.path("properties").has("DaylightSavingInOffset"))
                     .as(
                             "%s must say whether the offset includes the DST correction -- without the flag the "
                                     + "offset cannot be interpreted",

@@ -16,9 +16,13 @@
 package com.hivemq.edge.adapters.opcua.condition;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Base64;
-import java.util.Locale;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter;
+import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUaValueConverter.ConversionException;
+import org.eclipse.milo.opcua.sdk.core.ValueRanks;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,8 +53,9 @@ import org.jetbrains.annotations.Nullable;
  *                 acknowledgement cannot be applied to a newer transition. Null for methods that act on the
  *                 condition as a whole.
  * @param comment  free text recorded by the server alongside the transition. <b>Null and empty mean different
- *                 things</b> — null leaves any existing comment untouched, empty erases it. See
- *                 {@link #fromJson}.
+ *                 things</b> — null leaves any existing comment untouched, an empty text erases it. Never
+ *                 {@link LocalizedText#NULL_VALUE}: that is the protocol's spelling of "leave it alone", so it is
+ *                 carried as null here. See {@link #fromJson}.
  * @param duration the shelving time in milliseconds; null for every method except {@code TimedShelve}.
  * @param selectedResponse which of a dialog's offered responses to give, as an index into its
  *                         {@code ResponseOptionSet}; null for every method except {@code Respond}.
@@ -58,7 +63,7 @@ import org.jetbrains.annotations.Nullable;
 public record ConditionUpdate(
         @NotNull Method method,
         @Nullable ByteString eventId,
-        @Nullable String comment,
+        @Nullable LocalizedText comment,
         @Nullable Double duration,
         @Nullable Integer selectedResponse) {
 
@@ -254,24 +259,26 @@ public record ConditionUpdate(
         // saying anything about the comment", and serialisers that emit nulls for unset fields are common
         // enough that reading it as "erase" would surprise a caller who never thought about the field.
         //
-        // A string, and only a string. `asText()` used to stand here, and Jackson's coercions make that
-        // materially unsafe rather than merely lax: it renders a number or a boolean as its text, and -- the
-        // dangerous one -- returns the *empty string* for an object or an array. So `"comment": {}`, which is
-        // nothing anyone means, parsed as the deliberate erase form and wiped the condition's existing
-        // comment. Not a local mistake either: OPC 10000-9 §5.5.2 fires a fresh event on any comment change,
-        // so every other client watching that alarm is told the note is gone, and the audit trail cannot be
-        // recovered. Rejecting is the only safe reading of a payload nobody meant to send.
+        // Converted as the LocalizedText the methods declare, by the converter every southbound route uses: a
+        // string becomes English text, and the object a read publishes -- `{"locale": ..., "text": ...}` --
+        // keeps exactly the fields it carries. Anything else is refused. `asText()` used to stand here, and it
+        // returned the *empty string* for an object or an array, so `"comment": {}` parsed as the deliberate
+        // erase form and wiped the condition's existing comment -- broadcast to every client watching the
+        // alarm, since OPC 10000-9 §5.5.2 fires a fresh event on any comment change. Through the converter `{}`
+        // is the null localised text, which §5.7.3 defines as "leave any existing comment alone", the same
+        // as no comment at all; it is carried as null so the two cannot be told apart downstream.
         final JsonNode commentNode = payload.get(FIELD_COMMENT);
-        final String comment;
+        final LocalizedText comment;
         if (commentNode == null || commentNode.isNull()) {
             comment = null;
-        } else if (commentNode.isTextual()) {
-            comment = commentNode.textValue();
         } else {
-            throw new IllegalArgumentException("'" + FIELD_COMMENT
-                    + "' must be a string, or absent to leave the existing comment unchanged. An empty "
-                    + "string erases it. Received: "
-                    + commentNode.getNodeType().name().toLowerCase(Locale.ROOT));
+            final LocalizedText converted = (LocalizedText) convert(
+                    commentNode,
+                    NodeIds.LocalizedText,
+                    "'" + FIELD_COMMENT
+                            + "' must be a string, or the object a read publishes, or absent to leave the existing "
+                            + "comment unchanged. An empty string erases it");
+            comment = converted.isNull() ? null : converted;
         }
 
         final ByteString eventId = readEventId(payload, method);
@@ -292,13 +299,27 @@ public record ConditionUpdate(
             return null;
         }
         final JsonNode eventIdNode = payload.get(FIELD_EVENT_ID);
-        if (eventIdNode == null
-                || !eventIdNode.isTextual()
-                || eventIdNode.asText().isEmpty()) {
-            throw new IllegalArgumentException("'" + method.name() + "' needs a non-empty '" + FIELD_EVENT_ID
-                    + "', taken from the northbound message it responds to");
+        if (eventIdNode == null || eventIdNode.isNull()) {
+            throw missingEventId(method);
         }
-        return decodeEventId(eventIdNode.asText());
+        // Base64, always: an EventId is an opaque ByteString the northbound converter renders as base64, and the
+        // schema declares it BINARY -- `contentEncoding: base64` -- so a client echoes back exactly what it
+        // received. There is deliberately no fallback for a value that fails to decode. Base64 cannot be told
+        // apart from arbitrary text by inspection, so guessing would silently turn a mistyped id into a
+        // different one; rejecting says plainly what went wrong.
+        final ByteString eventId = (ByteString) convert(
+                eventIdNode,
+                NodeIds.ByteString,
+                "'" + FIELD_EVENT_ID + "' must be the base64 value from the northbound message, echoed back unchanged");
+        if (eventId.length() == 0) {
+            throw missingEventId(method);
+        }
+        return eventId;
+    }
+
+    private static @NotNull IllegalArgumentException missingEventId(final @NotNull Method method) {
+        return new IllegalArgumentException("'" + method.name() + "' needs a non-empty '" + FIELD_EVENT_ID
+                + "', taken from the northbound message it responds to");
     }
 
     /**
@@ -309,11 +330,14 @@ public record ConditionUpdate(
             return null;
         }
         final JsonNode durationNode = payload.get(FIELD_DURATION);
-        if (durationNode == null || !durationNode.isNumber()) {
-            throw new IllegalArgumentException(
-                    "'" + method.name() + "' needs a numeric '" + FIELD_DURATION + "' in milliseconds");
+        final String needed = "'" + method.name() + "' needs a numeric '" + FIELD_DURATION + "' in milliseconds";
+        if (durationNode == null || durationNode.isNull()) {
+            throw new IllegalArgumentException(needed);
         }
-        return durationNode.asDouble();
+        // Converted as a Double rather than as the Duration the method declares: OPC 10000-3 section 5.8.2 makes
+        // a Simple DataType indistinguishable on the wire from its builtin supertype, and naming the builtin
+        // needs no server.
+        return (Double) convert(durationNode, NodeIds.Double, needed);
     }
 
     /**
@@ -337,7 +361,8 @@ public record ConditionUpdate(
      * values wrapped to non-negative ones the same way and walked past the check below. So an out-of-range
      * request did not fail — it answered a different question, and the server saw a well-formed Int32 with no
      * way to know it was not what the caller sent. Responding to a dialog is a side-effecting industrial
-     * action; the only safe reading of a value the specification cannot represent is to refuse it.
+     * action; the only safe reading of a value the specification cannot represent is to refuse it. The
+     * converter compares the value as written against the Int32 range, which is that check.
      */
     private static @Nullable Integer readSelectedResponse(
             final @NotNull JsonNode payload, final @NotNull Method method) {
@@ -346,17 +371,17 @@ public record ConditionUpdate(
             return null;
         }
         final JsonNode selectedResponse = payload.get(FIELD_SELECTED_RESPONSE);
-        if (selectedResponse == null || !selectedResponse.isIntegralNumber()) {
+        if (selectedResponse == null || selectedResponse.isNull()) {
             throw new IllegalArgumentException("'" + method.name() + "' needs an integer '"
                     + FIELD_SELECTED_RESPONSE + "', the index of the chosen entry in the dialog's "
                     + "ResponseOptionSet");
         }
-        if (!selectedResponse.canConvertToInt()) {
-            throw new IllegalArgumentException("'" + FIELD_SELECTED_RESPONSE + "' is an OPC UA Int32 (OPC "
-                    + "10000-9 §5.6.3), so it must be between 0 and " + Integer.MAX_VALUE
-                    + ". Received: " + selectedResponse.asText());
-        }
-        final int chosen = selectedResponse.intValue();
+        final int chosen = (Integer) convert(
+                selectedResponse,
+                NodeIds.Int32,
+                "'" + FIELD_SELECTED_RESPONSE + "' is an OPC UA Int32 (OPC 10000-9 §5.6.3) and an index into the "
+                        + "dialog's ResponseOptionSet, so it must be a whole number between 0 and "
+                        + Integer.MAX_VALUE);
         if (chosen < 0) {
             throw new IllegalArgumentException("'" + FIELD_SELECTED_RESPONSE
                     + "' is an index into the dialog's ResponseOptionSet, so it cannot be negative");
@@ -365,21 +390,27 @@ public record ConditionUpdate(
     }
 
     /**
-     * Turns the textual {@code eventId} back into the bytes the server issued.
+     * Converts one field as a value of the given builtin type, by the converter every southbound route uses.
      * <p>
-     * Base64, always: an {@code EventId} is an opaque {@code ByteString} the northbound converter renders as
-     * base64, and the schema declares it {@code BINARY} — {@code contentEncoding: base64} — so a client
-     * echoes back exactly what it received. There is deliberately no fallback for a value that fails to
-     * decode. Base64 cannot be told apart from arbitrary text by inspection, so guessing would silently turn
-     * a mistyped id into a different one; rejecting says plainly what went wrong.
+     * All four of a condition update's values are builtins, so no server is needed. What the converter
+     * cannot know -- which method requires the field, what an absent one means -- is decided by the caller
+     * before and after.
+     *
+     * @param expectation what the field must be, as the start of the refusal; the converter's reason follows.
      */
-    private static @NotNull ByteString decodeEventId(final @NotNull String eventId) {
+    private static @NotNull Object convert(
+            final @NotNull JsonNode node, final @NotNull NodeId dataType, final @NotNull String expectation) {
         try {
-            return new ByteString(Base64.getDecoder().decode(eventId));
-        } catch (final IllegalArgumentException notBase64) {
-            throw new IllegalArgumentException("'" + FIELD_EVENT_ID
-                    + "' must be the base64 value from the northbound message, echoed back unchanged: "
-                    + notBase64.getMessage());
+            final Object value =
+                    CONVERTER.toVariant(node, dataType, ValueRanks.Scalar).getValue();
+            if (value == null) {
+                throw new IllegalArgumentException(expectation);
+            }
+            return value;
+        } catch (final ConversionException e) {
+            throw new IllegalArgumentException(expectation + ": " + e.reason());
         }
     }
+
+    private static final @NotNull JsonToOpcUaValueConverter CONVERTER = JsonToOpcUaValueConverter.builtinOnly();
 }
