@@ -113,7 +113,9 @@ class StructureArgumentIT {
         assertThat(range.at("/properties/High/type").asText()).isEqualTo("number");
         assertThat(range.get("required")).extracting(JsonNode::asText).containsExactlyInAnyOrder("Low", "High");
 
-        final JsonNode ranges = schema.at("/properties/ranges");
+        // An array argument is nullable (EDG-1138), so the array is the first branch of `anyOf [array, null]`.
+        final JsonNode ranges = schema.at("/properties/ranges/anyOf/0");
+        assertThat(schema.at("/properties/ranges/anyOf/1/type").asText()).isEqualTo("null");
         assertThat(ranges.get("type").asText()).isEqualTo("array");
         assertThat(ranges.at("/items/type").asText()).isEqualTo("object");
         assertThat(ranges.at("/items/properties/Low/type").asText()).isEqualTo("number");

@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
@@ -273,14 +274,119 @@ class JsonToOpcUaValueConverterTest {
 
     @Test
     void anAbsentOptionalField_isLeftOutRatherThanSentAsNull() throws Exception {
-        // `tags` is absent and `note` is null: both are left out of the encoding mask, which is what the device
-        // reads as "not supplied". Putting either in as null would set its bit and send a null value instead.
-        final Variant variant = CONVERTER.toVariant(
-                json("{\"id\": 1, \"mode\": 0, \"steps\": [], \"note\": null}"), RECIPE_TYPE, ValueRanks.Scalar);
+        // `note` and `tags` are absent: both are left out of the encoding mask, which is what the device reads as
+        // "not supplied".
+        final Variant variant =
+                CONVERTER.toVariant(json("{\"id\": 1, \"mode\": 0, \"steps\": []}"), RECIPE_TYPE, ValueRanks.Scalar);
 
         final DynamicStructType recipe = decode((ExtensionObject) variant.getValue());
         assertThat(recipe.getMembers()).containsOnlyKeys("id", "mode", "steps");
     }
+
+    // endregion
+
+    // region Null (EDG-1138)
+
+    @Test
+    void aNullOptionalField_isPresentWithItsNullValue_notLeftOut() throws Exception {
+        // A JSON null is a value, never an absence: `note` is a LocalizedText, which has a null value, so the
+        // field is sent with it.
+        final Variant variant = CONVERTER.toVariant(
+                json("{\"id\": 1, \"mode\": 0, \"steps\": [], \"note\": null}"), RECIPE_TYPE, ValueRanks.Scalar);
+
+        final DynamicStructType recipe = decode((ExtensionObject) variant.getValue());
+        assertThat(recipe.getMembers()).containsKey("note");
+        assertThat(recipe.getMembers().get("note")).isEqualTo(LocalizedText.NULL_VALUE);
+    }
+
+    @Test
+    void aNullRequiredStringField_carriesTheNullString() throws Exception {
+        // A required field is present, and present may mean null where the type has a null value. A structure
+        // read from a device with a null string can therefore be sent back unchanged.
+        final Variant variant = CONVERTER.toVariant(
+                json("{\"name\": null, \"temperature\": 80.5, \"durationMs\": 1}"), STEP_TYPE, ValueRanks.Scalar);
+
+        final DynamicStructType step = decode((ExtensionObject) variant.getValue());
+        assertThat(step.getMembers()).containsKey("name");
+        assertThat(step.getMembers().get("name")).isNull();
+    }
+
+    @Test
+    void aNullRequiredArrayField_carriesTheNullArray() throws Exception {
+        final Variant variant =
+                CONVERTER.toVariant(json("{\"id\": 1, \"mode\": 0, \"steps\": null}"), RECIPE_TYPE, ValueRanks.Scalar);
+
+        final DynamicStructType recipe = decode((ExtensionObject) variant.getValue());
+        assertThat(recipe.getMembers()).containsKey("steps");
+        assertThat(recipe.getMembers().get("steps")).isNull();
+    }
+
+    @Test
+    void aNullFieldOfATypeWithoutANullValue_isRefusedNamingIt() {
+        assertThatThrownBy(() -> CONVERTER.toVariant(
+                        json("{\"name\": \"heat\", \"temperature\": null, \"durationMs\": 1}"),
+                        STEP_TYPE,
+                        ValueRanks.Scalar))
+                .isInstanceOf(JsonToOpcUaValueConverter.ConversionException.class)
+                .hasMessageContaining("temperature")
+                .hasMessageContaining("no null value");
+    }
+
+    @Test
+    void aTopLevelNull_isTheTypesNullValue() {
+        assertThat(CONVERTER.toVariant(NullNode.getInstance(), NodeIds.String, ValueRanks.Scalar))
+                .isEqualTo(Variant.NULL_VALUE);
+        assertThat(CONVERTER
+                        .toVariant(NullNode.getInstance(), NodeIds.ByteString, ValueRanks.Scalar)
+                        .getValue())
+                .isEqualTo(ByteString.NULL_VALUE);
+        assertThat(CONVERTER
+                        .toVariant(NullNode.getInstance(), NodeIds.LocalizedText, ValueRanks.Scalar)
+                        .getValue())
+                .isEqualTo(LocalizedText.NULL_VALUE);
+        assertThat(CONVERTER
+                        .toVariant(NullNode.getInstance(), NodeIds.NodeId, ValueRanks.Scalar)
+                        .getValue())
+                .isEqualTo(NodeId.NULL_VALUE);
+    }
+
+    @Test
+    void aTopLevelNull_isTheNullArray_forADeclaredArray() {
+        // Every array has the null array as a value, whatever its element type.
+        assertThat(CONVERTER.toVariant(NullNode.getInstance(), NodeIds.Int32, ValueRanks.OneDimension))
+                .isEqualTo(Variant.NULL_VALUE);
+    }
+
+    @Test
+    void aTopLevelNull_isRefused_whereTheTypeHasNoNullValue() {
+        assertThatThrownBy(() -> CONVERTER.toVariant(NullNode.getInstance(), NodeIds.Int32, ValueRanks.Scalar))
+                .isInstanceOf(JsonToOpcUaValueConverter.ConversionException.class)
+                .hasMessageContaining("no null value");
+        // A value write passes the open rank Any for every variable. That must not turn a null write to an Int32
+        // variable into a null array.
+        assertThatThrownBy(() -> CONVERTER.toVariant(NullNode.getInstance(), NodeIds.Int32, ValueRanks.Any))
+                .isInstanceOf(JsonToOpcUaValueConverter.ConversionException.class);
+        assertThatThrownBy(() -> CONVERTER.toVariant(NullNode.getInstance(), NodeIds.Boolean, ValueRanks.Scalar))
+                .isInstanceOf(JsonToOpcUaValueConverter.ConversionException.class);
+    }
+
+    @Test
+    void aNullArrayElement_isTheElementTypesNullValue() {
+        final Variant variant = CONVERTER.toVariant(json("[\"a\", null]"), NodeIds.String, ValueRanks.OneDimension);
+
+        assertThat((String[]) variant.getValue()).containsExactly("a", null);
+    }
+
+    @Test
+    void aNullArrayElement_isRefused_whereTheElementTypeHasNoNullValue() {
+        assertThatThrownBy(() -> CONVERTER.toVariant(json("[1, null]"), NodeIds.Int32, ValueRanks.OneDimension))
+                .isInstanceOf(JsonToOpcUaValueConverter.ConversionException.class)
+                .hasMessageContaining("no null value");
+    }
+
+    // endregion
+
+    // region Structures, continued
 
     @Test
     void optionalFieldsLeftOutAtTheEnd_arriveAsSent() {

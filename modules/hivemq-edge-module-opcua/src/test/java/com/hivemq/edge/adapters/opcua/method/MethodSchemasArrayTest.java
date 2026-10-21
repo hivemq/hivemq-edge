@@ -60,6 +60,17 @@ class MethodSchemasArrayTest {
                 .get("properties");
     }
 
+    /// The array schema of an array argument. Every array is nullable -- the null array is a value of every array
+    /// (EDG-1138) -- and a nullable array renders as `anyOf [array, {"type": "null"}]`, so the array is the first
+    /// branch.
+    private static @NotNull JsonNode theArray(final @NotNull JsonNode prop) {
+        assertThat(prop.get("anyOf"))
+                .withFailMessage("not a nullable array: %s", prop)
+                .isNotNull();
+        assertThat(prop.get("anyOf").get(1).get("type").textValue()).isEqualTo("null");
+        return prop.get("anyOf").get(0);
+    }
+
     @Test
     void scalarRank_staysAScalar() {
         final JsonNode prop = requestProperties(method("Square", argument("input1", NodeIds.Int32, -1, null)))
@@ -75,8 +86,9 @@ class MethodSchemasArrayTest {
                         method("AddArray", argument("Array input1", NodeIds.Int32, 1, new UInteger[] {uint(5)})))
                 .get("Array input1");
 
-        assertThat(prop.get("type").textValue()).isEqualTo("array");
-        assertThat(prop.get("items").get("type").textValue()).isEqualTo("integer");
+        final JsonNode array = theArray(prop);
+        assertThat(array.get("type").textValue()).isEqualTo("array");
+        assertThat(array.get("items").get("type").textValue()).isEqualTo("integer");
     }
 
     @Test
@@ -95,9 +107,9 @@ class MethodSchemasArrayTest {
         // Saying nothing needs maxItems, which the shared SDK's array builder cannot emit, and the SDK is
         // unchanged this release. So the length rests with the device -- where it already rested, since the
         // keywords never constrained anything.
-        final JsonNode declared = requestProperties(
+        final JsonNode declared = theArray(requestProperties(
                         method("AddArray", argument("Array input1", NodeIds.Int32, 1, new UInteger[] {uint(5)})))
-                .get("Array input1");
+                .get("Array input1"));
 
         assertThat(declared.get("type").textValue()).isEqualTo("array");
         assertThat(declared.has("minContains"))
@@ -106,9 +118,9 @@ class MethodSchemasArrayTest {
         assertThat(declared.has("maxContains")).isFalse();
 
         // Zero already meant "any length" and emitted nothing; it still does.
-        final JsonNode unknown = requestProperties(
-                        method("Take", argument("values", NodeIds.Int32, 1, new UInteger[] {uint(0)})))
-                .get("values");
+        final JsonNode unknown = theArray(
+                requestProperties(method("Take", argument("values", NodeIds.Int32, 1, new UInteger[] {uint(0)})))
+                        .get("values"));
 
         assertThat(unknown.get("type").textValue()).isEqualTo("array");
         assertThat(unknown.has("minContains")).isFalse();
@@ -127,17 +139,18 @@ class MethodSchemasArrayTest {
 
         assertThat(oneOrder).isEqualTo(otherOrder);
         // And both still describe an array of the element type, rather than giving up on the argument.
-        assertThat(oneOrder.get("v").get("type").textValue()).isEqualTo("array");
+        assertThat(theArray(oneOrder.get("v")).get("type").textValue()).isEqualTo("array");
     }
 
     @Test
     void absentDimensions_stillGiveAnArrayOfTheRightDepth() {
         // The rank decides the nesting; ArrayDimensions only supplies lengths. A server may omit them.
-        final JsonNode prop = requestProperties(method("Take", argument("values", NodeIds.String, 1, null)))
-                .get("values");
+        final JsonNode prop = theArray(requestProperties(method("Take", argument("values", NodeIds.String, 1, null)))
+                .get("values"));
 
         assertThat(prop.get("type").textValue()).isEqualTo("array");
-        assertThat(prop.get("items").get("type").textValue()).isEqualTo("string");
+        // A String has a null value of its own, so the elements are nullable too.
+        assertThat(prop.get("items").get("type").toString()).isEqualTo("[\"string\",\"null\"]");
     }
 
     @Test
@@ -145,10 +158,12 @@ class MethodSchemasArrayTest {
         final JsonNode prop = requestProperties(
                         method("Grid", argument("cells", NodeIds.Double, 2, new UInteger[] {uint(2), uint(3)})))
                 .get("cells");
+        final JsonNode array = theArray(prop);
 
-        assertThat(prop.get("type").textValue()).isEqualTo("array");
-        assertThat(prop.get("items").get("type").textValue()).isEqualTo("array");
-        assertThat(prop.get("items").get("items").get("type").textValue()).isEqualTo("number");
+        assertThat(array.get("type").textValue()).isEqualTo("array");
+        // Only the outermost array is nullable: a row is not a value of its own.
+        assertThat(array.get("items").get("type").textValue()).isEqualTo("array");
+        assertThat(array.get("items").get("items").get("type").textValue()).isEqualTo("number");
     }
 
     @Test
@@ -197,7 +212,7 @@ class MethodSchemasArrayTest {
                         method("Load", argument("recipes", new NodeId(3, 4001), 1, new UInteger[] {uint(0)})))
                 .get("recipes");
 
-        assertThat(prop.get("type").textValue()).isEqualTo("array");
+        assertThat(theArray(prop).get("type").textValue()).isEqualTo("array");
     }
 
     @Test
@@ -240,7 +255,8 @@ class MethodSchemasArrayTest {
                 .get("points");
 
         assertThat(prop.has("readOnly")).isFalse();
-        assertThat(prop.get("items").has("readOnly")).isFalse();
+        assertThat(theArray(prop).has("readOnly")).isFalse();
+        assertThat(theArray(prop).get("items").has("readOnly")).isFalse();
     }
 
     @Test

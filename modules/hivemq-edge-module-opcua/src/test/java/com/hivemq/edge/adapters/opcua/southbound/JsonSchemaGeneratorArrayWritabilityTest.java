@@ -59,13 +59,24 @@ class JsonSchemaGeneratorArrayWritabilityTest {
         return SchemaJsonRepresentation.INSTANCE.toJsonSchemaDocument(dps.valueSchema());
     }
 
+    /// The array branch of a value's schema. The outermost array is nullable (EDG-1138) and renders as
+    /// `anyOf [array, {"type": "null"}]`: its access flags sit on that outer node, its `type` and `items` on the
+    /// first branch. Inner arrays are not nullable and carry both on one node.
+    private static @NotNull JsonNode theArray(final @NotNull JsonNode schema) {
+        assertThat(schema.get("anyOf"))
+                .withFailMessage("not a nullable array: %s", schema)
+                .isNotNull();
+        assertThat(schema.get("anyOf").get(1).get("type").asText()).isEqualTo("null");
+        return schema.get("anyOf").get(0);
+    }
+
     @Test
     void test_writableArray_hasWritableItems() {
         final JsonNode schema = render(arrayField(ONE_DIMENSION, true, true));
 
-        assertThat(schema.get("type").asText()).isEqualTo("array");
+        assertThat(theArray(schema).get("type").asText()).isEqualTo("array");
         assertThat(schema.has("readOnly")).as("the array itself is writable").isFalse();
-        assertThat(schema.get("items").has("readOnly"))
+        assertThat(theArray(schema).get("items").has("readOnly"))
                 .as("...and so are its elements — otherwise only [] could ever be written")
                 .isFalse();
     }
@@ -75,7 +86,7 @@ class JsonSchemaGeneratorArrayWritabilityTest {
         final JsonNode schema = render(arrayField(ONE_DIMENSION, true, false));
 
         assertThat(schema.get("readOnly").asBoolean()).isTrue();
-        assertThat(schema.get("items").get("readOnly").asBoolean())
+        assertThat(theArray(schema).get("items").get("readOnly").asBoolean())
                 .as("a read-only node's elements stay read-only — the fix must not make everything writable")
                 .isTrue();
     }
@@ -85,22 +96,25 @@ class JsonSchemaGeneratorArrayWritabilityTest {
         final JsonNode schema = render(arrayField(ONE_DIMENSION, false, true));
 
         assertThat(schema.get("writeOnly").asBoolean()).isTrue();
-        assertThat(schema.get("items").get("writeOnly").asBoolean()).isTrue();
+        assertThat(theArray(schema).get("items").get("writeOnly").asBoolean()).isTrue();
     }
 
     @Test
     void test_multiDimensionalWritableArray_isWritableAllTheWayDown() {
         final JsonNode schema = render(arrayField(THREE_DIMENSIONS, true, true));
 
-        JsonNode level = schema;
+        // `flags` carries the access flags of a level, `level` its type and items; they differ only at the top.
+        JsonNode flags = schema;
+        JsonNode level = theArray(schema);
         for (int depth = 0; depth < 3; depth++) {
             assertThat(level.get("type").asText())
                     .as("depth %s is an array", depth)
                     .isEqualTo("array");
-            assertThat(level.has("readOnly"))
+            assertThat(flags.has("readOnly"))
                     .as("depth %s must be writable", depth)
                     .isFalse();
             level = level.get("items");
+            flags = level;
         }
         assertThat(level.get("type").asText()).isEqualTo("integer");
         assertThat(level.has("readOnly"))
@@ -112,12 +126,14 @@ class JsonSchemaGeneratorArrayWritabilityTest {
     void test_multiDimensionalReadOnlyArray_isReadOnlyAllTheWayDown() {
         final JsonNode schema = render(arrayField(THREE_DIMENSIONS, true, false));
 
-        JsonNode level = schema;
+        JsonNode flags = schema;
+        JsonNode level = theArray(schema);
         for (int depth = 0; depth < 3; depth++) {
-            assertThat(level.get("readOnly").asBoolean())
+            assertThat(flags.get("readOnly").asBoolean())
                     .as("depth %s must stay read-only", depth)
                     .isTrue();
             level = level.get("items");
+            flags = level;
         }
         assertThat(level.get("readOnly").asBoolean()).isTrue();
     }
@@ -127,7 +143,7 @@ class JsonSchemaGeneratorArrayWritabilityTest {
     @CsvSource({"true,true", "true,false", "false,true", "false,false"})
     void test_itemsAlwaysMatchTheNodesOwnAccessFlags(final boolean readable, final boolean writable) {
         final JsonNode schema = render(arrayField(ONE_DIMENSION, readable, writable));
-        final JsonNode items = schema.get("items");
+        final JsonNode items = theArray(schema).get("items");
 
         assertThat(items.has("readOnly"))
                 .as("items readOnly must mirror the node")

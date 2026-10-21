@@ -355,7 +355,18 @@ public class JsonSchemaGenerator {
                 });
     }
 
+    /// Every value is nullable exactly where its OPC UA type has a null value (EDG-1138), so a `null` passes the
+    /// schema where the converter sends that null value, and fails it where the type has none. The rule is the
+    /// converter's: [JsonToOpcUaValueConverter#hasNullValue].
+    ///
+    /// **An array is nullable**, whatever its element type: the null array is a value of every array, and the
+    /// converter sends it for a `null`. Only the outermost array is -- the rows of a multi-dimensional array are
+    /// not values of their own, and the converter refuses a `null` row. Array elements follow their element type
+    /// like any scalar. The array's own flag is set by [#startNullableArray].
     private static void applyScalarType(final @NotNull SchemaBuilder schema, final @NotNull OpcUaDataType opcUaType) {
+        if (JsonToOpcUaValueConverter.hasNullValue(opcUaType)) {
+            schema.nullable();
+        }
         if (opcUaType == OpcUaDataType.QualifiedName) {
             schema.startObject()
                     .property("namespaceIndex")
@@ -421,11 +432,25 @@ public class JsonSchemaGenerator {
             final boolean writable) {
 
         final OpcUaDataType elementType = opcUaType != null && isScalarMappable(opcUaType) ? opcUaType : null;
-        applyArrayType(prop.startArray(), elementType, null, dimensions, 0, true, writable);
+        applyArrayType(startNullableArray(prop), elementType, null, dimensions, 0, true, writable);
+    }
+
+    /// Starts the outermost array of a value, declared nullable: see [#applyScalarType]. The SDK puts an array's
+    /// own flags on the builder that starts it; the item builder's apply to the elements.
+    private static <P> @NotNull ItemSchemaBuilder<PropertySchemaBuilder<P>> startNullableArray(
+            final @NotNull PropertySchemaBuilder<P> prop) {
+        return prop.nullable().startArray();
+    }
+
+    private static @NotNull ItemSchemaBuilder<SchemaBuilder> startNullableArray(final @NotNull SchemaBuilder schema) {
+        return schema.nullable().startArray();
     }
 
     private static void applyScalarType(
             final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
+        if (JsonToOpcUaValueConverter.hasNullValue(opcUaType)) {
+            prop.nullable();
+        }
         if (opcUaType == OpcUaDataType.QualifiedName) {
             prop.startObject()
                     .property("namespaceIndex")
@@ -443,6 +468,9 @@ public class JsonSchemaGenerator {
 
     private static void applyScalarType(
             final @NotNull ItemSchemaBuilder<?> items, final @NotNull OpcUaDataType opcUaType) {
+        if (JsonToOpcUaValueConverter.hasNullValue(opcUaType)) {
+            items.nullable();
+        }
         if (opcUaType == OpcUaDataType.QualifiedName) {
             items.startObject()
                     .property("namespaceIndex")
@@ -479,7 +507,7 @@ public class JsonSchemaGenerator {
         schema.readable(info.readable()).writable(info.writable());
         if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
             applyArrayType(
-                    schema.startArray(),
+                    startNullableArray(schema),
                     info.dataType(),
                     info.nestedFields().isEmpty() ? null : info,
                     info.arrayDimensions(),
@@ -507,7 +535,7 @@ public class JsonSchemaGenerator {
                 info.dataType() != null && acceptsTwoShapes(info.dataType()) ? null : info.dataType();
         if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
             applyArrayType(
-                    prop.startArray().readable(info.readable()).writable(info.writable()),
+                    startNullableArray(prop).readable(info.readable()).writable(info.writable()),
                     stated,
                     info.nestedFields().isEmpty() ? null : info,
                     info.arrayDimensions(),
@@ -545,7 +573,7 @@ public class JsonSchemaGenerator {
             final boolean writable) {
         final FieldInformation access = withAccess(structure, true, writable);
         if (dimensions.length > 0) {
-            applyArrayType(prop.startArray(), null, access, dimensions, 0, true, writable);
+            applyArrayType(startNullableArray(prop), null, access, dimensions, 0, true, writable);
         } else {
             applyObjectProperties(prop.startObject(), access);
         }
