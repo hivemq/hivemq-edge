@@ -20,11 +20,13 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,11 +66,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -92,6 +96,7 @@ import org.slf4j.LoggerFactory;
 class AbstractPlc4xAdapterReconnectTest {
 
     private static final @NotNull Duration TIMEOUT = Duration.ofSeconds(5);
+    private static final @NotNull String STOP_RETURNED = "stop() returned";
 
     @Test
     void test_poll_whilePlcRefusesFromStart_failsWithTheAttemptsOutcome() {
@@ -426,6 +431,78 @@ class AbstractPlc4xAdapterReconnectTest {
         verify(adapter.state, never()).setConnectionStatus(CONNECTING);
         verify(adapter.state, never()).setConnectionStatus(CONNECTED);
         assertThat(adapter.connectionsCreated.get()).isEqualTo(1);
+    }
+
+    @Test
+    void test_start_afterAStopWhileAnAttemptWasConnecting_startsItsOwnAttempt() {
+        final TestableAdapter adapter = new TestableAdapter(Behaviour.HANG);
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(() -> adapter.connectionsCreated.get() == 1);
+
+        // A REST restart: stop, then start at once, while the first attempt is still connecting.
+        adapter.stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+        adapter.start(startInput(), mock(ProtocolAdapterStartOutput.class));
+
+        assertThat(adapter.connectionsCreated.get())
+                .as("joining the stopped attempt would publish no status, and the wrapper would report CONNECTED")
+                .isEqualTo(2);
+        verify(adapter.state, times(2)).setConnectionStatus(CONNECTING);
+        adapter.hangLatch.countDown();
+        adapter.awaitAttemptsFinished(2);
+    }
+
+    @Test
+    void test_stop_duringTheConnectedStatusOfAnAttempt_isNotOverwrittenByIt() {
+        final List<Object> events = statusesAroundAStopDuring(Behaviour.SUCCEED, CONNECTED);
+
+        assertThat(events).containsSubsequence(CONNECTED, STOP_RETURNED);
+        assertThat(events.indexOf(CONNECTED)).isLessThan(events.indexOf(STOP_RETURNED));
+    }
+
+    @Test
+    void test_stop_duringTheErrorStatusOfAFailedAttempt_isNotOverwrittenByIt() {
+        final List<Object> events = statusesAroundAStopDuring(Behaviour.REFUSE, ERROR);
+
+        assertThat(events.indexOf(ERROR))
+                .as("a failed attempt's status must not land after stop() returned")
+                .isLessThan(events.indexOf(STOP_RETURNED));
+    }
+
+    /**
+     * Starts an adapter whose status writes are recorded; the first write of {@code trigger} runs stop() on another
+     * thread and gives it 300 ms to return before the write completes. With the write under the adapter lock, stop()
+     * cannot return in between.
+     */
+    private static @NotNull List<Object> statusesAroundAStopDuring(
+            final @NotNull Behaviour behaviour, final @NotNull ProtocolAdapterState.ConnectionStatus trigger) {
+        final ProtocolAdapterState state = mock(ProtocolAdapterState.class);
+        final List<Object> events = new CopyOnWriteArrayList<>();
+        final AtomicReference<TestableAdapter> adapter = new AtomicReference<>();
+        final CompletableFuture<Void> stopReturned = new CompletableFuture<>();
+        doAnswer(invocation -> {
+                    final ProtocolAdapterState.ConnectionStatus status = invocation.getArgument(0);
+                    if (status == trigger && !stopReturned.isDone() && !events.contains(trigger)) {
+                        final var unused = CompletableFuture.runAsync(() -> {
+                            adapter.get()
+                                    .stop(mock(ProtocolAdapterStopInput.class), mock(ProtocolAdapterStopOutput.class));
+                            events.add(STOP_RETURNED);
+                            stopReturned.complete(null);
+                        });
+                        try {
+                            stopReturned.get(300, TimeUnit.MILLISECONDS);
+                        } catch (final TimeoutException expected) {
+                            // stop() is waiting for the adapter lock
+                        }
+                    }
+                    events.add(status);
+                    return true;
+                })
+                .when(state)
+                .setConnectionStatus(any());
+        adapter.set(new TestableAdapter(behaviour, List.of(), state));
+        adapter.get().start(startInput(), mock(ProtocolAdapterStartOutput.class));
+        await().atMost(TIMEOUT).until(stopReturned::isDone);
+        return events;
     }
 
     @Test
