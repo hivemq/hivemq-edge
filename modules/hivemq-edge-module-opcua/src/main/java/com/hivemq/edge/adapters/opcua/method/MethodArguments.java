@@ -26,6 +26,7 @@ import static com.hivemq.edge.adapters.opcua.Constants.STATUS_CODE_CODE;
 import static com.hivemq.edge.adapters.opcua.Constants.STATUS_CODE_SYMBOL;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -34,11 +35,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -160,13 +161,23 @@ public final class MethodArguments {
         }
     }
 
+    /// {@link #forCall(MethodSignature, JsonNode, NamespaceTable)} against a table that holds only namespace 0,
+    /// the OPC UA namespace every server publishes. For tests whose arguments carry no namespace URI.
+    static @NotNull Variant[] forCall(final @NotNull MethodSignature signature, final @NotNull JsonNode value) {
+        return forCall(signature, value, new NamespaceTable());
+    }
+
     /// Builds the input arguments for a call, in wire order.
     ///
-    /// @param signature the method as the device describes it.
-    /// @param value     the request's `value` object, keyed by argument name.
+    /// @param signature      the method as the device describes it.
+    /// @param value          the request's `value` object, keyed by argument name.
+    /// @param namespaceTable the session's table, for a NodeId argument that names its namespace by URI.
     /// @throws InvalidArgumentException when the request names an argument the method does not declare, omits one
     ///         it does, or carries a value the argument's type cannot hold.
-    public static @NotNull Variant[] forCall(final @NotNull MethodSignature signature, final @NotNull JsonNode value) {
+    public static @NotNull Variant[] forCall(
+            final @NotNull MethodSignature signature,
+            final @NotNull JsonNode value,
+            final @NotNull NamespaceTable namespaceTable) {
 
         rejectUnknownNames(signature, value);
 
@@ -197,7 +208,8 @@ public final class MethodArguments {
                                 + String.join(", ", signature.inputArgumentNames()),
                         StatusCodes.Bad_ArgumentsMissing);
             }
-            arguments[i] = convert(signature.name(), name, argument, signature.builtinTypeOf(argument), supplied);
+            arguments[i] = convert(
+                    signature.name(), name, argument, signature.builtinTypeOf(argument), supplied, namespaceTable);
         }
         return arguments;
     }
@@ -244,7 +256,8 @@ public final class MethodArguments {
             final @NotNull String argumentName,
             final @NotNull Argument argument,
             final @Nullable OpcUaDataType type,
-            final @NotNull JsonNode supplied) {
+            final @NotNull JsonNode supplied,
+            final @NotNull NamespaceTable namespaceTable) {
 
         if (type == null) {
             throw new InvalidArgumentException("argument '"
@@ -258,14 +271,14 @@ public final class MethodArguments {
 
         try {
             if (dimensions == 0) {
-                return Variant.of(toJavaValue(type, supplied));
+                return Variant.of(toJavaValue(type, supplied, namespaceTable));
             }
             // One slot per declared dimension, each `UNKNOWN_LENGTH` until the first list at that level fixes
             // it. A real length may legitimately be 0 -- `[[], []]` is a rectangular 2x0 value -- so the
             // sentinel has to be a value no array can have rather than zero.
             final int[] lengthPerLevel = new int[dimensions];
             Arrays.fill(lengthPerLevel, UNKNOWN_LENGTH);
-            final Object array = toJavaArray(type, supplied, dimensions, lengthPerLevel, -1);
+            final Object array = toJavaArray(type, supplied, dimensions, lengthPerLevel, -1, namespaceTable);
             // A one-dimensional array goes into a Variant as itself; anything deeper has to be wrapped in a
             // Matrix, which is Milo's representation of a multi-dimensional value and what `Variant.of` demands
             // ("Multi-dimensional arrays must be wrapped in Matrix"). The wrapper carries the dimension lengths,
@@ -398,7 +411,8 @@ public final class MethodArguments {
             final @NotNull JsonNode node,
             final int remainingDimensions,
             final int @NotNull [] lengthPerLevel,
-            final int rowIndex) {
+            final int rowIndex,
+            final @NotNull NamespaceTable namespaceTable) {
 
         if (!node.isArray()) {
             throw new IllegalArgumentException(
@@ -423,7 +437,7 @@ public final class MethodArguments {
         if (remainingDimensions == 1) {
             final Object[] elements = (Object[]) Array.newInstance(type.getBackingClass(), node.size());
             for (int i = 0; i < node.size(); i++) {
-                elements[i] = toJavaValue(type, node.get(i));
+                elements[i] = toJavaValue(type, node.get(i), namespaceTable);
             }
             return elements;
         }
@@ -435,12 +449,15 @@ public final class MethodArguments {
                 .getClass();
         final Object[] rows = (Object[]) Array.newInstance(componentType, node.size());
         for (int i = 0; i < node.size(); i++) {
-            rows[i] = toJavaArray(type, node.get(i), remainingDimensions - 1, lengthPerLevel, i);
+            rows[i] = toJavaArray(type, node.get(i), remainingDimensions - 1, lengthPerLevel, i, namespaceTable);
         }
         return rows;
     }
 
-    private static @NotNull Object toJavaValue(final @NotNull OpcUaDataType type, final @NotNull JsonNode node) {
+    private static @NotNull Object toJavaValue(
+            final @NotNull OpcUaDataType type,
+            final @NotNull JsonNode node,
+            final @NotNull NamespaceTable namespaceTable) {
         return switch (type) {
             case Boolean -> requireBoolean(node);
             case SByte -> (byte) requireIntegral(node, Byte.MIN_VALUE, Byte.MAX_VALUE);
@@ -460,8 +477,8 @@ public final class MethodArguments {
             // simple form, so a value read from a device can be sent straight back and a caller writing one by
             // hand does not have to assemble an object. Their schema says `any` -- see MethodSchemas.
             case LocalizedText -> requireLocalizedText(node);
-            case NodeId -> requireNodeId(node);
-            case ExpandedNodeId -> ExpandedNodeId.parse(requireCanonicalGuidIn(requireText(node)));
+            case NodeId -> requireNodeId(node, namespaceTable);
+            case ExpandedNodeId -> NodeIdText.expanded(requireText(node));
             case QualifiedName -> requireQualifiedName(node);
             case StatusCode -> requireStatusCode(node);
             case XmlElement -> new XmlElement(requireText(node));
@@ -619,11 +636,12 @@ public final class MethodArguments {
         return value.textValue();
     }
 
-    /// A node id, from either the text form every tag configuration uses or the object the read path publishes.
+    /// A node id, from either the text form or the object the read path publishes.
     ///
-    /// The text form is `ns=2;s=Boiler`, which `NodeId.parse` already reads for a tag's own node and for a
-    /// method named by id. The object form carries `namespaceIndex`, `id` and `idType`, and is what a caller
-    /// gets back from a read -- so a value can make the round trip without being rewritten by hand.
+    /// The text form is `nsu=<namespace uri>;s=Boiler` or `ns=2;s=Boiler`, resolved by {@link NodeIdText} against
+    /// the session's table like every node id in the adapter. The object form carries `namespaceIndex`, `id` and
+    /// `idType`, and is what a caller gets back from a read -- so a value can make the round trip without being
+    /// rewritten by hand.
     ///
     /// ## Why `idType` decides, and is not inferred
     ///
@@ -642,9 +660,10 @@ public final class MethodArguments {
     /// different Guid** and accepts the wrapped, URN, struct and OID spellings a vendor tool may show
     /// alongside the hyphenated form `populateNodeId` emits. The refusal is what matters here; the extra
     /// spellings only save a transcription step.
-    private static @NotNull NodeId requireNodeId(final @NotNull JsonNode node) {
+    private static @NotNull NodeId requireNodeId(
+            final @NotNull JsonNode node, final @NotNull NamespaceTable namespaceTable) {
         if (node.isTextual()) {
-            return NodeId.parse(requireCanonicalGuidIn(node.textValue()));
+            return NodeIdText.resolve(node.textValue(), namespaceTable);
         }
         if (!node.isObject()) {
             throw new IllegalArgumentException("expected a node id as text or an object, got " + node.getNodeType());
@@ -700,21 +719,6 @@ public final class MethodArguments {
 
     private static @NotNull UUID requireUuidIdentifier(final @NotNull JsonNode id) {
         return Guids.parse(requireText(id));
-    }
-
-    /// The text form of a node id, with any Guid identifier in it checked before Milo parses it.
-    ///
-    /// `NodeId.parse` and `ExpandedNodeId.parse` read a `g=` identifier with `UUID.fromString`, which pads a
-    /// short group into a different valid Guid -- see {@link Guids}. The identifier is everything after the
-    /// first `;`, since only that one separates the namespace from the identifier.
-    private static @NotNull String requireCanonicalGuidIn(final @NotNull String text) {
-        final int separator = text.indexOf(';');
-        final int marker = text.indexOf("g=", separator + 1);
-        if (separator < 0 || marker != separator + 1) {
-            return text;
-        }
-        Guids.requireCanonical(text.substring(marker + 2));
-        return text;
     }
 
     /// A qualified name -- a namespace index and a name -- from either the object or a bare string.
