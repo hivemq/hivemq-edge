@@ -30,6 +30,7 @@ import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -76,7 +77,7 @@ public class JsonSchemaGenerator {
      * Collects OPC UA type information for the given tag asynchronously.
      */
     public @NotNull CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull OpcuaTag tag) {
-        final var parsed = NodeId.parse(tag.getDefinition().getNode());
+        final var parsed = NodeIdText.resolve(tag.getDefinition().getNode(), client.getNamespaceTable());
         return collectTypeInfo(parsed);
     }
 

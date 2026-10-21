@@ -15,10 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua.method;
 
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,16 +44,14 @@ import org.jetbrains.annotations.Nullable;
 /// re-verify cached indexes when starting a session. So an index in a request that is stored, retained or
 /// replayed can come to mean a different method.
 ///
-/// That hazard is real and is **not** grounds for refusing the form here, because a tag's own node id is
-/// parsed with `NodeId.parse` and is therefore written `ns=2;s=Boiler` in every configuration that exists. An
-/// operator who writes a tag that way and then has `methodName` refuse the same spelling meets an
-/// inconsistency Edge invented, while the exposure stays exactly where it was. Refusing it bought nothing and
-/// cost that. The URI form is offered, preferred in every message Edge prints, and documented as the stable
-/// one -- the choice is the caller's.
+/// That hazard is real and is **not** grounds for refusing the form here, because a tag's own node id accepts
+/// both spellings and is written `ns=2;s=Boiler` in nearly every configuration that exists. An operator who
+/// writes a tag that way and then has `methodName` refuse the same spelling meets an inconsistency Edge
+/// invented, while the exposure stays exactly where it was. Refusing it bought nothing and cost that. The URI
+/// form is offered, preferred in every message Edge prints, and documented as the stable one -- the choice is
+/// the caller's.
 ///
-/// The `nsu=...;...` spelling is not an invention: it is the string form OPC 10000-6 defines for an
-/// ExpandedNodeId, which is also why a `;` is the separator and why a URI containing a raw `;` is not
-/// expressible. Parsing is Milo's, so the spelling Edge accepts is the spelling the specification defines.
+/// A node id is parsed, resolved and printed by {@link NodeIdText}, as every other node id in the adapter is.
 public final class MethodReference {
 
     private MethodReference() {}
@@ -133,7 +131,7 @@ public final class MethodReference {
             if (!nodeIds.isEmpty()) {
                 nodeIds.append(", ");
             }
-            nodeIds.append(render(method.nodeId(), namespaceTable));
+            nodeIds.append(NodeIdText.render(method.nodeId(), namespaceTable));
         }
         return new Resolution.Ambiguous("has "
                 + matches.size()
@@ -150,36 +148,23 @@ public final class MethodReference {
             final @NotNull String methodName,
             final @NotNull NamespaceTable namespaceTable) {
 
-        final ExpandedNodeId parsed;
+        // An index is accepted as well as a URI. It is the weaker spelling -- see the class note -- but a tag's
+        // own node id accepts it too, so refusing it here would be an inconsistency of Edge's own making rather
+        // than a protection.
+        final NodeId wanted;
         try {
-            // The Guid check runs before Milo's parse, which pads a short one into a different valid Guid and
-            // would resolve this to a method node the caller did not name. See Guids.
-            final int separator = methodName.indexOf(';');
-            if (separator >= 0 && methodName.startsWith("g=", separator + 1)) {
-                Guids.requireCanonical(methodName.substring(separator + 3));
-            }
-            parsed = ExpandedNodeId.parse(methodName);
-        } catch (final RuntimeException e) {
-            return new Resolution.Malformed("'"
-                    + methodName
-                    + "' is neither a plain method name nor a node id: "
-                    + e.getMessage()
-                    + ". A node id is written nsu=<namespace uri>;<identifier> or ns=<index>;<identifier>, for "
-                    + "example nsu=http://example.org/Boiler;s=Start");
-        }
-        // An index is accepted as well as a URI. It is the weaker spelling -- see the class note -- but it is
-        // the spelling a tag's own node id uses, so refusing it here would be an inconsistency of Edge's own
-        // making rather than a protection. `toNodeId` resolves either: a URI through the live table, an index
-        // as itself.
-        final NodeId wanted = parsed.toNodeId(namespaceTable).orElse(null);
-        if (wanted == null) {
+            wanted = NodeIdText.resolve(methodName, namespaceTable);
+        } catch (final NodeIdText.UnpublishedNamespaceException e) {
             // Only reachable for the URI form; an index needs no lookup, so it cannot fail this way.
             return new Resolution.NoSuchMethod("is on a server that does not publish the namespace '"
-                    + parsed.getNamespaceUri()
+                    + e.namespaceUri()
                     + "', so '"
                     + methodName
                     + "' names no node on it. It offers: "
                     + offered(methods, namespaceTable));
+        } catch (final IllegalArgumentException e) {
+            return new Resolution.Malformed(
+                    "'" + methodName + "' is neither a plain method name nor a node id. " + e.getMessage());
         }
         for (final MethodSignature method : methods) {
             if (method.nodeId().equals(wanted)) {
@@ -187,37 +172,9 @@ public final class MethodReference {
             }
         }
         return new Resolution.NoSuchMethod("exposes no method with node id "
-                + render(wanted, namespaceTable)
+                + NodeIdText.render(wanted, namespaceTable)
                 + ". It offers: "
                 + offered(methods, namespaceTable));
-    }
-
-    /// A node id as a caller should write it back: the namespace by URI when the server publishes one.
-    ///
-    /// **Why not `toParseableString`.** That renders the namespace as an **index**, and every message Edge
-    /// prints is a value an operator is being invited to paste into `methodName`. An index is a per-session
-    /// handle (see the class note), so handing one back as the canonical spelling teaches the weaker form --
-    /// and the three places that printed one had each reached for the same convenient method, which is how
-    /// they drifted from what the parser documents. One helper now, so they cannot drift again.
-    ///
-    /// Falls back to the index form when the table has no URI for the namespace, which is the honest answer:
-    /// it is what the node id is, and it still parses.
-    ///
-    /// **The table may not know the namespace at all**, and then `expanded` throws rather than answering --
-    /// `IllegalStateException: namespace index=7 not found`. That reaches here from the refusal message for a
-    /// request naming an index the server does not publish: the resolution had already decided correctly that
-    /// no method matches, and only the wording of the refusal failed. The throw escaped into the write path,
-    /// which answered nothing and held the request's writer until it timed out 30 seconds later, so further
-    /// requests for that tag waited behind a message that was already known to be unanswerable. Caught here, at
-    /// the one place that turns a node id into text for a caller.
-    private static @NotNull String render(final @NotNull NodeId nodeId, final @NotNull NamespaceTable namespaceTable) {
-
-        try {
-            final ExpandedNodeId expanded = nodeId.expanded(namespaceTable);
-            return expanded.getNamespaceUri() != null ? expanded.toParseableString() : nodeId.toParseableString();
-        } catch (final RuntimeException e) {
-            return nodeId.toParseableString();
-        }
     }
 
     /// The object's own method when the only other match is a non-static declaration of it, else null.
@@ -260,7 +217,7 @@ public final class MethodReference {
             offered.append(method.name());
             if (isAmbiguous(methods, method.name())) {
                 offered.append(" (")
-                        .append(render(method.nodeId(), namespaceTable))
+                        .append(NodeIdText.render(method.nodeId(), namespaceTable))
                         .append(')');
             }
         }

@@ -29,7 +29,10 @@ public class OpcuaTagDefinition implements TagDefinition {
     @JsonProperty(value = "node", required = true)
     @ModuleConfigField(
             title = "Destination Node ID",
-            description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\". "
+            description = "identifier of the node on the OPC UA server, with the namespace given by URI "
+                    + "(\"nsu=http://example.org/Boiler;s=85/0:Temperature\") or by index "
+                    + "(\"ns=3;s=85/0:Temperature\"). The URI is stable; the server may renumber an index between "
+                    + "sessions. The same two forms are accepted for every node ID field of a tag. "
                     + "For a CONDITION node this is the alarm itself; for an EVENT_SUBSCRIPTION node it is the "
                     + "notifier to subscribe to; for a METHOD node it is the object whose methods are called. "
                     + "A REFRESH node still requires the field but ignores its "
