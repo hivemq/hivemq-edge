@@ -58,6 +58,10 @@ export const MqttTransformationField: FC<FieldProps<SouthboundMapping[], RJSFSch
             destination: { properties: {} },
           },
         },
+        // Explicitly off, so a new mapping starts from a defined state rather than from 'undefined'.
+        methodCalls: false,
+        correlationData: false,
+        responseTopic: false,
       },
     ])
   }

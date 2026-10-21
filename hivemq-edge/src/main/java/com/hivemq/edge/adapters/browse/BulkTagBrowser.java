@@ -69,4 +69,20 @@ public interface BulkTagBrowser {
             throws BrowseException {
         return nodeId;
     }
+
+    /**
+     * A key under which two spellings of the same node compare equal, so an import can tell that a row and an
+     * existing tag name one node although their node IDs are written differently. For OPC UA a node may be
+     * written with its namespace by URI ({@code nsu=urn:milo:hello-world;s=Temperature}) or by index
+     * ({@code ns=2;s=Temperature}); both give the same key while the device is connected.
+     * <p>
+     * The key is used only for matching and is never stored. Protocols with a single spelling per node return
+     * the {@code nodeId} unchanged, as does an adapter that cannot resolve it at the moment.
+     *
+     * @param nodeId a node ID from the import file or from an existing tag
+     * @return the key to match on; never throws
+     */
+    default @NotNull String nodeIdMatchKey(final @NotNull String nodeId) {
+        return nodeId;
+    }
 }

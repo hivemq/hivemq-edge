@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.edge.adapters.opcua.client.EdgeOpcUaClient;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
@@ -144,6 +145,21 @@ public class OpcUaClientConnection {
     private final @NotNull Consumer<OpcUaClientConnection> publishReady;
 
     /**
+     * Discards whatever the adapter remembers per session, run when the client activates a replacement session
+     * in this same connection.
+     * <p>
+     * Needed because a reconnect does not always replace the connection object. Milo owns the session lifecycle:
+     * when the link drops and recovers, it activates a fresh session inside the existing client, and nothing the
+     * adapter does to connections is involved — so state keyed to "the session" has to be discarded from here
+     * rather than from the connection swap that an operator-visible reconnect happens to go through.
+     * <p>
+     * What makes this more than tidiness is OPC 10000-3 §5.2.2: a server <em>shall</em> persist a node's
+     * identifier and its namespace URI, but <em>may</em> change the namespace index with future sessions, and
+     * "a Client shall not assume the namespaceIndex will not change". A remembered NodeId carries an index.
+     */
+    private final @NotNull Runnable onSessionReplaced;
+
+    /**
      * The subscription handler, reachable from the moment it is constructed rather than from the moment the
      * connection is fully established.
      * <p>
@@ -222,7 +238,8 @@ public class OpcUaClientConnection {
                 serviceFaultListener,
                 legacyStatusPublisher(protocolAdapterState, stillOwned),
                 prepareForUse,
-                legacyReadyPublisher(protocolAdapterState, stillOwned, markReady));
+                legacyReadyPublisher(protocolAdapterState, stillOwned, markReady),
+                () -> {});
     }
 
     OpcUaClientConnection(
@@ -236,7 +253,8 @@ public class OpcUaClientConnection {
             final @NotNull OpcUaServiceFaultListener serviceFaultListener,
             final @NotNull BiConsumer<OpcUaClientConnection, ProtocolAdapterState.ConnectionStatus> statusPublisher,
             final @NotNull Consumer<OpcUaClient> prepareForUse,
-            final @NotNull Consumer<OpcUaClientConnection> publishReady) {
+            final @NotNull Consumer<OpcUaClientConnection> publishReady,
+            final @NotNull Runnable onSessionReplaced) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
         this.eventService = eventService;
@@ -254,6 +272,7 @@ public class OpcUaClientConnection {
         this.statusPublisher = statusPublisher;
         this.prepareForUse = prepareForUse;
         this.publishReady = publishReady;
+        this.onSessionReplaced = onSessionReplaced;
     }
 
     /** Compatibility seam for direct connection tests; production delegates the whole operation to the adapter. */
@@ -369,7 +388,7 @@ public class OpcUaClientConnection {
         final var endpointFilter = new OpcUaEndpointFilter(
                 adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), preferredMode, config);
         try {
-            client = OpcUaClient.create(
+            client = EdgeOpcUaClient.create(
                     config.getUri(),
                     endpointFilter,
                     ignore -> {},
@@ -461,7 +480,15 @@ public class OpcUaClientConnection {
 
         // A reconnect that transfers the subscription successfully recreates nothing, so the refresh that
         // rides on re-establishing monitored items never happens. This is the only signal for that case.
-        activityListener.setOnReconnect(subscriptionLifecycleHandler::onSessionReactivated);
+        //
+        // Per-session state the adapter remembers is discarded here for the same reason: this is the only place
+        // that learns of a replacement session, because Milo activates one inside the existing client and no
+        // connection is swapped. Discarded first, so a request admitted during the refresh cannot be served
+        // from what the previous session reported.
+        activityListener.setOnReconnect(() -> {
+            onSessionReplaced.run();
+            subscriptionLifecycleHandler.onSessionReactivated();
+        });
 
         final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
 

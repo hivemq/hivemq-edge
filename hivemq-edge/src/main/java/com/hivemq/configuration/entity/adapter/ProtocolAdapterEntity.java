@@ -39,9 +39,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class ProtocolAdapterEntity implements EntityValidatable {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterEntity.class);
 
     private static final @NotNull TypeReference<Map<String, Object>> AS_MAP_TYPE_REF = new TypeReference<>() {
                 // no-op
@@ -204,6 +208,13 @@ public class ProtocolAdapterEntity implements EntityValidatable {
             }
         }
     }
+
+    // There is deliberately no cross-check that the two mappings of a tag agree about response addressing, because
+    // there is nothing left to disagree: the response address is configured southbound only, and the northbound
+    // side follows whatever a datapoint carries. An earlier design had a flag on each side and a warning here when
+    // one was set without the other -- which could only ever warn rather than reject, because the two mappings are
+    // updated by separate API calls and the path between two valid configurations has to pass through a one-sided
+    // one. Removing the second flag removed the need for the check.
 
     @Override
     public boolean equals(final @Nullable Object o) {

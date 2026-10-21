@@ -1,0 +1,409 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.protocols.northbound;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
+import com.hivemq.datapoint.DataPointWithMetadata;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
+
+/// What a datapoint's `context` child becomes on the wire, and which topic it is published to.
+///
+/// An adapter uses `context` for fields that belong to the message but are not the value -- a method answer's
+/// `responseMethodName`, the caller's `correlationData`, an `errorCode`. These pin that those reach the published
+/// message beside `value` rather than nested, and that the one entry naming a destination is consumed rather than
+/// published.
+///
+/// **A response says `responseMethodName`, not `methodName`**, and the spelling is the point: a published answer
+/// carrying `methodName` would be a structurally valid request, so a southbound method mapping subscribed to the
+/// answer's topic would dispatch it as one. See `MethodRequestFields.RESPONSE_METHOD_NAME`.
+class NorthboundTagConsumerContextTest {
+
+    private static final @NotNull Tag TAG = new Tag() {
+        @Override
+        public @NotNull TagDefinition getDefinition() {
+            return new TagDefinition() {};
+        }
+
+        @Override
+        public @NotNull String getName() {
+            return "boiler1";
+        }
+
+        @Override
+        public @NotNull String getDescription() {
+            return "";
+        }
+    };
+
+    /// What one datapoint produced: the topic, the payload, and the MQTT 5 Correlation Data property if set.
+    private record Published(
+            @NotNull String topic,
+            @NotNull JsonNode payload,
+            byte @org.jetbrains.annotations.Nullable [] correlationData) {}
+
+    /// Runs one datapoint through a consumer and reports what was published.
+    private static @NotNull Published publish(
+            final @NotNull NorthboundMapping mapping, final @NotNull DataPoint dataPoint) throws Exception {
+
+        final AtomicReference<String> topic = new AtomicReference<>();
+        final AtomicReference<byte[]> payload = new AtomicReference<>();
+        final AtomicReference<byte[]> correlationData = new AtomicReference<>();
+
+        // The implementation, not the SDK interface. The consumer holds that type so it can set the MQTT 5
+        // Correlation Data property, which is deliberately not on the interface -- see
+        // ProtocolAdapterPublishBuilderImpl.withCorrelationData.
+        final var builder = mock(ProtocolAdapterPublishBuilderImpl.class);
+        when(builder.withTopic(any())).thenAnswer(invocation -> {
+            topic.set(invocation.getArgument(0));
+            return builder;
+        });
+        when(builder.withQoS(org.mockito.ArgumentMatchers.anyInt())).thenReturn(builder);
+        when(builder.withPayload(any())).thenAnswer(invocation -> {
+            payload.set(invocation.getArgument(0));
+            return builder;
+        });
+        when(builder.withAdapter(any())).thenReturn(builder);
+        when(builder.withCorrelationData(any())).thenAnswer(invocation -> {
+            correlationData.set(invocation.getArgument(0));
+            return builder;
+        });
+        when(builder.send()).thenReturn(CompletableFuture.completedFuture(null));
+
+        final var publishService = mock(ProtocolAdapterPublishServiceImpl.class);
+        when(publishService.createPublish()).thenReturn(builder);
+
+        final var wrapper = mock(ProtocolAdapterWrapper.class);
+        when(wrapper.getId()).thenReturn("adapter-1");
+        final var info = mock(ProtocolAdapterInformation.class);
+        when(info.getProtocolId()).thenReturn("opcua");
+        when(wrapper.getAdapterInformation()).thenReturn(info);
+
+        final var consumer = new NorthboundTagConsumer(
+                mapping,
+                wrapper,
+                new ObjectMapper(),
+                publishService,
+                mock(ProtocolAdapterMetricsService.class),
+                mock(EventService.class));
+
+        consumer.accept(dataPoint);
+
+        return new Published(topic.get(), new ObjectMapper().readTree(payload.get()), correlationData.get());
+    }
+
+    /// A plain northbound mapping, which is the only kind there is.
+    ///
+    /// It takes no parameter because a northbound mapping has no method-call configuration: what a response
+    /// carries is decided by the southbound mapping that sent the request and travels with the request in its
+    /// context, so every test here varies the datapoint's context rather than the mapping.
+    private static @NotNull NorthboundMapping mapping() {
+        return new NorthboundMapping(
+                "boiler1", "plant/boiler1/result", 1, false, false, false, List.of(), Long.MAX_VALUE);
+    }
+
+    /// Builds a datapoint as a method adapter produces one: an object `value` holding one output argument and
+    /// the response's parameters, in the field that carries them across the adapter boundary.
+    private static @NotNull DataPoint dataPoint(final @NotNull String... parameterPairs) {
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final var value = builder.startObjectValue();
+        value.put("output1", 42);
+        if (parameterPairs.length > 0) {
+            final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
+            for (int i = 0; i < parameterPairs.length; i += 2) {
+                parameters.put(parameterPairs[i], parameterPairs[i + 1]);
+            }
+            parameters.endObject();
+        }
+        value.endObject();
+        builder.endDataPoint();
+        return builder.build("adapter-1");
+    }
+
+    @Test
+    void contextEntries_arePublishedBesideValue_notNested() throws Exception {
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "mes-east-00417"));
+
+        assertThat(published.payload().get("responseMethodName").textValue()).isEqualTo("Start");
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
+        // The child is a carrier inside Edge, not a level a consumer should descend.
+        assertThat(published.payload().has("context")).isFalse();
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void theKnownParametersArePublished_theCarrierAndAnUnknownParameterAreNot() throws Exception {
+        // Edge publishes a closed set of parameters: methodName, errorCode, statusInfo and correlationData.
+        // A name outside it is ignored, because what a response publishes is Edge's contract with the
+        // subscriber rather than the adapter's. The field that carried them never reaches the wire.
+        final Published published = publish(mapping(), dataPoint("responseMethodName", "Start", "somethingNew", "x"));
+
+        assertThat(published.payload().get("responseMethodName").textValue()).isEqualTo("Start");
+        assertThat(published.payload().has("somethingNew"))
+                .withFailMessage("a parameter Edge does not know was published: %s", published.payload())
+                .isFalse();
+        assertThat(published.payload().path("value").has("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8"))
+                .withFailMessage("the carrier reached the wire: %s", published.payload())
+                .isFalse();
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void aFailedCallPublishesValueAsNull() throws Exception {
+        // A failure writes no output arguments, so the parameter object is all `value` holds -- and once that
+        // is lifted out, `value` is published as null. Null and the empty object must not render alike: the
+        // empty object means the method ran and declares no outputs, which is a different outcome.
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final var value = builder.startObjectValue();
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
+        parameters.put("responseMethodName", "Start");
+        parameters.put("errorCode", "Bad_NotExecutable");
+        parameters.endObject();
+        value.endObject();
+        builder.endDataPoint();
+
+        final Published published = publish(mapping(), builder.build("adapter-1"));
+
+        assertThat(published.payload().get("value").isNull())
+                .withFailMessage("a failed call must publish value as null: %s", published.payload())
+                .isTrue();
+        assertThat(published.payload().get("errorCode").textValue()).isEqualTo("Bad_NotExecutable");
+    }
+
+    @Test
+    void aSucceedingCallWithNoOutputsPublishesAnEmptyValue() throws Exception {
+        // The boundary of the test above, and the distinction null exists to keep: the method ran and declares
+        // no output arguments, so `value` is an empty object rather than null.
+        //
+        // The value holds the parameter object and nothing else, which is exactly what such a success looks
+        // like. An earlier version of this test put an output into the value, so the empty case it names was
+        // never run and the defect it exists to catch went out in a release candidate (Miguel R4-2, Sam R03).
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final var value = builder.startObjectValue();
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
+        parameters.put("responseMethodName", "Stop");
+        parameters.endObject();
+        value.endObject();
+        builder.endDataPoint();
+
+        final Published published = publish(mapping(), builder.build("adapter-1"));
+
+        assertThat(published.payload().get("value").isObject())
+                .withFailMessage("a succeeding call with no outputs must publish {}: %s", published.payload())
+                .isTrue();
+        assertThat(published.payload().get("value")).isEmpty();
+        assertThat(published.payload().has("errorCode"))
+                .withFailMessage("a success must carry no errorCode: %s", published.payload())
+                .isFalse();
+    }
+
+    @Test
+    void aFailureCarryingOutputsKeepsThem_ratherThanPublishingNull() throws Exception {
+        // The documented rule says a failure publishes `value` as null. This case is the one it does not
+        // allow for: the device refused the call and still returned something. Deleting what it said to
+        // satisfy the shape would throw away the only explanation the caller gets, so the rule yields.
+        //
+        // Nothing in Edge produces this today -- a failure writes no output arguments -- which is why it is
+        // pinned here rather than left to a reader of the code.
+        final var builder =
+                (DataPointWithMetadata.DataPointBuilderImpl<Void>) DataPointWithMetadata.<Void>builder(TAG, b -> null);
+        final var value = builder.startObjectValue();
+        value.put("partialResult", 17);
+        final var parameters = value.startObject("INTERNAL_RESPONSE_PARAMETERS_H9G7R9B6S0V5O8R8");
+        parameters.put("responseMethodName", "Start");
+        parameters.put("errorCode", "Bad_NotExecutable");
+        parameters.endObject();
+        value.endObject();
+        builder.endDataPoint();
+
+        final Published published = publish(mapping(), builder.build("adapter-1"));
+
+        assertThat(published.payload().path("value").path("partialResult").intValue())
+                .withFailMessage("a failure's outputs must survive: %s", published.payload())
+                .isEqualTo(17);
+        assertThat(published.payload().get("errorCode").textValue()).isEqualTo("Bad_NotExecutable");
+    }
+
+    @Test
+    void statusInfo_isPublishedWhenTheResponseCarriesIt() throws Exception {
+        // The fourth named field, and the only one this class did not already cover.
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "statusInfo", "detail"));
+
+        assertThat(published.payload().get("statusInfo").textValue()).isEqualTo("detail");
+    }
+
+    @Test
+    void correlationData_isPublishedWheneverTheContextCarriesIt() throws Exception {
+        // The presence of the token in the context is the whole decision. There is deliberately no setting that
+        // withholds it: the request either carried a token or it did not, and whether a given subscriber sees it
+        // is settled further downstream, where a version-5 client gets the MQTT property and a version-3 client
+        // cannot. A setting here could only disagree with that.
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "mes-east-00417"));
+
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
+    }
+
+    @Test
+    void responseTopic_isConsumedNotPublished() throws Exception {
+        // The one entry that says where the answer goes rather than anything about it. Publishing it as well would
+        // put a routing instruction into the routed message.
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "responseTopic", "plant/mes-east"));
+
+        assertThat(published.topic()).isEqualTo("plant/mes-east");
+        assertThat(published.payload().has("responseTopic")).isFalse();
+        assertThat(published.payload().get("responseMethodName").textValue()).isEqualTo("Start");
+    }
+
+    @Test
+    void aResponseTopicIsAlwaysHonoured_withNoNorthboundSettingGatingIt() throws Exception {
+        // The decisive test, and it pins a deliberate reversal. An earlier design had a northbound flag here, so a
+        // response address was honoured only when the mapping had been told to -- the reasoning being that a caller
+        // must not redirect an adapter's output by sending a field.
+        //
+        // That protection lives southbound instead, and only there. The field mapping is a whitelist: a southbound
+        // mapping not configured to read a response topic drops the field, so the adapter never receives it and a
+        // datapoint never carries it. By the time a datapoint reaches here, the address being present already means
+        // the configuration asked for it. A second gate added no safety and only let the pair be half-configured.
+        final Published published = publish(mapping(), dataPoint("responseTopic", "plant/mes-east"));
+
+        assertThat(published.topic()).isEqualTo("plant/mes-east");
+    }
+
+    @Test
+    void aBlankResponseTopic_fallsBackToTheConfiguredTopic() throws Exception {
+        // A caller sending an empty string has named no topic; publishing to "" would fail far from the cause.
+        final Published published = publish(mapping(), dataPoint("responseTopic", "   "));
+
+        assertThat(published.topic()).isEqualTo("plant/boiler1/result");
+    }
+
+    @Test
+    void noResponseTopic_withTheFlagOn_fallsBackToTheConfiguredTopic() throws Exception {
+        // A fire-and-forget call on a mapping that would honour an address: there is none to honour.
+        final Published published = publish(mapping(), dataPoint("responseMethodName", "Stop"));
+
+        assertThat(published.topic()).isEqualTo("plant/boiler1/result");
+    }
+
+    @Test
+    void aDatapointWithNoContext_isUnaffected() throws Exception {
+        // Every value tag that exists today. The flattening must be invisible to them.
+        final Published published = publish(mapping(), dataPoint());
+
+        assertThat(published.topic()).isEqualTo("plant/boiler1/result");
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
+        assertThat(published.payload().has("context")).isFalse();
+    }
+
+    @Test
+    void aContextEntryNeverOverwritesAnAspect() throws Exception {
+        // Nothing in Edge fills context with an aspect name today, but a copy that silently replaced `value` would
+        // be far harder to diagnose than one that declines to.
+        final Published published = publish(mapping(), dataPoint("value", "hijacked"));
+
+        assertThat(published.payload().path("value").path("output1").intValue()).isEqualTo(42);
+    }
+
+    @Test
+    void aRawPrefixedToken_isEchoedWithoutItsPrefix() throws Exception {
+        // The decisive case for a caller who put a token in the request payload. `raw:` is Edge's own
+        // bookkeeping, marking the value as text the caller typed -- so it must not appear in what they get
+        // back. Echoing `raw:mes-east-00417` would hand back something they never sent, and would break a
+        // consumer matching the token against the one it generated.
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "raw:mes-east-00417"));
+
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("mes-east-00417");
+        assertThat(published.correlationData()).isEqualTo("mes-east-00417".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void aBase64PrefixedToken_keepsItsPrefixInThePayloadAndIsDecodedIntoTheProperty() throws Exception {
+        // The other direction, and the prefix stays. A caller setting the MQTT 5 property sent arbitrary bytes;
+        // the context carried them base64 because a user property value is text. Three things follow:
+        //
+        //   - the MQTT 5 property gets those exact bytes back;
+        //   - the payload keeps `base64:`, because decoding arbitrary bytes into a JSON string would mangle
+        //     them, and the prefix is what tells a consumer to decode rather than compare;
+        //   - the payload copy cannot be omitted, because nothing guarantees a request from an MQTT 5 client is
+        //     answered to an MQTT 5 subscriber -- an MQTT 3 consumer may be the only one reading.
+        final byte[] token = {0x00, 0x01, (byte) 0xFF, 0x7F};
+        final String encoded = Base64.getEncoder().encodeToString(token);
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "base64:" + encoded));
+
+        assertThat(published.correlationData()).isEqualTo(token);
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("base64:" + encoded);
+    }
+
+    @Test
+    void anUnprefixedToken_isTreatedAsRaw() throws Exception {
+        // Not a shape Edge produces -- it would mean a hand-edited datapoint or a future producer. UTF-8 bytes
+        // are the least surprising reading of plain text, and dropping the correlation would be worse.
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "plain"));
+
+        assertThat(published.correlationData()).isEqualTo("plain".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void noToken_setsNoMqtt5Property() throws Exception {
+        final Published published = publish(mapping(), dataPoint("responseMethodName", "Start"));
+
+        assertThat(published.correlationData()).isNull();
+    }
+
+    @Test
+    void aToken_reachesBothThePayloadAndTheMqtt5Property() throws Exception {
+        // Both slots, always, from the one token in the context. These are different slots reaching different
+        // callers -- a version-3 client can read only the payload copy, a version-5 client can use the property
+        // -- and the published message is one object serialised per subscriber, so writing both is what lets the
+        // encoder give each client what it can actually use.
+        final Published published =
+                publish(mapping(), dataPoint("responseMethodName", "Start", "correlationData", "raw:abc"));
+
+        assertThat(published.payload().get("correlationData").textValue()).isEqualTo("abc");
+        assertThat(published.correlationData()).isEqualTo("abc".getBytes(StandardCharsets.UTF_8));
+    }
+}

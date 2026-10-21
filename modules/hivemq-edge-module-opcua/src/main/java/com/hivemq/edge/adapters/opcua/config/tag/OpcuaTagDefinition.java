@@ -29,9 +29,13 @@ public class OpcuaTagDefinition implements TagDefinition {
     @JsonProperty(value = "node", required = true)
     @ModuleConfigField(
             title = "Destination Node ID",
-            description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\". "
+            description = "identifier of the node on the OPC UA server, with the namespace given by URI "
+                    + "(\"nsu=http://example.org/Boiler;s=85/0:Temperature\") or by index "
+                    + "(\"ns=3;s=85/0:Temperature\"). The URI is stable; the server may renumber an index between "
+                    + "sessions. The same two forms are accepted for every node ID field of a tag. "
                     + "For a CONDITION node this is the alarm itself; for an EVENT_SUBSCRIPTION node it is the "
-                    + "notifier to subscribe to. A REFRESH node still requires the field but ignores its "
+                    + "notifier to subscribe to; for a METHOD node it is the object whose methods are called. "
+                    + "A REFRESH node still requires the field but ignores its "
                     + "value: that tag always attaches to the Server object.",
             required = true)
     private final @NotNull String node;
@@ -41,12 +45,13 @@ public class OpcuaTagDefinition implements TagDefinition {
             title = "Node kind",
             description = "what the node is: an ordinary VALUE (default), a CONDITION (a single alarm), "
                     + "an EVENT_SUBSCRIPTION (a query against a notifier, delivering events from many "
-                    + "conditions), or a REFRESH (the adapter's refresh channel — northbound it publishes the "
+                    + "conditions), a REFRESH (the adapter's refresh channel — northbound it publishes the "
                     + "server's control events, and southbound it accepts {\"method\": \"REFRESH\"} to ask "
-                    + "the server to re-report every condition it currently retains). At most one REFRESH "
-                    + "tag per adapter. A queue-overflow event is not carried here: OPC UA delivers it only "
-                    + "to the monitored item whose queue filled, so it is reported against the tag that lost "
-                    + "the transitions.",
+                    + "the server to re-report every condition it currently retains), or a METHOD (an object "
+                    + "whose methods can be called; each request names the method, so one tag serves all of "
+                    + "them). At most one REFRESH tag per adapter. A queue-overflow event is not carried "
+                    + "here: OPC UA delivers it only to the monitored item whose queue filled, so it is "
+                    + "reported against the tag that lost the transitions.",
             defaultValue = "VALUE")
     private final @NotNull OpcuaTagKind kind;
 

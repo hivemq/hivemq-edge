@@ -15,6 +15,7 @@
  */
 package com.hivemq.protocols;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -33,6 +34,7 @@ public class ProtocolAdapterConfigConverter {
 
     private final @NotNull ProtocolAdapterFactoryManager factoryManager;
     private final @NotNull ObjectMapper mapper;
+    private final @NotNull ObjectMapper tagDefinitionMapper;
 
     @Inject
     public ProtocolAdapterConfigConverter(
@@ -42,6 +44,14 @@ public class ProtocolAdapterConfigConverter {
         // element in an adapter configuration was discarded in silence. Reported here rather than
         // thrown, so a configuration carrying a setting this version does not know still starts.
         this.mapper = ProtocolAdapterUtils.withUnknownPropertyReporting(mapper);
+        // An optional tag field the operator left empty is null in the tag definition. Written as an
+        // explicit JSON null, the frontend validates it against the field's schema type and rejects it
+        // ("must be string"), which also blocks saving the tag. Leaving the key out means "not set", and
+        // reads back to the same null. Content inclusion covers map-valued fields as well.
+        this.tagDefinitionMapper = this.mapper
+                .copy()
+                .setDefaultPropertyInclusion(
+                        JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL));
     }
 
     public @NotNull ProtocolAdapterConfig fromEntity(final @NotNull ProtocolAdapterEntity entity) {
@@ -78,6 +88,6 @@ public class ProtocolAdapterConfigConverter {
     }
 
     public @NotNull JsonNode convertTagDefinitionToJsonNode(final @NotNull TagDefinition tagDefinition) {
-        return mapper.valueToTree(tagDefinition);
+        return tagDefinitionMapper.valueToTree(tagDefinition);
     }
 }

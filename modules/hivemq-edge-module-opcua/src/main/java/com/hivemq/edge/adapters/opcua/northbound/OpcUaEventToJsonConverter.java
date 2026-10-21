@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -61,12 +62,12 @@ public final class OpcUaEventToJsonConverter {
     /**
      * Writes the event's fields into the value of the data point.
      *
-     * @param ctx     the encoding context, for structures nested inside a field.
+     * @param ctx     the encoding context, asked for only by a structure nested inside a field.
      * @param values  the event field values, positionally matching the declared condition type's field list.
      * @param builder the data point being built.
      */
     public static void convertPayload(
-            final @NotNull EncodingContext ctx,
+            final @NotNull Supplier<EncodingContext> ctx,
             final @NotNull EventFieldSet publishedFields,
             final @NotNull Variant[] values,
             final @NotNull DataPointBuilder<?> builder) {
@@ -243,7 +244,7 @@ public final class OpcUaEventToJsonConverter {
             final @NotNull String key,
             final @Nullable Object state,
             final @Nullable Object id,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
 
         if (state == null && id == null) {
             object.putNull(key);

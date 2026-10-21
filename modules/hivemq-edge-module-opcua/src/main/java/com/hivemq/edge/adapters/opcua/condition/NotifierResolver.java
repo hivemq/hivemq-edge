@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.condition;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.hivemq.edge.adapters.opcua.browse.Browsing;
+import com.hivemq.edge.adapters.opcua.util.NodeIdText;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -148,14 +150,11 @@ public final class NotifierResolver {
                 // checkSubscribable() straight afterwards, and drops the tag when the server says definitely
                 // not a notifier, so a typo no longer subscribes cleanly and then stays silent forever.
                 // Read without that qualification, this comment says what the user guide wrongly says.
-                return CompletableFuture.completedFuture(
-                        new Result.Found(NodeId.parse(declaredNotifier), "declared on the tag"));
+                return CompletableFuture.completedFuture(new Result.Found(
+                        NodeIdText.resolve(declaredNotifier, client.getNamespaceTable()), "declared on the tag"));
             } catch (final Exception e) {
-                return CompletableFuture.completedFuture(new Result.NotFound("tag '" + tagName
-                        + "' declares notifier '"
-                        + declaredNotifier
-                        + "', which is not a valid node id: "
-                        + e.getMessage()));
+                return CompletableFuture.completedFuture(new Result.NotFound("tag '" + tagName + "' declares notifier '"
+                        + declaredNotifier + "', which cannot be used: " + e.getMessage()));
             }
         }
 

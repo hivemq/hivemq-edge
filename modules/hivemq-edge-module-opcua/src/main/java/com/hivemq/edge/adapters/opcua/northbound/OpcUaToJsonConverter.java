@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicEnumType;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -30,6 +31,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DiagnosticInfo;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -47,6 +49,20 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/// Converts an OPC-UA value into the JSON shape Edge publishes.
+///
+/// **The encoding context is taken as a supplier, and asked for only by the branch that needs it.** The
+/// context is the server's type descriptions, read over the network. Exactly one thing here needs it:
+/// decoding an [ExtensionObject], a structure that arrives still encoded. Every other value -- a number, a
+/// string, a timestamp, a node id, an already-decoded [DynamicStructType] -- is rendered from what is in hand.
+/// Fetching it up front therefore made a value that needs no type description depend on one anyway: a failed
+/// read turned an `Int32` of 9 into `null` on the method path, and dropped a whole notification batch on the
+/// value and event paths.
+///
+/// Same rule as the value-write path (`JsonToOpcUAConverter`, Miguel's R6-3) and the method-signature
+/// verifier: do not reach for the hierarchy until a value's own type says it is needed. Stated here rather
+/// than at each caller because this is the only code that knows which values need it.
+///
 // see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
 public class OpcUaToJsonConverter {
 
@@ -60,7 +76,7 @@ public class OpcUaToJsonConverter {
     public static final String METADATA_SERVER_PICOSECONDS = "serverPicoseconds";
 
     public static void convertPayload(
-            final @NotNull EncodingContext serializationContext,
+            final @NotNull Supplier<EncodingContext> serializationContext,
             final @NotNull DataValue dataValue,
             final @NotNull DataPointBuilder<?> builder) {
         final Object value = dataValue.getValue().getValue();
@@ -98,7 +114,7 @@ public class OpcUaToJsonConverter {
     private static void addValue(
             final @NotNull DataPointBuilder<?> builder,
             final @Nullable Object value,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
 
         // SIMPLE TYPES — use builder.value(...) directly
         if (value == null) {
@@ -142,6 +158,8 @@ public class OpcUaToJsonConverter {
             }
         } else if (value instanceof final ExpandedNodeId enid) {
             builder.value(enid.toParseableString());
+        } else if (value instanceof final Matrix matrix) {
+            addValue(builder, matrix.nestedArrayValue(), ctx);
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             final var arr = builder.startArrayValue();
@@ -183,7 +201,9 @@ public class OpcUaToJsonConverter {
             }
             obj.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValue(builder, eo.decode(ctx), ctx);
+            // The only reach for the server's type descriptions in this converter, here and in the two
+            // sibling dispatches. See the note on the class.
+            addValue(builder, eo.decode(ctx.get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -213,13 +233,15 @@ public class OpcUaToJsonConverter {
 
     /**
      * Adds one OPC-UA value under {@code key}, mapping any builtin, array or structure to the builder. Shared
-     * with the event path, which maps each selected event field the same way.
+     * with the event path, which maps each selected event field the same way, and with the method-response path
+     * in {@code MethodResponse}: a method's output of a given OPC-UA type must look exactly like a variable's
+     * value of that type, and one converter is how that holds rather than two that are asserted to agree.
      */
-    static void addValueToObject(
+    public static void addValueToObject(
             final @NotNull DataPointBuilder.ObjectBuilder<?> obj,
             final @NotNull String key,
             final @Nullable Object value,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
 
         // SIMPLE TYPES
         if (value == null) {
@@ -261,6 +283,8 @@ public class OpcUaToJsonConverter {
             } else {
                 obj.putNull(key);
             }
+        } else if (value instanceof final Matrix matrix) {
+            addValueToObject(obj, key, matrix.nestedArrayValue(), ctx);
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             final var arr = obj.startArray(key);
@@ -302,7 +326,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValueToObject(obj, key, eo.decode(ctx), ctx);
+            addValueToObject(obj, key, eo.decode(ctx.get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -331,7 +355,7 @@ public class OpcUaToJsonConverter {
     private static void addValueToArray(
             final @NotNull DataPointBuilder.ArrayBuilder<?> arr,
             final @Nullable Object value,
-            final @NotNull EncodingContext ctx) {
+            final @NotNull Supplier<EncodingContext> ctx) {
         if (value == null) {
             arr.addNull();
         } else if (value instanceof final DataValue dv) {
@@ -402,7 +426,7 @@ public class OpcUaToJsonConverter {
             }
             nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
-            addValueToArray(arr, eo.decode(ctx), ctx);
+            addValueToArray(arr, eo.decode(ctx.get()), ctx);
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
             if (variantValue != null) {
@@ -428,11 +452,18 @@ public class OpcUaToJsonConverter {
             populateTimeZone(arr.startObject(), timeZone).endObject();
         } else if (value instanceof final EUInformation engineeringUnits) {
             populateEuInformation(arr.startObject(), engineeringUnits).endObject();
+        } else if (value instanceof final Matrix matrix) {
+            addValueToArray(arr, matrix.nestedArrayValue(), ctx);
         } else if (value.getClass().isArray()) {
+            // Nested, not appended into the array being written. Appending flattened a row into its parent, so
+            // a 2x2 matrix came out as [1,2,3,4] -- a shape no schema describes and no consumer can read back
+            // as rows. Unreachable until a Matrix was unwrapped above, which is why it went unnoticed.
             final Object[] values = (Object[]) value;
+            final var nested = arr.startArray();
             for (final Object elem : values) {
-                addValueToArray(arr, elem, ctx);
+                addValueToArray(nested, elem, ctx);
             }
+            nested.endArray();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",

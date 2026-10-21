@@ -48,8 +48,8 @@ class OpcUaToJsonConverterDecodeFailureTest {
         final DataPointBuilder<Void> builder = DataPointWithMetadata.builder(
                 new OpcuaTag("test-tag", "", new OpcuaTagDefinition("ns=2;i=1001")), b -> null);
 
-        assertThatThrownBy(
-                        () -> OpcUaToJsonConverter.convertPayload(DefaultEncodingContext.INSTANCE, dataValue, builder))
+        assertThatThrownBy(() ->
+                        OpcUaToJsonConverter.convertPayload(() -> DefaultEncodingContext.INSTANCE, dataValue, builder))
                 .isInstanceOf(UaSerializationException.class)
                 .hasMessageContaining("no codec registered");
     }

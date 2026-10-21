@@ -43,6 +43,23 @@ public class SouthboundMappingEntity implements EntityValidatable {
     @XmlElement(name = "fromNorthSchema", required = true)
     private final @NotNull String fromNorthSchema;
 
+    // The three method-call flags are deliberately NOT `required`. Every config written before method calls
+    // existed omits them, and a required element would make JaxB reject those files outright -- an adapter that
+    // worked yesterday failing to start after an upgrade.
+    //
+    // Boxed and left null when unset, rather than a primitive boolean. JaxB marshals a primitive
+    // unconditionally, so emitting these would have rewritten every existing mapping with three new lines on
+    // the first config write after an upgrade -- a diff in a file customers may keep in version control, for
+    // settings they never asked about. Null means absent on the way out and false on the way in.
+    @XmlElement(name = "methodCalls")
+    private final @Nullable Boolean methodCalls;
+
+    @XmlElement(name = "correlationData")
+    private final @Nullable Boolean correlationData;
+
+    @XmlElement(name = "responseTopic")
+    private final @Nullable Boolean responseTopic;
+
     // no-arg constructor for JaxB
     @SuppressWarnings("NullAway.Init")
     public SouthboundMappingEntity() {
@@ -50,6 +67,11 @@ public class SouthboundMappingEntity implements EntityValidatable {
         tagName = "";
         fieldMapping = new FieldMappingEntity();
         fromNorthSchema = "";
+        // Null, not false: that is what keeps the element out of the file again when it is rewritten. JaxB
+        // overwrites only the fields its XML names, so these three stay null whenever the file omits them.
+        methodCalls = null;
+        correlationData = null;
+        responseTopic = null;
     }
 
     public SouthboundMappingEntity(
@@ -57,10 +79,39 @@ public class SouthboundMappingEntity implements EntityValidatable {
             final @NotNull String topicFilter,
             final @NotNull FieldMappingEntity fieldMapping,
             final @NotNull String fromNorthSchema) {
+        this(tagName, topicFilter, fieldMapping, fromNorthSchema, false, false, false);
+    }
+
+    public SouthboundMappingEntity(
+            final @NotNull String tagName,
+            final @NotNull String topicFilter,
+            final @NotNull FieldMappingEntity fieldMapping,
+            final @NotNull String fromNorthSchema,
+            final boolean methodCalls,
+            final boolean correlationData,
+            final boolean responseTopic) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
         this.fieldMapping = fieldMapping;
         this.fromNorthSchema = fromNorthSchema;
+        // False is stored as null so it marshals to nothing. Without this a config written from a mapping that
+        // simply has no method calls -- which is every mapping that exists today -- would gain three elements
+        // saying so, and the round trip would no longer be a no-op.
+        this.methodCalls = methodCalls ? Boolean.TRUE : null;
+        this.correlationData = correlationData ? Boolean.TRUE : null;
+        this.responseTopic = responseTopic ? Boolean.TRUE : null;
+    }
+
+    public boolean isMethodCalls() {
+        return Boolean.TRUE.equals(methodCalls);
+    }
+
+    public boolean isCorrelationData() {
+        return Boolean.TRUE.equals(correlationData);
+    }
+
+    public boolean isResponseTopic() {
+        return Boolean.TRUE.equals(responseTopic);
     }
 
     public @NotNull String getTagName() {
@@ -85,7 +136,13 @@ public class SouthboundMappingEntity implements EntityValidatable {
 
     public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {
         return new SouthboundMapping(
-                this.getTagName(), this.getTopicFilter(), this.fieldMapping.to(mapper), this.fromNorthSchema);
+                this.getTagName(),
+                this.getTopicFilter(),
+                this.fieldMapping.to(mapper),
+                this.fromNorthSchema,
+                isMethodCalls(),
+                isCorrelationData(),
+                isResponseTopic());
     }
 
     public @NotNull com.hivemq.edge.api.model.SouthboundMapping toAPi() {
@@ -100,6 +157,9 @@ public class SouthboundMappingEntity implements EntityValidatable {
                                         .build())
                                 .toList())
                         .build())
+                .methodCalls(isMethodCalls())
+                .correlationData(isCorrelationData())
+                .responseTopic(isResponseTopic())
                 .build();
     }
 
@@ -108,7 +168,10 @@ public class SouthboundMappingEntity implements EntityValidatable {
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
                 Objects.requireNonNull(FieldMappingEntity.from(southboundMapping.getFieldMapping())),
-                southboundMapping.getSchema());
+                southboundMapping.getSchema(),
+                southboundMapping.isMethodCalls(),
+                southboundMapping.isCorrelationData(),
+                southboundMapping.isResponseTopic());
     }
 
     public static @NotNull SouthboundMappingEntity fromApi(
@@ -118,7 +181,10 @@ public class SouthboundMappingEntity implements EntityValidatable {
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
                 Objects.requireNonNull(FieldMappingEntity.from(southboundMapping.getFieldMapping())),
-                schema);
+                schema,
+                Boolean.TRUE.equals(southboundMapping.getMethodCalls()),
+                Boolean.TRUE.equals(southboundMapping.getCorrelationData()),
+                Boolean.TRUE.equals(southboundMapping.getResponseTopic()));
     }
 
     @Override
@@ -128,11 +194,26 @@ public class SouthboundMappingEntity implements EntityValidatable {
         return Objects.equals(getTopicFilter(), that.getTopicFilter())
                 && Objects.equals(getTagName(), that.getTagName())
                 && Objects.equals(fieldMapping, that.fieldMapping)
-                && Objects.equals(fromNorthSchema, that.fromNorthSchema);
+                && Objects.equals(fromNorthSchema, that.fromNorthSchema)
+                // Compared through the accessors, not the fields: null and false are the same state, so an
+                // entity read from a file that omits the element must equal one built with the flag off.
+                // Included at all because a flag change IS a mapping change -- the config layer compares
+                // entities to decide whether an adapter has to be reapplied, and leaving these out would accept
+                // a flag edit and never act on it.
+                && isMethodCalls() == that.isMethodCalls()
+                && isCorrelationData() == that.isCorrelationData()
+                && isResponseTopic() == that.isResponseTopic();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getTopicFilter(), getTagName(), fieldMapping, fromNorthSchema);
+        return Objects.hash(
+                getTopicFilter(),
+                getTagName(),
+                fieldMapping,
+                fromNorthSchema,
+                isMethodCalls(),
+                isCorrelationData(),
+                isResponseTopic());
     }
 }

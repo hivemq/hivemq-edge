@@ -31,7 +31,8 @@ import org.jetbrains.annotations.Nullable;
  *   <li>{@link #VALUE} — read and write schemas both derived from the device;</li>
  *   <li>{@link #CONDITION} — read schema from the type, write schema the fixed transition command;</li>
  *   <li>{@link #EVENT_SUBSCRIPTION} — read schema from the type, writing forbidden;</li>
- *   <li>{@link #REFRESH} — read schema the base event fields, write schema the fixed refresh command.</li>
+ *   <li>{@link #REFRESH} — read schema the base event fields, write schema the fixed refresh command;</li>
+ *   <li>{@link #METHOD} — both schemas derived from the object's methods, which are read by browsing it.</li>
  * </ul>
  * The kind is stated explicitly rather than inferred from the server: inference is possible in principle
  * (NodeClass, HasTypeDefinition, the EventNotifier attribute) but the EventNotifier bit in particular is
@@ -70,7 +71,22 @@ public enum OpcuaTagKind {
      * A query against a notifier, delivering events from potentially many conditions beneath it.
      * Northbound only — there is no single target to write to.
      */
-    EVENT_SUBSCRIPTION;
+    EVENT_SUBSCRIPTION,
+
+    /**
+     * An object whose methods can be called. The tag names the <em>object</em>; each request names the
+     * <em>method</em>, so one tag serves every method the object exposes.
+     * <p>
+     * The tag is a noun and the method is the verb, which is why the method is not part of the tag: an object
+     * with four methods is one tag with one topic pair, not four of each, and nothing in the configuration
+     * then fails to record that the four belong to the same device.
+     * <p>
+     * Unlike {@link #CONDITION}, whose methods are standard and whose NodeIds the specification fixes, a
+     * user-defined method's NodeId is per-server. Browsing the object is therefore the only way to learn it,
+     * and a tag whose browse does not reveal its methods is unusable rather than merely undescribed — so
+     * verification is what the call depends on, not a convenience that improves its metadata.
+     */
+    METHOD;
 
     /**
      * Reads the kind from configuration, treating <b>blank as unset</b> so the documented default

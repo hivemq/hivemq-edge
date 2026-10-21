@@ -117,7 +117,7 @@ class OpcUaNodeBrowserTest {
 
         assertThatThrownBy(() -> browser.browse("not a node id", 0))
                 .isInstanceOf(BrowseException.class)
-                .hasMessage("Invalid OPC-UA node ID: 'not a node id'");
+                .hasMessageStartingWith("Invalid OPC-UA node ID: 'not a node id'");
         assertThat(server.calls).isEmpty();
     }
 

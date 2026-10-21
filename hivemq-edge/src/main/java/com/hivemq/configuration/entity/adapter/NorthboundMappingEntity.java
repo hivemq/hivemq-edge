@@ -58,6 +58,10 @@ public class NorthboundMappingEntity implements EntityValidatable {
     @XmlElement(name = "includeMetadata", required = true)
     private final @NotNull Boolean includeMetadata;
 
+    // There is deliberately no method-call element here. A northbound mapping describes a topic to publish on and
+    // the shape of what is published; what belongs in a method response -- the reply address, the correlation
+    // token -- is decided by the southbound mapping that sent the request, and travels with the request in its
+    // `context`. Publishing a response therefore reads the context and needs no configuration of its own.
     @XmlElementWrapper(name = "mqttUserProperties", required = true)
     @XmlElement(name = "mqttUserProperty")
     private final @NotNull List<MqttUserPropertyEntity> userProperties;

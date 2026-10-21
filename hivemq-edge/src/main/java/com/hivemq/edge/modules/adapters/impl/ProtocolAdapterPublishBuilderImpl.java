@@ -81,6 +81,24 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
         return this;
     }
 
+    /**
+     * Sets the MQTT 5 {@code Correlation Data} property.
+     * <p>
+     * <b>Not on {@link ProtocolAdapterPublishBuilder}, deliberately.</b> That interface is in the adapter SDK,
+     * which stays byte-identical to master this release, and an adapter has no business setting this anyway:
+     * correlating a response with its request is Edge's concern, decided from the mapping and the request. So
+     * this is declared on the implementation and the one Edge-internal caller
+     * ({@code NorthboundTagConsumer}) holds that type rather than the interface.
+     * <p>
+     * The property is additive and costs an MQTT 3 subscriber nothing: the version-5 publish encoder writes it,
+     * the version-3 encoder has no field for it and never reads it, so one message serves both from the same
+     * object. The token also stays in the payload, which is where an MQTT 3 caller reads it.
+     */
+    public @NotNull ProtocolAdapterPublishBuilderImpl withCorrelationData(final byte @NotNull [] correlationData) {
+        builder.withCorrelationData(correlationData);
+        return this;
+    }
+
     @Override
     public @NotNull ProtocolAdapterPublishBuilder withRetain(final boolean retained) {
         builder.withRetain(retained);
