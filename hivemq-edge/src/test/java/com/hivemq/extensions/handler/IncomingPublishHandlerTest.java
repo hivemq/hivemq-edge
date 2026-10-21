@@ -133,12 +133,18 @@ public class IncomingPublishHandlerTest {
                 mqttServerDisconnector,
                 configurationService);
 
+        // a mock, not the store: test_read_publish_client_id_not_set sends a PUBLISH without a client id
+        final IncomingMessageFlowPersistence incomingMessageFlowPersistence =
+                mock(IncomingMessageFlowPersistence.class);
+        when(incomingMessageFlowPersistence.add(any(), anyInt()))
+                .thenReturn(IncomingMessageFlowPersistence.AddResult.ADDED);
         final PublishFlowHandler publishFlowHandler = new PublishFlowHandler(
                 mock(PublishPollService.class),
-                mock(IncomingMessageFlowPersistence.class),
+                incomingMessageFlowPersistence,
                 mock(OrderedTopicService.class),
                 incomingPublishHandler,
-                mock(DropOutgoingPublishesHandler.class));
+                mock(DropOutgoingPublishesHandler.class),
+                mock(MqttServerDisconnector.class));
         channel.pipeline().addFirst(publishFlowHandler);
         channel.pipeline().context(PublishFlowHandler.class);
     }

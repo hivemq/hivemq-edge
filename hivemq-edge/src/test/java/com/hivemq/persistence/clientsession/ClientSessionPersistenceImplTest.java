@@ -38,6 +38,7 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
+import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.Map;
@@ -59,6 +60,7 @@ public class ClientSessionPersistenceImplTest {
     private MqttServerDisconnector mqttServerDisconnector;
     private ConnectionPersistenceImpl connectionPersistence;
     private ClientSessionPersistenceImpl clientSessionPersistence;
+    private IncomingMessageFlowPersistence incomingMessageFlowPersistence;
     private SingleWriterService singleWriterService;
     private final @NotNull InternalConfigurationService internalConfigurationService =
             new InternalConfigurationServiceImpl();
@@ -72,6 +74,7 @@ public class ClientSessionPersistenceImplTest {
         mqttServerDisconnector = mock(MqttServerDisconnector.class);
         connectionPersistence = mock(ConnectionPersistenceImpl.class);
         clientSessionPersistence = mock(ClientSessionPersistenceImpl.class);
+        incomingMessageFlowPersistence = mock(IncomingMessageFlowPersistence.class);
 
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         clientSessionPersistence = new ClientSessionPersistenceImpl(
@@ -83,7 +86,8 @@ public class ClientSessionPersistenceImplTest {
                 mock(EventLog.class),
                 pendingWillMessages,
                 mqttServerDisconnector,
-                new Chunker(internalConfigurationService));
+                new Chunker(internalConfigurationService),
+                incomingMessageFlowPersistence);
     }
 
     @AfterEach
@@ -136,6 +140,8 @@ public class ClientSessionPersistenceImplTest {
         clientSessionPersistence
                 .clientConnected("client", true, 0, willPublish, 123L)
                 .get();
+        // clean start ends the previous session's unreleased QoS 2 identifiers before CONNACK
+        verify(incomingMessageFlowPersistence).delete("client");
 
         verify(localPersistence).put(eq("client"), any(ClientSession.class), anyLong(), anyInt());
     }
@@ -222,6 +228,7 @@ public class ClientSessionPersistenceImplTest {
 
         verify(subscriptionPersistence).removeAll("client");
         verify(clientQueuePersistence).clear("client", false);
+        verify(incomingMessageFlowPersistence).delete("client");
     }
 
     @Test

@@ -17,13 +17,11 @@ package com.hivemq.persistence.qos;
 
 import static org.mockito.Mockito.verify;
 
-import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import util.TestMessageUtil;
 
 /**
  * @since 4.1.0
@@ -43,16 +41,15 @@ public class IncomingMessageFlowPersistenceImplTest {
     }
 
     @Test
-    public void test_delegate_get() {
-        incomingMessageFlowPersistence.get("client", 1);
-        verify(incomingMessageFlowLocalPersistence).get("client", 1);
+    public void test_delegate_add() {
+        incomingMessageFlowPersistence.add("client", 1);
+        verify(incomingMessageFlowLocalPersistence).add("client", 1);
     }
 
     @Test
-    public void test_delegate_addOrReplace() {
-        final PUBLISH mqtt3Publish = TestMessageUtil.createMqtt3Publish();
-        incomingMessageFlowPersistence.addOrReplace("client", 1, mqtt3Publish);
-        verify(incomingMessageFlowLocalPersistence).addOrReplace("client", 1, mqtt3Publish);
+    public void test_delegate_size() {
+        incomingMessageFlowPersistence.size();
+        verify(incomingMessageFlowLocalPersistence).size();
     }
 
     @Test

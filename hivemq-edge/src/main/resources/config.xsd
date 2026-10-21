@@ -640,6 +640,48 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
+            <xs:element name="max-topic-filters-per-packet" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Topic filters one SUBSCRIBE or UNSUBSCRIBE may carry. A client that sends more is
+                        disconnected. Default: 10000
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="max-incoming-qos2-flows" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Inbound QoS 2 messages, across all clients, whose PUBREL has not arrived yet. Over the
+                        limit, a new QoS 2 PUBLISH is refused: MQTT 5 with PUBREC 0x97, MQTT 3 by closing the
+                        connection. Default: 100000
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:long">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="max-incoming-qos2-flows-per-client" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Inbound QoS 2 messages one client may have whose PUBREL has not arrived yet, kept across
+                        its reconnects. Over the limit, the client's new QoS 2 PUBLISH is refused as for
+                        max-incoming-qos2-flows, so that one client cannot hold the node's limit. Default: 1000
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="65535"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 

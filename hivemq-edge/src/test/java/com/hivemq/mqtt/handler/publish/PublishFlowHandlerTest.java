@@ -32,13 +32,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.extensions.handler.IncomingPublishHandler;
 import com.hivemq.mqtt.event.PublishDroppedEvent;
+import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.MessageWithID;
+import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.connect.Mqtt5CONNECT;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -50,13 +54,16 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.message.publish.PublishWithFuture;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
+import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.persistence.local.IncomingMessageFlowInMemoryLocalPersistence;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistenceImpl;
+import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.AfterEach;
@@ -72,8 +79,10 @@ public class PublishFlowHandlerTest {
 
     public static final String CLIENT_ID = "client";
 
-    @Mock
     private IncomingMessageFlowPersistence incomingMessageFlowPersistence;
+
+    @Mock
+    private MqttServerDisconnector serverDisconnector;
 
     @Mock
     private PublishPollService publishPollService;
@@ -86,6 +95,8 @@ public class PublishFlowHandlerTest {
 
     private OrderedTopicService orderedTopicService;
 
+    private final RestrictionsConfigurationServiceImpl restrictions = new RestrictionsConfigurationServiceImpl();
+
     private EmbeddedChannel channel;
 
     @BeforeEach
@@ -94,12 +105,15 @@ public class PublishFlowHandlerTest {
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 5;
         when(pool.takeNextId()).thenReturn(100);
         orderedTopicService = new OrderedTopicService();
+        incomingMessageFlowPersistence = spy(new IncomingMessageFlowPersistenceImpl(
+                new IncomingMessageFlowInMemoryLocalPersistence(restrictions, new MetricRegistry())));
         channel = new EmbeddedChannel(new PublishFlowHandler(
                 publishPollService,
                 incomingMessageFlowPersistence,
                 orderedTopicService,
                 incomingPublishHandler,
-                mock(DropOutgoingPublishesHandler.class)));
+                mock(DropOutgoingPublishesHandler.class),
+                serverDisconnector));
         final ClientConnection clientConnection = spy(new ClientConnection(channel, null));
         when(clientConnection.getMessageIDPool()).thenReturn(pool);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
@@ -144,8 +158,6 @@ public class PublishFlowHandlerTest {
                 .withPacketIdentifier(messageid)
                 .build();
 
-        when(incomingMessageFlowPersistence.get(CLIENT_ID, messageid)).thenReturn(null, publish);
-
         channel.writeInbound(publish);
 
         // ack to remove from map
@@ -173,8 +185,6 @@ public class PublishFlowHandlerTest {
                 .withPacketIdentifier(messageid)
                 .build();
 
-        when(incomingMessageFlowPersistence.get(CLIENT_ID, messageid)).thenReturn(null, publish);
-
         channel.writeInbound(publish);
         channel.writeInbound(publish);
 
@@ -194,8 +204,6 @@ public class PublishFlowHandlerTest {
                 .withPayload(new byte[100])
                 .withPacketIdentifier(messageid)
                 .build();
-
-        when(incomingMessageFlowPersistence.get(CLIENT_ID, messageid)).thenReturn(null, publish);
 
         channel.writeInbound(publish);
         channel.writeInbound(publish);
@@ -227,8 +235,6 @@ public class PublishFlowHandlerTest {
                 .withPacketIdentifier(messageid)
                 .build();
 
-        when(incomingMessageFlowPersistence.get(CLIENT_ID, messageid)).thenReturn(null, publish);
-
         channel.writeInbound(publish);
 
         // ack to remove from map
@@ -237,8 +243,10 @@ public class PublishFlowHandlerTest {
 
         channel.writeInbound(publish);
 
-        // pubcomp is here
-        assertEquals(2, channel.outboundMessages().size());
+        // only the PUBCOMP: after PUBREL the identifier is free, so the PUBLISH is new and forwarded again
+        assertEquals(1, channel.outboundMessages().size());
+        verify(incomingPublishHandler, times(2))
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(publish), eq(CLIENT_ID));
     }
 
     @Test
@@ -255,8 +263,6 @@ public class PublishFlowHandlerTest {
                 .withDuplicateDelivery(true)
                 .withPacketIdentifier(messageid)
                 .build();
-
-        when(incomingMessageFlowPersistence.get(CLIENT_ID, messageid)).thenReturn(null, publish);
 
         channel.writeInbound(publish);
         channel.writeInbound(publish);
@@ -281,8 +287,6 @@ public class PublishFlowHandlerTest {
                 .withPacketIdentifier(messageid)
                 .build();
 
-        when(incomingMessageFlowPersistence.get(CLIENT_ID, messageid)).thenReturn(null, publish);
-
         channel.writeInbound(publish);
         channel.writeInbound(publish);
 
@@ -290,8 +294,9 @@ public class PublishFlowHandlerTest {
         final PUBREC pubrec = channel.readOutbound();
         assertNotNull(pubrec);
         assertEquals(publish.getPacketIdentifier(), pubrec.getPacketIdentifier());
-        verify(incomingMessageFlowPersistence, times(1))
-                .addOrReplace(CLIENT_ID, publish.getPacketIdentifier(), publish);
+        verify(incomingMessageFlowPersistence, times(2)).add(CLIENT_ID, publish.getPacketIdentifier());
+        verify(incomingPublishHandler, times(1))
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(publish), eq(CLIENT_ID));
     }
 
     @Test
@@ -307,10 +312,7 @@ public class PublishFlowHandlerTest {
         assertNotNull(pubComp);
         assertEquals(pubrel.getPacketIdentifier(), pubComp.getPacketIdentifier());
 
-        verify(incomingMessageFlowPersistence)
-                .addOrReplace(eq("client"), eq(pubrel.getPacketIdentifier()), same(pubrel));
-
-        // We have to make sure that the client was actually deleted in the end
+        // released on PUBREL
         verify(incomingMessageFlowPersistence).remove(eq("client"), eq(pubrel.getPacketIdentifier()));
     }
 
@@ -792,10 +794,12 @@ public class PublishFlowHandlerTest {
         orderedTopicService = new OrderedTopicService();
         channel = new EmbeddedChannel(new PublishFlowHandler(
                 publishPollService,
-                new IncomingMessageFlowPersistenceImpl(new IncomingMessageFlowInMemoryLocalPersistence()),
+                new IncomingMessageFlowPersistenceImpl(
+                        new IncomingMessageFlowInMemoryLocalPersistence(restrictions, new MetricRegistry())),
                 orderedTopicService,
                 incomingPublishHandler,
-                mock(DropOutgoingPublishesHandler.class)));
+                mock(DropOutgoingPublishesHandler.class),
+                serverDisconnector));
         final ClientConnection clientConnection = spy(new ClientConnection(channel, null));
         when(clientConnection.getMessageIDPool()).thenReturn(pool);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
@@ -818,6 +822,149 @@ public class PublishFlowHandlerTest {
                 .interceptOrDelegate(any(ChannelHandlerContext.class), eq(publishQoS2), eq(CLIENT_ID));
         verify(incomingPublishHandler, times(0))
                 .interceptOrDelegate(any(ChannelHandlerContext.class), eq(publishQoS2_1000), eq(CLIENT_ID));
+    }
+
+    @Test
+    public void test_qos_2_over_the_node_limit_is_refused_with_pubrec_quota_exceeded_on_mqtt5() {
+        restrictions.setMaxIncomingQos2Flows(1);
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
+        final PUBLISH accepted = createPublish("topic", 1, QoS.EXACTLY_ONCE);
+        final PUBLISH refused = createPublish("topic", 2, QoS.EXACTLY_ONCE);
+
+        channel.writeInbound(accepted);
+        channel.writeInbound(refused);
+
+        final PUBREC pubrec = channel.readOutbound();
+        assertNotNull(pubrec);
+        assertEquals(2, pubrec.getPacketIdentifier());
+        assertEquals(Mqtt5PubRecReasonCode.QUOTA_EXCEEDED, pubrec.getReasonCode());
+        assertTrue(channel.isActive());
+        verify(incomingPublishHandler, never())
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(refused), eq(CLIENT_ID));
+        verify(serverDisconnector, never())
+                .disconnect(any(), any(), any(), any(Mqtt5DisconnectReasonCode.class), any());
+    }
+
+    @Test
+    public void test_qos_2_over_the_node_limit_disconnects_mqtt3() {
+        restrictions.setMaxIncomingQos2Flows(1);
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
+        final PUBLISH refused = createPublish("topic", 2, QoS.EXACTLY_ONCE);
+
+        channel.writeInbound(createPublish("topic", 1, QoS.EXACTLY_ONCE));
+        channel.writeInbound(refused);
+
+        assertTrue(channel.outboundMessages().isEmpty());
+        verify(serverDisconnector)
+                .disconnect(same(channel), any(), any(), eq(Mqtt5DisconnectReasonCode.QUOTA_EXCEEDED), any());
+        verify(incomingPublishHandler, never())
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(refused), eq(CLIENT_ID));
+    }
+
+    @Test
+    public void test_qos_2_over_the_client_limit_is_refused_with_pubrec_quota_exceeded_on_mqtt5() {
+        restrictions.setMaxIncomingQos2FlowsPerClient(1);
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
+        final PUBLISH refused = createPublish("topic", 2, QoS.EXACTLY_ONCE);
+
+        channel.writeInbound(createPublish("topic", 1, QoS.EXACTLY_ONCE));
+        channel.writeInbound(refused);
+
+        final PUBREC pubrec = channel.readOutbound();
+        assertNotNull(pubrec);
+        assertEquals(2, pubrec.getPacketIdentifier());
+        assertEquals(Mqtt5PubRecReasonCode.QUOTA_EXCEEDED, pubrec.getReasonCode());
+        assertEquals(ReasonStrings.QUOTA_EXCEEDED_INCOMING_QOS2_FLOWS, pubrec.getReasonString());
+        assertTrue(channel.isActive());
+        verify(incomingPublishHandler, never())
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(refused), eq(CLIENT_ID));
+    }
+
+    @Test
+    public void test_qos_2_over_the_client_limit_disconnects_mqtt3() {
+        restrictions.setMaxIncomingQos2FlowsPerClient(1);
+        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
+
+        channel.writeInbound(createPublish("topic", 1, QoS.EXACTLY_ONCE));
+        channel.writeInbound(createPublish("topic", 2, QoS.EXACTLY_ONCE));
+
+        verify(serverDisconnector)
+                .disconnect(
+                        same(channel),
+                        any(),
+                        any(),
+                        eq(Mqtt5DisconnectReasonCode.QUOTA_EXCEEDED),
+                        eq(ReasonStrings.QUOTA_EXCEEDED_INCOMING_QOS2_FLOWS));
+    }
+
+    @Test
+    public void test_error_pubrec_releases_the_identifier() {
+        final PUBLISH publish = createPublish("topic", 5, QoS.EXACTLY_ONCE);
+        channel.writeInbound(publish);
+
+        channel.writeOutbound(
+                new PUBREC(5, Mqtt5PubRecReasonCode.NOT_AUTHORIZED, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
+
+        verify(incomingMessageFlowPersistence).remove(CLIENT_ID, 5);
+        // the identifier is free: the same PUBLISH is a new message
+        channel.writeInbound(publish);
+        verify(incomingPublishHandler, times(2))
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(publish), eq(CLIENT_ID));
+    }
+
+    @Test
+    public void test_error_pubrec_releases_the_identifier_only_once_written() {
+        // an outbound handler nearer the network that holds the write, as an asynchronous PUBREC interceptor does
+        final ChannelPromise[] held = new ChannelPromise[1];
+        channel.pipeline().addFirst(new ChannelOutboundHandlerAdapter() {
+            @Override
+            public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise) {
+                if (held[0] == null) {
+                    held[0] = promise; // the error PUBREC; later writes (the PUBREC of the retransmission) are dropped
+                }
+            }
+        });
+        final PUBLISH publish = createPublish("topic", 5, QoS.EXACTLY_ONCE);
+        channel.writeInbound(publish);
+
+        channel.pipeline()
+                .writeAndFlush(new PUBREC(
+                        5, Mqtt5PubRecReasonCode.NOT_AUTHORIZED, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
+        // still held: a retransmission before the PUBREC is sent is recognised as one
+        channel.writeInbound(publish);
+        verify(incomingPublishHandler, times(1))
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(publish), eq(CLIENT_ID));
+
+        held[0].setSuccess();
+        verify(incomingMessageFlowPersistence).remove(CLIENT_ID, 5);
+    }
+
+    @Test
+    public void test_success_pubrec_keeps_the_identifier() {
+        final PUBLISH publish = createPublish("topic", 5, QoS.EXACTLY_ONCE);
+        channel.writeInbound(publish);
+
+        channel.writeOutbound(new PUBREC(5));
+        channel.writeInbound(publish);
+
+        verify(incomingMessageFlowPersistence, never()).remove(anyString(), anyInt());
+        verify(incomingPublishHandler, times(1))
+                .interceptOrDelegate(any(ChannelHandlerContext.class), eq(publish), eq(CLIENT_ID));
+    }
+
+    @Test
+    public void test_qos_2_retransmission_over_the_node_limit_is_still_answered() {
+        restrictions.setMaxIncomingQos2Flows(1);
+        final PUBLISH publish = createPublish("topic", 1, QoS.EXACTLY_ONCE);
+
+        channel.writeInbound(publish);
+        channel.writeInbound(publish);
+
+        final PUBREC pubrec = channel.readOutbound();
+        assertNotNull(pubrec);
+        assertEquals(Mqtt5PubRecReasonCode.SUCCESS, pubrec.getReasonCode());
+        verify(serverDisconnector, never())
+                .disconnect(any(), any(), any(), any(Mqtt5DisconnectReasonCode.class), any());
     }
 
     private PUBLISH createPublish(final String topic, final int messageId, final QoS qoS) {

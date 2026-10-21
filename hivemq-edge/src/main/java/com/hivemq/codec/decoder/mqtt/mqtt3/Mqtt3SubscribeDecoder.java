@@ -95,7 +95,13 @@ public class Mqtt3SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
             return null;
         }
 
+        int decodedFilters = 0;
         while (buf.isReadable()) {
+            if (topicFilterLimitExceeded(clientConnection, decodedFilters, MessageType.SUBSCRIBE)) {
+                buf.clear();
+                return null;
+            }
+            decodedFilters++;
             final String topic = Strings.getPrefixedString(buf);
             if (topic == null || isInvalidTopic(clientConnection, topic)) {
                 disconnector.disconnect(

@@ -43,6 +43,9 @@ public interface RestrictionsConfigurationService {
     long NO_CONNECT_IDLE_TIMEOUT_DEFAULT = 10000;
     long INCOMING_BANDWIDTH_THROTTLING_DEFAULT = UNLIMITED_BANDWIDTH;
     int MAX_TOPIC_LENGTH_DEFAULT = UnsignedDataTypes.UNSIGNED_SHORT_MAX_VALUE;
+    int MAX_TOPIC_FILTERS_PER_PACKET_DEFAULT = 10_000;
+    long MAX_INCOMING_QOS2_FLOWS_DEFAULT = 100_000;
+    int MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_DEFAULT = 1_000;
 
     /**
      * BOUNDARY VALUES
@@ -55,6 +58,10 @@ public interface RestrictionsConfigurationService {
     long INCOMING_BANDWIDTH_THROTTLING_MINIMUM = 0;
     int MAX_TOPIC_LENGTH_MINIMUM = 1;
     int MAX_TOPIC_LENGTH_MAXIMUM = UnsignedDataTypes.UNSIGNED_SHORT_MAX_VALUE;
+    int MAX_TOPIC_FILTERS_PER_PACKET_MINIMUM = 1;
+    long MAX_INCOMING_QOS2_FLOWS_MINIMUM = 1;
+    int MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_MINIMUM = 1;
+    int MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_MAXIMUM = UnsignedDataTypes.UNSIGNED_SHORT_MAX_VALUE;
 
     /**
      * Returns the maximum allowed connections.
@@ -86,6 +93,21 @@ public interface RestrictionsConfigurationService {
      */
     int maxTopicLength();
 
+    /**
+     * @return the maximum number of topic filters a single SUBSCRIBE or UNSUBSCRIBE may carry
+     */
+    int maxTopicFiltersPerPacket();
+
+    /**
+     * @return the maximum number of inbound QoS 2 messages, across all clients, whose PUBREL has not arrived yet
+     */
+    long maxIncomingQos2Flows();
+
+    /**
+     * @return the maximum number of inbound QoS 2 messages one client may have whose PUBREL has not arrived yet
+     */
+    int maxIncomingQos2FlowsPerClient();
+
     void setMaxConnections(long maxConnections);
 
     void setMaxClientIdLength(int maxClientIdLength);
@@ -95,4 +117,10 @@ public interface RestrictionsConfigurationService {
     void setIncomingLimit(long incomingLimit);
 
     void setMaxTopicLength(int maxTopicLength);
+
+    void setMaxTopicFiltersPerPacket(int maxTopicFiltersPerPacket);
+
+    void setMaxIncomingQos2Flows(long maxIncomingQos2Flows);
+
+    void setMaxIncomingQos2FlowsPerClient(int maxIncomingQos2FlowsPerClient);
 }

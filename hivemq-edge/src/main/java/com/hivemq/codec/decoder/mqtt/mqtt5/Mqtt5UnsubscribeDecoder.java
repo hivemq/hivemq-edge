@@ -110,7 +110,12 @@ public class Mqtt5UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
         }
 
         ImmutableList.Builder<String> topicFilterBuilder = null;
+        int decodedFilters = 0;
         while (buf.isReadable()) {
+            if (topicFilterLimitExceeded(clientConnection, decodedFilters, MessageType.UNSUBSCRIBE)) {
+                return null;
+            }
+            decodedFilters++;
             topicFilterBuilder = decodeTopicFilter(clientConnection, buf, topicFilterBuilder);
             if (topicFilterBuilder == null) {
                 return null;

@@ -15,107 +15,85 @@
  */
 package com.hivemq.persistence.local;
 
-import com.hivemq.extension.sdk.api.annotations.Immutable;
-import com.hivemq.mqtt.message.MessageWithID;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.hivemq.configuration.service.RestrictionsConfigurationService;
+import com.hivemq.metrics.HiveMQMetrics;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.util.Iterator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * This is an in-memory on-heap implementation of the
- * incoming message flow persistence.
- * <p>
- * Implementation note: No Locking is used since this implementation assumes the following:
- * <p>
- * - The same thread is used for each client id
- *
- * @author Dominik Obermaier
+ * Packet identifiers per client, each set guarded by its map bin: every read and write of a set runs inside a
+ * {@link ConcurrentHashMap} compute on its client. Deleting a client is one removal, not a scan over every client.
  */
 @Singleton
 public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMessageFlowLocalPersistence {
 
-    private final ConcurrentHashMap<MessageFlowKey, MessageWithID> backingMap = new ConcurrentHashMap<>();
+    private final @NotNull ConcurrentHashMap<String, Set<Integer>> flows = new ConcurrentHashMap<>();
+    // a LongAdder, not an AtomicLong: one shared counter written on every PUBLISH and PUBREL cut throughput 3x at
+    // 8 threads. The node limit becomes approximate: adds for different clients that check it together can pass
+    // it by at most one each, which does not matter for a memory bound.
+    private final @NotNull LongAdder size = new LongAdder();
+    private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
 
     @Inject
-    public IncomingMessageFlowInMemoryLocalPersistence() {}
+    public IncomingMessageFlowInMemoryLocalPersistence(
+            final @NotNull RestrictionsConfigurationService restrictionsConfigurationService,
+            final @NotNull MetricRegistry metricRegistry) {
+        this.restrictionsConfigurationService = restrictionsConfigurationService;
+        metricRegistry.register(HiveMQMetrics.INCOMING_QOS2_FLOWS_CURRENT.name(), (Gauge<Long>) size::sum);
+    }
 
     @Override
     public void closeDB() {}
 
     @Override
-    @Nullable
-    public MessageWithID get(final @NotNull String client, final int messageId) {
-        return backingMap.get(new MessageFlowKey(client, messageId));
-    }
-
-    @Override
-    public void addOrReplace(final @NotNull String client, final int messageId, final @NotNull MessageWithID message) {
-        backingMap.put(new MessageFlowKey(client, messageId), message);
+    public @NotNull AddResult add(final @NotNull String client, final int messageId) {
+        final AddResult[] result = new AddResult[1];
+        flows.compute(client, (key, messageIds) -> {
+            final Set<Integer> ids = messageIds != null ? messageIds : new HashSet<>();
+            if (ids.contains(messageId)) {
+                result[0] = AddResult.ALREADY_PRESENT;
+            } else if (ids.size() >= restrictionsConfigurationService.maxIncomingQos2FlowsPerClient()) {
+                result[0] = AddResult.LIMIT_REACHED;
+            } else if (size.sum() >= restrictionsConfigurationService.maxIncomingQos2Flows()) {
+                result[0] = AddResult.LIMIT_REACHED;
+            } else {
+                ids.add(messageId);
+                size.increment();
+                result[0] = AddResult.ADDED;
+            }
+            return ids.isEmpty() ? null : ids;
+        });
+        return result[0];
     }
 
     @Override
     public void remove(final @NotNull String client, final int messageId) {
-        backingMap.remove(new MessageFlowKey(client, messageId));
+        flows.computeIfPresent(client, (key, ids) -> {
+            if (ids.remove(messageId)) {
+                size.decrement();
+            }
+            return ids.isEmpty() ? null : ids;
+        });
     }
 
     @Override
     public void delete(final @NotNull String client) {
-
-        /* dobermai: This is a dangerous operation since that delete is not atomic.
-        It shouldn't be a problem, though, since if delete is called, no adds / removes
-        are expected for the same client key at the same time due to other threads interfering.
-
-        Since the Netty layer gives us this guarantee,
-        this should work for us. In case this guarantee is removed in the future,
-        then we have a problem here and we need to lock the whole map while doing this expensive operation!
-
-        Another problem here is that the removal has a complexity of O(n), which isn't really good for large maps.
-        Fortunately we don't block and don't lock, so this shouldn't be much of a problem. However, the calling
-        thread will be blocked. In case we have very large maps, it may be a good idea to execute this in a
-        separate executor or we do parallel iteration.*/
-        final Iterator<MessageFlowKey> iterator = backingMap.keySet().iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getClientId().equals(client)) {
-                iterator.remove();
-            }
+        // the removal takes the bin lock, so every change made to the set under a compute is visible here
+        final Set<Integer> ids = flows.remove(client);
+        if (ids != null) {
+            size.add(-ids.size());
         }
     }
 
-    @Immutable
-    static class MessageFlowKey {
-
-        private final String clientId;
-
-        // We only need the message ID for hashing, so we don't provide
-        // any access to it
-        private final int messageId;
-
-        public MessageFlowKey(final @NotNull String clientId, final int messageId) {
-            this.clientId = clientId;
-            this.messageId = messageId;
-        }
-
-        public String getClientId() {
-            return clientId;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (!(o instanceof MessageFlowKey that)) return false;
-
-            if (messageId != that.messageId) return false;
-            return clientId.equals(that.clientId);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = clientId.hashCode();
-            result = 31 * result + messageId;
-            return result;
-        }
+    @Override
+    public long size() {
+        return size.sum();
     }
 }

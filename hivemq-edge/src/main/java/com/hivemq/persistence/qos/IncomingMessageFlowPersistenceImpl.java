@@ -15,12 +15,10 @@
  */
 package com.hivemq.persistence.qos;
 
-import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -36,13 +34,8 @@ public class IncomingMessageFlowPersistenceImpl implements IncomingMessageFlowPe
     }
 
     @Override
-    public @Nullable MessageWithID get(final @NotNull String client, final int messageId) {
-        return localPersistence.get(client, messageId);
-    }
-
-    @Override
-    public void addOrReplace(final @NotNull String client, final int messageId, final @NotNull MessageWithID message) {
-        localPersistence.addOrReplace(client, messageId, message);
+    public @NotNull AddResult add(final @NotNull String client, final int messageId) {
+        return localPersistence.add(client, messageId);
     }
 
     @Override
@@ -53,6 +46,11 @@ public class IncomingMessageFlowPersistenceImpl implements IncomingMessageFlowPe
     @Override
     public void delete(final @NotNull String client) {
         localPersistence.delete(client);
+    }
+
+    @Override
+    public long size() {
+        return localPersistence.size();
     }
 
     @Override

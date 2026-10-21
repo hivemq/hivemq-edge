@@ -25,17 +25,22 @@ import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.extensions.handler.IncomingPublishHandler;
 import com.hivemq.mqtt.event.PublishDroppedEvent;
 import com.hivemq.mqtt.event.PubrelDroppedEvent;
+import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.MessageWithID;
+import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.QoS;
+import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.puback.PUBACK;
 import com.hivemq.mqtt.message.pubcomp.PUBCOMP;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
+import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.util.FutureUtils;
+import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -44,6 +49,7 @@ import io.netty.channel.ChannelPromise;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,12 +67,17 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
 
     // must be static as a new instance of qos receiver handler is in every channel
     private static final @NotNull AtomicLong UNACKNOWLEDGED_PUBLISHES_COUNTER = new AtomicLong();
+    private static final long QOS2_LIMIT_WARNING_INTERVAL_NANOS = TimeUnit.MINUTES.toNanos(1);
+    // static: one warning a minute for the node, not per channel
+    private static final @NotNull AtomicLong LAST_QOS2_LIMIT_WARNING =
+            new AtomicLong(System.nanoTime() - QOS2_LIMIT_WARNING_INTERVAL_NANOS - 1);
 
     private final @NotNull IncomingMessageFlowPersistence persistence;
     private final @NotNull OrderedTopicService orderedTopicService;
     private final @NotNull PublishPollService publishPollService;
     private final @NotNull IncomingPublishHandler incomingPublishHandler;
     private final @NotNull DropOutgoingPublishesHandler dropOutgoingPublishesHandler;
+    private final @NotNull MqttServerDisconnector serverDisconnector;
 
     private final @NotNull Map<Integer, Boolean> qos1AlreadySentMap;
 
@@ -77,13 +88,15 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
             final @NotNull IncomingMessageFlowPersistence persistence,
             final @NotNull OrderedTopicService orderedTopicService,
             final @NotNull IncomingPublishHandler incomingPublishHandler,
-            final @NotNull DropOutgoingPublishesHandler dropOutgoingPublishesHandler) {
+            final @NotNull DropOutgoingPublishesHandler dropOutgoingPublishesHandler,
+            final @NotNull MqttServerDisconnector serverDisconnector) {
         this.publishPollService = publishPollService;
         this.persistence = persistence;
         this.orderedTopicService = orderedTopicService;
         this.qos1AlreadySentMap = new HashMap<>();
         this.incomingPublishHandler = incomingPublishHandler;
         this.dropOutgoingPublishesHandler = dropOutgoingPublishesHandler;
+        this.serverDisconnector = serverDisconnector;
     }
 
     @Override
@@ -124,6 +137,16 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
             throws Exception {
 
         if (!(msg instanceof PUBLISH || msg instanceof PUBACK || msg instanceof PUBREL)) {
+            if (msg instanceof PUBREC pubrec && pubrec.getReasonCode().getCode() >= 0x80) {
+                // A PUBREC with an error code ends the flow: the client may reuse the identifier at once (MQTT 5,
+                // 4.3.3), and kept, it would drop that next PUBLISH as a retransmission and count against the limits.
+                // Released once the write completes, not when it starts: an outbound interceptor may hold the PUBREC,
+                // and until it is sent a retransmission must still be recognised as one.
+                final ChannelPromise written = promise.unvoid();
+                written.addListener(future -> releaseIncomingQos2(ctx, pubrec.getPacketIdentifier()));
+                super.write(ctx, msg, written);
+                return;
+            }
             super.write(ctx, msg, promise);
             return;
         }
@@ -217,12 +240,59 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
             // QoS 2 duplicate delivery handling
         } else {
             final int messageId = publish.getPacketIdentifier();
-            final MessageWithID savedMessage = persistence.get(client, messageId);
-            if (!(savedMessage instanceof PUBLISH)) {
-                persistence.addOrReplace(client, messageId, publish);
-                firstPublishForMessageIdReceived(ctx, publish, client, messageId);
-            } else ctx.writeAndFlush(new PUBREC(messageId));
+            switch (persistence.add(client, messageId)) {
+                case ADDED -> firstPublishForMessageIdReceived(ctx, publish, client, messageId);
+                case ALREADY_PRESENT -> ctx.writeAndFlush(new PUBREC(messageId));
+                case LIMIT_REACHED -> refuseQos2Publish(ctx, client, messageId);
+            }
         }
+    }
+
+    /**
+     * The client holds {@code max-incoming-qos2-flows-per-client} unreleased QoS 2 messages, or the node holds
+     * {@code max-incoming-qos2-flows}. MQTT 5 can refuse the one message with PUBREC 0x97, which ends its flow and keeps
+     * the connection; MQTT 3 has no negative PUBREC, so it is disconnected. The message is not forwarded either way.
+     */
+    private void refuseQos2Publish(
+            final @NotNull ChannelHandlerContext ctx, final @NotNull String client, final int messageId) {
+        final long now = System.nanoTime();
+        final long last = LAST_QOS2_LIMIT_WARNING.get();
+        if (now - last > QOS2_LIMIT_WARNING_INTERVAL_NANOS && LAST_QOS2_LIMIT_WARNING.compareAndSet(last, now)) {
+            log.warn(
+                    "A limit of unreleased inbound QoS 2 messages (max-incoming-qos2-flows-per-client or "
+                            + "max-incoming-qos2-flows) is reached; QoS 2 PUBLISHes are refused. Last refused client: "
+                            + "'{}'. Logged at most once a minute.",
+                    client);
+        }
+        final ProtocolVersion protocolVersion = ctx.channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .getProtocolVersion();
+        if (protocolVersion == ProtocolVersion.MQTTv5) {
+            ctx.writeAndFlush(new PUBREC(
+                    messageId,
+                    Mqtt5PubRecReasonCode.QUOTA_EXCEEDED,
+                    ReasonStrings.QUOTA_EXCEEDED_INCOMING_QOS2_FLOWS,
+                    Mqtt5UserProperties.NO_USER_PROPERTIES));
+        } else {
+            serverDisconnector.disconnect(
+                    ctx.channel(),
+                    "A client (IP: {}) sent a QoS 2 PUBLISH over the limit of QoS 2 messages awaiting PUBREL. "
+                            + "Disconnecting client.",
+                    "Sent a QoS 2 PUBLISH over the limit of QoS 2 messages awaiting PUBREL",
+                    Mqtt5DisconnectReasonCode.QUOTA_EXCEEDED,
+                    ReasonStrings.QUOTA_EXCEEDED_INCOMING_QOS2_FLOWS);
+        }
+    }
+
+    @SuppressWarnings("NullAway") // the client id is set before any PUBREC is written
+    private void releaseIncomingQos2(final @NotNull ChannelHandlerContext ctx, final int messageId) {
+        persistence.remove(
+                ctx.channel()
+                        .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                        .get()
+                        .getClientId(),
+                messageId);
     }
 
     private void firstPublishForMessageIdReceived(
@@ -277,8 +347,10 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
 
         final int messageId = pubrel.getPacketIdentifier();
 
-        persistence.addOrReplace(client, messageId, pubrel);
-        ctx.writeAndFlush(new PUBCOMP(messageId)).addListener(new PubcompSentListener(messageId, client, persistence));
+        // Released on PUBREL, not on PUBCOMP: the client cannot reuse the identifier before it receives PUBCOMP, and a
+        // PUBCOMP that never flushes must not leave the identifier held
+        persistence.remove(client, messageId);
+        ctx.writeAndFlush(new PUBCOMP(messageId)).addListener(new PubcompSentListener(messageId, client));
     }
 
     private void handlePubcomp(
@@ -296,23 +368,16 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
 
         private final int messageId;
         private final @Nullable String client;
-        private final @NotNull IncomingMessageFlowPersistence persistence;
 
-        PubcompSentListener(
-                final int messageId,
-                final @Nullable String client,
-                final @NotNull IncomingMessageFlowPersistence persistence) {
+        PubcompSentListener(final int messageId, final @Nullable String client) {
             this.messageId = messageId;
             this.client = client;
-            this.persistence = persistence;
         }
 
         @Override
-        @SuppressWarnings("NullAway") // client is always set when PUBCOMP messages are flowing
         public void operationComplete(final ChannelFuture future) throws Exception {
             if (future.isSuccess()) {
                 UNACKNOWLEDGED_PUBLISHES_COUNTER.decrementAndGet();
-                persistence.remove(client, messageId);
                 log.trace(
                         "Client '{}' completed a PUBLISH flow with QoS 1 or 2 for packet identifier '{}'",
                         client,

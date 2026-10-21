@@ -79,4 +79,66 @@ public class RestrictionConfiguratorTest extends AbstractConfigurationTest {
 
         assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
     }
+
+    @Test
+    public void test_topic_filter_and_qos2_flow_limits() throws Exception {
+        final String contents = "<hivemq><restrictions>"
+                + "<max-topic-filters-per-packet>50</max-topic-filters-per-packet>"
+                + "<max-incoming-qos2-flows>2000</max-incoming-qos2-flows>"
+                + "<max-incoming-qos2-flows-per-client>20</max-incoming-qos2-flows-per-client>"
+                + "</restrictions></hivemq>";
+        Files.write(contents.getBytes(UTF_8), xmlFile);
+
+        reader.applyConfig();
+
+        assertEquals(50, restrictionsConfigurationService.maxTopicFiltersPerPacket());
+        assertEquals(2000, restrictionsConfigurationService.maxIncomingQos2Flows());
+        assertEquals(20, restrictionsConfigurationService.maxIncomingQos2FlowsPerClient());
+    }
+
+    @Test
+    public void test_topic_filter_and_qos2_flow_limit_defaults() throws Exception {
+        Files.write("<hivemq><restrictions/></hivemq>".getBytes(UTF_8), xmlFile);
+
+        reader.applyConfig();
+
+        assertEquals(10_000, restrictionsConfigurationService.maxTopicFiltersPerPacket());
+        assertEquals(100_000, restrictionsConfigurationService.maxIncomingQos2Flows());
+        assertEquals(1_000, restrictionsConfigurationService.maxIncomingQos2FlowsPerClient());
+    }
+
+    @Test
+    public void test_topic_filter_limit_zero_is_refused() throws IOException {
+        Files.write(
+                "<hivemq><restrictions><max-topic-filters-per-packet>0</max-topic-filters-per-packet></restrictions></hivemq>"
+                        .getBytes(UTF_8),
+                xmlFile);
+
+        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+    }
+
+    @Test
+    public void test_qos2_flow_limit_zero_is_refused() throws IOException {
+        Files.write(
+                "<hivemq><restrictions><max-incoming-qos2-flows>0</max-incoming-qos2-flows></restrictions></hivemq>"
+                        .getBytes(UTF_8),
+                xmlFile);
+
+        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+    }
+
+    @Test
+    public void test_qos2_flow_limit_per_client_out_of_range_is_refused() throws IOException {
+        Files.write(
+                "<hivemq><restrictions><max-incoming-qos2-flows-per-client>0</max-incoming-qos2-flows-per-client></restrictions></hivemq>"
+                        .getBytes(UTF_8),
+                xmlFile);
+        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+
+        Files.write(
+                "<hivemq><restrictions><max-incoming-qos2-flows-per-client>65536</max-incoming-qos2-flows-per-client></restrictions></hivemq>"
+                        .getBytes(UTF_8),
+                xmlFile);
+        assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+    }
 }

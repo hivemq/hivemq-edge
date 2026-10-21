@@ -75,6 +75,10 @@ public class Mqtt3UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
         final List<String> topics = new ArrayList<>();
 
         while (buf.isReadable()) {
+            if (topicFilterLimitExceeded(clientConnection, topics.size(), MessageType.UNSUBSCRIBE)) {
+                buf.clear();
+                return null;
+            }
             final String topic = Strings.getPrefixedString(buf);
             if (isInvalidTopic(clientConnection, topic)) {
                 disconnector.disconnect(
