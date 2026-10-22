@@ -228,6 +228,68 @@ describe('getPropertyListFrom', () => {
     expect(properties.find((p) => p.key === 'container')?.readOnly).toBeUndefined()
     expect(properties.find((p) => p.key === 'writableChild')?.readOnly).toBeUndefined()
   })
+
+  it('should give a nullable scalar the type of its non-null form', () => {
+    const properties = getPropertyListFrom({
+      type: 'object',
+      properties: { name: { type: ['string', 'null'], description: 'A name' } },
+    })
+
+    expect(properties).toStrictEqual([expect.objectContaining({ key: 'name', type: 'string', description: 'A name' })])
+  })
+
+  it('should unwrap a nullable object, keeping its properties and the outer annotations', () => {
+    const properties = getPropertyListFrom({
+      type: 'object',
+      properties: {
+        browseName: {
+          anyOf: [{ type: 'object', properties: { name: { type: ['string', 'null'] } } }, { type: 'null' }],
+          title: 'Browse name',
+          readOnly: true,
+        },
+      },
+    })
+
+    expect(properties).toStrictEqual([
+      expect.objectContaining({ key: 'browseName', path: [], type: 'object', title: 'Browse name', readOnly: true }),
+      expect.objectContaining({ key: 'name', path: ['browseName'], type: 'string', readOnly: true }),
+    ])
+  })
+
+  it('should unwrap a nullable array and its nullable items', () => {
+    const properties = getPropertyListFrom({
+      type: 'object',
+      properties: {
+        values: {
+          anyOf: [{ type: 'array', items: { type: ['integer', 'null'] } }, { type: 'null' }],
+        },
+        names: {
+          type: 'array',
+          items: { anyOf: [{ type: 'object', properties: {} }, { type: 'null' }] },
+        },
+      },
+    })
+
+    expect(properties.find((p) => p.key === 'values')).toStrictEqual(
+      expect.objectContaining({ type: 'array', arrayType: 'integer' })
+    )
+    expect(properties.find((p) => p.key === 'names')).toStrictEqual(
+      expect.objectContaining({ type: 'array', arrayType: 'object' })
+    )
+  })
+
+  it('should leave a type list or anyOf that is not a nullability marker unchanged', () => {
+    const properties = getPropertyListFrom({
+      type: 'object',
+      properties: {
+        either: { type: ['string', 'number'] },
+        oneOfTwo: { anyOf: [{ type: 'string' }, { type: 'number' }] },
+      },
+    })
+
+    expect(properties.find((p) => p.key === 'either')?.type).toStrictEqual(['string', 'number'])
+    expect(properties.find((p) => p.key === 'oneOfTwo')?.type).toBeUndefined()
+  })
 })
 
 describe('reducerSchemaExamples', () => {

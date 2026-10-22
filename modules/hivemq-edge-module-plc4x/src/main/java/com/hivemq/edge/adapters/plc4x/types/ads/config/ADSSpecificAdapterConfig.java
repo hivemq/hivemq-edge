@@ -145,7 +145,8 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof ADSSpecificAdapterConfig that)) return false;
-        return getPort() == that.getPort()
+        return Objects.equals(getHost(), that.getHost())
+                && getPort() == that.getPort()
                 && getTargetAmsPort() == that.getTargetAmsPort()
                 && getSourceAmsPort() == that.getSourceAmsPort()
                 && isKeepAlive() == that.isKeepAlive()
@@ -157,6 +158,7 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
     @Override
     public int hashCode() {
         return Objects.hash(
+                getHost(),
                 getPort(),
                 getTargetAmsPort(),
                 getSourceAmsPort(),

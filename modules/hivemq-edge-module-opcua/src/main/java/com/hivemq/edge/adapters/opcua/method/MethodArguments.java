@@ -112,7 +112,9 @@ public final class MethodArguments {
                 continue;
             }
             final JsonNode supplied = value.get(name);
-            if (supplied == null || supplied.isNull()) {
+            // Absent, not null. A JSON null is a value (EDG-1138): the converter sends the argument type's null
+            // value, or refuses a type that has none.
+            if (supplied == null) {
                 // The one argument fault OPC-UA names specifically. Every other one -- a name the method does
                 // not declare, a value its type cannot hold -- is Bad_InvalidArgument, which is also what a
                 // server answers. Reported as its own code because a caller branching on status codes can act
