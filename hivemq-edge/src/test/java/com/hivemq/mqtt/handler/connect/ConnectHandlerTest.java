@@ -37,6 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
@@ -46,6 +47,7 @@ import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
@@ -69,6 +71,7 @@ import com.hivemq.mqtt.handler.KeepAliveDisconnectService;
 import com.hivemq.mqtt.handler.auth.AuthInProgressMessageHandler;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.connack.MqttConnackerImpl;
+import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import com.hivemq.mqtt.handler.publish.DropOutgoingPublishesHandler;
 import com.hivemq.mqtt.handler.publish.FlowControlHandler;
@@ -91,7 +94,8 @@ import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
-import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
+import com.hivemq.persistence.local.IncomingMessageFlowInMemoryLocalPersistence;
+import com.hivemq.persistence.qos.IncomingMessageFlowPersistenceImpl;
 import com.hivemq.util.Checkpoints;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelDuplexHandler;
@@ -1803,10 +1807,12 @@ public class ConnectHandlerTest {
 
         final Provider<PublishFlowHandler> publishFlowHandlerProvider = () -> new PublishFlowHandler(
                 mock(PublishPollService.class),
-                mock(IncomingMessageFlowPersistence.class),
+                new IncomingMessageFlowPersistenceImpl(new IncomingMessageFlowInMemoryLocalPersistence(
+                        new RestrictionsConfigurationServiceImpl(), new MetricRegistry())),
                 mock(OrderedTopicService.class),
                 mock(IncomingPublishHandler.class),
-                mock(DropOutgoingPublishesHandler.class));
+                mock(DropOutgoingPublishesHandler.class),
+                mock(MqttServerDisconnector.class));
 
         final Provider<FlowControlHandler> flowControlHandlerProvider =
                 () -> new FlowControlHandler(configurationService.mqttConfiguration(), serverDisconnector);

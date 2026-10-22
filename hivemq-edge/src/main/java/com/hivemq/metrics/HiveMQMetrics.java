@@ -211,4 +211,11 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Gauge<Number>> ASSET_MAPPERS_COUNT_CURRENT =
             HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "pulse.asset-mappers.current");
+
+    /**
+     * represents a {@link Gauge}, which holds the inbound QoS 2 messages, across all clients, whose PUBREL has not
+     * arrived yet. Bounded by the {@code max-incoming-qos2-flows} restriction.
+     */
+    public static final HiveMQMetric<Gauge<Number>> INCOMING_QOS2_FLOWS_CURRENT =
+            HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "mqtt.incoming.qos2-flows.current");
 }

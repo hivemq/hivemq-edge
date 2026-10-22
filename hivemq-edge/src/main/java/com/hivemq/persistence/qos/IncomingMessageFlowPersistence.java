@@ -15,48 +15,66 @@
  */
 package com.hivemq.persistence.qos;
 
-import com.hivemq.mqtt.message.MessageWithID;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * @author Dominik Obermaier
+ * The inbound QoS 2 PUBLISHes whose PUBREL has not arrived yet, as packet identifiers per client.
+ * <p>
+ * Only the identifier is kept. The message has been forwarded when it is recorded; the entry exists so that a
+ * retransmission of the same PUBLISH is answered with PUBREC and not forwarded again, until the client releases the
+ * identifier with PUBREL. The entries are bounded per client by {@code max-incoming-qos2-flows-per-client}, so that one
+ * client cannot hold the node's capacity, and across all clients by {@code max-incoming-qos2-flows}.
  */
 public interface IncomingMessageFlowPersistence {
 
     /**
-     * get a {@link MessageWithID} for specific client id and message id from the persistence.
-     *
-     * @param client    The client which belongs this message.
-     * @param messageId The identifier of the message.
-     * @return the message with id.
+     * The outcome of {@link #add(String, int)}.
      */
-    @Nullable
-    MessageWithID get(final @NotNull String client, final int messageId);
+    enum AddResult {
+        /**
+         * The identifier was recorded: the PUBLISH is new and must be forwarded.
+         */
+        ADDED,
+        /**
+         * The identifier was already recorded: the PUBLISH is a retransmission and must not be forwarded again.
+         */
+        ALREADY_PRESENT,
+        /**
+         * The client or the node holds its maximum number of entries: the PUBLISH must be refused.
+         */
+        LIMIT_REACHED
+    }
 
     /**
-     * Add or replace a {@link MessageWithID} for specific client id and message id.
+     * Records that the client sent a QoS 2 PUBLISH with this packet identifier.
      *
-     * @param client    The client which belongs this message.
-     * @param messageId The identifier of the message.
-     * @param message   The message to add.
+     * @param client    the client that sent the PUBLISH
+     * @param messageId the packet identifier of the PUBLISH
+     * @return whether the identifier was recorded, already present, or refused because the client or the node is at
+     *         its limit
      */
-    void addOrReplace(final @NotNull String client, final int messageId, final @NotNull MessageWithID message);
+    @NotNull
+    AddResult add(@NotNull String client, int messageId);
 
     /**
-     * Remove a {@link MessageWithID} for specific client id and message id.
+     * Releases one packet identifier of the client, on PUBREL.
      *
-     * @param client    The client which belongs this message.
-     * @param messageId The identifier of the message.
+     * @param client    the client
+     * @param messageId the packet identifier
      */
-    void remove(final @NotNull String client, final int messageId);
+    void remove(@NotNull String client, int messageId);
 
     /**
-     * Delete all {@link MessageWithID}s for specific client id.
+     * Deletes every packet identifier of the client, when its session ends. Proportional to the client's own entries.
      *
-     * @param client The client which belongs this message.
+     * @param client the client
      */
-    void delete(final @NotNull String client);
+    void delete(@NotNull String client);
+
+    /**
+     * @return the number of packet identifiers held across all clients
+     */
+    long size();
 
     /**
      * close the persistence with all buckets.

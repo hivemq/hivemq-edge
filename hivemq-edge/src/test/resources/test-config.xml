@@ -95,6 +95,9 @@
         <max-topic-length>65535</max-topic-length>
         <no-connect-idle-timeout>10000</no-connect-idle-timeout>
         <incoming-bandwidth-throttling>0</incoming-bandwidth-throttling>
+        <max-topic-filters-per-packet>10000</max-topic-filters-per-packet>
+        <max-incoming-qos2-flows>100000</max-incoming-qos2-flows>
+        <max-incoming-qos2-flows-per-client>1000</max-incoming-qos2-flows-per-client>
     </restrictions>
     <security>
         <payload-format-validation>

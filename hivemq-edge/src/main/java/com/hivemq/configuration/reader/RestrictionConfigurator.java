@@ -60,6 +60,12 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
         restrictionsConfigurationService.setIncomingLimit(
                 validateIncomingLimit(entity.getIncomingBandwidthThrottling()));
         restrictionsConfigurationService.setMaxTopicLength(validateMaxTopicLength(entity.getMaxTopicLength()));
+        restrictionsConfigurationService.setMaxTopicFiltersPerPacket(
+                validateMaxTopicFiltersPerPacket(entity.getMaxTopicFiltersPerPacket()));
+        restrictionsConfigurationService.setMaxIncomingQos2Flows(
+                validateMaxIncomingQos2Flows(entity.getMaxIncomingQos2Flows()));
+        restrictionsConfigurationService.setMaxIncomingQos2FlowsPerClient(
+                validateMaxIncomingQos2FlowsPerClient(entity.getMaxIncomingQos2FlowsPerClient()));
         return ConfigResult.SUCCESS;
     }
 
@@ -101,6 +107,44 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
             return MAX_TOPIC_LENGTH_DEFAULT;
         }
         return maxTopicLength;
+    }
+
+    private int validateMaxTopicFiltersPerPacket(final int maxTopicFiltersPerPacket) {
+        if (maxTopicFiltersPerPacket < MAX_TOPIC_FILTERS_PER_PACKET_MINIMUM) {
+            log.warn(
+                    "The configured max-topic-filters-per-packet ({}) must be at least {}. The default value ({}) is used instead.",
+                    maxTopicFiltersPerPacket,
+                    MAX_TOPIC_FILTERS_PER_PACKET_MINIMUM,
+                    MAX_TOPIC_FILTERS_PER_PACKET_DEFAULT);
+            return MAX_TOPIC_FILTERS_PER_PACKET_DEFAULT;
+        }
+        return maxTopicFiltersPerPacket;
+    }
+
+    private long validateMaxIncomingQos2Flows(final long maxIncomingQos2Flows) {
+        if (maxIncomingQos2Flows < MAX_INCOMING_QOS2_FLOWS_MINIMUM) {
+            log.warn(
+                    "The configured max-incoming-qos2-flows ({}) must be at least {}. The default value ({}) is used instead.",
+                    maxIncomingQos2Flows,
+                    MAX_INCOMING_QOS2_FLOWS_MINIMUM,
+                    MAX_INCOMING_QOS2_FLOWS_DEFAULT);
+            return MAX_INCOMING_QOS2_FLOWS_DEFAULT;
+        }
+        return maxIncomingQos2Flows;
+    }
+
+    private int validateMaxIncomingQos2FlowsPerClient(final int maxIncomingQos2FlowsPerClient) {
+        if (maxIncomingQos2FlowsPerClient < MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_MINIMUM
+                || maxIncomingQos2FlowsPerClient > MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_MAXIMUM) {
+            log.warn(
+                    "The configured max-incoming-qos2-flows-per-client ({}) must be in the range {} - {}. The default value ({}) is used instead.",
+                    maxIncomingQos2FlowsPerClient,
+                    MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_MINIMUM,
+                    MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_MAXIMUM,
+                    MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_DEFAULT);
+            return MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_DEFAULT;
+        }
+        return maxIncomingQos2FlowsPerClient;
     }
 
     private long validateNoConnectIdleTimeout(final long noConnectIdleTimeout) {

@@ -48,6 +48,15 @@ public class RestrictionsEntity {
     @XmlElement(name = "incoming-bandwidth-throttling", defaultValue = "0")
     private @NotNull Long incomingBandwidthThrottling = INCOMING_BANDWIDTH_THROTTLING_DEFAULT;
 
+    @XmlElement(name = "max-topic-filters-per-packet", defaultValue = "10000")
+    private @NotNull Integer maxTopicFiltersPerPacket = MAX_TOPIC_FILTERS_PER_PACKET_DEFAULT;
+
+    @XmlElement(name = "max-incoming-qos2-flows", defaultValue = "100000")
+    private @NotNull Long maxIncomingQos2Flows = MAX_INCOMING_QOS2_FLOWS_DEFAULT;
+
+    @XmlElement(name = "max-incoming-qos2-flows-per-client", defaultValue = "1000")
+    private @NotNull Integer maxIncomingQos2FlowsPerClient = MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_DEFAULT;
+
     public long getMaxConnections() {
         return maxConnections;
     }
@@ -68,6 +77,18 @@ public class RestrictionsEntity {
         return noConnectIdleTimeout;
     }
 
+    public int getMaxTopicFiltersPerPacket() {
+        return maxTopicFiltersPerPacket;
+    }
+
+    public long getMaxIncomingQos2Flows() {
+        return maxIncomingQos2Flows;
+    }
+
+    public int getMaxIncomingQos2FlowsPerClient() {
+        return maxIncomingQos2FlowsPerClient;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -76,7 +97,10 @@ public class RestrictionsEntity {
                 && getMaxClientIdLength() == that.getMaxClientIdLength()
                 && getMaxTopicLength() == that.getMaxTopicLength()
                 && getNoConnectIdleTimeout() == that.getNoConnectIdleTimeout()
-                && getIncomingBandwidthThrottling() == that.getIncomingBandwidthThrottling();
+                && getIncomingBandwidthThrottling() == that.getIncomingBandwidthThrottling()
+                && getMaxTopicFiltersPerPacket() == that.getMaxTopicFiltersPerPacket()
+                && getMaxIncomingQos2Flows() == that.getMaxIncomingQos2Flows()
+                && getMaxIncomingQos2FlowsPerClient() == that.getMaxIncomingQos2FlowsPerClient();
     }
 
     @Override
@@ -86,6 +110,9 @@ public class RestrictionsEntity {
                 getMaxClientIdLength(),
                 getMaxTopicLength(),
                 getNoConnectIdleTimeout(),
-                getIncomingBandwidthThrottling());
+                getIncomingBandwidthThrottling(),
+                getMaxTopicFiltersPerPacket(),
+                getMaxIncomingQos2Flows(),
+                getMaxIncomingQos2FlowsPerClient());
     }
 }

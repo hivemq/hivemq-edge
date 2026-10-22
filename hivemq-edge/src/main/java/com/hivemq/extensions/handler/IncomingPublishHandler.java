@@ -270,11 +270,14 @@ public class IncomingPublishHandler {
                     }
                     case EXACTLY_ONCE -> {
                         final Mqtt5PubRecReasonCode recReasonCode = Mqtt5PubRecReasonCode.from(output.getReasonCode());
-                        ctx.writeAndFlush(new PUBREC(
-                                publish.getPacketIdentifier(),
-                                recReasonCode,
-                                output.getReasonString(),
-                                Mqtt5UserProperties.NO_USER_PROPERTIES));
+                        // through the whole pipeline, so that PublishFlowHandler releases the identifier of an
+                        // error PUBREC; ctx is PublishFlowHandler's own, whose writes skip it
+                        ctx.pipeline()
+                                .writeAndFlush(new PUBREC(
+                                        publish.getPacketIdentifier(),
+                                        recReasonCode,
+                                        output.getReasonString(),
+                                        Mqtt5UserProperties.NO_USER_PROPERTIES));
                     }
                 }
             }

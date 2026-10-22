@@ -43,6 +43,7 @@ import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.task.ClientSessionCleanUpTask;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
+import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.util.FutureUtils;
 import io.netty.channel.ChannelFutureListener;
 import jakarta.inject.Inject;
@@ -72,6 +73,7 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
     private final @NotNull PendingWillMessages pendingWillMessages;
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;
     private final @NotNull Chunker chunker;
+    private final @NotNull IncomingMessageFlowPersistence incomingMessageFlowPersistence;
 
     @Inject
     public ClientSessionPersistenceImpl(
@@ -83,7 +85,8 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
             final @NotNull EventLog eventLog,
             final @NotNull PendingWillMessages pendingWillMessages,
             final @NotNull MqttServerDisconnector mqttServerDisconnector,
-            final @NotNull Chunker chunker) {
+            final @NotNull Chunker chunker,
+            final @NotNull IncomingMessageFlowPersistence incomingMessageFlowPersistence) {
 
         this.localPersistence = localPersistence;
         this.clientQueuePersistence = clientQueuePersistence;
@@ -92,6 +95,7 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
         this.pendingWillMessages = pendingWillMessages;
         this.mqttServerDisconnector = mqttServerDisconnector;
         this.chunker = chunker;
+        this.incomingMessageFlowPersistence = incomingMessageFlowPersistence;
         subscriptionPersistence = sessionSubscriptionPersistence;
         singleWriter = singleWriterService.getClientSessionQueue();
     }
@@ -291,6 +295,10 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
     @Override
     public @NotNull ListenableFuture<Void> cleanClientData(final @NotNull String clientId) {
 
+        // the session's unreleased QoS 2 packet identifiers end with it; kept, they would make a new session's
+        // PUBLISH with a reused identifier look like a retransmission and be dropped
+        incomingMessageFlowPersistence.delete(clientId);
+
         final ImmutableList.Builder<ListenableFuture<Void>> builder = ImmutableList.builder();
         builder.add(subscriptionPersistence.removeAll(clientId));
         builder.add(clientQueuePersistence.clear(clientId, false));
@@ -325,13 +333,18 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
         checkNotNull(clientId, "Client id must not be null");
 
         final ListenableFuture<Boolean> setTTlFuture = singleWriter.submit(clientId, (bucketIndex) -> {
-            final boolean clientSessionExists = localPersistence.getSession(clientId) != null;
+            final ClientSession clientSession = localPersistence.getSession(clientId);
 
-            if (!clientSessionExists) {
+            if (clientSession == null) {
                 return false;
             }
 
             localPersistence.setSessionExpiryInterval(clientId, sessionExpiryInterval, bucketIndex);
+            if (sessionExpiryInterval == SESSION_EXPIRE_ON_DISCONNECT && !clientSession.isConnected()) {
+                // an offline session set to expire on disconnect has ended, and its unreleased QoS 2 packet
+                // identifiers with it; a connected one releases them when its channel closes (PublishFlowHandler)
+                incomingMessageFlowPersistence.delete(clientId);
+            }
             return true;
         });
 

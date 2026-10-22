@@ -35,6 +35,10 @@ public class RestrictionsConfigurationServiceImpl implements RestrictionsConfigu
     private final AtomicLong noConnectIdleTimeout = new AtomicLong(NO_CONNECT_IDLE_TIMEOUT_DEFAULT);
     private final AtomicLong incomingLimit = new AtomicLong(INCOMING_BANDWIDTH_THROTTLING_DEFAULT);
     private final AtomicInteger maxTopicLength = new AtomicInteger(MAX_TOPIC_LENGTH_DEFAULT);
+    private final AtomicInteger maxTopicFiltersPerPacket = new AtomicInteger(MAX_TOPIC_FILTERS_PER_PACKET_DEFAULT);
+    private final AtomicLong maxIncomingQos2Flows = new AtomicLong(MAX_INCOMING_QOS2_FLOWS_DEFAULT);
+    private final AtomicInteger maxIncomingQos2FlowsPerClient =
+            new AtomicInteger(MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_DEFAULT);
 
     @Override
     public long maxConnections() {
@@ -91,5 +95,40 @@ public class RestrictionsConfigurationServiceImpl implements RestrictionsConfigu
     public void setMaxTopicLength(final int maxTopicLength) {
         log.debug("Setting the maximum topic length to {}", maxTopicLength);
         this.maxTopicLength.set(maxTopicLength);
+    }
+
+    @Override
+    public int maxTopicFiltersPerPacket() {
+        return maxTopicFiltersPerPacket.get();
+    }
+
+    @Override
+    public long maxIncomingQos2Flows() {
+        return maxIncomingQos2Flows.get();
+    }
+
+    @Override
+    public int maxIncomingQos2FlowsPerClient() {
+        return maxIncomingQos2FlowsPerClient.get();
+    }
+
+    @Override
+    public void setMaxTopicFiltersPerPacket(final int maxTopicFiltersPerPacket) {
+        log.debug("Setting the maximum topic filters per SUBSCRIBE or UNSUBSCRIBE to {}", maxTopicFiltersPerPacket);
+        this.maxTopicFiltersPerPacket.set(maxTopicFiltersPerPacket);
+    }
+
+    @Override
+    public void setMaxIncomingQos2Flows(final long maxIncomingQos2Flows) {
+        log.debug("Setting the maximum unreleased inbound QoS 2 messages to {}", maxIncomingQos2Flows);
+        this.maxIncomingQos2Flows.set(maxIncomingQos2Flows);
+    }
+
+    @Override
+    public void setMaxIncomingQos2FlowsPerClient(final int maxIncomingQos2FlowsPerClient) {
+        log.debug(
+                "Setting the maximum unreleased inbound QoS 2 messages per client to {}",
+                maxIncomingQos2FlowsPerClient);
+        this.maxIncomingQos2FlowsPerClient.set(maxIncomingQos2FlowsPerClient);
     }
 }

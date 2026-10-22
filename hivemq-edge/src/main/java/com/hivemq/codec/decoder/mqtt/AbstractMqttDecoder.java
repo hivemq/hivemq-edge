@@ -58,6 +58,7 @@ public abstract class AbstractMqttDecoder<T extends Message> extends MqttDecoder
     protected final boolean subscriptionIdentifiersAvailable;
     protected final long maxMessageExpiryInterval;
     protected final long maxUserPropertiesLength;
+    protected final int maxTopicFiltersPerPacket;
 
     protected AbstractMqttDecoder(
             final @NotNull MqttServerDisconnector disconnector,
@@ -67,6 +68,8 @@ public abstract class AbstractMqttDecoder<T extends Message> extends MqttDecoder
         validateUTF8 = configurationService.securityConfiguration().validateUTF8();
         maxMessageExpiryInterval = configurationService.mqttConfiguration().maxMessageExpiryInterval();
         maxUserPropertiesLength = InternalConfigurations.USER_PROPERTIES_MAX_SIZE_BYTES;
+        maxTopicFiltersPerPacket =
+                configurationService.restrictionsConfiguration().maxTopicFiltersPerPacket();
         subscriptionIdentifiersAvailable =
                 configurationService.mqttConfiguration().subscriptionIdentifierEnabled();
     }
@@ -878,5 +881,39 @@ public abstract class AbstractMqttDecoder<T extends Message> extends MqttDecoder
             return true;
         }
         return false;
+    }
+
+    /**
+     * Disconnects the client when a SUBSCRIBE or UNSUBSCRIBE carries more topic filters than allowed.
+     * <p>
+     * Called before each topic filter is decoded, so the limit bounds what the packet allocates, not only what it
+     * yields. The count is the caller's local variable: the decoders are singletons shared by every connection.
+     * <p>
+     * Results in {@link MqttCommonReasonCode#QUOTA_EXCEEDED} with DISCONNECT; an MQTT 3 connection is closed.
+     *
+     * @param clientConnection the connection of the mqtt client
+     * @param decodedFilters   the topic filters already decoded from this packet
+     * @param messageType      SUBSCRIBE or UNSUBSCRIBE
+     * @return {@code true} if the client was disconnected
+     */
+    protected boolean topicFilterLimitExceeded(
+            final @NotNull ClientConnection clientConnection,
+            final int decodedFilters,
+            final @NotNull MessageType messageType) {
+
+        if (decodedFilters < maxTopicFiltersPerPacket) {
+            return false;
+        }
+        disconnector.disconnect(
+                clientConnection.getChannel(),
+                "A client (IP: {}) sent a " + messageType.name() + " with more than " + maxTopicFiltersPerPacket
+                        + " topic filters. Disconnecting client.",
+                "Sent a " + messageType.name() + " with more than " + maxTopicFiltersPerPacket + " topic filters",
+                Mqtt5DisconnectReasonCode.QUOTA_EXCEEDED,
+                String.format(
+                        ReasonStrings.DISCONNECT_QUOTA_EXCEEDED_TOPIC_FILTERS,
+                        messageType.name(),
+                        maxTopicFiltersPerPacket));
+        return true;
     }
 }

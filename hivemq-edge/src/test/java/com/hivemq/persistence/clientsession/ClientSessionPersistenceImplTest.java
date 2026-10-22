@@ -38,6 +38,7 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
+import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.Map;
@@ -59,6 +60,7 @@ public class ClientSessionPersistenceImplTest {
     private MqttServerDisconnector mqttServerDisconnector;
     private ConnectionPersistenceImpl connectionPersistence;
     private ClientSessionPersistenceImpl clientSessionPersistence;
+    private IncomingMessageFlowPersistence incomingMessageFlowPersistence;
     private SingleWriterService singleWriterService;
     private final @NotNull InternalConfigurationService internalConfigurationService =
             new InternalConfigurationServiceImpl();
@@ -72,6 +74,7 @@ public class ClientSessionPersistenceImplTest {
         mqttServerDisconnector = mock(MqttServerDisconnector.class);
         connectionPersistence = mock(ConnectionPersistenceImpl.class);
         clientSessionPersistence = mock(ClientSessionPersistenceImpl.class);
+        incomingMessageFlowPersistence = mock(IncomingMessageFlowPersistence.class);
 
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         clientSessionPersistence = new ClientSessionPersistenceImpl(
@@ -83,7 +86,8 @@ public class ClientSessionPersistenceImplTest {
                 mock(EventLog.class),
                 pendingWillMessages,
                 mqttServerDisconnector,
-                new Chunker(internalConfigurationService));
+                new Chunker(internalConfigurationService),
+                incomingMessageFlowPersistence);
     }
 
     @AfterEach
@@ -136,6 +140,8 @@ public class ClientSessionPersistenceImplTest {
         clientSessionPersistence
                 .clientConnected("client", true, 0, willPublish, 123L)
                 .get();
+        // clean start ends the previous session's unreleased QoS 2 identifiers before CONNACK
+        verify(incomingMessageFlowPersistence).delete("client");
 
         verify(localPersistence).put(eq("client"), any(ClientSession.class), anyLong(), anyInt());
     }
@@ -222,6 +228,7 @@ public class ClientSessionPersistenceImplTest {
 
         verify(subscriptionPersistence).removeAll("client");
         verify(clientQueuePersistence).clear("client", false);
+        verify(incomingMessageFlowPersistence).delete("client");
     }
 
     @Test
@@ -255,6 +262,28 @@ public class ClientSessionPersistenceImplTest {
                 clientSessionPersistence.setSessionExpiryInterval("client", 0).get();
         assertTrue(result);
         verify(subscriptionPersistence).removeAll("client");
+        // the session is offline, so it has ended: its unreleased QoS 2 identifiers end with it
+        verify(incomingMessageFlowPersistence).delete("client");
+    }
+
+    @Test
+    public void set_expiry_interval_zero_on_a_connected_session_keeps_its_qos2_identifiers()
+            throws ExecutionException, InterruptedException {
+        when(localPersistence.getSession("client")).thenReturn(new ClientSession(true, 100));
+        when(subscriptionPersistence.removeAll("client")).thenReturn(Futures.immediateFuture(null));
+        assertTrue(
+                clientSessionPersistence.setSessionExpiryInterval("client", 0).get());
+        // the connection still runs its QoS 2 flows; the identifiers end when it disconnects
+        verify(incomingMessageFlowPersistence, never()).delete("client");
+    }
+
+    @Test
+    public void set_expiry_interval_above_zero_keeps_qos2_identifiers()
+            throws ExecutionException, InterruptedException {
+        when(localPersistence.getSession("client")).thenReturn(new ClientSession(false, 100));
+        assertTrue(
+                clientSessionPersistence.setSessionExpiryInterval("client", 50).get());
+        verify(incomingMessageFlowPersistence, never()).delete("client");
     }
 
     @Test

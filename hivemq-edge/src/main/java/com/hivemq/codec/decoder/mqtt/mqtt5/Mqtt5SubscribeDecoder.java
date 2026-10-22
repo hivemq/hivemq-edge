@@ -128,7 +128,12 @@ public class Mqtt5SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
         }
 
         ImmutableList.Builder<Topic> topicBuilder = null;
+        int decodedFilters = 0;
         while (buf.isReadable()) {
+            if (topicFilterLimitExceeded(clientConnection, decodedFilters, MessageType.SUBSCRIBE)) {
+                return null;
+            }
+            decodedFilters++;
             topicBuilder = decodeTopic(clientConnection, buf, topicBuilder, subscriptionIdentifier);
             if (topicBuilder == null) {
                 return null;

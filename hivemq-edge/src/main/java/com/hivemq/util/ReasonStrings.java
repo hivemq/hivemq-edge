@@ -168,6 +168,10 @@ public class ReasonStrings {
             "UNSUBSCRIBE with a packet identifier of '0' was sent. This is a protocol violation.";
 
     public static final String DISCONNECT_RECEIVE_MAXIMUM_EXCEEDED = "Too many concurrent PUBLISH messages sent.";
+    public static final String DISCONNECT_QUOTA_EXCEEDED_TOPIC_FILTERS =
+            "%s containing more than %d topic filters was sent.";
+    public static final String QUOTA_EXCEEDED_INCOMING_QOS2_FLOWS =
+            "The limit of QoS 2 messages awaiting PUBREL is reached.";
 
     public static final String DISCONNECT_TOPIC_NAME_INVALID_SHARED_EMPTY = "Shared subscription with empty topic.";
     public static final String DISCONNECT_TOPIC_ALIAS_INVALID_ZERO = "PUBLISH containing topic alias of '0' was sent.";
