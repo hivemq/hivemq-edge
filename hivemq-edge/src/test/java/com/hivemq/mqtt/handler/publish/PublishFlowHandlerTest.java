@@ -32,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
@@ -66,12 +67,18 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.LoggerFactory;
+import util.LogbackCapturingAppender;
 import util.TestMessageUtil;
 
 @SuppressWarnings({"NullabilityAnnotations", "FutureReturnValueIgnored"})
@@ -937,6 +944,67 @@ public class PublishFlowHandlerTest {
 
         held[0].setSuccess();
         verify(incomingMessageFlowPersistence).remove(CLIENT_ID, 5);
+    }
+
+    @Test
+    public void test_error_pubrec_at_the_lowest_error_code_releases_the_identifier() {
+        channel.writeInbound(createPublish("topic", 5, QoS.EXACTLY_ONCE));
+
+        // 0x80, the lowest error code, as a failed delivery writes it
+        channel.writeOutbound(
+                new PUBREC(5, Mqtt5PubRecReasonCode.UNSPECIFIED_ERROR, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
+
+        verify(incomingMessageFlowPersistence).remove(CLIENT_ID, 5);
+    }
+
+    @Test
+    public void test_pubrec_with_a_success_code_keeps_the_identifier() {
+        channel.writeInbound(createPublish("topic", 5, QoS.EXACTLY_ONCE));
+
+        // 0x10 is below 0x80: the flow continues with PUBREL
+        channel.writeOutbound(new PUBREC(
+                5, Mqtt5PubRecReasonCode.NO_MATCHING_SUBSCRIBERS, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
+
+        verify(incomingMessageFlowPersistence, never()).remove(anyString(), anyInt());
+    }
+
+    @Test
+    public void test_limit_warning_is_logged_at_most_once_a_minute() throws Exception {
+        final LogbackCapturingAppender logCapture =
+                LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(PublishFlowHandler.class));
+        try {
+            restrictions.setMaxIncomingQos2FlowsPerClient(1);
+            channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
+            // the interval is shared by every handler: open it, whatever earlier tests left behind
+            final AtomicLong lastWarning = lastQos2LimitWarning();
+            lastWarning.set(System.nanoTime() - TimeUnit.MINUTES.toNanos(2));
+
+            channel.writeInbound(createPublish("topic", 1, QoS.EXACTLY_ONCE));
+            for (int id = 2; id <= 6; id++) {
+                channel.writeInbound(createPublish("topic", id, QoS.EXACTLY_ONCE));
+            }
+            assertEquals(1, limitWarnings(logCapture));
+
+            // a minute later the next refusal is logged again
+            lastWarning.set(lastWarning.get() - TimeUnit.MINUTES.toNanos(1) - 1);
+            channel.writeInbound(createPublish("topic", 7, QoS.EXACTLY_ONCE));
+            assertEquals(2, limitWarnings(logCapture));
+        } finally {
+            LogbackCapturingAppender.Factory.cleanUp();
+        }
+    }
+
+    private static @NotNull AtomicLong lastQos2LimitWarning() throws Exception {
+        final Field field = PublishFlowHandler.class.getDeclaredField("LAST_QOS2_LIMIT_WARNING");
+        field.setAccessible(true);
+        return (AtomicLong) field.get(null);
+    }
+
+    private static long limitWarnings(final @NotNull LogbackCapturingAppender logCapture) {
+        return logCapture.getCapturedLogs().stream()
+                .filter(event -> event.getLevel() == Level.WARN)
+                .filter(event -> event.getFormattedMessage().contains("QoS 2 PUBLISHes are refused"))
+                .count();
     }
 
     @Test

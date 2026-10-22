@@ -333,13 +333,18 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
         checkNotNull(clientId, "Client id must not be null");
 
         final ListenableFuture<Boolean> setTTlFuture = singleWriter.submit(clientId, (bucketIndex) -> {
-            final boolean clientSessionExists = localPersistence.getSession(clientId) != null;
+            final ClientSession clientSession = localPersistence.getSession(clientId);
 
-            if (!clientSessionExists) {
+            if (clientSession == null) {
                 return false;
             }
 
             localPersistence.setSessionExpiryInterval(clientId, sessionExpiryInterval, bucketIndex);
+            if (sessionExpiryInterval == SESSION_EXPIRE_ON_DISCONNECT && !clientSession.isConnected()) {
+                // an offline session set to expire on disconnect has ended, and its unreleased QoS 2 packet
+                // identifiers with it; a connected one releases them when its channel closes (PublishFlowHandler)
+                incomingMessageFlowPersistence.delete(clientId);
+            }
             return true;
         });
 

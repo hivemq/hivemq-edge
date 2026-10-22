@@ -97,6 +97,29 @@ public class RestrictionConfiguratorTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void test_topic_filter_and_qos2_flow_limits_change_only_with_a_restart() throws Exception {
+        Files.write("<hivemq><restrictions/></hivemq>".getBytes(UTF_8), xmlFile);
+        reader.applyConfig();
+
+        Files.write("<hivemq><restrictions/></hivemq>".getBytes(UTF_8), xmlFile);
+        assertEquals(ConfigFileReaderWriter.ReloadOutcome.APPLIED, reader.loadConfigFromXML(xmlFile));
+
+        for (final String changed : new String[] {
+            "<max-topic-filters-per-packet>50</max-topic-filters-per-packet>",
+            "<max-incoming-qos2-flows>2000</max-incoming-qos2-flows>",
+            "<max-incoming-qos2-flows-per-client>20</max-incoming-qos2-flows-per-client>"
+        }) {
+            Files.write(("<hivemq><restrictions>" + changed + "</restrictions></hivemq>").getBytes(UTF_8), xmlFile);
+            assertEquals(
+                    ConfigFileReaderWriter.ReloadOutcome.NEEDS_RESTART, reader.loadConfigFromXML(xmlFile), changed);
+        }
+        // the running limits are the ones read at start
+        assertEquals(10_000, restrictionsConfigurationService.maxTopicFiltersPerPacket());
+        assertEquals(100_000, restrictionsConfigurationService.maxIncomingQos2Flows());
+        assertEquals(1_000, restrictionsConfigurationService.maxIncomingQos2FlowsPerClient());
+    }
+
+    @Test
     public void test_topic_filter_and_qos2_flow_limit_defaults() throws Exception {
         Files.write("<hivemq><restrictions/></hivemq>".getBytes(UTF_8), xmlFile);
 

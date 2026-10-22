@@ -262,6 +262,28 @@ public class ClientSessionPersistenceImplTest {
                 clientSessionPersistence.setSessionExpiryInterval("client", 0).get();
         assertTrue(result);
         verify(subscriptionPersistence).removeAll("client");
+        // the session is offline, so it has ended: its unreleased QoS 2 identifiers end with it
+        verify(incomingMessageFlowPersistence).delete("client");
+    }
+
+    @Test
+    public void set_expiry_interval_zero_on_a_connected_session_keeps_its_qos2_identifiers()
+            throws ExecutionException, InterruptedException {
+        when(localPersistence.getSession("client")).thenReturn(new ClientSession(true, 100));
+        when(subscriptionPersistence.removeAll("client")).thenReturn(Futures.immediateFuture(null));
+        assertTrue(
+                clientSessionPersistence.setSessionExpiryInterval("client", 0).get());
+        // the connection still runs its QoS 2 flows; the identifiers end when it disconnects
+        verify(incomingMessageFlowPersistence, never()).delete("client");
+    }
+
+    @Test
+    public void set_expiry_interval_above_zero_keeps_qos2_identifiers()
+            throws ExecutionException, InterruptedException {
+        when(localPersistence.getSession("client")).thenReturn(new ClientSession(false, 100));
+        assertTrue(
+                clientSessionPersistence.setSessionExpiryInterval("client", 50).get());
+        verify(incomingMessageFlowPersistence, never()).delete("client");
     }
 
     @Test
