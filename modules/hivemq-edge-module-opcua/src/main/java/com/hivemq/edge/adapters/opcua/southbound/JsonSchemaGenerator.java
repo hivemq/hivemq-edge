@@ -355,7 +355,17 @@ public class JsonSchemaGenerator {
                 });
     }
 
+    /// Every value is nullable exactly where its OPC UA type has a null value (EDG-1138), so a `null` passes the
+    /// schema where the converter sends that null value, and fails it where the type has none. The rule is the
+    /// converter's: [JsonToOpcUaValueConverter#hasNullValue].
+    ///
+    /// **An array is not nullable**, whatever its element type, because the converter refuses `null` for an
+    /// array: OPC UA makes the null array and the empty array the same value, so `[]` is the one spelling for it.
+    /// Array elements follow their element type like any scalar.
     private static void applyScalarType(final @NotNull SchemaBuilder schema, final @NotNull OpcUaDataType opcUaType) {
+        if (JsonToOpcUaValueConverter.hasNullValue(opcUaType)) {
+            schema.nullable();
+        }
         if (opcUaType == OpcUaDataType.QualifiedName) {
             schema.startObject()
                     .property("namespaceIndex")
@@ -426,6 +436,9 @@ public class JsonSchemaGenerator {
 
     private static void applyScalarType(
             final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
+        if (JsonToOpcUaValueConverter.hasNullValue(opcUaType)) {
+            prop.nullable();
+        }
         if (opcUaType == OpcUaDataType.QualifiedName) {
             prop.startObject()
                     .property("namespaceIndex")
@@ -443,6 +456,9 @@ public class JsonSchemaGenerator {
 
     private static void applyScalarType(
             final @NotNull ItemSchemaBuilder<?> items, final @NotNull OpcUaDataType opcUaType) {
+        if (JsonToOpcUaValueConverter.hasNullValue(opcUaType)) {
+            items.nullable();
+        }
         if (opcUaType == OpcUaDataType.QualifiedName) {
             items.startObject()
                     .property("namespaceIndex")

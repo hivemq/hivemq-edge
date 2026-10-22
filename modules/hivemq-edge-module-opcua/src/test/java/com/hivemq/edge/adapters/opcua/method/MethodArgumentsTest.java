@@ -127,13 +127,24 @@ class MethodArgumentsTest {
     }
 
     @Test
-    void explicitNull_countsAsMissing() throws Exception {
-        // A caller sending null for an argument has not supplied it. Passing a null Variant instead would let the
-        // device decide, and a device's answer to a missing argument is not something a caller can predict.
+    void explicitNull_isAValue_notAMissingArgument() throws Exception {
+        // EDG-1138: a JSON null is the argument type's null value. An Int32 has none, so the request is refused --
+        // as an invalid argument, not as a missing one, because the caller did supply it.
         assertThatThrownBy(() -> MethodArguments.forCall(
                         signature(argument("setpoint", NodeIds.Int32)), json("{\"setpoint\": null}")))
                 .isInstanceOf(MethodArguments.InvalidArgumentException.class)
-                .hasMessageContaining("requires the argument 'setpoint'");
+                .hasMessageContaining("no null value")
+                .extracting(e -> ((MethodArguments.InvalidArgumentException) e).statusCode())
+                .isEqualTo(StatusCodes.Bad_InvalidArgument);
+    }
+
+    @Test
+    void explicitNull_isSentAsTheNullValue_whereTheTypeHasOne() throws Exception {
+        final Variant[] arguments =
+                MethodArguments.forCall(signature(argument("label", NodeIds.String)), json("{\"label\": null}"));
+
+        assertThat(arguments).hasSize(1);
+        assertThat(arguments[0]).isEqualTo(Variant.NULL_VALUE);
     }
 
     @Test

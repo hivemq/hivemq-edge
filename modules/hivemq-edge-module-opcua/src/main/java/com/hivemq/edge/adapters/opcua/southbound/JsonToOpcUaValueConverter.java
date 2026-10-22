@@ -51,6 +51,7 @@ import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
@@ -130,6 +131,10 @@ public final class JsonToOpcUaValueConverter {
     /// real list can have: `[[], []]` is a rectangular 2x0 value, and its inner dimension is genuinely 0 rather
     /// than unknown.
     private static final int UNKNOWN_LENGTH = -1;
+
+    /// Why a `null` in place of an array is refused, and what to send instead. See [#hasNullValue].
+    private static final @NotNull String NULL_ARRAY_REFUSAL =
+            "an array does not accept null. Send [] for an array with no elements";
 
     /// 2^53, the first magnitude a whole number cannot be trusted at. The largest trustworthy one is 2^53 - 1.
     ///
@@ -325,6 +330,10 @@ public final class JsonToOpcUaValueConverter {
                     ConversionException.Fault.UNSUPPORTED, unsupported.name(), unsupported.reason());
         }
 
+        if (value.isNull()) {
+            return nullVariant(kind, valueRank);
+        }
+
         final int dimensions = depthFor(valueRank, value);
         try {
             if (dimensions == 0) {
@@ -477,6 +486,70 @@ public final class JsonToOpcUaValueConverter {
 
     // endregion
 
+    // region Null
+
+    /// Whether the builtin type has a null value of its own, distinct from every ordinary value: an empty
+    /// `String` is not the null `String`, so a JSON `null` can mean the latter without ambiguity.
+    ///
+    /// **A JSON `null` is a value, never an absence** (EDG-1138). It is accepted exactly where the OPC UA type
+    /// has a null value, and Edge sends that value. An absent field or argument is a different thing and is
+    /// handled where absence is: a structure leaves out an optional field, a method refuses a missing argument.
+    ///
+    /// Not exhaustive on purpose. `Guid` and `DateTime` are left out because their "null" is a sentinel inside
+    /// the value range -- the all-zero Guid, the minimum DateTime -- which a caller can write as itself. Numbers,
+    /// `Boolean`, `StatusCode`, enumerations and structures have no null value at all.
+    ///
+    /// **An array refuses `null`**, whatever its element type, although OPC UA gives every array a null value.
+    /// OPC 10000-6 section 5.1.11 makes the null array and the empty array the same value, so `[]` says what
+    /// `null` would, and refusing `null` keeps one spelling for it. A value write passes the open rank `Any`
+    /// for every variable, so the converter could not tell an array variable from a scalar one anyway.
+    public static boolean hasNullValue(final @NotNull OpcUaDataType type) {
+        return switch (type) {
+            case String, ByteString, XmlElement, NodeId, ExpandedNodeId, QualifiedName, LocalizedText -> true;
+            default -> false;
+        };
+    }
+
+    /// The null value of a type for which [#hasNullValue] holds. Java `null` for a `String`, which is how Milo
+    /// represents the null string inside a structure and in an array.
+    private static @Nullable Object nullValueOf(final @NotNull OpcUaDataType type) {
+        return switch (type) {
+            case String -> null;
+            case ByteString -> ByteString.NULL_VALUE;
+            case XmlElement -> new XmlElement(null);
+            case NodeId -> NodeId.NULL_VALUE;
+            case ExpandedNodeId -> ExpandedNodeId.NULL_VALUE;
+            case QualifiedName -> QualifiedName.NULL_VALUE;
+            case LocalizedText -> LocalizedText.NULL_VALUE;
+            default -> throw new IllegalStateException(type.name() + " has no null value");
+        };
+    }
+
+    /// A top-level JSON `null`: refused where the value is declared as an array (see [#hasNullValue]), otherwise
+    /// the type's null value. Milo cannot carry a typed null `String` in a `Variant`, so it travels as the null
+    /// Variant, which is how OPC UA encodes a value that carries nothing.
+    ///
+    /// A rank that leaves the shape open (`-2`, `-3`) does not make `null` an array, because a value write passes
+    /// `-2` for every variable. There the element type decides.
+    private static @NotNull Variant nullVariant(final @NotNull Kind kind, final @Nullable Integer valueRank) {
+        if (valueRank != null && valueRank >= ValueRanks.OneOrMoreDimensions) {
+            throw new ConversionException(
+                    ConversionException.Fault.VALUE,
+                    describeExpected(kind, Math.max(valueRank, 1)),
+                    "the value supplied is null, and " + NULL_ARRAY_REFUSAL);
+        }
+        if (kind instanceof final Kind.Builtin builtin && hasNullValue(builtin.type())) {
+            final Object nullValue = nullValueOf(builtin.type());
+            return nullValue == null ? Variant.NULL_VALUE : new Variant(nullValue);
+        }
+        throw new ConversionException(
+                ConversionException.Fault.VALUE,
+                describeExpected(kind, 0),
+                "the value supplied is null, and " + describeExpected(kind, 0) + " has no null value");
+    }
+
+    // endregion
+
     // region Shape
 
     /// How deeply to nest the value: a declared depth where the declaration fixed one, otherwise the depth the
@@ -615,7 +688,7 @@ public final class JsonToOpcUaValueConverter {
     /// One array element. A builtin element's failure is reported as before, without a position, because the
     /// message already names what was wrong; an element of an enumeration or a structure is named by its index,
     /// since a structure's failure is about one of its fields and needs the way there.
-    private @NotNull Object element(
+    private @Nullable Object element(
             final @NotNull Kind kind, final @NotNull JsonNode node, final int index, final boolean member) {
         if (kind instanceof Kind.Builtin) {
             return scalar(kind, node, member);
@@ -650,7 +723,16 @@ public final class JsonToOpcUaValueConverter {
     /// the wire -- as a variable's value or a method argument -- an enumeration is an `Integer` and a structure an
     /// `ExtensionObject`. Inside a structure, Milo's codec wants the decoded forms, `DynamicEnumType` and
     /// `DynamicStructType`, and encodes them itself as part of the enclosing structure. `member` chooses.
-    private @NotNull Object scalar(final @NotNull Kind kind, final @NotNull JsonNode node, final boolean member) {
+    ///
+    /// A JSON `null` here is an array element or a structure field: the type's null value where it has one, and
+    /// refused otherwise -- see [#hasNullValue]. A top-level `null` never arrives here; [#toVariant] takes it.
+    private @Nullable Object scalar(final @NotNull Kind kind, final @NotNull JsonNode node, final boolean member) {
+        if (node.isNull()) {
+            if (kind instanceof final Kind.Builtin builtin && hasNullValue(builtin.type())) {
+                return nullValueOf(builtin.type());
+            }
+            throw new IllegalArgumentException("is null, and " + describeExpected(kind, 0) + " has no null value");
+        }
         return switch (kind) {
             case Kind.Builtin builtin -> builtin(builtin.type(), node, namespaces);
             case Kind.Enumeration enumeration -> {
@@ -689,9 +771,12 @@ public final class JsonToOpcUaValueConverter {
     /// ## Which fields must be present
     ///
     /// Every field the definition does not mark optional. An optional field -- only a `StructureWithOptionalFields`
-    /// has them -- may be absent or `null`, and is then left out, which is how Milo's codec knows to clear its bit
-    /// in the encoding mask. A required field that is absent is refused rather than defaulted: there is no value
-    /// Edge could pick that the device would not act on.
+    /// has them -- may be absent, and is then left out, which is how Milo's codec knows to clear its bit in the
+    /// encoding mask. A required field that is absent is refused rather than defaulted: there is no value Edge
+    /// could pick that the device would not act on.
+    ///
+    /// **A `null` field is present** (EDG-1138): it carries the field type's null value, and is refused for a type
+    /// that has none -- see [#hasNullValue]. It does not leave an optional field out.
     ///
     /// **Optional fields may be left out only at the end.** The encoding mask has one bit per optional field, in
     /// declaration order. Milo's `DynamicStructCodec` (1.1.x) numbers those bits by the optional fields *present*,
@@ -734,7 +819,7 @@ public final class JsonToOpcUaValueConverter {
         for (final StructureField field : fields) {
             final String name = field.getName();
             final JsonNode supplied = node.get(name);
-            if (supplied == null || supplied.isNull()) {
+            if (supplied == null) {
                 if (optionalFieldsAllowed && Boolean.TRUE.equals(field.getIsOptional())) {
                     if (leftOut == null) {
                         leftOut = name;
@@ -760,7 +845,7 @@ public final class JsonToOpcUaValueConverter {
         return new DynamicStructType(kind.dataType(), members);
     }
 
-    private @NotNull Object fieldValue(final @NotNull StructureField field, final @NotNull JsonNode supplied) {
+    private @Nullable Object fieldValue(final @NotNull StructureField field, final @NotNull JsonNode supplied) {
         final Kind kind = resolve(field.getDataType());
         if (kind instanceof final Kind.Unsupported unsupported) {
             throw new IllegalArgumentException(
@@ -772,6 +857,9 @@ public final class JsonToOpcUaValueConverter {
         }
         if (rank < 1) {
             throw new IllegalArgumentException("has the value rank " + rank + ", which a structure field cannot have");
+        }
+        if (supplied.isNull()) {
+            throw new IllegalArgumentException("is null, and " + NULL_ARRAY_REFUSAL);
         }
         final int[] lengthPerLevel = new int[rank];
         Arrays.fill(lengthPerLevel, UNKNOWN_LENGTH);
