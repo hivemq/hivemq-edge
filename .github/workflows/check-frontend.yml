@@ -46,7 +46,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: 💾 Upload Vitest Code Coverage
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lcov-vitest
           path: hivemq-edge-frontend/coverage-vitest/lcov.info
@@ -73,7 +73,7 @@ jobs:
           VITE_COVERAGE: true
 
       - name: Upload artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: application-instrumented
           path: ./hivemq-edge-frontend/dist
@@ -95,7 +95,7 @@ jobs:
         run: pnpm run build --base=/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: application-clean
           path: ./hivemq-edge-frontend/dist
@@ -110,7 +110,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: application-clean
           path: ./hivemq-edge-frontend/dist
@@ -159,13 +159,13 @@ jobs:
           working-directory: ./hivemq-edge-frontend/
 
       - name: Download artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: application-instrumented
           path: ./hivemq-edge-frontend/dist
 
       - name: 🧪 Run Cypress suite
-        uses: cypress-io/github-action@fa4a118725a8f001170d49631ea89e5d66fee626 # v7.4.1
+        uses: cypress-io/github-action@c541a95ea92d9239347a2355f2e895cd4b3f8060 # v7.4.6
         with:
           component: ${{ matrix.cypress.component }}
           spec: ${{ matrix.cypress.spec }}
@@ -176,7 +176,7 @@ jobs:
       # after the test, store videos
       - name: 💾 Upload Cypress - ${{ matrix.cypress.target }} videos
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: cypress-${{ matrix.cypress.target }}-videos
           path: hivemq-edge-frontend/cypress/videos
@@ -185,7 +185,7 @@ jobs:
 
       - name: 💾 Upload Cypress Code Coverage
         if: success() || failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lcov-cypress-${{ matrix.cypress.target }}
           path: hivemq-edge-frontend/coverage-cypress/lcov.info
@@ -204,7 +204,7 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Download all LCOV Artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: hivemq-edge-frontend/coverage-combined
           pattern: lcov-*
@@ -215,7 +215,7 @@ jobs:
           ls -R ./coverage-combined
           ls -R **/**/*.info
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
