@@ -137,7 +137,8 @@ class MethodSchemasArrayTest {
                 .get("values");
 
         assertThat(prop.get("type").textValue()).isEqualTo("array");
-        assertThat(prop.get("items").get("type").textValue()).isEqualTo("string");
+        // A String has a null value of its own, so the elements are nullable (EDG-1138); the array is not.
+        assertThat(prop.get("items").get("type").toString()).isEqualTo("[\"string\",\"null\"]");
     }
 
     @Test

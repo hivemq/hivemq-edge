@@ -48,6 +48,28 @@ export interface FlatJSONSchema7 extends Omit<JSONSchema7, 'required'> {
 }
 
 /**
+ * Removes the nullability marker, so that a nullable value has the single type of its non-null form.
+ *
+ * A schema marks a value as nullable in one of two ways: a type list including "null" (`type: ["string", "null"]`),
+ * or `anyOf` of the schema and `{ type: "null" }`; Edge writes the first for scalars and the second for objects and
+ * arrays. The mapping editor works on one type per property, and whether a value may be null does not change where it
+ * can be mapped from or to. Any other type list or `anyOf` is returned unchanged.
+ */
+export const withoutNullability = (schema: JSONSchema7): JSONSchema7 => {
+  const { type, anyOf, ...rest } = schema
+  if (Array.isArray(type)) {
+    const nonNull = type.filter((t) => t !== 'null')
+    return nonNull.length === 1 ? { ...schema, type: nonNull[0] } : schema
+  }
+  if (type === undefined && anyOf?.length === 2) {
+    const nonNull = anyOf.filter((branch) => typeof branch !== 'object' || branch.type !== 'null')
+    // The annotations (title, description, readOnly) sit on the outer schema, so they win over the branch's own.
+    if (nonNull.length === 1 && typeof nonNull[0] === 'object') return { ...nonNull[0], ...rest }
+  }
+  return schema
+}
+
+/**
  * `readOnly` is inherited: a read-only container cannot be written, so nothing below it can be either, and
  * JSON Schema does not require the flag to be repeated on every leaf. Callers that use `readOnly` to decide
  * what may be a write destination need the *effective* value, so it is resolved here while flattening rather
@@ -78,6 +100,7 @@ export const getProperty = (
       return [{ key: key, path: path, type: 'null', description: `error: definition ${defName} doesn't exist` }]
     }
   }
+  if (typeof tempProperty === 'object') tempProperty = withoutNullability(tempProperty)
 
   // Add the property
   const { type, description, title: titleRef, examples, ...allProperties } = tempProperty as JSONSchema7
@@ -121,7 +144,7 @@ export const getProperty = (
     }
   } else if (type === 'array') {
     const { items } = tempProperty as JSONSchema7
-    const { type: arrayType } = items as JSONSchema7
+    const { type: arrayType } = withoutNullability((items ?? {}) as JSONSchema7)
     if (arrayType) mainProps.arrayType = Array.isArray(arrayType) ? arrayType[0] : arrayType
   }
 
