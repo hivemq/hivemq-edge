@@ -18,20 +18,20 @@ jobs:
 
     steps:
       - name: Setup Java
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: 'temurin'
           java-version: |
             25
 
-      - uses: hivemq/hivemq-checkout-composite-action@26f72bf9994a1e9091f035e7b0bef787d82bad83 # v1
+      - uses: hivemq/hivemq-checkout-composite-action@c7f25775479e7e1a24566ad301f35c88e0a3dbe7 # v1
         with:
           path: hivemq-edge
           ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
       - name: Check for new issues
-        uses: hivemq/hivemq-snyk-composite-action@1c18f39e10e7b1d35fa121b91b99c0445b7a4a56 # v2.3.6
+        uses: hivemq/hivemq-snyk-composite-action@964ecf88d2ca59af77cc2718d2a79503479b762e # v2.3.7
         with:
           snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge
           artifact-name: snyk-report-hivemq-edge
@@ -54,7 +54,7 @@ jobs:
         run: rm -f hivemq-edge/hivemq-edge-frontend/pnpm-workspace.yaml
 
       - name: Check for new issues (hivemq-edge-frontend)
-        uses: hivemq/hivemq-snyk-composite-action@1c18f39e10e7b1d35fa121b91b99c0445b7a4a56 # v2.3.6
+        uses: hivemq/hivemq-snyk-composite-action@964ecf88d2ca59af77cc2718d2a79503479b762e # v2.3.7
         with:
           snyk-args: --org=hivemq-edge --configuration-matching=^runtimeClasspath$ -d hivemq-edge/hivemq-edge-frontend
           artifact-name: snyk-report-hivemq-edge-frontend
