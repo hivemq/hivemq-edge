@@ -16,12 +16,14 @@
 package com.hivemq.configuration.reader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
 import com.hivemq.exceptions.UnrecoverableException;
 import java.io.IOException;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -163,5 +165,47 @@ public class RestrictionConfiguratorTest extends AbstractConfigurationTest {
                         .getBytes(UTF_8),
                 xmlFile);
         assertThrows(UnrecoverableException.class, () -> reader.applyConfig());
+    }
+
+    // 2026.14 refuses to start on a config.xml that names any of the three limits added in 2026.15, so a write-back
+    // must not add them when nobody set them -- otherwise a rollback after any REST config save fails.
+    @Test
+    public void test_unset_topic_filter_and_qos2_flow_limits_are_not_written_back() throws Exception {
+        Files.write(
+                "<hivemq><restrictions><max-connections>500</max-connections></restrictions></hivemq>".getBytes(UTF_8),
+                xmlFile);
+        reader.applyConfig();
+
+        reader.writeConfigWithSync();
+
+        final String written = java.nio.file.Files.readString(Path.of(xmlFile.getPath()));
+        assertThat(written).contains("<max-connections>500</max-connections>");
+        assertThat(written).doesNotContain("max-topic-filters-per-packet").doesNotContain("max-incoming-qos2-flows");
+        assertEquals(10_000, restrictionsConfigurationService.maxTopicFiltersPerPacket());
+        assertEquals(100_000, restrictionsConfigurationService.maxIncomingQos2Flows());
+        assertEquals(1_000, restrictionsConfigurationService.maxIncomingQos2FlowsPerClient());
+    }
+
+    @Test
+    public void test_set_topic_filter_and_qos2_flow_limits_survive_a_write_back() throws Exception {
+        // the per-client value is the default, set explicitly: it stays in the file
+        Files.write(
+                ("<hivemq><restrictions>"
+                                + "<max-topic-filters-per-packet>50</max-topic-filters-per-packet>"
+                                + "<max-incoming-qos2-flows>2000</max-incoming-qos2-flows>"
+                                + "<max-incoming-qos2-flows-per-client>1000</max-incoming-qos2-flows-per-client>"
+                                + "</restrictions></hivemq>")
+                        .getBytes(UTF_8),
+                xmlFile);
+        reader.applyConfig();
+
+        reader.writeConfigWithSync();
+
+        final String written = java.nio.file.Files.readString(Path.of(xmlFile.getPath()));
+        assertThat(written)
+                .contains("<max-topic-filters-per-packet>50</max-topic-filters-per-packet>")
+                .contains("<max-incoming-qos2-flows>2000</max-incoming-qos2-flows>")
+                .contains("<max-incoming-qos2-flows-per-client>1000</max-incoming-qos2-flows-per-client>");
+        assertEquals(ConfigFileReaderWriter.ReloadOutcome.APPLIED, reader.loadConfigFromXML(xmlFile));
     }
 }
