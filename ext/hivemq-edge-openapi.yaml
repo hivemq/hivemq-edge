@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: PLACEHOLDER_HIVEMQ_VERSION
+  version: 2026.15
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -8468,7 +8468,7 @@ components:
         methodCalls:
           type: boolean
           default: false
-          description: 'Whether messages on this mapping are method calls. When enabled, each message must name the method to call in ''methodName'', and that method is called on the tag''s object. Required for a method tag: with it switched off no method is called whatever the message says, and a request to a method tag is refused with Bad_MethodInvalid naming this setting.'
+          description: 'Whether messages on this mapping are method calls. When enabled, each message must name the method to call in ''methodName'', and that method is called on the tag''s object. Required for a method tag: with it switched off Edge treats every message as an ordinary value write, so no method is called whatever the message says.'
         correlationData:
           type: boolean
           default: false
