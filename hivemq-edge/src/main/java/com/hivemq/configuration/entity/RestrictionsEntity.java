@@ -23,6 +23,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -48,14 +49,18 @@ public class RestrictionsEntity {
     @XmlElement(name = "incoming-bandwidth-throttling", defaultValue = "0")
     private @NotNull Long incomingBandwidthThrottling = INCOMING_BANDWIDTH_THROTTLING_DEFAULT;
 
+    // The three limits added in 2026.15 are null when unset, rather than initialised to their defaults. JaxB marshals
+    // every non-null field, so a default would put all three into config.xml on the first write, and 2026.14 refuses
+    // to start on a file that names them -- a rollback after any REST config save would fail. Null means absent on
+    // the way out and the default on the way in; JaxB sets only the fields the file names.
     @XmlElement(name = "max-topic-filters-per-packet", defaultValue = "10000")
-    private @NotNull Integer maxTopicFiltersPerPacket = MAX_TOPIC_FILTERS_PER_PACKET_DEFAULT;
+    private @Nullable Integer maxTopicFiltersPerPacket = null;
 
     @XmlElement(name = "max-incoming-qos2-flows", defaultValue = "100000")
-    private @NotNull Long maxIncomingQos2Flows = MAX_INCOMING_QOS2_FLOWS_DEFAULT;
+    private @Nullable Long maxIncomingQos2Flows = null;
 
     @XmlElement(name = "max-incoming-qos2-flows-per-client", defaultValue = "1000")
-    private @NotNull Integer maxIncomingQos2FlowsPerClient = MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_DEFAULT;
+    private @Nullable Integer maxIncomingQos2FlowsPerClient = null;
 
     public long getMaxConnections() {
         return maxConnections;
@@ -78,15 +83,17 @@ public class RestrictionsEntity {
     }
 
     public int getMaxTopicFiltersPerPacket() {
-        return maxTopicFiltersPerPacket;
+        return maxTopicFiltersPerPacket != null ? maxTopicFiltersPerPacket : MAX_TOPIC_FILTERS_PER_PACKET_DEFAULT;
     }
 
     public long getMaxIncomingQos2Flows() {
-        return maxIncomingQos2Flows;
+        return maxIncomingQos2Flows != null ? maxIncomingQos2Flows : MAX_INCOMING_QOS2_FLOWS_DEFAULT;
     }
 
     public int getMaxIncomingQos2FlowsPerClient() {
-        return maxIncomingQos2FlowsPerClient;
+        return maxIncomingQos2FlowsPerClient != null
+                ? maxIncomingQos2FlowsPerClient
+                : MAX_INCOMING_QOS2_FLOWS_PER_CLIENT_DEFAULT;
     }
 
     @Override
