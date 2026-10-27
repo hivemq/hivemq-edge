@@ -19,6 +19,8 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.util.NanoTimeProvider;
@@ -44,6 +46,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull EventService eventService;
     private final @NotNull NanoTimeProvider nanoTimeProvider;
+    private final @NotNull InternalConfigurationService internalConfigurationService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, PollingTask> samplerToTask = new ConcurrentHashMap<>();
 
     @Inject
@@ -51,19 +54,56 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
             final @NotNull ScheduledExecutorService scheduledExecutorService,
             final @NotNull ShutdownHooks shutdownHooks,
             final @NotNull EventService eventService,
-            final @NotNull NanoTimeProvider nanoTimeProvider) {
+            final @NotNull NanoTimeProvider nanoTimeProvider,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
         this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
         this.nanoTimeProvider = nanoTimeProvider;
+        this.internalConfigurationService = internalConfigurationService;
         shutdownHooks.add(new Shutdown());
     }
 
     @Override
     public void schedulePolling(final @NotNull ProtocolAdapterPollingSampler sampler) {
-        final PollingTask pollingTask =
-                new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider);
+        final PollingTask pollingTask = new PollingTask(
+                sampler,
+                scheduledExecutorService,
+                eventService,
+                nanoTimeProvider,
+                internalOption(
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
+                        1,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT),
+                internalOption(
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
+                        0,
+                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT));
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
         samplerToTask.put(sampler, pollingTask);
+    }
+
+    private int internalOption(final @NotNull String key, final int minimum, final int defaultValue) {
+        final String configured = internalConfigurationService.get(key);
+        if (configured == null) {
+            return defaultValue;
+        }
+        final int value;
+        try {
+            value = Integer.parseInt(configured.trim());
+        } catch (final NumberFormatException e) {
+            log.warn("Internal option '{}' is '{}', not a number; using the default {}", key, configured, defaultValue);
+            return defaultValue;
+        }
+        if (value < minimum) {
+            log.warn(
+                    "Internal option '{}' is {}, below its minimum of {}; using the default {}",
+                    key,
+                    value,
+                    minimum,
+                    defaultValue);
+            return defaultValue;
+        }
+        return value;
     }
 
     @Override
