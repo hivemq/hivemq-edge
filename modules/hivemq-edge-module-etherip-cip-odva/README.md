@@ -108,8 +108,8 @@ Uses [EtherIP](https://github.com/ornl-epics/etherip/) library and extends it
 - [x] Adapter gets stopped/removed after maxErrorLevel is reached
   - Workaround:
     - [x] Set limit at VERY HIGH value (so it's never reached, or -1)
-    - [ ] Set internal max backoff time to some reasonable value: currently set statically to 10 minutes
-      - InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get()
+    - [x] Set internal max backoff time to some reasonable value: default 10 minutes
+      - `<internal>` option `adapter.polling.error.backoff.max.millis` in `config.xml`
 
 - [x] BOOL Attribute protocol single (checks whole value) & batched (looks at given bit) (For get attribute single - True is represented by SINT 0xFF = -1)
 

@@ -48,6 +48,9 @@ public class InternalConfigurations {
         defaultValuesMap.put(
                 ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
                 String.valueOf(ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT));
+        defaultValuesMap.put(
+                ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS,
+                String.valueOf(ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT));
         return defaultValuesMap;
     }
 
@@ -331,8 +334,15 @@ public class InternalConfigurations {
      *       EDGE RUNTIME     *
      **********************/
 
-    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF =
-            new AtomicInteger(60 * 10 * 1000); // -- 10 minutes
+    /**
+     * Upper bound of the delay before the next poll after a failed one; the delay doubles with every failure since the
+     * last successful poll until it reaches this bound or the internal ceiling of about 29 hours, whichever is lower.
+     * Minimum 1000 ms, which bounds how often a poll that never answers is replaced by a new one. Set with
+     * {@code <internal><option><key>adapter.polling.error.backoff.max.millis</key>…}.
+     */
+    public static final String ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS = "adapter.polling.error.backoff.max.millis";
+
+    public static final int ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT = 60 * 10 * 1000; // -- 10 minutes
 
     /**
      * Time a single poll may take before the polling watchdog stops waiting for it and counts a watchdog hit. Set with

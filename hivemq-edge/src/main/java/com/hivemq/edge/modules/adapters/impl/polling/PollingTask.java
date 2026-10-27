@@ -45,8 +45,7 @@ public class PollingTask implements Runnable {
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull EventService eventService;
     private final @NotNull NanoTimeProvider nanoTimeProvider;
-    private final int watchdogTimeoutMillis;
-    private final int watchdogErrorsBeforeStop;
+    private final @NotNull Settings settings;
     private final @NotNull AtomicInteger watchdogErrorCount;
     private final @NotNull AtomicInteger applicationErrorCount;
     private final @NotNull AtomicBoolean continueScheduling;
@@ -58,13 +57,7 @@ public class PollingTask implements Runnable {
             final @NotNull ScheduledExecutorService scheduledExecutorService,
             final @NotNull EventService eventService,
             final @NotNull NanoTimeProvider nanoTimeProvider) {
-        this(
-                sampler,
-                scheduledExecutorService,
-                eventService,
-                nanoTimeProvider,
-                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT,
-                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT);
+        this(sampler, scheduledExecutorService, eventService, nanoTimeProvider, Settings.DEFAULTS);
     }
 
     public PollingTask(
@@ -72,23 +65,21 @@ public class PollingTask implements Runnable {
             final @NotNull ScheduledExecutorService scheduledExecutorService,
             final @NotNull EventService eventService,
             final @NotNull NanoTimeProvider nanoTimeProvider,
-            final int watchdogTimeoutMillis,
-            final int watchdogErrorsBeforeStop) {
+            final @NotNull Settings settings) {
         this.sampler = sampler;
         this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
         this.nanoTimeProvider = nanoTimeProvider;
-        this.watchdogTimeoutMillis = watchdogTimeoutMillis;
-        this.watchdogErrorsBeforeStop = watchdogErrorsBeforeStop;
+        this.settings = settings;
         this.watchdogErrorCount = new AtomicInteger();
         this.applicationErrorCount = new AtomicInteger();
         this.continueScheduling = new AtomicBoolean(true);
         this.currentScheduledFuture = new AtomicReference<>();
     }
 
-    private static long getBackoff(final int errorCount) {
-        // -- This will backoff up to a max of about a day (unless the max provided is less)
-        final long max = InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get();
+    private long getBackoff(final int errorCount) {
+        // -- This will backoff up to about 29 hours (2^20 * 100 ms), unless the configured max is less
+        final long max = settings.maxErrorBackoffMillis();
         long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
         f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
         f = Math.min(f, max);
@@ -106,7 +97,7 @@ public class PollingTask implements Runnable {
             // -- reaches the copy wrapped in a CompletionException, so a bare TimeoutException is the watchdog's.
             // -- A timeout inside the sampler (a driver or poll-output timeout) is an ordinary polling error.
             final CompletableFuture<?> localExecutionFuture =
-                    sampler.execute().copy().orTimeout(watchdogTimeoutMillis, TimeUnit.MILLISECONDS);
+                    sampler.execute().copy().orTimeout(settings.watchdogTimeoutMillis(), TimeUnit.MILLISECONDS);
             localExecutionFuture.whenComplete((aVoid, throwable) -> {
                 if (throwable == null) {
                     resetErrorStats();
@@ -140,7 +131,7 @@ public class PollingTask implements Runnable {
         // -- Not respond and we dont want to block other polls
         // -- A negative maxErrorsBeforeRemoval asks for unlimited retries, so the watchdog never stops polling then
         final var errorCountTotal = watchdogErrorCount.incrementAndGet();
-        final var overWatchdogLimit = errorCountTotal > watchdogErrorsBeforeStop;
+        final var overWatchdogLimit = errorCountTotal > settings.watchdogErrorsBeforeStop();
         final var stopBecauseOfTooManyErrors = overWatchdogLimit && sampler.getMaxErrorsBeforeRemoval() >= 0;
         final var milliSecondsSinceLastPoll =
                 TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
@@ -254,5 +245,19 @@ public class PollingTask implements Runnable {
     private void resetErrorStats() {
         applicationErrorCount.set(0);
         watchdogErrorCount.set(0);
+    }
+
+    /**
+     * @param watchdogTimeoutMillis    time a poll may take before the watchdog stops waiting for it
+     * @param watchdogErrorsBeforeStop watchdog hits since the last successful poll after which polling stops, unless
+     *                                 the sampler retries without limit
+     * @param maxErrorBackoffMillis    upper bound of the delay before the next poll after a failed one
+     */
+    public record Settings(int watchdogTimeoutMillis, int watchdogErrorsBeforeStop, int maxErrorBackoffMillis) {
+
+        public static final @NotNull Settings DEFAULTS = new Settings(
+                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT,
+                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT,
+                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT);
     }
 }

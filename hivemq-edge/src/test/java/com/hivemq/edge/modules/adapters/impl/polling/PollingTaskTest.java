@@ -28,9 +28,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.util.NanoTimeProvider;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,6 +42,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class PollingTaskTest {
 
@@ -88,7 +91,8 @@ class PollingTaskTest {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
         when(sampler.execute()).thenReturn(new CompletableFuture<>());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 1);
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(1, 1));
 
         pollingTask.run();
         await().until(() -> {
@@ -111,7 +115,7 @@ class PollingTaskTest {
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
         when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new InterruptedException()));
         final PollingTask pollingTask =
-                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 60_000, 1);
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(60_000, 1));
 
         pollingTask.run();
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
@@ -146,7 +150,8 @@ class PollingTaskTest {
     void run_whenSampleExecutionExceedsTime_thenTaskIsRescheduled() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenReturn(new CompletableFuture<>());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 10);
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(1, 10));
 
         pollingTask.run();
         await().until(() -> {
@@ -165,7 +170,7 @@ class PollingTaskTest {
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
         when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new TimeoutException()));
         final PollingTask pollingTask =
-                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 60_000, 10);
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(60_000, 10));
 
         for (int i = 1; i <= 12; i++) {
             pollingTask.run();
@@ -180,7 +185,7 @@ class PollingTaskTest {
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(2);
         when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new TimeoutException()));
         final PollingTask pollingTask =
-                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 60_000, 10);
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(60_000, 10));
 
         pollingTask.run();
         pollingTask.run();
@@ -195,7 +200,8 @@ class PollingTaskTest {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
         when(sampler.execute()).thenAnswer(invocation -> new CompletableFuture<>());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 1);
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(1, 1));
 
         for (int i = 1; i <= 3; i++) {
             pollingTask.run();
@@ -211,13 +217,51 @@ class PollingTaskTest {
         final ScheduledExecutorService mockedExecutor = mock();
         final CompletableFuture<Object> samplerFuture = new CompletableFuture<>();
         when(sampler.execute()).thenAnswer(invocation -> samplerFuture);
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 10);
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, watchdog(1, 10));
 
         pollingTask.run();
 
         await().untilAsserted(() ->
                 verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS)));
         assertThat(samplerFuture).isNotDone();
+    }
+
+    @Test
+    void run_whenPollsKeepFailing_thenDelayGrowsToDefaultBackoffMax() {
+        assertThat(delaysAfterFailedPolls(PollingTask.Settings.DEFAULTS, 15))
+                .last()
+                .isEqualTo((long) InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT);
+    }
+
+    @Test
+    void run_whenPollsKeepFailing_thenDelayStopsAtConfiguredBackoffMax() {
+        final List<Long> delays = delaysAfterFailedPolls(new PollingTask.Settings(60_000, 10, 50), 15);
+
+        assertThat(delays).allMatch(delay -> delay <= 50L);
+        assertThat(delays).last().isEqualTo(50L);
+    }
+
+    private @NotNull List<Long> delaysAfterFailedPolls(final @NotNull PollingTask.Settings settings, final int polls) {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new RuntimeException()));
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, settings);
+
+        for (int i = 0; i < polls; i++) {
+            pollingTask.run();
+        }
+
+        final ArgumentCaptor<Long> delays = ArgumentCaptor.forClass(Long.class);
+        verify(mockedExecutor, times(polls)).schedule(same(pollingTask), delays.capture(), eq(TimeUnit.MILLISECONDS));
+        return delays.getAllValues();
+    }
+
+    private static @NotNull PollingTask.Settings watchdog(final int timeoutMillis, final int errorsBeforeStop) {
+        return new PollingTask.Settings(
+                timeoutMillis,
+                errorsBeforeStop,
+                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT);
     }
 
     @Test
