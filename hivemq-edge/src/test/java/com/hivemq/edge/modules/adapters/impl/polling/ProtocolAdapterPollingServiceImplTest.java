@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.impl.polling;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -32,6 +33,7 @@ import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.util.NanoTimeProvider;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -102,6 +104,40 @@ class ProtocolAdapterPollingServiceImplTest {
         scheduledTask().run();
 
         verify(sampler).error(any(), eq(false));
+    }
+
+    @Test
+    void schedulePolling_whenBackoffMaxIsSet_thenTaskUsesIt() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS, "2000");
+
+        // without the option the last delays would be 10 minutes
+        assertThat(delaysAfterFailedPolls())
+                .allMatch(delay -> delay <= 2000L)
+                .last()
+                .isEqualTo(2000L);
+    }
+
+    @Test
+    void schedulePolling_whenBackoffMaxIsBelowMinimum_thenTaskUsesDefault() {
+        internalConfigurationService.set(InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS, "0");
+
+        assertThat(delaysAfterFailedPolls()).last().isEqualTo((long)
+                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT);
+    }
+
+    private @NotNull List<Long> delaysAfterFailedPolls() {
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new RuntimeException()));
+        final PollingTask task = scheduledTask();
+
+        for (int i = 0; i < 15; i++) {
+            task.run();
+        }
+
+        // the initial schedule plus 15 reschedules
+        final ArgumentCaptor<Long> delays = ArgumentCaptor.forClass(Long.class);
+        verify(scheduledExecutorService, times(16)).schedule(same(task), delays.capture(), eq(TimeUnit.MILLISECONDS));
+        return delays.getAllValues();
     }
 
     private void assertStopsAfterDefaultWatchdogLimit() {

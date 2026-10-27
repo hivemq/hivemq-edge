@@ -70,14 +70,19 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 scheduledExecutorService,
                 eventService,
                 nanoTimeProvider,
-                internalOption(
-                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
-                        1,
-                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT),
-                internalOption(
-                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
-                        0,
-                        InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT));
+                new PollingTask.Settings(
+                        internalOption(
+                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
+                                1,
+                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT),
+                        internalOption(
+                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
+                                0,
+                                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT),
+                        internalOption(
+                                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS,
+                                1000,
+                                InternalConfigurations.ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT)));
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
         samplerToTask.put(sampler, pollingTask);
     }
