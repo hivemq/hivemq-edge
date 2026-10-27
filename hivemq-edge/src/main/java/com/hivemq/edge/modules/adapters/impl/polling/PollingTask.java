@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,6 +45,8 @@ public class PollingTask implements Runnable {
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull EventService eventService;
     private final @NotNull NanoTimeProvider nanoTimeProvider;
+    private final int watchdogTimeoutMillis;
+    private final int watchdogErrorsBeforeStop;
     private final @NotNull AtomicInteger watchdogErrorCount;
     private final @NotNull AtomicInteger applicationErrorCount;
     private final @NotNull AtomicBoolean continueScheduling;
@@ -55,10 +58,28 @@ public class PollingTask implements Runnable {
             final @NotNull ScheduledExecutorService scheduledExecutorService,
             final @NotNull EventService eventService,
             final @NotNull NanoTimeProvider nanoTimeProvider) {
+        this(
+                sampler,
+                scheduledExecutorService,
+                eventService,
+                nanoTimeProvider,
+                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT,
+                InternalConfigurations.ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT);
+    }
+
+    public PollingTask(
+            final @NotNull ProtocolAdapterPollingSampler sampler,
+            final @NotNull ScheduledExecutorService scheduledExecutorService,
+            final @NotNull EventService eventService,
+            final @NotNull NanoTimeProvider nanoTimeProvider,
+            final int watchdogTimeoutMillis,
+            final int watchdogErrorsBeforeStop) {
         this.sampler = sampler;
         this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
         this.nanoTimeProvider = nanoTimeProvider;
+        this.watchdogTimeoutMillis = watchdogTimeoutMillis;
+        this.watchdogErrorsBeforeStop = watchdogErrorsBeforeStop;
         this.watchdogErrorCount = new AtomicInteger();
         this.applicationErrorCount = new AtomicInteger();
         this.continueScheduling = new AtomicBoolean(true);
@@ -81,16 +102,17 @@ public class PollingTask implements Runnable {
             if (!continueScheduling.get()) {
                 return;
             }
-            final CompletableFuture<?> localExecutionFuture = sampler.execute()
-                    .orTimeout(
-                            InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
-                            TimeUnit.MILLISECONDS);
+            // -- The watchdog times out a copy of the sampler's future: a failure of the sampler's own future
+            // -- reaches the copy wrapped in a CompletionException, so a bare TimeoutException is the watchdog's.
+            // -- A timeout inside the sampler (a driver or poll-output timeout) is an ordinary polling error.
+            final CompletableFuture<?> localExecutionFuture =
+                    sampler.execute().copy().orTimeout(watchdogTimeoutMillis, TimeUnit.MILLISECONDS);
             localExecutionFuture.whenComplete((aVoid, throwable) -> {
                 if (throwable == null) {
                     resetErrorStats();
                     reschedule(0);
                 } else {
-                    if (ExceptionUtils.isInterruptedException(throwable)) {
+                    if (throwable instanceof TimeoutException || ExceptionUtils.isInterruptedException(throwable)) {
                         handleInterruptionException(throwable);
                     } else {
                         handleExceptionDuringPolling(throwable);
@@ -116,14 +138,21 @@ public class PollingTask implements Runnable {
         // -- Job was killed by the framework as it took too long
         // -- Do not call back to the job here (notify) since it will
         // -- Not respond and we dont want to block other polls
+        // -- A negative maxErrorsBeforeRemoval asks for unlimited retries, so the watchdog never stops polling then
         final var errorCountTotal = watchdogErrorCount.incrementAndGet();
-        final var stopBecauseOfTooManyErrors =
-                errorCountTotal > InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
+        final var overWatchdogLimit = errorCountTotal > watchdogErrorsBeforeStop;
+        final var stopBecauseOfTooManyErrors = overWatchdogLimit && sampler.getMaxErrorsBeforeRemoval() >= 0;
         final var milliSecondsSinceLastPoll =
                 TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
         if (stopBecauseOfTooManyErrors) {
             log.warn(
                     "Detected bad system process {} in sampler {} - terminating process to maintain health ({}ms runtime)",
+                    errorCountTotal,
+                    sampler.getAdapterId(),
+                    milliSecondsSinceLastPoll);
+        } else if (overWatchdogLimit) {
+            log.warn(
+                    "Detected bad system process {} in sampler {} - stopped waiting for the poll, polling continues because the adapter retries without limit ({}ms runtime)",
                     errorCountTotal,
                     sampler.getAdapterId(),
                     milliSecondsSinceLastPoll);

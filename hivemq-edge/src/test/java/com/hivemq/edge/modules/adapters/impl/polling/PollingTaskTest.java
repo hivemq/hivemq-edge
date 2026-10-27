@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.impl.polling;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -27,7 +28,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import com.hivemq.util.NanoTimeProvider;
@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,10 +87,8 @@ class PollingTaskTest {
     void run_whenSampleExecutionTakesTooLong_thenTaskIsRescheduledMaxErrorTimes() throws InterruptedException {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
-        InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.set(0);
-        InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.set(1);
         when(sampler.execute()).thenReturn(new CompletableFuture<>());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 1);
 
         pollingTask.run();
         await().until(() -> {
@@ -110,9 +109,9 @@ class PollingTaskTest {
     void run_whenSampleExecutionGetsInterrupted_thenTaskIsRescheduledMaxErrorTimes() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
-        InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.set(1);
         when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new InterruptedException()));
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 60_000, 1);
 
         pollingTask.run();
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
@@ -145,10 +144,9 @@ class PollingTaskTest {
 
     @Test
     void run_whenSampleExecutionExceedsTime_thenTaskIsRescheduled() {
-        InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.set(1);
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenReturn(new CompletableFuture<>());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 10);
 
         pollingTask.run();
         await().until(() -> {
@@ -159,6 +157,67 @@ class PollingTaskTest {
             }
             return true;
         });
+    }
+
+    @Test
+    void run_whenSamplerTimesOutMoreThanWatchdogLimit_andRetriesAreUnlimited_thenTaskKeepsRescheduling() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new TimeoutException()));
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 60_000, 10);
+
+        for (int i = 1; i <= 12; i++) {
+            pollingTask.run();
+            verify(mockedExecutor, times(i)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        }
+        verify(sampler, never()).error(any(), eq(false));
+    }
+
+    @Test
+    void run_whenSamplerTimesOut_thenTimeoutCountsAgainstMaxErrorsBeforeRemoval() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(2);
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new TimeoutException()));
+        final PollingTask pollingTask =
+                new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 60_000, 10);
+
+        pollingTask.run();
+        pollingTask.run();
+        pollingTask.run();
+
+        verify(mockedExecutor, times(2)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        verify(sampler, times(1)).error(any(), eq(false));
+    }
+
+    @Test
+    void run_whenWatchdogFiresMoreThanLimit_andRetriesAreUnlimited_thenTaskKeepsRescheduling() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
+        when(sampler.execute()).thenAnswer(invocation -> new CompletableFuture<>());
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 1);
+
+        for (int i = 1; i <= 3; i++) {
+            pollingTask.run();
+            final int expectedSchedules = i;
+            await().untilAsserted(() -> verify(mockedExecutor, times(expectedSchedules))
+                    .schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS)));
+        }
+        verify(sampler, never()).error(any(), eq(false));
+    }
+
+    @Test
+    void run_whenWatchdogFires_thenSamplerFutureIsNotCompletedByTheWatchdog() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        final CompletableFuture<Object> samplerFuture = new CompletableFuture<>();
+        when(sampler.execute()).thenAnswer(invocation -> samplerFuture);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider, 1, 10);
+
+        pollingTask.run();
+
+        await().untilAsserted(() ->
+                verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS)));
+        assertThat(samplerFuture).isNotDone();
     }
 
     @Test
