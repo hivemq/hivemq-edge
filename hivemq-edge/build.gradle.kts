@@ -170,6 +170,11 @@ dependencies {
         implementation(libs.classmate)
     }
 
+    // json-path pulls in asm 9.7.1 through json-smart and accessors-smart; take the release that fixes its CVEs (EDG-1173)
+    constraints {
+        implementation(libs.asm)
+    }
+
     // config
     implementation(libs.jaxb4.impl)
     implementation(libs.jaxb4.bind)
