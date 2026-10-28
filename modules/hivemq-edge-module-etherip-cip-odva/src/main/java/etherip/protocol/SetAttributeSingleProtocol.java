@@ -66,30 +66,80 @@ public class SetAttributeSingleProtocol extends ProtocolAdapter {
 
     @Override
     public void decode(final ByteBuffer buf, final int available, final StringBuilder log) throws Exception {
-        final byte serviceCode = buf.get();
-        if (serviceCode != REPLY_CODE) {
-            throw new Exception("Expected Set_Attribute_Single reply (0x"
-                    + Integer.toHexString(REPLY_CODE & 0xFF)
-                    + "), got service code 0x"
-                    + Integer.toHexString(serviceCode & 0xFF));
+        // The whole header is read before the service code is judged, so that a device's error status is
+        // reported even in a reply for the wrong service. Upstream MessageRouterProtocol, too, reads the status
+        // before it compares the reply's service with the request's.
+        if (buf.remaining() < 4) {
+            throw new Exception(
+                    "Set_Attribute_Single reply cut short: " + buf.remaining() + " bytes, at least 4 expected");
         }
+        final int serviceCode = buf.get() & 0xFF;
         buf.get(); // reserved
-        final int status = buf.get();
-        final int extStatusSize = buf.get();
+        final int status = buf.get() & 0xFF;
+        final int extStatusSize = buf.get() & 0xFF;
+        if (buf.remaining() < 2 * extStatusSize) {
+            throw new Exception("Set_Attribute_Single reply cut short: " + extStatusSize
+                    + " extended status words announced, " + buf.remaining() + " bytes left");
+        }
         final int[] extStatus = new int[extStatusSize];
         for (int i = 0; i < extStatusSize; ++i) {
-            extStatus[i] = buf.getShort();
+            extStatus[i] = buf.getShort() & 0xFFFF;
         }
         if (log != null) {
             log.append("MR Response\n");
-            log.append("USINT service           : Set_Attribute_Single reply\n");
+            log.append("USINT service           : 0x")
+                    .append(Integer.toHexString(serviceCode))
+                    .append("\n");
             log.append("USINT status            : 0x")
                     .append(Integer.toHexString(status))
                     .append("\n");
         }
-        if (status != 0 && status != STATUS_PARTIAL_TRANSFER) {
-            throw new CipException(status, extStatusSize > 0 ? extStatus[0] : 0);
+        final int extendedStatus = extStatusSize > 0 ? extStatus[0] : 0;
+        if (serviceCode != (REPLY_CODE & 0xFF)) {
+            throw new UnexpectedReplyException(serviceCode, status, extendedStatus);
+        }
+        if (isError(status)) {
+            throw new CipException(status, extendedStatus);
         }
         body.decode(buf, available - 4 - 2 * extStatusSize, log);
+    }
+
+    private static boolean isError(final int status) {
+        return status != 0 && status != STATUS_PARTIAL_TRANSFER;
+    }
+
+    /// The device answered the write with a reply for another service. Its status is kept: an error status is
+    /// still the device's reason for refusing the write, while a success status leaves open whether the value
+    /// was written.
+    public static final class UnexpectedReplyException extends Exception {
+
+        private final int serviceCode;
+        private final int status;
+        private final int extendedStatus;
+
+        UnexpectedReplyException(final int serviceCode, final int status, final int extendedStatus) {
+            super(String.format(
+                    "Expected Set_Attribute_Single reply (0x%02X), got service code 0x%02X with status 0x%02X",
+                    REPLY_CODE & 0xFF, serviceCode, status));
+            this.serviceCode = serviceCode;
+            this.status = status;
+            this.extendedStatus = extendedStatus;
+        }
+
+        public int getServiceCode() {
+            return serviceCode;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+
+        public int getExtendedStatus() {
+            return extendedStatus;
+        }
+
+        public boolean isDeviceError() {
+            return isError(status);
+        }
     }
 }

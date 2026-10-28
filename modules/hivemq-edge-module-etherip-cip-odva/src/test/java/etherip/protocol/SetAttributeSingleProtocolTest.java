@@ -92,6 +92,6 @@ class SetAttributeSingleProtocolTest {
 
         assertThatThrownBy(() -> new SetAttributeSingleProtocol(new LogicalAddressPath(1, 2, 3), new TwoBytes())
                         .decode(reply, 4, null))
-                .hasMessageContaining("0x8e");
+                .isInstanceOf(SetAttributeSingleProtocol.UnexpectedReplyException.class);
     }
 }

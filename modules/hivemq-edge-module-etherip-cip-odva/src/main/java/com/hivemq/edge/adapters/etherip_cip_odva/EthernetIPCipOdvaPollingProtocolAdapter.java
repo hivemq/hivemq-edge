@@ -68,6 +68,7 @@ import etherip.EtherNetIP;
 import etherip.EthernetIPWithODVA;
 import etherip.data.CipException;
 import etherip.protocol.Encapsulation;
+import etherip.protocol.SetAttributeSingleProtocol;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -89,6 +90,9 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     private static final String[] DISCONNECT_REASONS = new String[] {
         "Connection reset by peer", "Broken pipe", "Timeout", Encapsulation.Command.UnRegisterSession.name()
     };
+
+    private static final int CIP_STATUS_SERVICE_NOT_SUPPORTED = 0x08;
+    private static final int CIP_STATUS_NOT_ENOUGH_DATA = 0x13;
 
     private final @NotNull EipSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -596,11 +600,27 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         // Serialize the read->write window of a PARTIAL_WRITE so it is not interleaved with another write.
         // COMPLETE_WRITE does not read, but sharing the lock is harmless and keeps concurrent writes ordered.
         synchronized (writeLock) {
+            final byte @Nullable [] prefill;
             try {
-                final byte @Nullable [] prefill = tag.getWriteMode() == CipWriteMode.PARTIAL_WRITE
+                prefill = tag.getWriteMode() == CipWriteMode.PARTIAL_WRITE
                         ? readAttributeBytes(connectedClient, tagGroup)
                         : null;
+            } catch (final Exception e) {
+                failWrite(
+                        writingOutput,
+                        tagName,
+                        e instanceof CipException cip
+                                ? "the device refused to read the current value, which a PARTIAL_WRITE needs (device said: "
+                                        + describeCipStatus(cip.getStatusCode(), cip.getExtendedStatusCode())
+                                        + ")"
+                                : "could not read the current value, which a PARTIAL_WRITE needs ("
+                                        + ExceptionUtils.extractMessageWithCause(e)
+                                        + ")",
+                        e);
+                return;
+            }
 
+            try {
                 final CipTagEncodingAttributeProtocol encodingProtocol = new CipTagEncodingAttributeProtocol(
                         cipTagsEncoders,
                         tagsToWrite,
@@ -610,35 +630,65 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 connectedClient.setAttributeSingle(tagGroup.getLogicalAddressPath(), encodingProtocol);
                 writingOutput.finish();
             } catch (final Exception e) {
-                // A COMPLETE_WRITE whose configured tag(s) do not actually span the whole attribute produces a
-                // request shorter than the device's attribute, which the device rejects (typically CIP status
-                // 0x08 "Service not supported"). Surface that likely cause rather than the raw device error.
-                if (tag.getWriteMode() == CipWriteMode.COMPLETE_WRITE) {
-                    LOG.warn(
-                            "Adapter '{}'. Failed to write tag '{}' using COMPLETE_WRITE: {}. The device rejected the "
-                                    + "request; the configured tag(s) at {} may not span the whole attribute. Either make "
-                                    + "them cover the full attribute, or use PARTIAL_WRITE.",
-                            adapterId,
-                            tagName,
-                            ExceptionUtils.extractMessageWithCause(e),
-                            tagGroup.getTagAddress());
-                    writingOutput.fail(
-                            e,
-                            "Failed to write tag '"
-                                    + tagName
-                                    + "' using COMPLETE_WRITE: the configured tag(s) at "
-                                    + tagGroup.getTagAddress()
-                                    + " may not span the whole attribute. Either make them cover the full attribute, or use PARTIAL_WRITE.");
-                } else {
-                    LOG.warn(
-                            "Adapter '{}'. Failed to write tag '{}': {}",
-                            adapterId,
-                            tagName,
-                            ExceptionUtils.extractMessageWithCause(e));
-                    writingOutput.fail(e, "Failed to write tag '" + tagName + "'.");
+                String reason = describeWriteFailure(e);
+                // A COMPLETE_WRITE whose configured tag(s) do not span the whole attribute produces a request
+                // shorter than the attribute, which the device refuses with "Service not supported" or "Not enough
+                // data". Name that likely cause after what the device said.
+                if (tag.getWriteMode() == CipWriteMode.COMPLETE_WRITE
+                        && e instanceof CipException cip
+                        && (cip.getStatusCode() == CIP_STATUS_SERVICE_NOT_SUPPORTED
+                                || cip.getStatusCode() == CIP_STATUS_NOT_ENOUGH_DATA)) {
+                    reason += ". The configured tag(s) at " + tagGroup.getTagAddress()
+                            + " may not span the whole attribute; either make them cover the full attribute,"
+                            + " or use PARTIAL_WRITE";
                 }
+                failWrite(writingOutput, tagName, reason, e);
             }
         }
+    }
+
+    private void failWrite(
+            final @NotNull WritingOutput writingOutput,
+            final @NotNull String tagName,
+            final @NotNull String reason,
+            final @NotNull Exception e) {
+        final String message = "Failed to write tag '" + tagName + "': " + reason + ".";
+        LOG.warn("Adapter '{}'. {}", adapterId, message);
+        writingOutput.fail(e, message);
+    }
+
+    /// What went wrong, followed by what the device said, in parentheses.
+    private static @NotNull String describeWriteFailure(final @NotNull Exception e) {
+        if (e instanceof SetAttributeSingleProtocol.UnexpectedReplyException reply) {
+            final String deviceSaid = String.format(
+                            "service code 0x%02X instead of 0x%02X, ",
+                            reply.getServiceCode(), SetAttributeSingleProtocol.REPLY_CODE & 0xFF)
+                    + describeCipStatus(reply.getStatus(), reply.getExtendedStatus());
+            return reply.isDeviceError()
+                    ? "the device refused the write (device said: " + deviceSaid + ")"
+                    : "the device sent a reply that does not belong to a write, so the value may or may not have been"
+                            + " written (device said: " + deviceSaid + ")";
+        }
+        if (e instanceof CipException cip) {
+            return "the device refused the write (device said: "
+                    + describeCipStatus(cip.getStatusCode(), cip.getExtendedStatusCode())
+                    + ")";
+        }
+        return "the write did not complete (" + ExceptionUtils.extractMessageWithCause(e) + ")";
+    }
+
+    /// A CIP general status as code and name, e.g. "status 0x0E Attribute not settable", plus the first
+    /// extended status word when there is one.
+    private static @NotNull String describeCipStatus(final int status, final int extendedStatus) {
+        final String name = status == 0 ? "Success" : new CipException(status, extendedStatus).getStatusName();
+        final StringBuilder text = new StringBuilder(String.format("status 0x%02X", status));
+        if (name != null && !name.isEmpty()) {
+            text.append(' ').append(name);
+        }
+        if (extendedStatus != 0) {
+            text.append(String.format(", extended status 0x%04X", extendedStatus));
+        }
+        return text.toString();
     }
 
     /**
