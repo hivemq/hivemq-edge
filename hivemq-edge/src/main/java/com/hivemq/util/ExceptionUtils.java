@@ -15,7 +15,6 @@
  */
 package com.hivemq.util;
 
-import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
 
 public class ExceptionUtils {
@@ -23,7 +22,7 @@ public class ExceptionUtils {
     public static boolean isInterruptedException(final @NotNull Throwable original) {
         Throwable t = original;
         do {
-            if (t instanceof InterruptedException || t instanceof TimeoutException) {
+            if (t instanceof InterruptedException) {
                 return true;
             }
             t = t.getCause();

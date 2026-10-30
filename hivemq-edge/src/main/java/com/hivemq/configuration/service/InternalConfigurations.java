@@ -42,6 +42,15 @@ public class InternalConfigurations {
         defaultValuesMap.put(PERSISTENCE_BUCKET_COUNT, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
         defaultValuesMap.put(FILE_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
         defaultValuesMap.put(MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS));
+        defaultValuesMap.put(
+                ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS,
+                String.valueOf(ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT));
+        defaultValuesMap.put(
+                ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP,
+                String.valueOf(ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT));
+        defaultValuesMap.put(
+                ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS,
+                String.valueOf(ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT));
         return defaultValuesMap;
     }
 
@@ -325,11 +334,33 @@ public class InternalConfigurations {
      *       EDGE RUNTIME     *
      **********************/
 
-    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF =
-            new AtomicInteger(60 * 10 * 1000); // -- 10 minutes
-    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS =
-            new AtomicInteger(60 * 1000); // -- 60 Seconds
-    public static final @NotNull AtomicInteger ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT =
-            new AtomicInteger(10);
+    /**
+     * Upper bound of the delay before the next poll after a failed one; the delay doubles with every failure since the
+     * last successful poll until it reaches this bound or the internal ceiling of about 29 hours, whichever is lower.
+     * Minimum 1000 ms, which bounds how often a poll that never answers is replaced by a new one. Set with
+     * {@code <internal><option><key>adapter.polling.error.backoff.max.millis</key>…}.
+     */
+    public static final String ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS = "adapter.polling.error.backoff.max.millis";
+
+    public static final int ADAPTER_POLLING_ERROR_BACKOFF_MAX_MILLIS_DEFAULT = 60 * 10 * 1000; // -- 10 minutes
+
+    /**
+     * Time a single poll may take before the polling watchdog stops waiting for it and counts a watchdog hit. Set with
+     * {@code <internal><option><key>adapter.polling.watchdog.timeout.millis</key>…}.
+     */
+    public static final String ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS = "adapter.polling.watchdog.timeout.millis";
+
+    public static final int ADAPTER_POLLING_WATCHDOG_TIMEOUT_MILLIS_DEFAULT = 60 * 1000; // -- 60 Seconds
+
+    /**
+     * Watchdog hits since the last successful poll after which polling stops, unless the adapter's
+     * {@code maxPollingErrorsBeforeRemoval} is negative (unlimited). Set with
+     * {@code <internal><option><key>adapter.polling.watchdog.errors.before.stop</key>…}.
+     */
+    public static final String ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP =
+            "adapter.polling.watchdog.errors.before.stop";
+
+    public static final int ADAPTER_POLLING_WATCHDOG_ERRORS_BEFORE_STOP_DEFAULT = 10;
+
     public static final @NotNull AtomicInteger EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST = new AtomicInteger(250);
 }
