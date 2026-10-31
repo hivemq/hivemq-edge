@@ -170,6 +170,13 @@ dependencies {
         implementation(libs.classmate)
     }
 
+    // json-path pulls in asm 9.7.1 through json-smart and accessors-smart; take the release that fixes its CVEs (EDG-1173).
+    // `api`, so the constraint also reaches the compile classpath of projects that build against Edge (hivemq-edge-test
+    // compiles against oauth2-oidc-sdk too), and the composite's version check sees one asm version.
+    constraints {
+        api(libs.asm)
+    }
+
     // config
     implementation(libs.jaxb4.impl)
     implementation(libs.jaxb4.bind)
