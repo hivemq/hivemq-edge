@@ -165,7 +165,7 @@ jobs:
           path: ./hivemq-edge-frontend/dist
 
       - name: 🧪 Run Cypress suite
-        uses: cypress-io/github-action@c541a95ea92d9239347a2355f2e895cd4b3f8060 # v7.4.6
+        uses: cypress-io/github-action@4ce68f262a3888d22cf3175d62010a145ba737ee # v7.4.8
         with:
           component: ${{ matrix.cypress.component }}
           spec: ${{ matrix.cypress.spec }}
@@ -215,7 +215,7 @@ jobs:
           ls -R ./coverage-combined
           ls -R **/**/*.info
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
