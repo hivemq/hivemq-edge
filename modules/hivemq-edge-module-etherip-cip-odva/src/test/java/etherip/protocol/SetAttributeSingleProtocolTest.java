@@ -86,6 +86,20 @@ class SetAttributeSingleProtocolTest {
     }
 
     @Test
+    void reply_withErrorStatus0xFF_throwsCipException() {
+        // general status 0xFF (object specific, see extended status), one extended status word 0x2107
+        final ByteBuffer reply = ByteBuffer.wrap(new byte[] {(byte) 0x90, 0, (byte) 0xFF, 1, 0x07, 0x21})
+                .order(ByteOrder.LITTLE_ENDIAN);
+
+        assertThatThrownBy(() -> new SetAttributeSingleProtocol(new LogicalAddressPath(1, 2, 3), new TwoBytes())
+                        .decode(reply, 6, null))
+                .isInstanceOfSatisfying(CipException.class, e -> {
+                    assertThat(e.getStatusCode()).isEqualTo(0xFF);
+                    assertThat(e.getExtendedStatusCode()).isEqualTo(0x2107);
+                });
+    }
+
+    @Test
     void reply_forAnotherService_isRefused() {
         final ByteBuffer reply =
                 ByteBuffer.wrap(new byte[] {(byte) 0x8E, 0, 0, 0}).order(ByteOrder.LITTLE_ENDIAN);

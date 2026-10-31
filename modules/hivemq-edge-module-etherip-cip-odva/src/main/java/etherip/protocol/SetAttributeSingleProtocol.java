@@ -99,7 +99,9 @@ public class SetAttributeSingleProtocol extends ProtocolAdapter {
             throw new UnexpectedReplyException(serviceCode, status, extendedStatus);
         }
         if (isError(status)) {
-            throw new CipException(status, extendedStatus);
+            // As a signed byte, as upstream MessageRouterProtocol passes it: CipException's status table has no
+            // description for 0xFF, and the constructor fails on that entry when it is given 255.
+            throw new CipException((byte) status, extendedStatus);
         }
         body.decode(buf, available - 4 - 2 * extStatusSize, log);
     }

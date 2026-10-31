@@ -680,7 +680,8 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     /// A CIP general status as code and name, e.g. "status 0x0E Attribute not settable", plus the first
     /// extended status word when there is one.
     private static @NotNull String describeCipStatus(final int status, final int extendedStatus) {
-        final String name = status == 0 ? "Success" : new CipException(status, extendedStatus).getStatusName();
+        // The status goes in as a signed byte, as in SetAttributeSingleProtocol: given 255, CipException fails.
+        final String name = status == 0 ? "Success" : new CipException((byte) status, extendedStatus).getStatusName();
         final StringBuilder text = new StringBuilder(String.format("status 0x%02X", status));
         if (name != null && !name.isEmpty()) {
             text.append(' ').append(name);
