@@ -38,14 +38,35 @@ public class LogicalAddressPathFactory {
                     "Expected tagAddress to contain '@class/instance/attribute' but is '" + tagAddress + "'");
         }
 
+        final int classCode;
+        final int instance;
+        final int attribute;
         try {
-            int classCode = Integer.parseInt(pathElements[0]);
-            int instance = Integer.parseInt(pathElements[1]);
-            int attribute = Integer.parseInt(pathElements[2]);
+            classCode = Integer.parseInt(pathElements[0]);
+            instance = Integer.parseInt(pathElements[1]);
+            attribute = Integer.parseInt(pathElements[2]);
+        } catch (Exception e) {
+            throw new OdvaException("Error parsing tagAddress=" + tagAddress, e);
+        }
 
+        // The etherip library encodes a value above 65535 by casting it to 16 bits, so such an address would
+        // silently read or write a different object (EDG-1181). Refuse it, which refuses the adapter's start.
+        requireSixteenBits(classCode, "class", tagAddress);
+        requireSixteenBits(instance, "instance", tagAddress);
+        requireSixteenBits(attribute, "attribute", tagAddress);
+
+        try {
             return producer.produce(classCode, instance, attribute);
         } catch (Exception e) {
             throw new OdvaException("Error parsing tagAddress=" + tagAddress, e);
+        }
+    }
+
+    private static void requireSixteenBits(final int value, final @NotNull String part, final String tagAddress)
+            throws OdvaException {
+        if (value < 0 || value > 0xFFFF) {
+            throw new OdvaException("The " + part + " in tagAddress '" + tagAddress + "' is " + value
+                    + ", outside the range 0 to 65535 that EtherNet/IP Logical Addressing supports");
         }
     }
 

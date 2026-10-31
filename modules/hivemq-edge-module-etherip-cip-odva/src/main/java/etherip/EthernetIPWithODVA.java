@@ -17,8 +17,10 @@ package etherip;
 
 import etherip.protocol.Encapsulation;
 import etherip.protocol.MessageRouterProtocol;
+import etherip.protocol.Protocol;
 import etherip.protocol.ProtocolAdapter;
 import etherip.protocol.SendRRDataProtocol;
+import etherip.protocol.SetAttributeSingleProtocol;
 import etherip.types.CNService;
 import etherip.types.LogicalAddressPath;
 
@@ -30,23 +32,21 @@ public class EthernetIPWithODVA extends EtherNetIP {
 
     public void getAttributeSingle(LogicalAddressPath logicalAddressPath, ProtocolAdapter protocolAdapter)
             throws Exception {
-        executeSingle(CNService.Get_Attribute_Single, logicalAddressPath, protocolAdapter);
+        executeSingle(new MessageRouterProtocol(CNService.Get_Attribute_Single, logicalAddressPath, protocolAdapter));
     }
 
     public void setAttributeSingle(LogicalAddressPath logicalAddressPath, ProtocolAdapter protocolAdapter)
             throws Exception {
-        executeSingle(CNService.Set_Attribute_Single, logicalAddressPath, protocolAdapter);
+        executeSingle(new SetAttributeSingleProtocol(logicalAddressPath, protocolAdapter));
     }
 
-    protected void executeSingle(
-            CNService service, LogicalAddressPath logicalAddressPath, ProtocolAdapter protocolAdapter)
-            throws Exception {
+    protected void executeSingle(Protocol messageRouterRequest) throws Exception {
         Encapsulation encap = new Encapsulation(
                 Encapsulation.Command.SendRRData,
-                this.connection.getSession(),
-                new SendRRDataProtocol(new MessageRouterProtocol(service, logicalAddressPath, protocolAdapter)));
+                getConnection().getSession(),
+                new SendRRDataProtocol(messageRouterRequest));
 
-        this.connection.execute(encap);
+        getConnection().execute(encap);
     }
 
     //    MRChipWriteAnyProtocol cip_write = new MRChipWriteAnyProtocol(tagClasPath, value);
