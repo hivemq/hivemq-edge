@@ -38,8 +38,8 @@
   },
   "capabilities": {
     "WRITEABLE_CONFIG": {
-      "title": "Config cannot be manipulated via the web app",
-      "description": "Changes to the configuration made via the web app will NOT be persisted back into the config.xml. The requests will fail with an error message highlighting this situation."
+      "title": "Config cannot be updated in this Edge",
+      "description": "This Edge was started with config updates turned off, which is always the case on Kubernetes. To change the config, update the Helm values, or the config file this Edge was started with."
     }
   },
   "navigation": {

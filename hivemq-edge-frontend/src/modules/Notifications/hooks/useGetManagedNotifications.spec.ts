@@ -1,6 +1,6 @@
 import { vi, expect, beforeEach } from 'vitest'
 
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, render, renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
@@ -35,6 +35,25 @@ describe('useGetManagedNotifications', () => {
 
     expect(result.current.notifications).toHaveLength(3)
     expect(result.current.readNotifications).toHaveLength(0)
+  })
+
+  it('should explain why the config cannot be updated', async () => {
+    const { result } = renderHook(useGetManagedNotifications, { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBeTruthy()
+    })
+
+    const notification = result.current.notifications.find(({ id }) => id === 'config-writeable')
+    expect(notification).toBeDefined()
+
+    const { container: title } = render(notification?.title, { wrapper })
+    const { container: description } = render(notification?.description, { wrapper })
+
+    expect(title).toHaveTextContent('Config cannot be updated in this Edge')
+    expect(description).toHaveTextContent(
+      'This Edge was started with config updates turned off, which is always the case on Kubernetes. To change the config, update the Helm values, or the config file this Edge was started with.'
+    )
   })
 
   it('should handle reading a notification', async () => {
