@@ -15,6 +15,7 @@
  */
 package com.hivemq.bridge.config;
 
+import com.hivemq.security.tls.TLSConfig;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +35,19 @@ public class BridgeTls {
     private final boolean verifyHostname;
     private final int handshakeTimeout;
 
+    /// The bridge's TLS settings as the five-stage validation chain sees them, or null for a bridge
+    /// built without going through it.
+    ///
+    /// Carried beside the fields above rather than replacing them: those are read by the REST API and
+    /// the configuration write-back, which report what the operator wrote, while this is what the
+    /// connection validates against. The two describe the same configuration, derived once in the
+    /// configuration reader, so they cannot disagree about one bridge.
+    ///
+    /// Null only where a bridge was assembled directly in code rather than read from a configuration
+    /// file, which is every caller that predates the chain. Such a bridge connects the way it always
+    /// did; a bridge whose configuration was read carries this and validates through it.
+    private final @Nullable TLSConfig effectiveTls;
+
     public BridgeTls(
             final @Nullable String keystorePath,
             final @NotNull String keystorePassword,
@@ -46,6 +60,37 @@ public class BridgeTls {
             final @Nullable String truststoreType,
             final boolean verifyHostname,
             final int handshakeTimeout) {
+        this(
+                keystorePath,
+                keystorePassword,
+                privateKeyPassword,
+                truststorePath,
+                truststorePassword,
+                protocols,
+                cipherSuites,
+                keystoreType,
+                truststoreType,
+                verifyHostname,
+                handshakeTimeout,
+                null);
+    }
+
+    /// As above, for a bridge whose configuration was read through the validation chain.
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public BridgeTls(
+            final @Nullable String keystorePath,
+            final @NotNull String keystorePassword,
+            final @NotNull String privateKeyPassword,
+            final @Nullable String truststorePath,
+            final @NotNull String truststorePassword,
+            final @NotNull List<String> protocols,
+            final @NotNull List<String> cipherSuites,
+            final @Nullable String keystoreType,
+            final @Nullable String truststoreType,
+            final boolean verifyHostname,
+            final int handshakeTimeout,
+            final @Nullable TLSConfig effectiveTls) {
+        this.effectiveTls = effectiveTls;
         this.keystorePath = keystorePath;
         this.keystorePassword = keystorePassword;
         this.privateKeyPassword = privateKeyPassword;
@@ -57,6 +102,12 @@ public class BridgeTls {
         this.truststoreType = truststoreType;
         this.verifyHostname = verifyHostname;
         this.handshakeTimeout = handshakeTimeout;
+    }
+
+    /// The settings as the validation chain sees them, where this bridge was read from a
+    /// configuration file.
+    public @Nullable TLSConfig getEffectiveTls() {
+        return effectiveTls;
     }
 
     public @Nullable String getKeystorePath() {
@@ -187,6 +238,15 @@ public class BridgeTls {
         private @NotNull String truststoreType = "JKS";
         private boolean verifyHostname = true;
         private int handshakeTimeoutSeconds = 10;
+        private @Nullable TLSConfig effectiveTls;
+
+        /// The settings as the validation chain sees them. Set by the configuration reader; a caller
+        /// assembling a bridge in code leaves it alone and gets the connection path that predates
+        /// the chain.
+        public @NotNull Builder withEffectiveTls(final @Nullable TLSConfig effectiveTls) {
+            this.effectiveTls = effectiveTls;
+            return this;
+        }
 
         public @NotNull Builder withKeystorePath(@Nullable String keystorePath) {
             this.keystorePath = keystorePath;
@@ -255,7 +315,8 @@ public class BridgeTls {
                     keystoreType,
                     truststoreType,
                     verifyHostname,
-                    handshakeTimeoutSeconds);
+                    handshakeTimeoutSeconds,
+                    effectiveTls);
         }
     }
 }

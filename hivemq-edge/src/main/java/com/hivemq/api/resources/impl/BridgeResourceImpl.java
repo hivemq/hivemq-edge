@@ -51,6 +51,8 @@ import com.hivemq.edge.api.model.TlsConfiguration;
 import com.hivemq.edge.api.model.WebsocketConfiguration;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.http.error.Error;
+import com.hivemq.security.tls.TLSConfig;
+import com.hivemq.security.tls.TLSConfigBridge;
 import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
@@ -426,7 +428,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                                         .map(BridgeResourceImpl::unconvertRemote)
                                         .collect(Collectors.toList())
                                 : List.of())
-                .withBridgeTls(convertTls(bridge.getTlsConfiguration()))
+                .withBridgeTls(convertTls(bridge.getId(), bridge.getTlsConfiguration()))
                 .withWebsocketConfiguration(convertWebsocketConfig(bridge.getWebsocketConfiguration()))
                 .persist(bridge.getPersist() == null || bridge.getPersist());
         return builder.build();
@@ -465,9 +467,41 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
         return CustomUserProperty.of(customUserProperty.getKey(), customUserProperty.getValue());
     }
 
-    public static @Nullable BridgeTls convertTls(final @Nullable TlsConfiguration tls) {
+    /// A bridge's TLS settings as the API supplies them.
+    ///
+    /// Derives the effective configuration as well as carrying the raw values, because the bridge
+    /// this produces is handed straight to the code that starts bridges - before the configuration
+    /// is written back - so a bridge created or changed through the API would otherwise connect
+    /// without going through the certificate-validation chain at all.
+    ///
+    /// The API's bridge model carries only the older fields, so what it can express is the superseded
+    /// spelling. An operator wanting PEM, a directory of authorities or shared material writes it in
+    /// the configuration file.
+    ///
+    /// @throws IllegalArgumentException if the settings cannot be carried out, which the API reports
+    ///     as a bad request rather than accepting a bridge it cannot validate for
+    public static @Nullable BridgeTls convertTls(
+            final @Nullable String bridgeId, final @Nullable TlsConfiguration tls) {
         if (tls == null || !tls.getEnabled()) {
             return null;
+        }
+
+        final int handshakeTimeout = Math.max(10, Objects.requireNonNullElse(tls.getHandshakeTimeout(), 10));
+        final TLSConfig effectiveTls;
+        try {
+            effectiveTls = TLSConfigBridge.fromSupersededSettings(
+                    bridgeId == null ? "" : bridgeId,
+                    tls.getKeystorePath(),
+                    tls.getKeystorePassword(),
+                    tls.getPrivateKeyPassword(),
+                    tls.getTruststorePath(),
+                    tls.getTruststorePassword(),
+                    tls.getProtocols(),
+                    tls.getCipherSuites(),
+                    tls.getVerifyHostname(),
+                    handshakeTimeout);
+        } catch (final TLSConfigBridge.InvalidTlsConfigException e) {
+            throw new IllegalArgumentException(e.reason(), e);
         }
 
         return new BridgeTls(
@@ -481,7 +515,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                 tls.getKeystoreType(),
                 tls.getTruststoreType(),
                 tls.getVerifyHostname(),
-                Math.max(10, Objects.requireNonNullElse(tls.getHandshakeTimeout(), 10)));
+                handshakeTimeout,
+                effectiveTls);
     }
 
     public static @Nullable BridgeWebsocketConfig convertWebsocketConfig(

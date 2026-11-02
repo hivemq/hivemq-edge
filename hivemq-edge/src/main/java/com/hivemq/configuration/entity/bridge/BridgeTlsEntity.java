@@ -17,6 +17,10 @@ package com.hivemq.configuration.entity.bridge;
 
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
+import com.hivemq.configuration.entity.tls.TlsAllowlistEntity;
+import com.hivemq.configuration.entity.tls.TlsIdentityEntity;
+import com.hivemq.configuration.entity.tls.TlsRevocationlistEntity;
+import com.hivemq.configuration.entity.tls.TlsTruststoreEntity;
 import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,8 +53,43 @@ public class BridgeTlsEntity {
     @XmlElement(name = "handshake-timeout", defaultValue = "10")
     private int handshakeTimeout = 10;
 
-    @XmlElement(name = "verify-hostname", defaultValue = "true")
-    private boolean verifyHostname = true;
+    /// Whether the server certificate is checked to belong to the host this bridge connects to.
+    ///
+    /// Superseded by `tls-checks` and `tls-checks-full`, and refused alongside either of them. On its
+    /// own it still works and feeds the hostname check; left out, the compatibility preset supplies
+    /// it. Declared as an object rather than a primitive so that "not written" is distinguishable
+    /// from "written false", which is what the refusal rests on.
+    @XmlElement(name = "verify-hostname")
+    private @Nullable Boolean verifyHostname = null;
+
+    /// A named certificate-validation profile. Superseded spellings of the material may not appear
+    /// beside it.
+    @XmlElement(name = "tls-checks")
+    private @Nullable String tlsChecks = null;
+
+    /// The five independent validation checks, for what the presets do not cover.
+    @XmlElementRef(required = false)
+    private @Nullable BridgeTlsChecksEntity tlsChecksFull = null;
+
+    /// The private key and certificate chain this bridge presents. Supersedes `keystore`, and adds
+    /// PEM, passwords read from files, and references to shared TLS material.
+    @XmlElement(name = "tls-identity")
+    private @Nullable TlsIdentityEntity tlsIdentity = null;
+
+    /// The authorities whose certificates this bridge accepts. Supersedes `truststore`, and adds PEM,
+    /// several files, directories, glob patterns and the runtime's own authorities.
+    @XmlElement(name = "tls-truststore")
+    private @Nullable TlsTruststoreEntity tlsTruststore = null;
+
+    /// The individual server certificates this bridge accepts, by SHA-256 fingerprint. A bridge has
+    /// never had this; it arrives with the trust mode that reads it.
+    @XmlElement(name = "tls-allowlist")
+    private @Nullable TlsAllowlistEntity tlsAllowlist = null;
+
+    /// The certificates authorities have withdrawn. A bridge has never had this either; it arrives
+    /// with the revocation check that reads it.
+    @XmlElement(name = "tls-revocationlist")
+    private @Nullable TlsRevocationlistEntity tlsRevocationlist = null;
 
     public boolean isEnabled() {
         return enabled;
@@ -76,8 +115,40 @@ public class BridgeTlsEntity {
         return handshakeTimeout;
     }
 
+    /// Whether the hostname check is on, with the default applied: an operator who writes nothing
+    /// gets it, which is what a bridge has always done.
     public boolean isVerifyHostname() {
-        return verifyHostname;
+        return !Boolean.FALSE.equals(verifyHostname);
+    }
+
+    /// Whether the operator wrote the element at all, which decides whether writing it beside the
+    /// superseding checks elements is a mixture to refuse or simply the default taking effect.
+    public boolean isVerifyHostnameWritten() {
+        return verifyHostname != null;
+    }
+
+    public @Nullable String getTlsChecks() {
+        return tlsChecks;
+    }
+
+    public @Nullable BridgeTlsChecksEntity getTlsChecksFull() {
+        return tlsChecksFull;
+    }
+
+    public @Nullable TlsIdentityEntity getTlsIdentity() {
+        return tlsIdentity;
+    }
+
+    public @Nullable TlsTruststoreEntity getTlsTruststore() {
+        return tlsTruststore;
+    }
+
+    public @Nullable TlsAllowlistEntity getTlsAllowlist() {
+        return tlsAllowlist;
+    }
+
+    public @Nullable TlsRevocationlistEntity getTlsRevocationlist() {
+        return tlsRevocationlist;
     }
 
     public void setEnabled(final boolean enabled) {
@@ -112,13 +183,22 @@ public class BridgeTlsEntity {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof BridgeTlsEntity that)) return false;
+        // On the raw field, not the defaulted accessor: a bridge that wrote nothing and one that
+        // wrote the default are the same configuration to run but not the same file, and a reload
+        // compares these to decide what changed.
         return isEnabled() == that.isEnabled()
                 && getHandshakeTimeout() == that.getHandshakeTimeout()
-                && isVerifyHostname() == that.isVerifyHostname()
+                && Objects.equals(verifyHostname, that.verifyHostname)
                 && Objects.equals(getKeyStore(), that.getKeyStore())
                 && Objects.equals(getTrustStore(), that.getTrustStore())
                 && Objects.equals(getProtocols(), that.getProtocols())
-                && Objects.equals(getCipherSuites(), that.getCipherSuites());
+                && Objects.equals(getCipherSuites(), that.getCipherSuites())
+                && Objects.equals(getTlsChecks(), that.getTlsChecks())
+                && Objects.equals(getTlsChecksFull(), that.getTlsChecksFull())
+                && Objects.equals(getTlsIdentity(), that.getTlsIdentity())
+                && Objects.equals(getTlsTruststore(), that.getTlsTruststore())
+                && Objects.equals(getTlsAllowlist(), that.getTlsAllowlist())
+                && Objects.equals(getTlsRevocationlist(), that.getTlsRevocationlist());
     }
 
     @Override
@@ -130,6 +210,12 @@ public class BridgeTlsEntity {
                 getProtocols(),
                 getCipherSuites(),
                 getHandshakeTimeout(),
-                isVerifyHostname());
+                verifyHostname,
+                getTlsChecks(),
+                getTlsChecksFull(),
+                getTlsIdentity(),
+                getTlsTruststore(),
+                getTlsAllowlist(),
+                getTlsRevocationlist());
     }
 }

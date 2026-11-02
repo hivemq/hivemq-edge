@@ -40,6 +40,10 @@ import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.security.tls.TLSConfig;
+import com.hivemq.security.tls.TLSConfigBridge;
+import com.hivemq.security.tls.TLSConfigResolved;
+import com.hivemq.security.tls.TLSMaterialRegistry;
 import com.hivemq.util.Topics;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -271,7 +275,7 @@ public class BridgeExtractor
                             convertLocalSubscriptions(bridgeConfig.getId(), bridgeConfig.getForwardedTopics());
                     builder.withLocalSubscriptions(localSubscriptions);
 
-                    final BridgeTls bridgeTls = convertTls(remoteBroker.getTls());
+                    final BridgeTls bridgeTls = convertTls(bridgeConfig.getId(), remoteBroker.getTls(), config);
                     if (bridgeTls != null) {
                         builder.withBridgeTls(bridgeTls);
                     }
@@ -411,12 +415,43 @@ public class BridgeExtractor
                 websocketConfiguration.getServerPath(), websocketConfiguration.getSubProtocol());
     }
 
-    private @Nullable BridgeTls convertTls(final @Nullable BridgeTlsEntity tls) {
+    /// A bridge's TLS settings, in both the shape the REST API and the write-back read and the shape
+    /// the validation chain uses.
+    ///
+    /// The two are derived from the same element, here, so they cannot disagree about one bridge. The
+    /// fields carry what the operator wrote; the effective configuration carries what it amounts to,
+    /// with presets resolved, the container format guessed where the older spelling omits it, and
+    /// references into shared material replaced by the material itself.
+    ///
+    /// A bridge whose TLS cannot be carried out refuses the configuration, as an invalid bridge id
+    /// or an invalid topic filter does. Returning a bridge with TLS dropped would be worse than
+    /// refusing: the bridge would connect without encryption, to a broker the operator configured
+    /// encryption for, with nothing but a log line to say so.
+    private @Nullable BridgeTls convertTls(
+            final @NotNull String bridgeId,
+            final @Nullable BridgeTlsEntity tls,
+            final @NotNull HiveMQConfigEntity config) {
         if (tls == null || !tls.isEnabled()) {
             return null;
         }
 
-        final BridgeTls.Builder builder = new BridgeTls.Builder();
+        final TLSConfig effectiveTls;
+        try {
+            final TLSConfigBridge written = new TLSConfigBridge(bridgeId, tls);
+            // Material declared once for several surfaces to share, resolved here because this is
+            // where the whole configuration is in hand. A bridge is the first surface where this
+            // works end to end.
+            effectiveTls =
+                    new TLSConfigResolved(written, TlsMaterialRegistryBuilder.registryOf(config.getTlsMaterials()));
+        } catch (final TLSConfigBridge.InvalidTlsConfigException e) {
+            log.error("{}", e.reason());
+            throw new UnrecoverableException(false);
+        } catch (final TLSMaterialRegistry.InvalidReferenceException e) {
+            log.error("Bridge '{}' references TLS material that cannot be resolved: {}", bridgeId, e.reason());
+            throw new UnrecoverableException(false);
+        }
+
+        final BridgeTls.Builder builder = new BridgeTls.Builder().withEffectiveTls(effectiveTls);
         if (tls.getKeyStore() != null && !tls.getKeyStore().getPath().isBlank()) {
             builder.withKeystorePath(tls.getKeyStore().getPath())
                     .withKeystorePassword(
