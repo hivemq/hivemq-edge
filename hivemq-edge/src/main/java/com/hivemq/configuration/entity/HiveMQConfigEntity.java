@@ -21,6 +21,7 @@ import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.configuration.entity.tls.TlsMaterialEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -104,6 +105,14 @@ public class HiveMQConfigEntity {
     @XmlElementWrapper(name = "asset-mappers")
     @XmlElement(name = "asset-mapper")
     private @NotNull List<DataCombinerEntity> assetMapperEntities = new ArrayList<>();
+
+    /// TLS material declared once for several surfaces to share.
+    ///
+    /// Repeats so that several parties can each manage their own material, which is why a reference
+    /// names the material as well as the entry inside it.
+    @XmlElementWrapper(name = "tls-materials")
+    @XmlElement(name = "tls-material")
+    private @NotNull List<TlsMaterialEntity> tlsMaterials = new ArrayList<>();
 
     @XmlElementRef(name = "pulse", required = false)
     private @NotNull PulseEntity pulseEntity = new PulseEntity();
@@ -225,6 +234,10 @@ public class HiveMQConfigEntity {
 
     public @NotNull PulseEntity getPulseEntity() {
         return pulseEntity;
+    }
+
+    public @NotNull List<TlsMaterialEntity> getTlsMaterials() {
+        return tlsMaterials;
     }
 
     public int getVersion() {
