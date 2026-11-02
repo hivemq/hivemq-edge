@@ -352,7 +352,7 @@ public class OpcUaClientConnection {
                             + "certificate will be accepted, establishing no trust at all. Effective checks: {}.",
                     adapterId,
                     config.getUri(),
-                    parsedConfig.effectiveChecks().describe());
+                    parsedConfig.effectiveChecks().describeChecks());
         }
         final var activityListener = new OpcUaSessionActivityListener(
                 protocolAdapterMetricsService,

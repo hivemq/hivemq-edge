@@ -53,7 +53,9 @@
       "ui:order": ["policy", "messageSecurityMode", "*"]
   },
   "tls": {
-    "ui:order": ["enabled", "tlsChecks", "tlsChecksFull", "allowList", "revocationList", "keystore", "truststore", "*"],
+    "ui:order": ["enabled", "tlsChecks", "tlsChecksFull",
+      "tls-identity", "tls-truststore", "tls-allowlist", "tls-revocationlist",
+      "allowList", "revocationList", "keystore", "truststore", "*"],
     "tlsChecks": {
       "ui:enumNames": ["NONE: Chain validation only - the trust chain is still built.",
         "APPLICATION_URI: Chain validation plus the Application URI check.",
@@ -76,6 +78,23 @@
     },
     "truststore": {
       "ui:order": ["path", "password"]
+    },
+    "tls-identity": {
+      "ui:order": ["format", "file", "key-file", "certificate-file", "chain-file",
+        "password", "password-file", "key-entry",
+        "keyentry-password", "keyentry-password-file", "key-password", "key-password-file",
+        "reference-name", "reference-uuid", "*"]
+    },
+    "tls-truststore": {
+      "ui:order": ["format", "file", "directory", "pattern", "builtin",
+        "password", "password-file", "skip-integrity-check",
+        "reference-name", "reference-uuid", "*"]
+    },
+    "tls-allowlist": {
+      "ui:order": ["file", "directory", "pattern", "reference-name", "reference-uuid", "*"]
+    },
+    "tls-revocationlist": {
+      "ui:order": ["file", "directory", "pattern", "reference-name", "reference-uuid", "*"]
     }
   }
 }

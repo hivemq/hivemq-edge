@@ -236,7 +236,7 @@ class OpcUaProtocolAdapterSchedulerLifecycleTest {
 
     // -- fixtures --------------------------------------------------------------------------------
 
-    /** Rejected by TlsChecksProjection: the two validation doors are mutually exclusive. */
+    /** Rejected by OpcUaTLSConfig: the two validation doors are mutually exclusive. */
     private static @NotNull OpcUaSpecificAdapterConfig bothDoorsSet() {
         return config(new Tls(true, TlsChecks.STANDARD, TlsChecksFull.allAxesUnset(), null, null, null));
     }
