@@ -35,6 +35,7 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
+import com.hivemq.edge.model.PhoneHomeData;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterTagStreamingServiceImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -215,6 +216,11 @@ public class ProtocolAdapterManager {
         // hook is not an option: removeShutdownHook throws once the JVM is already exiting.
         protocolAdapterWritingService.addWritingChangedCallback(() ->
                 protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
+        PhoneHomeData.adapterInventory(() -> PhoneHomeData.inventory(
+                protocolAdapterMap.values().stream()
+                        .map(ProtocolAdapterWrapper::getProtocolAdapterInformation)
+                        .toList(),
+                versionProvider.getVersion()));
     }
 
     /**

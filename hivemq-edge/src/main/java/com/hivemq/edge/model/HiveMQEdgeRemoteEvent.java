@@ -43,6 +43,7 @@ public class HiveMQEdgeRemoteEvent {
         this.created = new Date();
         this.installationToken = HiveMQEdgeEnvironmentUtils.generateInstallationToken();
         this.sessionToken = HiveMQEdgeEnvironmentUtils.getSessionToken();
+        PhoneHomeData.addTo(userData, eventType == EVENT_TYPE.EDGE_PING);
     }
 
     public @NotNull Date getCreated() {

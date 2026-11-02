@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
+import com.hivemq.edge.model.PhoneHomeData;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -146,6 +147,43 @@ class HiveMQEdgeHttpServiceImplTest {
 
         for (final JsonNode event : receivedEvents) {
             assertEquals(EDGE_VERSION, event.get("edgeVersion").asText(), "Edge version should be set on events");
+        }
+    }
+
+    @Test
+    void testPingCarriesLicenseIdAndAdapterInventoryOnTheWire() throws Exception {
+        eventLatch = new CountDownLatch(1);
+        httpServer.createContext("/services", new JsonResponseHandler(createServicesJson()));
+        httpServer.createContext("/config", new JsonResponseHandler(createConfigurationJson()));
+        httpServer.createContext("/usage", new UsageEventHandler());
+        httpServer.start();
+        System.setProperty(PhoneHomeData.LICENSE_ID_PROPERTY, "3c1e7a52-file-set");
+        PhoneHomeData.adapterInventory(() -> "modbus:2026.16:1,opcua:2026.16:2");
+        try {
+            service = new HiveMQEdgeHttpServiceImpl(
+                    EDGE_VERSION,
+                    objectMapper,
+                    "http://localhost:" + port + "/services",
+                    TIMEOUT_MILLIS,
+                    TIMEOUT_MILLIS,
+                    RETRY_MILLIS,
+                    true);
+            assertTrue(waitForCondition(() -> service.isOnline(), 10000), "Service should come online");
+
+            service.fireEvent(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING), false);
+
+            assertTrue(eventLatch.await(10, TimeUnit.SECONDS), "Should receive the ping within timeout");
+            final JsonNode ping = receivedEvents.stream()
+                    .filter(e -> "EDGE_PING".equals(e.get("eventType").asText()))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals("3c1e7a52-file-set", ping.at("/userData/licenseId").asText());
+            assertEquals(
+                    "modbus:2026.16:1,opcua:2026.16:2",
+                    ping.at("/userData/adapters").asText());
+        } finally {
+            System.clearProperty(PhoneHomeData.LICENSE_ID_PROPERTY);
+            PhoneHomeData.adapterInventory(null);
         }
     }
 
