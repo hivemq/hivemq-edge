@@ -15,11 +15,48 @@
  */
 package etherip.types;
 
+import java.util.Objects;
+
+/// A CIP logical address: class, instance and attribute.
+///
+/// The wire encoding is inherited unchanged from the upstream `CNClassPath`. Its fields are private
+/// there, so the three coordinates are kept here as well, for the getters and for equality.
 public class LogicalAddressPath extends CNClassPath {
+
+    private final int classCode;
+    private final int instance;
+    private final int attribute;
 
     public LogicalAddressPath(final int class_code, final int instance, final int attribute) {
         super(class_code, "Class: " + class_code);
         instance(instance);
         attr(attribute);
+        this.classCode = class_code;
+        this.instance = instance;
+        this.attribute = attribute;
+    }
+
+    public int getClass_code() {
+        return classCode;
+    }
+
+    public int getInstance() {
+        return instance;
+    }
+
+    public int getAttr() {
+        return attribute;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof final LogicalAddressPath that)) return false;
+        return classCode == that.classCode && instance == that.instance && attribute == that.attribute;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(classCode, instance, attribute);
     }
 }
